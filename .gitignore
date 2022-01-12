@@ -1,0 +1,18 @@
+# Cabal builds
+dist/
+dist-newstyle/
+
+# Nix build results
+result
+result-*
+
+# Editors
+.vscode/
+.idea
+tags
+.nvimrc
+
+*.tix
+
+# Plutus dumped .flat files
+*.flat

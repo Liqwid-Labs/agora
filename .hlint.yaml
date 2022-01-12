@@ -1,0 +1,7 @@
+# Ignored Rules
+- ignore: {name: "Unused LANGUAGE pragma"}
+- ignore: {name: "Use <$>"}
+
+# Extra warnings
+- warn: {name: Use explicit module import list}
+- warn: {name: Use module export list}
