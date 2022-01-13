@@ -19,9 +19,13 @@ import Plutarch.Unit (PUnit (..))
 
 --------------------------------------------------------------------------------
 
+{- | An AuthorityToken represents a proof that a particular token moved while this token was minted.
+ In effect, this means that the validator that locked such a token must have approved said transaction.
+ Said validator should be made aware of _this_ token's existence in order to prevent incorrect minting.
+-}
 data AuthorityToken = AuthorityToken
   { -- | Token that must move in order for minting this to be valid.
-    authorityAssetClass :: AssetClass
+    authority :: AssetClass
   }
 
 --------------------------------------------------------------------------------

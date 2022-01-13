@@ -248,7 +248,7 @@
         self.flake.${system}.devShell.overrideAttrs (oldAttrs: {
           buildInputs = (nixpkgsFor system).lib.unique oldAttrs.buildInputs;
         }));
-      defaultPackage = perSystem
-        (system: self.flake.${system}.packages."liqwid-agora:lib:liqwid-agora");
+      defaultPackage =
+        perSystem (system: self.flake.${system}.packages."agora:lib:agora");
     };
 }
