@@ -7,14 +7,34 @@
   inputs.haskell-nix.inputs.nixpkgs.follows = "haskell-nix/nixpkgs-2105";
 
   inputs.plutus.url =
-    "github:input-output-hk/plutus?rev=6d8d25d1e84b2a4278da1036aab23da4161b8df8";
+    "github:input-output-hk/plutus?rev=65bad0fd53e432974c3c203b1b1999161b6c2dce";
 
   inputs.plutarch.url =
-    "github:Plutonomicon/plutarch?rev=c9a6760f780046018536dc088afaa0657d130ba2";
+    "github:emiflake/plutarch?rev=fc81238aca3d9305347fe38471194e809f262e39";
 
   inputs.goblins.url =
     "github:input-output-hk/goblins?rev=cde90a2b27f79187ca8310b6549331e59595e7ba";
   inputs.goblins.flake = false;
+
+  inputs.cardano-node.url =
+    "github:input-output-hk/cardano-node?rev=b6ca519f97a0e795611a63174687e6bb70c9f752";
+  inputs.cardano-node.flake = false;
+
+  inputs.cardano-wallet.url =
+    "github:j-mueller/cardano-wallet?rev=6be73ab852c0592713dfe78218856d4a8a0ee69e";
+  inputs.cardano-wallet.flake = false;
+
+  inputs.purescript-bridge.url =
+    "github:input-output-hk/purescript-bridge?rev=366fc70b341e2633f3ad0158a577d52e1cd2b138";
+  inputs.purescript-bridge.flake = false;
+
+  inputs.servant-purescript.url =
+    "github:input-output-hk/servant-purescript?rev=ebea59c7bdfc0338d83fca772b9a57e28560bcde";
+  inputs.servant-purescript.flake = false;
+
+  inputs.plutus-apps.url =
+    "github:input-output-hk/plutus-apps?rev=404af7ac3e27ebcb218c05f79d9a70ca966407c9";
+  inputs.plutus-apps.flake = false;
 
   inputs.cardano-addresses.url =
     "github:input-output-hk/cardano-addresses?rev=d2f86caa085402a953920c6714a0de6a50b655ec";
@@ -157,7 +177,14 @@
                 "ntp-client"
               ];
             }
-
+            {
+              src = inputs.servant-purescript;
+              subdirs = [ "." ];
+            }
+            {
+              src = inputs.purescript-bridge;
+              subdirs = [ "." ];
+            }
             {
               src = inputs.plutarch;
               subdirs = [ "." ];
@@ -185,6 +212,43 @@
             {
               src = inputs.flat;
               subdirs = [ "." ];
+            }
+            {
+              src = inputs.cardano-wallet;
+              subdirs = [
+                "lib/text-class"
+                "lib/strict-non-empty-containers"
+                "lib/core"
+                "lib/test-utils"
+                "lib/numeric"
+                "lib/launcher"
+                "lib/core-integration"
+                "lib/cli"
+                "lib/shelley"
+              ];
+            }
+
+            {
+              src = inputs.plutus-apps;
+              subdirs = [
+                "doc"
+                "freer-extras"
+                "playground-common"
+                "plutus-chain-index"
+                "plutus-chain-index-core"
+                "plutus-contract"
+                "plutus-ledger"
+                "plutus-pab"
+                "plutus-playground-server"
+                "plutus-use-cases"
+                "quickcheck-dynamic"
+                "web-ghc"
+              ];
+            }
+            {
+              src = inputs.cardano-node;
+              subdirs =
+                [ "cardano-api" "cardano-node" "cardano-cli" "cardano-config" ];
             }
             {
               src = inputs.plutus;
@@ -230,7 +294,7 @@
               gnumake
             ];
 
-            additional = ps: [ ps.plutarch ];
+            additional = ps: [ ps.plutarch ps.plutus-ledger ];
           };
         };
     in {
