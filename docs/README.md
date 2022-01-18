@@ -1,4 +1,4 @@
-# agora specification & documentation
+# Agora specification & documentation
 
 This folder contains all of the specification and architecture documentation of agora.
 
@@ -15,4 +15,4 @@ Agora makes extensive use of plutarch. So it's prerequisite for understanding th
 The following is a list of words/shorthands that are frequently used:
 
 - **Governance Token (GT)**: The token that holds value within the protocol and is used for voting, rewards, etc. _Examples: Liqwid's LQ_.
-- **Authority Token (GAT)**: A token that delegates authority of a particular script / token. See [tech-design/authority-token.md](..)
+- **Authority Token (GAT)**: A token that delegates authority of a particular script / token. See [tech-design/authority-token.md](./tech-design/authority-token.md)

@@ -292,6 +292,8 @@
               haskellPackages.record-dot-preprocessor
               entr
               gnumake
+
+              graphviz
             ];
 
             additional = ps: [ ps.plutarch ps.plutus-ledger ];
