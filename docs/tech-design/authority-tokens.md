@@ -34,7 +34,7 @@ The components that need to be adjustable at a later point, will need to allow t
 
 ![](../diagrams/GovernanceAuthorityToken.svg)
 
-As a result of this approach, there's a number of benefits, but also details we need to watch out for.
+As a result of this approach, there's a number of benefits, but also details we need to watch out for:
 
 #### Handling multiple effects in a single Proposal
 
