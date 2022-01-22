@@ -17,3 +17,7 @@ Non-goals:
 An up to date `nix` (>=2.3) is required to build this project. For information on how to install, see the [nixos website](https://nixos.org/download.html). Important: See also [this section](https://github.com/input-output-hk/plutus#nix-advice) on binary caches.
 
 Open a dev-shell with `nix develop`, and build with `cabal build`.
+
+## Documentation
+
+See documentation of the agora architecture in [docs](./docs).

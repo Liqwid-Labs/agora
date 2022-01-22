@@ -24,16 +24,17 @@ import Plutus.V1.Ledger.Value (AssetClass (..))
 
 --------------------------------------------------------------------------------
 
-import Plutarch
 import Plutarch.Api.V1 hiding (PMaybe (..))
-import Plutarch.Bool (PBool (..), PEq, pif, (#<), (#==))
-import Plutarch.Builtin
-import Plutarch.DataRepr
+import Plutarch.Bool (PBool, PEq, pif, (#<), (#==))
+import Plutarch.Builtin (PBuiltinPair, PData, pdata, pfromData, pfstBuiltin, psndBuiltin)
+import Plutarch.DataRepr (pindexDataList)
 import Plutarch.Integer (PInteger)
-import Plutarch.List
-import Plutarch.Maybe
+import Plutarch.Lift (pconstant)
+import Plutarch.List (PIsListLike, pfoldr', precList)
+import Plutarch.Maybe (PMaybe (PJust, PNothing))
+import Plutarch.Prelude
 import Plutarch.Trace (ptraceError)
-import Plutarch.Unit (PUnit (..))
+import Plutarch.Unit (PUnit)
 
 --------------------------------------------------------------------------------
 
