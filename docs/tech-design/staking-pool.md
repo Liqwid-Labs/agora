@@ -20,6 +20,8 @@
 
 In order to be able to count votes at all, some means of proving a user's skin in the game on-chain must exist. We propose having a central StakingPool contract which mints separate per-user UTXOs in which the governance token can be deposited. The MintingPolicy of the state threads ensures that it is paid to the script and with valid initial state. This circumvents the need for a central token, and makes the minting of such tokens concurrently possible.
 
+> Peter, 2022-01-24: "(...) mints separate per-user UTxOs (...)": I think this should read something like "locks per-user continuing UTxOs carrying unique state-thread tokens in which the governance token can be deposited." What do you think?
+
 ### Stake UTXOs
 
 A stake UTXO stores the information to allow accessing your staked GT as if it was a safe.
@@ -35,6 +37,8 @@ data Stake = Stake
   }
 ```
 
+> Peter, 2022-01-24: What happens is `lockedByProposals` grows too large? I know its unlikely, but have you considered devising a way circumvent this from being a possibility?
+
 When voting for a proposal, the Stake UTXO is used to witness the user's staked amount. As a result, the two following state transitions take place (pseudocode):
 
 ```haskell
@@ -45,6 +49,8 @@ stake.lockedByProposals += (hash proposal.settings, vote)
 A sort of mutual binding between the proposal and the stake is created and undoing one undoes the other, which is exactly what we want!
 
 Depositing and withdrawing is made illegal when `stake.lockedByProposals` isn't empty. Withdrawing is illegal so that you can't have GT in a vote, without having it anymore, whereas Depositing is illegal so that you can't deposit after a vote and unvote it again in order to retract more than you originally voted. Thus preserving that
+
+> Peter, 2022-01-24: "Thus preserving that..." (incomplete sentence)
 
 #### Delegating stake
 
