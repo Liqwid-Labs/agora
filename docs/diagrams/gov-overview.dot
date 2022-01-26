@@ -1,0 +1,12 @@
+digraph {
+  Proposals -> Governor [label="submitted to"]
+  Users -> StakingPool [label="pay GT to"]
+  StakingPool -> Stakes [label="creates"]
+  Stakes -> Proposals [label="are locked by"]
+  Proposals -> Effects [label="have"]
+  Governor -> Effects [label="issues GATs to"]
+  Treasury -> Governor [label="releases GT to"]
+  "Vesting contract" -> Users [label="distributes GT amongst"]
+  Users -> Stakes [label="own"]
+  Governor -> "Vesting contract" [label="invokes"]
+}

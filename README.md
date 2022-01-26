@@ -1,4 +1,4 @@
-# `agora`
+# Agora
 
 Agora is a set of Plutus scripts that compose together to form a Governance system.
 
@@ -20,4 +20,21 @@ Open a dev-shell with `nix develop`, and build with `cabal build`.
 
 ## Documentation
 
-See documentation of the agora architecture in [docs](./docs).
+See documentation of the Agora architecture in [docs](./docs).
+
+## Road-map
+
+### v1
+- [ ] Governor
+- [ ] Treasury 
+- [ ] Staking pool
+- [ ] Proposals
+- [ ] Effects
+
+### v2
+- [ ] Rewards distribution
+
+### Beyond
+
+
+
