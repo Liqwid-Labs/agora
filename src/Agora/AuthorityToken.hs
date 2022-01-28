@@ -27,7 +27,6 @@ import Plutus.V1.Ledger.Value (AssetClass (..))
 import Plutarch.Api.V1 hiding (PMaybe (..))
 import Plutarch.Bool (PBool, PEq, pif, (#<), (#==))
 import Plutarch.Builtin (PBuiltinPair, PData, pdata, pfromData, pfstBuiltin, psndBuiltin)
-import Plutarch.DataRepr (pindexDataList)
 import Plutarch.Integer (PInteger)
 import Plutarch.Lift (pconstant)
 import Plutarch.List (PIsListLike, pfoldr', precList)
@@ -48,6 +47,8 @@ data AuthorityToken = AuthorityToken
   }
 
 --------------------------------------------------------------------------------
+
+pindexDataList = undefined
 
 -- TODO: upstream something like this
 pfind' :: PIsListLike list a => (Term s a -> Term s PBool) -> Term s (list a :--> PMaybe a)
