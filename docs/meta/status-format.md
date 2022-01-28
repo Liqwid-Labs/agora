@@ -1,6 +1,6 @@
 # Spec Status Format
 
-This document specifies a format used to denote the 'status' of a document.
+This document specifies a format used to denote the 'status' of a spec document.
 
 ## Overview
 
@@ -17,6 +17,26 @@ This format should be used at the start of any documentation that may be conside
 
 In Markdown, the format is as follows, with {substitutions} in curly braces.
 
+| Spec Status | Impl Status | Last Revision |
+|-------------|-------------|---------------|
+| {status}    |  {status}   | {version}, {date} |
+
+--------------------
+
+**Spec Ownership:** [{owner name}]
+
+**Authors**: [{author name}], [{owner name}]
+
+**Impl Owner:** [{impl owner name}]
+ 
+**Current Status**:
+ 
+{Short description of status}
+
+[{owner name}]: {github url}
+[{author name}]: {github url}
+[{impl owner name}]: {github url}
+
 ```markdown
 | Spec Status | Impl Status | Last Revision |
 |-------------|-------------|---------------|
@@ -24,19 +44,19 @@ In Markdown, the format is as follows, with {substitutions} in curly braces.
 
 --------------------
 
-**Spec Ownership:** [@{owner name}]
+**Spec Ownership:** [{owner name}]
 
-**Authors**: [@{author name}], [@{owner name}]
+**Authors**: [{author name}], [{owner name}]
 
-**Impl Owner:** [@{impl owner name}]
+**Impl Owner:** [{impl owner name}]
  
 **Current Status**:
  
 {Short description of status}
 
-[@{owner name}]: {github url}
-[@{author name}]: {github url}
-[@{impl owner name]: {github url}
+[{owner name}]: {github url}
+[{author name}]: {github url}
+[{impl owner name}]: {github url}
 
 --------------------
 ```
