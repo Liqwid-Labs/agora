@@ -6,12 +6,12 @@ This document specifies a format used to denote the 'status' of a spec document.
 
 Each specification document should be headed by a simple table outlining aspects of its status in relation to:
 
--   Authorship
--   Ownership
--   Implementation(s)
--   Specification Completeness
+-   Authorship: who has contributed to it?
+-   Ownership: who is responsible for it?
+-   Implementation(s): where is it used?
+-   Completeness: is it done yet?
 
-This format should be used at the start of any documentation that may be considered a _technical specification_, with a related implementation.
+This format should be used at the start of any documentation that may be considered a _technical specification_, with a related implementation. For anything conceptual, information regarding implementations and completeness may be omitted.
 
 ## Format
 
