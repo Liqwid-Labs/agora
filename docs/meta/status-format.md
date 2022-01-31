@@ -1,4 +1,4 @@
-# Spec Status Format
+# Spec status format
 
 This document specifies a format used to denote the 'status' of a spec document.
 
@@ -11,46 +11,51 @@ Each specification document should be headed by a simple table outlining aspects
 -   Implementation(s): where is it used?
 -   Completeness: is it done yet?
 
-This format should be used at the start of any documentation that may be considered a _technical specification_, with a related implementation. For anything conceptual, information regarding implementations and completeness may be omitted.
+This format should be used at the start of any documentation that may be considered a _technical specification_, with a related implementation. 
 
 ## Format
 
-In Markdown, the format is as follows, with {substitutions} in curly braces.
+The format is as follows, with {substitutions} in curly braces.
 
-| Spec Status | Impl Status | Last Revision |
-|-------------|-------------|---------------|
-| {status}    |  {status}   | {version}, {date} |
+| Specification | Implementation | Last Revision |
+|:-------------:|:--------------:|:-------------:|
+| {status}      | {status}       | {version}, {date} |
 
 --------------------
 
-**Spec Ownership:** [{owner name}]
+**Specification ownership:** {[Spec owner]}
 
-**Authors**: [{author name}], [{owner name}]
+**Authors**: 
+ -   {[Spec owner]}
+ -   {[Author]}
 
-**Impl Owner:** [{impl owner name}]
+**Implementation ownership:** {[Impl owner]}
  
-**Current Status**:
+**Current status**:
  
-{Short description of status}
+{Short description of status regarding __both__ specification and implementation}.
 
-[{owner name}]: {github url}
-[{author name}]: {github url}
-[{impl owner name}]: {github url}
+[Spec owner]: https://genrandom.com/cats/
+[Author]: https://genrandom.com/cats/
+[Impl owner]: https://genrandom.com/cats/
 
 ```markdown
-| Spec Status | Impl Status | Last Revision |
-|-------------|-------------|---------------|
-| {status}    |  {status}   | {version}, {date} |
+| Specification | Implementation | Last Revision |
+|:-------------:|:--------------:|:-------------:|
+| {status}      | {status}       | {version}, {date} |
 
 --------------------
 
-**Spec Ownership:** [{owner name}]
+**Specification ownership:** [{owner name}]
 
-**Authors**: [{author name}], [{owner name}]
+**Authors**: 
+ -   [{owner name}]
+ -   [{author name}]
 
-**Impl Owner:** [{impl owner name}]
+
+**Implementation ownership:** [{impl owner name}]
  
-**Current Status**:
+**Current status**:
  
 {Short description of status}
 
@@ -61,59 +66,54 @@ In Markdown, the format is as follows, with {substitutions} in curly braces.
 --------------------
 ```
 
-### Spec/Impl Status
+### Specification/Implementation status
 
-The Spec and Impl status should be one of the following:
+The 'Specification' and 'Implementation' status should be one of the following:
 
 -   `WIP`: Work In Progress, currently incomplete, pending current or future work by the current owner or a future owner.
 -   `Draft`: Complete but pending further evaluation or changes to be accounted for in the future.
--   `Final`: Complete, and finalised to some degree of certainty.
+-   `Final`: Complete and finalised to some degree of certainty.
 
-### Last Revision
+### Last revision
 
--   version - An (optional) version/revision number for the spec document.
--   date - date the document was last updated. (ISO 8601 format)
+-   version - An optional version/revision number for the spec document.
+-   date - date the document was last updated in [ISO 8601 format](https://www.wikiwand.com/en/ISO_8601#/Calendar_dates) (YYYY-MM-DD).
 
 ### Authors
 
-The authors/contributors of the spec document.
+The authors and contributors of the spec document.
 
-### Spec Ownership
+### Specificiation ownership
 
-The person currently, or most recently tasked with writing/maintaining the spec document.
+The person currently, or most recently tasked with writing and maintaining the spec document.
 
-### Impl Owner
+### Implementation ownership
 
-The person currently or most recently tasked with the implementation of the feature/s described in the document.
+The person currently or most recently tasked with the implementation of the features described in the document.
 
--   For individual features, this will be the person currently/previously assigned to related GitHub Issues.
+-   For individual features, this will be the person most recently assigned to related GitHub issues.
 -   For broader sections, this will be a person leading the implementation efforts for the particular system.
 
 ## Example
 
-| Spec Status | Impl Status | Last Revision |
-|-------------|----------------|---------------|
-| WIP         |  Draft      | 1.0, 2021-10-20 |
+| Specification | Implementation | Last Revision |
+|:-------------:|:--------------:|:-------------:|
+| WIP   | Draft     | 0.1, 2022-01-31 |
 
-***
+--------------------
 
-**Spec Ownership:** [@owner]
+**Specification ownership:** [Jack Hodgkinson]
 
-**Authors**: [@author1], [@author2]
+**Authors**: 
+ -   [Jack Hodgkinson]
+ -   [Emily Martins]
 
-**Impl Owner:** [@developer]
+**Implementation ownership:** [Emily Martins]
+ 
+**Current status**:
+ 
+Draft completed in project repo. Spec needs revisiting to address issues outlined in #42. Section on staking pool behaviour is out-dated. 
 
-**Current Status**:
-
-Draft completed in project repo.
-Spec needs revisiting to address issues outlined in [#100](etc).
-
-[@owner]: URL
-
-[@author1]: URL
-
-[@author2]: URL
-
-[@developer]: URL
-
+[Jack Hodgkinson]: https://github.com/jhodgdev
+[Emily Martins]: https://github.com/emiflake
 ***
