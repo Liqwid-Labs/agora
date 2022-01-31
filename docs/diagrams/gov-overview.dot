@@ -1,12 +1,8 @@
 digraph {
-  Proposals -> Governor [label="submitted to"]
-  Users -> StakingPool [label="pay GT to"]
-  StakingPool -> Stakes [label="creates"]
-  Stakes -> Proposals [label="are locked by"]
+  "Staking pool" -> Stakes [label="tracks"]
+  Stakes -> Proposals [label="are put on"]
   Proposals -> Effects [label="have"]
   Governor -> Effects [label="issues GATs to"]
-  Treasury -> Governor [label="releases GT to"]
-  "Vesting contract" -> Users [label="distributes GT amongst"]
-  Users -> Stakes [label="own"]
-  Governor -> "Vesting contract" [label="invokes"]
+  Users -> Stakes [label="lock GT in"]
+  Users -> Treasury [label="claim GT from"]
 }
