@@ -27,6 +27,7 @@ import Plutus.V1.Ledger.Value (AssetClass (..))
 import Plutarch.Api.V1 hiding (PMaybe (..))
 import Plutarch.Bool (PBool, PEq, pif, (#<), (#==))
 import Plutarch.Builtin (PBuiltinPair, PData, pdata, pfromData, pfstBuiltin, psndBuiltin)
+import Plutarch.DataRepr.Internal.HList (IndexList)
 import Plutarch.Integer (PInteger)
 import Plutarch.Lift (pconstant)
 import Plutarch.List (PIsListLike, pfoldr', precList)
@@ -48,6 +49,7 @@ data AuthorityToken = AuthorityToken
 
 --------------------------------------------------------------------------------
 
+pindexDataList :: Proxy n -> Term s (PDataList xs :--> PAsData (IndexList n xs))
 pindexDataList = undefined
 
 -- TODO: upstream something like this
