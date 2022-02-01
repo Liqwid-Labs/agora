@@ -77,4 +77,4 @@ Proposals may have one or many 'effects', which represent the concrete, individu
 
 ### Governor
 
-The governor is responsible for validating whether proposals have passed. If they have, it issues GATs to the proposals effects.
+The governor is responsible for validating whether proposals have passed. If they have, it issues GATs to the proposals' effects.
