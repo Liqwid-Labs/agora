@@ -1,20 +1,27 @@
 # Vesting contract technical design
 
-| Spec Status | Impl Status | Last Revision |
-|-------------|-------------|---------------|
-| WIP         |  WIP        | 2022-01-18    |
+| Specification | Implementation    | Last revision |
+|:-----------:|:--------------:|:-------------:|
+| WIP         |  WIP           | v0.1 2022-01-26 |
 
---------------------
+***
 
-**Spec Ownership:** [@Emily Martins]
+**Specification ownership:** [Emily Martins]
 
-**Authors**: [@Emily Martins]
+**Authors**:
 
-**Impl Owner:** [@Emily Martins]
+-   [Emily Martins]
+-   [Jack Hodgkinson]
 
-[@Emily Martins]: https://github.com/emiflake
+**Implementation ownership:** [Emily Martins]
 
---------------------
+[Jack Hodgkinson]: https://github.com/jhodgdev
+
+[Emily Martins]: https://github.com/emiflake
+
+**Current Status**:
+
+***
 
 ## Vesting contract
 

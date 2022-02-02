@@ -17,9 +17,9 @@ This format should be used at the start of any documentation that may be conside
 
 The format is as follows, with {substitutions} in curly braces.
 
-| Specification | Implementation | Last Revision |
+| Specification | Implementation | Last revision |
 |:-------------:|:--------------:|:-------------:|
-| {status}      | {status}       | {version}, {date} |
+| {status}      | {status}       | {version} {date} |
 
 --------------------
 

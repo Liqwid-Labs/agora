@@ -1,13 +1,19 @@
-| Spec Status | Impl Status    | Last Revision |
-|-------------|----------------|---------------|
-| WIP         |  WIP           | v0.1 22/01/26 |
+# Effects technical design
+
+| Specification | Implementation    | Last revision |
+|:-----------:|:--------------:|:-------------:|
+| WIP         |  WIP           | v0.1 2022-01-26 |
 
 ***
 
-**Spec Ownership:** [Jack Hodgkinson](github.com/jhodgdev)
+**Specification ownership:** [Jack Hodgkinson]
 
-**Impl Ownership:** _unassigned_
+**Authors**:
 
-**Authors**: [Jack Hodgkinson](github.com/jhodgdev)
+-   [Jack Hodgkinson]
+
+**Implementation ownership:** _unassigned_
+
+[Jack Hodgkinson]: https://github.com/jhodgdev
 
 **Current Status**:
