@@ -83,7 +83,7 @@ The 'Specification' and 'Implementation' status should be one of the following:
 
 The authors and contributors of the spec document.
 
-### Specificiation ownership
+### Specification ownership
 
 The person currently, or most recently tasked with writing and maintaining the spec document.
 
@@ -98,7 +98,7 @@ The person currently or most recently tasked with the implementation of the feat
 
 | Specification | Implementation | Last Revision |
 |:-------------:|:--------------:|:-------------:|
-| WIP   | Draft     | 0.1, 2022-01-31 |
+| WIP   | Draft     | 0.1 2022-01-31 |
 
 --------------------
 

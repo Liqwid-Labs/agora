@@ -2,15 +2,16 @@
 
 | Specification Status | Implementation status | Last revision |
 |:-----------:|:-----------:|:-------------:|
-| WIP         |  WIP        | 2022-02-2022    |
+| WIP         |  WIP        | 2022-02-02    |
 
 ***
 
 **Specification ownership:** [Emily Martins]
 
-**Authors**: 
-  - [Emily Martins]
-  - [Jack Hodgkinson]
+**Authors**:
+
+-   [Emily Martins]
+-   [Jack Hodgkinson]
 
 **Implementation ownership:** [Emily Martins]
 
@@ -18,59 +19,58 @@
 
 [Jack Hodgkinson]: https://github.com/jhodgdev
 
+**Current status:** Originally written for Liqwid by [Emily Martins]. Rewritten by [Jack Hodgkinson]. Will be subject to changes, when a final implementation for the staking pool has been decided.
+
 ***
 
-## The StakingPool
+## Stake UTXOs
 
-In order to be able to count votes at all, some means of proving a user's skin in the game on-chain must exist. We propose having a central StakingPool contract which mints separate per-user UTXOs in which the governance token can be deposited. The MintingPolicy of the state threads ensures that it is paid to the script and with valid initial state. This circumvents the need for a central token, and makes the minting of such tokens concurrently possible.
-
-> Peter, 2022-01-24: "(...) mints separate per-user UTxOs (...)": I think this should read something like "locks per-user continuing UTxOs carrying unique state-thread tokens in which the governance token can be deposited." What do you think?
-
-### Stake UTXOs
-
-A stake UTXO stores the information to allow accessing your staked GT as if it was a safe.
+A 'stake' records how much GT has been staked by a user, and on which proposals it has been locked against.
 
 ```haskell
 data Stake = Stake
-  { -- | Which proposals has this Stake been used to vote on?
+  { -- | Which proposals has this stake been used to vote on?
     lockedByProposals :: [(DatumHash, ProposalVote)]
-  , -- | The amount staked by this utxo
+  , -- | The amount of GT in the stake.
     stakedAmount :: GT
-  , -- | Who owns this Stake
+  , -- | The owner of the stake.
     owner :: PubKeyHash
   }
 ```
 
-> Peter, 2022-01-24: What happens is `lockedByProposals` grows too large? I know its unlikely, but have you considered devising a way circumvent this from being a possibility?
-
-When voting for a proposal, the Stake UTXO is used to witness the user's staked amount. As a result, the two following state transitions take place (pseudocode):
+When voting for a proposal, the stake UTXO is used to witness the user's staked amount. As a result, the two following state transitions take place:
 
 ```haskell
 proposal.votes += (stake.stakedAmount, vote)
 stake.lockedByProposals += (hash proposal.settings, vote)
 ```
 
-A sort of mutual binding between the proposal and the stake is created and undoing one undoes the other, which is exactly what we want!
+This forms a mutual binding between the proposal and the stake.
 
-Depositing and withdrawing is made illegal when `stake.lockedByProposals` isn't empty. Withdrawing is illegal so that you can't have GT in a vote, without having it anymore, whereas Depositing is illegal so that you can't deposit after a vote and unvote it again in order to retract more than you originally voted. Thus preserving that
+A stake may be used to vote on an unlimited number of proposals. Consider a user staking 50GT. They may pledge that 50GT against a proposal `p` _and_ another proposal `p'`.
 
-> Peter, 2022-01-24: "Thus preserving that..." (incomplete sentence)
+Altering the amount positioned in a stake is not possible, for as long as that stake is locked against any proposals. This is to prevent two potential malpractices:
 
-#### Delegating stake
+1.  A user stakes `n` GT and votes on a proposal. They then withdraw their stake and sell it on a DEX. They no own zero GT but have `n` GT staked on a proposal.
+2.  A user stakes `n` GT and votes on a proposal. They further deposit `k` into their stake. They revoke their vote and redeem `n + k` GT, leaving them with a `k` GT profit.
 
-Most things like Cosigning sort of work trivially by just witnessing Stake, but delegation requires an extra step. We add a field to what `Stake` stores.
+Preventing alteration of GT in stakes ensures that there is never a discrepancy between the amount of GT a user holds and the amount the system believes that they hold.
+
+## Delegating stake
+
+Aspects of delegation, such as co-signing work through the trivial witnessing of a stake UTXO, however allowing a user to delegate their stakes requires an extra field:
 
 ```haskell
 data Stake = Stake
-  { -- | Which proposals has this Stake been used to vote on?
+  { -- | Which proposals has this stake been used to vote on?
     lockedByProposals :: [(DatumHash, ProposalVote)]
-  , -- | The amount staked by this utxo
+  , -- | The amount of GT in the stake.
     stakedAmount :: GT
-  , -- | Who can spend our utxo for us when voting
-    delegatedTo :: Maybe ValidatorHash
-  , -- | Who owns this Stake
+  , -- | The owner of the stake.
     owner :: PubKeyHash
+  , -- | To whom this stake has been delegated.
+    delegatedTo :: Maybe ValidatorHash
   }
 ```
 
-We simply link one stake to another. When voting now the voter can check which Stake utxos are delegated to them off-chain, and include them in the transaction for voting. **This will lock the delegators' utxos**, but that's no big deal because they can themselves unlock it just like usual. The validity of the hash provided to the Stake is irrelevant. It simply delegates its _authentication_ to the particular hash. Note, it only delegates authentication for _voting_ but not for example for withdrawing.
+When voting on a proposal, a user can check which stakes have delegated to them off-chain and include them in the voting transaction. _This will lock the delegator's stake_, however they will be themselves be able to unlock it as usual. It should be noted that delegation of stakes only extends to voting on proposals and not, for example, withdrawing GT from a stake.
