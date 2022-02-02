@@ -1,6 +1,0 @@
-digraph {
-  rankdir="LR"
-  {User} -> StakingPool [label="pays LQ to"]
-  StakingPool -> Stake [label="creates"]
-  Stake -> Proposal [label="is locked by"]
-}
