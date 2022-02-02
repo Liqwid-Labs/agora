@@ -23,7 +23,7 @@ This document gives an overview of the technical design of the proposals system 
 
 **Current status**:
 
-Imported from Liqwid by [Emily Martins]. Underwent rewrite by [Jack Hodgkinson].Further amendments to the 'period table' should be considered. Outstanding remarks from Peter Dragos that require attention.
+Imported from Liqwid by [Emily Martins]. Underwent rewrite by [Jack Hodgkinson].Further amendments to the 'period table' should be considered. 
 
 ***
 
@@ -67,7 +67,7 @@ Consider the following 'stages' of a proposal:
 
 #### Draft phase
 
-During the draft phase, the proposal script has been minted. At this stage, only votes in favor of co-signing the draft are counted. For the proposal to transition to the voting phase, a threshold of GT will have to be staked backing the proposal. This threshold will be determined on a per-system basis and could itself be a 'governable' parameter.
+During the draft phase, the proposal script has been created. At this stage, only votes in favor of co-signing the draft are counted. For the proposal to transition to the voting phase, a threshold of GT will have to be staked backing the proposal. This threshold will be determined on a per-system basis and could itself be a 'governable' parameter.
 
 #### Voting phase
 
@@ -76,8 +76,6 @@ In the voting phase, users may utilise their stakes to vote in-favour or in-oppo
 #### Lock phase
 
 Upon completion of the voting phase, a proposal will either have been passed or failed. A delay between the passing of a proposal and execution of its effects will be enforced, to allow users to prepare for incoming changes to the system. It'll further give the system maintainers opportunity to intervene, in the case of a hostile action.
-
-> Peter, 2022-01-24: How is this time decided? Are you familiar with the "Emergency Shutdown Mode" of MakerDAO, which we'll be adopting in LiqwidX? This is something that would, for the most part, need to happen ASAP. What sort of modularity exists or would you like to see?
 
 #### Execution phase
 

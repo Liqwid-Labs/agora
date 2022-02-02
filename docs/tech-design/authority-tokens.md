@@ -47,7 +47,7 @@ This model naturally requires that any component of the system, desired to be ad
 
 ![Governance Authority Token UTxO flow diagram](../diagrams/GovernanceAuthorityToken.svg)
 
-> Peter, 2022-01-24: You should add a link to what conventions you're following for you UTxO flows to the README
+> Peter, 2022-01-24: You should add a link to what conventions you're following for you UTXO flows to the README
 
 > Peter 2022-01-24: I think I see what's going on here, but it could use some annotations/additional description.
 > Tx1, a.) A proposal is closed via Tx1, and the transaction emits a continuing `Proposal` and `Governance` UtXO,
@@ -77,6 +77,4 @@ The ability to alter large swathes of the system being conferred by the ownershi
 
 This should be sufficient to prevent loopholes. Delegating authority through validation or movement of tokens is often a necessary risk in blockchain systems and this problem is no more complex than others of its kind.
 
-> 2022-01-24, Peter: Have you considered placing the validator hash of the effect script in the token name? This could tie a proposal to a GAT to a validator, instead of having any GAT work with any effect script.
-
-> 2022-01-24, Peter: This section could use some additional explanation/pseudo-code of the what the GAT minting policy would look like and what additional validation logic would go into a governable component
+There is scope for expanding GATs to make them more restrictive and therefore less dangerous. One proposal is to store the hash of the effect script within the GAT, thus allowing for the minting of 'bespoke GATs', which are only authorised to make changes allowed for in the effect hash.
