@@ -1,20 +1,24 @@
-# StakingPool technical design
+# Staking pool technical design
 
-| Spec Status | Impl Status | Last Revision |
-|-------------|-------------|---------------|
-| WIP         |  WIP        | 2022-01-18    |
+| Specification Status | Implementation status | Last revision |
+|:-----------:|:-----------:|:-------------:|
+| WIP         |  WIP        | 2022-02-2022    |
 
---------------------
+***
 
-**Spec Ownership:** [@Emily Martins]
+**Specification ownership:** [Emily Martins]
 
-**Authors**: [@Emily Martins]
+**Authors**: 
+  - [Emily Martins]
+  - [Jack Hodgkinson]
 
-**Impl Owner:** [@Emily Martins]
+**Implementation ownership:** [Emily Martins]
 
-[@Emily Martins]: https://github.com/emiflake
+[Emily Martins]: https://github.com/emiflake
 
---------------------
+[Jack Hodgkinson]: https://github.com/jhodgdev
+
+***
 
 ## The StakingPool
 
