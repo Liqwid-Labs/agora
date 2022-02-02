@@ -11,7 +11,7 @@ usage:
 
 HOOGLE_PORT=8081
 hoogle:
-	hoogle server --local --port $(HOOGLE_PORT)
+	hoogle server --local --port $(HOOGLE_PORT) > /dev/null &
 
 FORMAT_EXTENSIONS := -o -XQuasiQuotes -o -XTemplateHaskell -o -XTypeApplications -o -XImportQualifiedPost -o -XPatternSynonyms -o -fplugin=RecordDotPreprocessor
 format:

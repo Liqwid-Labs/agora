@@ -1,8 +1,11 @@
-module Agora.AuthorityToken (authorityTokenPolicy, AuthorityToken (..), serialisedScriptSize) where
+module Agora.AuthorityToken (
+  authorityTokenPolicy,
+  AuthorityToken (..),
+  serialisedScriptSize,
+) where
 
 --------------------------------------------------------------------------------
 
-import Data.Proxy (Proxy (..))
 import Prelude
 
 --------------------------------------------------------------------------------
@@ -24,23 +27,17 @@ import Plutus.V1.Ledger.Value (AssetClass (..))
 
 --------------------------------------------------------------------------------
 
-import Plutarch.Api.V1 hiding (PMaybe (..))
-import Plutarch.Bool (PBool, PEq, pif, (#<), (#==))
-import Plutarch.Builtin (PBuiltinPair, PData, pdata, pfromData, pfstBuiltin, psndBuiltin)
-import Plutarch.DataRepr (pindexDataList)
-import Plutarch.Integer (PInteger)
-import Plutarch.Lift (pconstant)
-import Plutarch.List (PIsListLike, pfoldr', precList)
-import Plutarch.Maybe (PMaybe (PJust, PNothing))
+import Plutarch.Api.V1
+import Plutarch.List (pfoldr')
 import Plutarch.Prelude
-import Plutarch.Trace (ptraceError)
-import Plutarch.Unit (PUnit)
 
 --------------------------------------------------------------------------------
 
-{- | An AuthorityToken represents a proof that a particular token moved while this token was minted.
- In effect, this means that the validator that locked such a token must have approved said transaction.
- Said validator should be made aware of _this_ token's existence in order to prevent incorrect minting.
+{- | An AuthorityToken represents a proof that a particular token
+     moved while this token was minted. In effect, this means that
+     the validator that locked such a token must have approved
+     said transaction. Said validator should be made aware of
+     _this_ token's existence in order to prevent incorrect minting.
 -}
 data AuthorityToken = AuthorityToken
   { -- | Token that must move in order for minting this to be valid.
@@ -50,14 +47,19 @@ data AuthorityToken = AuthorityToken
 --------------------------------------------------------------------------------
 
 -- TODO: upstream something like this
-pfind' :: PIsListLike list a => (Term s a -> Term s PBool) -> Term s (list a :--> PMaybe a)
+pfind' ::
+  PIsListLike list a =>
+  (Term s a -> Term s PBool) ->
+  Term s (list a :--> PMaybe a)
 pfind' p =
   precList
     (\self x xs -> pif (p x) (pcon (PJust x)) (self # xs))
     (const $ pcon PNothing)
 
 -- TODO: upstream something like this
-plookup :: (PEq a, PIsListLike list (PBuiltinPair a b)) => Term s (a :--> list (PBuiltinPair a b) :--> PMaybe b)
+plookup ::
+  (PEq a, PIsListLike list (PBuiltinPair a b)) =>
+  Term s (a :--> list (PBuiltinPair a b) :--> PMaybe b)
 plookup =
   phoistAcyclic $
     plam $ \k xs ->
@@ -69,7 +71,8 @@ passetClassValueOf' :: AssetClass -> Term s (PValue :--> PInteger)
 passetClassValueOf' (AssetClass (sym, token)) =
   passetClassValueOf # pconstant sym # pconstant token
 
-passetClassValueOf :: Term s (PCurrencySymbol :--> PTokenName :--> PValue :--> PInteger)
+passetClassValueOf ::
+  Term s (PCurrencySymbol :--> PTokenName :--> PValue :--> PInteger)
 passetClassValueOf =
   phoistAcyclic $
     plam $ \sym token value'' ->
@@ -83,7 +86,8 @@ passetClassValueOf =
                   PNothing -> 0
                   PJust v -> pfromData v
 
--- TODO: We should rely on plutus-extra instead of rolling our own, this is just quick & hacky.
+-- TODO: We should rely on plutus-extra instead of rolling our own,
+--       this is just quick and hacky.
 serialisedScriptSize :: Script -> Int
 serialisedScriptSize =
   BSS.length
@@ -93,26 +97,29 @@ serialisedScriptSize =
     . BS.toStrict
     . serialise
 
-authorityTokenPolicy :: AuthorityToken -> Term s (PData :--> PData :--> PScriptContext :--> PUnit)
+authorityTokenPolicy ::
+  AuthorityToken ->
+  Term s (PData :--> PData :--> PScriptContext :--> PUnit)
 authorityTokenPolicy params =
   plam $ \_datum _redeemer ctx' ->
     pmatch ctx' $ \(PScriptContext ctx) ->
-      let txInfo' =
-            pfromData $ pindexDataList (Proxy @0) # ctx
-
-          purpose' =
-            pfromData $ pindexDataList (Proxy @1) # ctx
+      let txInfo' = pfromData $ pfield @"txInfo" # ctx
+          purpose' = pfromData $ pfield @"purpose" # ctx
 
           inputs =
             pmatch txInfo' $ \(PTxInfo txInfo) ->
-              pfromData $ pindexDataList (Proxy @0) # txInfo
+              pfromData $ pfield @"inputs" # txInfo
 
           authorityTokenInputs =
             pfoldr'
               ( \txInInfo' acc ->
                   pmatch (pfromData txInInfo') $ \(PTxInInfo txInInfo) ->
-                    let txOut' = pfromData $ pindexDataList (Proxy @1) # txInInfo
-                        txOutValue = pmatch txOut' $ \(PTxOut txOut) -> pfromData $ pindexDataList (Proxy @1) # txOut
+                    let txOut' =
+                          pfromData $ pfield @"resolved" # txInInfo
+                        txOutValue =
+                          pmatch txOut' $
+                            \(PTxOut txOut) ->
+                              pfromData $ pfield @"value" # txOut
                      in passetClassValueOf' params.authority # txOutValue + acc
               )
               # (0 :: Term s PInteger)
@@ -121,12 +128,12 @@ authorityTokenPolicy params =
           -- We incur the cost twice here. This will be fixed upstream in Plutarch.
           mintedValue =
             pmatch txInfo' $ \(PTxInfo txInfo) ->
-              pfromData $ pindexDataList (Proxy @3) # txInfo
+              pfromData $ pfield @"mint" # txInfo
 
           tokenMoved = 0 #< authorityTokenInputs
        in pmatch purpose' $ \case
             PMinting sym' ->
-              let sym = pfromData $ pindexDataList (Proxy @0) # sym'
+              let sym = pfromData $ pfield @"_0" # sym'
                   mintedATs = passetClassValueOf # sym # pconstant "" # mintedValue
                in pif
                     (0 #< mintedATs)
