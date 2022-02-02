@@ -19,6 +19,12 @@
 
 [Jack Hodgkinson]: https://github.com/jhodgdev
 
+[Peter Dragos]: https://github.com/peter-mlabs
+
+**Current status:**
+
+Initially written up by [Emily Martins] for Liqwid. Transferred across to Agora. Rewritten by [Jack Hodgkinson]. Outstanding suggestions from [Peter Dragos] that require addressing.
+
 ***
 
 ## Authority tokens
@@ -65,8 +71,6 @@ It is essentially impossible for the system to prevent from conflicting effects 
 #### Writing effect code requires a _lot_ of care
 
 The ability to alter large swathes of the system being conferred by the ownership of a single token poses the risk of (purposeful or inadvertent) harm. There are steps one can take to lessen this risk:
-
-> Jack 2022-02-02: Is there any scope for 'domain specific' GATs? Effects could be limited to altering a single component of the system and therefore be issued with GATs that only permit the altering of that component.
 
 -   All validators for an effect transaction are specified **in full**. In comparison to the normal writing of validators, where one only specifies what they must, one must do all they can to avoid undesired behaviour being permitted by the validator.
 -   All transactions are only executed by one of a few 'trusted' DAO members. This would necessarily have to be encoded in the effect.
