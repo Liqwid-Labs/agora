@@ -1,50 +1,43 @@
 # Authority token technical design
 
-| Spec status | Impl status | Last revision |
-|-------------|-------------|---------------|
-| WIP         |  WIP        | 2022-01-18    |
+| Specification | Implementation  | Last revision |
+|:-----------:|:-----------:|:-------------:|
+| WIP         |  WIP        | 2022-02-02    |
 
 ***
 
 **Specification owner:** [Emily Martins]
 
-**Authors**: [Emily Martins]
+**Authors**:
+
+-   [Emily Martins]
+-   [Jack Hodgkinson]
 
 **Implementation owner:** [Emily Martins]
 
 [Emily Martins]: https://github.com/emiflake
 
+[Jack Hodgkinson]: https://github.com/jhodgdev
+
 ***
 
-## Authority Tokens
+## Authority tokens
 
 In the spirit of extensibility, a governance system should be able to readily expand the effects proposals can have on their protocol. With Ethereum systems, this is often done with untyped data and references to specific contract hashes. [Compound](https://medium.com/compound-finance/compound-governance-5531f524cf68) encodes an array of the contracts' addresses (`address[] Proposal.targets`) and the data to be passed to them (`bytes[] Proposal.calldatas`). This does not translate to Cardano's EUTXO model, so we require an alternative approach.
 
+Our approach relies on two core assumptions:
 
-> In order to allow this flexibility, there are two facts that we rely on:
+-   We trust the community to thoroughly assess the effects of a proposal. This ensures that the effects are safe and will work as intended.
 
--   We trust the community to validate the proposal entirely, including whether or not the effects encoded in it are written correctly. (This may mean we have a set of known and trusted effects we agree are correct and safe, collectively)
--   The effects are given authority only after the proposal that promises them succeeds.
+-   The effects of a proposal may only alter the system, after their associated proposal has been passed by the community.
 
-Our approach relies on two core assumptions: 
+The first assumption is justified by the fact that any proposal stores the hash of its effects' codes, and these effects are available for any user to inspect. The community of GT-holders will be able to verify a proposal's purported benefits.
 
-- We trust the community to thoroughly assess the effects of a proposal. This ensures that the effects are safe and will work as intended.
+To ensure the latter assumption holds true, we introduce 'governance authority tokens' (GATs). Any effect that wishes to alter the system will be required to _burn_ a GAT, when it is enacted. These GATs will be issued to a proposal's effects via the governor component, which has the responsibility of ensuring that a proposal passed in a correct and valid manner. Conceptually, the ownership of a GAT by an effect is a way of demonstrating to a component: 'the DAO (decentralised autonomous organisation) has granted me permission to alter your parameters'.
 
-- The effects of a proposal may only alter the system, after their associated proposal has been passed by the community.
+> The components that need to be adjustable at a later point will need to allow this as means for proving authority and validation of a transaction. So, for example, a Liqwid market might need to have its parameters updated, the following diagram shows how this would happen after a proposal has successfully been voted on and passed:
 
-To achieve the former is rather simple, the effect validator's source code is available for anyone to look at, and it hashes correctly to the hash stored in the proposal itself. So, the LQ holders can decide on whether it is a positive for the system.
-
-> Peter, 2022-01-24: At this point in reading, its not obvious that "effect"s have validators. This is likely explained elsewhere, but this should be kept in mind when considering the order in which these specs should be read.
-
-> Peter, 2022-01-24: Update: after some more reading, it sounds like the Effect/GAT pair is basically a way to short-circuit the "normal" validation of a UTxO at one of the component addresses; it basically says "ignore your usual validation logic; I have a GAT, so this transaction must be approved".
-
-In order to achieve the latter, we must introduce some way to give effects authority to perform their actions.
-
-We do this by handing out "Governance Authority Tokens" (GATs) to each of the the effects belonging to a proposal after the proposal passes. When these authority tokens are _burned_, they act as a way of saying "the DAO validated this, so trust that I will ensure this transaction is correct".
-
-The components that need to be adjustable at a later point will need to allow this as means for proving authority and validation of a transaction. So, for example, a Liqwid Market might need to have its parameters updated, the following diagram shows how this would happen after a proposal has successfully been voted on and passed:
-
-> Peter, 2022-01-24: RE: "(...) need to be adjustable at a (...)": could it make more sense to say "adjusted via governance"?
+This model naturally requires that any component of the system, desired to be adjustable via governance is aware of the existence and significance of GATs. For example, a [Liqwid](https://github.com/mlabs-haskell/liqwid-contracts/) market may be subject to the effects of a successful proposal to alter its parameters. The following diagram shows how such an update would occur:
 
 ![Governance Authority Token UTxO flow diagram](../diagrams/GovernanceAuthorityToken.svg)
 
@@ -61,23 +54,25 @@ The components that need to be adjustable at a later point will need to allow th
 > Tx2, c.) There is a continuing "Effect" UTxO; presumably, this serves as a proof that an effect has taken place? Meaning that a sequence of effects that require a particular order of execution can consume the output UTxO as a witness?
 > Tx2, d.) The min ADA is paid to "user outputs"; is this just "collateral" to make sure that the effect is executed in a timely fashion?
 
-As a result of this approach, there's a number of benefits, but also details we need to watch out for:
+This approach has a number of benefits but some important details must be kept in mind:
 
-#### Handling multiple effects in a single Proposal
+#### Handling multiple effects in a single proposal
 
-Handling multile effects this way is very doable. For one, a single effect can do multiple things at once, if the script sizes allow it. But another point is that a proposal can have a _list_ of hashes that it distributes GATs to. And this is all without growing size almost at all, because the actual effects are encoded in their scripts.
+Cardano script sizes are restricted to 16KB and previous proposal/effect models have had difficulties generating scripts which keep under this limit. By decoupling proposals and their effects, a proposal can have a far greater number of effects, as all it contains is a list of hashes for said effects. Effects themselves can make any number of changes to the system, as long as the resulting script is kept to an allowable size.
 
-There is the concern of expiration date of effects and incomplete execution now, however. But the customizability allows for failsafes (like retrying) and encoding expiration correctly. Due to the nature of these effects being handled by the DAO, it's assumed no conflicting effects will be executed in short succession. This is essentially impossible to encode in the system itself, so this tradeoff must be taken.
+It is essentially impossible for the system to prevent from conflicting effects taking place in short order and harming the system but the likelihood of this occurring is sufficiently reduced by all effects first having be passed by the DAO. There is scope for adding a notion of 'expiration', after which effects will no longer be able to enact their changes.
 
-#### Writing effect code needs a _lot_ of care
+#### Writing effect code requires a _lot_ of care
 
-Having delegated the authority of _the entire system_ in a single token is a lot of power for one tiny script. And with great power comes great responsibility. It is important that this token doesn't fall into the wrong hands or is executed in a way that was unexpected (by the community). There's a few things we can do to help mitigate this:
+The ability to alter large swathes of the system being conferred by the ownership of a single token poses the risk of (purposeful or inadvertent) harm. There are steps one can take to lessen this risk:
 
--   We write the validator with the transaction in mind specified out in fullest. No extra inputs, no extra outputs, no extra mints, etc. Essentially this is the opposite of what we do in other places, where we try to be only as specific as we need.
--   We have the transaction be executed by one of a number of community trusted members. This of course is something that is encoded in the effect, rather than anywhere else.
+> Jack 2022-02-02: Is there any scope for 'domain specific' GATs? Effects could be limited to altering a single component of the system and therefore be issued with GATs that only permit the altering of that component.
 
-Hopefully, this is sufficient to ensure the transactions are created correctly, and nothing unexpected slips in. This problem is no more complicated or dangerous than elsewhere where we delegate certain trust or authority to just the validation or movement of a token.
+-   All validators for an effect transaction are specified **in full**. In comparison to the normal writing of validators, where one only specifies what they must, one must do all they can to avoid undesired behaviour being permitted by the validator.
+-   All transactions are only executed by one of a few 'trusted' DAO members. This would necessarily have to be encoded in the effect.
+
+This should be sufficient to prevent loopholes. Delegating authority through validation or movement of tokens is often a necessary risk in blockchain systems and this problem is no more complex than others of its kind.
 
 > 2022-01-24, Peter: Have you considered placing the validator hash of the effect script in the token name? This could tie a proposal to a GAT to a validator, instead of having any GAT work with any effect script.
 
-> 2022-01-24, Peter: This section could use some additional explaination/pseudo-code of the what the GAT minting policy would look like and what additional validation logic would go into a govern-able component
+> 2022-01-24, Peter: This section could use some additional explanation/pseudo-code of the what the GAT minting policy would look like and what additional validation logic would go into a governable component
