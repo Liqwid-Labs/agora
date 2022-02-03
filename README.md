@@ -63,7 +63,9 @@ A: The right to vote is conferred by the _staking_ of some designated _governanc
 
 ## Overview of components
 
-![Governance overview diagram](/docs/diagrams/gov-overview.svg "Governance overview diagram")
+<p align="center">
+  <img src="/docs/diagrams/gov-overview.svg"/>
+</p>
 
 More-detailed information on individual components will be included in their own, specific documentation. This section provides brief descriptions on the purpose of each component.
 
