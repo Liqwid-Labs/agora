@@ -1,6 +1,6 @@
 # Staking pool technical design
 
-| Specification Status | Implementation status | Last revision |
+| Specification | Implementation | Last revision |
 |:-----------:|:-----------:|:-------------:|
 | WIP         |  WIP        | 2022-02-02    |
 
