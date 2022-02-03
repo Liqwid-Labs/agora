@@ -16,3 +16,6 @@ tags
 
 # Plutus dumped .flat files
 *.flat
+
+# direnv files
+.envrc
