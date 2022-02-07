@@ -1,3 +1,5 @@
+{-# LANGUAGE PolyKinds #-}
+
 module Agora.AuthorityToken (
   authorityTokenPolicy,
   AuthorityToken (..),
@@ -16,6 +18,8 @@ import Plutarch.Api.V1
 import Plutarch.List (pfoldr')
 import Plutarch.Prelude
 
+import Agora.SafeMoney
+
 --------------------------------------------------------------------------------
 
 {- | An AuthorityToken represents a proof that a particular token
@@ -30,46 +34,6 @@ data AuthorityToken = AuthorityToken
   }
 
 --------------------------------------------------------------------------------
-
--- TODO: upstream something like this
-pfind' ::
-  PIsListLike list a =>
-  (Term s a -> Term s PBool) ->
-  Term s (list a :--> PMaybe a)
-pfind' p =
-  precList
-    (\self x xs -> pif (p x) (pcon (PJust x)) (self # xs))
-    (const $ pcon PNothing)
-
--- TODO: upstream something like this
-plookup ::
-  (PEq a, PIsListLike list (PBuiltinPair a b)) =>
-  Term s (a :--> list (PBuiltinPair a b) :--> PMaybe b)
-plookup =
-  phoistAcyclic $
-    plam $ \k xs ->
-      pmatch (pfind' (\p -> pfstBuiltin # p #== k) # xs) $ \case
-        PNothing -> pcon PNothing
-        PJust p -> pcon (PJust (psndBuiltin # p))
-
-passetClassValueOf' :: AssetClass -> Term s (PValue :--> PInteger)
-passetClassValueOf' (AssetClass (sym, token)) =
-  passetClassValueOf # pconstant sym # pconstant token
-
-passetClassValueOf ::
-  Term s (PCurrencySymbol :--> PTokenName :--> PValue :--> PInteger)
-passetClassValueOf =
-  phoistAcyclic $
-    plam $ \sym token value'' ->
-      pmatch value'' $ \(PValue value') ->
-        pmatch value' $ \(PMap value) ->
-          pmatch (plookup # pdata sym # value) $ \case
-            PNothing -> 0
-            PJust m' ->
-              pmatch (pfromData m') $ \(PMap m) ->
-                pmatch (plookup # pdata token # m) $ \case
-                  PNothing -> 0
-                  PJust v -> pfromData v
 
 authorityTokenPolicy ::
   AuthorityToken ->

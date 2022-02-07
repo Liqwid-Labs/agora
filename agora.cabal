@@ -92,7 +92,10 @@ common test-deps
 
 library
   import:          lang, deps
-  exposed-modules: Agora.AuthorityToken
+  exposed-modules:
+    Agora.AuthorityToken
+    Agora.SafeMoney
+    Agora.SafeMoney.QQ
   other-modules:
   hs-source-dirs:  src
 
