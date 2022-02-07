@@ -49,12 +49,13 @@ This forms a mutual binding between the proposal and the stake.
 
 A stake may be used to vote on an unlimited number of proposals. Consider a user staking 50GT. They may pledge that 50GT against a proposal `p` _and_ another proposal `p'`.
 
-Altering the amount positioned in a stake is not possible, for as long as that stake is locked against any proposals. This is to prevent two potential malpractices:
+Altering the amount positioned in a stake is not possible, for as long as that stake is locked against any proposals. This is to prevent vote manipulation. Consider:
 
-1.  A user stakes `n` GT and votes on a proposal. They then withdraw their stake and sell it on a DEX. They no own zero GT but have `n` GT staked on a proposal.
-2.  A user stakes `n` GT and votes on a proposal. They further deposit `k` into their stake. They revoke their vote and redeem `n + k` GT, leaving them with a `k` GT profit.
+-   Ford stakes 100GT and votes in-favour of a proposal `p`. `p` now has +100GT in-favour.
+-   Ford _increases_ his stake by 50GT to 150GT.
+-   Ford retracts his vote from `p`. As his stake is 150GT, `p` deducts 150GT and `p` now has -50GT in-favour.
 
-Preventing alteration of GT in stakes ensures that there is never a discrepancy between the amount of GT a user holds and the amount the system believes that they hold.
+It should be clear how users could alter their stakes to reduce and manipulate the vote count. Preventing alteration of GT in stakes ensures that there is never a discrepancy between the amount of GT a user holds and the amount the system believes that they hold.
 
 If a user wished to stake _more_ GT, they could always create a new stake that they would be free to lock on proposals. For this reason, it may be useful to include a method of 'merging' stakes, when they are not being locked against any proposals, to allow users to 'streamline' their GT portfolio.
 
@@ -83,6 +84,6 @@ There are a number of reasons that a protocol would wish to track the global sta
 
 Whilst the ability to track stakes is a useful one, it is a complicated concept to implement on Cardano. A particular issue is _throughput and contention_: any purely on-chain solution is unlikely to be able to process data rapidly enough that the process of users creating stakes _and_ updating the staking pool is as seamless as desired.
 
-One potential solution for this is an _escrow_ system, which implements a queueing solution by which users issue their stake and the system takes responsibility for updating the staking pool accordingly, with no further action required from the staker.
+One potential solution for this is an _escrow_ system, which implements a queueing solution by which users issue their stake and the system takes responsibility for updating the staking pool accordingly, with no further action required from the staker. This is a feature that is being considered for Agora v2.
 
 Another implementation takes the burden of calculating the global state of user stakes _off-chain_. This allows the developers much more freedom in how they approach the solution, as they are no longer restricted by the complications of programming on a blockchain. What issue this solution _does_ have is one of **trust**. Any off-chain solution utilised by the protocol developers must demonstrate its fairness and accuracy to its users.

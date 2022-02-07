@@ -37,6 +37,7 @@ Documentation for Agora may be found in [docs](./docs).
 ### v2
 
 -   [ ] Rewards distribution
+-   [ ] Escrow staking pool solution
 
 ### Beyond
 
