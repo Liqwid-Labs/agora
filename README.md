@@ -16,7 +16,7 @@ Non-goals:
 
 ## Project setup
 
-An up to date version of the [`nix` package manager](nixos.org) (>=2.3) is required to build this project. For information on how to install, see the [NixOS website](https://nixos.org/download.html). Important: See also [this section](https://github.com/input-output-hk/plutus#nix-advice) on binary caches.
+An up to date version of the [Nix package manager](nixos.org) (>=2.3) is required to build this project. For information on how to install, see the [NixOS website](https://nixos.org/download.html). Important: see also [this section](https://github.com/input-output-hk/plutus#nix-advice) on binary caches.
 
 Open a dev-shell with `nix develop` and build with `cabal build`.
 
