@@ -9,8 +9,17 @@ The following words should always be render capitalised:
 -   Agora
 -   Liqwid
 -   LiqwidX
+-   Nix
+-   NixOS
 -   Plutus
 -   Plutarch
+
+Sensible exceptions naturally exist, including referencing shell commands (`nix-shell`) or code:
+
+```haskell
+plutarchTerm :: Term s a 
+plutarchTerm = ...
+```
 
 ## Upper-case terms
 
@@ -29,4 +38,4 @@ The following words should always be rendered lower-case (unless used at the beg
 
 The following practices should be avoided:
 
--   The use of '&' apart from in proper nouns such as AT&T or commonly-understood abbreviations such as 'R&D'.
+-   The use of '&' apart from in proper nouns such as AT\&T.
