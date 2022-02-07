@@ -1,10 +1,10 @@
-# Staking pool technical design
+# Stakes and staking pool technical design
 
 | Specification | Implementation | Last revision |
 |:-----------:|:-----------:|:-------------:|
-| WIP         |  WIP        | 2022-02-02    |
+| WIP         |  WIP        | 2022-02-07    |
 
-***
+---
 
 **Specification ownership:** [Emily Martins]
 
@@ -19,9 +19,9 @@
 
 [Jack Hodgkinson]: https://github.com/jhodgdev
 
-**Current status:** Originally written for Liqwid by [Emily Martins]. Rewritten by [Jack Hodgkinson]. Will be subject to changes, when a final implementation for the staking pool has been decided.
+**Current status:** Originally written for Liqwid by [Emily Martins]. Rewritten by [Jack Hodgkinson]. Required review from [Emily Martins], especially wrt the section on tracking global state.
 
-***
+---
 
 ## Stake UTXOs
 
@@ -56,6 +56,8 @@ Altering the amount positioned in a stake is not possible, for as long as that s
 
 Preventing alteration of GT in stakes ensures that there is never a discrepancy between the amount of GT a user holds and the amount the system believes that they hold.
 
+If a user wished to stake _more_ GT, they could always create a new stake that they would be free to lock on proposals. For this reason, it may be useful to include a method of 'merging' stakes, when they are not being locked against any proposals, to allow users to 'streamline' their GT portfolio.
+
 ## Delegating stake
 
 Aspects of delegation, such as co-signing work through the trivial witnessing of a stake UTXO, however allowing a user to delegate their stakes requires an extra field:
@@ -74,3 +76,13 @@ data Stake = Stake
 ```
 
 When voting on a proposal, a user can check which stakes have delegated to them off-chain and include them in the voting transaction. _This will lock the delegator's stake_, however they will be themselves be able to unlock it as usual. It should be noted that delegation of stakes only extends to voting on proposals and not, for example, withdrawing GT from a stake.
+
+## Staking pool
+
+There are a number of reasons that a protocol would wish to track the global state of stakes in its system. For example, a protocol may wish to implement a proposal system where a certain proportion of the globally available GT must be staked in-favour of a proposal, in order to allow it to pass. This is the equivalent of mandating a certain voter turnout be met in a national referendum. The ability to do such a thing is conferred by the creation of a _staking pool_.
+
+Whilst the ability to track stakes is a useful one, it is a complicated concept to implement on Cardano. A particular issue is _throughput and contention_: any purely on-chain solution is unlikely to be able to process data rapidly enough that the process of users creating stakes _and_ updating the staking pool is as seamless as desired.
+
+One potential solution for this is an _escrow_ system, which implements a queueing solution by which users issue their stake and the system takes responsibility for updating the staking pool accordingly, with no further action required from the staker.
+
+Another implementation takes the burden of calculating the global state of user stakes _off-chain_. This allows the developers much more freedom in how they approach the solution, as they are no longer restricted by the complications of programming on a blockchain. What issue this solution _does_ have is one of **trust**. Any off-chain solution utilised by the protocol developers must demonstrate its fairness and accuracy to its users.
