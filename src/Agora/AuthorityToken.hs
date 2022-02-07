@@ -1,7 +1,6 @@
 module Agora.AuthorityToken (
   authorityTokenPolicy,
   AuthorityToken (..),
-  serialisedScriptSize,
 ) where
 
 --------------------------------------------------------------------------------
@@ -9,20 +8,6 @@ module Agora.AuthorityToken (
 import Prelude
 
 --------------------------------------------------------------------------------
-
-import Codec.Serialise (serialise)
-import Data.ByteString qualified as BSS
-import Data.ByteString.Lazy qualified as BS
-import Data.ByteString.Short qualified as SBS
-
---------------------------------------------------------------------------------
-
-import Cardano.Api.Shelley (
-  PlutusScript (PlutusScriptSerialised),
-  PlutusScriptV1,
-  serialiseToCBOR,
- )
-import Plutus.V1.Ledger.Scripts (Script)
 import Plutus.V1.Ledger.Value (AssetClass (..))
 
 --------------------------------------------------------------------------------
@@ -85,17 +70,6 @@ passetClassValueOf =
                 pmatch (plookup # pdata token # m) $ \case
                   PNothing -> 0
                   PJust v -> pfromData v
-
--- TODO: We should rely on plutus-extra instead of rolling our own,
---       this is just quick and hacky.
-serialisedScriptSize :: Script -> Int
-serialisedScriptSize =
-  BSS.length
-    . serialiseToCBOR
-    . PlutusScriptSerialised @PlutusScriptV1
-    . SBS.toShort
-    . BS.toStrict
-    . serialise
 
 authorityTokenPolicy ::
   AuthorityToken ->

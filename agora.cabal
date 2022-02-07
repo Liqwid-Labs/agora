@@ -78,6 +78,7 @@ common deps
     , serialise
     , template-haskell
     , text
+    , plutus-extra
 
 common test-deps
   build-depends:
