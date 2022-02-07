@@ -19,7 +19,7 @@
 
 [Jack Hodgkinson]: https://github.com/jhodgdev
 
-**Current status:** Originally written for Liqwid by [Emily Martins]. Rewritten by [Jack Hodgkinson]. Required review from [Emily Martins], especially wrt the section on tracking global state.
+**Current status:** Originally written for Liqwid by [Emily Martins]. Rewritten by [Jack Hodgkinson]. Required review from [Emily Martins], especially the section on staking pools.
 
 ---
 
