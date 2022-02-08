@@ -10,18 +10,22 @@
     "github:input-output-hk/plutus?rev=65bad0fd53e432974c3c203b1b1999161b6c2dce";
 
   inputs.plutarch.url =
-    "github:Plutonomicon/plutarch?rev=d753dc34dfc30b144e94d6493c837ebd0c99b588";
+    "github:Plutonomicon/plutarch?rev=1fd4db27152625184e559cfb465d225a0995a56b";
 
   inputs.goblins.url =
     "github:input-output-hk/goblins?rev=cde90a2b27f79187ca8310b6549331e59595e7ba";
   inputs.goblins.flake = false;
+
+  inputs.plutus-extra.url =
+    "github:Liqwid-Labs/plutus-extra?rev=bfeb0d2bb1bc18f147e58c200db2022f5c75eb60";
+  inputs.plutus-extra.flake = false; # Could we set this to true?
 
   inputs.cardano-node.url =
     "github:input-output-hk/cardano-node?rev=b6ca519f97a0e795611a63174687e6bb70c9f752";
   inputs.cardano-node.flake = false;
 
   inputs.cardano-wallet.url =
-    "github:j-mueller/cardano-wallet?rev=6be73ab852c0592713dfe78218856d4a8a0ee69e";
+    "github:j-mueller/cardano-wallet?rev=760140e238a5fbca61d1b286d7a80ece058dc729";
   inputs.cardano-wallet.flake = false;
 
   inputs.purescript-bridge.url =
@@ -33,7 +37,7 @@
   inputs.servant-purescript.flake = false;
 
   inputs.plutus-apps.url =
-    "github:input-output-hk/plutus-apps?rev=404af7ac3e27ebcb218c05f79d9a70ca966407c9";
+    "github:input-output-hk/plutus-apps?rev=34fe6eeff441166fee0cd0ceba68c1439f0e93d2";
   inputs.plutus-apps.flake = false;
 
   inputs.cardano-addresses.url =
@@ -45,7 +49,7 @@
   inputs.optparse-applicative.flake = false;
 
   inputs.ouroboros-network.url =
-    "github:input-output-hk/ouroboros-network?rev=1f4973f36f689d6da75b5d351fb124d66ef1057d";
+    "github:input-output-hk/ouroboros-network?rev=d613de3d872ec8b4a5da0c98afb443f322dc4dab";
   inputs.ouroboros-network.flake = false;
 
   inputs.cardano-ledger-specs.url =
@@ -61,11 +65,11 @@
   inputs.cardano-prelude.flake = false;
 
   inputs.cardano-base.url =
-    "github:input-output-hk/cardano-base?rev=4ea7e2d927c9a7f78ddc69738409a5827ab66b98";
+    "github:input-output-hk/cardano-base?rev=654f5b7c76f7cc57900b4ddc664a82fc3b925fb0";
   inputs.cardano-base.flake = false;
 
   inputs.cardano-crypto.url =
-    "github:input-output-hk/cardano-crypto?rev=07397f0e50da97eaa0575d93bee7ac4b2b2576ec";
+    "github:input-output-hk/cardano-crypto?rev=f73079303f663e028288f9f4a9e08bcca39a923e";
   inputs.cardano-crypto.flake = false;
 
   inputs.flat.url =
@@ -91,6 +95,7 @@
         };
 
       deferPluginErrors = true;
+      plutarch-development = true;
 
       projectFor = system:
         let pkgs = nixpkgsFor system;
@@ -224,6 +229,7 @@
                 "lib/launcher"
                 "lib/core-integration"
                 "lib/cli"
+                "lib/dbvar"
                 "lib/shelley"
               ];
             }
@@ -238,6 +244,7 @@
                 "plutus-chain-index-core"
                 "plutus-contract"
                 "plutus-ledger"
+                "plutus-ledger-constraints"
                 "plutus-pab"
                 "plutus-playground-server"
                 "plutus-use-cases"
@@ -249,6 +256,19 @@
               src = inputs.cardano-node;
               subdirs =
                 [ "cardano-api" "cardano-node" "cardano-cli" "cardano-config" ];
+            }
+            {
+              src = inputs.plutus-extra;
+              subdirs = [
+                "tasty-plutus"
+                "plutus-pretty"
+                "plutus-numeric"
+                "plutus-extra"
+                "plutus-golden"
+                "plutus-laws"
+                "quickcheck-plutus-instances"
+
+              ];
             }
             {
               src = inputs.plutus;
@@ -268,7 +288,12 @@
           ];
           modules = [{
             packages = {
+
+              plutarch.flags.development = plutarch-development;
+              marlowe.flags.defer-plugin-errors = deferPluginErrors;
+              plutus-use-cases.flags.defer-plugin-errors = deferPluginErrors;
               plutus-ledger.flags.defer-plugin-errors = deferPluginErrors;
+              plutus-contract.flags.defer-plugin-errors = deferPluginErrors;
               cardano-crypto-praos.components.library.pkgconfig =
                 nixpkgs.lib.mkForce
                 [ [ (import plutus { inherit system; }).pkgs.libsodium-vrf ] ];
@@ -296,7 +321,12 @@
               graphviz
             ];
 
-            additional = ps: [ ps.plutarch ps.plutus-ledger ];
+            additional = ps: [
+              ps.plutarch
+              ps.plutus-ledger
+              ps.plutus-extra
+
+            ];
           };
         };
     in {
