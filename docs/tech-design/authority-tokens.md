@@ -66,7 +66,7 @@ This approach has a number of benefits but some important details must be kept i
 
 Cardano script sizes are restricted to 16KB and previous proposal/effect models have had difficulties generating scripts which keep under this limit. By decoupling proposals and their effects, a proposal can have a far greater number of effects, as all it contains is a list of hashes for said effects. Effects themselves can make any number of changes to the system, as long as the resulting script is kept to an allowable size.
 
-It is essentially impossible for the system to prevent from conflicting effects taking place in short order and harming the system but the likelihood of this occurring is sufficiently reduced by all effects first having be passed by the DAO. There is scope for adding a notion of 'expiration', after which effects will no longer be able to enact their changes.
+It is essentially impossible for the system to prevent conflicting effects taking place in short order and harming the system but the likelihood of this occurring is sufficiently reduced by all effects first having be passed by the DAO. There is scope for adding a notion of 'expiration', after which effects will no longer be able to enact their changes.
 
 #### Writing effect code requires a _lot_ of care
 
