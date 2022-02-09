@@ -321,12 +321,9 @@
               graphviz
             ];
 
-            additional = ps: [
-              ps.plutarch
-              ps.plutus-ledger
-              ps.plutus-extra
+            additional = ps: [ ps.plutarch ps.plutus-ledger ps.plutus-extra ];
 
-            ];
+            tools.haskell-language-server = { };
           };
         };
     in {
