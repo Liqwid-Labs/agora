@@ -19,3 +19,4 @@ tags
 
 # direnv files
 .envrc
+.direnv/
