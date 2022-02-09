@@ -19,7 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: cachix/install-nix-action@v13
-        name: Set up nix and IOHK cache
+        name: Set up Nix and IOHK cache
         with:
           nix_path: nixpkgs=channel:nixos-unstable
           extra_nix_config: |
