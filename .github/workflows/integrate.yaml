@@ -20,14 +20,14 @@ jobs:
       - uses: actions/checkout@v2
 
       - uses: actions/cache@v2.1.4
-        name: Cache Stack
+        name: Cache stack
         with:
           path: ~/.stack
           key: ${{ runner.os }}-stack-formatting
           restore-keys: ${{ runner.os }}-stack-
 
       - run: stack install fourmolu
-        name: Setup
+        name: "Install fourmolu"
 
       - run: ./.github/format.sh
         name: "Run fourmolu"
