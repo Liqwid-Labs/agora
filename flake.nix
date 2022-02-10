@@ -4,7 +4,7 @@
   inputs.haskell-nix.url =
     "github:input-output-hk/haskell.nix?rev=4aeeba8d713d0b98c92c8c717df24da17d463c1d";
   inputs.nixpkgs.follows = "haskell-nix/nixpkgs-unstable";
-  inputs.haskell-nix.inputs.nixpkgs.follows = "haskell-nix/nixpkgs-unstable";
+  inputs.haskell-nix.inputs.nixpkgs.follows = "haskell-nix/nixpkgs-2105";
 
   inputs.plutus.url =
     "github:input-output-hk/plutus?rev=65bad0fd53e432974c3c203b1b1999161b6c2dce";

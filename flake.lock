@@ -772,7 +772,7 @@
         "nix-tools": "nix-tools",
         "nixpkgs": [
           "haskell-nix",
-          "nixpkgs-unstable"
+          "nixpkgs-2105"
         ],
         "nixpkgs-2003": "nixpkgs-2003",
         "nixpkgs-2009": "nixpkgs-2009",
