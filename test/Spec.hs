@@ -9,4 +9,5 @@ import Test.Tasty (defaultMain, testGroup)
 --------------------------------------------------------------------------------
 
 main :: IO ()
-main = defaultMain $ testGroup "Suites" []
+main =
+  defaultMain $ testGroup "Suites" []

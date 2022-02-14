@@ -24,7 +24,7 @@ import Plutarch.Prelude
      said transaction. Said validator should be made aware of
      _this_ token's existence in order to prevent incorrect minting.
 -}
-data AuthorityToken = AuthorityToken
+newtype AuthorityToken = AuthorityToken
   { -- | Token that must move in order for minting this to be valid.
     authority :: AssetClass
   }

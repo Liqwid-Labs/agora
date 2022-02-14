@@ -68,6 +68,7 @@ common deps
     , data-default-class
     , plutarch
     , plutus-core
+    , plutus-extra
     , plutus-ledger
     , plutus-ledger-api
     , plutus-tx
@@ -78,7 +79,6 @@ common deps
     , serialise
     , template-haskell
     , text
-    , plutus-extra
 
 common test-deps
   build-depends:
@@ -86,6 +86,7 @@ common test-deps
     , quickcheck-instances
     , tagged
     , tasty
+    , tasty-hunit
     , utf8-string
 
 --------------------------------------------------------------------------------
