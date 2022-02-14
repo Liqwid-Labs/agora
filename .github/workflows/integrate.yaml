@@ -15,42 +15,42 @@ on:
       - "flake.lock"
       - "agora.cabal"
 jobs:
-  check-formatting:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2.4.0
+  # check-formatting:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v2.4.0
 
-      # - uses: actions/cache@v2.1.4
-      #   name: Add Stack files to cache
-      #   with:
-      #     path: ~/.stack
-      #     key: ${{ runner.os }}-stack-formatting
-      #     restore-keys: ${{ runner.os }}-stack-
+  #     - uses: actions/cache@v2.1.4
+  #       name: Add Stack files to cache
+  #       with:
+  #         path: ~/.stack
+  #         key: ${{ runner.os }}-stack-formatting
+  #         restore-keys: ${{ runner.os }}-stack-
 
-      # - run: stack install fourmolu
-      #   name: Install fourmolu
+  #     - run: stack install fourmolu
+  #       name: Install fourmolu
 
-      - run: ./.github/format.sh
-        name: Run fourmolu
+  #     - run: ./.github/format.sh
+  #       name: Run fourmolu
 
-  run-linter:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2.4.0
+  # run-linter:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v2.4.0
 
-      # - uses: actions/cache@v2.1.4
-      #   name: Add Stack files to cache
-      #   with:
-      #     path: ~/.stack
-      #     key: ${{ runner.os }}-stack-lint
-      #     restore-keys: ${{ runner.os }}-stack-
+  #     # - uses: actions/cache@v2.1.4
+  #     #   name: Add Stack files to cache
+  #     #   with:
+  #     #     path: ~/.stack
+  #     #     key: ${{ runner.os }}-stack-lint
+  #     #     restore-keys: ${{ runner.os }}-stack-
 
-      # - run: stack install hlint
-      #   name: Install hlint
+  #     # - run: stack install hlint
+  #     #   name: Install hlint
 
-      # - run: ~/.local/bin/hlint $(git ls-tree -r HEAD --full-tree --name-only | grep -E '.*\.hs')
-      - run: hlint $(git ls-tree -r HEAD --full-tree --name-only | grep -E '.*\.hs')
-        name: Run hlint
+  #     # - run: ~/.local/bin/hlint $(git ls-tree -r HEAD --full-tree --name-only | grep -E '.*\.hs')
+  #     - run: hlint $(git ls-tree -r HEAD --full-tree --name-only | grep -E '.*\.hs')
+  #       name: Run hlint
 
   check-build:
     runs-on: ubuntu-latest
@@ -79,4 +79,12 @@ jobs:
           key: ${{ runner.os }}-cabal
       - name: Build the project
         run: nix build
-      - run: nix flake check
+
+      - name: Enter Nix environment
+        run: nix develop
+
+      - run: ./.github/format.sh
+        name: Run fourmolu
+
+      - run: hlint $(git ls-tree -r HEAD --full-tree --name-only | grep -E '.*\.hs')
+        name: Run hlint
