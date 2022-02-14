@@ -34,8 +34,6 @@ jobs:
   check-formatting:
     needs: setup
     runs-on: ubuntu-latest
-    secrets:
-      CACHIX_KEY: ${{ secrets.CACHIX_KEY }}
     steps:
       - run: ./.github/format.sh
         name: Run fourmolu
