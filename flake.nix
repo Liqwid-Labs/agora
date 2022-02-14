@@ -7,8 +7,7 @@
   inputs.haskell-nix.inputs.nixpkgs.follows = "haskell-nix/nixpkgs-unstable";
 
   # Temp workaround for Nix issue.
-  inputs.nixpkgs-2111.url =
-    "github:input-output-hk/haskell.nix?rev=4aeeba8d713d0b98c92c8c717df24da17d463c1d";
+  inputs.nixpkgs-2111.url = "github:NixOS/nixpkgs/nixpkgs-21.11-darwin";
 
   inputs.plutus.url =
     "github:input-output-hk/plutus?rev=65bad0fd53e432974c3c203b1b1999161b6c2dce";
