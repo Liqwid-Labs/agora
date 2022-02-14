@@ -17,21 +17,27 @@ on:
 jobs:
   check-formatting:
     runs-on: ubuntu-latest
-    uses: ./prepare-nix.yml
+    uses: ./.github/workflows/prepare-nix.yml
+    secrets:
+      CACHIX_KEY: ${{ secrets.CACHIX_KEY }}
     steps:
       - run: ./.github/format.sh
         name: Run fourmolu
 
   run-linter:
     runs-on: ubuntu-latest
-    uses: ./prepare-nix.yml
+    uses: ./.github/workflows/prepare-nix.yml
+    secrets:
+      CACHIX_KEY: ${{ secrets.CACHIX_KEY }}
     steps:
       - run: nix run nixpkgs#hlint -- $(git ls-tree -r HEAD --full-tree --name-only | grep -E '.*\.hs')
         name: Run hlint
 
   check-build:
     runs-on: ubuntu-latest
-    uses: ./prepare-nix.yml
+    uses: ./.github/workflows/prepare-nix.yml
+    secrets:
+      CACHIX_KEY: ${{ secrets.CACHIX_KEY }}
     steps:
       - name: Add cabal folder to cache
         id: cabal
