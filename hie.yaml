@@ -2,3 +2,5 @@ cradle:
   cabal:
     - path: "./src"
       component: "lib:agora"
+    - path: "./test"
+      component: "test:agora-test"

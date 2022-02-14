@@ -1,0 +1,8 @@
+digraph {
+  "Staking pool" -> Stakes [label="tracks"]
+  Stakes -> Proposals [label="are put on"]
+  Proposals -> Effects [label="have"]
+  Governor -> Effects [label="issues GATs to"]
+  Users -> Stakes [label="lock GT in"]
+  Users -> Treasury [label="claim GT from"]
+}
