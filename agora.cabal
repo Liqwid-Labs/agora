@@ -86,6 +86,7 @@ common test-deps
     , quickcheck-instances
     , tagged
     , tasty
+    , tasty-hunit
     , utf8-string
 
 --------------------------------------------------------------------------------
