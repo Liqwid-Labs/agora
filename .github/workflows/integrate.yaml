@@ -78,5 +78,5 @@ jobs:
             dist-newstyle
           key: ${{ runner.os }}-cabal
       - name: Build the project
-        run: nix build 
-        run: nix flake check
+        run: nix build
+      - run: nix flake check
