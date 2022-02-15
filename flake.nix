@@ -320,7 +320,6 @@
               haskellPackages.record-dot-preprocessor
               entr
               gnumake
-
               graphviz
             ];
 

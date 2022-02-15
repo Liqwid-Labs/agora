@@ -36,8 +36,11 @@ jobs:
           name: mlabs
           authToken: ${{ secrets.CACHIX_KEY }}
 
-      - run: cabal --enable-nix haddock
-        name: Check Haddock coverage.
+      - run: nix develop
+        name: Enter Nix environment
+
+      - run: cabal haddock
+        name: Run Haddock
 
   check-formatting:
     runs-on: ubuntu-latest
