@@ -14,6 +14,7 @@ on:
       - "**.nix"
       - "flake.lock"
       - "agora.cabal"
+      - "./.github/**"
 jobs:
   haddock-coverage:
     runs-on: ubuntu-latest
