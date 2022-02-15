@@ -4,10 +4,6 @@
   inputs.nixpkgs.follows = "plutarch/nixpkgs";
   inputs.haskell-nix.follows = "plutarch/haskell-nix";
 
-  inputs.plutus-extra.url =
-    "github:Liqwid-Labs/plutus-extra?rev=bfeb0d2bb1bc18f147e58c200db2022f5c75eb60";
-  inputs.plutus-extra.flake = false; # Could we set this to true?
-
   # temporary fix for nix versions that have the transitive follows bug 
   # see https://github.com/NixOS/nix/issues/6013
   inputs.nixpkgs-2111 = { url = "github:NixOS/nixpkgs/nixpkgs-21.11-darwin"; };
@@ -47,9 +43,7 @@
           extraSources = plutarch.extraSources ++ [{
             src = inputs.plutarch;
             subdirs = [ "." ];
-          }
-
-            ];
+          }];
           modules = [ (plutarch.haskellModule system) ];
           shell = {
             withHoogle = true;

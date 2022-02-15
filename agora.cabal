@@ -86,7 +86,7 @@ common deps
   build-depends:
     , aeson
     , ansi-terminal
-    , base                     >=4.14 && <5
+    , base                >=4.14 && <5
     , base-compat
     , bytestring
     , cardano-prelude
@@ -95,8 +95,6 @@ common deps
     , data-default-class
     , plutarch
     , plutus-core
-    -- , plutus-extra
-    -- , plutus-ledger
     , plutus-ledger-api
     , plutus-tx
     , pprelude

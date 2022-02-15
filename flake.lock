@@ -852,23 +852,6 @@
         "type": "github"
       }
     },
-    "plutus-extra": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1643739251,
-        "narHash": "sha256-L7WSXvGWxfuqSP4ZNdbuT2AdW89mAJsE6+3mxO+1dx8=",
-        "owner": "Liqwid-Labs",
-        "repo": "plutus-extra",
-        "rev": "bfeb0d2bb1bc18f147e58c200db2022f5c75eb60",
-        "type": "github"
-      },
-      "original": {
-        "owner": "Liqwid-Labs",
-        "repo": "plutus-extra",
-        "rev": "bfeb0d2bb1bc18f147e58c200db2022f5c75eb60",
-        "type": "github"
-      }
-    },
     "pre-commit-hooks-nix": {
       "flake": false,
       "locked": {
@@ -929,8 +912,7 @@
           "nixpkgs"
         ],
         "nixpkgs-2111": "nixpkgs-2111",
-        "plutarch": "plutarch",
-        "plutus-extra": "plutus-extra"
+        "plutarch": "plutarch"
       }
     },
     "sized-functors": {
