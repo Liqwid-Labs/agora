@@ -70,7 +70,6 @@ common lang
     ScopedTypeVariables
     StandaloneDeriving
     StandaloneKindSignatures
-    TraditionalRecordSyntax
     TupleSections
     TypeApplications
     TypeFamilies
