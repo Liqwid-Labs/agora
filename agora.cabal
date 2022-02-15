@@ -9,72 +9,98 @@ license:            Apache-2.0
 -- Common Stanza Declarations
 
 -- Language options, warnings, some options for plutus
+
 common lang
-  default-language:   Haskell2010
+  ghc-options:
+    -Wall -Wcompat -Wincomplete-uni-patterns -Wno-unused-do-bind
+    -Wno-partial-type-signatures -Wmissing-export-lists
+    -Wincomplete-record-updates -Wmissing-deriving-strategies
+    -Wno-name-shadowing -Wunused-foralls -fprint-explicit-foralls
+    -fprint-explicit-kinds -Werror
+
+  mixins:
+    base hiding (Prelude),
+    pprelude (PPrelude as Prelude)
+
   default-extensions:
-    NoImplicitPrelude
+    NoStarIsType
     BangPatterns
     BinaryLiterals
+    ConstrainedClassMethods
     ConstraintKinds
     DataKinds
     DeriveAnyClass
+    DeriveDataTypeable
+    DeriveFoldable
     DeriveFunctor
     DeriveGeneric
+    DeriveLift
     DeriveTraversable
     DerivingStrategies
     DerivingVia
-    DuplicateRecordFields
+    DoAndIfThenElse
     EmptyCase
+    EmptyDataDecls
+    EmptyDataDeriving
+    ExistentialQuantification
+    ExplicitForAll
     FlexibleContexts
     FlexibleInstances
-    GADTs
-    GeneralizedNewtypeDeriving
+    ForeignFunctionInterface
+    GADTSyntax
+    GeneralisedNewtypeDeriving
     HexFloatLiterals
+    ImplicitPrelude
     ImportQualifiedPost
     InstanceSigs
     KindSignatures
     LambdaCase
+    MonomorphismRestriction
     MultiParamTypeClasses
+    NamedFieldPuns
+    NamedWildCards
     NumericUnderscores
     OverloadedStrings
-    QuasiQuotes
+    PartialTypeSignatures
+    PatternGuards
+    PolyKinds
+    PostfixOperators
+    RankNTypes
+    RelaxedPolyRec
     ScopedTypeVariables
     StandaloneDeriving
+    StandaloneKindSignatures
+    TraditionalRecordSyntax
     TupleSections
     TypeApplications
     TypeFamilies
     TypeOperators
     TypeSynonymInstances
-    UndecidableInstances
+    ViewPatterns
+    OverloadedRecordDot
+    QualifiedDo
 
-  ghc-options:
-    -Wall -Wcompat -Wincomplete-uni-patterns -Wredundant-constraints
-    -Wmissing-export-lists -Werror -Wincomplete-record-updates
-    -fno-ignore-interface-pragmas -fno-omit-interface-pragmas
-    -fobject-code -fno-strictness -fplugin=RecordDotPreprocessor
-    -fplugin-opt PlutusTx.Plugin:dump-uplc
+  default-language:   Haskell2010
 
 common deps
   build-depends:
     , aeson
     , ansi-terminal
-    , base                     >=4.9 && <5
+    , base                     >=4.14 && <5
     , base-compat
     , bytestring
-    , cardano-api
     , cardano-prelude
     , containers
     , data-default
     , data-default-class
     , plutarch
     , plutus-core
-    , plutus-extra
-    , plutus-ledger
+    -- , plutus-extra
+    -- , plutus-ledger
     , plutus-ledger-api
     , plutus-tx
+    , pprelude
     , prettyprinter
-    , record-dot-preprocessor
-    , record-hasfield
     , recursion-schemes
     , serialise
     , template-haskell
@@ -84,18 +110,23 @@ common test-deps
   build-depends:
     , QuickCheck
     , quickcheck-instances
-    , tagged
     , tasty
-    , tasty-hunit
-    , utf8-string
-
---------------------------------------------------------------------------------
+    , tasty-quickcheck
 
 library
   import:          lang, deps
   exposed-modules: Agora.AuthorityToken
   other-modules:
   hs-source-dirs:  src
+
+library pprelude
+  build-depends:
+    , base
+    , plutarch
+
+  exposed-modules:  PPrelude
+  hs-source-dirs:   src
+  default-language: Haskell2010
 
 test-suite agora-test
   import:         lang, deps, test-deps
