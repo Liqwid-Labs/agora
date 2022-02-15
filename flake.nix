@@ -13,7 +13,7 @@
     "github:input-output-hk/plutus?rev=65bad0fd53e432974c3c203b1b1999161b6c2dce";
 
   inputs.plutarch.url =
-    "github:Plutonomicon/plutarch?rev=1fd4db27152625184e559cfb465d225a0995a56b";
+    "github:Plutonomicon/plutarch?rev=a0cbe99921aad7c5df9239cb0240933e4d9b2eaa";
 
   inputs.goblins.url =
     "github:input-output-hk/goblins?rev=cde90a2b27f79187ca8310b6549331e59595e7ba";

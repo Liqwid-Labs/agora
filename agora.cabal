@@ -79,6 +79,7 @@ common deps
     , serialise
     , template-haskell
     , text
+    , generics-sop
 
 common test-deps
   build-depends:
@@ -95,6 +96,8 @@ library
   import:          lang, deps
   exposed-modules:
     Agora.AuthorityToken
+    Agora.Stake
+    Agora.Voting
     Agora.SafeMoney
     Agora.SafeMoney.QQ
   other-modules:

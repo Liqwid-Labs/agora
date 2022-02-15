@@ -37,9 +37,9 @@ newtype AuthorityToken = AuthorityToken
 
 authorityTokenPolicy ::
   AuthorityToken ->
-  Term s (PData :--> PData :--> PScriptContext :--> PUnit)
+  Term s (PData :--> PScriptContext :--> PUnit)
 authorityTokenPolicy params =
-  plam $ \_datum _redeemer ctx' ->
+  plam $ \_redeemer ctx' ->
     pmatch ctx' $ \(PScriptContext ctx) ->
       let txInfo' = pfromData $ pfield @"txInfo" # ctx
           purpose' = pfromData $ pfield @"purpose" # ctx

@@ -1400,7 +1400,6 @@
         "hercules-ci-effects": "hercules-ci-effects",
         "hs-memory": "hs-memory",
         "nixpkgs": [
-          "plutarch",
           "haskell-nix",
           "nixpkgs-unstable"
         ],
@@ -1410,17 +1409,17 @@
         "th-extras": "th-extras"
       },
       "locked": {
-        "lastModified": 1643799364,
-        "narHash": "sha256-ud/YkMtBKcx0yrHOboA7uTPtGCt5LCOipF0m2W6LqxU=",
+        "lastModified": 1644875667,
+        "narHash": "sha256-eNKEubOfkVGmDX1HbbCTbtIjEyXfxlYedrWuwhOLVrQ=",
         "owner": "Plutonomicon",
         "repo": "plutarch",
-        "rev": "1fd4db27152625184e559cfb465d225a0995a56b",
+        "rev": "a0cbe99921aad7c5df9239cb0240933e4d9b2eaa",
         "type": "github"
       },
       "original": {
         "owner": "Plutonomicon",
         "repo": "plutarch",
-        "rev": "1fd4db27152625184e559cfb465d225a0995a56b",
+        "rev": "a0cbe99921aad7c5df9239cb0240933e4d9b2eaa",
         "type": "github"
       }
     },
