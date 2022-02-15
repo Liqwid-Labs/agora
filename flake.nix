@@ -4,7 +4,7 @@
   inputs.nixpkgs.follows = "plutarch/nixpkgs";
   inputs.haskell-nix.follows = "plutarch/haskell-nix";
 
-  # temporary fix for nix versions that have the transitive follows bug 
+  # temporary fix for nix versions that have the transitive follows bug
   # see https://github.com/NixOS/nix/issues/6013
   inputs.nixpkgs-2111 = { url = "github:NixOS/nixpkgs/nixpkgs-21.11-darwin"; };
 
@@ -107,5 +107,7 @@
           touch $out
         '');
       devShell = perSystem (system: self.flake.${system}.devShell);
+      defaultPackage =
+        perSystem (system: self.flake.${system}.packages."agora:lib:agora");
     };
 }
