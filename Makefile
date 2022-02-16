@@ -13,7 +13,7 @@ HOOGLE_PORT=8081
 hoogle:
 	hoogle server --local --port $(HOOGLE_PORT) > /dev/null &
 
-FORMAT_EXTENSIONS := -o -XQuasiQuotes -o -XTemplateHaskell -o -XTypeApplications -o -XImportQualifiedPost -o -XPatternSynonyms -o -fplugin=RecordDotPreprocessor
+FORMAT_EXTENSIONS := -o -XQuasiQuotes -o -XTemplateHaskell -o -XTypeApplications -o -XImportQualifiedPost -o -XPatternSynonyms -o -XOverloadedRecordDot
 format:
 	find -name '*.hs' -not -path './dist-*/*' | xargs fourmolu $(FORMAT_EXTENSIONS) -m inplace
 	git ls-tree -r HEAD --full-tree --name-only | grep -E '.*\.nix' | xargs nixfmt

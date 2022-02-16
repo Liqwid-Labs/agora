@@ -3,18 +3,21 @@ module Agora.AuthorityToken (
   AuthorityToken (..),
 ) where
 
---------------------------------------------------------------------------------
+import Plutarch.Api.V1 (
+  PCurrencySymbol,
+  PMap (..),
+  PScriptContext (..),
+  PScriptPurpose (..),
+  PTokenName,
+  PTxInInfo (..),
+  PTxInfo (..),
+  PTxOut (..),
+  PValue (..),
+ )
+import Plutarch.List (pfoldr')
+import Plutus.V1.Ledger.Value (AssetClass (AssetClass))
 
 import Prelude
-
---------------------------------------------------------------------------------
-import Plutus.V1.Ledger.Value (AssetClass (..))
-
---------------------------------------------------------------------------------
-
-import Plutarch.Api.V1
-import Plutarch.List (pfoldr')
-import Plutarch.Prelude
 
 --------------------------------------------------------------------------------
 
@@ -25,8 +28,8 @@ import Plutarch.Prelude
      _this_ token's existence in order to prevent incorrect minting.
 -}
 newtype AuthorityToken = AuthorityToken
-  { -- | Token that must move in order for minting this to be valid.
-    authority :: AssetClass
+  { authority :: AssetClass
+  -- ^ Token that must move in order for minting this to be valid.
   }
 
 --------------------------------------------------------------------------------
