@@ -23,6 +23,7 @@ import Plutarch.DataRepr (
   PIsDataReprInstances (PIsDataReprInstances),
  )
 import Plutarch.Internal
+import Plutarch.Monadic qualified as P
 
 --------------------------------------------------------------------------------
 
@@ -62,33 +63,28 @@ newtype StakeDatum (gt :: MoneyClass) (s :: S) = StakeDatum
     (PlutusType, PIsData, PDataFields)
     via (PIsDataReprInstances (StakeDatum gt))
 
-assert :: Term s PString -> Term s PBool -> TermCont @r s ()
-assert errorMessage check = TermCont $ \k -> pif check (k ()) (ptraceError errorMessage)
-
--- pfindDatum :: Term s (PDatumHash :--> PTxInfo :--> PMaybe PDatum)
--- pfindDatum = phoistAcyclic $
---   plam $ \_datumHash _txInfo -> unTermCont $ do
---     pure (pcon PNothing)
+passert :: Term s PString -> Term s PBool -> Term s k -> Term s k
+passert errorMessage check k = pif check k (ptraceError errorMessage)
 
 stakePolicy ::
   forall (gt :: MoneyClass) s.
   Stake gt ->
   Term s (PData :--> PScriptContext :--> PUnit)
 stakePolicy _stake =
-  plam $ \_redeemer ctx -> unTermCont $ do
-    PScriptContext ctx' <- tcont $ pmatch ctx
-    ctx'' <- tcont $ pletFields @'["txInfo", "purpose"] ctx'
-    PTxInfo txInfo <- tcont $ pmatch $ pfromData (hrecField @"txInfo" ctx'')
-    txInfo' <- tcont $ pletFields @'["signatories", "outputs"] txInfo
+  plam $ \_redeemer ctx -> P.do
+    PScriptContext ctx' <- pmatch ctx
+    ctx'' <- pletFields @'["txInfo", "purpose"] ctx'
+    PTxInfo txInfo <- pmatch $ pfromData (hrecField @"txInfo" ctx'')
+    txInfo' <- pletFields @'["signatories", "outputs"] txInfo
     let outputs = hrecField @"outputs" txInfo'
 
-    assert "Created stake must be owned by a signer of this transaction" $
+    passert "Created stake must be owned by a signer of this transaction" $
       pany
-        # ( plam $ \txOut -> unTermCont $ do
-              PTxOut txOut' <- tcont $ pmatch (pfromData txOut)
-              _txOut'' <- tcont $ pletFields @'["value", "datumHash"] txOut'
-              pure (pcon PTrue)
+        # ( plam $ \txOut -> P.do
+              PTxOut txOut' <- pmatch (pfromData txOut)
+              _txOut'' <- pletFields @'["value", "datumHash"] txOut'
+              pcon PTrue
           )
         # outputs
 
-    pure (pcon PUnit)
+    pcon PUnit
