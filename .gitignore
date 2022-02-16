@@ -21,6 +21,3 @@ TAGS
 # direnv files
 .envrc
 .direnv/
-
-# Benchmark result csv file
-bench.csv
