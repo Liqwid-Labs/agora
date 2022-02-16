@@ -1,4 +1,5 @@
 {-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 -- | Vote-lockable stake UTXOs holding GT
 module Agora.Stake (
@@ -22,7 +23,6 @@ import Plutarch.DataRepr (
   PIsDataReprInstances (PIsDataReprInstances),
  )
 import Plutarch.Internal
-import Plutarch.Prelude
 
 --------------------------------------------------------------------------------
 
@@ -46,14 +46,14 @@ data StakeAction (gt :: MoneyClass) (s :: S)
 
 newtype StakeDatum (gt :: MoneyClass) (s :: S) = StakeDatum
   { getStakeDatum ::
-      ( Term
-          s
-          ( PDataRecord
-              '[ "stakedAmount" ':= Discrete gt
-               , "owner" ':= PPubKeyHash
-               ]
-          )
-      )
+    ( Term
+        s
+        ( PDataRecord
+            '[ "stakedAmount" ':= Discrete gt
+             , "owner" ':= PPubKeyHash
+             ]
+        )
+    )
   }
   deriving stock (GHC.Generic)
   deriving anyclass (Generic)
@@ -65,10 +65,10 @@ newtype StakeDatum (gt :: MoneyClass) (s :: S) = StakeDatum
 assert :: Term s PString -> Term s PBool -> TermCont @r s ()
 assert errorMessage check = TermCont $ \k -> pif check (k ()) (ptraceError errorMessage)
 
-pfindDatum :: Term s (PDatumHash :--> PTxInfo :--> PMaybe PDatum)
-pfindDatum = phoistAcyclic $
-  plam $ \_datumHash _txInfo -> unTermCont $ do
-    pure (pcon PNothing)
+-- pfindDatum :: Term s (PDatumHash :--> PTxInfo :--> PMaybe PDatum)
+-- pfindDatum = phoistAcyclic $
+--   plam $ \_datumHash _txInfo -> unTermCont $ do
+--     pure (pcon PNothing)
 
 stakePolicy ::
   forall (gt :: MoneyClass) s.

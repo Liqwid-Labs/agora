@@ -1,5 +1,6 @@
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE StandaloneKindSignatures #-}
+{-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -Wwarn=missing-methods #-}
 {-# OPTIONS_GHC -Wwarn=unused-imports #-}
 

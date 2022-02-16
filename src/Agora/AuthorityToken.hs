@@ -5,18 +5,20 @@ module Agora.AuthorityToken (
   AuthorityToken (..),
 ) where
 
---------------------------------------------------------------------------------
+import Plutarch.Api.V1 (
+  PScriptContext (..),
+  PScriptPurpose (..),
+  PTxInInfo (..),
+  PTxInfo (..),
+  PTxOut (..),
+ )
+import Plutarch.List (pfoldr')
+import Plutarch.Monadic qualified as P
+import Plutus.V1.Ledger.Value (AssetClass)
 
 import Prelude
 
 --------------------------------------------------------------------------------
-import Plutus.V1.Ledger.Value (AssetClass (..))
-
---------------------------------------------------------------------------------
-
-import Plutarch.Api.V1
-import Plutarch.List (pfoldr')
-import Plutarch.Prelude
 
 import Agora.SafeMoney
 
@@ -29,8 +31,8 @@ import Agora.SafeMoney
      _this_ token's existence in order to prevent incorrect minting.
 -}
 newtype AuthorityToken = AuthorityToken
-  { -- | Token that must move in order for minting this to be valid.
-    authority :: AssetClass
+  { authority :: AssetClass
+  -- ^ Token that must move in order for minting this to be valid.
   }
 
 --------------------------------------------------------------------------------
@@ -40,49 +42,35 @@ authorityTokenPolicy ::
   Term s (PData :--> PScriptContext :--> PUnit)
 authorityTokenPolicy params =
   plam $ \_redeemer ctx' ->
-    pmatch ctx' $ \(PScriptContext ctx) ->
-      let txInfo' = pfromData $ pfield @"txInfo" # ctx
-          purpose' = pfromData $ pfield @"purpose" # ctx
-
-          inputs =
-            pmatch txInfo' $ \(PTxInfo txInfo) ->
-              pfromData $ pfield @"inputs" # txInfo
-
-          authorityTokenInputs =
+    pmatch ctx' $ \(PScriptContext ctx') -> P.do
+      ctx <- pletFields @'["txInfo", "purpose"] ctx'
+      PTxInfo txInfo' <- pmatch $ pfromData ctx.txInfo
+      txInfo <- pletFields @'["inputs", "mint"] txInfo'
+      let inputs = txInfo.inputs :: Term _ (PBuiltinList (PAsData PTxInInfo))
+      let authorityTokenInputs =
             pfoldr'
-              ( \txInInfo' acc ->
-                  pmatch (pfromData txInInfo') $ \(PTxInInfo txInInfo) ->
-                    let txOut' =
-                          pfromData $ pfield @"resolved" # txInInfo
-                        txOutValue =
-                          pmatch txOut' $
-                            \(PTxOut txOut) ->
-                              pfromData $ pfield @"value" # txOut
-                     in passetClassValueOf' params.authority # txOutValue + acc
+              ( \txInInfo' acc -> P.do
+                  PTxInInfo txInInfo <- pmatch (pfromData txInInfo')
+                  PTxOut txOut' <- pmatch $ pfromData $ pfield @"resolved" # txInInfo
+                  txOut <- pletFields @'["value"] txOut'
+                  let txOutValue = pfromData txOut.value
+                  passetClassValueOf' params.authority # txOutValue + acc
               )
-              # (0 :: Term s PInteger)
+              # 0
               # inputs
-
-          -- We incur the cost twice here. This will be fixed upstream in Plutarch.
-          mintedValue =
-            pmatch txInfo' $ \(PTxInfo txInfo) ->
-              pfromData $ pfield @"mint" # txInfo
-
-          tokenMoved = 0 #< authorityTokenInputs
-       in pmatch purpose' $ \case
-            PMinting sym' ->
-              let sym = pfromData $ pfield @"_0" # sym'
-                  mintedATs = passetClassValueOf # sym # pconstant "" # mintedValue
-               in pif
-                    (0 #< mintedATs)
-                    ( pif
-                        tokenMoved
-                        -- The authority token moved, we are good to go for minting.
-                        (pconstant ())
-                        (ptraceError "Authority token did not move in minting GATs")
-                    )
-                    -- We minted 0 or less Authority Tokens, we are good to go.
-                    -- Burning is always allowed.
-                    (pconstant ())
-            _ ->
-              ptraceError "Wrong script type"
+      let mintedValue = pfromData txInfo.mint
+      let tokenMoved = 0 #< authorityTokenInputs
+      PMinting sym' <- pmatch $ pfromData ctx.purpose
+      let sym = pfromData $ pfield @"_0" # sym'
+      let mintedATs = passetClassValueOf # sym # pconstant "" # mintedValue
+      pif
+        (0 #< mintedATs)
+        ( pif
+            tokenMoved
+            -- The authority token moved, we are good to go for minting.
+            (pconstant ())
+            (ptraceError "Authority token did not move in minting GATs")
+        )
+        -- We minted 0 or less Authority Tokens, we are good to go.
+        -- Burning is always allowed.
+        (pconstant ())

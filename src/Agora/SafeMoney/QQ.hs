@@ -4,10 +4,8 @@
 
 module Agora.SafeMoney.QQ (discrete) where
 
-import Control.Arrow ((&&&))
-import Data.Ratio (denominator, numerator)
-import Debug.Trace
 import GHC.Real (Ratio ((:%)))
+import Language.Haskell.TH qualified as TH (Type)
 import Language.Haskell.TH.Quote (QuasiQuoter (QuasiQuoter))
 import Language.Haskell.TH.Syntax (
   Dec (TySynD),
@@ -20,18 +18,15 @@ import Language.Haskell.TH.Syntax (
   Type (AppT, ConT, LitT, PromotedTupleT),
   lookupTypeName,
   reify,
-  reifyType,
  )
-import PlutusTx.Ratio (unsafeRatio)
 import Text.ParserCombinators.ReadP (readP_to_S, skipSpaces)
-import Text.Read (lexP, readMaybe, readPrec_to_P)
+import Text.Read (lexP, readPrec_to_P)
 import Text.Read.Lex (Lexeme (Ident, Number), Number, numberToFixed, numberToRational)
 import Prelude
 
 --------------------------------------------------------------------------------
 
 import Plutarch.Internal (punsafeCoerce)
-import Plutarch.Prelude hiding (Type)
 
 import Agora.SafeMoney
 
@@ -81,7 +76,7 @@ parseDiscreteRatioExp s =
 errorDiscretePat :: String -> Q Pat
 errorDiscretePat _ = fail "Cannot use 'discrete' in a pattern context."
 
-errorDiscreteType :: String -> Q Type
+errorDiscreteType :: String -> Q TH.Type
 errorDiscreteType _ = fail "Cannot use 'discrete' in a type context."
 
 errorDiscreteDiscretelaration :: String -> Q [Dec]
