@@ -130,3 +130,12 @@ test-suite agora-test
   type:           exitcode-stdio-1.0
   main-is:        Spec.hs
   hs-source-dirs: test
+
+benchmark agora-bench
+  import:         lang, deps
+  hs-source-dirs: bench
+  main-is:        Main.hs
+  type:           exitcode-stdio-1.0
+  build-depends:
+    , plutarch-benchmark
+    , agora

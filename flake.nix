@@ -42,7 +42,7 @@
           inherit (plutarch) cabalProjectLocal;
           extraSources = plutarch.extraSources ++ [{
             src = inputs.plutarch;
-            subdirs = [ "." ];
+            subdirs = [ "." "plutarch-benchmark" ];
           }];
           modules = [ (plutarch.haskellModule system) ];
           shell = {
@@ -64,7 +64,11 @@
 
             inherit (plutarch) tools;
 
-            additional = ps: [ ps.plutarch ps.tasty-quickcheck ];
+            additional = ps: [
+              ps.plutarch
+              ps.plutarch-benchmark
+              ps.tasty-quickcheck
+            ];
           };
         };
 
