@@ -31,6 +31,7 @@ import Plutus.V1.Ledger.Value qualified as Ledger
 --------------------------------------------------------------------------------
 
 import Plutarch.Api.V1
+import Plutarch.Builtin
 import Plutarch.Internal
 import Plutarch.Prelude
 
@@ -106,6 +107,17 @@ plookup =
         PNothing -> pcon PNothing
         PJust p -> pcon (PJust (psndBuiltin # p))
 
+-- This is quite silly.
+plookupTuple ::
+  (PEq a, PIsListLike list (PAsData (PTuple a b)), PIsData a, PIsData b) =>
+  Term s (a :--> list (PAsData (PTuple a b)) :--> PMaybe b)
+plookupTuple =
+  phoistAcyclic $
+    plam $ \k xs ->
+      pmatch (pfind' (\p -> (pfield @"_0" # pfromData p) #== k) # xs) $ \case
+        PNothing -> pcon PNothing
+        PJust p -> pcon (PJust (pfield @"_1" # pfromData p))
+
 matchMaybe :: Term s r -> Term s (PMaybe a) -> TermCont @r s (Term s a)
 matchMaybe r f = TermCont $ \k ->
   pmatch f $ \case
@@ -142,3 +154,30 @@ valueDiscrete = phoistAcyclic $
       passetClassValueOf # (pconstant $ fromString $ symbolVal $ Proxy @ac)
         # (pconstant $ fromString $ symbolVal $ Proxy @n)
         # f
+
+-- NOTE: discreteValue after valueDiscrete is loses information
+
+-- | Get a 'PValue' from a 'Discrete'
+discreteValue ::
+  forall (moneyClass :: MoneyClass) (ac :: Symbol) (n :: Symbol) (scale :: Nat) s.
+  ( KnownSymbol ac
+  , KnownSymbol n
+  , moneyClass ~ '(ac, n, scale)
+  ) =>
+  Term s (Discrete moneyClass :--> PValue)
+discreteValue = phoistAcyclic $
+  plam $ \f -> pmatch f $ \case
+    Discrete p ->
+      psingletonValue
+        # (pconstant $ fromString $ symbolVal $ Proxy @ac)
+        # (pconstant $ fromString $ symbolVal $ Proxy @n)
+        # p
+
+-- | Create a value with a single asset class
+psingletonValue :: forall s. Term s (PCurrencySymbol :--> PTokenName :--> PInteger :--> PValue)
+psingletonValue = phoistAcyclic $
+  plam $ \sym tok int ->
+    let innerTup = pcon $ PMap $ psingleton #$ ppairDataBuiltin # pdata tok # pdata int
+        outerTup = pcon $ PMap $ psingleton #$ ppairDataBuiltin # pdata sym # pdata innerTup
+        res = pcon $ PValue outerTup
+     in res
