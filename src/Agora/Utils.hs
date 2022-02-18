@@ -144,8 +144,5 @@ paddValue = phoistAcyclic $
     PValue b <- pmatch b'
     pcon
       ( PValue $
-          pmapUnionWith
-            # (plam $ \a' b' -> pmapUnionWith # (plam (+)) # a' # b')
-            # a
-            # b
+          pmapUnionWith # (plam $ \a' b' -> pmapUnionWith # (plam (+)) # a' # b') # a # b
       )
