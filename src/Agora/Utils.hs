@@ -15,7 +15,9 @@ import Plutarch.Api.V1 (
   PPubKeyHash,
   PTokenName,
   PTuple,
+  PTxInInfo (PTxInInfo),
   PTxInfo (PTxInfo),
+  PTxOut (PTxOut),
   PValue (PValue),
  )
 import Plutarch.Builtin (ppairDataBuiltin)
@@ -146,3 +148,20 @@ paddValue = phoistAcyclic $
       ( PValue $
           pmapUnionWith # (plam $ \a' b' -> pmapUnionWith # (plam (+)) # a' # b') # a # b
       )
+
+-- | Sum of all value at input
+pvalueSpent :: Term s (PTxInfo :--> PValue)
+pvalueSpent = phoistAcyclic $
+  plam $ \txInfo' ->
+    pmatch txInfo' $ \(PTxInfo txInfo) ->
+      pfoldr
+        # ( plam $ \txInInfo' v ->
+              pmatch
+                (pfromData txInInfo')
+                $ \(PTxInInfo txInInfo) ->
+                  paddValue
+                    # (pmatch (pfield @"resolved" # txInInfo) $ \(PTxOut o) -> pfromData $ pfield @"value" # o)
+                    # v
+          )
+        # pconstant mempty
+        # (pfield @"inputs" # txInfo)

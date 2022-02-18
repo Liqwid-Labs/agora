@@ -88,6 +88,17 @@ anyOutput = phoistAcyclic $
         )
       # pfromData txInfo.outputs
 
+--------------------------------------------------------------------------------
+--
+-- What this Policy does
+--
+-- - Check that exactly 1 state thread is minted
+-- - Check that an output exists with a state thread and a valid datum
+-- - Check that no state thread is an input
+--
+-- Question:
+--
+--------------------------------------------------------------------------------
 stakePolicy ::
   forall (gt :: MoneyClass) ac n scale s.
   ( KnownSymbol ac
@@ -101,12 +112,21 @@ stakePolicy _stake =
   plam $ \_redeemer ctx'' -> P.do
     PScriptContext ctx' <- pmatch ctx''
     ctx <- pletFields @'["txInfo", "purpose"] ctx'
+    txInfo' <- plet ctx.txInfo
+    txInfo <- pletFields @'["mint", "inputs"] txInfo'
 
-    PMinting ownSymbol <- pmatch $ pfromData ctx.purpose
-    let stValue = psingletonValue # (pfield @"_0" # ownSymbol) # pconstant "ST" # 1
+    PMinting ownSymbol' <- pmatch $ pfromData ctx.purpose
+    ownSymbol <- plet $ pfield @"_0" # ownSymbol'
+    let stValue = psingletonValue # ownSymbol # pconstant "ST" # 1
+
+    passert "ST at inputs must be 0" $
+      (passetClassValueOf # ownSymbol # pconstant "ST" # (pvalueSpent # pfromData txInfo')) #== 0
+
+    passert "Minted ST must be exactly 1" $
+      pdata txInfo.mint #== pdata stValue
 
     passert "A UTXO must exist with the correct output" $
-      anyOutput @(StakeDatum gt) # pfromData ctx.txInfo
+      anyOutput @(StakeDatum gt) # pfromData txInfo'
         # ( plam $ \value stakeDatum' -> P.do
               stakeDatum <- pletFields @'["owner", "stakedAmount"] stakeDatum'
               let expectedValue = paddValue # (discreteValue # stakeDatum.stakedAmount) # stValue

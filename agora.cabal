@@ -120,8 +120,7 @@ library
     Agora.Stake
     Agora.Voting
 
-  other-modules:
-    Agora.Utils
+  other-modules:   Agora.Utils
   hs-source-dirs:  src
 
 library pprelude
@@ -145,5 +144,5 @@ benchmark agora-bench
   main-is:        Main.hs
   type:           exitcode-stdio-1.0
   build-depends:
-    , plutarch-benchmark
     , agora
+    , plutarch-benchmark
