@@ -103,15 +103,15 @@ stakePolicy _stake =
     ctx <- pletFields @'["txInfo", "purpose"] ctx'
 
     PMinting ownSymbol <- pmatch $ pfromData ctx.purpose
-    -- TODO: add this to 'valueCorrect'
     let stValue = psingletonValue # (pfield @"_0" # ownSymbol) # pconstant "ST" # 1
 
     passert "A UTXO must exist with the correct output" $
       anyOutput @(StakeDatum gt) # pfromData ctx.txInfo
         # ( plam $ \value stakeDatum' -> P.do
               stakeDatum <- pletFields @'["owner", "stakedAmount"] stakeDatum'
+              let expectedValue = paddValue # (discreteValue # stakeDatum.stakedAmount) # stValue
               let ownerSignsTransaction = ptxSignedBy # ctx.txInfo # stakeDatum.owner
-              let valueCorrect = pdata value #== pdata (paddValue # (discreteValue # stakeDatum.stakedAmount) # stValue)
+              let valueCorrect = pdata value #== pdata expectedValue
               ownerSignsTransaction #&& valueCorrect
           )
 
