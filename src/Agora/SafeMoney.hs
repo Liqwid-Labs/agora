@@ -37,6 +37,10 @@ import Plutarch.Prelude
 
 --------------------------------------------------------------------------------
 
+import Agora.Utils
+
+--------------------------------------------------------------------------------
+
 -- | Type-level unique identifier for an AssetClass
 type MoneyClass =
   ( -- AssetClass
@@ -85,60 +89,6 @@ type ADA :: MoneyClass
 type ADA = '("", "", 6)
 
 --------------------------------------------------------------------------------
-
--- TODO: upstream something like this
-pfind' ::
-  PIsListLike list a =>
-  (Term s a -> Term s PBool) ->
-  Term s (list a :--> PMaybe a)
-pfind' p =
-  precList
-    (\self x xs -> pif (p x) (pcon (PJust x)) (self # xs))
-    (const $ pcon PNothing)
-
--- TODO: upstream something like this
-plookup ::
-  (PEq a, PIsListLike list (PBuiltinPair a b)) =>
-  Term s (a :--> list (PBuiltinPair a b) :--> PMaybe b)
-plookup =
-  phoistAcyclic $
-    plam $ \k xs ->
-      pmatch (pfind' (\p -> pfstBuiltin # p #== k) # xs) $ \case
-        PNothing -> pcon PNothing
-        PJust p -> pcon (PJust (psndBuiltin # p))
-
--- This is quite silly.
-plookupTuple ::
-  (PEq a, PIsListLike list (PAsData (PTuple a b)), PIsData a, PIsData b) =>
-  Term s (a :--> list (PAsData (PTuple a b)) :--> PMaybe b)
-plookupTuple =
-  phoistAcyclic $
-    plam $ \k xs ->
-      pmatch (pfind' (\p -> (pfield @"_0" # pfromData p) #== k) # xs) $ \case
-        PNothing -> pcon PNothing
-        PJust p -> pcon (PJust (pfield @"_1" # pfromData p))
-
-matchMaybe :: Term s r -> Term s (PMaybe a) -> TermCont @r s (Term s a)
-matchMaybe r f = TermCont $ \k ->
-  pmatch f $ \case
-    PJust v -> k v
-    PNothing -> r
-
-passetClassValueOf ::
-  Term s (PCurrencySymbol :--> PTokenName :--> PValue :--> PInteger)
-passetClassValueOf =
-  phoistAcyclic $
-    plam $ \sym token value'' -> unTermCont $ do
-      PValue value' <- tcont $ pmatch value''
-      PMap value <- tcont $ pmatch value'
-      m' <- matchMaybe 0 (plookup # pdata sym # value)
-      PMap m <- tcont (pmatch (pfromData m'))
-      v <- matchMaybe 0 (plookup # pdata token # m)
-      pure (pfromData v)
-
-passetClassValueOf' :: AssetClass -> Term s (PValue :--> PInteger)
-passetClassValueOf' (AssetClass (sym, token)) =
-  passetClassValueOf # pconstant sym # pconstant token
 
 -- | Downcast a 'PValue' to a 'Discrete' unit
 valueDiscrete ::

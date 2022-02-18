@@ -31,6 +31,7 @@ import Plutarch.Monadic qualified as P
 --------------------------------------------------------------------------------
 
 import Agora.SafeMoney
+import Agora.Utils
 
 --------------------------------------------------------------------------------
 
@@ -65,28 +66,6 @@ newtype StakeDatum (gt :: MoneyClass) (s :: S) = StakeDatum
   deriving
     (PlutusType, PIsData, PDataFields)
     via (PIsDataReprInstances (StakeDatum gt))
-
--- | Assert a particular bool, trace on falsehood. Use in monadic context
-passert :: Term s PString -> Term s PBool -> Term s k -> Term s k
-passert errorMessage check k = pif check k (ptraceError errorMessage)
-
--- | Find a datum with the given hash.
-pfindDatum :: Term s (PDatumHash :--> PTxInfo :--> PMaybe PDatum)
-pfindDatum = phoistAcyclic $
-  plam $ \datumHash txInfo'' -> P.do
-    PTxInfo txInfo' <- pmatch txInfo''
-    plookupTuple # datumHash #$ pfield @"data" # txInfo'
-
--- | Find a datum with the given hash. NOTE: this is unsafe in the sense that, if the data layout is wrong, this is UB.
-pfindDatum' :: PIsData a => Term s (PDatumHash :--> PTxInfo :--> PMaybe (PAsData a))
-pfindDatum' = phoistAcyclic $ plam $ \dh x -> punsafeCoerce $ pfindDatum # dh # x
-
--- | Check if a PubKeyHash signs this transaction
-ptxSignedBy :: Term s (PTxInfo :--> PAsData PPubKeyHash :--> PBool)
-ptxSignedBy = phoistAcyclic $
-  plam $ \txInfo' pkh -> P.do
-    txInfo <- pletFields @'["signatories"] txInfo'
-    pelem @PBuiltinList # pkh # txInfo.signatories
 
 -- | Check if any output matches the predicate
 anyOutput ::
@@ -125,14 +104,14 @@ stakePolicy _stake =
 
     PMinting ownSymbol <- pmatch $ pfromData ctx.purpose
     -- TODO: add this to 'valueCorrect'
-    let _stValue = psingletonValue # (pfield @"_0" # ownSymbol) # pconstant "ST" # 1
+    let stValue = psingletonValue # (pfield @"_0" # ownSymbol) # pconstant "ST" # 1
 
     passert "A UTXO must exist with the correct output" $
       anyOutput @(StakeDatum gt) # pfromData ctx.txInfo
         # ( plam $ \value stakeDatum' -> P.do
               stakeDatum <- pletFields @'["owner", "stakedAmount"] stakeDatum'
               let ownerSignsTransaction = ptxSignedBy # ctx.txInfo # stakeDatum.owner
-              let valueCorrect = pdata value #== pdata (discreteValue # stakeDatum.stakedAmount)
+              let valueCorrect = pdata value #== pdata (paddValue # (discreteValue # stakeDatum.stakedAmount) # stValue)
               ownerSignsTransaction #&& valueCorrect
           )
 

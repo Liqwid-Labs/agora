@@ -121,6 +121,7 @@ library
     Agora.Voting
 
   other-modules:
+    Agora.Utils
   hs-source-dirs:  src
 
 library pprelude

@@ -20,7 +20,7 @@ import Prelude
 
 --------------------------------------------------------------------------------
 
-import Agora.SafeMoney
+import Agora.Utils (passetClassValueOf, passetClassValueOf')
 
 --------------------------------------------------------------------------------
 
