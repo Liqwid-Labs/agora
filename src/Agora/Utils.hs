@@ -107,6 +107,7 @@ passetClassValueOf =
       v <- pexpectJust 0 (plookup # pdata token # m)
       pfromData v
 
+-- | Extract amount from PValue belonging to a Haskell-level AssetClass
 passetClassValueOf' :: AssetClass -> Term s (PValue :--> PInteger)
 passetClassValueOf' (AssetClass (sym, token)) =
   passetClassValueOf # pconstant sym # pconstant token

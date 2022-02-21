@@ -7,6 +7,7 @@ module Agora.Stake (
   StakeAction (..),
   Stake (..),
   stakePolicy,
+  stakeLocked,
 ) where
 
 --------------------------------------------------------------------------------
@@ -72,31 +73,59 @@ anyOutput ::
   forall (datum :: PType) s.
   ( PIsData datum
   ) =>
-  Term s (PTxInfo :--> (PValue :--> datum :--> PBool) :--> PBool)
+  Term s (PTxInfo :--> (PValue :--> PAddress :--> datum :--> PBool) :--> PBool)
 anyOutput = phoistAcyclic $
   plam $ \txInfo' predicate -> P.do
     txInfo <- pletFields @'["outputs"] txInfo'
     pany
       # ( plam $ \txOut'' -> P.do
             PTxOut txOut' <- pmatch (pfromData txOut'')
-            txOut <- pletFields @'["value", "datumHash"] txOut'
+            txOut <- pletFields @'["value", "datumHash", "address"] txOut'
             PDJust dh <- pmatch txOut.datumHash
             pmatch (pfindDatum' @datum # (pfield @"_0" # dh) # txInfo') $ \case
               PJust datum -> P.do
-                predicate # txOut.value # pfromData datum
+                predicate # txOut.value # txOut.address # pfromData datum
               PNothing -> pcon PFalse
         )
       # pfromData txInfo.outputs
 
+anyInput ::
+  forall (datum :: PType) s.
+  ( PIsData datum
+  ) =>
+  Term s (PTxInfo :--> (PValue :--> PAddress :--> datum :--> PBool) :--> PBool)
+anyInput = phoistAcyclic $
+  plam $ \txInfo' predicate -> P.do
+    txInfo <- pletFields @'["inputs"] txInfo'
+    pany
+      # ( plam $ \txInInfo'' -> P.do
+            PTxInInfo txInInfo' <- pmatch (pfromData txInInfo'')
+            let txOut'' = pfield @"resolved" # txInInfo'
+            PTxOut txOut' <- pmatch (pfromData txOut'')
+            txOut <- pletFields @'["value", "datumHash", "address"] txOut'
+            PDJust dh <- pmatch txOut.datumHash
+            pmatch (pfindDatum' @datum # (pfield @"_0" # dh) # txInfo') $ \case
+              PJust datum -> P.do
+                predicate # txOut.value # txOut.address # pfromData datum
+              PNothing -> pcon PFalse
+        )
+      # pfromData txInfo.inputs
+
 --------------------------------------------------------------------------------
 --
--- What this Policy does
+-- # What this Policy does
 --
--- - Check that exactly 1 state thread is minted
--- - Check that an output exists with a state thread and a valid datum
--- - Check that no state thread is an input
+-- For minting:
+--   Check that exactly 1 state thread is minted
+--   Check that an output exists with a state thread and a valid datum
+--   Check that no state thread is an input
 --
--- Question:
+-- FIXME: This doesn't check that it's paid to the right script address, can we?
+--
+--
+-- For burning:
+--   Check that exactly 1 state thread is burned
+--   Check that datum at state thread is valid and not locked
 --
 --------------------------------------------------------------------------------
 stakePolicy ::
@@ -113,26 +142,57 @@ stakePolicy _stake =
     PScriptContext ctx' <- pmatch ctx''
     ctx <- pletFields @'["txInfo", "purpose"] ctx'
     txInfo' <- plet ctx.txInfo
-    txInfo <- pletFields @'["mint", "inputs"] txInfo'
+    txInfo <- pletFields @'["mint", "inputs", "outputs"] txInfo'
 
     PMinting ownSymbol' <- pmatch $ pfromData ctx.purpose
     ownSymbol <- plet $ pfield @"_0" # ownSymbol'
     let stValue = psingletonValue # ownSymbol # pconstant "ST" # 1
 
-    passert "ST at inputs must be 0" $
-      (passetClassValueOf # ownSymbol # pconstant "ST" # (pvalueSpent # pfromData txInfo')) #== 0
+    stOf <- plet $ plam $ \v -> passetClassValueOf # ownSymbol # pconstant "ST" # v
+    mintedST <- plet $ stOf # txInfo.mint
+    inputST <- plet $ stOf # (pvalueSpent # pfromData txInfo')
 
-    passert "Minted ST must be exactly 1" $
-      pdata txInfo.mint #== pdata stValue
+    let burning = P.do
+          passert "ST at inputs must be 1" $
+            inputST #== 1
 
-    passert "A UTXO must exist with the correct output" $
-      anyOutput @(StakeDatum gt) # pfromData txInfo'
-        # ( plam $ \value stakeDatum' -> P.do
-              stakeDatum <- pletFields @'["owner", "stakedAmount"] stakeDatum'
-              let expectedValue = paddValue # (discreteValue # stakeDatum.stakedAmount) # stValue
-              let ownerSignsTransaction = ptxSignedBy # ctx.txInfo # stakeDatum.owner
-              let valueCorrect = pdata value #== pdata expectedValue
-              ownerSignsTransaction #&& valueCorrect
-          )
+          passert "ST burned" $
+            mintedST #== -1
 
-    pconstant ()
+          passert "An unlocked input existed containing an ST" $
+            anyInput @(StakeDatum gt) # pfromData txInfo'
+              #$ plam
+              $ \value _ stakeDatum' -> P.do
+                let hasST = stOf # value #== 1
+                let unlocked = pnot # (stakeLocked # stakeDatum')
+                hasST #&& unlocked
+
+          pconstant ()
+
+    let minting = P.do
+          passert "ST at inputs must be 0" $
+            inputST #== 0
+
+          passert "Minted ST must be exactly 1" $
+            mintedST #== 1
+
+          passert "A UTXO must exist with the correct output" $
+            anyOutput @(StakeDatum gt) # pfromData txInfo'
+              #$ plam
+              $ \value _ stakeDatum' -> P.do
+                stakeDatum <- pletFields @'["owner", "stakedAmount"] stakeDatum'
+                let expectedValue = paddValue # (discreteValue # stakeDatum.stakedAmount) # stValue
+                let ownerSignsTransaction = ptxSignedBy # ctx.txInfo # stakeDatum.owner
+                let valueCorrect = pdata value #== pdata expectedValue -- TODO: Needs to be >=, rather than ==
+                ownerSignsTransaction #&& valueCorrect
+
+          pconstant ()
+
+    pif (0 #< mintedST) minting burning
+
+-- | Check whether a Stake is locked. If it is locked, various actions are unavailable.
+stakeLocked :: forall (gt :: MoneyClass) s. Term s (StakeDatum gt :--> PBool)
+stakeLocked = phoistAcyclic $
+  plam $ \_stakeDatum ->
+    -- TODO: when we extend this to support proposals, this will need to do something
+    pcon PFalse
