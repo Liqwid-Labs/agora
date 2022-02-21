@@ -89,6 +89,7 @@ anyOutput = phoistAcyclic $
         )
       # pfromData txInfo.outputs
 
+-- | Check if any (resolved) input matches the predicate
 anyInput ::
   forall (datum :: PType) s.
   ( PIsData datum
@@ -179,12 +180,17 @@ stakePolicy _stake =
           passert "A UTXO must exist with the correct output" $
             anyOutput @(StakeDatum gt) # pfromData txInfo'
               #$ plam
-              $ \value _ stakeDatum' -> P.do
-                stakeDatum <- pletFields @'["owner", "stakedAmount"] stakeDatum'
-                let expectedValue = paddValue # (discreteValue # stakeDatum.stakedAmount) # stValue
-                let ownerSignsTransaction = ptxSignedBy # ctx.txInfo # stakeDatum.owner
-                let valueCorrect = pdata value #== pdata expectedValue -- TODO: Needs to be >=, rather than ==
-                ownerSignsTransaction #&& valueCorrect
+              $ \value address stakeDatum' -> P.do
+                let cred = pfield @"credential" # address
+                pmatch cred $ \case
+                  -- Should pay to a script address
+                  PPubKeyCredential _ -> pcon PFalse
+                  PScriptCredential _ -> P.do
+                    stakeDatum <- pletFields @'["owner", "stakedAmount"] stakeDatum'
+                    let expectedValue = paddValue # (discreteValue # stakeDatum.stakedAmount) # stValue
+                    let ownerSignsTransaction = ptxSignedBy # ctx.txInfo # stakeDatum.owner
+                    let valueCorrect = pdata value #== pdata expectedValue -- TODO: Needs to be >=, rather than ==
+                    ownerSignsTransaction #&& valueCorrect
 
           pconstant ()
 
