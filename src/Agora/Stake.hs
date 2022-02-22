@@ -7,6 +7,7 @@ module Agora.Stake (
   StakeAction (..),
   Stake (..),
   stakePolicy,
+  stakeValidator,
   stakeLocked,
 ) where
 
@@ -114,15 +115,17 @@ anyInput = phoistAcyclic $
 
 --------------------------------------------------------------------------------
 --
--- # What this Policy does
+-- What this Policy does
 --
 -- For minting:
 --   Check that exactly 1 state thread is minted
 --   Check that an output exists with a state thread and a valid datum
 --   Check that no state thread is an input
 --
--- FIXME: This doesn't check that it's paid to the right script address, can we?
---
+-- > FIXME: This doesn't check that it's paid to the right script address, can we?
+-- > Potential solution:
+-- > Encode script hash in token-name.
+-- > Then, those who script hash, will be able to verify.
 --
 -- For burning:
 --   Check that exactly 1 state thread is burned
@@ -135,12 +138,10 @@ stakePolicy ::
   , KnownSymbol n
   , gt ~ '(ac, n, scale)
   ) =>
-  Stake
-    gt ->
-  Term s (PData :--> PScriptContext :--> PUnit)
+  Stake gt ->
+  Term s (PData :--> PAsData PScriptContext :--> PUnit)
 stakePolicy _stake =
-  plam $ \_redeemer ctx'' -> P.do
-    PScriptContext ctx' <- pmatch ctx''
+  plam $ \_redeemer ctx' -> P.do
     ctx <- pletFields @'["txInfo", "purpose"] ctx'
     txInfo' <- plet ctx.txInfo
     txInfo <- pletFields @'["mint", "inputs", "outputs"] txInfo'
@@ -148,7 +149,6 @@ stakePolicy _stake =
     PMinting ownSymbol' <- pmatch $ pfromData ctx.purpose
     ownSymbol <- plet $ pfield @"_0" # ownSymbol'
     let stValue = psingletonValue # ownSymbol # pconstant "ST" # 1
-
     stOf <- plet $ plam $ \v -> passetClassValueOf # ownSymbol # pconstant "ST" # v
     mintedST <- plet $ stOf # txInfo.mint
     inputST <- plet $ stOf # (pvalueSpent # pfromData txInfo')
@@ -202,3 +202,20 @@ stakeLocked = phoistAcyclic $
   plam $ \_stakeDatum ->
     -- TODO: when we extend this to support proposals, this will need to do something
     pcon PFalse
+
+--------------------------------------------------------------------------------
+stakeValidator ::
+  forall (gt :: MoneyClass) ac n scale s.
+  ( KnownSymbol ac
+  , KnownSymbol n
+  , gt ~ '(ac, n, scale)
+  ) =>
+  Stake gt ->
+  Term s (PData :--> PData :--> PAsData PScriptContext :--> PUnit)
+stakeValidator _stake =
+  plam $ \datum redeemer ctx' -> P.do
+    _ctx <- pletFields @'["txInfo", "purpose"] ctx'
+    let _stakeAction = punsafeCoerce redeemer :: Term s (StakeAction gt)
+    _stakeDatum <- pletFields @'["owner"] (punsafeCoerce datum :: Term s (StakeDatum gt))
+
+    pconstant ()
