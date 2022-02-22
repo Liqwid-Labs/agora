@@ -95,6 +95,17 @@ pexpectJust escape ma f =
     PJust v -> f v
     PNothing -> escape
 
+-- | Get the sum of all values belonging to a particular CurrencySymbol
+psymbolValueOf :: Term s (PCurrencySymbol :--> PValue :--> PInteger)
+psymbolValueOf =
+  phoistAcyclic $
+    plam $ \sym value'' -> P.do
+      PValue value' <- pmatch value''
+      PMap value <- pmatch value'
+      m' <- pexpectJust 0 (plookup # pdata sym # value)
+      PMap m <- pmatch (pfromData m')
+      pfoldr # (plam $ \x v -> (pfromData $ psndBuiltin # x) + v) # 0 # m
+
 passetClassValueOf ::
   Term s (PCurrencySymbol :--> PTokenName :--> PValue :--> PInteger)
 passetClassValueOf =

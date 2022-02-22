@@ -121,11 +121,7 @@ anyInput = phoistAcyclic $
 --   Check that exactly 1 state thread is minted
 --   Check that an output exists with a state thread and a valid datum
 --   Check that no state thread is an input
---
--- > FIXME: This doesn't check that it's paid to the right script address, can we?
--- > Potential solution:
--- > Encode script hash in token-name.
--- > Then, those who script hash, will be able to verify.
+--   assert TokenName == ValidatorHash of the script that we pay to
 --
 -- For burning:
 --   Check that exactly 1 state thread is burned
@@ -148,14 +144,13 @@ stakePolicy _stake =
 
     PMinting ownSymbol' <- pmatch $ pfromData ctx.purpose
     ownSymbol <- plet $ pfield @"_0" # ownSymbol'
-    let stValue = psingletonValue # ownSymbol # pconstant "ST" # 1
-    stOf <- plet $ plam $ \v -> passetClassValueOf # ownSymbol # pconstant "ST" # v
-    mintedST <- plet $ stOf # txInfo.mint
-    inputST <- plet $ stOf # (pvalueSpent # pfromData txInfo')
+    valueSpent <- plet $ pvalueSpent # pfromData txInfo'
+    mintedST <- plet $ psymbolValueOf # ownSymbol # txInfo.mint
+    -- inputST <- plet $ stOf # (pvalueSpent # pfromData txInfo')
 
     let burning = P.do
           passert "ST at inputs must be 1" $
-            inputST #== 1
+            psymbolValueOf # ownSymbol # valueSpent #== 1
 
           passert "ST burned" $
             mintedST #== -1
@@ -164,7 +159,7 @@ stakePolicy _stake =
             anyInput @(StakeDatum gt) # pfromData txInfo'
               #$ plam
               $ \value _ stakeDatum' -> P.do
-                let hasST = stOf # value #== 1
+                let hasST = psymbolValueOf # ownSymbol # value #== 1
                 let unlocked = pnot # (stakeLocked # stakeDatum')
                 hasST #&& unlocked
 
@@ -172,7 +167,7 @@ stakePolicy _stake =
 
     let minting = P.do
           passert "ST at inputs must be 0" $
-            inputST #== 0
+            psymbolValueOf # ownSymbol # valueSpent #== 0
 
           passert "Minted ST must be exactly 1" $
             mintedST #== 1
@@ -185,11 +180,24 @@ stakePolicy _stake =
                 pmatch cred $ \case
                   -- Should pay to a script address
                   PPubKeyCredential _ -> pcon PFalse
-                  PScriptCredential _ -> P.do
+                  PScriptCredential validatorHash' -> P.do
+                    validatorHash <- pletFields @'["_0"] validatorHash'
                     stakeDatum <- pletFields @'["owner", "stakedAmount"] stakeDatum'
-                    let expectedValue = paddValue # (discreteValue # stakeDatum.stakedAmount) # stValue
+                    let stValue =
+                          psingletonValue
+                            # ownSymbol
+                            -- This coerce is safe because the structure
+                            -- of PValidatorHash is the same as PTokenName.
+                            # punsafeCoerce validatorHash._0
+                            # 1
+                    let expectedValue =
+                          paddValue
+                            # (discreteValue # stakeDatum.stakedAmount)
+                            # stValue
                     let ownerSignsTransaction = ptxSignedBy # ctx.txInfo # stakeDatum.owner
-                    let valueCorrect = pdata value #== pdata expectedValue -- TODO: Needs to be >=, rather than ==
+
+                    -- TODO: Needs to be >=, rather than ==
+                    let valueCorrect = pdata value #== pdata expectedValue
                     ownerSignsTransaction #&& valueCorrect
 
           pconstant ()
