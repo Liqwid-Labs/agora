@@ -25,4 +25,5 @@ benchmarks =
     "full_scripts"
     [ bench "authorityTokenPolicy" $ Agora.authorityTokenPolicy (Agora.AuthorityToken (Value.assetClass "" ""))
     , bench "stakePolicy" $ Agora.stakePolicy (Agora.Stake @Agora.LQ)
+    , bench "stakeValidator" $ Agora.stakeValidator (Agora.Stake @Agora.LQ)
     ]

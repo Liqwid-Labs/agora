@@ -1,5 +1,25 @@
 -- | Plutarch utility functions that should be upstreamed or don't belong anywhere else
-module Agora.Utils (module Agora.Utils) where
+module Agora.Utils (
+  -- * Validator-level utility functions
+  passert,
+  pfind',
+  pfindDatum,
+  pfindDatum',
+  pvalueSpent,
+  ptxSignedBy,
+  paddValue,
+  plookup,
+  pfromMaybe,
+  psymbolValueOf,
+  passetClassValueOf,
+  passetClassValueOf',
+  pfindTxInByTxOutRef,
+  pfindMap,
+
+  -- * Functions which should (probably) not be upstreamed
+  anyOutput,
+  anyInput,
+) where
 
 --------------------------------------------------------------------------------
 
@@ -8,16 +28,19 @@ import Plutus.V1.Ledger.Value (AssetClass (..))
 --------------------------------------------------------------------------------
 
 import Plutarch.Api.V1 (
+  PAddress,
   PCurrencySymbol,
   PDatum,
   PDatumHash,
   PMap (PMap),
+  PMaybeData (PDJust),
   PPubKeyHash,
   PTokenName,
   PTuple,
   PTxInInfo (PTxInInfo),
   PTxInfo (PTxInfo),
   PTxOut (PTxOut),
+  PTxOutRef,
   PValue (PValue),
  )
 import Plutarch.Builtin (ppairDataBuiltin)
@@ -25,6 +48,7 @@ import Plutarch.Internal (punsafeCoerce)
 import Plutarch.Monadic qualified as P
 
 --------------------------------------------------------------------------------
+-- Validator-level utility functions
 
 -- | Assert a particular bool, trace on falsehood. Use in monadic context
 passert :: Term s PString -> Term s PBool -> Term s k -> Term s k
@@ -57,6 +81,22 @@ pfind' p =
   precList
     (\self x xs -> pif (p x) (pcon (PJust x)) (self # xs))
     (const $ pcon PNothing)
+
+-- | Get the first element that maps to a PJust in a list
+pfindMap ::
+  PIsListLike list a =>
+  Term s ((a :--> PMaybe b) :--> list a :--> PMaybe b)
+pfindMap =
+  phoistAcyclic $
+    plam $ \p ->
+      precList
+        ( \self x xs ->
+            -- In the future, this should use `pmatchSum`, I believe?
+            pmatch (p # x) $ \case
+              PNothing -> self # xs
+              PJust v -> pcon (PJust v)
+        )
+        (const $ pcon PNothing)
 
 -- | Find the value for a given key in an assoclist
 plookup ::
@@ -106,6 +146,7 @@ psymbolValueOf =
       PMap m <- pmatch (pfromData m')
       pfoldr # (plam $ \x v -> (pfromData $ psndBuiltin # x) + v) # 0 # m
 
+-- | Extract amount from PValue belonging to a Plutarch-level asset class
 passetClassValueOf ::
   Term s (PCurrencySymbol :--> PTokenName :--> PValue :--> PInteger)
 passetClassValueOf =
@@ -136,7 +177,7 @@ pmapUnionWith = phoistAcyclic $
                   pf <- plet $ pfstBuiltin # p
                   ps <- plet $ psndBuiltin # p
                   pmatch (plookup # pf # ys) $ \case
-                    PJust v -> P.do
+                    PJust v ->
                       -- Data conversions here are silly, aren't they?
                       ppairDataBuiltin # pf # (pdata (f # pfromData ps # pfromData v))
                     PNothing -> p
@@ -177,3 +218,66 @@ pvalueSpent = phoistAcyclic $
           )
         # pconstant mempty
         # (pfield @"inputs" # txInfo)
+
+-- | Find the TxInInfo by a TxOutRef
+pfindTxInByTxOutRef :: Term s (PTxOutRef :--> PTxInfo :--> PMaybe PTxInInfo)
+pfindTxInByTxOutRef = phoistAcyclic $
+  plam $ \txOutRef txInfo' ->
+    pmatch txInfo' $ \(PTxInfo txInfo) ->
+      pfindMap
+        # ( plam $ \txInInfo' ->
+              plet (pfromData txInInfo') $ \r ->
+                pmatch r $ \(PTxInInfo txInInfo) ->
+                  pif
+                    (pdata txOutRef #== pfield @"outRef" # txInInfo)
+                    (pcon (PJust r))
+                    (pcon PNothing)
+          )
+        #$ (pfield @"inputs" # txInfo)
+
+--------------------------------------------------------------------------------
+-- Functions which should (probably) not be upstreamed
+
+-- | Check if any output matches the predicate
+anyOutput ::
+  forall (datum :: PType) s.
+  ( PIsData datum
+  ) =>
+  Term s (PTxInfo :--> (PValue :--> PAddress :--> datum :--> PBool) :--> PBool)
+anyOutput = phoistAcyclic $
+  plam $ \txInfo' predicate -> P.do
+    txInfo <- pletFields @'["outputs"] txInfo'
+    pany
+      # ( plam $ \txOut'' -> P.do
+            PTxOut txOut' <- pmatch (pfromData txOut'')
+            txOut <- pletFields @'["value", "datumHash", "address"] txOut'
+            PDJust dh <- pmatch txOut.datumHash
+            pmatch (pfindDatum' @datum # (pfield @"_0" # dh) # txInfo') $ \case
+              PJust datum -> P.do
+                predicate # txOut.value # txOut.address # pfromData datum
+              PNothing -> pcon PFalse
+        )
+      # pfromData txInfo.outputs
+
+-- | Check if any (resolved) input matches the predicate
+anyInput ::
+  forall (datum :: PType) s.
+  ( PIsData datum
+  ) =>
+  Term s (PTxInfo :--> (PValue :--> PAddress :--> datum :--> PBool) :--> PBool)
+anyInput = phoistAcyclic $
+  plam $ \txInfo' predicate -> P.do
+    txInfo <- pletFields @'["inputs"] txInfo'
+    pany
+      # ( plam $ \txInInfo'' -> P.do
+            PTxInInfo txInInfo' <- pmatch (pfromData txInInfo'')
+            let txOut'' = pfield @"resolved" # txInInfo'
+            PTxOut txOut' <- pmatch (pfromData txOut'')
+            txOut <- pletFields @'["value", "datumHash", "address"] txOut'
+            PDJust dh <- pmatch txOut.datumHash
+            pmatch (pfindDatum' @datum # (pfield @"_0" # dh) # txInfo') $ \case
+              PJust datum -> P.do
+                predicate # txOut.value # txOut.address # pfromData datum
+              PNothing -> pcon PFalse
+        )
+      # pfromData txInfo.inputs

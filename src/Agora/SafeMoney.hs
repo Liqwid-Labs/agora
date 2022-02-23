@@ -25,15 +25,10 @@ import Prelude
 
 --------------------------------------------------------------------------------
 
-import Plutus.V1.Ledger.Value (AssetClass (..))
-import Plutus.V1.Ledger.Value qualified as Ledger
-
---------------------------------------------------------------------------------
-
 import Plutarch.Api.V1
 import Plutarch.Builtin
 import Plutarch.Internal
-import Plutarch.Prelude
+import Plutarch.Monadic qualified as P
 
 --------------------------------------------------------------------------------
 
@@ -55,26 +50,15 @@ newtype Discrete (mc :: MoneyClass) (s :: S)
   = Discrete (Term s PInteger)
   deriving (PlutusType, PIsData, PEq, POrd) via (DerivePNewtype (Discrete mc) PInteger)
 
-instance Num (Term s (Discrete mc)) where
-  (+) x y = pcon $
-    Discrete . unTermCont $ do
-      Discrete x' <- tcont $ pmatch x
-      Discrete y' <- tcont $ pmatch y
-      pure (x' + y')
-  abs x = pcon $
-    Discrete . unTermCont $ do
-      Discrete x' <- tcont $ pmatch x
-      pure (abs x')
-  negate x = pcon $
-    Discrete . unTermCont $ do
-      Discrete x' <- tcont $ pmatch x
-      pure (negate x')
-  (*) x y = pcon $
-    Discrete . unTermCont $ do
-      Discrete x' <- tcont $ pmatch x
-      Discrete y' <- tcont $ pmatch y
-      pure (x' * y')
-  fromInteger = error "Tried to `fromInteger` for a Discrete type. use `discrete` quasiquoter instead."
+-- In the future, this should use plutarch-numeric
+
+-- | Add two `Discrete` values of the same MoneyClass
+paddDiscrete :: Term s (Discrete mc :--> Discrete mc :--> Discrete mc)
+paddDiscrete = phoistAcyclic $
+  plam $ \x y -> P.do
+    Discrete x' <- pmatch x
+    Discrete y' <- pmatch y
+    pcon (Discrete $ x' + y')
 
 (^*) :: Term s (Discrete mc) -> Term s PInteger -> Term s (Discrete mc)
 (^*) x y = pcon $

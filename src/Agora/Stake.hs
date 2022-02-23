@@ -1,10 +1,11 @@
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 -- | Vote-lockable stake UTXOs holding GT
 module Agora.Stake (
-  StakeDatum (..),
-  StakeAction (..),
+  PStakeDatum (..),
+  PStakeAction (..),
   Stake (..),
   stakePolicy,
   stakeValidator,
@@ -22,6 +23,7 @@ import Prelude
 
 --------------------------------------------------------------------------------
 
+import Plutarch (popaque)
 import Plutarch.Api.V1
 import Plutarch.DataRepr (
   PDataFields,
@@ -39,19 +41,19 @@ import Agora.Utils
 
 data Stake (gt :: MoneyClass) = Stake
 
-data StakeAction (gt :: MoneyClass) (s :: S)
+data PStakeAction (gt :: MoneyClass) (s :: S)
   = -- | Deposit or withdraw a discrete amount of the staked governance token
-    DepositWithdraw (Term s (PDataRecord '["delta" ':= Discrete gt]))
+    PDepositWithdraw (Term s (PDataRecord '["delta" ':= Discrete gt]))
   | -- | Destroy a stake, retrieving its LQ, the minimum ADA and any other assets
-    Destroy (Term s (PDataRecord '[]))
+    PDestroy (Term s (PDataRecord '[]))
   deriving stock (GHC.Generic)
   deriving anyclass (Generic)
   deriving anyclass (PIsDataRepr)
   deriving
     (PlutusType, PIsData)
-    via PIsDataReprInstances (StakeAction gt)
+    via PIsDataReprInstances (PStakeAction gt)
 
-newtype StakeDatum (gt :: MoneyClass) (s :: S) = StakeDatum
+newtype PStakeDatum (gt :: MoneyClass) (s :: S) = PStakeDatum
   { getStakeDatum ::
     ( Term
         s
@@ -67,51 +69,7 @@ newtype StakeDatum (gt :: MoneyClass) (s :: S) = StakeDatum
   deriving anyclass (PIsDataRepr)
   deriving
     (PlutusType, PIsData, PDataFields)
-    via (PIsDataReprInstances (StakeDatum gt))
-
--- | Check if any output matches the predicate
-anyOutput ::
-  forall (datum :: PType) s.
-  ( PIsData datum
-  ) =>
-  Term s (PTxInfo :--> (PValue :--> PAddress :--> datum :--> PBool) :--> PBool)
-anyOutput = phoistAcyclic $
-  plam $ \txInfo' predicate -> P.do
-    txInfo <- pletFields @'["outputs"] txInfo'
-    pany
-      # ( plam $ \txOut'' -> P.do
-            PTxOut txOut' <- pmatch (pfromData txOut'')
-            txOut <- pletFields @'["value", "datumHash", "address"] txOut'
-            PDJust dh <- pmatch txOut.datumHash
-            pmatch (pfindDatum' @datum # (pfield @"_0" # dh) # txInfo') $ \case
-              PJust datum -> P.do
-                predicate # txOut.value # txOut.address # pfromData datum
-              PNothing -> pcon PFalse
-        )
-      # pfromData txInfo.outputs
-
--- | Check if any (resolved) input matches the predicate
-anyInput ::
-  forall (datum :: PType) s.
-  ( PIsData datum
-  ) =>
-  Term s (PTxInfo :--> (PValue :--> PAddress :--> datum :--> PBool) :--> PBool)
-anyInput = phoistAcyclic $
-  plam $ \txInfo' predicate -> P.do
-    txInfo <- pletFields @'["inputs"] txInfo'
-    pany
-      # ( plam $ \txInInfo'' -> P.do
-            PTxInInfo txInInfo' <- pmatch (pfromData txInInfo'')
-            let txOut'' = pfield @"resolved" # txInInfo'
-            PTxOut txOut' <- pmatch (pfromData txOut'')
-            txOut <- pletFields @'["value", "datumHash", "address"] txOut'
-            PDJust dh <- pmatch txOut.datumHash
-            pmatch (pfindDatum' @datum # (pfield @"_0" # dh) # txInfo') $ \case
-              PJust datum -> P.do
-                predicate # txOut.value # txOut.address # pfromData datum
-              PNothing -> pcon PFalse
-        )
-      # pfromData txInfo.inputs
+    via (PIsDataReprInstances (PStakeDatum gt))
 
 --------------------------------------------------------------------------------
 --
@@ -135,7 +93,7 @@ stakePolicy ::
   , gt ~ '(ac, n, scale)
   ) =>
   Stake gt ->
-  Term s (PData :--> PAsData PScriptContext :--> PUnit)
+  Term s PMintingPolicy
 stakePolicy _stake =
   plam $ \_redeemer ctx' -> P.do
     ctx <- pletFields @'["txInfo", "purpose"] ctx'
@@ -144,36 +102,35 @@ stakePolicy _stake =
 
     PMinting ownSymbol' <- pmatch $ pfromData ctx.purpose
     ownSymbol <- plet $ pfield @"_0" # ownSymbol'
-    valueSpent <- plet $ pvalueSpent # pfromData txInfo'
+    spentST <- plet $ psymbolValueOf # ownSymbol #$ pvalueSpent # pfromData txInfo'
     mintedST <- plet $ psymbolValueOf # ownSymbol # txInfo.mint
-    -- inputST <- plet $ stOf # (pvalueSpent # pfromData txInfo')
 
     let burning = P.do
           passert "ST at inputs must be 1" $
-            psymbolValueOf # ownSymbol # valueSpent #== 1
+            spentST #== 1
 
           passert "ST burned" $
             mintedST #== -1
 
           passert "An unlocked input existed containing an ST" $
-            anyInput @(StakeDatum gt) # pfromData txInfo'
+            anyInput @(PStakeDatum gt) # pfromData txInfo'
               #$ plam
               $ \value _ stakeDatum' -> P.do
                 let hasST = psymbolValueOf # ownSymbol # value #== 1
                 let unlocked = pnot # (stakeLocked # stakeDatum')
                 hasST #&& unlocked
 
-          pconstant ()
+          popaque (pconstant ())
 
     let minting = P.do
           passert "ST at inputs must be 0" $
-            psymbolValueOf # ownSymbol # valueSpent #== 0
+            spentST #== 0
 
           passert "Minted ST must be exactly 1" $
             mintedST #== 1
 
           passert "A UTXO must exist with the correct output" $
-            anyOutput @(StakeDatum gt) # pfromData txInfo'
+            anyOutput @(PStakeDatum gt) # pfromData txInfo'
               #$ plam
               $ \value address stakeDatum' -> P.do
                 let cred = pfield @"credential" # address
@@ -200,16 +157,9 @@ stakePolicy _stake =
                     let valueCorrect = pdata value #== pdata expectedValue
                     ownerSignsTransaction #&& valueCorrect
 
-          pconstant ()
+          popaque (pconstant ())
 
     pif (0 #< mintedST) minting burning
-
--- | Check whether a Stake is locked. If it is locked, various actions are unavailable.
-stakeLocked :: forall (gt :: MoneyClass) s. Term s (StakeDatum gt :--> PBool)
-stakeLocked = phoistAcyclic $
-  plam $ \_stakeDatum ->
-    -- TODO: when we extend this to support proposals, this will need to do something
-    pcon PFalse
 
 --------------------------------------------------------------------------------
 stakeValidator ::
@@ -219,11 +169,62 @@ stakeValidator ::
   , gt ~ '(ac, n, scale)
   ) =>
   Stake gt ->
-  Term s (PData :--> PData :--> PAsData PScriptContext :--> PUnit)
-stakeValidator _stake =
+  Term s PValidator
+stakeValidator stake =
   plam $ \datum redeemer ctx' -> P.do
-    _ctx <- pletFields @'["txInfo", "purpose"] ctx'
-    let _stakeAction = punsafeCoerce redeemer :: Term s (StakeAction gt)
-    _stakeDatum <- pletFields @'["owner"] (punsafeCoerce datum :: Term s (StakeDatum gt))
+    ctx <- pletFields @'["txInfo", "purpose"] ctx'
+    txInfo' <- plet ctx.txInfo
+    txInfo <- pletFields @'["mint", "inputs", "outputs"] txInfo'
+    let stakeAction = punsafeCoerce redeemer :: Term s (PStakeAction gt)
+    let stakeDatum' = punsafeCoerce datum :: Term s (PStakeDatum gt)
+    stakeDatum <- pletFields @'["owner", "stakedAmount"] stakeDatum'
 
-    pconstant ()
+    PSpending txOutRef <- pmatch $ pfromData ctx.purpose
+
+    PJust txInInfo <- pmatch $ pfindTxInByTxOutRef # (pfield @"_0" # txOutRef) # txInfo'
+    ownAddress <- plet $ pfield @"address" #$ pfield @"resolved" # txInInfo
+    let continuingValue = pfield @"value" #$ pfield @"resolved" # txInInfo
+    stCurrencySymbol <- plet $ pconstant $ mintingPolicySymbol $ mkMintingPolicy (stakePolicy stake)
+    mintedST <- plet $ psymbolValueOf # stCurrencySymbol # txInfo.mint
+    spentST <- plet $ psymbolValueOf # stCurrencySymbol #$ pvalueSpent # txInfo'
+
+    pmatch stakeAction $ \case
+      PDestroy _ -> P.do
+        passert "ST at inputs must be 1" $
+          spentST #== 1
+        passert "Should burn ST" $
+          mintedST #== -1
+        passert "Stake unlocked" $
+          pnot #$ stakeLocked # stakeDatum'
+        popaque (pconstant ())
+      PDepositWithdraw r -> P.do
+        passert "ST at inputs must be 1" $
+          spentST #== 1
+        passert "Stake unlocked" $
+          pnot #$ stakeLocked # stakeDatum'
+        passert "A UTXO must exist with the correct output" $
+          anyOutput @(PStakeDatum gt) # txInfo'
+            #$ plam
+            $ \value address newStakeDatum' -> P.do
+              newStakeDatum <- pletFields @'["owner", "stakedAmount"] newStakeDatum'
+              delta <- plet $ pfield @"delta" # r
+              let isScriptAddress = pdata address #== ownAddress
+              let correctOutputDatum =
+                    stakeDatum.owner #== newStakeDatum.owner
+                      #&& (paddDiscrete # stakeDatum.stakedAmount # delta) #== newStakeDatum.stakedAmount
+              let expectedValue = paddValue # continuingValue # (discreteValue # delta)
+
+              -- TODO: As above, needs to be >=, rather than ==
+              let correctValue = pdata value #== pdata expectedValue
+              isScriptAddress #&& correctOutputDatum #&& correctValue
+
+        popaque (pconstant ())
+
+--------------------------------------------------------------------------------
+
+-- | Check whether a Stake is locked. If it is locked, various actions are unavailable.
+stakeLocked :: forall (gt :: MoneyClass) s. Term s (PStakeDatum gt :--> PBool)
+stakeLocked = phoistAcyclic $
+  plam $ \_stakeDatum ->
+    -- TODO: when we extend this to support proposals, this will need to do something
+    pcon PFalse
