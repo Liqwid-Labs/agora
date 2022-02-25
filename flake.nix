@@ -76,15 +76,18 @@
         let
           pkgs = nixpkgsFor system;
           pkgs' = nixpkgsFor' system;
+          inherit (pkgs.haskell-nix.tools ghcVersion {
+            inherit (plutarch.tools) fourmolu hlint;
+          })
+            fourmolu hlint;
         in pkgs.runCommand "format-check" {
           nativeBuildInputs = [
             pkgs'.git
             pkgs'.fd
             pkgs'.haskellPackages.cabal-fmt
             pkgs'.nixpkgs-fmt
-            (pkgs.haskell-nix.tools ghcVersion {
-              inherit (plutarch.tools) fourmolu;
-            }).fourmolu
+            fourmolu
+            hlint
           ];
         } ''
           export LC_CTYPE=C.UTF-8

@@ -55,14 +55,13 @@ data PStakeAction (gt :: MoneyClass) (s :: S)
 
 newtype PStakeDatum (gt :: MoneyClass) (s :: S) = PStakeDatum
   { getStakeDatum ::
-    ( Term
-        s
-        ( PDataRecord
-            '[ "stakedAmount" ':= Discrete gt
-             , "owner" ':= PPubKeyHash
-             ]
-        )
-    )
+    Term
+      s
+      ( PDataRecord
+          '[ "stakedAmount" ':= Discrete gt
+           , "owner" ':= PPubKeyHash
+           ]
+      )
   }
   deriving stock (GHC.Generic)
   deriving anyclass (Generic)

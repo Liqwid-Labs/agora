@@ -144,7 +144,7 @@ psymbolValueOf =
       PMap value <- pmatch value'
       m' <- pexpectJust 0 (plookup # pdata sym # value)
       PMap m <- pmatch (pfromData m')
-      pfoldr # (plam $ \x v -> (pfromData $ psndBuiltin # x) + v) # 0 # m
+      pfoldr # plam (\x v -> pfromData (psndBuiltin # x) + v) # 0 # m
 
 -- | Extract amount from PValue belonging to a Plutarch-level asset class
 passetClassValueOf ::
@@ -173,20 +173,22 @@ pmapUnionWith = phoistAcyclic $
     PMap ys <- pmatch ys'
     let ls =
           pmap
-            # ( plam $ \p -> P.do
+            # plam
+              ( \p -> P.do
                   pf <- plet $ pfstBuiltin # p
                   ps <- plet $ psndBuiltin # p
                   pmatch (plookup # pf # ys) $ \case
                     PJust v ->
                       -- Data conversions here are silly, aren't they?
-                      ppairDataBuiltin # pf # (pdata (f # pfromData ps # pfromData v))
+                      ppairDataBuiltin # pf # pdata (f # pfromData ps # pfromData v)
                     PNothing -> p
               )
             # xs
         rs =
           pfilter
-            # ( plam $ \p ->
-                  pnot # (pany # (plam $ \p' -> pfstBuiltin # p' #== pfstBuiltin # p) # xs)
+            # plam
+              ( \p ->
+                  pnot #$ pany # plam (\p' -> pfstBuiltin # p' #== pfstBuiltin # p) # xs
               )
             # ys
     pcon (PMap $ pconcat # ls # rs)
@@ -199,7 +201,7 @@ paddValue = phoistAcyclic $
     PValue b <- pmatch b'
     pcon
       ( PValue $
-          pmapUnionWith # (plam $ \a' b' -> pmapUnionWith # (plam (+)) # a' # b') # a # b
+          pmapUnionWith # plam (\a' b' -> pmapUnionWith # plam (+) # a' # b') # a # b
       )
 
 -- | Sum of all value at input
@@ -208,12 +210,13 @@ pvalueSpent = phoistAcyclic $
   plam $ \txInfo' ->
     pmatch txInfo' $ \(PTxInfo txInfo) ->
       pfoldr
-        # ( plam $ \txInInfo' v ->
+        # plam
+          ( \txInInfo' v ->
               pmatch
                 (pfromData txInInfo')
                 $ \(PTxInInfo txInInfo) ->
                   paddValue
-                    # (pmatch (pfield @"resolved" # txInInfo) $ \(PTxOut o) -> pfromData $ pfield @"value" # o)
+                    # pmatch (pfield @"resolved" # txInInfo) (\(PTxOut o) -> pfromData $ pfield @"value" # o)
                     # v
           )
         # pconstant mempty
@@ -225,7 +228,8 @@ pfindTxInByTxOutRef = phoistAcyclic $
   plam $ \txOutRef txInfo' ->
     pmatch txInfo' $ \(PTxInfo txInfo) ->
       pfindMap
-        # ( plam $ \txInInfo' ->
+        # plam
+          ( \txInInfo' ->
               plet (pfromData txInInfo') $ \r ->
                 pmatch r $ \(PTxInInfo txInInfo) ->
                   pif
@@ -248,7 +252,8 @@ anyOutput = phoistAcyclic $
   plam $ \txInfo' predicate -> P.do
     txInfo <- pletFields @'["outputs"] txInfo'
     pany
-      # ( plam $ \txOut'' -> P.do
+      # plam
+        ( \txOut'' -> P.do
             PTxOut txOut' <- pmatch (pfromData txOut'')
             txOut <- pletFields @'["value", "datumHash", "address"] txOut'
             PDJust dh <- pmatch txOut.datumHash
@@ -269,7 +274,8 @@ anyInput = phoistAcyclic $
   plam $ \txInfo' predicate -> P.do
     txInfo <- pletFields @'["inputs"] txInfo'
     pany
-      # ( plam $ \txInInfo'' -> P.do
+      # plam
+        ( \txInInfo'' -> P.do
             PTxInInfo txInInfo' <- pmatch (pfromData txInInfo'')
             let txOut'' = pfield @"resolved" # txInInfo'
             PTxOut txOut' <- pmatch (pfromData txOut'')

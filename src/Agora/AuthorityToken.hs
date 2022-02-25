@@ -20,7 +20,7 @@ import Prelude
 
 --------------------------------------------------------------------------------
 
-import Agora.Utils (passetClassValueOf, passetClassValueOf')
+import Agora.Utils (passert, passetClassValueOf, passetClassValueOf')
 
 --------------------------------------------------------------------------------
 
@@ -46,9 +46,9 @@ authorityTokenPolicy params =
       ctx <- pletFields @'["txInfo", "purpose"] ctx'
       PTxInfo txInfo' <- pmatch $ pfromData ctx.txInfo
       txInfo <- pletFields @'["inputs", "mint"] txInfo'
-      let inputs = txInfo.inputs :: Term _ (PBuiltinList (PAsData PTxInInfo))
+      let inputs = txInfo.inputs
       let authorityTokenInputs =
-            pfoldr'
+            pfoldr' @PBuiltinList
               ( \txInInfo' acc -> P.do
                   PTxInInfo txInInfo <- pmatch (pfromData txInInfo')
                   PTxOut txOut' <- pmatch $ pfromData $ pfield @"resolved" # txInInfo
@@ -60,17 +60,10 @@ authorityTokenPolicy params =
               # inputs
       let mintedValue = pfromData txInfo.mint
       let tokenMoved = 0 #< authorityTokenInputs
-      PMinting sym' <- pmatch $ pfromData ctx.purpose
-      let sym = pfromData $ pfield @"_0" # sym'
-      let mintedATs = passetClassValueOf # sym # pconstant "" # mintedValue
+      PMinting ownSymbol' <- pmatch $ pfromData ctx.purpose
+      let ownSymbol = pfromData $ pfield @"_0" # ownSymbol'
+      let mintedATs = passetClassValueOf # ownSymbol # pconstant "" # mintedValue
       pif
         (0 #< mintedATs)
-        ( pif
-            tokenMoved
-            -- The authority token moved, we are good to go for minting.
-            (pconstant ())
-            (ptraceError "Authority token did not move in minting GATs")
-        )
-        -- We minted 0 or less Authority Tokens, we are good to go.
-        -- Burning is always allowed.
+        (passert "Authority token did not move in minting GATs" tokenMoved (pconstant ()))
         (pconstant ())

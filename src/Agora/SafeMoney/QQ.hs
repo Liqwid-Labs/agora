@@ -34,7 +34,7 @@ discrete :: QuasiQuoter
 discrete = QuasiQuoter discreteExp errorDiscretePat errorDiscreteType errorDiscreteDiscretelaration
 
 discreteConstant :: forall (moneyClass :: MoneyClass) s. Integer -> Term s (Discrete moneyClass)
-discreteConstant n = punsafeCoerce ((pconstant n) :: Term s PInteger)
+discreteConstant n = punsafeCoerce (pconstant n :: Term s PInteger)
 
 fixedToInteger :: Integer -> (Integer, Integer) -> Integer
 fixedToInteger places (i, f) = i * 10 ^ places + f

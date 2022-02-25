@@ -85,8 +85,8 @@ valueDiscrete ::
 valueDiscrete = phoistAcyclic $
   plam $ \f ->
     pcon . Discrete $
-      passetClassValueOf # (pconstant $ fromString $ symbolVal $ Proxy @ac)
-        # (pconstant $ fromString $ symbolVal $ Proxy @n)
+      passetClassValueOf # pconstant (fromString $ symbolVal $ Proxy @ac)
+        # pconstant (fromString $ symbolVal $ Proxy @n)
         # f
 
 -- NOTE: discreteValue after valueDiscrete is loses information
@@ -103,8 +103,8 @@ discreteValue = phoistAcyclic $
   plam $ \f -> pmatch f $ \case
     Discrete p ->
       psingletonValue
-        # (pconstant $ fromString $ symbolVal $ Proxy @ac)
-        # (pconstant $ fromString $ symbolVal $ Proxy @n)
+        # pconstant (fromString $ symbolVal $ Proxy @ac)
+        # pconstant (fromString $ symbolVal $ Proxy @n)
         # p
 
 -- | Create a value with a single asset class
