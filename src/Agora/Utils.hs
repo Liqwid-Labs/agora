@@ -1,4 +1,8 @@
--- | Plutarch utility functions that should be upstreamed or don't belong anywhere else
+{- |
+Module     : Agora.Utils
+Maintainer : emi@haskell.fyi
+Description: Plutarch utility functions that should be upstreamed or don't belong anywhere else
+-}
 module Agora.Utils (
   -- * Validator-level utility functions
   passert,
@@ -14,6 +18,7 @@ module Agora.Utils (
   passetClassValueOf,
   passetClassValueOf',
   pfindTxInByTxOutRef,
+  psingletonValue,
   pfindMap,
 
   -- * Functions which should (probably) not be upstreamed
@@ -50,7 +55,7 @@ import Plutarch.Monadic qualified as P
 --------------------------------------------------------------------------------
 -- Validator-level utility functions
 
--- | Assert a particular bool, trace on falsehood. Use in monadic context
+-- | Assert a particular 'PBool', trace if false. Use in monadic context.
 passert :: Term s PString -> Term s PBool -> Term s k -> Term s k
 passert errorMessage check k = pif check k (ptraceError errorMessage)
 
@@ -61,18 +66,20 @@ pfindDatum = phoistAcyclic $
     PTxInfo txInfo' <- pmatch txInfo''
     plookupTuple # datumHash #$ pfield @"data" # txInfo'
 
--- | Find a datum with the given hash. NOTE: this is unsafe in the sense that, if the data layout is wrong, this is UB.
+{- | Find a datum with the given hash.
+NOTE: this is unsafe in the sense that, if the data layout is wrong, this is UB.
+-}
 pfindDatum' :: PIsData a => Term s (PDatumHash :--> PTxInfo :--> PMaybe (PAsData a))
 pfindDatum' = phoistAcyclic $ plam $ \dh x -> punsafeCoerce $ pfindDatum # dh # x
 
--- | Check if a PubKeyHash signs this transaction
+-- | Check if a PubKeyHash signs this transaction.
 ptxSignedBy :: Term s (PTxInfo :--> PAsData PPubKeyHash :--> PBool)
 ptxSignedBy = phoistAcyclic $
   plam $ \txInfo' pkh -> P.do
     txInfo <- pletFields @'["signatories"] txInfo'
     pelem @PBuiltinList # pkh # txInfo.signatories
 
--- | Get the first element that matches a predicate or return Nothing
+-- | Get the first element that matches a predicate or return Nothing.
 pfind' ::
   PIsListLike list a =>
   (Term s a -> Term s PBool) ->
@@ -82,7 +89,7 @@ pfind' p =
     (\self x xs -> pif (p x) (pcon (PJust x)) (self # xs))
     (const $ pcon PNothing)
 
--- | Get the first element that maps to a PJust in a list
+-- | Get the first element that maps to a PJust in a list.
 pfindMap ::
   PIsListLike list a =>
   Term s ((a :--> PMaybe b) :--> list a :--> PMaybe b)
@@ -98,7 +105,7 @@ pfindMap =
         )
         (const $ pcon PNothing)
 
--- | Find the value for a given key in an assoclist
+-- | Find the value for a given key in an associative list.
 plookup ::
   (PEq a, PIsListLike list (PBuiltinPair a b)) =>
   Term s (a :--> list (PBuiltinPair a b) :--> PMaybe b)
@@ -109,7 +116,7 @@ plookup =
         PNothing -> pcon PNothing
         PJust p -> pcon (PJust (psndBuiltin # p))
 
--- | Find the value for a given key in an assoclist which uses 'PTuple's
+-- | Find the value for a given key in an assoclist which uses 'PTuple's.
 plookupTuple ::
   (PEq a, PIsListLike list (PAsData (PTuple a b)), PIsData a, PIsData b) =>
   Term s (a :--> list (PAsData (PTuple a b)) :--> PMaybe b)
@@ -120,7 +127,7 @@ plookupTuple =
         PNothing -> pcon PNothing
         PJust p -> pcon (PJust (pfield @"_1" # pfromData p))
 
--- | Extract a Maybe by providing a default value in case of Just
+-- | Extract a Maybe by providing a default value in case of Just.
 pfromMaybe :: forall a s. Term s (a :--> PMaybe a :--> a)
 pfromMaybe = phoistAcyclic $
   plam $ \e a ->
@@ -128,14 +135,19 @@ pfromMaybe = phoistAcyclic $
       PJust a' -> a'
       PNothing -> e
 
--- | Escape with a particular value on expecting 'Just'. For use in monadic context
-pexpectJust :: forall r a s. Term s r -> Term s (PMaybe a) -> (Term s a -> Term s r) -> Term s r
+-- | Escape with a particular value on expecting 'Just'. For use in monadic context.
+pexpectJust ::
+  forall r a s.
+  Term s r ->
+  Term s (PMaybe a) ->
+  (Term s a -> Term s r) ->
+  Term s r
 pexpectJust escape ma f =
   pmatch ma $ \case
     PJust v -> f v
     PNothing -> escape
 
--- | Get the sum of all values belonging to a particular CurrencySymbol
+-- | Get the sum of all values belonging to a particular CurrencySymbol.
 psymbolValueOf :: Term s (PCurrencySymbol :--> PValue :--> PInteger)
 psymbolValueOf =
   phoistAcyclic $
@@ -146,7 +158,7 @@ psymbolValueOf =
       PMap m <- pmatch (pfromData m')
       pfoldr # plam (\x v -> pfromData (psndBuiltin # x) + v) # 0 # m
 
--- | Extract amount from PValue belonging to a Plutarch-level asset class
+-- | Extract amount from PValue belonging to a Plutarch-level asset class.
 passetClassValueOf ::
   Term s (PCurrencySymbol :--> PTokenName :--> PValue :--> PInteger)
 passetClassValueOf =
@@ -159,12 +171,12 @@ passetClassValueOf =
       v <- pexpectJust 0 (plookup # pdata token # m)
       pfromData v
 
--- | Extract amount from PValue belonging to a Haskell-level AssetClass
+-- | Extract amount from PValue belonging to a Haskell-level AssetClass.
 passetClassValueOf' :: AssetClass -> Term s (PValue :--> PInteger)
 passetClassValueOf' (AssetClass (sym, token)) =
   passetClassValueOf # pconstant sym # pconstant token
 
--- | Union two maps using a merge function on collisions
+-- | Union two maps using a merge function on collisions.
 pmapUnionWith :: forall k v s. PIsData v => Term s ((v :--> v :--> v) :--> PMap k v :--> PMap k v :--> PMap k v)
 pmapUnionWith = phoistAcyclic $
   -- TODO: this function is kinda suspect. I feel like a lot of optimizations could be done here
@@ -204,7 +216,7 @@ paddValue = phoistAcyclic $
           pmapUnionWith # plam (\a' b' -> pmapUnionWith # plam (+) # a' # b') # a # b
       )
 
--- | Sum of all value at input
+-- | Sum of all value at input.
 pvalueSpent :: Term s (PTxInfo :--> PValue)
 pvalueSpent = phoistAcyclic $
   plam $ \txInfo' ->
@@ -216,13 +228,15 @@ pvalueSpent = phoistAcyclic $
                 (pfromData txInInfo')
                 $ \(PTxInInfo txInInfo) ->
                   paddValue
-                    # pmatch (pfield @"resolved" # txInInfo) (\(PTxOut o) -> pfromData $ pfield @"value" # o)
+                    # pmatch
+                      (pfield @"resolved" # txInInfo)
+                      (\(PTxOut o) -> pfromData $ pfield @"value" # o)
                     # v
           )
         # pconstant mempty
         # (pfield @"inputs" # txInfo)
 
--- | Find the TxInInfo by a TxOutRef
+-- | Find the TxInInfo by a TxOutRef.
 pfindTxInByTxOutRef :: Term s (PTxOutRef :--> PTxInfo :--> PMaybe PTxInInfo)
 pfindTxInByTxOutRef = phoistAcyclic $
   plam $ \txOutRef txInfo' ->
@@ -242,7 +256,7 @@ pfindTxInByTxOutRef = phoistAcyclic $
 --------------------------------------------------------------------------------
 -- Functions which should (probably) not be upstreamed
 
--- | Check if any output matches the predicate
+-- | Check if any output matches the predicate.
 anyOutput ::
   forall (datum :: PType) s.
   ( PIsData datum
@@ -264,7 +278,7 @@ anyOutput = phoistAcyclic $
         )
       # pfromData txInfo.outputs
 
--- | Check if any (resolved) input matches the predicate
+-- | Check if any (resolved) input matches the predicate.
 anyInput ::
   forall (datum :: PType) s.
   ( PIsData datum
@@ -287,3 +301,12 @@ anyInput = phoistAcyclic $
               PNothing -> pcon PFalse
         )
       # pfromData txInfo.inputs
+
+-- | Create a value with a single asset class.
+psingletonValue :: forall s. Term s (PCurrencySymbol :--> PTokenName :--> PInteger :--> PValue)
+psingletonValue = phoistAcyclic $
+  plam $ \sym tok int ->
+    let innerTup = pcon $ PMap $ psingleton #$ ppairDataBuiltin # pdata tok # pdata int
+        outerTup = pcon $ PMap $ psingleton #$ ppairDataBuiltin # pdata sym # pdata innerTup
+        res = pcon $ PValue outerTup
+     in res

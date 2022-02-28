@@ -4,14 +4,24 @@ import Prelude
 
 --------------------------------------------------------------------------------
 
-import Plutarch.Benchmark
 import Plutus.V1.Ledger.Value qualified as Value
 
 --------------------------------------------------------------------------------
 
-import Agora.AuthorityToken qualified as Agora
-import Agora.SafeMoney qualified as Agora
-import Agora.Stake qualified as Agora
+import Plutarch.Benchmark
+
+--------------------------------------------------------------------------------
+
+import Agora.AuthorityToken (
+  AuthorityToken (AuthorityToken),
+  authorityTokenPolicy,
+ )
+import Agora.SafeMoney (LQ)
+import Agora.Stake (
+  Stake (Stake),
+  stakePolicy,
+  stakeValidator,
+ )
 
 --------------------------------------------------------------------------------
 
@@ -23,7 +33,10 @@ benchmarks :: [NamedBenchmark]
 benchmarks =
   benchGroup
     "full_scripts"
-    [ bench "authorityTokenPolicy" $ Agora.authorityTokenPolicy (Agora.AuthorityToken (Value.assetClass "" ""))
-    , bench "stakePolicy" $ Agora.stakePolicy (Agora.Stake @Agora.LQ)
-    , bench "stakeValidator" $ Agora.stakeValidator (Agora.Stake @Agora.LQ)
+    [ bench "authorityTokenPolicy" $ authorityTokenPolicy authorityToken
+    , bench "stakePolicy" $ stakePolicy (Stake @LQ)
+    , bench "stakeValidator" $ stakeValidator (Stake @LQ)
     ]
+
+authorityToken :: AuthorityToken
+authorityToken = AuthorityToken (Value.assetClass "" "")

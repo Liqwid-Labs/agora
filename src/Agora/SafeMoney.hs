@@ -1,33 +1,40 @@
-{-# LANGUAGE PolyKinds #-}
-{-# LANGUAGE StandaloneKindSignatures #-}
-{-# LANGUAGE UndecidableInstances #-}
-{-# OPTIONS_GHC -Wwarn=missing-methods #-}
-{-# OPTIONS_GHC -Wwarn=unused-imports #-}
+{- |
+Module     : Agora.SafeMoney
+Maintainer : emi@haskell.fyi
+Description: Phantom-type protected types for handling money in Plutus
+-}
+module Agora.SafeMoney (
+  -- * Types
+  MoneyClass,
+  PDiscrete,
 
-module Agora.SafeMoney (module Agora.SafeMoney) where
+  -- * Utility functions
+  paddDiscrete,
+
+  -- * Conversions
+  pdiscreteValue,
+  pvalueDiscrete,
+
+  -- * Example MoneyClasses
+  LQ,
+  ADA,
+) where
 
 import Data.Proxy (Proxy (Proxy))
 import Data.String
 import GHC.TypeLits (
-  CmpNat,
-  KnownNat,
   KnownSymbol,
   Nat,
-  SomeNat (..),
-  SomeSymbol (..),
   Symbol,
-  natVal,
-  someNatVal,
-  someSymbolVal,
   symbolVal,
  )
 import Prelude
 
 --------------------------------------------------------------------------------
 
-import Plutarch.Api.V1
-import Plutarch.Builtin
-import Plutarch.Internal
+import Plutarch.Api.V1 (PValue)
+import Plutarch.Builtin ()
+import Plutarch.Internal ()
 import Plutarch.Monadic qualified as P
 
 --------------------------------------------------------------------------------
@@ -46,72 +53,59 @@ type MoneyClass =
     Nat
   )
 
-newtype Discrete (mc :: MoneyClass) (s :: S)
-  = Discrete (Term s PInteger)
-  deriving (PlutusType, PIsData, PEq, POrd) via (DerivePNewtype (Discrete mc) PInteger)
+-- | A PDiscrete amount of currency tagged on the type level with the MoneyClass it belong sto
+newtype PDiscrete (mc :: MoneyClass) (s :: S)
+  = PDiscrete (Term s PInteger)
+  deriving (PlutusType, PIsData, PEq, POrd) via (DerivePNewtype (PDiscrete mc) PInteger)
 
--- In the future, this should use plutarch-numeric
-
--- | Add two `Discrete` values of the same MoneyClass
-paddDiscrete :: Term s (Discrete mc :--> Discrete mc :--> Discrete mc)
+-- | Add two `PDiscrete` values of the same MoneyClass.
+paddDiscrete :: Term s (PDiscrete mc :--> PDiscrete mc :--> PDiscrete mc)
 paddDiscrete = phoistAcyclic $
+  -- In the future, this should use plutarch-numeric
   plam $ \x y -> P.do
-    Discrete x' <- pmatch x
-    Discrete y' <- pmatch y
-    pcon (Discrete $ x' + y')
+    PDiscrete x' <- pmatch x
+    PDiscrete y' <- pmatch y
+    pcon (PDiscrete $ x' + y')
 
-(^*) :: Term s (Discrete mc) -> Term s PInteger -> Term s (Discrete mc)
-(^*) x y = pcon $
-  Discrete . unTermCont $ do
-    Discrete x' <- tcont $ pmatch x
-    pure (x' * y)
-
+-- | The MoneyClass of LQ.
 type LQ :: MoneyClass
 type LQ = '("da8c30857834c6ae7203935b89278c532b3995245295456f993e1d24", "LQ", 6)
 
+-- | The MoneyClass of ADA.
 type ADA :: MoneyClass
 type ADA = '("", "", 6)
 
 --------------------------------------------------------------------------------
 
--- | Downcast a 'PValue' to a 'Discrete' unit
-valueDiscrete ::
+-- | Downcast a 'PValue' to a 'PDiscrete' unit.
+pvalueDiscrete ::
   forall (moneyClass :: MoneyClass) (ac :: Symbol) (n :: Symbol) (scale :: Nat) s.
   ( KnownSymbol ac
   , KnownSymbol n
   , moneyClass ~ '(ac, n, scale)
   ) =>
-  Term s (PValue :--> Discrete moneyClass)
-valueDiscrete = phoistAcyclic $
+  Term s (PValue :--> PDiscrete moneyClass)
+pvalueDiscrete = phoistAcyclic $
   plam $ \f ->
-    pcon . Discrete $
+    pcon . PDiscrete $
       passetClassValueOf # pconstant (fromString $ symbolVal $ Proxy @ac)
         # pconstant (fromString $ symbolVal $ Proxy @n)
         # f
 
--- NOTE: discreteValue after valueDiscrete is loses information
-
--- | Get a 'PValue' from a 'Discrete'
-discreteValue ::
+{- | Get a 'PValue' from a 'PDiscrete'.
+NOTE: pdiscreteValue after pvaluePDiscrete is loses information
+-}
+pdiscreteValue ::
   forall (moneyClass :: MoneyClass) (ac :: Symbol) (n :: Symbol) (scale :: Nat) s.
   ( KnownSymbol ac
   , KnownSymbol n
   , moneyClass ~ '(ac, n, scale)
   ) =>
-  Term s (Discrete moneyClass :--> PValue)
-discreteValue = phoistAcyclic $
+  Term s (PDiscrete moneyClass :--> PValue)
+pdiscreteValue = phoistAcyclic $
   plam $ \f -> pmatch f $ \case
-    Discrete p ->
+    PDiscrete p ->
       psingletonValue
         # pconstant (fromString $ symbolVal $ Proxy @ac)
         # pconstant (fromString $ symbolVal $ Proxy @n)
         # p
-
--- | Create a value with a single asset class
-psingletonValue :: forall s. Term s (PCurrencySymbol :--> PTokenName :--> PInteger :--> PValue)
-psingletonValue = phoistAcyclic $
-  plam $ \sym tok int ->
-    let innerTup = pcon $ PMap $ psingleton #$ ppairDataBuiltin # pdata tok # pdata int
-        outerTup = pcon $ PMap $ psingleton #$ ppairDataBuiltin # pdata sym # pdata innerTup
-        res = pcon $ PValue outerTup
-     in res

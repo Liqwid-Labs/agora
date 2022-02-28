@@ -1,8 +1,8 @@
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE PolyKinds #-}
-{-# LANGUAGE UndecidableInstances #-}
-
--- | Vote-lockable stake UTXOs holding GT
+{- |
+Module     : Agora.Stake
+Maintainer : emi@haskell.fyi
+Description: Vote-lockable stake UTXOs holding GT.
+-}
 module Agora.Stake (
   PStakeDatum (..),
   PStakeAction (..),
@@ -24,27 +24,52 @@ import Prelude
 --------------------------------------------------------------------------------
 
 import Plutarch (popaque)
-import Plutarch.Api.V1
+import Plutarch.Api.V1 (
+  PCredential (PPubKeyCredential, PScriptCredential),
+  PMintingPolicy,
+  PPubKeyHash,
+  PScriptPurpose (PMinting, PSpending),
+  PValidator,
+  mintingPolicySymbol,
+  mkMintingPolicy,
+ )
 import Plutarch.DataRepr (
   PDataFields,
   PIsDataReprInstances (PIsDataReprInstances),
  )
-import Plutarch.Internal
+import Plutarch.Internal (punsafeCoerce)
 import Plutarch.Monadic qualified as P
 
 --------------------------------------------------------------------------------
 
-import Agora.SafeMoney
-import Agora.Utils
+import Agora.SafeMoney (
+  MoneyClass,
+  PDiscrete,
+  paddDiscrete,
+  pdiscreteValue,
+ )
+import Agora.Utils (
+  anyInput,
+  anyOutput,
+  paddValue,
+  passert,
+  pfindTxInByTxOutRef,
+  psingletonValue,
+  psymbolValueOf,
+  ptxSignedBy,
+  pvalueSpent,
+ )
 
 --------------------------------------------------------------------------------
 
+-- | Parameters for creating Stake scripts.
 data Stake (gt :: MoneyClass) = Stake
 
+-- | Plutarch-level redeemer for Stake scripts.
 data PStakeAction (gt :: MoneyClass) (s :: S)
-  = -- | Deposit or withdraw a discrete amount of the staked governance token
-    PDepositWithdraw (Term s (PDataRecord '["delta" ':= Discrete gt]))
-  | -- | Destroy a stake, retrieving its LQ, the minimum ADA and any other assets
+  = -- | Deposit or withdraw a discrete amount of the staked governance token.
+    PDepositWithdraw (Term s (PDataRecord '["delta" ':= PDiscrete gt]))
+  | -- | Destroy a stake, retrieving its LQ, the minimum ADA and any other assets.
     PDestroy (Term s (PDataRecord '[]))
   deriving stock (GHC.Generic)
   deriving anyclass (Generic)
@@ -53,15 +78,10 @@ data PStakeAction (gt :: MoneyClass) (s :: S)
     (PlutusType, PIsData)
     via PIsDataReprInstances (PStakeAction gt)
 
+-- | Plutarch-level datum for Stake scripts.
 newtype PStakeDatum (gt :: MoneyClass) (s :: S) = PStakeDatum
   { getStakeDatum ::
-    Term
-      s
-      ( PDataRecord
-          '[ "stakedAmount" ':= Discrete gt
-           , "owner" ':= PPubKeyHash
-           ]
-      )
+    Term s (PDataRecord '["stakedAmount" ':= PDiscrete gt, "owner" ':= PPubKeyHash])
   }
   deriving stock (GHC.Generic)
   deriving anyclass (Generic)
@@ -71,20 +91,21 @@ newtype PStakeDatum (gt :: MoneyClass) (s :: S) = PStakeDatum
     via (PIsDataReprInstances (PStakeDatum gt))
 
 --------------------------------------------------------------------------------
---
--- What this Policy does
---
--- For minting:
---   Check that exactly 1 state thread is minted
---   Check that an output exists with a state thread and a valid datum
---   Check that no state thread is an input
---   assert TokenName == ValidatorHash of the script that we pay to
---
--- For burning:
---   Check that exactly 1 state thread is burned
---   Check that datum at state thread is valid and not locked
---
+{- What this Policy does
+
+   For minting:
+     Check that exactly one state thread is minted
+     Check that an output exists with a state thread and a valid datum
+     Check that no state thread is an input
+     assert TokenName == ValidatorHash of the script that we pay to
+
+   For burning:
+     Check that exactly one state thread is burned
+     Check that datum at state thread is valid and not locked
+-}
 --------------------------------------------------------------------------------
+
+-- | Policy for Stake state threads
 stakePolicy ::
   forall (gt :: MoneyClass) ac n scale s.
   ( KnownSymbol ac
@@ -148,9 +169,12 @@ stakePolicy _stake =
                             # 1
                     let expectedValue =
                           paddValue
-                            # (discreteValue # stakeDatum.stakedAmount)
+                            # (pdiscreteValue # stakeDatum.stakedAmount)
                             # stValue
-                    let ownerSignsTransaction = ptxSignedBy # ctx.txInfo # stakeDatum.owner
+                    let ownerSignsTransaction =
+                          ptxSignedBy
+                            # ctx.txInfo
+                            # stakeDatum.owner
 
                     -- TODO: Needs to be >=, rather than ==
                     let valueCorrect = pdata value #== pdata expectedValue
@@ -161,6 +185,8 @@ stakePolicy _stake =
     pif (0 #< mintedST) minting burning
 
 --------------------------------------------------------------------------------
+
+-- | Validator intended for Stake UTXOs to live in
 stakeValidator ::
   forall (gt :: MoneyClass) ac n scale s.
   ( KnownSymbol ac
@@ -174,8 +200,12 @@ stakeValidator stake =
     ctx <- pletFields @'["txInfo", "purpose"] ctx'
     txInfo' <- plet ctx.txInfo
     txInfo <- pletFields @'["mint", "inputs", "outputs"] txInfo'
-    let stakeAction = punsafeCoerce redeemer :: Term s (PStakeAction gt)
-    let stakeDatum' = punsafeCoerce datum :: Term s (PStakeDatum gt)
+
+    -- Coercion is safe in that if coercion fails we crash hard.
+    let stakeAction :: Term _ (PStakeAction gt)
+        stakeAction = pfromData $ punsafeCoerce redeemer
+        stakeDatum' :: Term _ (PStakeDatum gt)
+        stakeDatum' = pfromData $ punsafeCoerce datum
     stakeDatum <- pletFields @'["owner", "stakedAmount"] stakeDatum'
 
     PSpending txOutRef <- pmatch $ pfromData ctx.purpose
@@ -211,7 +241,7 @@ stakeValidator stake =
               let correctOutputDatum =
                     stakeDatum.owner #== newStakeDatum.owner
                       #&& (paddDiscrete # stakeDatum.stakedAmount # delta) #== newStakeDatum.stakedAmount
-              let expectedValue = paddValue # continuingValue # (discreteValue # delta)
+              let expectedValue = paddValue # continuingValue # (pdiscreteValue # delta)
 
               -- TODO: As above, needs to be >=, rather than ==
               let correctValue = pdata value #== pdata expectedValue

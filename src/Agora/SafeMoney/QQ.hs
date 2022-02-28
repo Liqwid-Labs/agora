@@ -1,7 +1,10 @@
 {-# LANGUAGE TemplateHaskell #-}
-{-# OPTIONS_GHC -Wwarn=missing-methods #-}
-{-# OPTIONS_GHC -Wwarn=unused-imports #-}
 
+{- |
+Module     : Agora.SafeMoney.QQ
+Maintainer : emi@haskell.fyi
+Description: Quasiquoter for SafeMoney types
+-}
 module Agora.SafeMoney.QQ (discrete) where
 
 import GHC.Real (Ratio ((:%)))
@@ -28,12 +31,20 @@ import Prelude
 
 import Plutarch.Internal (punsafeCoerce)
 
-import Agora.SafeMoney
+import Agora.SafeMoney (MoneyClass, PDiscrete)
 
+--------------------------------------------------------------------------------
+
+{- | Generate 'PDiscrete' values tagged by a particular MoneyClass
+
+@
+  [discrete| 123.456 ADA |] :: 'Term' s ('PDiscrete' 'ADA')
+@
+-}
 discrete :: QuasiQuoter
 discrete = QuasiQuoter discreteExp errorDiscretePat errorDiscreteType errorDiscreteDiscretelaration
 
-discreteConstant :: forall (moneyClass :: MoneyClass) s. Integer -> Term s (Discrete moneyClass)
+discreteConstant :: forall (moneyClass :: MoneyClass) s. Integer -> Term s (PDiscrete moneyClass)
 discreteConstant n = punsafeCoerce (pconstant n :: Term s PInteger)
 
 fixedToInteger :: Integer -> (Integer, Integer) -> Integer
