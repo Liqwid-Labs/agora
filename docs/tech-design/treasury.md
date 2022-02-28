@@ -12,7 +12,7 @@
 
 -   [Jack Hodgkinson]
 
-**Implementation ownership:** _unassigned_
+**Implementation ownership:** [Jack Hodgkinson]
 
 [Jack Hodgkinson]: https://github.com/jhodgdev
 
