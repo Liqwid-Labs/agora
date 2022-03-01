@@ -3,7 +3,9 @@
 {- |
 Module     : Agora.SafeMoney.QQ
 Maintainer : emi@haskell.fyi
-Description: Quasiquoter for SafeMoney types
+Description: Quasiquoter for SafeMoney types.
+
+Quasiquoter for SafeMoney types.
 -}
 module Agora.SafeMoney.QQ (discrete) where
 

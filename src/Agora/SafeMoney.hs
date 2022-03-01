@@ -1,7 +1,9 @@
 {- |
 Module     : Agora.SafeMoney
 Maintainer : emi@haskell.fyi
-Description: Phantom-type protected types for handling money in Plutus
+Description: Phantom-type protected types for handling money in Plutus.
+
+Phantom-type protected types for handling money in Plutus.
 -}
 module Agora.SafeMoney (
   -- * Types
@@ -43,7 +45,7 @@ import Agora.Utils
 
 --------------------------------------------------------------------------------
 
--- | Type-level unique identifier for an AssetClass
+-- | Type-level unique identifier for an `AssetClass`
 type MoneyClass =
   ( -- AssetClass
     Symbol
@@ -53,12 +55,12 @@ type MoneyClass =
     Nat
   )
 
--- | A PDiscrete amount of currency tagged on the type level with the MoneyClass it belong sto
+-- | A `PDiscrete` amount of currency tagged on the type level with the `MoneyClass` it belong sto
 newtype PDiscrete (mc :: MoneyClass) (s :: S)
   = PDiscrete (Term s PInteger)
   deriving (PlutusType, PIsData, PEq, POrd) via (DerivePNewtype (PDiscrete mc) PInteger)
 
--- | Add two `PDiscrete` values of the same MoneyClass.
+-- | Add two `PDiscrete` values of the same `MoneyClass`.
 paddDiscrete :: Term s (PDiscrete mc :--> PDiscrete mc :--> PDiscrete mc)
 paddDiscrete = phoistAcyclic $
   -- In the future, this should use plutarch-numeric
@@ -77,7 +79,7 @@ type ADA = '("", "", 6)
 
 --------------------------------------------------------------------------------
 
--- | Downcast a 'PValue' to a 'PDiscrete' unit.
+-- | Downcast a `PValue` to a `PDiscrete` unit.
 pvalueDiscrete ::
   forall (moneyClass :: MoneyClass) (ac :: Symbol) (n :: Symbol) (scale :: Nat) s.
   ( KnownSymbol ac
@@ -92,8 +94,8 @@ pvalueDiscrete = phoistAcyclic $
         # pconstant (fromString $ symbolVal $ Proxy @n)
         # f
 
-{- | Get a 'PValue' from a 'PDiscrete'.
-NOTE: pdiscreteValue after pvaluePDiscrete is loses information
+{- | Get a `PValue` from a `PDiscrete`.
+     __NOTE__: `pdiscreteValue` after `pvalueDiscrete` is loses information
 -}
 pdiscreteValue ::
   forall (moneyClass :: MoneyClass) (ac :: Symbol) (n :: Symbol) (scale :: Nat) s.

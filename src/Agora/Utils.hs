@@ -1,7 +1,9 @@
 {- |
 Module     : Agora.Utils
 Maintainer : emi@haskell.fyi
-Description: Plutarch utility functions that should be upstreamed or don't belong anywhere else
+Description: Plutarch utility functions that should be upstreamed or don't belong anywhere else.
+
+Plutarch utility functions that should be upstreamed or don't belong anywhere else.
 -}
 module Agora.Utils (
   -- * Validator-level utility functions

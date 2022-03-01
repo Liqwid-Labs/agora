@@ -2,6 +2,8 @@
 Module     : Agora.Stake
 Maintainer : emi@haskell.fyi
 Description: Vote-lockable stake UTXOs holding GT.
+
+Vote-lockable stake UTXOs holding GT.
 -}
 module Agora.Stake (
   PStakeDatum (..),
@@ -105,7 +107,7 @@ newtype PStakeDatum (gt :: MoneyClass) (s :: S) = PStakeDatum
 -}
 --------------------------------------------------------------------------------
 
--- | Policy for Stake state threads
+-- | Policy for Stake state threads.
 stakePolicy ::
   forall (gt :: MoneyClass) ac n scale s.
   ( KnownSymbol ac
@@ -186,7 +188,7 @@ stakePolicy _stake =
 
 --------------------------------------------------------------------------------
 
--- | Validator intended for Stake UTXOs to live in
+-- | Validator intended for Stake UTXOs to live in.
 stakeValidator ::
   forall (gt :: MoneyClass) ac n scale s.
   ( KnownSymbol ac

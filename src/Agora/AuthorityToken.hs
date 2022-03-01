@@ -1,7 +1,9 @@
 {- |
 Module     : Agora.AuthorityToken
 Maintainer : emi@haskell.fyi
-Description: Tokens acting as redeemable proofs of DAO authority
+Description: Tokens acting as redeemable proofs of DAO authority.
+
+Tokens acting as redeemable proofs of DAO authority.
 -}
 module Agora.AuthorityToken (
   authorityTokenPolicy,
