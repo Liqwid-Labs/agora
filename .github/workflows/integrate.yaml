@@ -56,7 +56,7 @@ jobs:
           name: mlabs
           authToken: ${{ secrets.CACHIX_KEY }}
 
-      - run: nix run nixpkgs#hlint -- $(git ls-tree -r HEAD --full-tree --name-only | grep -E '.*\.hs')
+      - run: nix run nixpkgs#haskell.packages.ghc921.hlint -- $(git ls-tree -r HEAD --full-tree --name-only | grep -E '.*\.hs')
         name: Run hlint
 
   check-build:
