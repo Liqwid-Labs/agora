@@ -2,7 +2,7 @@
 
 | Specification | Implementation    | Last revision |
 |:-----------:|:--------------:|:-------------:|
-| WIP         |  WIP           | v0.1 2022-02-07 |
+| Draft         |  WIP           | v0.1 2022-03-01 |
 
 ---
 
@@ -20,7 +20,8 @@
 
 **Current Status**:
 
-Initial conceptual draft. Requires review from [Emily Martins].
+- Conceptual draft agreed upon. 
+- Requires technical details and review from [Emily Martins].
 
 ---
 
@@ -46,3 +47,20 @@ The treasury will further be the initial holder of all a governance system's GT.
 3.  How much do they receive in their reward?
 
 are all, naturally, protocol-specific. A simple method for creating such a bespoke reward structure is **not** considered in-scope for Agora v1. Agora v1 will offer a simple, prescribed reward structure, that allows the treasury to determine the reward eligibility of a user and allow them to redeem said amount.
+
+## Script 
+
+The script for an Agora treasury is described in this section.
+
+### Datum 
+
+```hs 
+data TreasuryD = TreasuryD
+  { reserves :: Value
+  , stateThread :: CurrencySymbol
+  }
+```
+
+### Redeemers 
+
+### Validators

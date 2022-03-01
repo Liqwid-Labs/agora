@@ -23,6 +23,7 @@ common lang
     pprelude (PPrelude as Prelude)
 
   default-extensions:
+    UndecidableInstances
     NoStarIsType
     BangPatterns
     BinaryLiterals
@@ -92,6 +93,7 @@ common deps
     , containers
     , data-default
     , data-default-class
+    , generics-sop
     , plutarch
     , plutus-core
     , plutus-ledger-api
@@ -112,7 +114,10 @@ common test-deps
 
 library
   import:          lang, deps
-  exposed-modules: Agora.AuthorityToken
+  exposed-modules:
+    Agora.AuthorityToken
+    Agora.Treasury
+
   other-modules:
   hs-source-dirs:  src
 
@@ -137,5 +142,5 @@ benchmark agora-bench
   main-is:        Main.hs
   type:           exitcode-stdio-1.0
   build-depends:
-    , plutarch-benchmark
     , agora
+    , plutarch-benchmark
