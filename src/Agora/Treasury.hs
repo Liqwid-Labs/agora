@@ -49,16 +49,22 @@ treasuryV = plam $ \d r ctx' -> P.do
     PWitnessTreasury _ -> P.do
       txInfo <- pletFields @'["inputs", "outputs", "data"] txInfo'
 
-      -- inputs :: Term s ( PAsData PBuiltinList )
       let inputs = txInfo.inputs
 
-      -- dat :: Term s (PAsData PBuiltinList)
       let dat = pfield @"data" # txInfo'
 
-      -- dh :: Term s PDatumHash
       let dH = getTrDatumHash # d # dat
 
-      pconstant ()
+      let rs = pmap # toResolved # inputs
+      let outputs = txInfo.outputs
+
+      let valueIn = getValAtDHash # dH # rs
+      let valueOut = getValAtDHash # dH # outputs
+
+      pif
+        (valueIn #== valueOut)
+        (pconstant ())
+        $ ptraceError "Treasury is altered when witnessing transaction"
 
     -- Validation for receiving funds.
     PReceiveFunds _ -> P.do
@@ -89,12 +95,15 @@ getTrDatumHash = plam $ \d l -> P.do
       let t = pfield @"_1" # t'
        in (pforgetData d) #== (pforgetData t)
 
+toResolved :: Term s (PAsData PTxInInfo :--> PAsData PTxOut)
+toResolved = plam $ \txIn -> pfield @"resolved" # txIn
+
 getValAtDHash ::
   Term
     s
     ( PDatumHash
         :--> PBuiltinList (PAsData PTxOut)
-        :--> PValue
+        :--> PAsData PValue
     )
 getValAtDHash = plam $ \dh outs -> P.do
   let matchingOut = phead #$ pfilter # (matchHashes # dh) # outs
