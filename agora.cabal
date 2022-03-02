@@ -78,6 +78,7 @@ common lang
     ViewPatterns
     OverloadedRecordDot
     QualifiedDo
+    UndecidableInstances
 
   default-language:   Haskell2010
 
@@ -92,6 +93,7 @@ common deps
     , containers
     , data-default
     , data-default-class
+    , generics-sop
     , plutarch
     , plutus-core
     , plutus-ledger-api
@@ -112,8 +114,14 @@ common test-deps
 
 library
   import:          lang, deps
-  exposed-modules: Agora.AuthorityToken
-  other-modules:
+  exposed-modules:
+    Agora.AuthorityToken
+    Agora.SafeMoney
+    Agora.SafeMoney.QQ
+    Agora.Stake
+    Agora.Voting
+
+  other-modules:   Agora.Utils
   hs-source-dirs:  src
 
 library pprelude
@@ -137,5 +145,5 @@ benchmark agora-bench
   main-is:        Main.hs
   type:           exitcode-stdio-1.0
   build-depends:
-    , plutarch-benchmark
     , agora
+    , plutarch-benchmark

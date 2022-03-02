@@ -1,2 +1,4 @@
 name,cpu,mem,size
-full_scripts:authorityTokenPolicy,1280339,4400,284
+full_scripts:authorityTokenPolicy,1399431,4800,421
+full_scripts:stakePolicy,3751498,12700,1610
+full_scripts:stakeValidator,3126265,10600,1500

@@ -440,8 +440,6 @@
         "hpc-coveralls": "hpc-coveralls",
         "nix-tools": "nix-tools",
         "nixpkgs": [
-          "plutarch",
-          "haskell-nix",
           "nixpkgs-2111"
         ],
         "nixpkgs-2003": "nixpkgs-2003",
@@ -832,11 +830,11 @@
         "validity": "validity"
       },
       "locked": {
-        "lastModified": 1645006916,
-        "narHash": "sha256-j8o0D48LfDYqf07bi34474lkFnMZ5TNvcZmACVMw3yA=",
+        "lastModified": 1645200363,
+        "narHash": "sha256-k/ecf2uasWwBV+zq3daJVGY3xnsYkLe3zmT+k+iZ++A=",
         "owner": "Plutonomicon",
         "repo": "plutarch",
-        "rev": "c77fcd605269bd8183d5496e297eb38503ea0e29",
+        "rev": "473424c89b4457e58e009e65d411ace1efc3ea9e",
         "type": "github"
       },
       "original": {
