@@ -47,7 +47,7 @@ stake.lockedByProposals += (hash proposal.settings, vote)
 
 This forms a mutual binding between the proposal and the stake.
 
-A stake may be used to vote on an unlimited number of proposals. Consider a user staking 50GT. They may pledge that 50GT against a proposal `p` _and_ another proposal `p'`.
+A stake may be used to vote on an unlimited number of proposals. Consider a user staking 50GT. They may pledge that 50GT against a proposal `p` _and_ another proposal `q`.
 
 Altering the amount positioned in a stake is not possible, for as long as that stake is locked against any proposals. This is to prevent vote manipulation. Consider:
 
@@ -77,6 +77,10 @@ data Stake = Stake
 ```
 
 When voting on a proposal, a user can check which stakes have delegated to them off-chain and include them in the voting transaction. _This will lock the delegator's stake_, however they will be themselves be able to unlock it as usual. It should be noted that delegation of stakes only extends to voting on proposals and not, for example, withdrawing GT from a stake.
+
+## Destroying stake
+
+In order to recover the ADA and potentially any other funds sent on accident, Stake UTXOs must be destroyable.
 
 ## Staking pool
 
