@@ -1,6 +1,6 @@
 SHELL := /usr/bin/env bash
 
-.PHONY: hoogle format usage
+.PHONY: hoogle format haddock usage
 
 usage:
 	@echo "usage: make <command> [OPTIONS]"

@@ -76,7 +76,6 @@ common lang
     TypeOperators
     TypeSynonymInstances
     UndecidableInstances
-    UndecidableInstances
     ViewPatterns
     OverloadedRecordDot
     QualifiedDo
