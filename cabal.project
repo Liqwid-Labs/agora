@@ -2,3 +2,6 @@ packages: ./.
 
 benchmarks: true
 tests: true
+
+package plutarch
+  flags: +development

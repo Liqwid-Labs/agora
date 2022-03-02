@@ -23,7 +23,6 @@ common lang
     pprelude (PPrelude as Prelude)
 
   default-extensions:
-    UndecidableInstances
     NoStarIsType
     BangPatterns
     BinaryLiterals
@@ -76,6 +75,8 @@ common lang
     TypeFamilies
     TypeOperators
     TypeSynonymInstances
+    UndecidableInstances
+    UndecidableInstances
     ViewPatterns
     OverloadedRecordDot
     QualifiedDo
@@ -116,9 +117,13 @@ library
   import:          lang, deps
   exposed-modules:
     Agora.AuthorityToken
+    Agora.SafeMoney
+    Agora.SafeMoney.QQ
+    Agora.Stake
     Agora.Treasury
+    Agora.Voting
 
-  other-modules:
+  other-modules:   Agora.Utils
   hs-source-dirs:  src
 
 library pprelude
