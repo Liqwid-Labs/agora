@@ -43,30 +43,44 @@ treasuryV ::
         :--> PUnit
     )
 treasuryV = plam $ \d r ctx' -> P.do
+  -- Load txInfo and purpose fields from script context.
   ctx <- pletFields @["txInfo", "purpose"] ctx'
+
+  -- Extract txInfo.
   PTxInfo txInfo' <- pmatch $ pfromData ctx.txInfo
+
+  -- Pattern match on type of treasury redeemer.
   pmatch (pfromData r) $ \case
+    -- Treasury is merely being witnessed. It's datum and value
+    -- must be unchanged.
     PWitnessTreasury _ -> P.do
       txInfo <- pletFields @'["inputs", "outputs", "data"] txInfo'
 
-      let inputs = txInfo.inputs
-
+      -- Get datum hash of datum supplied to validator.
       let dat = pfield @"data" # txInfo'
+          dH = getTrDatumHash # d # dat
 
-      let dH = getTrDatumHash # d # dat
+      -- Get inputs in TxOut form.
+      let inputs = txInfo.inputs
+          rs = pmap # toResolved # inputs
 
-      let rs = pmap # toResolved # inputs
-      let outputs = txInfo.outputs
-
+      -- Find the value the treasury had before being spent.
       let valueIn = getValAtDHash # dH # rs
-      let valueOut = getValAtDHash # dH # outputs
 
+      -- Find the value the treasury has after being spent.
+      let outputs = txInfo.outputs
+          valueOut = getValAtDHash # dH # outputs
+
+      -- If the value in equals the value out, validate the
+      -- transaction. Otherwise, fail.
       pif
         (valueIn #== valueOut)
         (pconstant ())
         $ ptraceError "Treasury is altered when witnessing transaction"
 
-    -- Validation for receiving funds.
+    -- Treasury is receiving amount of funds specified in the
+    -- redeemer. It's datum must be unchanged but it's value
+    -- must be increased by the specified amount.
     PReceiveFunds _ -> P.do
       pconstant ()
 
@@ -95,9 +109,11 @@ getTrDatumHash = plam $ \d l -> P.do
       let t = pfield @"_1" # t'
        in (pforgetData d) #== (pforgetData t)
 
+-- | Get the "resolved" field of a TxInInfo.
 toResolved :: Term s (PAsData PTxInInfo :--> PAsData PTxOut)
 toResolved = plam $ \txIn -> pfield @"resolved" # txIn
 
+-- | Gets the value kept at a given datum hash.
 getValAtDHash ::
   Term
     s
