@@ -60,6 +60,7 @@
               pkgs'.hlint
               pkgs'.haskellPackages.cabal-fmt
               pkgs'.nixpkgs-fmt
+              pkgs'.graphviz
             ];
 
             inherit (plutarch) tools;
