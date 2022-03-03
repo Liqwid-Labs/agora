@@ -228,7 +228,8 @@ stakeValidator stake =
           mintedST #== -1
         passert "Stake unlocked" $
           pnot #$ stakeLocked # stakeDatum'
-        passert "Owner signs this transaction" $
+        passert
+          "Owner signs this transaction"
           ownerSignsTransaction
         popaque (pconstant ())
       PDepositWithdraw r -> P.do
@@ -236,7 +237,8 @@ stakeValidator stake =
           spentST #== 1
         passert "Stake unlocked" $
           pnot #$ stakeLocked # stakeDatum'
-        passert "Owner signs this transaction" $
+        passert
+          "Owner signs this transaction"
           ownerSignsTransaction
         passert "A UTXO must exist with the correct output" $
           anyOutput @(PStakeDatum gt) # txInfo'
