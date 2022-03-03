@@ -30,7 +30,6 @@ import Plutarch.DataRepr (
   PIsDataReprInstances (PIsDataReprInstances),
  )
 import Plutarch.Monadic qualified as P
-import Agora.Utils (pisValueSubset)
 
 {- | Validator ensuring that transactions consuming the treasury
      do so in a valid manner.
@@ -59,7 +58,7 @@ treasuryV = plam $ \d r ctx' -> P.do
       -- Amount of value treasury has after transaction.
       let valueTrOut = undefined
 
-      let vOutExceedsVIn = pisValueSubset # valueTrIn # valueTrOut
+      let vOutExceedsVIn = undefined
 
       pif
         (vOutExceedsVIn)

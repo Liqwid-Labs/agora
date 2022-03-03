@@ -122,7 +122,11 @@ library
     Agora.Treasury
     Agora.Voting
 
-  other-modules:   Agora.Utils
+  other-modules:   
+    Agora.Utils
+    Agora.Utils.Value
+    Plutarch.Extra.Map
+
   hs-source-dirs:  src
 
 library pprelude
