@@ -60,7 +60,7 @@ newtype PTreasuryDatum (s :: S)
 {- | Plutarch level type representing valid redeemers of the
      treasury.
 -}
-data PTreasuryRedeemer (s :: S)
+newtype PTreasuryRedeemer (s :: S)
   = -- | Alters treasury parameters (subject to the burning of a
     --   governance authority token).
     PAlterTrParams (Term s (PDataRecord '[]))

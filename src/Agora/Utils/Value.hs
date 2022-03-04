@@ -27,7 +27,7 @@ pmapAll ::
   (PUnsafeLiftDecl v, PIsData v) =>
   Term s ((v :--> PBool) :--> PMap k v :--> PBool)
 pmapAll = plam $ \f m -> P.do
-  PMap builtinMap <- pmatch $ m
+  PMap builtinMap <- pmatch m
 
   let getV = plam $ \bip -> P.do
         let tuple = pfromData $ ptupleFromBuiltin (pdata bip)
