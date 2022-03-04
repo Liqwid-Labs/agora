@@ -8,7 +8,7 @@ treasury.
 -}
 module Agora.Treasury (module Agora.Treasury) where
 
-import Agora.Utils (passetClassValueOf)
+import Agora.Utils (passert, passetClassValueOf)
 import GHC.Generics qualified as GHC
 import Generics.SOP
 import Plutarch.Api.V1.Contexts (PScriptContext, PScriptPurpose (PMinting))
@@ -52,10 +52,9 @@ treasuryV cs tn = plam $ \_d r ctx' -> P.do
       gatAmountMinted :: Term s PInteger
       gatAmountMinted = passetClassValueOf # pconstant cs # pconstant tn # mint
 
-  pif
-    (gatAmountMinted #== -1) -- If the amount of GATS burned is not one, ...
-    (ptraceError "GAT not burned.") -- ... then error.
-    (pconstant ()) -- ... else success.
+  passert "GAT not burned." $ gatAmountMinted #== -1
+
+  pconstant ()
 
 {- | Plutarch level type representing datum of the treasury.
      Contains:
