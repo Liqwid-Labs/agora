@@ -55,8 +55,8 @@ The script for an Agora treasury is described in this section. For clarity, all 
 ### Datum
 
 ```hs
-newtype TreasuryDtum = TreasuryDatum
-  { -- | Currency symbol of the treasury state thread. 
+newtype TreasuryDatum = TreasuryDatum
+  { -- | Currency symbol of the treasury state thread.
     stateThread :: CurrencySymbol
   }
 ```
@@ -64,16 +64,16 @@ newtype TreasuryDtum = TreasuryDatum
 ### Redeemers
 
 ```hs
-newtype TreasuryRedeemer = AlterTrParams
+newtype TreasuryRedeemer = AlterTreasuryParams
 ```
 
-At the current stage, it is sufficient to allow users to simply grant funds to the treasury, without an explicit redeemer. The only redeemer that is required is `AlterTrParams`, for when the treasury's parameters are subject to change by a proposal effect.
+At the current stage, it is sufficient to allow users to simply grant funds to the treasury, without an explicit redeemer. The only redeemer that is required is `AlterTreasuryParams`, for when the treasury's parameters are subject to change by a proposal effect.
 
 ### Validators
 
 ```hs
 treasuryV ::
-  CurrencySymbol -> 
+  CurrencySymbol ->
   TreasuryDatum ->
   TreasuryRedeemer ->
   ScriptContext ->

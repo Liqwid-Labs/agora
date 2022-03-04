@@ -38,11 +38,11 @@ treasuryV cs tn = plam $ \_d r ctx' -> P.do
   -- plet required fields from script context.
   ctx <- pletFields @["txInfo", "purpose"] ctx'
 
-  -- Ensure redeemer type is valid.
-  PAlterTrParams _ <- pmatch $ pfromData r
-
   -- Ensure that script is for burning i.e. minting a negative amount.
   PMinting _ <- pmatch ctx.purpose
+
+  -- Ensure redeemer type is valid.
+  PAlterTreasuryParams _ <- pmatch $ pfromData r
 
   -- Get the minted value from txInfo.
   txInfo' <- plet ctx.txInfo
@@ -84,7 +84,7 @@ newtype PTreasuryDatum (s :: S)
 newtype PTreasuryRedeemer (s :: S)
   = -- | Alters treasury parameters, subject to the burning of a
     --   governance authority token.
-    PAlterTrParams (Term s (PDataRecord '[]))
+    PAlterTreasuryParams (Term s (PDataRecord '[]))
   deriving stock (GHC.Generic)
   deriving anyclass (Generic, PIsDataRepr)
   deriving
