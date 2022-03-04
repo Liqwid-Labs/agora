@@ -80,7 +80,8 @@ When voting on a proposal, a user can check which stakes have delegated to them 
 
 ## Destroying stake
 
-In order to recover the ADA and potentially any other funds sent on accident, Stake UTXOs must be destroyable. For the same reasons as for withdrawing and depositing, the Stake must not be locked by a proposal when destroying it.
+In order to recover the ADA spent on creating the stake UTXO (and any other funds, which may have been locked by accident), stake UTXOs must be destroyable. As is the case with the depositing and withdrawal of GT from a stake, the stake must *not* be locked by any proposals, before it may be destroyed.
+
 
 ## Staking pool
 
