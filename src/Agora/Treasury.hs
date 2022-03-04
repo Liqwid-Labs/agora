@@ -8,19 +8,25 @@ treasury.
 -}
 module Agora.Treasury (module Agora.Treasury) where
 
+import Agora.Utils (passetClassValueOf)
 import GHC.Generics qualified as GHC
 import Generics.SOP
-import Plutarch.Api.V1.Contexts (PScriptContext)
-import Plutarch.Api.V1.Value (PCurrencySymbol)
+import Plutarch.Api.V1.Contexts (PScriptContext, PScriptPurpose (PMinting))
+import Plutarch.Api.V1.Value (PCurrencySymbol, PValue)
 import Plutarch.DataRepr (
   PDataFields,
   PIsDataReprInstances (PIsDataReprInstances),
  )
+import Plutarch.Monadic qualified as P
+import Plutus.V1.Ledger.Value (CurrencySymbol, TokenName)
 
 {- | Validator ensuring that transactions consuming the treasury
      do so in a valid manner.
 -}
 treasuryV ::
+  forall {s :: S}.
+  CurrencySymbol ->
+  TokenName ->
   Term
     s
     ( PAsData PTreasuryDatum
@@ -28,13 +34,28 @@ treasuryV ::
         :--> PAsData PScriptContext
         :--> PUnit
     )
-treasuryV = plam $ \_d r _ctx' -> P.do
-  pmatch (pfromData r) $ \case
-    -- Redeemer seeking to alter treasury parameters. Must ensure
-    -- a valid GAT is burned in the transaction.
-    PAlterTrParams _ ->
-      -- TODO: Implement.
-      ptraceError "Altering treasury parameters is not currently supported."
+treasuryV cs tn = plam $ \_d r ctx' -> P.do
+  -- plet required fields from script context.
+  ctx <- pletFields @["txInfo", "purpose"] ctx'
+
+  -- Ensure redeemer type is valid.
+  PAlterTrParams _ <- pmatch $ pfromData r
+
+  -- Ensure that script is for burning i.e. minting a negative amount.
+  PMinting _ <- pmatch ctx.purpose
+
+  -- Get the minted value from txInfo.
+  txInfo' <- plet ctx.txInfo
+  txInfo <- pletFields @'["mint"] txInfo'
+  let mint :: Term s PValue
+      mint = txInfo.mint
+      gatAmountMinted :: Term s PInteger
+      gatAmountMinted = passetClassValueOf # (pconstant cs) # (pconstant tn) # mint
+
+  pif
+    (gatAmountMinted #== -1) -- If the amount of GATS burned is not one, ...
+    (ptraceError "GAT not burned.") -- ... then error.
+    (pconstant ()) -- ... else success.
 
 {- | Plutarch level type representing datum of the treasury.
      Contains:
@@ -61,8 +82,8 @@ newtype PTreasuryDatum (s :: S)
      treasury.
 -}
 newtype PTreasuryRedeemer (s :: S)
-  = -- | Alters treasury parameters (subject to the burning of a
-    --   governance authority token).
+  = -- | Alters treasury parameters, subject to the burning of a
+    --   governance authority token.
     PAlterTrParams (Term s (PDataRecord '[]))
   deriving stock (GHC.Generic)
   deriving anyclass (Generic, PIsDataRepr)
