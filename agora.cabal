@@ -125,6 +125,8 @@ library
   other-modules:
     Agora.Utils
     Agora.Utils.Value
+    Plutarch.Api.V1.These
+    Plutarch.These
 
   hs-source-dirs:  src
 

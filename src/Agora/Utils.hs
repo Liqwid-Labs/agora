@@ -1,5 +1,3 @@
-{-# OPTIONS_GHC -Wwarn #-}
-
 {- |
 Module     : Agora.Utils
 Maintainer : emi@haskell.fyi
@@ -52,8 +50,6 @@ import Plutarch.Api.V1 (
   PTxOutRef,
   PValue (PValue),
  )
-import Plutarch.Api.V1.Tuple (ptupleFromBuiltin)
-import Plutarch.Bool (pand)
 import Plutarch.Builtin (ppairDataBuiltin)
 import Plutarch.Internal (punsafeCoerce)
 import Plutarch.Monadic qualified as P
@@ -258,59 +254,6 @@ pfindTxInByTxOutRef = phoistAcyclic $
                     (pcon PNothing)
           )
         #$ (pfield @"inputs" # txInfo)
-
--- -- | Determines if a value is a subset of another.
--- pisValueSubset :: Term s (PValue :--> PValue :--> PBool)
--- pisValueSubset = plam $ \v0 _v1 -> P.do
---   -- v0Map :: Term s (PMap PCurrencySymbol (PMap PTokenName PInteger))
---   PValue v0Map <- pmatch v0
-
---   -- v0BuiltinMap :: Term s (PBuiltinMap k v)
---   PMap v0BuiltinMap <- pmatch v0Map
-
---   -- ks0 :: Term s (PBuiltinList PCurrencySymbol)
---   let ks0 = pmap # pfstBuiltin # v0BuiltinMap
---   pconstant True
-
--- -- | Determines if a PTokenName/PInteger pmap is a subset of another.
--- pisTnISubset ::
---   Term
---     s
---     ( PMap PTokenName PInteger
---         :--> PMap PTokenName PInteger
---         :--> PBool
---     )
--- pisTnISubset = plam $ \m0 m1 -> P.do
---   -- m0BuiltinMap :: Term s (PBuiltinMap PTokenName PInteger)
---   PMap m0BuiltinMap <- pmatch m0
-
---   -- ks0 :: Term s (PBuiltinList PTokenName)
---   let ks0 = pmap # pfstBuiltin # m0BuiltinMap
---   pconstant True
-
--- pcompareKeys ::
---   Term
---     s
---     ( PBuiltinList k
---         :--> PMap k v
---         :--> PMap k v
---         :--> PBool
---     )
--- pcompareKeys = plam $ \ks m0' m1' -> P.do
---   PMap m0 <- m0'
---   PMap m1 <- m1'
---   bs <- pmatch $ pmap # f # ks
---   pconstant True
-
--- f :: Term s (k :--> PMap k v :--> PMap k v :--> PBool)
--- f = plam $ \k m0' m1' -> P.do
---   PMap m0 <- m0'
---   PMap m1 <- m1'
---   pmatch (plookup # k # m1) $ \case
---     PNothing -> pconstant False
---     PJust n1 -> P.do
---       PJust n0 <- pmatch $ plookup # k # m0
---       n0 #<= n1
 
 --------------------------------------------------------------------------------
 -- Functions which should (probably) not be upstreamed

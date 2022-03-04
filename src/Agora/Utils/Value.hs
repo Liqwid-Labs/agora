@@ -1,46 +1,15 @@
-{-# OPTIONS_GHC -Wwarn #-}
+{-# OPTIONS_GHC -Wno-unused-imports #-}
+{-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
-module Agora.Utils.Value where
+module Agora.Utils.Value (pgeq, pleq, pgt, plt) where
 
-import GHC.Generics qualified as GHC
-import Generics.SOP
 import Plutarch.Api.V1.AssocMap (PMap (PMap))
-import Plutarch.Api.V1.Tuple (PTuple, ptupleFromBuiltin)
+import Plutarch.Api.V1.These (PTheseData (..))
+import Plutarch.Api.V1.Tuple (ptupleFromBuiltin)
 import Plutarch.Api.V1.Value (PCurrencySymbol, PTokenName, PValue)
-import Plutarch.DataRepr (PIsDataReprInstances (PIsDataReprInstances))
-import Plutarch.Lift (PLifted, PUnsafeLiftDecl)
+import Plutarch.Lift (PUnsafeLiftDecl)
+import Plutarch.List (pconvertLists)
 import Plutarch.Monadic qualified as P
-import Plutus.V1.Ledger.Api qualified as Plutus
-import PlutusTx.These qualified as PlutusThese
-
--- data PThese (a :: PType) (b :: PType) (s :: S)
---   = PThis (Term s a)
---   | PThat (Term s b)
---   | PThese (Term s a) (Term s b)
---   deriving stock (GHC.Generic)
---   deriving anyclass (Generic, PlutusType)
-
-data PTheseData (a :: PType) (b :: PType) (s :: S)
-  = PDThis (Term s (PDataRecord '["_0" ':= a]))
-  | PDThat (Term s (PDataRecord '["_0" ':= b]))
-  | PDThese (Term s (PDataRecord '["_0" ':= a, "_1" ':= b]))
-  deriving stock (GHC.Generic)
-  deriving anyclass (Generic, PIsDataRepr)
-  deriving
-    (PlutusType, PIsData)
-    via PIsDataReprInstances (PTheseData a b)
-
-instance
-  ( Plutus.ToData (PLifted a)
-  , Plutus.ToData (PLifted b)
-  , Plutus.FromData (PLifted a)
-  , Plutus.FromData (PLifted b)
-  , PLift a
-  , PLift b
-  ) =>
-  PUnsafeLiftDecl (PTheseData a b)
-  where
-  type PLifted (PTheseData a b) = PlutusThese.These (PLifted a) (PLifted b)
 
 punionVal ::
   Term
@@ -60,10 +29,9 @@ pmapAll ::
 pmapAll = plam $ \f m -> P.do
   PMap builtinMap <- pmatch $ m
 
-  let getV :: PIsData v => Term s (PBuiltinPair (PAsData k) (PAsData v) :--> v)
-      getV = plam $ \bip -> P.do
+  let getV = plam $ \bip -> P.do
         let tuple = pfromData $ ptupleFromBuiltin (pdata bip)
-        pfield @"_1" # tuple
+        pfromData $ pfield @"_1" # tuple
 
   let vs = pmap # getV # builtinMap
   pall # f # vs
@@ -77,10 +45,12 @@ pcheckPred ::
         :--> PValue
         :--> PBool
     )
-pcheckPred = plam $ \f l r -> P.do
-  let inner :: Term s (PMap PTokenName (PTheseData PInteger PInteger) :--> PBool)
-      inner = pmapAll # f
-  pmapAll # inner # (punionVal # l # r)
+pcheckPred = plam $ \_f _l _r -> P.do
+  undefined
+
+--  let inner :: Term s (PMap PTokenName (PTheseData PInteger PInteger) :--> PBool)
+--      inner = pmapAll # f
+--  pmapAll # inner # (punionVal # l # r)
 
 pcheckBinRel ::
   forall {s :: S}.
@@ -100,8 +70,24 @@ pcheckBinRel = plam $ \f l r -> P.do
           PDThese r -> f # (pfield @"_0" # r) # (pfield @"_1" # r)
   pcheckPred # unThese # l # r
 
+-- | Establishes if a value is less than or equal to another.
 pleq :: Term s (PValue :--> PValue :--> PBool)
 pleq = plam $ \v0 v1 -> (pcheckBinRel # pleq') # v0 # v1
 
 pleq' :: Term s (PInteger :--> PInteger :--> PBool)
 pleq' = plam $ \m n -> m #<= n
+
+-- | Establishes if a value is strictly less than another.
+plt :: Term s (PValue :--> PValue :--> PBool)
+plt = plam $ \v0 v1 -> (pcheckBinRel # plt') # v0 # v1
+
+plt' :: Term s (PInteger :--> PInteger :--> PBool)
+plt' = plam $ \m n -> m #< n
+
+-- | Establishes if a value is greater than or equal to another.
+pgeq :: Term s (PValue :--> PValue :--> PBool)
+pgeq = plam $ \v0 v1 -> pnot #$ plt # v0 # v1
+
+-- | Establishes if a value is strictly greater than another.
+pgt :: Term s (PValue :--> PValue :--> PBool)
+pgt = plam $ \v0 v1 -> pnot #$ pleq # v0 # v1
