@@ -50,7 +50,7 @@ treasuryV cs tn = plam $ \_d r ctx' -> P.do
   let mint :: Term s PValue
       mint = txInfo.mint
       gatAmountMinted :: Term s PInteger
-      gatAmountMinted = passetClassValueOf # (pconstant cs) # (pconstant tn) # mint
+      gatAmountMinted = passetClassValueOf # pconstant cs # pconstant tn # mint
 
   pif
     (gatAmountMinted #== -1) -- If the amount of GATS burned is not one, ...
