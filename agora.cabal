@@ -122,10 +122,9 @@ library
     Agora.Treasury
     Agora.Voting
 
-  other-modules:   
+  other-modules:
     Agora.Utils
     Agora.Utils.Value
-    Plutarch.Extra.Map
 
   hs-source-dirs:  src
 
