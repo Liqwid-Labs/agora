@@ -215,6 +215,7 @@ stakeValidator stake =
     PJust txInInfo <- pmatch $ pfindTxInByTxOutRef # (pfield @"_0" # txOutRef) # txInfo'
     ownAddress <- plet $ pfield @"address" #$ pfield @"resolved" # txInInfo
     let continuingValue = pfield @"value" #$ pfield @"resolved" # txInInfo
+    ownerSignsTransaction <- plet $ ptxSignedBy # ctx.txInfo # stakeDatum.owner
     stCurrencySymbol <- plet $ pconstant $ mintingPolicySymbol $ mkMintingPolicy (stakePolicy stake)
     mintedST <- plet $ psymbolValueOf # stCurrencySymbol # txInfo.mint
     spentST <- plet $ psymbolValueOf # stCurrencySymbol #$ pvalueSpent # txInfo'
@@ -227,12 +228,18 @@ stakeValidator stake =
           mintedST #== -1
         passert "Stake unlocked" $
           pnot #$ stakeLocked # stakeDatum'
+        passert
+          "Owner signs this transaction"
+          ownerSignsTransaction
         popaque (pconstant ())
       PDepositWithdraw r -> P.do
         passert "ST at inputs must be 1" $
           spentST #== 1
         passert "Stake unlocked" $
           pnot #$ stakeLocked # stakeDatum'
+        passert
+          "Owner signs this transaction"
+          ownerSignsTransaction
         passert "A UTXO must exist with the correct output" $
           anyOutput @(PStakeDatum gt) # txInfo'
             #$ plam

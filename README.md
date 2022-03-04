@@ -18,7 +18,7 @@ Non-goals:
 
 An up to date version of the [Nix package manager](nixos.org) (>=2.3) is required to build this project. For information on how to install, see the [NixOS website](https://nixos.org/download.html). Important: see also [this section](https://github.com/input-output-hk/plutus#nix-advice) on binary caches.
 
-Open a development shell with `nix develop` and build the project with `cabal build`. Those pained by the need to remember to enter a Nix shell may consider using [nix-direnv](https://github.com/nix-community/nix-direnv). 
+Open a development shell with `nix develop` and build the project with `cabal build`. Those pained by the need to remember to enter a Nix shell may consider using [nix-direnv](https://github.com/nix-community/nix-direnv).
 
 ## Documentation
 
@@ -87,10 +87,6 @@ The treasury of a governance system is responsible for determining which users a
 ### Stakes
 
 Users are required to 'lock' their GT in stakes, so that the system has some idea of their eligibility to vote on proposal.
-
-### Staking pool
-
-A staking pool can be introduced, for the purpose of tracking the aggregate status of all stakes in the system. Some systems may not require a staking pool.
 
 ### Proposal
 
