@@ -46,7 +46,7 @@ multiSigValidator params =
     let signatories = pfield @"signatories" # ctx.txInfo
     passert "The amount of required signatures is not met."
       ((fromInteger params.minSigs) #<= (plength #$ pfilter
-          # (plam $ \a ->
-              (pelem # pdata a # pfromData signatories))
+          # (plam \a ->
+              pelem # pdata a # pfromData signatories)
           # pcon params.keys))
       (pconstant ())
