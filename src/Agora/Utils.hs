@@ -25,7 +25,9 @@ module Agora.Utils (
 
   -- * Functions which should (probably) not be upstreamed
   anyOutput,
+  allOutputs,
   anyInput,
+  allInputs,
 ) where
 
 --------------------------------------------------------------------------------
@@ -256,7 +258,9 @@ pfindTxInByTxOutRef = phoistAcyclic $
         #$ (pfield @"inputs" # txInfo)
 
 --------------------------------------------------------------------------------
--- Functions which should (probably) not be upstreamed
+{- Functions which should (probably) not be upstreamed
+   All of these functions are quite inefficient.
+-}
 
 -- | Check if any output matches the predicate.
 anyOutput ::
@@ -276,6 +280,28 @@ anyOutput = phoistAcyclic $
             pmatch (pfindDatum' @datum # (pfield @"_0" # dh) # txInfo') $ \case
               PJust datum -> P.do
                 predicate # txOut.value # txOut.address # pfromData datum
+              PNothing -> pcon PFalse
+        )
+      # pfromData txInfo.outputs
+
+-- | Check if all outputs match the predicate.
+allOutputs ::
+  forall (datum :: PType) s.
+  ( PIsData datum
+  ) =>
+  Term s (PTxInfo :--> (PTxOut :--> PValue :--> PAddress :--> datum :--> PBool) :--> PBool)
+allOutputs = phoistAcyclic $
+  plam $ \txInfo' predicate -> P.do
+    txInfo <- pletFields @'["outputs"] txInfo'
+    pall
+      # plam
+        ( \txOut'' -> P.do
+            PTxOut txOut' <- pmatch (pfromData txOut'')
+            txOut <- pletFields @'["value", "datumHash", "address"] txOut'
+            PDJust dh <- pmatch txOut.datumHash
+            pmatch (pfindDatum' @datum # (pfield @"_0" # dh) # txInfo') $ \case
+              PJust datum -> P.do
+                predicate # (pfromData txOut'') # txOut.value # txOut.address # pfromData datum
               PNothing -> pcon PFalse
         )
       # pfromData txInfo.outputs
@@ -300,6 +326,30 @@ anyInput = phoistAcyclic $
             pmatch (pfindDatum' @datum # (pfield @"_0" # dh) # txInfo') $ \case
               PJust datum -> P.do
                 predicate # txOut.value # txOut.address # pfromData datum
+              PNothing -> pcon PFalse
+        )
+      # pfromData txInfo.inputs
+
+-- | Check if all (resolved) inputs match the predicate.
+allInputs ::
+  forall (datum :: PType) s.
+  ( PIsData datum
+  ) =>
+  Term s (PTxInfo :--> (PTxOut :--> PValue :--> PAddress :--> datum :--> PBool) :--> PBool)
+allInputs = phoistAcyclic $
+  plam $ \txInfo' predicate -> P.do
+    txInfo <- pletFields @'["inputs"] txInfo'
+    pall
+      # plam
+        ( \txInInfo'' -> P.do
+            PTxInInfo txInInfo' <- pmatch (pfromData txInInfo'')
+            let txOut'' = pfield @"resolved" # txInInfo'
+            PTxOut txOut' <- pmatch (pfromData txOut'')
+            txOut <- pletFields @'["value", "datumHash", "address"] txOut'
+            PDJust dh <- pmatch txOut.datumHash
+            pmatch (pfindDatum' @datum # (pfield @"_0" # dh) # txInfo') $ \case
+              PJust datum -> P.do
+                predicate # pfromData txOut'' # txOut.value # txOut.address # pfromData datum
               PNothing -> pcon PFalse
         )
       # pfromData txInfo.inputs

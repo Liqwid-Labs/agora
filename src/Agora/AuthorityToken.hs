@@ -32,7 +32,7 @@ import Prelude
 
 --------------------------------------------------------------------------------
 
-import Agora.Utils (passert, passetClassValueOf, passetClassValueOf', plookup)
+import Agora.Utils (allOutputs, passert, passetClassValueOf, passetClassValueOf', plookup)
 
 --------------------------------------------------------------------------------
 
@@ -113,5 +113,13 @@ authorityTokenPolicy params =
       let mintedATs = passetClassValueOf # ownSymbol # pconstant "" # mintedValue
       pif
         (0 #< mintedATs)
-        (passert "Authority token did not move in minting GATs" tokenMoved (pconstant ()))
+        ( P.do
+            passert "Parent token did not move in minting GATs" tokenMoved
+            passert "All outputs only emit valid GATs" $
+              allOutputs @PUnit # pfromData ctx.txInfo #$ plam $ \txOut _value _address _datum ->
+                authorityTokensValidIn
+                  # ownSymbol
+                  # txOut
+            pconstant ()
+        )
         (pconstant ())

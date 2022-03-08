@@ -8,7 +8,6 @@ treasury.
 -}
 module Agora.Treasury (module Agora.Treasury) where
 
-import Agora.Utils (passert, passetClassValueOf)
 import GHC.Generics qualified as GHC
 import Generics.SOP
 import Plutarch.Api.V1.Contexts (PScriptContext, PScriptPurpose (PMinting))
@@ -18,7 +17,12 @@ import Plutarch.DataRepr (
   PIsDataReprInstances (PIsDataReprInstances),
  )
 import Plutarch.Monadic qualified as P
-import Plutus.V1.Ledger.Value (CurrencySymbol, TokenName)
+import Plutus.V1.Ledger.Value (CurrencySymbol)
+
+--------------------------------------------------------------------------------
+
+import Agora.AuthorityToken (authorityTokensValidIn)
+import Agora.Utils (allInputs, passert, psymbolValueOf)
 
 {- | Validator ensuring that transactions consuming the treasury
      do so in a valid manner.
@@ -26,7 +30,6 @@ import Plutus.V1.Ledger.Value (CurrencySymbol, TokenName)
 treasuryV ::
   forall {s :: S}.
   CurrencySymbol ->
-  TokenName ->
   Term
     s
     ( PAsData PTreasuryDatum
@@ -34,7 +37,7 @@ treasuryV ::
         :--> PAsData PScriptContext
         :--> PUnit
     )
-treasuryV cs tn = plam $ \_d r ctx' -> P.do
+treasuryV cs = plam $ \_d r ctx' -> P.do
   -- plet required fields from script context.
   ctx <- pletFields @["txInfo", "purpose"] ctx'
 
@@ -50,9 +53,15 @@ treasuryV cs tn = plam $ \_d r ctx' -> P.do
   let mint :: Term s PValue
       mint = txInfo.mint
       gatAmountMinted :: Term s PInteger
-      gatAmountMinted = passetClassValueOf # pconstant cs # pconstant tn # mint
+      gatAmountMinted = psymbolValueOf # pconstant cs # mint
 
   passert "GAT not burned." $ gatAmountMinted #== -1
+
+  passert "All inputs only have valid GATs" $
+    allInputs @PUnit # pfromData ctx.txInfo #$ plam $ \txOut _value _address _datum ->
+      authorityTokensValidIn
+        # pconstant cs
+        # txOut
 
   pconstant ()
 
