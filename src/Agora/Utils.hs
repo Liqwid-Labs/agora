@@ -301,7 +301,7 @@ allOutputs = phoistAcyclic $
             PDJust dh <- pmatch txOut.datumHash
             pmatch (pfindDatum' @datum # (pfield @"_0" # dh) # txInfo') $ \case
               PJust datum -> P.do
-                predicate # (pfromData txOut'') # txOut.value # txOut.address # pfromData datum
+                predicate # pfromData txOut'' # txOut.value # txOut.address # pfromData datum
               PNothing -> pcon PFalse
         )
       # pfromData txInfo.outputs

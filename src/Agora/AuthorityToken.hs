@@ -76,7 +76,8 @@ authorityTokensValidIn = phoistAcyclic $
           PScriptCredential ((pfromData . (pfield @"_0" #)) -> cred) -> P.do
             PMap tokenMap <- pmatch tokenMap'
             pall
-              # ( plam $ \pair ->
+              # plam
+                ( \pair ->
                     pforgetData (pfstBuiltin # pair) #== pforgetData (pdata cred)
                 )
               # tokenMap
