@@ -3,6 +3,8 @@ Module     : Agora.MultiSig
 Maintainer : riley_kilgore@outlook.com
 Description: A basic N of M multisignature validation function.
 -}
+{-# LANGUAGE TemplateHaskell     #-}
+
 module Agora.MultiSig (
   validatedByMultisig,
   pvalidatedByMultisig,
@@ -14,12 +16,18 @@ import Plutarch.Api.V1 (
   PScriptContext (..),
  )
 import Plutarch.DataRepr (
+  DerivePConstantViaData (DerivePConstantViaData),
   PDataFields,
   PIsDataReprInstances (PIsDataReprInstances),
+ )
+import Plutarch.Lift (
+  PLifted,
+  PUnsafeLiftDecl,
  )
 import Plutarch.Monadic qualified as P
 
 import Plutus.V1.Ledger.Crypto (PubKeyHash)
+import qualified PlutusTx
 
 --------------------------------------------------------------------------------
 
@@ -39,6 +47,9 @@ data MultiSig = MultiSig
   } deriving stock (GHC.Generic)
     deriving anyclass (Generic)
 
+PlutusTx.makeLift ''MultiSig
+PlutusTx.unstableMakeIsData ''MultiSig
+
 newtype PMultiSig (s :: S) = PMultiSig
   { getMultiSig ::
     Term s (PDataRecord '[ "keys" ':= PBuiltinList (PAsData PPubKeyHash)
@@ -51,28 +62,15 @@ newtype PMultiSig (s :: S) = PMultiSig
     (PlutusType, PIsData, PDataFields)
     via (PIsDataReprInstances PMultiSig)
 
---------------------------------------------------------------------------------
-pubKeysToPPubKeys ::
-  forall s. [PubKeyHash] -> PBuiltinList (PAsData PPubKeyHash) s
-pubKeysToPPubKeys xs = case xs of
-  x:xs' ->
-    let x' :: Term s (PAsData PPubKeyHash)
-        x' = pconstantData x
-    in
-    PCons x' (pcon $ pubKeysToPPubKeys xs')
-  []    ->
-    PNil
+instance PUnsafeLiftDecl PMultiSig where type PLifted PMultiSig = MultiSig
+deriving via (DerivePConstantViaData MultiSig PMultiSig) instance (PConstant MultiSig)
 
-multisigToPMultisig :: forall s. MultiSig -> Term s PMultiSig
-multisigToPMultisig m =
-    pcon $ PMultiSig (pdcons @"keys" @(PBuiltinList (PAsData PPubKeyHash))
-      # (pdata $ pcon (pubKeysToPPubKeys m.keys))
-      #$ pdcons @"minSigs" @PInteger # (pdata $ fromInteger m.minSigs) # pdnil)
+--------------------------------------------------------------------------------
 
 validatedByMultisig :: MultiSig -> Term s (PScriptContext :--> PBool)
 validatedByMultisig params =
   plam $ \ctx' -> P.do
-    pvalidatedByMultisig # (multisigToPMultisig params) # ctx'
+    pvalidatedByMultisig # (pconstant params) # ctx'
 
 pvalidatedByMultisig :: Term s (PMultiSig :--> PScriptContext :--> PBool)
 pvalidatedByMultisig =
