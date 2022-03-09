@@ -110,7 +110,8 @@ common test-deps
     , QuickCheck
     , quickcheck-instances
     , tasty
-    , tasty-quickcheck
+    , tasty-hedgehog
+    , apropos-tx
 
 library
   import:          lang, deps
@@ -128,7 +129,7 @@ library
     Plutarch.Api.V1.These
     Plutarch.These
 
-  hs-source-dirs:  src
+  hs-source-dirs:  agora
 
 library pprelude
   build-depends:
@@ -136,18 +137,20 @@ library pprelude
     , plutarch
 
   exposed-modules:  PPrelude
-  hs-source-dirs:   src
+  hs-source-dirs:   agora
   default-language: Haskell2010
 
 test-suite agora-test
   import:         lang, deps, test-deps
   type:           exitcode-stdio-1.0
   main-is:        Spec.hs
-  hs-source-dirs: test
+  hs-source-dirs: agora-test
+  other-modules:
+    Spec.Int
 
 benchmark agora-bench
   import:         lang, deps
-  hs-source-dirs: bench
+  hs-source-dirs: agora-bench
   main-is:        Main.hs
   type:           exitcode-stdio-1.0
   build-depends:
