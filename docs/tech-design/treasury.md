@@ -2,7 +2,7 @@
 
 | Specification | Implementation    | Last revision |
 |:-----------:|:--------------:|:-------------:|
-| WIP         |  WIP           | v0.1 2022-02-07 |
+| Draft         |  WIP           | v0.1 2022-03-04 |
 
 ---
 
@@ -12,7 +12,7 @@
 
 -   [Jack Hodgkinson]
 
-**Implementation ownership:** _unassigned_
+**Implementation ownership:** [Jack Hodgkinson]
 
 [Jack Hodgkinson]: https://github.com/jhodgdev
 
@@ -20,7 +20,8 @@
 
 **Current Status**:
 
-Initial conceptual draft. Requires review from [Emily Martins].
+-   Conceptual draft agreed upon.
+-   Implementation incomplete; documentation subject to change.
 
 ---
 
@@ -46,3 +47,37 @@ The treasury will further be the initial holder of all a governance system's GT.
 3.  How much do they receive in their reward?
 
 are all, naturally, protocol-specific. A simple method for creating such a bespoke reward structure is **not** considered in-scope for Agora v1. Agora v1 will offer a simple, prescribed reward structure, that allows the treasury to determine the reward eligibility of a user and allow them to redeem said amount.
+
+## Script
+
+The script for an Agora treasury is described in this section. For clarity, all data types and functions are written in _traditional Haskell_, rather than at the Plutarch level.
+
+### Datum
+
+```hs
+newtype TreasuryDatum = TreasuryDatum
+  { -- | Currency symbol of the treasury state thread.
+    stateThread :: CurrencySymbol
+  }
+```
+
+### Redeemers
+
+```hs
+newtype TreasuryRedeemer = AlterTreasuryParams
+```
+
+At the current stage, it is sufficient to allow users to simply grant funds to the treasury, without an explicit redeemer. The only redeemer that is required is `AlterTreasuryParams`, for when the treasury's parameters are subject to change by a proposal effect.
+
+### Validators
+
+```hs
+treasuryV ::
+  CurrencySymbol ->
+  TreasuryDatum ->
+  TreasuryRedeemer ->
+  ScriptContext ->
+  ()
+```
+
+The only redeemer the validator handles at present is `AlterTrParams`. The validator ensures that a valid governance authority token is burned, when a proposal effect is attempting to alter the parameters of the treasury.

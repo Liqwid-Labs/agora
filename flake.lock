@@ -440,6 +440,8 @@
         "hpc-coveralls": "hpc-coveralls",
         "nix-tools": "nix-tools",
         "nixpkgs": [
+          "plutarch",
+          "haskell-nix",
           "nixpkgs-2111"
         ],
         "nixpkgs-2003": "nixpkgs-2003",

@@ -75,10 +75,10 @@ common lang
     TypeFamilies
     TypeOperators
     TypeSynonymInstances
+    UndecidableInstances
     ViewPatterns
     OverloadedRecordDot
     QualifiedDo
-    UndecidableInstances
 
   default-language:   Haskell2010
 
@@ -119,9 +119,15 @@ library
     Agora.SafeMoney
     Agora.SafeMoney.QQ
     Agora.Stake
+    Agora.Treasury
     Agora.Voting
 
-  other-modules:   Agora.Utils
+  other-modules:
+    Agora.Utils
+    Agora.Utils.Value
+    Plutarch.Api.V1.These
+    Plutarch.These
+
   hs-source-dirs:  src
 
 library pprelude

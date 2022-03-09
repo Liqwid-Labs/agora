@@ -7,16 +7,23 @@ Tokens acting as redeemable proofs of DAO authority.
 -}
 module Agora.AuthorityToken (
   authorityTokenPolicy,
+  authorityTokensValidIn,
   AuthorityToken (..),
 ) where
 
 import Plutarch.Api.V1 (
+  PAddress (..),
+  PCredential (..),
+  PCurrencySymbol (..),
+  PMap (..),
   PScriptContext (..),
   PScriptPurpose (..),
   PTxInInfo (..),
   PTxInfo (..),
   PTxOut (..),
+  PValue (..),
  )
+import Plutarch.Builtin (pforgetData)
 import Plutarch.List (pfoldr')
 import Plutarch.Monadic qualified as P
 import Plutus.V1.Ledger.Value (AssetClass)
@@ -25,7 +32,7 @@ import Prelude
 
 --------------------------------------------------------------------------------
 
-import Agora.Utils (passert, passetClassValueOf, passetClassValueOf')
+import Agora.Utils (allOutputs, passert, passetClassValueOf, passetClassValueOf', plookup)
 
 --------------------------------------------------------------------------------
 
@@ -41,6 +48,42 @@ newtype AuthorityToken = AuthorityToken
   }
 
 --------------------------------------------------------------------------------
+
+{- | Check that all GATs are valid in a particular TxOut.
+     How this is checked: an AuthorityToken should never leave
+     the Effect it was initially sent to, so we simply check that
+     the script address the token resides in matches the TokenName.
+     Since the TokenName was tagged upon mint with the Effect script
+     it was sent to, this is enough to prove validity.
+
+     In other words, check that all assets of a particular currency symbol
+     are tagged with a TokenName that matches where they live.
+-}
+authorityTokensValidIn :: Term s (PCurrencySymbol :--> PTxOut :--> PBool)
+authorityTokensValidIn = phoistAcyclic $
+  plam $ \authorityTokenSym txOut'' -> P.do
+    PTxOut txOut' <- pmatch txOut''
+    txOut <- pletFields @'["address", "value"] $ txOut'
+    PAddress address <- pmatch txOut.address
+    PValue value' <- pmatch txOut.value
+    PMap value <- pmatch value'
+    pmatch (plookup # pdata authorityTokenSym # value) $ \case
+      PJust (pfromData -> tokenMap') ->
+        pmatch (pfield @"credential" # address) $ \case
+          PPubKeyCredential _ ->
+            -- GATs should only be sent to Effect validators
+            pconstant False
+          PScriptCredential ((pfromData . (pfield @"_0" #)) -> cred) -> P.do
+            PMap tokenMap <- pmatch tokenMap'
+            pall
+              # plam
+                ( \pair ->
+                    pforgetData (pfstBuiltin # pair) #== pforgetData (pdata cred)
+                )
+              # tokenMap
+      PNothing ->
+        -- No GATs exist at this output!
+        pconstant True
 
 -- | Policy given 'AuthorityToken' params.
 authorityTokenPolicy ::
@@ -71,5 +114,13 @@ authorityTokenPolicy params =
       let mintedATs = passetClassValueOf # ownSymbol # pconstant "" # mintedValue
       pif
         (0 #< mintedATs)
-        (passert "Authority token did not move in minting GATs" tokenMoved (pconstant ()))
+        ( P.do
+            passert "Parent token did not move in minting GATs" tokenMoved
+            passert "All outputs only emit valid GATs" $
+              allOutputs @PUnit # pfromData ctx.txInfo #$ plam $ \txOut _value _address _datum ->
+                authorityTokensValidIn
+                  # ownSymbol
+                  # txOut
+            pconstant ()
+        )
         (pconstant ())
