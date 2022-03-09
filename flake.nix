@@ -80,7 +80,6 @@
             additional = ps: [
               ps.plutarch
               ps.plutarch-benchmark
-              ps.tasty-quickcheck
               ps.apropos-tx
             ];
           };

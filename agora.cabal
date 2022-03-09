@@ -111,6 +111,7 @@ common test-deps
     , quickcheck-instances
     , tasty
     , tasty-hedgehog
+    , tasty-hunit
     , apropos-tx
 
 library
@@ -147,6 +148,11 @@ test-suite agora-test
   hs-source-dirs: agora-test
   other-modules:
     Spec.Int
+    Spec.Sample.Stake
+    Spec.Stake
+
+  build-depends:
+    , agora
 
 benchmark agora-bench
   import:         lang, deps

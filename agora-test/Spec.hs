@@ -9,14 +9,21 @@ import Test.Tasty (defaultMain, testGroup)
 --------------------------------------------------------------------------------
 
 import Spec.Int
+import Spec.Stake qualified as Stake
 
 main :: IO ()
 main =
   defaultMain $
     testGroup
-      "apropos-tx"
+      "test suite"
       [ testGroup
-          "Int"
-          [ intPlutarchTests
+          "sample-tests"
+          Stake.tests
+      , testGroup
+          "apropos-tx"
+          [ testGroup
+              "Int"
+              [ intPlutarchTests
+              ]
           ]
       ]
