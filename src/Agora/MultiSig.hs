@@ -41,8 +41,8 @@ data MultiSig = MultiSig
 
 newtype PMultiSig (s :: S) = PMultiSig
   { getMultiSig ::
-    Term s (PDataRecord '[ "pkeys" ':= PBuiltinList (PAsData PPubKeyHash)
-                         , "pminSigs" ':= PInteger])
+    Term s (PDataRecord '[ "keys" ':= PBuiltinList (PAsData PPubKeyHash)
+                         , "minSigs" ':= PInteger])
   }
   deriving stock (GHC.Generic)
   deriving anyclass (Generic)
@@ -65,9 +65,9 @@ pubKeysToPPubKeys xs = case xs of
 
 multisigToPMultisig :: forall s. MultiSig -> Term s PMultiSig
 multisigToPMultisig m =
-    pcon $ PMultiSig (pdcons @"pkeys" @(PBuiltinList (PAsData PPubKeyHash))
+    pcon $ PMultiSig (pdcons @"keys" @(PBuiltinList (PAsData PPubKeyHash))
       # (pdata $ pcon (pubKeysToPPubKeys m.keys))
-      #$ pdcons @"pminSigs" @PInteger # (pdata $ fromInteger m.minSigs) # pdnil)
+      #$ pdcons @"minSigs" @PInteger # (pdata $ fromInteger m.minSigs) # pdnil)
 
 validatedByMultisig :: MultiSig -> Term s (PScriptContext :--> PBool)
 validatedByMultisig params =
@@ -78,12 +78,9 @@ pvalidatedByMultisig :: Term s (PMultiSig :--> PScriptContext :--> PBool)
 pvalidatedByMultisig =
   plam $ \multi' ctx' -> P.do
     ctx <- pletFields @'["txInfo", "purpose"] ctx'
-    multi <- pletFields @'["pkeys", "pminSigs"] multi'
+    multi <- pletFields @'["keys", "minSigs"] multi'
     let signatories = pfield @"signatories" # ctx.txInfo
-    pif
-      ((pfromData multi.pminSigs) #<= (plength #$ pfilter
-          # (plam $ \a ->
-              (pelem # a # pfromData signatories))
-          # multi.pkeys))
-      (pcon PTrue)
-      perror
+    ((pfromData multi.minSigs) #<= (plength #$ pfilter
+        # (plam $ \a ->
+            (pelem # a # pfromData signatories))
+        # multi.keys))
