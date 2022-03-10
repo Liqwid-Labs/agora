@@ -1,10 +1,10 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 {- |
 Module     : Agora.MultiSig
 Maintainer : riley_kilgore@outlook.com
 Description: A basic N of M multisignature validation function.
 -}
-{-# LANGUAGE TemplateHaskell     #-}
-
 module Agora.MultiSig (
   validatedByMultisig,
   pvalidatedByMultisig,
@@ -27,7 +27,7 @@ import Plutarch.Lift (
 import Plutarch.Monadic qualified as P
 
 import Plutus.V1.Ledger.Crypto (PubKeyHash)
-import qualified PlutusTx
+import PlutusTx qualified
 
 --------------------------------------------------------------------------------
 
@@ -41,19 +41,25 @@ import Prelude
      are present on a transaction.
 -}
 data MultiSig = MultiSig
-  { keys    :: [PubKeyHash]
+  { keys :: [PubKeyHash]
   -- ^ List of PubKeyHashes that must be present in the list of signatories.
   , minSigs :: Integer
-  } deriving stock (GHC.Generic)
-    deriving anyclass (Generic)
+  }
+  deriving stock (GHC.Generic)
+  deriving anyclass (Generic)
 
 PlutusTx.makeLift ''MultiSig
 PlutusTx.unstableMakeIsData ''MultiSig
 
 newtype PMultiSig (s :: S) = PMultiSig
   { getMultiSig ::
-    Term s (PDataRecord '[ "keys" ':= PBuiltinList (PAsData PPubKeyHash)
-                         , "minSigs" ':= PInteger])
+    Term
+      s
+      ( PDataRecord
+          '[ "keys" ':= PBuiltinList (PAsData PPubKeyHash)
+           , "minSigs" ':= PInteger
+           ]
+      )
   }
   deriving stock (GHC.Generic)
   deriving anyclass (Generic)
@@ -68,9 +74,7 @@ deriving via (DerivePConstantViaData MultiSig PMultiSig) instance (PConstant Mul
 --------------------------------------------------------------------------------
 
 validatedByMultisig :: MultiSig -> Term s (PScriptContext :--> PBool)
-validatedByMultisig params =
-  plam $ \ctx' -> P.do
-    pvalidatedByMultisig # (pconstant params) # ctx'
+validatedByMultisig params = pvalidatedByMultisig # pconstant params
 
 pvalidatedByMultisig :: Term s (PMultiSig :--> PScriptContext :--> PBool)
 pvalidatedByMultisig =
@@ -78,7 +82,11 @@ pvalidatedByMultisig =
     ctx <- pletFields @'["txInfo", "purpose"] ctx'
     multi <- pletFields @'["keys", "minSigs"] multi'
     let signatories = pfield @"signatories" # ctx.txInfo
-    ((pfromData multi.minSigs) #<= (plength #$ pfilter
-        # (plam $ \a ->
-            (pelem # a # pfromData signatories))
-        # multi.keys))
+    ( (pfromData multi.minSigs)
+        #<= ( plength #$ pfilter
+                # ( plam $ \a ->
+                      (pelem # a # pfromData signatories)
+                  )
+                # multi.keys
+            )
+      )
