@@ -82,11 +82,11 @@ pvalidatedByMultisig =
     ctx <- pletFields @'["txInfo", "purpose"] ctx'
     multi <- pletFields @'["keys", "minSigs"] multi'
     let signatories = pfield @"signatories" # ctx.txInfo
-    ( (pfromData multi.minSigs)
-        #<= ( plength #$ pfilter
-                # ( plam $ \a ->
-                      (pelem # a # pfromData signatories)
-                  )
-                # multi.keys
-            )
-      )
+    (pfromData multi.minSigs)
+      #<= ( plength #$ pfilter
+              # plam
+                ( \a ->
+                    pelem # a # pfromData signatories
+                )
+              # multi.keys
+          )
