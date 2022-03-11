@@ -12,7 +12,7 @@ import Test.Tasty.HUnit (assertFailure, testCase)
 --------------------------------------------------------------------------------
 
 import Plutarch (compile)
-import Plutarch.Evaluate (evaluateScript)
+import Plutarch.Evaluate (evalScript)
 import Plutus.V1.Ledger.Scripts (Script)
 
 --------------------------------------------------------------------------------
@@ -34,6 +34,8 @@ tests =
 
 scriptTest :: String -> Script -> TestTree
 scriptTest name script = testCase name $ do
-  case evaluateScript script of
-    Left e -> assertFailure (show e)
+  let (res, _budget, traces) = evalScript script
+  case res of
+    Left e -> do
+      assertFailure (show e <> " Traces: " <> show traces)
     Right _v -> pure ()

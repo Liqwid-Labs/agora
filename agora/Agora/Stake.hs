@@ -202,8 +202,8 @@ stakePolicy _stake =
 
                     -- TODO: Needs to be >=, rather than ==
                     let valueCorrect = pdata value #== pdata expectedValue
-                    ptraceIfFalse "ownerSignsTransaction" ownerSignsTransaction
-                      #&& ptraceIfFalse "valueCorrect" valueCorrect
+                    ownerSignsTransaction
+                      #&& valueCorrect
           popaque (pconstant ())
 
     pif (0 #< mintedST) minting burning

@@ -14,7 +14,8 @@
   # see https://github.com/NixOS/nix/issues/6013
   inputs.nixpkgs-2111 = { url = "github:NixOS/nixpkgs/nixpkgs-21.11-darwin"; };
 
-  inputs.plutarch.url = "github:Plutonomicon/plutarch";
+  inputs.plutarch.url =
+    "github:Plutonomicon/plutarch?rev=cb29ca64df4ed193d94a062e3fe26aa37e59b7bc";
   inputs.plutarch.inputs.nixpkgs.follows =
     "plutarch/haskell-nix/nixpkgs-unstable";
 
@@ -49,7 +50,7 @@
           extraSources = plutarch.extraSources ++ [
             {
               src = inputs.plutarch;
-              subdirs = [ "." "plutarch-benchmark" ];
+              subdirs = [ "." "plutarch-test" "plutarch-extra" ];
             }
             {
               src = inputs.apropos-tx;
@@ -79,8 +80,9 @@
 
             additional = ps: [
               ps.plutarch
-              ps.plutarch-benchmark
+              ps.plutarch-test
               ps.apropos-tx
+              ps.plutarch-extra
             ];
           };
         };

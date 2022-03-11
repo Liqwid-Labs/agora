@@ -21,7 +21,6 @@ import Plutarch.Api.V1 (
   mkValidator,
   validatorHash,
  )
-import Plutus.V1.Ledger.Ada (adaValueOf)
 import Plutus.V1.Ledger.Api (
   Address (Address),
   Credential (ScriptCredential),
@@ -84,7 +83,7 @@ stakeCreation =
                       , txOutDatumHash = Just (DatumHash "")
                       }
                   ]
-              , txInfoFee = adaValueOf 2
+              , txInfoFee = Value.singleton "" "" 2
               , txInfoMint = st
               , txInfoDCert = []
               , txInfoWdrl = []

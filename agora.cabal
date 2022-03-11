@@ -162,4 +162,3 @@ benchmark agora-bench
   type:           exitcode-stdio-1.0
   build-depends:
     , agora
-    , plutarch-benchmark
