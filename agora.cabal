@@ -118,6 +118,7 @@ library
   import:          lang, deps
   exposed-modules:
     Agora.AuthorityToken
+    Agora.MultiSig
     Agora.SafeMoney
     Agora.SafeMoney.QQ
     Agora.Stake
