@@ -152,6 +152,8 @@ test-suite agora-test
     Spec.Sample.Stake
     Spec.Stake
 
+    Spec.Util
+
   build-depends:
     , agora
 
