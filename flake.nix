@@ -70,7 +70,7 @@
               pkgs'.haskellPackages.apply-refact
               pkgs'.fd
               pkgs'.cabal-install
-              pkgs'.hlint
+              pkgs'.haskell.packages."${ghcVersion}".hlint
               pkgs'.haskellPackages.cabal-fmt
               pkgs'.nixpkgs-fmt
               pkgs'.graphviz
