@@ -27,7 +27,8 @@ import Spec.Sample.Stake qualified as Stake
 --------------------------------------------------------------------------------
 tests :: [TestTree]
 tests =
-  [ testGroup "policy" $
+  [ testGroup
+      "policy"
       [ scriptTest "minting" (compile $ stakePolicy Stake.stake # pforgetData (pconstantData ()) # pconstant Stake.stakeCreation)
       ]
   ]
