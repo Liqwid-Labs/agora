@@ -9,8 +9,12 @@ module Spec.Sample.Stake (
   stake,
   policy,
   policySymbol,
-  stakeCreation,
   validatorHashTN,
+
+  -- * Script contexts
+  stakeCreation,
+  stakeCreationWrongDatum,
+  stakeCreationUnsigned,
 ) where
 
 --------------------------------------------------------------------------------
@@ -67,6 +71,7 @@ validator = mkValidator (stakeValidator stake)
 validatorHashTN :: TokenName
 validatorHashTN = let ValidatorHash vh = validatorHash validator in TokenName vh
 
+-- | This script context should be a valid transaction
 stakeCreation :: ScriptContext
 stakeCreation =
   let st = Value.singleton policySymbol validatorHashTN 1 -- Stake ST
@@ -94,3 +99,24 @@ stakeCreation =
               }
         , scriptContextPurpose = Minting policySymbol
         }
+
+-- | This ScriptContext should fail because the datum has too much GT
+stakeCreationWrongDatum :: ScriptContext
+stakeCreationWrongDatum =
+  let datum :: Datum
+      datum = Datum (toBuiltinData $ StakeDatum 4242424242424242 signer) -- Too much GT
+   in ScriptContext
+        { scriptContextTxInfo = stakeCreation.scriptContextTxInfo {txInfoData = [("", datum)]}
+        , scriptContextPurpose = Minting policySymbol
+        }
+
+-- | This ScriptContext should fail because the datum has too much GT
+stakeCreationUnsigned :: ScriptContext
+stakeCreationUnsigned =
+  ScriptContext
+    { scriptContextTxInfo =
+        stakeCreation.scriptContextTxInfo
+          { txInfoSignatories = []
+          }
+    , scriptContextPurpose = Minting policySymbol
+    }

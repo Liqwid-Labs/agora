@@ -10,7 +10,6 @@ import Test.Tasty (TestTree, testGroup)
 
 --------------------------------------------------------------------------------
 
-import Plutarch (compile)
 import Plutarch.Builtin (pforgetData)
 
 --------------------------------------------------------------------------------
@@ -20,7 +19,7 @@ import Agora.Stake (stakePolicy)
 --------------------------------------------------------------------------------
 
 import Spec.Sample.Stake qualified as Stake
-import Spec.Util (scriptTest)
+import Spec.Util (policyFailsWith, policySucceedsWith)
 
 --------------------------------------------------------------------------------
 
@@ -28,6 +27,20 @@ tests :: [TestTree]
 tests =
   [ testGroup
       "policy"
-      [ scriptTest "minting" (compile $ stakePolicy Stake.stake # pforgetData (pconstantData ()) # pconstant Stake.stakeCreation)
+      [ policySucceedsWith
+          "stakeCreation"
+          (stakePolicy Stake.stake)
+          (pforgetData (pconstantData ()))
+          Stake.stakeCreation
+      , policyFailsWith
+          "stakeCreationWrongDatum"
+          (stakePolicy Stake.stake)
+          (pforgetData (pconstantData ()))
+          Stake.stakeCreationWrongDatum
+      , policyFailsWith
+          "stakeCreationUnsigned"
+          (stakePolicy Stake.stake)
+          (pforgetData (pconstantData ()))
+          Stake.stakeCreationUnsigned
       ]
   ]

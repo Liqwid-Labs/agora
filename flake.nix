@@ -32,6 +32,7 @@
           overlays = [ haskell-nix.overlay ];
           inherit (haskell-nix) config;
         };
+
       nixpkgsFor' = system:
         import nixpkgs {
           inherit system;
