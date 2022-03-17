@@ -4,11 +4,18 @@
   inputs.nixpkgs.follows = "plutarch/nixpkgs";
   inputs.haskell-nix.follows = "plutarch/haskell-nix";
 
+  # https://github.com/mlabs-haskell/apropos-tx/pull/28
+  inputs.apropos-tx.url =
+    "github:mlabs-haskell/apropos-tx?rev=5b74ba897a6f02718c163bf588a08c5e3e9de204";
+  inputs.apropos-tx.inputs.nixpkgs.follows =
+    "plutarch/haskell-nix/nixpkgs-unstable";
+
   # temporary fix for nix versions that have the transitive follows bug
   # see https://github.com/NixOS/nix/issues/6013
   inputs.nixpkgs-2111 = { url = "github:NixOS/nixpkgs/nixpkgs-21.11-darwin"; };
 
-  inputs.plutarch.url = "github:Plutonomicon/plutarch";
+  inputs.plutarch.url =
+    "github:Plutonomicon/plutarch?rev=cb29ca64df4ed193d94a062e3fe26aa37e59b7bc";
   inputs.plutarch.inputs.nixpkgs.follows =
     "plutarch/haskell-nix/nixpkgs-unstable";
 
@@ -25,6 +32,7 @@
           overlays = [ haskell-nix.overlay ];
           inherit (haskell-nix) config;
         };
+
       nixpkgsFor' = system:
         import nixpkgs {
           inherit system;
@@ -40,10 +48,16 @@
           src = ./.;
           compiler-nix-name = ghcVersion;
           inherit (plutarch) cabalProjectLocal;
-          extraSources = plutarch.extraSources ++ [{
-            src = inputs.plutarch;
-            subdirs = [ "." "plutarch-benchmark" ];
-          }];
+          extraSources = plutarch.extraSources ++ [
+            {
+              src = inputs.plutarch;
+              subdirs = [ "." "plutarch-test" "plutarch-extra" ];
+            }
+            {
+              src = inputs.apropos-tx;
+              subdirs = [ "." ];
+            }
+          ];
           modules = [ (plutarch.haskellModule system) ];
           shell = {
             withHoogle = true;
@@ -57,7 +71,7 @@
               pkgs'.haskellPackages.apply-refact
               pkgs'.fd
               pkgs'.cabal-install
-              pkgs'.hlint
+              pkgs'.haskell.packages."${ghcVersion}".hlint
               pkgs'.haskellPackages.cabal-fmt
               pkgs'.nixpkgs-fmt
               pkgs'.graphviz
@@ -67,8 +81,9 @@
 
             additional = ps: [
               ps.plutarch
-              ps.plutarch-benchmark
-              ps.tasty-quickcheck
+              ps.plutarch-test
+              ps.apropos-tx
+              ps.plutarch-extra
             ];
           };
         };

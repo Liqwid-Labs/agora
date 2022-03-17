@@ -1,8 +1,8 @@
 cradle:
   cabal:
-    - path: "./src"
+    - path: "./agora-src"
       component: "lib:agora"
-    - path: "./bench"
+    - path: "./agora-bench"
       component: "benchmark:agora-bench"
-    - path: "./test"
+    - path: "./agora-test"
       component: "test:agora-test"

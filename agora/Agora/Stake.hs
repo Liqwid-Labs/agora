@@ -1,3 +1,5 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 {- |
 Module     : Agora.Stake
 Maintainer : emi@haskell.fyi
@@ -8,6 +10,7 @@ Vote-lockable stake UTXOs holding GT.
 module Agora.Stake (
   PStakeDatum (..),
   PStakeAction (..),
+  StakeDatum (..),
   Stake (..),
   stakePolicy,
   stakeValidator,
@@ -25,12 +28,18 @@ import Prelude
 
 --------------------------------------------------------------------------------
 
+import Plutus.V1.Ledger.Api (PubKeyHash)
+import PlutusTx qualified
+
+--------------------------------------------------------------------------------
+
 import Plutarch (popaque)
 import Plutarch.Api.V1 (
   PCredential (PPubKeyCredential, PScriptCredential),
   PMintingPolicy,
   PPubKeyHash,
   PScriptPurpose (PMinting, PSpending),
+  PTokenName,
   PValidator,
   mintingPolicySymbol,
   mkMintingPolicy,
@@ -91,6 +100,15 @@ newtype PStakeDatum (gt :: MoneyClass) (s :: S) = PStakeDatum
   deriving
     (PlutusType, PIsData, PDataFields)
     via (PIsDataReprInstances (PStakeDatum gt))
+
+-- | Haskell-level datum for Stake scripts.
+data StakeDatum = StakeDatum
+  { stakedAmount :: Integer
+  , owner :: PubKeyHash
+  }
+  deriving stock (Show, GHC.Generic)
+
+PlutusTx.makeIsDataIndexed ''StakeDatum [('StakeDatum, 0)]
 
 --------------------------------------------------------------------------------
 {- What this Policy does
@@ -162,12 +180,16 @@ stakePolicy _stake =
                   PScriptCredential validatorHash' -> P.do
                     validatorHash <- pletFields @'["_0"] validatorHash'
                     stakeDatum <- pletFields @'["owner", "stakedAmount"] stakeDatum'
+
+                    -- TODO: figure out why this is required :/ (specifically, why `validatorHash._0` is `PData`)
+                    tn <- plet (pfromData (punsafeCoerce validatorHash._0 :: Term _ (PAsData PTokenName)))
+
                     let stValue =
                           psingletonValue
                             # ownSymbol
                             -- This coerce is safe because the structure
                             -- of PValidatorHash is the same as PTokenName.
-                            # punsafeCoerce validatorHash._0
+                            # tn
                             # 1
                     let expectedValue =
                           paddValue
@@ -180,8 +202,8 @@ stakePolicy _stake =
 
                     -- TODO: Needs to be >=, rather than ==
                     let valueCorrect = pdata value #== pdata expectedValue
-                    ownerSignsTransaction #&& valueCorrect
-
+                    ownerSignsTransaction
+                      #&& valueCorrect
           popaque (pconstant ())
 
     pif (0 #< mintedST) minting burning

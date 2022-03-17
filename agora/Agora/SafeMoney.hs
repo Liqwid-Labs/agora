@@ -9,6 +9,7 @@ module Agora.SafeMoney (
   -- * Types
   MoneyClass,
   PDiscrete,
+  Discrete,
 
   -- * Utility functions
   paddDiscrete,
@@ -59,6 +60,10 @@ type MoneyClass =
 newtype PDiscrete (mc :: MoneyClass) (s :: S)
   = PDiscrete (Term s PInteger)
   deriving (PlutusType, PIsData, PEq, POrd) via (DerivePNewtype (PDiscrete mc) PInteger)
+
+newtype Discrete (mc :: MoneyClass)
+  = Discrete Integer
+  deriving stock (Show)
 
 -- | Add two `PDiscrete` values of the same `MoneyClass`.
 paddDiscrete :: Term s (PDiscrete mc :--> PDiscrete mc :--> PDiscrete mc)

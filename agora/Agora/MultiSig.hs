@@ -4,6 +4,8 @@
 Module     : Agora.MultiSig
 Maintainer : riley_kilgore@outlook.com
 Description: A basic N of M multisignature validation function.
+
+A basic N of M multisignature validation function.
 -}
 module Agora.MultiSig (
   validatedByMultisig,
@@ -13,7 +15,7 @@ module Agora.MultiSig (
 
 import Plutarch.Api.V1 (
   PPubKeyHash,
-  PScriptContext (..),
+  PTxInfo (..),
  )
 import Plutarch.DataRepr (
   DerivePConstantViaData (DerivePConstantViaData),
@@ -51,6 +53,7 @@ data MultiSig = MultiSig
 PlutusTx.makeLift ''MultiSig
 PlutusTx.unstableMakeIsData ''MultiSig
 
+-- | Plutarch-level MultiSig
 newtype PMultiSig (s :: S) = PMultiSig
   { getMultiSig ::
     Term
@@ -73,20 +76,24 @@ deriving via (DerivePConstantViaData MultiSig PMultiSig) instance (PConstant Mul
 
 --------------------------------------------------------------------------------
 
-validatedByMultisig :: MultiSig -> Term s (PScriptContext :--> PBool)
-validatedByMultisig params = pvalidatedByMultisig # pconstant params
+-- | Check if a Haskell-level MultiSig signs this transaction
+validatedByMultisig :: MultiSig -> Term s (PTxInfo :--> PBool)
+validatedByMultisig params =
+  phoistAcyclic $
+    pvalidatedByMultisig # pconstant params
 
-pvalidatedByMultisig :: Term s (PMultiSig :--> PScriptContext :--> PBool)
+-- | Check if a Plutarch-level MultiSig signs this transaction
+pvalidatedByMultisig :: Term s (PMultiSig :--> PTxInfo :--> PBool)
 pvalidatedByMultisig =
-  plam $ \multi' ctx' -> P.do
-    ctx <- pletFields @'["txInfo", "purpose"] ctx'
-    multi <- pletFields @'["keys", "minSigs"] multi'
-    let signatories = pfield @"signatories" # ctx.txInfo
-    (pfromData multi.minSigs)
-      #<= ( plength #$ pfilter
-              # plam
-                ( \a ->
-                    pelem # a # pfromData signatories
-                )
-              # multi.keys
-          )
+  phoistAcyclic $
+    plam $ \multi' txInfo -> P.do
+      multi <- pletFields @'["keys", "minSigs"] multi'
+      let signatories = pfield @"signatories" # txInfo
+      pfromData multi.minSigs
+        #<= ( plength #$ pfilter
+                # plam
+                  ( \a ->
+                      pelem # a # pfromData signatories
+                  )
+                # multi.keys
+            )
