@@ -1,3 +1,1 @@
-module Spec.Treasury () where 
-
-
+module Spec.Treasury () where
