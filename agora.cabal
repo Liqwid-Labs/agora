@@ -107,12 +107,12 @@ common deps
 
 common test-deps
   build-depends:
+    , apropos-tx
     , QuickCheck
     , quickcheck-instances
     , tasty
     , tasty-hedgehog
     , tasty-hunit
-    , apropos-tx
 
 library
   import:          lang, deps
@@ -150,17 +150,16 @@ test-suite agora-test
   other-modules:
     Spec.Int
     Spec.Sample.Stake
+    Spec.Sample.Treasury
     Spec.Stake
-
+    Spec.Treasury
     Spec.Util
 
-  build-depends:
-    , agora
+  build-depends:  agora
 
 benchmark agora-bench
   import:         lang, deps
   hs-source-dirs: agora-bench
   main-is:        Main.hs
   type:           exitcode-stdio-1.0
-  build-depends:
-    , agora
+  build-depends:  agora
