@@ -1,7 +1,16 @@
 module Model.MultiSig (plutarchTests, genTests) where
 
 import Agora.MultiSig (MultiSig (..), validatedByMultisig)
-import Apropos (Apropos (Apropos), Formula (ExactlyOne, Var, Yes), HasLogicalModel (..), HasParameterisedGenerator, LogicalModel (logic), parameterisedGenerator, runGeneratorTestsWhere, (:+))
+import Apropos (
+  Apropos (Apropos),
+  Formula (ExactlyOne, Var, Yes),
+  HasLogicalModel (..),
+  HasParameterisedGenerator,
+  LogicalModel (logic),
+  parameterisedGenerator,
+  runGeneratorTestsWhere,
+  (:+),
+ )
 import Apropos.Gen (Gen, choice, int, linear, list)
 import Apropos.LogicalModel (Enumerable)
 import Apropos.LogicalModel.Enumerable (Enumerable (enumerated))
@@ -12,7 +21,17 @@ import Plutus.V1.Ledger.Api (
   Script,
   ScriptContext (scriptContextPurpose),
   ScriptPurpose (Spending),
-  TxInfo (txInfoDCert, txInfoData, txInfoFee, txInfoId, txInfoInputs, txInfoMint, txInfoOutputs, txInfoValidRange, txInfoWdrl),
+  TxInfo (
+    txInfoDCert,
+    txInfoData,
+    txInfoFee,
+    txInfoId,
+    txInfoInputs,
+    txInfoMint,
+    txInfoOutputs,
+    txInfoValidRange,
+    txInfoWdrl
+  ),
   TxOutRef (TxOutRef),
   scriptContextTxInfo,
   txInfoSignatories,
@@ -24,45 +43,50 @@ import Plutus.V1.Ledger.Value qualified as Value
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.Hedgehog (fromGroup)
 
-{-
+{- Function definitions for reference:
 
-1. Create proposition sum type.
-2. Create logical model defining relationships between propositions.
-3. Associating propositions with the "concrete" type i.e. MultiSig.
-4. Create Generators.
-5. Run tests (with magic).
+{- | A MultiSig represents a proof that a particular set of
+     signatures are present on a transaction.
+-}
+data MultiSig = MultiSig
+  { keys :: [PubKeyHash]
+  -- ^ List of PubKeyHashes that must be present in the list of signatories.
+  , minSigs :: Integer
+  }
+  deriving stock (GHC.Generic, Eq, Show)
+  deriving anyclass (Generic)
+
+-- | Check if a Haskell-level MultiSig signs this transaction.
+validatedByMultisig :: MultiSig -> Term s (PTxInfo :--> PBool)
+validatedByMultisig params =
+  phoistAcyclic $
+    pvalidatedByMultisig # pconstant params
 
 -}
 
-{-
-
-1. Create a
-
-Define a prop, as if it is the way a script can pass.
-  1. keys signed exceeds `minSigs`
-  2. `minSigs` is lte zero.
-
-Props not passing:
-  1. No signatures present.
-  2. Signatures present is less than `minSigs`.
-
--}
-
+-- | apropos model for testing multisigs.
 data MultiSigModel = MultiSigModel
   { ms :: MultiSig
+  -- ^ `MultiSig` value to be tested.
   , ctx :: ScriptContext
+  -- ^ The `ScriptContext` of the transaction.
   }
   deriving stock (Eq, Show)
 
+-- | Propositions that may hold true of a `MultiSigModel`.
 data MultiSigProp
-  = MeetsMinSigs
-  | DoesNotMeetMinSigs
+  = -- | Sufficient number of signatories in the script context.
+    MeetsMinSigs
+  | -- | Insufficient number of signatories in the script context.
+    DoesNotMeetMinSigs
   deriving stock (Eq, Show, Ord)
 
 instance Enumerable MultiSigProp where
   enumerated = [MeetsMinSigs, DoesNotMeetMinSigs]
 
 instance LogicalModel MultiSigProp where
+  -- Only logical relationship between the two propositions is
+  -- that exactly one of them holds for a given model.
   logic = ExactlyOne [Var MeetsMinSigs, Var DoesNotMeetMinSigs]
 
 instance HasLogicalModel MultiSigProp MultiSigModel where
@@ -75,6 +99,9 @@ instance HasLogicalModel MultiSigProp MultiSigModel where
           MeetsMinSigs -> length matchingSigs >= fromInteger minSigs
           DoesNotMeetMinSigs -> length matchingSigs < fromInteger minSigs
 
+{- | Given a list of key hashes, returns a dummy `ScriptContext`,
+     with those hashes as signatories.
+-}
 contextWithSignatures :: [PubKeyHash] -> ScriptContext
 contextWithSignatures sigs =
   ScriptContext
@@ -94,6 +121,7 @@ contextWithSignatures sigs =
     , scriptContextPurpose = Spending (TxOutRef "" 0)
     }
 
+-- | Generator returning one of four dummy public key hashes.
 genPK :: Gen PubKeyHash
 genPK =
   choice
@@ -105,23 +133,37 @@ genPK =
 
 instance HasParameterisedGenerator MultiSigProp MultiSigModel where
   parameterisedGenerator s = do
+    -- Gen between one and four signatures for the `MultiSig`.
     expectedSignatures <- list (linear 1 4) genPK
+
+    -- Gen the value of `MultiSig.minSigs`.
     minSigs <- toInteger <$> int (linear 1 (length expectedSignatures))
+
+    -- Assign values to msig.
     let msig = MultiSig expectedSignatures minSigs
 
     actualSignaturesLength <-
+      -- If we would like to generate a MultiSig model which passes...
       if MeetsMinSigs `elem` s
-        then int (linear (fromInteger minSigs) (length expectedSignatures))
-        else pure 0
+        then -- ... have a sufficient number of signatories.
+          int (linear (fromInteger minSigs) (length expectedSignatures))
+        else -- ... have zero signatories.
+          pure 0
+
+    -- Get a list of signatories for the script context.
     let actualSignatures = take actualSignaturesLength expectedSignatures
 
     let ctx = contextWithSignatures actualSignatures
+
+    -- Return the generated model.
     pure (MultiSigModel msig ctx)
 
 instance HasScriptRunner MultiSigProp MultiSigModel where
+  -- When the script runs, we want the model to meet the minimum signatures.
   expect :: (MultiSigModel :+ MultiSigProp) -> Formula MultiSigProp
   expect Apropos = Var MeetsMinSigs
 
+  -- Function making a valid script from the model and propositions.
   script :: (MultiSigModel :+ MultiSigProp) -> MultiSigModel -> Script
   script Apropos msm =
     compile $
@@ -134,12 +176,18 @@ genTests :: TestTree
 genTests =
   testGroup "genTests" $
     fromGroup
-      <$> [ runGeneratorTestsWhere (Apropos :: MultiSigModel :+ MultiSigProp) "Generator" Yes
+      <$> [ runGeneratorTestsWhere
+              (Apropos :: MultiSigModel :+ MultiSigProp)
+              "Generator"
+              Yes
           ]
 
 plutarchTests :: TestTree
 plutarchTests =
   testGroup "plutarchTests" $
     fromGroup
-      <$> [ runScriptTestsWhere (Apropos :: MultiSigModel :+ MultiSigProp) "ScriptValid" Yes
+      <$> [ runScriptTestsWhere
+              (Apropos :: MultiSigModel :+ MultiSigProp)
+              "ScriptValid"
+              Yes
           ]
