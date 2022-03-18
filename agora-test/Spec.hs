@@ -8,6 +8,7 @@ import Test.Tasty (defaultMain, testGroup)
 
 --------------------------------------------------------------------------------
 
+import Model.MultiSig qualified
 import Spec.Int
 import Spec.Stake qualified as Stake
 
@@ -24,6 +25,11 @@ main =
           [ testGroup
               "Int"
               [ intPlutarchTests
+              ]
+          , testGroup
+              "MultiSig"
+              [ Model.MultiSig.plutarchTests
+              , Model.MultiSig.genTests
               ]
           ]
       ]

@@ -151,6 +151,7 @@ test-suite agora-test
     Spec.Int
     Spec.Sample.Stake
     Spec.Stake
+    Model.MultiSig
     Spec.Util
 
   build-depends:  agora
