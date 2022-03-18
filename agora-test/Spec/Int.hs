@@ -1,4 +1,10 @@
-module Spec.Int (HasLogicalModel (..), IntProp (..), intGenTests, intPureTests, intPlutarchTests) where
+module Spec.Int (
+  HasLogicalModel (..),
+  IntProp (..),
+  intGenTests,
+  intPureTests,
+  intPlutarchTests,
+) where
 
 import Apropos
 import Apropos.Script

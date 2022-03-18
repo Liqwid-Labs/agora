@@ -24,7 +24,12 @@ import Plutus.V1.Ledger.Scripts (Script)
 
 --------------------------------------------------------------------------------
 
-policySucceedsWith :: String -> ClosedTerm PMintingPolicy -> ClosedTerm PData -> _ -> TestTree
+policySucceedsWith ::
+  String ->
+  ClosedTerm PMintingPolicy ->
+  ClosedTerm PData ->
+  _ ->
+  TestTree
 policySucceedsWith tag policy redeemer scriptContext =
   scriptSucceeds tag $ compile (policy # redeemer # pconstant scriptContext)
 
