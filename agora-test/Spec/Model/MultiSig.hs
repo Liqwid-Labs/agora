@@ -1,21 +1,12 @@
-module Model.MultiSig (plutarchTests, genTests) where
+module Spec.Model.MultiSig (
+  plutarchTests,
+  genTests,
+) where
 
-import Agora.MultiSig (MultiSig (..), validatedByMultisig)
-import Apropos (
-  Apropos (Apropos),
-  Formula (ExactlyOne, Var, Yes),
-  HasLogicalModel (..),
-  HasParameterisedGenerator,
-  LogicalModel (logic),
-  parameterisedGenerator,
-  runGeneratorTestsWhere,
-  (:+),
- )
-import Apropos.Gen (Gen, choice, int, linear, list)
-import Apropos.LogicalModel (Enumerable)
-import Apropos.LogicalModel.Enumerable (Enumerable (enumerated))
-import Apropos.Script (HasScriptRunner (expect, runScriptTestsWhere, script))
 import Data.List (intersect)
+
+--------------------------------------------------------------------------------
+
 import Plutarch (compile)
 import Plutus.V1.Ledger.Api (
   Script,
@@ -40,29 +31,31 @@ import Plutus.V1.Ledger.Contexts (ScriptContext (ScriptContext), TxInfo (TxInfo)
 import Plutus.V1.Ledger.Crypto (PubKeyHash)
 import Plutus.V1.Ledger.Interval qualified as Interval
 import Plutus.V1.Ledger.Value qualified as Value
+
+--------------------------------------------------------------------------------
+
+import Apropos (
+  Apropos (Apropos),
+  Formula (ExactlyOne, Var, Yes),
+  HasLogicalModel (..),
+  HasParameterisedGenerator,
+  LogicalModel (logic),
+  parameterisedGenerator,
+  runGeneratorTestsWhere,
+  (:+),
+ )
+import Apropos.Gen (Gen, choice, int, linear, list)
+import Apropos.LogicalModel (Enumerable)
+import Apropos.LogicalModel.Enumerable (Enumerable (enumerated))
+import Apropos.Script (HasScriptRunner (expect, runScriptTestsWhere, script))
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.Hedgehog (fromGroup)
 
-{- Function definitions for reference:
+--------------------------------------------------------------------------------
 
-{- | A MultiSig represents a proof that a particular set of
-     signatures are present on a transaction.
--}
-data MultiSig = MultiSig
-  { keys :: [PubKeyHash]
-  -- ^ List of PubKeyHashes that must be present in the list of signatories.
-  , minSigs :: Integer
-  }
-  deriving stock (GHC.Generic, Eq, Show)
-  deriving anyclass (Generic)
+import Agora.MultiSig (MultiSig (..), validatedByMultisig)
 
--- | Check if a Haskell-level MultiSig signs this transaction.
-validatedByMultisig :: MultiSig -> Term s (PTxInfo :--> PBool)
-validatedByMultisig params =
-  phoistAcyclic $
-    pvalidatedByMultisig # pconstant params
-
--}
+--------------------------------------------------------------------------------
 
 -- | apropos model for testing multisigs.
 data MultiSigModel = MultiSigModel
