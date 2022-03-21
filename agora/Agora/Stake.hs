@@ -19,9 +19,12 @@ module Agora.Stake (
 
 --------------------------------------------------------------------------------
 
+import Data.Proxy (Proxy (Proxy))
+import Data.String (IsString (fromString))
 import GHC.Generics qualified as GHC
 import GHC.TypeLits (
   KnownSymbol,
+  symbolVal,
  )
 import Generics.SOP (Generic, I (I))
 import Prelude
@@ -50,6 +53,7 @@ import Plutarch.DataRepr (
  )
 import Plutarch.Internal (punsafeCoerce)
 import Plutarch.Monadic qualified as P
+import Plutus.V1.Ledger.Value (AssetClass (AssetClass))
 
 --------------------------------------------------------------------------------
 
@@ -65,6 +69,9 @@ import Agora.Utils (
   paddValue,
   passert,
   pfindTxInByTxOutRef,
+  pgeqBy,
+  pgeqBy',
+  pgeqBySymbol,
   psingletonValue,
   psymbolValueOf,
   ptxSignedBy,
@@ -200,8 +207,28 @@ stakePolicy _stake =
                             # ctx.txInfo
                             # stakeDatum.owner
 
-                    -- TODO: Needs to be >=, rather than ==
-                    let valueCorrect = pdata value #== pdata expectedValue
+                    -- TODO: This is quite inefficient now, as it does two lookups
+                    -- instead of a more efficient single pass,
+                    -- but it doesn't really matter for this. At least it's correct.
+                    let valueCorrect =
+                          foldr1
+                            (#&&)
+                            [ pgeqBy' (AssetClass ("", "")) # value # expectedValue
+                            , pgeqBy'
+                                ( AssetClass
+                                    ( fromString . symbolVal $ Proxy @ac
+                                    , fromString . symbolVal $ Proxy @n
+                                    )
+                                )
+                                # value
+                                # expectedValue
+                            , pgeqBy
+                                # ownSymbol
+                                # tn
+                                # value
+                                # expectedValue
+                            ]
+
                     ownerSignsTransaction
                       #&& valueCorrect
           popaque (pconstant ())
@@ -274,9 +301,27 @@ stakeValidator stake =
                       #&& (paddDiscrete # stakeDatum.stakedAmount # delta) #== newStakeDatum.stakedAmount
               let expectedValue = paddValue # continuingValue # (pdiscreteValue # delta)
 
-              -- TODO: As above, needs to be >=, rather than ==
-              let correctValue = pdata value #== pdata expectedValue
-              isScriptAddress #&& correctOutputDatum #&& correctValue
+              -- TODO: Same as above. This is quite inefficient now, as it does two lookups
+              -- instead of a more efficient single pass,
+              -- but it doesn't really matter for this. At least it's correct.
+              let valueCorrect =
+                    foldr1
+                      (#&&)
+                      [ pgeqBy' (AssetClass ("", "")) # value # expectedValue
+                      , pgeqBy'
+                          ( AssetClass
+                              ( fromString . symbolVal $ Proxy @ac
+                              , fromString . symbolVal $ Proxy @n
+                              )
+                          )
+                          # value
+                          # expectedValue
+                      , pgeqBySymbol
+                          # stCurrencySymbol
+                          # value
+                          # expectedValue
+                      ]
+              isScriptAddress #&& correctOutputDatum #&& valueCorrect
 
         popaque (pconstant ())
 
