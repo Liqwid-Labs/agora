@@ -93,9 +93,9 @@
           pkgs = nixpkgsFor system;
           pkgs' = nixpkgsFor' system;
           inherit (pkgs.haskell-nix.tools ghcVersion {
-            inherit (plutarch.tools) fourmolu hlint;
+            inherit (plutarch.tools) fourmolu;
           })
-            fourmolu hlint;
+            fourmolu;
         in pkgs.runCommand "format-check" {
           nativeBuildInputs = [
             pkgs'.git
@@ -103,14 +103,13 @@
             pkgs'.haskellPackages.cabal-fmt
             pkgs'.nixpkgs-fmt
             fourmolu
-            hlint
           ];
         } ''
           export LC_CTYPE=C.UTF-8
           export LC_ALL=C.UTF-8
           export LANG=C.UTF-8
           cd ${self}
-          make format_check
+          make format_check || (echo "    Please run 'make format'" ; exit 1)
           mkdir $out
         '';
     in {
@@ -118,9 +117,13 @@
       flake = perSystem (system: (projectFor system).flake { });
 
       packages = perSystem (system: self.flake.${system}.packages);
+
+      # Define what we want to test
       checks = perSystem (system:
         self.flake.${system}.checks // {
           formatCheck = formatCheckFor system;
+          agora = self.flake.${system}.packages."agora:lib:agora";
+          agora-test = self.flake.${system}.packages."agora:test:agora-test";
         });
       check = perSystem (system:
         (nixpkgsFor system).runCommand "combined-test" {
@@ -130,7 +133,5 @@
           touch $out
         '');
       devShell = perSystem (system: self.flake.${system}.devShell);
-      defaultPackage =
-        perSystem (system: self.flake.${system}.packages."agora:lib:agora");
     };
 }

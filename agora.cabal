@@ -148,11 +148,9 @@ test-suite agora-test
   main-is:        Spec.hs
   hs-source-dirs: agora-test
   other-modules:
-    Spec.Stake
-    Spec.Sample.Stake
-
     Spec.Model.MultiSig
-
+    Spec.Sample.Stake
+    Spec.Stake
     Spec.Util
 
   build-depends:  agora
