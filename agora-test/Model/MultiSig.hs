@@ -16,6 +16,7 @@ import Apropos.LogicalModel (Enumerable)
 import Apropos.LogicalModel.Enumerable (Enumerable (enumerated))
 import Apropos.Script (HasScriptRunner (expect, runScriptTestsWhere, script))
 import Data.List (intersect)
+import Data.Set (Set)
 import Plutarch (compile)
 import Plutus.V1.Ledger.Api (
   Script,
@@ -132,11 +133,14 @@ genPK =
     ]
 
 instance HasParameterisedGenerator MultiSigProp MultiSigModel where
+  -- For a given set of MultiSig propositions, return a model
+  -- for which all of the propositions hold true.
+  parameterisedGenerator :: Set MultiSigProp -> Gen MultiSigModel
   parameterisedGenerator s = do
-    -- Gen between one and four signatures for the `MultiSig`.
+    -- Generate between one and four signatures for the `MultiSig`.
     expectedSignatures <- list (linear 1 4) genPK
 
-    -- Gen the value of `MultiSig.minSigs`.
+    -- Generate the value of `MultiSig.minSigs`.
     minSigs <- toInteger <$> int (linear 1 (length expectedSignatures))
 
     -- Assign values to msig.
@@ -145,9 +149,9 @@ instance HasParameterisedGenerator MultiSigProp MultiSigModel where
     actualSignaturesLength <-
       -- If we would like to generate a MultiSig model which passes...
       if MeetsMinSigs `elem` s
-        then -- ... have a sufficient number of signatories.
+        then -- have a sufficient number of signatories.
           int (linear (fromInteger minSigs) (length expectedSignatures))
-        else -- ... have zero signatories.
+        else -- have zero signatories.
           pure 0
 
     -- Get a list of signatories for the script context.

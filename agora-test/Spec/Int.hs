@@ -1,4 +1,10 @@
-module Spec.Int (HasLogicalModel (..), IntProp (..), intGenTests, intPureTests, intPlutarchTests) where
+module Spec.Int (
+  HasLogicalModel (..),
+  IntProp (..),
+  intGenTests,
+  intPureTests,
+  intPlutarchTests,
+) where
 
 import Apropos
 import Apropos.Script
@@ -64,14 +70,17 @@ intGenTests =
           ]
 
 instance HasPureRunner IntProp Int where
-  expect _ = Var IsSmall :&&: Var IsNegative
-  script _ i = i < 0 && i >= -10
+  script _ = (/= 0)
+  expect _ = Var IsZero :->: Var IsSmall
 
 intPureTests :: TestTree
 intPureTests =
   testGroup "intPureTests" $
     fromGroup
-      <$> [ runPureTestsWhere (Apropos :: Int :+ IntProp) "AcceptsSmallNegativeInts" Yes
+      <$> [ runPureTestsWhere
+              (Apropos :: Int :+ IntProp)
+              "AcceptsSmallNegativeInts"
+              Yes -- Constraints the test space.
           ]
 
 instance HasScriptRunner IntProp Int where
