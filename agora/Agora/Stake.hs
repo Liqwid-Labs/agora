@@ -9,8 +9,9 @@ Vote-lockable stake UTXOs holding GT.
 -}
 module Agora.Stake (
   PStakeDatum (..),
-  PStakeAction (..),
+  PStakeRedeemer (..),
   StakeDatum (..),
+  StakeRedeemer (..),
   Stake (..),
   stakePolicy,
   stakeValidator,
@@ -62,6 +63,8 @@ import Agora.SafeMoney (
   PDiscrete,
   paddDiscrete,
   pdiscreteValue,
+  pgeqDiscrete,
+  pzeroDiscrete,
  )
 import Agora.Utils (
   anyInput,
@@ -84,7 +87,7 @@ import Agora.Utils (
 data Stake (gt :: MoneyClass) = Stake
 
 -- | Plutarch-level redeemer for Stake scripts.
-data PStakeAction (gt :: MoneyClass) (s :: S)
+data PStakeRedeemer (gt :: MoneyClass) (s :: S)
   = -- | Deposit or withdraw a discrete amount of the staked governance token.
     PDepositWithdraw (Term s (PDataRecord '["delta" ':= PDiscrete gt]))
   | -- | Destroy a stake, retrieving its LQ, the minimum ADA and any other assets.
@@ -94,7 +97,23 @@ data PStakeAction (gt :: MoneyClass) (s :: S)
   deriving anyclass (PIsDataRepr)
   deriving
     (PlutusType, PIsData)
-    via PIsDataReprInstances (PStakeAction gt)
+    via PIsDataReprInstances (PStakeRedeemer gt)
+
+-- FIXME: 'StakeRedeemer' and 'StakeDatum' are stripped of their
+-- typesafe `PDiscrete` equivalent due to issues with `makeIsDataIndexed`
+-- when using the kind @gt :: MoneyClass@. This ought to be fixed with
+-- a future patch in Plutarch upstream. For now, we will deal with lower
+-- type safety off-chain.
+
+-- | Haskell-level redeemer for Stake scripts.
+data StakeRedeemer
+  = -- | Deposit or withdraw a discrete amount of the staked governance token.
+    DepositWithdraw Integer
+  | -- | Destroy a stake, retrieving its LQ, the minimum ADA and any other assets.
+    Destroy
+  deriving stock (Show, GHC.Generic)
+
+PlutusTx.makeIsDataIndexed ''StakeRedeemer [('DepositWithdraw, 0), ('Destroy, 1)]
 
 -- | Plutarch-level datum for Stake scripts.
 newtype PStakeDatum (gt :: MoneyClass) (s :: S) = PStakeDatum
@@ -110,7 +129,8 @@ newtype PStakeDatum (gt :: MoneyClass) (s :: S) = PStakeDatum
 
 -- | Haskell-level datum for Stake scripts.
 data StakeDatum = StakeDatum
-  { stakedAmount :: Integer
+  { -- FIXME: This needs to be gt
+  stakedAmount :: Integer
   , owner :: PubKeyHash
   }
   deriving stock (Show, GHC.Generic)
@@ -253,8 +273,8 @@ stakeValidator stake =
     txInfo <- pletFields @'["mint", "inputs", "outputs"] txInfo'
 
     -- Coercion is safe in that if coercion fails we crash hard.
-    let stakeAction :: Term _ (PStakeAction gt)
-        stakeAction = pfromData $ punsafeCoerce redeemer
+    let stakeRedeemer :: Term _ (PStakeRedeemer gt)
+        stakeRedeemer = pfromData $ punsafeCoerce redeemer
         stakeDatum' :: Term _ (PStakeDatum gt)
         stakeDatum' = pfromData $ punsafeCoerce datum
     stakeDatum <- pletFields @'["owner", "stakedAmount"] stakeDatum'
@@ -269,7 +289,7 @@ stakeValidator stake =
     mintedST <- plet $ psymbolValueOf # stCurrencySymbol # txInfo.mint
     spentST <- plet $ psymbolValueOf # stCurrencySymbol #$ pvalueSpent # txInfo'
 
-    pmatch stakeAction $ \case
+    pmatch stakeRedeemer $ \case
       PDestroy _ -> P.do
         passert "ST at inputs must be 1" $
           spentST #== 1
@@ -297,8 +317,14 @@ stakeValidator stake =
               delta <- plet $ pfield @"delta" # r
               let isScriptAddress = pdata address #== ownAddress
               let correctOutputDatum =
-                    stakeDatum.owner #== newStakeDatum.owner
-                      #&& (paddDiscrete # stakeDatum.stakedAmount # delta) #== newStakeDatum.stakedAmount
+                    foldr1
+                      (#&&)
+                      [ stakeDatum.owner #== newStakeDatum.owner
+                      , (paddDiscrete # stakeDatum.stakedAmount # delta) #== newStakeDatum.stakedAmount
+                      , -- We can't magically conjure GT anyway (no input to spend!)
+                        -- do we need to check this, really?
+                        pgeqDiscrete # (pfromData newStakeDatum.stakedAmount) # pzeroDiscrete
+                      ]
               let expectedValue = paddValue # continuingValue # (pdiscreteValue # delta)
 
               -- TODO: Same as above. This is quite inefficient now, as it does two lookups
@@ -321,7 +347,13 @@ stakeValidator stake =
                           # value
                           # expectedValue
                       ]
-              isScriptAddress #&& correctOutputDatum #&& valueCorrect
+
+              foldr1
+                (#&&)
+                [ ptraceIfFalse "isScriptAddress" isScriptAddress
+                , ptraceIfFalse "correctOutputDatum" correctOutputDatum
+                , ptraceIfFalse "valueCorrect" valueCorrect
+                ]
 
         popaque (pconstant ())
 

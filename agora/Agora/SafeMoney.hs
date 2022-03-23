@@ -13,6 +13,8 @@ module Agora.SafeMoney (
 
   -- * Utility functions
   paddDiscrete,
+  pgeqDiscrete,
+  pzeroDiscrete,
 
   -- * Conversions
   pdiscreteValue,
@@ -56,7 +58,7 @@ type MoneyClass =
     Nat
   )
 
--- | A `PDiscrete` amount of currency tagged on the type level with the `MoneyClass` it belong sto
+-- | A 'PDiscrete' amount of currency tagged on the type level with the 'MoneyClass' it belongs to
 newtype PDiscrete (mc :: MoneyClass) (s :: S)
   = PDiscrete (Term s PInteger)
   deriving (PlutusType, PIsData, PEq, POrd) via (DerivePNewtype (PDiscrete mc) PInteger)
@@ -65,7 +67,18 @@ newtype Discrete (mc :: MoneyClass)
   = Discrete Integer
   deriving stock (Show)
 
--- | Add two `PDiscrete` values of the same `MoneyClass`.
+-- | Check if one 'PDiscrete' is greater than another.
+pgeqDiscrete :: forall (mc :: MoneyClass) (s :: S). Term s (PDiscrete mc :--> PDiscrete mc :--> PBool)
+pgeqDiscrete = phoistAcyclic $
+  plam $ \x y -> P.do
+    PDiscrete x' <- pmatch x
+    PDiscrete y' <- pmatch y
+    y' #<= x'
+
+pzeroDiscrete :: forall (mc :: MoneyClass) (s :: S). Term s (PDiscrete mc)
+pzeroDiscrete = phoistAcyclic $ pcon (PDiscrete 0)
+
+-- | Add two 'PDiscrete' values of the same 'MoneyClass'.
 paddDiscrete :: Term s (PDiscrete mc :--> PDiscrete mc :--> PDiscrete mc)
 paddDiscrete = phoistAcyclic $
   -- In the future, this should use plutarch-numeric
