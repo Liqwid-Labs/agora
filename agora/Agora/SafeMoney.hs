@@ -75,6 +75,7 @@ pgeqDiscrete = phoistAcyclic $
     PDiscrete y' <- pmatch y
     y' #<= x'
 
+-- | Conjure zero discrete unit for any moneyclass
 pzeroDiscrete :: forall (mc :: MoneyClass) (s :: S). Term s (PDiscrete mc)
 pzeroDiscrete = phoistAcyclic $ pcon (PDiscrete 0)
 
@@ -113,7 +114,7 @@ pvalueDiscrete = phoistAcyclic $
         # f
 
 {- | Get a `PValue` from a `PDiscrete`.
-     __NOTE__: `pdiscreteValue` after `pvalueDiscrete` is loses information
+     __NOTE__: `pdiscreteValue` after `pvalueDiscrete` loses information
 -}
 pdiscreteValue ::
   forall (moneyClass :: MoneyClass) (ac :: Symbol) (n :: Symbol) (scale :: Nat) s.

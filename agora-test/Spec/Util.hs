@@ -32,30 +32,93 @@ import Test.Tasty.HUnit (assertFailure, testCase)
 
 import Plutarch
 import Plutarch.Api.V1 (PMintingPolicy, PValidator)
+import Plutarch.Builtin (pforgetData)
 import Plutarch.Crypto (pblake2b_256)
 import Plutarch.Evaluate (evalScript)
+import Plutarch.Lift (PUnsafeLiftDecl (PLifted))
 import Plutarch.Prelude ()
+import Plutus.V1.Ledger.Contexts (ScriptContext)
 import Plutus.V1.Ledger.Scripts (Datum (Datum), DatumHash (DatumHash), Script)
 import PlutusTx.Builtins qualified as PlutusTx
 import PlutusTx.IsData qualified as PlutusTx
 
 --------------------------------------------------------------------------------
 
-policySucceedsWith :: String -> ClosedTerm PMintingPolicy -> ClosedTerm PData -> _ -> TestTree
+policySucceedsWith ::
+  ( PLift redeemer
+  , PlutusTx.ToData (PLifted redeemer)
+  ) =>
+  String ->
+  ClosedTerm PMintingPolicy ->
+  PLifted redeemer ->
+  ScriptContext ->
+  TestTree
 policySucceedsWith tag policy redeemer scriptContext =
-  scriptSucceeds tag $ compile (policy # redeemer # pconstant scriptContext)
+  scriptSucceeds tag $
+    compile
+      ( policy
+          # pforgetData (pconstantData redeemer)
+          # pconstant scriptContext
+      )
 
-policyFailsWith :: String -> ClosedTerm PMintingPolicy -> ClosedTerm PData -> _ -> TestTree
+policyFailsWith ::
+  ( PLift redeemer
+  , PlutusTx.ToData (PLifted redeemer)
+  ) =>
+  String ->
+  ClosedTerm PMintingPolicy ->
+  PLifted redeemer ->
+  ScriptContext ->
+  TestTree
 policyFailsWith tag policy redeemer scriptContext =
-  scriptFails tag $ compile (policy # redeemer # pconstant scriptContext)
+  scriptFails tag $
+    compile
+      ( policy
+          # pforgetData (pconstantData redeemer)
+          # pconstant scriptContext
+      )
 
-validatorSucceedsWith :: String -> ClosedTerm PValidator -> ClosedTerm PData -> ClosedTerm PData -> _ -> TestTree
+validatorSucceedsWith ::
+  ( PLift datum
+  , PlutusTx.ToData (PLifted datum)
+  , PLift redeemer
+  , PlutusTx.ToData (PLifted redeemer)
+  ) =>
+  String ->
+  ClosedTerm PValidator ->
+  PLifted datum ->
+  PLifted redeemer ->
+  ScriptContext ->
+  TestTree
 validatorSucceedsWith tag policy datum redeemer scriptContext =
-  scriptSucceeds tag $ compile (policy # datum # redeemer # pconstant scriptContext)
+  scriptSucceeds tag $
+    compile
+      ( policy
+          # pforgetData (pconstantData datum)
+          # pforgetData (pconstantData redeemer)
+          # pconstant scriptContext
+      )
 
-validatorFailsWith :: String -> ClosedTerm PValidator -> ClosedTerm PData -> ClosedTerm PData -> _ -> TestTree
+validatorFailsWith ::
+  ( PLift datum
+  , PlutusTx.ToData (PLifted datum)
+  , PLift redeemer
+  , PlutusTx.ToData (PLifted redeemer)
+  ) =>
+  String ->
+  ClosedTerm PValidator ->
+  PLifted datum ->
+  PLifted redeemer ->
+  ScriptContext ->
+  TestTree
 validatorFailsWith tag policy datum redeemer scriptContext =
-  scriptFails tag $ compile (policy # datum # redeemer # pconstant scriptContext)
+  scriptFails tag $
+    compile
+      ( policy
+          # pforgetData (pconstantData datum)
+          # pforgetData (pconstantData redeemer)
+          # pconstant scriptContext
+      )
 
 scriptSucceeds :: String -> Script -> TestTree
 scriptSucceeds name script = testCase name $ do
