@@ -1,3 +1,10 @@
+{- |
+Module     : Spec.Util
+Maintainer : emi@haskell.fyi
+Description: Utility functions for testing Plutarch scripts with ScriptContext
+
+Utility functions for testing Plutarch scripts with ScriptContext
+-}
 module Spec.Util (
   -- * Testing utils
   scriptSucceeds,

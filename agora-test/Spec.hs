@@ -11,6 +11,7 @@ import Test.Tasty (defaultMain, testGroup)
 import Spec.Model.MultiSig qualified as MultiSig
 import Spec.Stake qualified as Stake
 
+-- | The Agora test suite
 main :: IO ()
 main =
   defaultMain $

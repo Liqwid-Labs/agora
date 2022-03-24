@@ -1,3 +1,10 @@
+{- |
+Module     : Spec.Stake
+Maintainer : emi@haskell.fyi
+Description: Tests for Stake policy and validator
+
+Tests for Stake policy and validator
+-}
 module Spec.Stake (tests) where
 
 --------------------------------------------------------------------------------
@@ -20,6 +27,7 @@ import Spec.Util (policyFailsWith, policySucceedsWith, toDatum, validatorFailsWi
 
 --------------------------------------------------------------------------------
 
+-- | Stake tests
 tests :: [TestTree]
 tests =
   [ testGroup
