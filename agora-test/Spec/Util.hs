@@ -7,7 +7,7 @@ module Spec.Util (
   validatorSucceedsWith,
   validatorFailsWith,
 
-  -- * Plutus land utils
+  -- * Plutus-land utils
   datumHash,
   toDatum,
   toDatumHash,
@@ -30,13 +30,11 @@ import Test.Tasty.HUnit (assertFailure, testCase)
 
 --------------------------------------------------------------------------------
 
-import Plutarch
 import Plutarch.Api.V1 (PMintingPolicy, PValidator)
 import Plutarch.Builtin (pforgetData)
 import Plutarch.Crypto (pblake2b_256)
 import Plutarch.Evaluate (evalScript)
 import Plutarch.Lift (PUnsafeLiftDecl (PLifted))
-import Plutarch.Prelude ()
 import Plutus.V1.Ledger.Contexts (ScriptContext)
 import Plutus.V1.Ledger.Scripts (Datum (Datum), DatumHash (DatumHash), Script)
 import PlutusTx.Builtins qualified as PlutusTx
@@ -44,6 +42,7 @@ import PlutusTx.IsData qualified as PlutusTx
 
 --------------------------------------------------------------------------------
 
+-- | Check that a policy script succeeds, given a name and arguments.
 policySucceedsWith ::
   ( PLift redeemer
   , PlutusTx.ToData (PLifted redeemer)
@@ -61,6 +60,7 @@ policySucceedsWith tag policy redeemer scriptContext =
           # pconstant scriptContext
       )
 
+-- | Check that a policy script fails, given a name and arguments.
 policyFailsWith ::
   ( PLift redeemer
   , PlutusTx.ToData (PLifted redeemer)
@@ -78,6 +78,7 @@ policyFailsWith tag policy redeemer scriptContext =
           # pconstant scriptContext
       )
 
+-- | Check that a validator script succeeds, given a name and arguments.
 validatorSucceedsWith ::
   ( PLift datum
   , PlutusTx.ToData (PLifted datum)
@@ -99,6 +100,7 @@ validatorSucceedsWith tag policy datum redeemer scriptContext =
           # pconstant scriptContext
       )
 
+-- | Check that a validator script fails, given a name and arguments.
 validatorFailsWith ::
   ( PLift datum
   , PlutusTx.ToData (PLifted datum)
@@ -120,6 +122,7 @@ validatorFailsWith tag policy datum redeemer scriptContext =
           # pconstant scriptContext
       )
 
+-- | Check that an arbitrary script doesn't error when evaluated, given a name.
 scriptSucceeds :: String -> Script -> TestTree
 scriptSucceeds name script = testCase name $ do
   let (res, _budget, traces) = evalScript script
@@ -130,6 +133,7 @@ scriptSucceeds name script = testCase name $ do
     Right _v ->
       pure ()
 
+-- | Check that an arbitrary script **does** error when evaluated, given a name.
 scriptFails :: String -> Script -> TestTree
 scriptFails name script = testCase name $ do
   let (res, _budget, traces) = evalScript script
@@ -142,7 +146,7 @@ scriptFails name script = testCase name $ do
 
 --------------------------------------------------------------------------------
 
-{- | Create a pair from data for use in 'txInfoData'
+{- | Create a pair from data for use in 'txInfoData'.
 
    Example:
    @
@@ -152,13 +156,18 @@ scriptFails name script = testCase name $ do
 datumPair :: PlutusTx.ToData a => a -> (DatumHash, Datum)
 datumPair = (,) <$> toDatumHash <*> toDatum
 
+-- | Calculate the blake2b-256 hash of a Datum.
 datumHash :: Datum -> DatumHash
 datumHash (Datum data') = toDatumHash data'
 
+-- | Convenience function to create a Datum from any type that implements ToData.
 toDatum :: PlutusTx.ToData a => a -> Datum
 toDatum = Datum . PlutusTx.toBuiltinData
 
--- Shamelessly go through plutus.
+{- | Calculate the blake2b-256 hash of any type that implements ToData
+
+     Shamelessly go through plutus.
+-}
 toDatumHash :: PlutusTx.ToData a => a -> DatumHash
 toDatumHash datum =
   DatumHash $

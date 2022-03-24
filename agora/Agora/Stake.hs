@@ -72,8 +72,8 @@ import Agora.Utils (
   paddValue,
   passert,
   pfindTxInByTxOutRef,
-  pgeqBy,
-  pgeqBy',
+  pgeqByClass,
+  pgeqByClass',
   pgeqBySymbol,
   psingletonValue,
   psymbolValueOf,
@@ -233,8 +233,8 @@ stakePolicy _stake =
                     let valueCorrect =
                           foldr1
                             (#&&)
-                            [ pgeqBy' (AssetClass ("", "")) # value # expectedValue
-                            , pgeqBy'
+                            [ pgeqByClass' (AssetClass ("", "")) # value # expectedValue
+                            , pgeqByClass'
                                 ( AssetClass
                                     ( fromString . symbolVal $ Proxy @ac
                                     , fromString . symbolVal $ Proxy @n
@@ -242,7 +242,7 @@ stakePolicy _stake =
                                 )
                                 # value
                                 # expectedValue
-                            , pgeqBy
+                            , pgeqByClass
                                 # ownSymbol
                                 # tn
                                 # value
@@ -333,8 +333,8 @@ stakeValidator stake =
               let valueCorrect =
                     foldr1
                       (#&&)
-                      [ pgeqBy' (AssetClass ("", "")) # value # expectedValue
-                      , pgeqBy'
+                      [ pgeqByClass' (AssetClass ("", "")) # value # expectedValue
+                      , pgeqByClass'
                           ( AssetClass
                               ( fromString . symbolVal $ Proxy @ac
                               , fromString . symbolVal $ Proxy @n

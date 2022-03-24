@@ -58,25 +58,30 @@ import Spec.Util (datumPair, toDatumHash)
 
 --------------------------------------------------------------------------------
 
+-- | 'Stake' parameters for 'LQ'.
 stake :: Stake LQ
 stake = Stake
 
+-- | 'Stake' policy instance.
 policy :: MintingPolicy
 policy = mkMintingPolicy (stakePolicy stake)
 
 policySymbol :: CurrencySymbol
 policySymbol = mintingPolicySymbol policy
 
+-- | A sample 'PubKeyHash'.
 signer :: PubKeyHash
 signer = "8a30896c4fd5e79843e4ca1bd2cdbaa36f8c0bc3be7401214142019c"
 
+-- | 'Stake' validator instance.
 validator :: Validator
 validator = mkValidator (stakeValidator stake)
 
+-- | 'TokenName' that represents the hash of the 'Stake' validator.
 validatorHashTN :: TokenName
 validatorHashTN = let ValidatorHash vh = validatorHash validator in TokenName vh
 
--- | This script context should be a valid transaction
+-- | This script context should be a valid transaction.
 stakeCreation :: ScriptContext
 stakeCreation =
   let st = Value.singleton policySymbol validatorHashTN 1 -- Stake ST
@@ -105,7 +110,7 @@ stakeCreation =
         , scriptContextPurpose = Minting policySymbol
         }
 
--- | This ScriptContext should fail because the datum has too much GT
+-- | This ScriptContext should fail because the datum has too much GT.
 stakeCreationWrongDatum :: ScriptContext
 stakeCreationWrongDatum =
   let datum :: Datum
@@ -115,7 +120,7 @@ stakeCreationWrongDatum =
         , scriptContextPurpose = Minting policySymbol
         }
 
--- | This ScriptContext should fail because the datum has too much GT
+-- | This ScriptContext should fail because the datum has too much GT.
 stakeCreationUnsigned :: ScriptContext
 stakeCreationUnsigned =
   ScriptContext
@@ -128,11 +133,15 @@ stakeCreationUnsigned =
 
 --------------------------------------------------------------------------------
 
+-- | Config for creating a ScriptContext that deposits or withdraws.
 data DepositWithdrawExample = DepositWithdrawExample
   { startAmount :: Integer
+  -- ^ The amount of GT stored before the transaction.
   , delta :: Integer
+  -- ^ The amount of GT deposited or withdrawn from the Stake.
   }
 
+-- | Create a ScriptContext that deposits or withdraws, given the config for it.
 stakeDepositWithdraw :: DepositWithdrawExample -> ScriptContext
 stakeDepositWithdraw config =
   let st = Value.singleton policySymbol validatorHashTN 1 -- Stake ST

@@ -23,7 +23,10 @@ format:
 	git ls-tree -r HEAD --full-tree --name-only | grep -E '.*\.cabal' | xargs cabal-fmt -i
 
 format_check:
-	find -name '*.hs' -not -path './dist-*/*' | xargs fourmolu $(FORMAT_EXTENSIONS) -m check
+	find -name '*.hs' \
+	     -not -path './dist*/*' \
+	     -not -path './haddock/*' \
+	  | xargs fourmolu $(FORMAT_EXTENSIONS) -m check
 
 haddock:
 	cabal haddock --haddock-html --haddock-hoogle --builddir=haddock

@@ -10,6 +10,7 @@ A basic N of M multisignature validation function.
 module Agora.MultiSig (
   validatedByMultisig,
   pvalidatedByMultisig,
+  PMultiSig (..),
   MultiSig (..),
 ) where
 

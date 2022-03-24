@@ -40,7 +40,7 @@ import Agora.SafeMoney (MoneyClass, PDiscrete)
 {- | Generate 'PDiscrete' values tagged by a particular MoneyClass
 
 @
-  [discrete| 123.456 ADA |] :: 'Term' s ('PDiscrete' 'ADA')
+  [discrete| 123.456 'Agora.SafeMoney.ADA' |] :: 'Term' s ('PDiscrete' 'Agora.SafeMoney.ADA')
 @
 -}
 discrete :: QuasiQuoter
