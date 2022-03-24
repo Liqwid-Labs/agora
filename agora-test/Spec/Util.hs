@@ -28,7 +28,7 @@ import Prelude
 --------------------------------------------------------------------------------
 
 import Codec.Serialise (serialise)
-import Data.ByteString.Lazy qualified as LBS
+import Data.ByteString.Lazy qualified as ByteString.Lazy
 
 --------------------------------------------------------------------------------
 
@@ -181,4 +181,4 @@ toDatumHash datum =
     PlutusTx.toBuiltin $
       plift $
         pblake2b_256
-          # pconstant (LBS.toStrict $ serialise $ PlutusTx.toData datum)
+          # pconstant (ByteString.Lazy.toStrict $ serialise $ PlutusTx.toData datum)
