@@ -41,7 +41,6 @@ import Plutarch.Api.V1 (
   PCurrencySymbol,
   PDatum,
   PDatumHash,
-  PMap (PMap),
   PMaybeData (PDJust),
   PPubKeyHash,
   PTokenName,
@@ -50,8 +49,9 @@ import Plutarch.Api.V1 (
   PTxInfo (PTxInfo),
   PTxOut (PTxOut),
   PTxOutRef,
-  PValue (PValue),
  )
+import Plutarch.Api.V1.AssocMap (PMap (PMap))
+import Plutarch.Api.V1.Value (PValue (PValue))
 import Plutarch.Builtin (ppairDataBuiltin)
 import Plutarch.Internal (punsafeCoerce)
 import Plutarch.Monadic qualified as P

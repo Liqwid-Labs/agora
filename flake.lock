@@ -679,7 +679,7 @@
         "nixpkgs": [
           "apropos-tx",
           "haskell-nix",
-          "nixpkgs-2105"
+          "nixpkgs-unstable"
         ],
         "nixpkgs-2003": "nixpkgs-2003",
         "nixpkgs-2105": "nixpkgs-2105",
@@ -731,6 +731,8 @@
         "hpc-coveralls": "hpc-coveralls_2",
         "nix-tools": "nix-tools_2",
         "nixpkgs": [
+          "plutarch",
+          "haskell-nix",
           "nixpkgs-2111"
         ],
         "nixpkgs-2003": "nixpkgs-2003_2",
@@ -1123,6 +1125,22 @@
         "type": "github"
       }
     },
+    "nixpkgs-2111_4": {
+      "locked": {
+        "lastModified": 1647902355,
+        "narHash": "sha256-SySJ8IRaogpc/BPOkysA+kzq9URvXthoeKIemaTKCiM=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "31aa631dbc496500efd2507baaed39626f6650f2",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixpkgs-21.11-darwin",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
     "nixpkgs-nixops": {
       "locked": {
         "lastModified": 1630248577,
@@ -1274,6 +1292,7 @@
           "haskell-nix",
           "nixpkgs-unstable"
         ],
+        "nixpkgs-2111": "nixpkgs-2111_4",
         "plutus": "plutus_2",
         "protolude": "protolude",
         "safe-coloured-text": "safe-coloured-text",
@@ -1283,17 +1302,17 @@
         "validity": "validity"
       },
       "locked": {
-        "lastModified": 1646941827,
-        "narHash": "sha256-/TmkSDVOYD0Nsf6/tsyCSWhFUIeefwPn0Lz1oeZ7lyQ=",
-        "owner": "Plutonomicon",
+        "lastModified": 1648145467,
+        "narHash": "sha256-yrq0CJbZPrDmrEeI/RqNmKGHoHasMsnknug7kPLUsRU=",
+        "owner": "peter-mlabs",
         "repo": "plutarch",
-        "rev": "cb29ca64df4ed193d94a062e3fe26aa37e59b7bc",
+        "rev": "2ddf1d1b6efc43598ca3502471f6ace596f920ec",
         "type": "github"
       },
       "original": {
-        "owner": "Plutonomicon",
+        "owner": "peter-mlabs",
+        "ref": "liqwid/extra",
         "repo": "plutarch",
-        "rev": "cb29ca64df4ed193d94a062e3fe26aa37e59b7bc",
         "type": "github"
       }
     },
