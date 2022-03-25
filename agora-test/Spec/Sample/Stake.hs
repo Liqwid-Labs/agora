@@ -10,11 +10,14 @@ module Spec.Sample.Stake (
   policy,
   policySymbol,
   validatorHashTN,
+  signer,
 
   -- * Script contexts
   stakeCreation,
   stakeCreationWrongDatum,
   stakeCreationUnsigned,
+  stakeDepositWithdraw,
+  DepositWithdrawExample (..),
 ) where
 
 --------------------------------------------------------------------------------
@@ -36,11 +39,12 @@ import Plutus.V1.Ledger.Api (
   ScriptContext (..),
   ScriptPurpose (..),
   ToData (toBuiltinData),
+  TxInInfo (TxInInfo),
   TxInfo (..),
   TxOut (txOutAddress, txOutDatumHash, txOutValue),
   ValidatorHash (ValidatorHash),
  )
-import Plutus.V1.Ledger.Contexts (TxOut (TxOut))
+import Plutus.V1.Ledger.Contexts (TxOut (TxOut), TxOutRef (TxOutRef))
 import Plutus.V1.Ledger.Interval qualified as Interval
 import Plutus.V1.Ledger.Scripts (Validator)
 import Plutus.V1.Ledger.Value (TokenName (TokenName))
@@ -50,28 +54,34 @@ import Plutus.V1.Ledger.Value qualified as Value
 
 import Agora.SafeMoney
 import Agora.Stake
+import Spec.Util (datumPair, toDatumHash)
 
 --------------------------------------------------------------------------------
 
+-- | 'Stake' parameters for 'LQ'.
 stake :: Stake LQ
 stake = Stake
 
+-- | 'Stake' policy instance.
 policy :: MintingPolicy
 policy = mkMintingPolicy (stakePolicy stake)
 
 policySymbol :: CurrencySymbol
 policySymbol = mintingPolicySymbol policy
 
+-- | A sample 'PubKeyHash'.
 signer :: PubKeyHash
 signer = "8a30896c4fd5e79843e4ca1bd2cdbaa36f8c0bc3be7401214142019c"
 
+-- | 'Stake' validator instance.
 validator :: Validator
 validator = mkValidator (stakeValidator stake)
 
+-- | 'TokenName' that represents the hash of the 'Stake' validator.
 validatorHashTN :: TokenName
 validatorHashTN = let ValidatorHash vh = validatorHash validator in TokenName vh
 
--- | This script context should be a valid transaction
+-- | This script context should be a valid transaction.
 stakeCreation :: ScriptContext
 stakeCreation =
   let st = Value.singleton policySymbol validatorHashTN 1 -- Stake ST
@@ -100,7 +110,7 @@ stakeCreation =
         , scriptContextPurpose = Minting policySymbol
         }
 
--- | This ScriptContext should fail because the datum has too much GT
+-- | This ScriptContext should fail because the datum has too much GT.
 stakeCreationWrongDatum :: ScriptContext
 stakeCreationWrongDatum =
   let datum :: Datum
@@ -110,7 +120,7 @@ stakeCreationWrongDatum =
         , scriptContextPurpose = Minting policySymbol
         }
 
--- | This ScriptContext should fail because the datum has too much GT
+-- | This ScriptContext should fail because the datum has too much GT.
 stakeCreationUnsigned :: ScriptContext
 stakeCreationUnsigned =
   ScriptContext
@@ -120,3 +130,63 @@ stakeCreationUnsigned =
           }
     , scriptContextPurpose = Minting policySymbol
     }
+
+--------------------------------------------------------------------------------
+
+-- | Config for creating a ScriptContext that deposits or withdraws.
+data DepositWithdrawExample = DepositWithdrawExample
+  { startAmount :: Integer
+  -- ^ The amount of GT stored before the transaction.
+  , delta :: Integer
+  -- ^ The amount of GT deposited or withdrawn from the Stake.
+  }
+
+-- | Create a ScriptContext that deposits or withdraws, given the config for it.
+stakeDepositWithdraw :: DepositWithdrawExample -> ScriptContext
+stakeDepositWithdraw config =
+  let st = Value.singleton policySymbol validatorHashTN 1 -- Stake ST
+      stakeBefore :: StakeDatum
+      stakeBefore = StakeDatum config.startAmount signer
+
+      stakeAfter :: StakeDatum
+      stakeAfter = stakeBefore {stakedAmount = stakeBefore.stakedAmount + config.delta}
+   in ScriptContext
+        { scriptContextTxInfo =
+            TxInfo
+              { txInfoInputs =
+                  [ TxInInfo
+                      (TxOutRef "0b2086cbf8b6900f8cb65e012de4516cb66b5cb08a9aaba12a8b88be" 1)
+                      TxOut
+                        { txOutAddress = Address (ScriptCredential $ validatorHash validator) Nothing
+                        , txOutValue =
+                            st
+                              <> Value.singleton
+                                "da8c30857834c6ae7203935b89278c532b3995245295456f993e1d24"
+                                "LQ"
+                                stakeBefore.stakedAmount
+                        , txOutDatumHash = Just (toDatumHash stakeAfter)
+                        }
+                  ]
+              , txInfoOutputs =
+                  [ TxOut
+                      { txOutAddress = Address (ScriptCredential $ validatorHash validator) Nothing
+                      , txOutValue =
+                          st
+                            <> Value.singleton
+                              "da8c30857834c6ae7203935b89278c532b3995245295456f993e1d24"
+                              "LQ"
+                              stakeAfter.stakedAmount
+                      , txOutDatumHash = Just (toDatumHash stakeAfter)
+                      }
+                  ]
+              , txInfoFee = Value.singleton "" "" 2
+              , txInfoMint = st
+              , txInfoDCert = []
+              , txInfoWdrl = []
+              , txInfoValidRange = Interval.always
+              , txInfoSignatories = [signer]
+              , txInfoData = [datumPair stakeAfter]
+              , txInfoId = "0b2086cbf8b6900f8cb65e012de4516cb66b5cb08a9aaba12a8b88be"
+              }
+        , scriptContextPurpose = Spending (TxOutRef "0b2086cbf8b6900f8cb65e012de4516cb66b5cb08a9aaba12a8b88be" 1)
+        }

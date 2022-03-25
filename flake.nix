@@ -8,7 +8,8 @@
   inputs.nixpkgs-2111 = { url = "github:NixOS/nixpkgs/nixpkgs-21.11-darwin"; };
 
   inputs.plutarch.url = "github:peter-mlabs/plutarch/liqwid/extra";
-  inputs.plutarch.inputs.nixpkgs.follows = "plutarch/haskell-nix/nixpkgs-unstable";
+  inputs.plutarch.inputs.nixpkgs.follows =
+    "plutarch/haskell-nix/nixpkgs-unstable";
 
   # https://github.com/mlabs-haskell/apropos-tx/pull/28
   inputs.apropos-tx.url =
@@ -18,31 +19,37 @@
 
   outputs = inputs@{ self, nixpkgs, haskell-nix, plutarch, ... }:
     let
-      supportedSystems = with nixpkgs.lib.systems.supported; tier1 ++ tier2 ++ tier3;
+      supportedSystems = with nixpkgs.lib.systems.supported;
+        tier1 ++ tier2 ++ tier3;
 
       perSystem = nixpkgs.lib.genAttrs supportedSystems;
 
-      nixpkgsFor = system: import nixpkgs { inherit system; overlays = [ haskell-nix.overlay ]; inherit (haskell-nix) config; };
-      nixpkgsFor' = system: import nixpkgs { inherit system; inherit (haskell-nix) config; };
+      nixpkgsFor = system:
+        import nixpkgs {
+          inherit system;
+          overlays = [ haskell-nix.overlay ];
+          inherit (haskell-nix) config;
+        };
+      nixpkgsFor' = system:
+        import nixpkgs {
+          inherit system;
+          inherit (haskell-nix) config;
+        };
 
       ghcVersion = "ghc921";
 
       projectFor = system:
-        let pkgs = nixpkgsFor system; in
-        let pkgs' = nixpkgsFor' system; in
-        (nixpkgsFor system).haskell-nix.cabalProject' {
+        let pkgs = nixpkgsFor system;
+        in let pkgs' = nixpkgsFor' system;
+        in (nixpkgsFor system).haskell-nix.cabalProject' {
           src = ./.;
           compiler-nix-name = ghcVersion;
           inherit (plutarch) cabalProjectLocal;
           extraSources = plutarch.extraSources ++ [
             {
               src = inputs.plutarch;
-              subdirs = [
-                "."
-                "plutarch-test"
-                "plutarch-extra"
-                "plutarch-numeric"
-              ];
+              subdirs =
+                [ "." "plutarch-test" "plutarch-extra" "plutarch-numeric" ];
             }
             {
               src = inputs.apropos-tx;
@@ -57,18 +64,17 @@
 
             # We use the ones from Nixpkgs, since they are cached reliably.
             # Eventually we will probably want to build these with haskell.nix.
-            nativeBuildInputs = with pkgs';
-              [
-                entr
-                haskellPackages.apply-refact
-                git
-                fd
-                cabal-install
-                hlint
-                haskellPackages.cabal-fmt
-                nixpkgs-fmt
-                graphviz
-              ];
+            nativeBuildInputs = with pkgs'; [
+              entr
+              haskellPackages.apply-refact
+              git
+              fd
+              cabal-install
+              haskell.packages."${ghcVersion}".hlint
+              haskellPackages.cabal-fmt
+              nixpkgs-fmt
+              graphviz
+            ];
 
             inherit (plutarch) tools;
 
@@ -87,42 +93,44 @@
         let
           pkgs = nixpkgsFor system;
           pkgs' = nixpkgsFor' system;
-        in
-        pkgs.runCommand "format-check"
-          {
-            nativeBuildInputs = [ pkgs'.git pkgs'.fd pkgs'.haskellPackages.cabal-fmt pkgs'.nixpkgs-fmt (pkgs.haskell-nix.tools ghcVersion { inherit (plutarch.tools) fourmolu; }).fourmolu ];
-          } ''
+        in pkgs.runCommand "format-check" {
+          nativeBuildInputs = [
+            pkgs'.git
+            pkgs'.fd
+            pkgs'.haskellPackages.cabal-fmt
+            pkgs'.nixpkgs-fmt
+            (pkgs.haskell-nix.tools ghcVersion {
+              inherit (plutarch.tools) fourmolu;
+            }).fourmolu
+          ];
+        } ''
           export LC_CTYPE=C.UTF-8
           export LC_ALL=C.UTF-8
           export LANG=C.UTF-8
           cd ${self}
-          make format_check
+          make format_check || (echo "    Please run 'make format'" ; exit 1)
           mkdir $out
-        ''
-      ;
-    in
-    {
+        '';
+    in {
       project = perSystem projectFor;
       flake = perSystem (system: (projectFor system).flake { });
 
       packages = perSystem (system: self.flake.${system}.packages);
+
+      # Define what we want to test
       checks = perSystem (system:
-        self.flake.${system}.checks
-        // {
+        self.flake.${system}.checks // {
           formatCheck = formatCheckFor system;
-        }
-      );
+          agora = self.flake.${system}.packages."agora:lib:agora";
+          agora-test = self.flake.${system}.packages."agora:test:agora-test";
+        });
       check = perSystem (system:
-        (nixpkgsFor system).runCommand "combined-test"
-          {
-            checksss = builtins.attrValues self.checks.${system};
-          } ''
+        (nixpkgsFor system).runCommand "combined-test" {
+          checksss = builtins.attrValues self.checks.${system};
+        } ''
           echo $checksss
           touch $out
-        ''
-      );
+        '');
       devShell = perSystem (system: self.flake.${system}.devShell);
     };
 }
-
-
