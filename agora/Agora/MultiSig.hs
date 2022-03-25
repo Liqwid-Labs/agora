@@ -10,6 +10,7 @@ A basic N of M multisignature validation function.
 module Agora.MultiSig (
   validatedByMultisig,
   pvalidatedByMultisig,
+  PMultiSig (..),
   MultiSig (..),
 ) where
 
@@ -47,7 +48,7 @@ data MultiSig = MultiSig
   -- ^ List of PubKeyHashes that must be present in the list of signatories.
   , minSigs :: Integer
   }
-  deriving stock (GHC.Generic)
+  deriving stock (GHC.Generic, Eq, Show)
   deriving anyclass (Generic)
 
 PlutusTx.makeLift ''MultiSig

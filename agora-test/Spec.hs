@@ -8,22 +8,24 @@ import Test.Tasty (defaultMain, testGroup)
 
 --------------------------------------------------------------------------------
 
-import Spec.Int
+import Spec.Model.MultiSig qualified as MultiSig
 import Spec.Stake qualified as Stake
 
+-- | The Agora test suite
 main :: IO ()
 main =
   defaultMain $
     testGroup
       "test suite"
       [ testGroup
-          "sample-tests"
+          "Stake tests"
           Stake.tests
       , testGroup
-          "apropos-tx"
+          "Multisig tests"
           [ testGroup
-              "Int"
-              [ intPlutarchTests
+              "MultiSig"
+              [ MultiSig.plutarchTests
+              , MultiSig.genTests
               ]
           ]
       ]

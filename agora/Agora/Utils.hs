@@ -19,6 +19,9 @@ module Agora.Utils (
   psymbolValueOf,
   passetClassValueOf,
   passetClassValueOf',
+  pgeqByClass,
+  pgeqBySymbol,
+  pgeqByClass',
   pfindTxInByTxOutRef,
   psingletonValue,
   pfindMap,
@@ -179,6 +182,27 @@ passetClassValueOf =
 passetClassValueOf' :: AssetClass -> Term s (PValue :--> PInteger)
 passetClassValueOf' (AssetClass (sym, token)) =
   passetClassValueOf # pconstant sym # pconstant token
+
+-- | Return '>=' on two values comparing by only a particular AssetClass
+pgeqByClass :: Term s (PCurrencySymbol :--> PTokenName :--> PValue :--> PValue :--> PBool)
+pgeqByClass =
+  phoistAcyclic $
+    plam $ \cs tn a b ->
+      passetClassValueOf # cs # tn # b #<= passetClassValueOf # cs # tn # a
+
+-- | Return '>=' on two values comparing by only a particular CurrencySymbol
+pgeqBySymbol :: Term s (PCurrencySymbol :--> PValue :--> PValue :--> PBool)
+pgeqBySymbol =
+  phoistAcyclic $
+    plam $ \cs a b ->
+      psymbolValueOf # cs # b #<= psymbolValueOf # cs # a
+
+-- | Return '>=' on two values comparing by only a particular Haskell-level AssetClass
+pgeqByClass' :: AssetClass -> Term s (PValue :--> PValue :--> PBool)
+pgeqByClass' ac =
+  phoistAcyclic $
+    plam $ \a b ->
+      passetClassValueOf' ac # b #<= passetClassValueOf' ac # a
 
 -- | Union two maps using a merge function on collisions.
 pmapUnionWith :: forall k v s. PIsData v => Term s ((v :--> v :--> v) :--> PMap k v :--> PMap k v :--> PMap k v)

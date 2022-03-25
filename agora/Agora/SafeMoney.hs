@@ -9,10 +9,11 @@ module Agora.SafeMoney (
   -- * Types
   MoneyClass,
   PDiscrete,
-  Discrete,
 
   -- * Utility functions
   paddDiscrete,
+  pgeqDiscrete,
+  pzeroDiscrete,
 
   -- * Conversions
   pdiscreteValue,
@@ -42,11 +43,11 @@ import Plutarch.Monadic qualified as P
 
 --------------------------------------------------------------------------------
 
-import Agora.Utils
+import Agora.Utils (passetClassValueOf, psingletonValue)
 
 --------------------------------------------------------------------------------
 
--- | Type-level unique identifier for an `AssetClass`
+-- | Type-level unique identifier for an 'Plutus.V1.Ledger.Value.AssetClass'
 type MoneyClass =
   ( -- AssetClass
     Symbol
@@ -56,16 +57,24 @@ type MoneyClass =
     Nat
   )
 
--- | A `PDiscrete` amount of currency tagged on the type level with the `MoneyClass` it belong sto
+-- | A 'PDiscrete' amount of currency tagged on the type level with the 'MoneyClass' it belongs to
 newtype PDiscrete (mc :: MoneyClass) (s :: S)
   = PDiscrete (Term s PInteger)
   deriving (PlutusType, PIsData, PEq, POrd) via (DerivePNewtype (PDiscrete mc) PInteger)
 
-newtype Discrete (mc :: MoneyClass)
-  = Discrete Integer
-  deriving stock (Show)
+-- | Check if one 'PDiscrete' is greater than another.
+pgeqDiscrete :: forall (mc :: MoneyClass) (s :: S). Term s (PDiscrete mc :--> PDiscrete mc :--> PBool)
+pgeqDiscrete = phoistAcyclic $
+  plam $ \x y -> P.do
+    PDiscrete x' <- pmatch x
+    PDiscrete y' <- pmatch y
+    y' #<= x'
 
--- | Add two `PDiscrete` values of the same `MoneyClass`.
+-- | Returns a zero-value 'PDiscrete' unit for any 'MoneyClass'.
+pzeroDiscrete :: forall (mc :: MoneyClass) (s :: S). Term s (PDiscrete mc)
+pzeroDiscrete = phoistAcyclic $ pcon (PDiscrete 0)
+
+-- | Add two 'PDiscrete' values of the same 'MoneyClass'.
 paddDiscrete :: Term s (PDiscrete mc :--> PDiscrete mc :--> PDiscrete mc)
 paddDiscrete = phoistAcyclic $
   -- In the future, this should use plutarch-numeric
@@ -100,7 +109,8 @@ pvalueDiscrete = phoistAcyclic $
         # f
 
 {- | Get a `PValue` from a `PDiscrete`.
-     __NOTE__: `pdiscreteValue` after `pvalueDiscrete` is loses information
+     __NOTE__: `pdiscreteValue` after `pvalueDiscrete` is not a round-trip.
+     It filters for a particular 'MoneyClass'.
 -}
 pdiscreteValue ::
   forall (moneyClass :: MoneyClass) (ac :: Symbol) (n :: Symbol) (scale :: Nat) s.
