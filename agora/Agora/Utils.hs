@@ -19,9 +19,9 @@ module Agora.Utils (
   psymbolValueOf,
   passetClassValueOf,
   passetClassValueOf',
-  pgeqBy,
+  pgeqByClass,
   pgeqBySymbol,
-  pgeqBy',
+  pgeqByClass',
   pfindTxInByTxOutRef,
   psingletonValue,
   pfindMap,
@@ -184,13 +184,13 @@ passetClassValueOf' (AssetClass (sym, token)) =
   passetClassValueOf # pconstant sym # pconstant token
 
 -- | Return '>=' on two values comparing by only a particular AssetClass
-pgeqBy :: Term s (PCurrencySymbol :--> PTokenName :--> PValue :--> PValue :--> PBool)
-pgeqBy =
+pgeqByClass :: Term s (PCurrencySymbol :--> PTokenName :--> PValue :--> PValue :--> PBool)
+pgeqByClass =
   phoistAcyclic $
     plam $ \cs tn a b ->
       passetClassValueOf # cs # tn # b #<= passetClassValueOf # cs # tn # a
 
--- | Return '>=' on two values comparing by only a particular AssetClass
+-- | Return '>=' on two values comparing by only a particular CurrencySymbol
 pgeqBySymbol :: Term s (PCurrencySymbol :--> PValue :--> PValue :--> PBool)
 pgeqBySymbol =
   phoistAcyclic $
@@ -198,8 +198,8 @@ pgeqBySymbol =
       psymbolValueOf # cs # b #<= psymbolValueOf # cs # a
 
 -- | Return '>=' on two values comparing by only a particular Haskell-level AssetClass
-pgeqBy' :: AssetClass -> Term s (PValue :--> PValue :--> PBool)
-pgeqBy' ac =
+pgeqByClass' :: AssetClass -> Term s (PValue :--> PValue :--> PBool)
+pgeqByClass' ac =
   phoistAcyclic $
     plam $ \a b ->
       passetClassValueOf' ac # b #<= passetClassValueOf' ac # a

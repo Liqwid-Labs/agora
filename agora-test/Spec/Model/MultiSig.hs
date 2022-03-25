@@ -1,3 +1,10 @@
+{- |
+Module     : Spec.Model.MultiSig
+Maintainer : emi@haskell.fyi
+Description: apropos-tx model and tests for 'MultiSig' functions
+
+apropos-tx model and tests for 'MultiSig' functions
+-}
 module Spec.Model.MultiSig (
   plutarchTests,
   genTests,
@@ -7,7 +14,6 @@ import Data.List (intersect)
 
 --------------------------------------------------------------------------------
 
-import Plutarch (compile)
 import Plutus.V1.Ledger.Api (
   Script,
   ScriptContext (scriptContextPurpose),
@@ -165,6 +171,7 @@ instance HasScriptRunner MultiSigProp MultiSigModel where
         (pcon PUnit)
         perror
 
+-- | Consistency tests for the 'HasParameterisedGenerator' instance of 'MultiSigModel'
 genTests :: TestTree
 genTests =
   testGroup "genTests" $
@@ -175,6 +182,7 @@ genTests =
               Yes
           ]
 
+-- | Tests for the 'HasScriptRunner' instance of 'MultiSigModel'
 plutarchTests :: TestTree
 plutarchTests =
   testGroup "plutarchTests" $
