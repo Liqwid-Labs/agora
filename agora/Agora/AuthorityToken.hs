@@ -15,14 +15,14 @@ import Plutarch.Api.V1 (
   PAddress (..),
   PCredential (..),
   PCurrencySymbol (..),
-  PMap (..),
   PScriptContext (..),
   PScriptPurpose (..),
   PTxInInfo (..),
   PTxInfo (..),
   PTxOut (..),
-  PValue (..),
  )
+import Plutarch.Api.V1.AssocMap (PMap (PMap))
+import Plutarch.Api.V1.Value (PValue (PValue))
 import Plutarch.Builtin (pforgetData)
 import Plutarch.List (pfoldr')
 import Plutarch.Monadic qualified as P
