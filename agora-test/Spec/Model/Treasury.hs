@@ -23,7 +23,13 @@ import Apropos (
  )
 import Apropos.Script (HasScriptRunner (expect, runScriptTestsWhere, script))
 import Data.Set (Set)
-import Plutus.V1.Ledger.Api (CurrencySymbol, ScriptContext)
+import Plutus.V1.Ledger.Api (
+  CurrencySymbol,
+  ScriptContext (scriptContextPurpose, scriptContextTxInfo),
+  ScriptPurpose (Minting),
+  TxInfo (txInfoMint),
+  Value,
+ )
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.Hedgehog (fromGroup)
 
@@ -44,6 +50,7 @@ data TreasuryTxProp
   | GATIsNotBurned
   | AllGATsValid
   | SomeGATsInvalid
+  | ScriptPurposeIsNotMinting
   deriving stock (Show, Eq, Ord, Enum, Bounded)
 
 data TreasuryTxModel = TreasuryTxModel
@@ -63,10 +70,15 @@ instance LogicalModel TreasuryTxProp where
 
 instance HasLogicalModel TreasuryTxProp TreasuryTxModel where
   satisfiesProperty :: TreasuryTxProp -> TreasuryTxModel -> Bool
-  satisfiesProperty GATIsBurned trModel = undefined
-  satisfiesProperty GATIsNotBurned trModel = undefined
-  satisfiesProperty AllGATsValid trModel = undefined
-  satisfiesProperty SomeGATsInvalid trModel = undefined
+  satisfiesProperty prop model =
+    let purpose = model.ctx.scriptContextPurpose :: ScriptPurpose
+        txInfo = model.ctx.scriptContextTxInfo :: TxInfo
+        amountMinted = txInfo.txInfoMint :: Value
+     in case prop of
+          ScriptPurposeIsNotMinting -> case purpose of
+            Minting _ -> False
+            _ -> True
+          _ -> undefined
 
 -- instance HasParameterisedGenerator TreasuryTxProp Int where
 --   parameterisedGenerator :: Set TreasuryTxProp -> Gen Int
