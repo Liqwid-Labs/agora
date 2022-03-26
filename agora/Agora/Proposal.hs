@@ -22,8 +22,8 @@ import Plutus.V1.Ledger.Api (DatumHash, PubKeyHash, ValidatorHash)
 -}
 newtype ResultTag = ResultTag {getResultTag :: Integer}
 
-{- | The 'status' of the proposal. This is only useful for __actual__
-     state transitions, as opposed to time-based 'phases'.
+{- | The "status" of the proposal. This is only useful for __actual__
+     state transitions, as opposed to time-based "phases".
 
      If the proposal is 'VotingReady', for instance, that doesn't necessarily
      mean that voting is possible, as this also requires the timing to be right.
@@ -48,6 +48,7 @@ data ProposalStatus
     --   TODO: The owner of the proposal may choose to reclaim their proposal.
     Finished
 
+-- | Haskell-level datum for Proposal scripts.
 data ProposalDatum = ProposalDatum
   { -- TODO: could we encode this more efficiently?
   -- This is shaped this way for future proofing.

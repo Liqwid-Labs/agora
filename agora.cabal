@@ -121,7 +121,6 @@ library
     Agora.AuthorityToken
     Agora.MultiSig
     Agora.SafeMoney
-    Agora.SafeMoney.QQ
     Agora.Stake
     Agora.Treasury
     Agora.Governor

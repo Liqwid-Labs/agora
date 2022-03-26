@@ -7,7 +7,8 @@ Phantom-type protected types for handling money in Plutus.
 -}
 module Agora.SafeMoney (
   -- * Types
-  PDiscrete,
+  PDiscrete (..),
+  Discrete (..),
 
   -- * Tags and refs
   AssetClassRef (..),
@@ -23,15 +24,16 @@ module Agora.SafeMoney (
   -- * Conversions
   pdiscreteValue,
   pvalueDiscrete,
+  discreteValue,
 ) where
 
 import Prelude
 
 --------------------------------------------------------------------------------
 
-import Plutus.V1.Ledger.Api (BuiltinData (..), Data (..))
-import Plutus.V1.Ledger.Value (AssetClass (AssetClass))
-import PlutusTx.IsData.Class (FromData (..), ToData (..))
+import Plutus.V1.Ledger.Value (AssetClass (AssetClass), Value)
+import Plutus.V1.Ledger.Value qualified as Value
+import PlutusTx qualified
 
 import Plutarch.Api.V1 (PValue)
 import Plutarch.Builtin ()
@@ -63,22 +65,21 @@ newtype AssetClassRef (tag :: Type) = AssetClassRef {getAssetClass :: AssetClass
 adaRef :: AssetClassRef ADATag
 adaRef = AssetClassRef (AssetClass ("", ""))
 
-{- | Represents a single asset in a 'Value' related to a particular 'AssetClass'
+-- TODO: Currently it's possible to transmute from one discrete to another.
+-- How do we prevent this?
+--
+-- @
+--   transmute :: forall (a :: Type) (b :: Type). Discrete a -> Discrete b
+--   transmute = Discrete . getDiscrete
+-- @
+
+{- | Represents a single asset in a 'Plutus.V1.Ledger.Value.Value' related to a particular 'AssetClass'
      through 'AssetClassRef'.
 -}
-newtype Discrete (tag :: Type)
-  = Discrete Integer
+newtype Discrete (tag :: Type) = Discrete {getDiscrete :: Integer}
   deriving stock (Show, Eq)
-
-{- We have to manually write these instances because the `tag` will confuse
-   `makeIsDataIndexed`.
--}
-instance forall tag. FromData (Discrete tag) where
-  fromBuiltinData (BuiltinData (I x)) = Just (Discrete x)
-  fromBuiltinData _ = Nothing
-
-instance forall tag. ToData (Discrete tag) where
-  toBuiltinData (Discrete x) = BuiltinData (I x)
+  deriving newtype (PlutusTx.ToData, PlutusTx.FromData, PlutusTx.UnsafeFromData)
+  deriving newtype (Num) -- TODO: Use plutarch-numeric
 
 {- | Represents a single asset in a 'PValue' related to a particular 'AssetClass'
      through 'AssetClassRef'.
@@ -134,3 +135,11 @@ pdiscreteValue (AssetClassRef (AssetClass (cs, tn))) = phoistAcyclic $
         # pconstant cs
         # pconstant tn
         # p
+
+discreteValue ::
+  forall (tag :: Type).
+  AssetClassRef tag ->
+  Discrete tag ->
+  Value
+discreteValue (AssetClassRef (AssetClass (cs, tn))) (Discrete v) =
+  Value.singleton cs tn v

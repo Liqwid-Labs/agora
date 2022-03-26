@@ -21,7 +21,6 @@ module Spec.Sample.Stake (
 ) where
 
 --------------------------------------------------------------------------------
-
 import Plutarch.Api.V1 (
   mintingPolicySymbol,
   mkMintingPolicy,
@@ -144,9 +143,9 @@ stakeCreationUnsigned =
 
 -- | Config for creating a ScriptContext that deposits or withdraws.
 data DepositWithdrawExample = DepositWithdrawExample
-  { startAmount :: Integer
+  { startAmount :: Discrete GTTag
   -- ^ The amount of GT stored before the transaction.
-  , delta :: Integer
+  , delta :: Discrete GTTag
   -- ^ The amount of GT deposited or withdrawn from the Stake.
   }
 
@@ -169,10 +168,7 @@ stakeDepositWithdraw config =
                         { txOutAddress = Address (ScriptCredential $ validatorHash validator) Nothing
                         , txOutValue =
                             st
-                              <> Value.singleton
-                                "da8c30857834c6ae7203935b89278c532b3995245295456f993e1d24"
-                                "LQ"
-                                stakeBefore.stakedAmount
+                              <> discreteValue stake.gtClassRef stakeBefore.stakedAmount
                         , txOutDatumHash = Just (toDatumHash stakeAfter)
                         }
                   ]
@@ -181,10 +177,7 @@ stakeDepositWithdraw config =
                       { txOutAddress = Address (ScriptCredential $ validatorHash validator) Nothing
                       , txOutValue =
                           st
-                            <> Value.singleton
-                              "da8c30857834c6ae7203935b89278c532b3995245295456f993e1d24"
-                              "LQ"
-                              stakeAfter.stakedAmount
+                            <> discreteValue stake.gtClassRef stakeAfter.stakedAmount
                       , txOutDatumHash = Just (toDatumHash stakeAfter)
                       }
                   ]

@@ -54,6 +54,7 @@ import Plutus.V1.Ledger.Value (AssetClass (AssetClass))
 
 import Agora.SafeMoney (
   AssetClassRef (..),
+  Discrete,
   GTTag,
   PDiscrete,
   paddDiscrete,
@@ -66,6 +67,7 @@ import Agora.Utils (
   anyOutput,
   paddValue,
   passert,
+  passetClassValueOf',
   pfindTxInByTxOutRef,
   pgeqByClass,
   pgeqByClass',
@@ -100,7 +102,7 @@ data PStakeRedeemer (s :: S)
 -- | Haskell-level redeemer for Stake scripts.
 data StakeRedeemer
   = -- | Deposit or withdraw a discrete amount of the staked governance token.
-    DepositWithdraw Integer
+    DepositWithdraw (Discrete GTTag)
   | -- | Destroy a stake, retrieving its LQ, the minimum ADA and any other assets.
     Destroy
   deriving stock (Show, GHC.Generic)
@@ -121,8 +123,7 @@ newtype PStakeDatum (s :: S) = PStakeDatum
 
 -- | Haskell-level datum for Stake scripts.
 data StakeDatum = StakeDatum
-  { -- FIXME: This needs to be gt
-  stakedAmount :: Integer
+  { stakedAmount :: Discrete GTTag
   , owner :: PubKeyHash
   }
   deriving stock (Show, GHC.Generic)
@@ -305,6 +306,9 @@ stakeValidator stake =
                         pgeqDiscrete # (pfromData newStakeDatum.stakedAmount) # pzeroDiscrete
                       ]
               let expectedValue = paddValue # continuingValue # (pdiscreteValue stake.gtClassRef # delta)
+
+              ptrace (pshow $ passetClassValueOf' stake.gtClassRef.getAssetClass # value)
+              ptrace (pshow $ passetClassValueOf' stake.gtClassRef.getAssetClass # expectedValue)
 
               -- TODO: Same as above. This is quite inefficient now, as it does two lookups
               -- instead of a more efficient single pass,
