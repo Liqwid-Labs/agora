@@ -33,11 +33,11 @@ import Prelude
 
 import Plutarch.Internal (punsafeCoerce)
 
-import Agora.SafeMoney (MoneyClass, PDiscrete)
+import Agora.SafeMoney (PDiscrete)
 
 --------------------------------------------------------------------------------
 
-{- | Generate 'PDiscrete' values tagged by a particular MoneyClass
+{- | Generate 'PDiscrete' values tagged by a particular tag
 
 @
   [discrete| 123.456 'Agora.SafeMoney.ADA' |] :: 'Term' s ('PDiscrete' 'Agora.SafeMoney.ADA')
@@ -46,7 +46,7 @@ import Agora.SafeMoney (MoneyClass, PDiscrete)
 discrete :: QuasiQuoter
 discrete = QuasiQuoter discreteExp errorDiscretePat errorDiscreteType errorDiscreteDiscretelaration
 
-discreteConstant :: forall (moneyClass :: MoneyClass) s. Integer -> Term s (PDiscrete moneyClass)
+discreteConstant :: forall tag s. Integer -> Term s (PDiscrete tag)
 discreteConstant n = punsafeCoerce (pconstant n :: Term s PInteger)
 
 fixedToInteger :: Integer -> (Integer, Integer) -> Integer
@@ -68,7 +68,7 @@ discreteExp s = case parseDiscreteRatioExp s of
   Just (num, mc) -> do
     mcName <-
       lookupTypeName mc >>= \case
-        Nothing -> fail $ "MoneyClass with the name " <> show mc <> " is not in scope."
+        Nothing -> fail $ "Type with the name " <> show mc <> " is not in scope."
         Just v -> pure v
     reified <- reify mcName
     case reified of
