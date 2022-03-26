@@ -79,7 +79,7 @@ import Agora.Utils (
 --------------------------------------------------------------------------------
 
 -- | Parameters for creating Stake scripts.
-data Stake = Stake
+newtype Stake = Stake
   { gtClassRef :: AssetClassRef GTTag
   -- ^ Resolve governance token
   }

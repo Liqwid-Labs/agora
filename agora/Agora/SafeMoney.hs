@@ -29,7 +29,9 @@ import Prelude
 
 --------------------------------------------------------------------------------
 
+import Plutus.V1.Ledger.Api (BuiltinData (..), Data (..))
 import Plutus.V1.Ledger.Value (AssetClass (AssetClass))
+import PlutusTx.IsData.Class (FromData (..), ToData (..))
 
 import Plutarch.Api.V1 (PValue)
 import Plutarch.Builtin ()
@@ -55,11 +57,32 @@ data ADATag
 --------------------------------------------------------------------------------
 
 -- | A tagged AssetClass. Use to resolve a reference inside of a PDiscrete
-data AssetClassRef (tag :: Type) = AssetClassRef {getAssetClass :: AssetClass}
+newtype AssetClassRef (tag :: Type) = AssetClassRef {getAssetClass :: AssetClass}
 
+-- | Resolves ada tags.
 adaRef :: AssetClassRef ADATag
 adaRef = AssetClassRef (AssetClass ("", ""))
 
+{- | Represents a single asset in a 'Value' related to a particular 'AssetClass'
+     through 'AssetClassRef'.
+-}
+newtype Discrete (tag :: Type)
+  = Discrete Integer
+  deriving stock (Show, Eq)
+
+{- We have to manually write these instances because the `tag` will confuse
+   `makeIsDataIndexed`.
+-}
+instance forall tag. FromData (Discrete tag) where
+  fromBuiltinData (BuiltinData (I x)) = Just (Discrete x)
+  fromBuiltinData _ = Nothing
+
+instance forall tag. ToData (Discrete tag) where
+  toBuiltinData (Discrete x) = BuiltinData (I x)
+
+{- | Represents a single asset in a 'PValue' related to a particular 'AssetClass'
+     through 'AssetClassRef'.
+-}
 newtype PDiscrete (tag :: Type) (s :: S)
   = PDiscrete (Term s PInteger)
   deriving (PlutusType, PIsData, PEq, POrd) via (DerivePNewtype (PDiscrete tag) PInteger)
