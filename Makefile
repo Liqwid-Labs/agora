@@ -12,6 +12,7 @@ usage:
 	@echo "  haddock -- Generate Haddock docs for project"
 
 hoogle:
+	pkill hoogle
 	hoogle generate --local=haddock --database=hoo/local.hoo
 	hoogle server --local -p 8081 >> /dev/null &
 	hoogle server --local --database=hoo/local.hoo -p 8082 >> /dev/null &

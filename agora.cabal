@@ -124,7 +124,8 @@ library
     Agora.SafeMoney.QQ
     Agora.Stake
     Agora.Treasury
-    Agora.Voting
+    Agora.Governor
+    Agora.Proposal
 
   other-modules:
     Agora.Utils
