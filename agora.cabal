@@ -108,6 +108,7 @@ common deps
 
 common test-deps
   build-depends:
+    , apropos
     , apropos-tx
     , QuickCheck
     , quickcheck-instances
