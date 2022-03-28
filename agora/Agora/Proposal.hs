@@ -6,20 +6,38 @@ Description: Proposal scripts encoding effects that operate on the system.
 Proposal scripts encoding effects that operate on the system.
 -}
 module Agora.Proposal (
+  -- * Haskell-land
   ProposalDatum (..),
   ProposalStatus (..),
   ProposalThresholds (..),
   ProposalVotes (..),
   ResultTag (..),
+
+  -- * Plutarch-land
+  PProposalDatum (..),
+  PResultTag (..),
 ) where
 
+import GHC.Generics qualified as GHC
+import Generics.SOP (Generic, I (I))
+import Plutarch.Api.V1 (
+  PDatumHash,
+  PMap,
+  PPubKeyHash,
+  PValidatorHash,
+ )
+import Plutarch.DataRepr (
+  PDataFields,
+  PIsDataReprInstances (PIsDataReprInstances),
+ )
 import Plutus.V1.Ledger.Api (DatumHash, PubKeyHash, ValidatorHash)
 
 --------------------------------------------------------------------------------
 
-import Agora.SafeMoney (Discrete, GTTag)
+import Agora.SafeMoney (Discrete, GTTag, PDiscrete)
 
 --------------------------------------------------------------------------------
+-- Haskell-land
 
 {- | Encodes a result. Typically, for a Yes/No proposal, we encode it like this:
 
@@ -99,11 +117,76 @@ data ProposalDatum = ProposalDatum
   -- ^ Effect lookup table. First by result, then by
   , status :: ProposalStatus
   -- ^ The status the proposal is in.
-  , proposers :: [PubKeyHash]
-  -- ^ Who created the proposal initially.
-  -- We may want to remove this.
+  , cosigners :: [PubKeyHash]
+  -- ^ Who created the proposal initially + who cosigned.
   , thresholds :: ProposalThresholds
   -- ^ Thresholds copied over on initialization.
   , votes :: ProposalVotes
   -- ^ Vote tally on the proposal
   }
+
+--------------------------------------------------------------------------------
+-- Plutarch-land
+
+-- | Plutarch-level version of 'ResultTag'.
+newtype PResultTag (s :: S) = PResultTag (Term s PInteger)
+  deriving (PlutusType, PIsData, PEq, POrd) via (DerivePNewtype PResultTag PInteger)
+
+-- | Plutarch-level version of 'ProposalStatus'.
+data PProposalStatus (s :: S)
+  = -- TODO: 'PProposalStatus' ought te be encoded as 'PInteger'.
+    -- e.g. like Tilde used 'pmatchEnum'.
+    PDraft (Term s (PDataRecord '[]))
+  | PVotingReady (Term s (PDataRecord '[]))
+  | PFinished (Term s (PDataRecord '[]))
+  deriving stock (GHC.Generic)
+  deriving anyclass (Generic)
+  deriving anyclass (PIsDataRepr)
+  deriving
+    (PlutusType, PIsData)
+    via PIsDataReprInstances PProposalStatus
+
+-- | Plutarch-level version of 'ProposalThresholds'.
+data PProposalThresholds (s :: S) = PProposalThresholds
+  { getProposalThresholds ::
+    Term
+      s
+      ( PDataRecord
+          '[ "execute" ':= PDiscrete GTTag
+           , "draft" ':= PDiscrete GTTag
+           , "vote" ':= PDiscrete GTTag
+           ]
+      )
+  }
+  deriving stock (GHC.Generic)
+  deriving anyclass (Generic)
+  deriving anyclass (PIsDataRepr)
+  deriving
+    (PlutusType, PIsData, PDataFields)
+    via (PIsDataReprInstances PProposalThresholds)
+
+-- | Plutarch-level version of 'ProposalVotes'.
+newtype PProposalVotes (s :: S)
+  = PProposalVotes (Term s (PMap PResultTag PInteger))
+  deriving (PlutusType, PIsData) via (DerivePNewtype PProposalVotes (PMap PResultTag PInteger))
+
+-- | Plutarch-level version of 'ProposalDatum'.
+newtype PProposalDatum (s :: S) = PProposalDatum
+  { getProposalDatum ::
+    Term
+      s
+      ( PDataRecord
+          '[ "effects" ':= PMap PResultTag (PMap PValidatorHash PDatumHash)
+           , "status" ':= PProposalStatus
+           , "cosigners" ':= PBuiltinList PPubKeyHash
+           , "thresholds" ':= PProposalThresholds
+           , "votes" ':= PProposalVotes
+           ]
+      )
+  }
+  deriving stock (GHC.Generic)
+  deriving anyclass (Generic)
+  deriving anyclass (PIsDataRepr)
+  deriving
+    (PlutusType, PIsData, PDataFields)
+    via (PIsDataReprInstances PProposalDatum)
