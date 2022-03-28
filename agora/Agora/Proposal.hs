@@ -9,6 +9,7 @@ Proposal scripts encoding effects that operate on the system.
 -}
 module Agora.Proposal (
   -- * Haskell-land
+  Proposal (..),
   ProposalDatum (..),
   ProposalStatus (..),
   ProposalThresholds (..),
@@ -50,6 +51,7 @@ import Agora.SafeMoney (Discrete, GTTag, PDiscrete)
 @
 -}
 newtype ResultTag = ResultTag {getResultTag :: Integer}
+  deriving stock (Eq, Show)
   deriving newtype (PlutusTx.ToData, PlutusTx.FromData, PlutusTx.UnsafeFromData)
 
 {- | The "status" of the proposal. This is only useful for state transitions,
@@ -102,7 +104,7 @@ data ProposalThresholds = ProposalThresholds
 PlutusTx.makeIsDataIndexed ''ProposalThresholds [('ProposalThresholds, 0)]
 
 {- | Map which encodes the total tally for each result.
-   It's important that the 'shape' is consistent with the shape of 'effects'.
+   It's important that the "shape" is consistent with the shape of 'effects'.
 
    e.g. if the 'effects' field looks like the following:
 
@@ -136,6 +138,9 @@ data ProposalDatum = ProposalDatum
 
 PlutusTx.makeIsDataIndexed ''ProposalDatum [('ProposalDatum, 0)]
 
+-- | Parameters that identify the Proposal validator script.
+data Proposal = Proposal
+
 --------------------------------------------------------------------------------
 -- Plutarch-land
 
@@ -158,7 +163,7 @@ data PProposalStatus (s :: S)
     via PIsDataReprInstances PProposalStatus
 
 -- | Plutarch-level version of 'ProposalThresholds'.
-data PProposalThresholds (s :: S) = PProposalThresholds
+newtype PProposalThresholds (s :: S) = PProposalThresholds
   { getProposalThresholds ::
     Term
       s

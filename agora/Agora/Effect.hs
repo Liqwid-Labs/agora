@@ -13,7 +13,7 @@ import Plutarch.Monadic qualified as P
 
 --------------------------------------------------------------------------------
 
--- | Helper 'template' for creating effect validator.
+-- | Helper "template" for creating effect validator.
 makeEffect ::
   forall (datum :: PType) (s :: S).
   PIsData datum =>

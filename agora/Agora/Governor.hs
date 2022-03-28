@@ -9,9 +9,10 @@ module Agora.Governor (GovernorDatum (..), GovernorRedeemer (..)) where
 
 import Agora.Proposal (ProposalThresholds)
 
-data GovernorDatum = GovernorDatum
+-- | Datum for the Governor script.
+newtype GovernorDatum = GovernorDatum
   { proposalThresholds :: ProposalThresholds
-  -- ^ Gets copied over upon creation of a 'Proposal'.
+  -- ^ Gets copied over upon creation of a 'Agora.Proposal.ProposalDatum'.
   }
 
 {- | Redeemer for Governor script.

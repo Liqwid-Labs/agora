@@ -29,7 +29,7 @@ import Spec.Util (policyFailsWith, policySucceedsWith, toDatum, validatorFailsWi
 
 --------------------------------------------------------------------------------
 
--- | Stake tests
+-- | Stake tests.
 tests :: [TestTree]
 tests =
   [ testGroup

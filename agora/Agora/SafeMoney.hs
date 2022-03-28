@@ -50,10 +50,10 @@ import Agora.Utils (
 --------------------------------------------------------------------------------
 -- Example tags
 
--- | Governance token
+-- | Governance token.
 data GTTag
 
--- | ADA
+-- | ADA.
 data ADATag
 
 --------------------------------------------------------------------------------
@@ -136,6 +136,7 @@ pdiscreteValue (AssetClassRef (AssetClass (cs, tn))) = phoistAcyclic $
         # pconstant tn
         # p
 
+-- | Get a `Value` from a `Discrete`.
 discreteValue ::
   forall (tag :: Type).
   AssetClassRef tag ->

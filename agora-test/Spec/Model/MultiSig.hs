@@ -171,7 +171,7 @@ instance HasScriptRunner MultiSigProp MultiSigModel where
         (pcon PUnit)
         perror
 
--- | Consistency tests for the 'HasParameterisedGenerator' instance of 'MultiSigModel'
+-- | Consistency tests for the 'HasParameterisedGenerator' instance of 'MultiSigModel'.
 genTests :: TestTree
 genTests =
   testGroup "genTests" $
@@ -182,7 +182,7 @@ genTests =
               Yes
           ]
 
--- | Tests for the 'HasScriptRunner' instance of 'MultiSigModel'
+-- | Tests for the 'HasScriptRunner' instance of 'MultiSigModel'.
 plutarchTests :: TestTree
 plutarchTests =
   testGroup "plutarchTests" $
