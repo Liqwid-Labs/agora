@@ -5,7 +5,7 @@ Description: Governor entity scripts acting as authority of entire system.
 
 Governor entity scripts acting as authority of entire system.
 -}
-module Agora.Governor (GovernorDatum (..)) where
+module Agora.Governor (GovernorDatum (..), GovernorRedeemer (..)) where
 
 import Agora.Proposal (ProposalThresholds)
 
