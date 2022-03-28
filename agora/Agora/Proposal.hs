@@ -1,3 +1,5 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 {- |
 Module     : Agora.Proposal
 Maintainer : emi@haskell.fyi
@@ -31,6 +33,7 @@ import Plutarch.DataRepr (
   PIsDataReprInstances (PIsDataReprInstances),
  )
 import Plutus.V1.Ledger.Api (DatumHash, PubKeyHash, ValidatorHash)
+import PlutusTx qualified
 
 --------------------------------------------------------------------------------
 
@@ -47,6 +50,7 @@ import Agora.SafeMoney (Discrete, GTTag, PDiscrete)
 @
 -}
 newtype ResultTag = ResultTag {getResultTag :: Integer}
+  deriving newtype (PlutusTx.ToData, PlutusTx.FromData, PlutusTx.UnsafeFromData)
 
 {- | The "status" of the proposal. This is only useful for state transitions,
      as opposed to time-based "phases".
@@ -79,6 +83,8 @@ data ProposalStatus
     --   TODO: The owner of the proposal may choose to reclaim their proposal.
     Finished
 
+PlutusTx.makeIsDataIndexed ''ProposalStatus [('Draft, 0), ('VotingReady, 1), ('Finished, 2)]
+
 {- | The threshold values for various state transitions to happen.
      This data is stored centrally (in the Governor) and copied over
      to Proposals when they are created.
@@ -92,6 +98,8 @@ data ProposalThresholds = ProposalThresholds
   -- ^ How much GT required to allow voting to happen.
   -- (i.e. to move into 'VotingReady')
   }
+
+PlutusTx.makeIsDataIndexed ''ProposalThresholds [('ProposalThresholds, 0)]
 
 {- | Map which encodes the total tally for each result.
    It's important that the 'shape' is consistent with the shape of 'effects'.
@@ -107,6 +115,7 @@ data ProposalThresholds = ProposalThresholds
 newtype ProposalVotes = ProposalVotes
   { getProposalVotes :: [(ResultTag, Integer)]
   }
+  deriving newtype (PlutusTx.ToData, PlutusTx.FromData, PlutusTx.UnsafeFromData)
 
 -- | Haskell-level datum for Proposal scripts.
 data ProposalDatum = ProposalDatum
@@ -124,6 +133,8 @@ data ProposalDatum = ProposalDatum
   , votes :: ProposalVotes
   -- ^ Vote tally on the proposal
   }
+
+PlutusTx.makeIsDataIndexed ''ProposalDatum [('ProposalDatum, 0)]
 
 --------------------------------------------------------------------------------
 -- Plutarch-land
