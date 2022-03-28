@@ -53,7 +53,7 @@ import Apropos (
 import Apropos.Gen (Gen, choice, int, linear, list)
 import Apropos.LogicalModel (Enumerable)
 import Apropos.LogicalModel.Enumerable (Enumerable (enumerated))
-import Apropos.Script (HasScriptRunner (expect, runScriptTestsWhere, script))
+import Apropos.Script (ScriptModel (expect, runScriptTestsWhere, script))
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.Hedgehog (fromGroup)
 
@@ -157,7 +157,7 @@ instance HasParameterisedGenerator MultiSigProp MultiSigModel where
     -- Return the generated model.
     pure (MultiSigModel msig ctx)
 
-instance HasScriptRunner MultiSigProp MultiSigModel where
+instance ScriptModel MultiSigProp MultiSigModel where
   -- When the script runs, we want the model to meet the minimum signatures.
   expect :: (MultiSigModel :+ MultiSigProp) -> Formula MultiSigProp
   expect Apropos = Var MeetsMinSigs
@@ -182,7 +182,7 @@ genTests =
               Yes
           ]
 
--- | Tests for the 'HasScriptRunner' instance of 'MultiSigModel'
+-- | Tests for the 'ScriptModel' instance of 'MultiSigModel'
 plutarchTests :: TestTree
 plutarchTests =
   testGroup "plutarchTests" $
