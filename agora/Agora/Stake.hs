@@ -83,7 +83,7 @@ import Agora.Utils (
 -- | Parameters for creating Stake scripts.
 newtype Stake = Stake
   { gtClassRef :: AssetClassRef GTTag
-  -- ^ Resolve governance token
+  -- ^ Used when inlining the AssetClass of a 'PDiscrete' in the script code.
   }
 
 -- | Plutarch-level redeemer for Stake scripts.

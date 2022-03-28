@@ -88,12 +88,12 @@ data ProposalStatus
 PlutusTx.makeIsDataIndexed ''ProposalStatus [('Draft, 0), ('VotingReady, 1), ('Finished, 2)]
 
 {- | The threshold values for various state transitions to happen.
-     This data is stored centrally (in the Governor) and copied over
-     to Proposals when they are created.
+     This data is stored centrally (in the 'Agora.Governor.Governor') and copied over
+     to 'Proposal's when they are created.
 -}
 data ProposalThresholds = ProposalThresholds
   { execute :: Discrete GTTag
-  -- ^ How much GT minimum must a particular 'ResultTag' accumulate to fulfil.
+  -- ^ How much GT minimum must a particular 'ResultTag' accumulate for it to pass.
   , draft :: Discrete GTTag
   -- ^ How much GT required to "create" a proposal.
   , vote :: Discrete GTTag
@@ -110,7 +110,7 @@ PlutusTx.makeIsDataIndexed ''ProposalThresholds [('ProposalThresholds, 0)]
 
    @[('ResultTag' 0, []), ('ResultTag' 1, [(vh, dh)])]@
 
-   Then 'ProposalVotes' need be of the shape:
+   Then 'ProposalVotes' needs be of the shape:
 
    @[('ResultTag' 0, n), ('ResultTag' 1, m)]@
 -}
@@ -125,11 +125,11 @@ data ProposalDatum = ProposalDatum
   -- This is shaped this way for future proofing.
   -- See https://github.com/Liqwid-Labs/agora/issues/39
   effects :: [(ResultTag, [(ValidatorHash, DatumHash)])]
-  -- ^ Effect lookup table. First by result, then by
+  -- ^ Effect lookup table. First by result, then by effect hash.
   , status :: ProposalStatus
   -- ^ The status the proposal is in.
   , cosigners :: [PubKeyHash]
-  -- ^ Who created the proposal initially + who cosigned.
+  -- ^ Who created the proposal initially, and who cosigned it later.
   , thresholds :: ProposalThresholds
   -- ^ Thresholds copied over on initialization.
   , votes :: ProposalVotes
