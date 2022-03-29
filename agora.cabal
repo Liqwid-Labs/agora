@@ -96,6 +96,7 @@ common deps
     , generics-sop
     , plutarch
     , plutarch-extra
+    , plutarch-numeric
     , plutus-core
     , plutus-ledger-api
     , plutus-tx
@@ -122,10 +123,11 @@ library
     Agora.AuthorityToken
     Agora.MultiSig
     Agora.SafeMoney
-    Agora.SafeMoney.QQ
     Agora.Stake
+    Agora.Effect
     Agora.Treasury
-    Agora.Voting
+    Agora.Governor
+    Agora.Proposal
 
   other-modules:
     Agora.Utils

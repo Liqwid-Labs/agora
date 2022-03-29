@@ -1,3 +1,5 @@
+{-# LANGUAGE QuasiQuotes #-}
+
 {- |
 Module     : Spec.Stake
 Maintainer : emi@haskell.fyi
@@ -27,7 +29,7 @@ import Spec.Util (policyFailsWith, policySucceedsWith, toDatum, validatorFailsWi
 
 --------------------------------------------------------------------------------
 
--- | Stake tests
+-- | Stake tests.
 tests :: [TestTree]
 tests =
   [ testGroup
@@ -57,13 +59,13 @@ tests =
           "stakeDepositWithdraw withdraw"
           (stakeValidator Stake.stake)
           (toDatum $ StakeDatum 100_000 signer)
-          (toDatum $ DepositWithdraw (negate 100_000))
+          (toDatum $ DepositWithdraw $ negate 100_000)
           (Stake.stakeDepositWithdraw $ DepositWithdrawExample {startAmount = 100_000, delta = negate 100_000})
       , validatorFailsWith
           "stakeDepositWithdraw negative GT"
           (stakeValidator Stake.stake)
           (toDatum $ StakeDatum 100_000 signer)
-          (toDatum $ DepositWithdraw (negate 1_000_000))
+          (toDatum $ DepositWithdraw 1_000_000)
           (Stake.stakeDepositWithdraw $ DepositWithdrawExample {startAmount = 100_000, delta = negate 1_000_000})
       ]
   ]

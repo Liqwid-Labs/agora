@@ -7,8 +7,14 @@ Phantom-type protected types for handling money in Plutus.
 -}
 module Agora.SafeMoney (
   -- * Types
-  MoneyClass,
-  PDiscrete,
+  PDiscrete (..),
+  Discrete (..),
+
+  -- * Tags and refs
+  AssetClassRef (..),
+  ADATag,
+  GTTag,
+  adaRef,
 
   -- * Utility functions
   paddDiscrete,
@@ -18,23 +24,16 @@ module Agora.SafeMoney (
   -- * Conversions
   pdiscreteValue,
   pvalueDiscrete,
-
-  -- * Example MoneyClasses
-  LQ,
-  ADA,
+  discreteValue,
 ) where
 
-import Data.Proxy (Proxy (Proxy))
-import Data.String
-import GHC.TypeLits (
-  KnownSymbol,
-  Nat,
-  Symbol,
-  symbolVal,
- )
 import Prelude
 
 --------------------------------------------------------------------------------
+
+import Plutus.V1.Ledger.Value (AssetClass (AssetClass), Value)
+import Plutus.V1.Ledger.Value qualified as Value
+import PlutusTx qualified
 
 import Plutarch.Api.V1 (PValue)
 import Plutarch.Builtin ()
@@ -43,39 +42,66 @@ import Plutarch.Monadic qualified as P
 
 --------------------------------------------------------------------------------
 
-import Agora.Utils (passetClassValueOf, psingletonValue)
+import Agora.Utils (
+  passetClassValueOf',
+  psingletonValue,
+ )
+
+--------------------------------------------------------------------------------
+-- Example tags
+
+-- | Governance token.
+data GTTag
+
+-- | ADA.
+data ADATag
 
 --------------------------------------------------------------------------------
 
--- | Type-level unique identifier for an 'Plutus.V1.Ledger.Value.AssetClass'
-type MoneyClass =
-  ( -- AssetClass
-    Symbol
-  , -- TokenName
-    Symbol
-  , -- Decimal places
-    Nat
-  )
+-- | A tagged AssetClass. Use to resolve a reference inside of a PDiscrete
+newtype AssetClassRef (tag :: Type) = AssetClassRef {getAssetClass :: AssetClass}
 
--- | A 'PDiscrete' amount of currency tagged on the type level with the 'MoneyClass' it belongs to
-newtype PDiscrete (mc :: MoneyClass) (s :: S)
+-- | Resolves ada tags.
+adaRef :: AssetClassRef ADATag
+adaRef = AssetClassRef (AssetClass ("", ""))
+
+-- TODO: Currently it's possible to transmute from one discrete to another.
+-- How do we prevent this?
+--
+-- @
+--   transmute :: forall (a :: Type) (b :: Type). Discrete a -> Discrete b
+--   transmute = Discrete . getDiscrete
+-- @
+
+{- | Represents a single asset in a 'Plutus.V1.Ledger.Value.Value' related to a particular 'AssetClass'
+     through 'AssetClassRef'.
+-}
+newtype Discrete (tag :: Type) = Discrete {getDiscrete :: Integer}
+  deriving stock (Show, Eq)
+  deriving newtype (PlutusTx.ToData, PlutusTx.FromData, PlutusTx.UnsafeFromData)
+  deriving newtype (Num) -- TODO: Use plutarch-numeric
+
+{- | Represents a single asset in a 'PValue' related to a particular 'AssetClass'
+     through 'AssetClassRef'.
+-}
+newtype PDiscrete (tag :: Type) (s :: S)
   = PDiscrete (Term s PInteger)
-  deriving (PlutusType, PIsData, PEq, POrd) via (DerivePNewtype (PDiscrete mc) PInteger)
+  deriving (PlutusType, PIsData, PEq, POrd) via (DerivePNewtype (PDiscrete tag) PInteger)
 
 -- | Check if one 'PDiscrete' is greater than another.
-pgeqDiscrete :: forall (mc :: MoneyClass) (s :: S). Term s (PDiscrete mc :--> PDiscrete mc :--> PBool)
+pgeqDiscrete :: forall (tag :: Type) (s :: S). Term s (PDiscrete tag :--> PDiscrete tag :--> PBool)
 pgeqDiscrete = phoistAcyclic $
   plam $ \x y -> P.do
     PDiscrete x' <- pmatch x
     PDiscrete y' <- pmatch y
     y' #<= x'
 
--- | Returns a zero-value 'PDiscrete' unit for any 'MoneyClass'.
-pzeroDiscrete :: forall (mc :: MoneyClass) (s :: S). Term s (PDiscrete mc)
+-- | Returns a zero-value 'PDiscrete' unit for any tag.
+pzeroDiscrete :: forall (tag :: Type) (s :: S). Term s (PDiscrete tag)
 pzeroDiscrete = phoistAcyclic $ pcon (PDiscrete 0)
 
--- | Add two 'PDiscrete' values of the same 'MoneyClass'.
-paddDiscrete :: Term s (PDiscrete mc :--> PDiscrete mc :--> PDiscrete mc)
+-- | Add two 'PDiscrete' values of the same tag.
+paddDiscrete :: forall (tag :: Type) (s :: S). Term s (PDiscrete tag :--> PDiscrete tag :--> PDiscrete tag)
 paddDiscrete = phoistAcyclic $
   -- In the future, this should use plutarch-numeric
   plam $ \x y -> P.do
@@ -83,46 +109,38 @@ paddDiscrete = phoistAcyclic $
     PDiscrete y' <- pmatch y
     pcon (PDiscrete $ x' + y')
 
--- | The MoneyClass of LQ.
-type LQ :: MoneyClass
-type LQ = '("da8c30857834c6ae7203935b89278c532b3995245295456f993e1d24", "LQ", 6)
-
--- | The MoneyClass of ADA.
-type ADA :: MoneyClass
-type ADA = '("", "", 6)
-
 --------------------------------------------------------------------------------
 
 -- | Downcast a `PValue` to a `PDiscrete` unit.
 pvalueDiscrete ::
-  forall (moneyClass :: MoneyClass) (ac :: Symbol) (n :: Symbol) (scale :: Nat) s.
-  ( KnownSymbol ac
-  , KnownSymbol n
-  , moneyClass ~ '(ac, n, scale)
-  ) =>
-  Term s (PValue :--> PDiscrete moneyClass)
-pvalueDiscrete = phoistAcyclic $
+  forall (tag :: Type) (s :: S).
+  AssetClassRef tag ->
+  Term s (PValue :--> PDiscrete tag)
+pvalueDiscrete (AssetClassRef ac) = phoistAcyclic $
   plam $ \f ->
-    pcon . PDiscrete $
-      passetClassValueOf # pconstant (fromString $ symbolVal $ Proxy @ac)
-        # pconstant (fromString $ symbolVal $ Proxy @n)
-        # f
+    pcon . PDiscrete $ passetClassValueOf' ac # f
 
 {- | Get a `PValue` from a `PDiscrete`.
      __NOTE__: `pdiscreteValue` after `pvalueDiscrete` is not a round-trip.
-     It filters for a particular 'MoneyClass'.
+     It filters for a particular tag.
 -}
 pdiscreteValue ::
-  forall (moneyClass :: MoneyClass) (ac :: Symbol) (n :: Symbol) (scale :: Nat) s.
-  ( KnownSymbol ac
-  , KnownSymbol n
-  , moneyClass ~ '(ac, n, scale)
-  ) =>
-  Term s (PDiscrete moneyClass :--> PValue)
-pdiscreteValue = phoistAcyclic $
+  forall (tag :: Type) (s :: S).
+  AssetClassRef tag ->
+  Term s (PDiscrete tag :--> PValue)
+pdiscreteValue (AssetClassRef (AssetClass (cs, tn))) = phoistAcyclic $
   plam $ \f -> pmatch f $ \case
     PDiscrete p ->
       psingletonValue
-        # pconstant (fromString $ symbolVal $ Proxy @ac)
-        # pconstant (fromString $ symbolVal $ Proxy @n)
+        # pconstant cs
+        # pconstant tn
         # p
+
+-- | Get a `Value` from a `Discrete`.
+discreteValue ::
+  forall (tag :: Type).
+  AssetClassRef tag ->
+  Discrete tag ->
+  Value
+discreteValue (AssetClassRef (AssetClass (cs, tn))) (Discrete v) =
+  Value.singleton cs tn v

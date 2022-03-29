@@ -21,7 +21,6 @@ module Spec.Sample.Stake (
 ) where
 
 --------------------------------------------------------------------------------
-
 import Plutarch.Api.V1 (
   mintingPolicySymbol,
   mkMintingPolicy,
@@ -47,7 +46,7 @@ import Plutus.V1.Ledger.Api (
 import Plutus.V1.Ledger.Contexts (TxOut (TxOut), TxOutRef (TxOutRef))
 import Plutus.V1.Ledger.Interval qualified as Interval
 import Plutus.V1.Ledger.Scripts (Validator)
-import Plutus.V1.Ledger.Value (TokenName (TokenName))
+import Plutus.V1.Ledger.Value (AssetClass (AssetClass), TokenName (TokenName))
 import Plutus.V1.Ledger.Value qualified as Value
 
 --------------------------------------------------------------------------------
@@ -59,8 +58,17 @@ import Spec.Util (datumPair, toDatumHash)
 --------------------------------------------------------------------------------
 
 -- | 'Stake' parameters for 'LQ'.
-stake :: Stake LQ
-stake = Stake
+stake :: Stake
+stake =
+  Stake
+    { gtClassRef =
+        AssetClassRef
+          ( AssetClass
+              ( "da8c30857834c6ae7203935b89278c532b3995245295456f993e1d24"
+              , "LQ"
+              )
+          )
+    }
 
 -- | 'Stake' policy instance.
 policy :: MintingPolicy
@@ -135,9 +143,9 @@ stakeCreationUnsigned =
 
 -- | Config for creating a ScriptContext that deposits or withdraws.
 data DepositWithdrawExample = DepositWithdrawExample
-  { startAmount :: Integer
+  { startAmount :: Discrete GTTag
   -- ^ The amount of GT stored before the transaction.
-  , delta :: Integer
+  , delta :: Discrete GTTag
   -- ^ The amount of GT deposited or withdrawn from the Stake.
   }
 
@@ -160,10 +168,7 @@ stakeDepositWithdraw config =
                         { txOutAddress = Address (ScriptCredential $ validatorHash validator) Nothing
                         , txOutValue =
                             st
-                              <> Value.singleton
-                                "da8c30857834c6ae7203935b89278c532b3995245295456f993e1d24"
-                                "LQ"
-                                stakeBefore.stakedAmount
+                              <> discreteValue stake.gtClassRef stakeBefore.stakedAmount
                         , txOutDatumHash = Just (toDatumHash stakeAfter)
                         }
                   ]
@@ -172,10 +177,7 @@ stakeDepositWithdraw config =
                       { txOutAddress = Address (ScriptCredential $ validatorHash validator) Nothing
                       , txOutValue =
                           st
-                            <> Value.singleton
-                              "da8c30857834c6ae7203935b89278c532b3995245295456f993e1d24"
-                              "LQ"
-                              stakeAfter.stakedAmount
+                            <> discreteValue stake.gtClassRef stakeAfter.stakedAmount
                       , txOutDatumHash = Just (toDatumHash stakeAfter)
                       }
                   ]

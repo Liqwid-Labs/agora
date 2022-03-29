@@ -11,18 +11,19 @@
   inputs.plutarch.inputs.nixpkgs.follows =
     "plutarch/haskell-nix/nixpkgs-unstable";
 
-  # Follows jhodgdev's forks of apropos and apropos-tx, as these 
-  # are not constrained to `base ^>= 4.14`. Once these are merged 
-  # to their respective master branches, we should change the 
-  # inputs to follow a commit on those master branches. For more 
-  # info, see: https://github.com/mlabs-haskell/apropos-tx/pull/37 
+  # Follows jhodgdev's forks of apropos and apropos-tx, as these
+  # are not constrained to `base ^>= 4.14`. Once these are merged
+  # to their respective master branches, we should change the
+  # inputs to follow a commit on those master branches. For more
+  # info, see: https://github.com/mlabs-haskell/apropos-tx/pull/37
   inputs.apropos-tx.url =
     "github:jhodgdev/apropos-tx?rev=582496d0dfb88ce007bb0d2a2dcbc72ea0bb1cd1";
   inputs.apropos-tx.inputs.nixpkgs.follows =
     "plutarch/haskell-nix/nixpkgs-unstable";
   inputs.apropos.url =
     "github:jhodgdev/apropos?rev=c6c580aeab8b5c2a6512a49823dd17936e87b70a";
-
+  inputs.apropos.inputs.nixpkgs.follows =
+    "plutarch/haskell-nix/nixpkgs-unstable";
 
   outputs = inputs@{ self, nixpkgs, haskell-nix, plutarch, ... }:
     let

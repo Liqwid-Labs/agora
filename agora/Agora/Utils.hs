@@ -183,21 +183,21 @@ passetClassValueOf' :: AssetClass -> Term s (PValue :--> PInteger)
 passetClassValueOf' (AssetClass (sym, token)) =
   passetClassValueOf # pconstant sym # pconstant token
 
--- | Return '>=' on two values comparing by only a particular AssetClass
+-- | Return '>=' on two values comparing by only a particular AssetClass.
 pgeqByClass :: Term s (PCurrencySymbol :--> PTokenName :--> PValue :--> PValue :--> PBool)
 pgeqByClass =
   phoistAcyclic $
     plam $ \cs tn a b ->
       passetClassValueOf # cs # tn # b #<= passetClassValueOf # cs # tn # a
 
--- | Return '>=' on two values comparing by only a particular CurrencySymbol
+-- | Return '>=' on two values comparing by only a particular CurrencySymbol.
 pgeqBySymbol :: Term s (PCurrencySymbol :--> PValue :--> PValue :--> PBool)
 pgeqBySymbol =
   phoistAcyclic $
     plam $ \cs a b ->
       psymbolValueOf # cs # b #<= psymbolValueOf # cs # a
 
--- | Return '>=' on two values comparing by only a particular Haskell-level AssetClass
+-- | Return '>=' on two values comparing by only a particular Haskell-level AssetClass.
 pgeqByClass' :: AssetClass -> Term s (PValue :--> PValue :--> PBool)
 pgeqByClass' ac =
   phoistAcyclic $
@@ -233,7 +233,7 @@ pmapUnionWith = phoistAcyclic $
             # ys
     pcon (PMap $ pconcat # ls # rs)
 
--- | Add two 'PValue's together
+-- | Add two 'PValue's together.
 paddValue :: forall s. Term s (PValue :--> PValue :--> PValue)
 paddValue = phoistAcyclic $
   plam $ \a' b' -> P.do
