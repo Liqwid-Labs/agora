@@ -51,8 +51,9 @@ import Plutus.V1.Ledger.Value qualified as Value
 
 --------------------------------------------------------------------------------
 
-import Agora.SafeMoney
+import Agora.SafeMoney (GTTag)
 import Agora.Stake
+import Plutarch.SafeMoney
 import Spec.Util (datumPair, toDatumHash)
 
 --------------------------------------------------------------------------------
@@ -62,7 +63,7 @@ stake :: Stake
 stake =
   Stake
     { gtClassRef =
-        AssetClassRef
+        Tagged
           ( AssetClass
               ( "da8c30857834c6ae7203935b89278c532b3995245295456f993e1d24"
               , "LQ"
@@ -143,9 +144,9 @@ stakeCreationUnsigned =
 
 -- | Config for creating a ScriptContext that deposits or withdraws.
 data DepositWithdrawExample = DepositWithdrawExample
-  { startAmount :: Discrete GTTag
+  { startAmount :: Tagged GTTag Integer
   -- ^ The amount of GT stored before the transaction.
-  , delta :: Discrete GTTag
+  , delta :: Tagged GTTag Integer
   -- ^ The amount of GT deposited or withdrawn from the Stake.
   }
 
@@ -168,7 +169,7 @@ stakeDepositWithdraw config =
                         { txOutAddress = Address (ScriptCredential $ validatorHash validator) Nothing
                         , txOutValue =
                             st
-                              <> discreteValue stake.gtClassRef stakeBefore.stakedAmount
+                              <> Value.assetClassValue (untag stake.gtClassRef) (untag stakeBefore.stakedAmount)
                         , txOutDatumHash = Just (toDatumHash stakeAfter)
                         }
                   ]
@@ -177,7 +178,7 @@ stakeDepositWithdraw config =
                       { txOutAddress = Address (ScriptCredential $ validatorHash validator) Nothing
                       , txOutValue =
                           st
-                            <> discreteValue stake.gtClassRef stakeAfter.stakedAmount
+                            <> Value.assetClassValue (untag stake.gtClassRef) (untag stakeAfter.stakedAmount)
                       , txOutDatumHash = Just (toDatumHash stakeAfter)
                       }
                   ]

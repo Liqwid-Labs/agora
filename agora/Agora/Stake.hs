@@ -22,7 +22,7 @@ module Agora.Stake (
 
 import GHC.Generics qualified as GHC
 import Generics.SOP (Generic, I (I))
-import Prelude
+import Prelude hiding (Num (..))
 
 --------------------------------------------------------------------------------
 
@@ -52,16 +52,7 @@ import Plutus.V1.Ledger.Value (AssetClass (AssetClass))
 
 --------------------------------------------------------------------------------
 
-import Agora.SafeMoney (
-  AssetClassRef (..),
-  Discrete,
-  GTTag,
-  PDiscrete,
-  paddDiscrete,
-  pdiscreteValue,
-  pgeqDiscrete,
-  pzeroDiscrete,
- )
+import Agora.SafeMoney (GTTag)
 import Agora.Utils (
   anyInput,
   anyOutput,
@@ -77,37 +68,40 @@ import Agora.Utils (
   ptxSignedBy,
   pvalueSpent,
  )
+import Plutarch.Numeric
+import Plutarch.SafeMoney (
+  PDiscrete,
+  Tagged (..),
+  pdiscreteValue,
+  untag,
+ )
 
 --------------------------------------------------------------------------------
 
 -- | Parameters for creating Stake scripts.
 newtype Stake = Stake
-  { gtClassRef :: AssetClassRef GTTag
+  { gtClassRef :: Tagged GTTag AssetClass
   -- ^ Used when inlining the AssetClass of a 'PDiscrete' in the script code.
   }
-
--- | Plutarch-level redeemer for Stake scripts.
-data PStakeRedeemer (s :: S)
-  = -- | Deposit or withdraw a discrete amount of the staked governance token.
-    PDepositWithdraw (Term s (PDataRecord '["delta" ':= PDiscrete GTTag]))
-  | -- | Destroy a stake, retrieving its LQ, the minimum ADA and any other assets.
-    PDestroy (Term s (PDataRecord '[]))
-  deriving stock (GHC.Generic)
-  deriving anyclass (Generic)
-  deriving anyclass (PIsDataRepr)
-  deriving
-    (PlutusType, PIsData)
-    via PIsDataReprInstances PStakeRedeemer
 
 -- | Haskell-level redeemer for Stake scripts.
 data StakeRedeemer
   = -- | Deposit or withdraw a discrete amount of the staked governance token.
-    DepositWithdraw (Discrete GTTag)
+    DepositWithdraw (Tagged GTTag Integer)
   | -- | Destroy a stake, retrieving its LQ, the minimum ADA and any other assets.
     Destroy
   deriving stock (Show, GHC.Generic)
 
 PlutusTx.makeIsDataIndexed ''StakeRedeemer [('DepositWithdraw, 0), ('Destroy, 1)]
+
+-- | Haskell-level datum for Stake scripts.
+data StakeDatum = StakeDatum
+  { stakedAmount :: Tagged GTTag Integer
+  , owner :: PubKeyHash
+  }
+  deriving stock (Show, GHC.Generic)
+
+PlutusTx.makeIsDataIndexed ''StakeDatum [('StakeDatum, 0)]
 
 -- | Plutarch-level datum for Stake scripts.
 newtype PStakeDatum (s :: S) = PStakeDatum
@@ -121,14 +115,18 @@ newtype PStakeDatum (s :: S) = PStakeDatum
     (PlutusType, PIsData, PDataFields)
     via (PIsDataReprInstances PStakeDatum)
 
--- | Haskell-level datum for Stake scripts.
-data StakeDatum = StakeDatum
-  { stakedAmount :: Discrete GTTag
-  , owner :: PubKeyHash
-  }
-  deriving stock (Show, GHC.Generic)
-
-PlutusTx.makeIsDataIndexed ''StakeDatum [('StakeDatum, 0)]
+-- | Plutarch-level redeemer for Stake scripts.
+data PStakeRedeemer (s :: S)
+  = -- | Deposit or withdraw a discrete amount of the staked governance token.
+    PDepositWithdraw (Term s (PDataRecord '["delta" ':= PDiscrete GTTag]))
+  | -- | Destroy a stake, retrieving its LQ, the minimum ADA and any other assets.
+    PDestroy (Term s (PDataRecord '[]))
+  deriving stock (GHC.Generic)
+  deriving anyclass (Generic)
+  deriving anyclass (PIsDataRepr)
+  deriving
+    (PlutusType, PIsData)
+    via PIsDataReprInstances PStakeRedeemer
 
 --------------------------------------------------------------------------------
 {- What this Policy does
@@ -223,7 +221,7 @@ stakePolicy stake =
                           foldr1
                             (#&&)
                             [ pgeqByClass' (AssetClass ("", "")) # value # expectedValue
-                            , pgeqByClass' stake.gtClassRef.getAssetClass
+                            , pgeqByClass' (untag stake.gtClassRef)
                                 # value
                                 # expectedValue
                             , pgeqByClass
@@ -300,15 +298,15 @@ stakeValidator stake =
                     foldr1
                       (#&&)
                       [ stakeDatum.owner #== newStakeDatum.owner
-                      , (paddDiscrete # stakeDatum.stakedAmount # delta) #== newStakeDatum.stakedAmount
+                      , (stakeDatum.stakedAmount + delta) #== newStakeDatum.stakedAmount
                       , -- We can't magically conjure GT anyway (no input to spend!)
                         -- do we need to check this, really?
-                        pgeqDiscrete # (pfromData newStakeDatum.stakedAmount) # pzeroDiscrete
+                        zero #<= pfromData newStakeDatum.stakedAmount
                       ]
               let expectedValue = paddValue # continuingValue # (pdiscreteValue stake.gtClassRef # delta)
 
-              ptrace (pshow $ passetClassValueOf' stake.gtClassRef.getAssetClass # value)
-              ptrace (pshow $ passetClassValueOf' stake.gtClassRef.getAssetClass # expectedValue)
+              ptrace (pshow $ passetClassValueOf' (untag stake.gtClassRef) # value)
+              ptrace (pshow $ passetClassValueOf' (untag stake.gtClassRef) # expectedValue)
 
               -- TODO: Same as above. This is quite inefficient now, as it does two lookups
               -- instead of a more efficient single pass,
@@ -317,7 +315,7 @@ stakeValidator stake =
                     foldr1
                       (#&&)
                       [ pgeqByClass' (AssetClass ("", "")) # value # expectedValue
-                      , pgeqByClass' stake.gtClassRef.getAssetClass
+                      , pgeqByClass' (untag stake.gtClassRef)
                           # value
                           # expectedValue
                       , pgeqBySymbol

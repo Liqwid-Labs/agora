@@ -38,7 +38,8 @@ import PlutusTx qualified
 
 --------------------------------------------------------------------------------
 
-import Agora.SafeMoney (Discrete, GTTag, PDiscrete)
+import Agora.SafeMoney (GTTag)
+import Plutarch.SafeMoney (PDiscrete, Tagged)
 
 --------------------------------------------------------------------------------
 -- Haskell-land
@@ -92,11 +93,11 @@ PlutusTx.makeIsDataIndexed ''ProposalStatus [('Draft, 0), ('VotingReady, 1), ('F
      to 'Proposal's when they are created.
 -}
 data ProposalThresholds = ProposalThresholds
-  { execute :: Discrete GTTag
+  { execute :: Tagged GTTag Integer
   -- ^ How much GT minimum must a particular 'ResultTag' accumulate for it to pass.
-  , draft :: Discrete GTTag
+  , draft :: Tagged GTTag Integer
   -- ^ How much GT required to "create" a proposal.
-  , vote :: Discrete GTTag
+  , vote :: Tagged GTTag Integer
   -- ^ How much GT required to allow voting to happen.
   -- (i.e. to move into 'VotingReady')
   }

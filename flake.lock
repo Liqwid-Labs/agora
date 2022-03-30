@@ -1381,11 +1381,11 @@
     },
     "nixpkgs-2111_3": {
       "locked": {
-        "lastModified": 1648420413,
-        "narHash": "sha256-AHejj7EsbTt+CMOoy15wwkFsFNmx8oinGgDZR22lS6g=",
+        "lastModified": 1648608655,
+        "narHash": "sha256-pTjZg9DwU89ZZ1fdtt6/i1X4vSNXoRJYUArgVZPh9F8=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "d6778e0b5d608eb6738af2a64e26d99cdc5b9e86",
+        "rev": "ba93b1d8253ed4b359b9e81d10e02c106d3f8b11",
         "type": "github"
       },
       "original": {
@@ -1621,17 +1621,17 @@
         "validity": "validity"
       },
       "locked": {
-        "lastModified": 1648163186,
-        "narHash": "sha256-UfaSb4nk9HWzsj1Kb8RJuPV+iw1Nl4E2+97KOwIwcao=",
+        "lastModified": 1648639396,
+        "narHash": "sha256-pAkEsIDXJckVYufVPUzD/4sq4/uE7iyV0IR2BuLhZjY=",
         "owner": "peter-mlabs",
         "repo": "plutarch",
-        "rev": "0638dbd706bc2c5f48f9f40be7bbe1986a778698",
+        "rev": "a7a410da209b9c14c834a41e07b1c197c2a4dcd6",
         "type": "github"
       },
       "original": {
         "owner": "peter-mlabs",
-        "ref": "liqwid/extra",
         "repo": "plutarch",
+        "rev": "a7a410da209b9c14c834a41e07b1c197c2a4dcd6",
         "type": "github"
       }
     },
