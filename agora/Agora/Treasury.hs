@@ -21,8 +21,8 @@ import Plutus.V1.Ledger.Value (CurrencySymbol)
 
 --------------------------------------------------------------------------------
 
-import Agora.AuthorityToken (authorityTokensValidIn)
-import Agora.Utils (allInputs, passert, psymbolValueOf)
+import Agora.AuthorityToken (singleAuthorityTokenBurned)
+import Agora.Utils (passert)
 
 {- | Validator ensuring that transactions consuming the treasury
      do so in a valid manner.
@@ -37,7 +37,7 @@ treasuryV ::
         :--> PAsData PScriptContext
         :--> PUnit
     )
-treasuryV cs = plam $ \_d r ctx' -> P.do
+treasuryV gatCs' = plam $ \_d r ctx' -> P.do
   -- plet required fields from script context.
   ctx <- pletFields @["txInfo", "purpose"] ctx'
 
@@ -52,16 +52,10 @@ treasuryV cs = plam $ \_d r ctx' -> P.do
   txInfo <- pletFields @'["mint"] txInfo'
   let mint :: Term s PValue
       mint = txInfo.mint
-      gatAmountMinted :: Term s PInteger
-      gatAmountMinted = psymbolValueOf # pconstant cs # mint
 
-  passert "GAT not burned." $ gatAmountMinted #== -1
+  gatCs <- plet $ pconstant gatCs'
 
-  passert "All inputs only have valid GATs" $
-    allInputs @PUnit # pfromData ctx.txInfo #$ plam $ \txOut _value _address _datum ->
-      authorityTokensValidIn
-        # pconstant cs
-        # txOut
+  passert "singleAuthorityTokenBurned" $ singleAuthorityTokenBurned gatCs txInfo' mint
 
   pconstant ()
 

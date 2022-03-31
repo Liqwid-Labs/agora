@@ -12,6 +12,8 @@ module Agora.Stake (
   PStakeRedeemer (..),
   StakeDatum (..),
   StakeRedeemer (..),
+  ProposalLock (..),
+  PProposalLock (..),
   Stake (..),
   stakePolicy,
   stakeValidator,
@@ -43,15 +45,18 @@ import Plutarch.Api.V1 (
   mkMintingPolicy,
  )
 import Plutarch.DataRepr (
+  DerivePConstantViaData (..),
   PDataFields,
   PIsDataReprInstances (PIsDataReprInstances),
  )
 import Plutarch.Internal (punsafeCoerce)
+import Plutarch.Lift (PUnsafeLiftDecl (..))
 import Plutarch.Monadic qualified as P
 import Plutus.V1.Ledger.Value (AssetClass (AssetClass))
 
 --------------------------------------------------------------------------------
 
+import Agora.Proposal (PProposalTag, PResultTag, ProposalTag (..), ResultTag (..))
 import Agora.SafeMoney (GTTag)
 import Agora.Utils (
   anyInput,
@@ -94,19 +99,48 @@ data StakeRedeemer
 
 PlutusTx.makeIsDataIndexed ''StakeRedeemer [('DepositWithdraw, 0), ('Destroy, 1)]
 
+data ProposalLock = ProposalLock
+  { vote :: ResultTag
+  -- ^ What was voted on. This allows retracting votes to
+  --   undo their vote.
+  , proposalTag :: ProposalTag
+  -- ^ Identifies the proposal.
+  }
+  deriving stock (Show, GHC.Generic)
+
+PlutusTx.makeIsDataIndexed ''ProposalLock [('ProposalLock, 0)]
+
 -- | Haskell-level datum for Stake scripts.
 data StakeDatum = StakeDatum
   { stakedAmount :: Tagged GTTag Integer
+  -- ^ Tracks the amount of governance token staked in the datum.
+  -- This also acts as the voting weight for 'Proposal's.
   , owner :: PubKeyHash
+  -- ^ The hash of the public key this stake belongs to.
+  --
+  -- TODO Support for MultiSig/Scripts is tracked here:
+  --      https://github.com/Liqwid-Labs/agora/issues/45
+  , lockedBy :: [ProposalLock]
+  -- ^ The proposal locks in place. This field must be empty
+  -- for the stake to be usable for deposits and withdrawals.
   }
   deriving stock (Show, GHC.Generic)
 
 PlutusTx.makeIsDataIndexed ''StakeDatum [('StakeDatum, 0)]
 
+--------------------------------------------------------------------------------
+
 -- | Plutarch-level datum for Stake scripts.
 newtype PStakeDatum (s :: S) = PStakeDatum
   { getStakeDatum ::
-    Term s (PDataRecord '["stakedAmount" ':= PDiscrete GTTag, "owner" ':= PPubKeyHash])
+    Term
+      s
+      ( PDataRecord
+          '[ "stakedAmount" ':= PDiscrete GTTag
+           , "owner" ':= PPubKeyHash
+           , "lockedBy" ':= PBuiltinList (PAsData PProposalLock)
+           ]
+      )
   }
   deriving stock (GHC.Generic)
   deriving anyclass (Generic)
@@ -114,6 +148,9 @@ newtype PStakeDatum (s :: S) = PStakeDatum
   deriving
     (PlutusType, PIsData, PDataFields)
     via (PIsDataReprInstances PStakeDatum)
+
+instance PUnsafeLiftDecl PStakeDatum where type PLifted PStakeDatum = StakeDatum
+deriving via (DerivePConstantViaData StakeDatum PStakeDatum) instance (PConstant StakeDatum)
 
 -- | Plutarch-level redeemer for Stake scripts.
 data PStakeRedeemer (s :: S)
@@ -127,6 +164,29 @@ data PStakeRedeemer (s :: S)
   deriving
     (PlutusType, PIsData)
     via PIsDataReprInstances PStakeRedeemer
+
+instance PUnsafeLiftDecl PStakeRedeemer where type PLifted PStakeRedeemer = StakeRedeemer
+deriving via (DerivePConstantViaData StakeRedeemer PStakeRedeemer) instance (PConstant StakeRedeemer)
+
+newtype PProposalLock (s :: S) = PProposalLock
+  { getProposalLock ::
+    Term
+      s
+      ( PDataRecord
+          '[ "vote" ':= PResultTag
+           , "proposalTag" ':= PProposalTag
+           ]
+      )
+  }
+  deriving stock (GHC.Generic)
+  deriving anyclass (Generic)
+  deriving anyclass (PIsDataRepr)
+  deriving
+    (PlutusType, PIsData, PDataFields)
+    via (PIsDataReprInstances PProposalLock)
+
+instance PUnsafeLiftDecl PProposalLock where type PLifted PProposalLock = ProposalLock
+deriving via (DerivePConstantViaData ProposalLock PProposalLock) instance (PConstant ProposalLock)
 
 --------------------------------------------------------------------------------
 {- What this Policy does
@@ -338,6 +398,8 @@ stakeValidator stake =
 -- | Check whether a Stake is locked. If it is locked, various actions are unavailable.
 stakeLocked :: forall (s :: S). Term s (PStakeDatum :--> PBool)
 stakeLocked = phoistAcyclic $
-  plam $ \_stakeDatum ->
-    -- TODO: when we extend this to support proposals, this will need to do something
-    pcon PFalse
+  plam $ \stakeDatum ->
+    let locks :: Term _ (PBuiltinList (PAsData PProposalLock))
+        locks = pfield @"lockedBy" # stakeDatum
+     in -- 'pnotNull' ?
+        pelimList (\_ _ -> pcon PTrue) (pcon PFalse) locks

@@ -95,7 +95,7 @@ stakeCreation :: ScriptContext
 stakeCreation =
   let st = Value.singleton policySymbol validatorHashTN 1 -- Stake ST
       datum :: Datum
-      datum = Datum (toBuiltinData $ StakeDatum 424242424242 signer)
+      datum = Datum (toBuiltinData $ StakeDatum 424242424242 signer [])
    in ScriptContext
         { scriptContextTxInfo =
             TxInfo
@@ -123,7 +123,7 @@ stakeCreation =
 stakeCreationWrongDatum :: ScriptContext
 stakeCreationWrongDatum =
   let datum :: Datum
-      datum = Datum (toBuiltinData $ StakeDatum 4242424242424242 signer) -- Too much GT
+      datum = Datum (toBuiltinData $ StakeDatum 4242424242424242 signer []) -- Too much GT
    in ScriptContext
         { scriptContextTxInfo = stakeCreation.scriptContextTxInfo {txInfoData = [("", datum)]}
         , scriptContextPurpose = Minting policySymbol
@@ -155,7 +155,7 @@ stakeDepositWithdraw :: DepositWithdrawExample -> ScriptContext
 stakeDepositWithdraw config =
   let st = Value.singleton policySymbol validatorHashTN 1 -- Stake ST
       stakeBefore :: StakeDatum
-      stakeBefore = StakeDatum config.startAmount signer
+      stakeBefore = StakeDatum config.startAmount signer []
 
       stakeAfter :: StakeDatum
       stakeAfter = stakeBefore {stakedAmount = stakeBefore.stakedAmount + config.delta}

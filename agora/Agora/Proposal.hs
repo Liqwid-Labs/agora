@@ -14,10 +14,15 @@ module Agora.Proposal (
   ProposalStatus (..),
   ProposalThresholds (..),
   ProposalVotes (..),
+  ProposalTag (..),
   ResultTag (..),
 
   -- * Plutarch-land
   PProposalDatum (..),
+  PProposalStatus (..),
+  PProposalThresholds (..),
+  PProposalVotes (..),
+  PProposalTag (..),
   PResultTag (..),
 ) where
 
@@ -85,6 +90,7 @@ data ProposalStatus
     --
     --   TODO: The owner of the proposal may choose to reclaim their proposal.
     Finished
+  deriving stock (Eq, Show, GHC.Generic)
 
 PlutusTx.makeIsDataIndexed ''ProposalStatus [('Draft, 0), ('VotingReady, 1), ('Finished, 2)]
 
@@ -101,6 +107,7 @@ data ProposalThresholds = ProposalThresholds
   -- ^ How much GT required to allow voting to happen.
   -- (i.e. to move into 'VotingReady')
   }
+  deriving stock (Eq, Show, GHC.Generic)
 
 PlutusTx.makeIsDataIndexed ''ProposalThresholds [('ProposalThresholds, 0)]
 
@@ -119,6 +126,7 @@ newtype ProposalVotes = ProposalVotes
   { getProposalVotes :: [(ResultTag, Integer)]
   }
   deriving newtype (PlutusTx.ToData, PlutusTx.FromData, PlutusTx.UnsafeFromData)
+  deriving stock (Eq, Show, GHC.Generic)
 
 -- | Haskell-level datum for Proposal scripts.
 data ProposalDatum = ProposalDatum
@@ -136,8 +144,14 @@ data ProposalDatum = ProposalDatum
   , votes :: ProposalVotes
   -- ^ Vote tally on the proposal
   }
+  deriving stock (Eq, Show, GHC.Generic)
 
 PlutusTx.makeIsDataIndexed ''ProposalDatum [('ProposalDatum, 0)]
+
+-- | Identifies a Proposal, issued upon creation of a proposal.
+newtype ProposalTag = ProposalTag {proposalTag :: Integer}
+  deriving newtype (PlutusTx.ToData, PlutusTx.FromData, PlutusTx.UnsafeFromData)
+  deriving stock (Eq, Show, GHC.Generic)
 
 -- | Parameters that identify the Proposal validator script.
 data Proposal = Proposal
@@ -148,6 +162,10 @@ data Proposal = Proposal
 -- | Plutarch-level version of 'ResultTag'.
 newtype PResultTag (s :: S) = PResultTag (Term s PInteger)
   deriving (PlutusType, PIsData, PEq, POrd) via (DerivePNewtype PResultTag PInteger)
+
+-- | Plutarch-level version of 'PProposalTag'.
+newtype PProposalTag (s :: S) = PProposalTag (Term s PInteger)
+  deriving (PlutusType, PIsData, PEq, POrd) via (DerivePNewtype PProposalTag PInteger)
 
 -- | Plutarch-level version of 'ProposalStatus'.
 data PProposalStatus (s :: S)
