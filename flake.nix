@@ -21,12 +21,10 @@
   inputs.apropos-tx.inputs.nixpkgs.follows =
     "plutarch/haskell-nix/nixpkgs-unstable";
   inputs.apropos.url =
-    "github:jhodgdev/apropos?rev=c6c580aeab8b5c2a6512a49823dd17936e87b70a";
+    "github:mlabs-haskell/apropos?rev=3734bb3baa297ed990725a5ef14efcbb6a1c1c23";
   inputs.apropos.inputs.nixpkgs.follows =
     "plutarch/haskell-nix/nixpkgs-unstable";
 
-  inputs.apropos.url =
-    "github:mlabs-haskell/apropos?rev=3734bb3baa297ed990725a5ef14efcbb6a1c1c23";
 
   outputs = inputs@{ self, nixpkgs, haskell-nix, plutarch, ... }:
     let
