@@ -127,7 +127,12 @@ instance HasLogicalModel TreasuryTxProp TreasuryTxModel where
 
 instance HasParameterisedGenerator TreasuryTxProp TreasuryTxModel where
   parameterisedGenerator :: Set TreasuryTxProp -> Gen TreasuryTxModel
-  parameterisedGenerator = undefined
+  parameterisedGenerator propSet = do
+    purpose <-
+      if ScriptPurposeIsNotMinting `elem` propSet
+        then undefined
+        else undefined
+    undefined
 
 instance HasScriptRunner TreasuryTxProp TreasuryTxModel where
   expect = undefined
