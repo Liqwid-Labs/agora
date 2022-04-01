@@ -20,13 +20,7 @@ module Agora.Stake (
 
 --------------------------------------------------------------------------------
 
-import Data.Proxy (Proxy (Proxy))
-import Data.String (IsString (fromString))
 import GHC.Generics qualified as GHC
-import GHC.TypeLits (
-  KnownSymbol,
-  symbolVal,
- )
 import Generics.SOP (Generic, I (I))
 import Prelude
 
@@ -59,7 +53,9 @@ import Plutus.V1.Ledger.Value (AssetClass (AssetClass))
 --------------------------------------------------------------------------------
 
 import Agora.SafeMoney (
-  MoneyClass,
+  AssetClassRef (..),
+  Discrete,
+  GTTag,
   PDiscrete,
   paddDiscrete,
   pdiscreteValue,
@@ -71,6 +67,7 @@ import Agora.Utils (
   anyOutput,
   paddValue,
   passert,
+  passetClassValueOf',
   pfindTxInByTxOutRef,
   pgeqByClass,
   pgeqByClass',
@@ -84,12 +81,15 @@ import Agora.Utils (
 --------------------------------------------------------------------------------
 
 -- | Parameters for creating Stake scripts.
-data Stake (gt :: MoneyClass) = Stake
+newtype Stake = Stake
+  { gtClassRef :: AssetClassRef GTTag
+  -- ^ Used when inlining the AssetClass of a 'PDiscrete' in the script code.
+  }
 
 -- | Plutarch-level redeemer for Stake scripts.
-data PStakeRedeemer (gt :: MoneyClass) (s :: S)
+data PStakeRedeemer (s :: S)
   = -- | Deposit or withdraw a discrete amount of the staked governance token.
-    PDepositWithdraw (Term s (PDataRecord '["delta" ':= PDiscrete gt]))
+    PDepositWithdraw (Term s (PDataRecord '["delta" ':= PDiscrete GTTag]))
   | -- | Destroy a stake, retrieving its LQ, the minimum ADA and any other assets.
     PDestroy (Term s (PDataRecord '[]))
   deriving stock (GHC.Generic)
@@ -97,18 +97,12 @@ data PStakeRedeemer (gt :: MoneyClass) (s :: S)
   deriving anyclass (PIsDataRepr)
   deriving
     (PlutusType, PIsData)
-    via PIsDataReprInstances (PStakeRedeemer gt)
-
--- FIXME: 'StakeRedeemer' and 'StakeDatum' are stripped of their
--- typesafe `PDiscrete` equivalent due to issues with `makeIsDataIndexed`
--- when using the kind @gt :: MoneyClass@. This ought to be fixed with
--- a future patch in Plutarch upstream. For now, we will deal with lower
--- type safety off-chain.
+    via PIsDataReprInstances PStakeRedeemer
 
 -- | Haskell-level redeemer for Stake scripts.
 data StakeRedeemer
   = -- | Deposit or withdraw a discrete amount of the staked governance token.
-    DepositWithdraw Integer
+    DepositWithdraw (Discrete GTTag)
   | -- | Destroy a stake, retrieving its LQ, the minimum ADA and any other assets.
     Destroy
   deriving stock (Show, GHC.Generic)
@@ -116,21 +110,20 @@ data StakeRedeemer
 PlutusTx.makeIsDataIndexed ''StakeRedeemer [('DepositWithdraw, 0), ('Destroy, 1)]
 
 -- | Plutarch-level datum for Stake scripts.
-newtype PStakeDatum (gt :: MoneyClass) (s :: S) = PStakeDatum
+newtype PStakeDatum (s :: S) = PStakeDatum
   { getStakeDatum ::
-    Term s (PDataRecord '["stakedAmount" ':= PDiscrete gt, "owner" ':= PPubKeyHash])
+    Term s (PDataRecord '["stakedAmount" ':= PDiscrete GTTag, "owner" ':= PPubKeyHash])
   }
   deriving stock (GHC.Generic)
   deriving anyclass (Generic)
   deriving anyclass (PIsDataRepr)
   deriving
     (PlutusType, PIsData, PDataFields)
-    via (PIsDataReprInstances (PStakeDatum gt))
+    via (PIsDataReprInstances PStakeDatum)
 
 -- | Haskell-level datum for Stake scripts.
 data StakeDatum = StakeDatum
-  { -- FIXME: This needs to be gt
-  stakedAmount :: Integer
+  { stakedAmount :: Discrete GTTag
   , owner :: PubKeyHash
   }
   deriving stock (Show, GHC.Generic)
@@ -154,14 +147,10 @@ PlutusTx.makeIsDataIndexed ''StakeDatum [('StakeDatum, 0)]
 
 -- | Policy for Stake state threads.
 stakePolicy ::
-  forall (gt :: MoneyClass) ac n scale s.
-  ( KnownSymbol ac
-  , KnownSymbol n
-  , gt ~ '(ac, n, scale)
-  ) =>
-  Stake gt ->
+  forall (s :: S).
+  Stake ->
   Term s PMintingPolicy
-stakePolicy _stake =
+stakePolicy stake =
   plam $ \_redeemer ctx' -> P.do
     ctx <- pletFields @'["txInfo", "purpose"] ctx'
     txInfo' <- plet ctx.txInfo
@@ -180,7 +169,7 @@ stakePolicy _stake =
             mintedST #== -1
 
           passert "An unlocked input existed containing an ST" $
-            anyInput @(PStakeDatum gt) # pfromData txInfo'
+            anyInput @PStakeDatum # pfromData txInfo'
               #$ plam
               $ \value _ stakeDatum' -> P.do
                 let hasST = psymbolValueOf # ownSymbol # value #== 1
@@ -197,7 +186,7 @@ stakePolicy _stake =
             mintedST #== 1
 
           passert "A UTXO must exist with the correct output" $
-            anyOutput @(PStakeDatum gt) # pfromData txInfo'
+            anyOutput @PStakeDatum # pfromData txInfo'
               #$ plam
               $ \value address stakeDatum' -> P.do
                 let cred = pfield @"credential" # address
@@ -220,7 +209,7 @@ stakePolicy _stake =
                             # 1
                     let expectedValue =
                           paddValue
-                            # (pdiscreteValue # stakeDatum.stakedAmount)
+                            # (pdiscreteValue stake.gtClassRef # stakeDatum.stakedAmount)
                             # stValue
                     let ownerSignsTransaction =
                           ptxSignedBy
@@ -234,12 +223,7 @@ stakePolicy _stake =
                           foldr1
                             (#&&)
                             [ pgeqByClass' (AssetClass ("", "")) # value # expectedValue
-                            , pgeqByClass'
-                                ( AssetClass
-                                    ( fromString . symbolVal $ Proxy @ac
-                                    , fromString . symbolVal $ Proxy @n
-                                    )
-                                )
+                            , pgeqByClass' stake.gtClassRef.getAssetClass
                                 # value
                                 # expectedValue
                             , pgeqByClass
@@ -259,12 +243,8 @@ stakePolicy _stake =
 
 -- | Validator intended for Stake UTXOs to live in.
 stakeValidator ::
-  forall (gt :: MoneyClass) ac n scale s.
-  ( KnownSymbol ac
-  , KnownSymbol n
-  , gt ~ '(ac, n, scale)
-  ) =>
-  Stake gt ->
+  forall (s :: S).
+  Stake ->
   Term s PValidator
 stakeValidator stake =
   plam $ \datum redeemer ctx' -> P.do
@@ -273,9 +253,9 @@ stakeValidator stake =
     txInfo <- pletFields @'["mint", "inputs", "outputs"] txInfo'
 
     -- Coercion is safe in that if coercion fails we crash hard.
-    let stakeRedeemer :: Term _ (PStakeRedeemer gt)
+    let stakeRedeemer :: Term _ PStakeRedeemer
         stakeRedeemer = pfromData $ punsafeCoerce redeemer
-        stakeDatum' :: Term _ (PStakeDatum gt)
+        stakeDatum' :: Term _ PStakeDatum
         stakeDatum' = pfromData $ punsafeCoerce datum
     stakeDatum <- pletFields @'["owner", "stakedAmount"] stakeDatum'
 
@@ -310,7 +290,7 @@ stakeValidator stake =
           "Owner signs this transaction"
           ownerSignsTransaction
         passert "A UTXO must exist with the correct output" $
-          anyOutput @(PStakeDatum gt) # txInfo'
+          anyOutput @PStakeDatum # txInfo'
             #$ plam
             $ \value address newStakeDatum' -> P.do
               newStakeDatum <- pletFields @'["owner", "stakedAmount"] newStakeDatum'
@@ -325,7 +305,10 @@ stakeValidator stake =
                         -- do we need to check this, really?
                         pgeqDiscrete # (pfromData newStakeDatum.stakedAmount) # pzeroDiscrete
                       ]
-              let expectedValue = paddValue # continuingValue # (pdiscreteValue # delta)
+              let expectedValue = paddValue # continuingValue # (pdiscreteValue stake.gtClassRef # delta)
+
+              ptrace (pshow $ passetClassValueOf' stake.gtClassRef.getAssetClass # value)
+              ptrace (pshow $ passetClassValueOf' stake.gtClassRef.getAssetClass # expectedValue)
 
               -- TODO: Same as above. This is quite inefficient now, as it does two lookups
               -- instead of a more efficient single pass,
@@ -334,12 +317,7 @@ stakeValidator stake =
                     foldr1
                       (#&&)
                       [ pgeqByClass' (AssetClass ("", "")) # value # expectedValue
-                      , pgeqByClass'
-                          ( AssetClass
-                              ( fromString . symbolVal $ Proxy @ac
-                              , fromString . symbolVal $ Proxy @n
-                              )
-                          )
+                      , pgeqByClass' stake.gtClassRef.getAssetClass
                           # value
                           # expectedValue
                       , pgeqBySymbol
@@ -360,7 +338,7 @@ stakeValidator stake =
 --------------------------------------------------------------------------------
 
 -- | Check whether a Stake is locked. If it is locked, various actions are unavailable.
-stakeLocked :: forall (gt :: MoneyClass) s. Term s (PStakeDatum gt :--> PBool)
+stakeLocked :: forall (s :: S). Term s (PStakeDatum :--> PBool)
 stakeLocked = phoistAcyclic $
   plam $ \_stakeDatum ->
     -- TODO: when we extend this to support proposals, this will need to do something
