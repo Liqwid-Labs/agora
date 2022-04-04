@@ -1,4 +1,5 @@
-# Agora
+# Agora :classical_building:
+![integrate.yaml badge](https://github.com/Liqwid-Labs/agora/actions/workflows/integrate.yaml/badge.svg?branch=master)
 
 Agora is a set of Plutus scripts that compose together to form a governance system.
 

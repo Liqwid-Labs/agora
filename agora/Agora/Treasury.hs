@@ -10,7 +10,7 @@ module Agora.Treasury (module Agora.Treasury) where
 
 import GHC.Generics qualified as GHC
 import Generics.SOP
-import Plutarch.Api.V1.Contexts (PScriptContext, PScriptPurpose (PMinting))
+import Plutarch.Api.V1.Contexts (PScriptPurpose (PMinting))
 import Plutarch.Api.V1.Value (PCurrencySymbol, PValue)
 import Plutarch.DataRepr (
   PDataFields,
@@ -23,19 +23,23 @@ import Plutus.V1.Ledger.Value (CurrencySymbol)
 
 import Agora.AuthorityToken (singleAuthorityTokenBurned)
 import Agora.Utils (passert)
+import Plutarch (popaque)
+import Plutarch.Api.V1 (PValidator)
+import Plutarch.Unsafe (punsafeCoerce)
 
 {- | Validator ensuring that transactions consuming the treasury
      do so in a valid manner.
 -}
-treasuryV ::
+treasuryValidator ::
   CurrencySymbol ->
-  ClosedTerm
-    ( PAsData PTreasuryDatum
-        :--> PAsData PTreasuryRedeemer
-        :--> PAsData PScriptContext
-        :--> PUnit
-    )
-treasuryV gatCs' = plam $ \_d r ctx' -> P.do
+  ClosedTerm PValidator
+treasuryValidator gatCs' = plam $ \datum redeemer ctx' -> P.do
+  -- TODO: Use PTryFrom
+  let treasuryRedeemer :: Term _ (PAsData PTreasuryRedeemer)
+      treasuryRedeemer = punsafeCoerce redeemer
+      _treasuryDatum' :: Term _ (PAsData PTreasuryDatum)
+      _treasuryDatum' = punsafeCoerce datum
+
   -- plet required fields from script context.
   ctx <- pletFields @["txInfo", "purpose"] ctx'
 
@@ -43,7 +47,7 @@ treasuryV gatCs' = plam $ \_d r ctx' -> P.do
   PMinting _ <- pmatch ctx.purpose
 
   -- Ensure redeemer type is valid.
-  PAlterTreasuryParams _ <- pmatch $ pfromData r
+  PAlterTreasuryParams _ <- pmatch $ pfromData treasuryRedeemer
 
   -- Get the minted value from txInfo.
   txInfo' <- plet ctx.txInfo
@@ -55,7 +59,7 @@ treasuryV gatCs' = plam $ \_d r ctx' -> P.do
 
   passert "singleAuthorityTokenBurned" $ singleAuthorityTokenBurned gatCs txInfo' mint
 
-  pconstant ()
+  popaque $ pconstant ()
 
 {- | Plutarch level type representing datum of the treasury.
      Contains:

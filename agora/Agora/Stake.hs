@@ -351,7 +351,7 @@ stakeValidator stake =
     txInfo' <- plet ctx.txInfo
     txInfo <- pletFields @'["mint", "inputs", "outputs"] txInfo'
 
-    -- Coercion is safe in that if coercion fails we crash hard.
+    -- TODO: Use PTryFrom
     let stakeRedeemer :: Term _ PStakeRedeemer
         stakeRedeemer = pfromData $ punsafeCoerce redeemer
         stakeDatum' :: Term _ PStakeDatum
