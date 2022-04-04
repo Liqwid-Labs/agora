@@ -99,7 +99,7 @@ newtype Stake = Stake
      on voting which in turn creates contention on stakers.
 
      Vaguely this is the dependency graph for this locking
-     interaction. Both the stake vaalidator and the proposal
+     interaction. Both the stake validator and the proposal
      validator are only able to check for eachother through
      the datum belonging to the ST:
 

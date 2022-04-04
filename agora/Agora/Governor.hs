@@ -5,9 +5,22 @@ Description: Governor entity scripts acting as authority of entire system.
 
 Governor entity scripts acting as authority of entire system.
 -}
-module Agora.Governor (GovernorDatum (..), GovernorRedeemer (..), Governor (..)) where
+module Agora.Governor (
+  -- * Haskell-land
+  GovernorDatum (..),
+  GovernorRedeemer (..),
+  Governor (..),
+
+  -- * Plutarch-land
+
+  -- * Scripts
+  governorPolicy,
+  governorValidator,
+) where
 
 import Agora.Proposal (ProposalThresholds)
+import Plutarch (popaque)
+import Plutarch.Api.V1 (PMintingPolicy, PValidator)
 
 -- | Datum for the Governor script.
 newtype GovernorDatum = GovernorDatum
@@ -31,3 +44,17 @@ data GovernorRedeemer
 -- | Parameters for creating Governor scripts.
 data Governor
   = Governor
+
+--------------------------------------------------------------------------------
+
+-- | Policy for Governors.
+governorPolicy :: Governor -> ClosedTerm PMintingPolicy
+governorPolicy _ =
+  plam $ \_redeemer _ctx' -> P.do
+    popaque (pconstant ())
+
+-- | Validator for Governors.
+governorValidator :: Governor -> ClosedTerm PValidator
+governorValidator _ =
+  plam $ \_datum _redeemer _ctx' -> P.do
+    popaque (pconstant ())
