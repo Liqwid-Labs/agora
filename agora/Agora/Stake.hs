@@ -63,11 +63,11 @@ import Agora.Utils (
   anyOutput,
   paddValue,
   passert,
-  passetClassValueOf',
   pfindTxInByTxOutRef,
   pgeqByClass,
   pgeqByClass',
   pgeqBySymbol,
+  pnotNull,
   psingletonValue,
   psymbolValueOf,
   ptxSignedBy,
@@ -89,26 +89,71 @@ newtype Stake = Stake
   -- ^ Used when inlining the AssetClass of a 'PDiscrete' in the script code.
   }
 
--- | Haskell-level redeemer for Stake scripts.
-data StakeRedeemer
-  = -- | Deposit or withdraw a discrete amount of the staked governance token.
-    DepositWithdraw (Tagged GTTag Integer)
-  | -- | Destroy a stake, retrieving its LQ, the minimum ADA and any other assets.
-    Destroy
-  deriving stock (Show, GHC.Generic)
+{- | A lock placed on a Stake datum in order to prevent
+     depositing and withdrawing when votes are in place.
 
-PlutusTx.makeIsDataIndexed ''StakeRedeemer [('DepositWithdraw, 0), ('Destroy, 1)]
+     NOTE: Due to retracting votes always being possible,
+     this lock will only lock with contention on the proposal.
 
+     FIXME: Contention on Proposals could create contention
+     on voting which in turn creates contention on stakers.
+
+     Vaguely this is the dependency graph for this locking
+     interaction. Both the stake vaalidator and the proposal
+     validator are only able to check for eachother through
+     the datum belonging to the ST:
+
+     @
+     ┌─────────────────┐   ┌────────────────────┐
+     │ Stake Validator ├─┐ │ Proposal Validator │
+     └────────┬────────┘ │ └──────┬─────┬───────┘
+              │          │        │     │
+              │        ┌─┼────────┘     │
+              ▼        │ │              ▼
+     ┌──────────────┐  │ │ ┌─────────────────┐
+     │ Stake Policy │◄─┘ └►│ Proposal Policy │
+     └──────────────┘      └─────────────────┘
+     @
+-}
 data ProposalLock = ProposalLock
   { vote :: ResultTag
   -- ^ What was voted on. This allows retracting votes to
   --   undo their vote.
   , proposalTag :: ProposalTag
-  -- ^ Identifies the proposal.
+  -- ^ Identifies the proposal. See 'ProposalTag' for further
+  -- comments on its significance.
   }
   deriving stock (Show, GHC.Generic)
 
 PlutusTx.makeIsDataIndexed ''ProposalLock [('ProposalLock, 0)]
+
+-- | Haskell-level redeemer for Stake scripts.
+data StakeRedeemer
+  = -- | Deposit or withdraw a discrete amount of the staked governance token.
+    --   Stake must be unlocked.
+    DepositWithdraw (Tagged GTTag Integer)
+  | -- | Destroy a stake, retrieving its LQ, the minimum ADA and any other assets.
+    --   Stake must be unlocked.
+    Destroy
+  | -- | Permit a Vote to be added onto a 'Proposal'.
+    --   This also adds a lock to the 'lockedBy' field. See 'ProposalLock'.
+    --   This needs to be done in sync with casting a vote, otherwise
+    --   it's possible for a lock to be permanently placed on the stake,
+    --   and then the funds are lost.
+    PermitVote ProposalLock
+  | -- | Retract a vote, removing it from the 'lockedBy' field. See 'ProposalLock'.
+    --   This action checks for permission of the 'Proposal'. Finished proposals are
+    --   always allowed to be retracted with.
+    RetractVotes [ProposalLock]
+  deriving stock (Show, GHC.Generic)
+
+PlutusTx.makeIsDataIndexed
+  ''StakeRedeemer
+  [ ('DepositWithdraw, 0)
+  , ('Destroy, 1)
+  , ('PermitVote, 2)
+  , ('RetractVotes, 3)
+  ]
 
 -- | Haskell-level datum for Stake scripts.
 data StakeDatum = StakeDatum
@@ -158,6 +203,8 @@ data PStakeRedeemer (s :: S)
     PDepositWithdraw (Term s (PDataRecord '["delta" ':= PDiscrete GTTag]))
   | -- | Destroy a stake, retrieving its LQ, the minimum ADA and any other assets.
     PDestroy (Term s (PDataRecord '[]))
+  | PPermitVote (Term s (PDataRecord '["lock" ':= PProposalLock]))
+  | PRetractVotes (Term s (PDataRecord '["locks" ':= PBuiltinList PProposalLock]))
   deriving stock (GHC.Generic)
   deriving anyclass (Generic)
   deriving anyclass (PIsDataRepr)
@@ -204,10 +251,7 @@ deriving via (DerivePConstantViaData ProposalLock PProposalLock) instance (PCons
 --------------------------------------------------------------------------------
 
 -- | Policy for Stake state threads.
-stakePolicy ::
-  forall (s :: S).
-  Stake ->
-  Term s PMintingPolicy
+stakePolicy :: Stake -> ClosedTerm PMintingPolicy
 stakePolicy stake =
   plam $ \_redeemer ctx' -> P.do
     ctx <- pletFields @'["txInfo", "purpose"] ctx'
@@ -300,10 +344,7 @@ stakePolicy stake =
 --------------------------------------------------------------------------------
 
 -- | Validator intended for Stake UTXOs to live in.
-stakeValidator ::
-  forall (s :: S).
-  Stake ->
-  Term s PValidator
+stakeValidator :: Stake -> ClosedTerm PValidator
 stakeValidator stake =
   plam $ \datum redeemer ctx' -> P.do
     ctx <- pletFields @'["txInfo", "purpose"] ctx'
@@ -322,10 +363,16 @@ stakeValidator stake =
     PJust txInInfo <- pmatch $ pfindTxInByTxOutRef # (pfield @"_0" # txOutRef) # txInfo'
     ownAddress <- plet $ pfield @"address" #$ pfield @"resolved" # txInInfo
     let continuingValue = pfield @"value" #$ pfield @"resolved" # txInInfo
+
+    -- Whether the owner signs this transaction or not.
     ownerSignsTransaction <- plet $ ptxSignedBy # ctx.txInfo # stakeDatum.owner
+
     stCurrencySymbol <- plet $ pconstant $ mintingPolicySymbol $ mkMintingPolicy (stakePolicy stake)
     mintedST <- plet $ psymbolValueOf # stCurrencySymbol # txInfo.mint
     spentST <- plet $ psymbolValueOf # stCurrencySymbol #$ pvalueSpent # txInfo'
+
+    -- Is the stake currently locked?
+    stakeIsLocked <- plet $ stakeLocked # stakeDatum'
 
     pmatch stakeRedeemer $ \case
       PDestroy _ -> P.do
@@ -333,17 +380,31 @@ stakeValidator stake =
           spentST #== 1
         passert "Should burn ST" $
           mintedST #== -1
-        passert "Stake unlocked" $
-          pnot #$ stakeLocked # stakeDatum'
+        passert "Stake unlocked" $ pnot # stakeIsLocked
         passert
           "Owner signs this transaction"
           ownerSignsTransaction
         popaque (pconstant ())
+      --------------------------------------------------------------------------
+      PRetractVotes _ -> P.do
+        passert
+          "Owner signs this transaction"
+          ownerSignsTransaction
+        -- TODO: check proposal constraints
+        popaque (pconstant ())
+      --------------------------------------------------------------------------
+      PPermitVote _ -> P.do
+        passert
+          "Owner signs this transaction"
+          ownerSignsTransaction
+        -- TODO: check proposal constraints
+        popaque (pconstant ())
+      --------------------------------------------------------------------------
       PDepositWithdraw r -> P.do
         passert "ST at inputs must be 1" $
           spentST #== 1
         passert "Stake unlocked" $
-          pnot #$ stakeLocked # stakeDatum'
+          pnot #$ stakeIsLocked
         passert
           "Owner signs this transaction"
           ownerSignsTransaction
@@ -364,9 +425,6 @@ stakeValidator stake =
                         zero #<= pfromData newStakeDatum.stakedAmount
                       ]
               let expectedValue = paddValue # continuingValue # (pdiscreteValue stake.gtClassRef # delta)
-
-              ptrace (pshow $ passetClassValueOf' (untag stake.gtClassRef) # value)
-              ptrace (pshow $ passetClassValueOf' (untag stake.gtClassRef) # expectedValue)
 
               -- TODO: Same as above. This is quite inefficient now, as it does two lookups
               -- instead of a more efficient single pass,
@@ -401,5 +459,4 @@ stakeLocked = phoistAcyclic $
   plam $ \stakeDatum ->
     let locks :: Term _ (PBuiltinList (PAsData PProposalLock))
         locks = pfield @"lockedBy" # stakeDatum
-     in -- 'pnotNull' ?
-        pelimList (\_ _ -> pcon PTrue) (pcon PFalse) locks
+     in pnotNull # locks

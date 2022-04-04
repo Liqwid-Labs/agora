@@ -25,6 +25,7 @@ module Agora.Utils (
   pfindTxInByTxOutRef,
   psingletonValue,
   pfindMap,
+  pnotNull,
 
   -- * Functions which should (probably) not be upstreamed
   anyOutput,
@@ -280,6 +281,10 @@ pfindTxInByTxOutRef = phoistAcyclic $
                     (pcon PNothing)
           )
         #$ (pfield @"inputs" # txInfo)
+
+-- | True if a list is not empty.
+pnotNull :: forall list a. PIsListLike list a => Term _ (list a :--> PBool)
+pnotNull = phoistAcyclic $ plam $ pelimList (\_ _ -> pcon PTrue) (pcon PFalse)
 
 --------------------------------------------------------------------------------
 {- Functions which should (probably) not be upstreamed

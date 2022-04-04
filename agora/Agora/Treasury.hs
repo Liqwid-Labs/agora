@@ -28,10 +28,8 @@ import Agora.Utils (passert)
      do so in a valid manner.
 -}
 treasuryV ::
-  forall {s :: S}.
   CurrencySymbol ->
-  Term
-    s
+  ClosedTerm
     ( PAsData PTreasuryDatum
         :--> PAsData PTreasuryRedeemer
         :--> PAsData PScriptContext
@@ -50,7 +48,7 @@ treasuryV gatCs' = plam $ \_d r ctx' -> P.do
   -- Get the minted value from txInfo.
   txInfo' <- plet ctx.txInfo
   txInfo <- pletFields @'["mint"] txInfo'
-  let mint :: Term s PValue
+  let mint :: Term _ PValue
       mint = txInfo.mint
 
   gatCs <- plet $ pconstant gatCs'

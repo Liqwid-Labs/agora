@@ -23,11 +23,11 @@ import Plutus.V1.Ledger.Value (CurrencySymbol)
      helper.
 -}
 makeEffect ::
-  forall (datum :: PType) (s :: S).
+  forall (datum :: PType).
   PIsData datum =>
   CurrencySymbol ->
-  (Term s datum -> Term s PTxOutRef -> Term s (PAsData PTxInfo) -> Term s POpaque) ->
-  Term s PValidator
+  (forall (s :: S). Term s datum -> Term s PTxOutRef -> Term s (PAsData PTxInfo) -> Term s POpaque) ->
+  ClosedTerm PValidator
 makeEffect gatCs' f =
   plam $ \datum _redeemer ctx' -> P.do
     ctx <- pletFields @'["txInfo", "purpose"] ctx'
@@ -40,7 +40,7 @@ makeEffect gatCs' f =
     txOutRef' <- plet (pfield @"_0" # txOutRef)
 
     txInfo <- pletFields @'["mint"] txInfo'
-    let mint :: Term s PValue
+    let mint :: Term _ PValue
         mint = txInfo.mint
 
     gatCs <- plet $ pconstant gatCs'
