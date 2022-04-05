@@ -3,7 +3,7 @@ Module     : Agora.SafeMoney
 Maintainer : emi@haskell.fyi
 Description: Tags and bonuses for Plutarch.SafeMoney.
 
-Tags and bonuses for "Plutarch.SafeMoney".
+Tags and extras for "Plutarch.SafeMoney".
 -}
 module Agora.SafeMoney (
   ADATag,

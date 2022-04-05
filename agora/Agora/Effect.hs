@@ -5,11 +5,15 @@ Description: Helpers for constructing effects
 
 Helpers for constructing effects.
 -}
-module Agora.Effect (makeEffect) where
+module Agora.Effect (
+  makeEffect,
+  noopEffect,
+) where
 
 import Agora.AuthorityToken (singleAuthorityTokenBurned)
 import Agora.Utils (passert)
-import Plutarch.Api.V1 (PScriptPurpose (PSpending), PTxInfo, PTxOutRef, PValidator, PValue)
+import Plutarch (popaque)
+import Plutarch.Api.V1 (PCurrencySymbol, PScriptPurpose (PSpending), PTxInfo, PTxOutRef, PValidator, PValue)
 import Plutarch.Internal (punsafeCoerce)
 import Plutarch.Monadic qualified as P
 import Plutus.V1.Ledger.Value (CurrencySymbol)
@@ -26,13 +30,14 @@ makeEffect ::
   forall (datum :: PType).
   PIsData datum =>
   CurrencySymbol ->
-  (forall (s :: S). Term s datum -> Term s PTxOutRef -> Term s (PAsData PTxInfo) -> Term s POpaque) ->
+  (forall (s :: S). Term s PCurrencySymbol -> Term s datum -> Term s PTxOutRef -> Term s (PAsData PTxInfo) -> Term s POpaque) ->
   ClosedTerm PValidator
 makeEffect gatCs' f =
   plam $ \datum _redeemer ctx' -> P.do
     ctx <- pletFields @'["txInfo", "purpose"] ctx'
     txInfo' <- plet ctx.txInfo
 
+    -- TODO: Use PTryFrom
     let datum' :: Term _ datum
         datum' = pfromData $ punsafeCoerce datum
 
@@ -45,8 +50,16 @@ makeEffect gatCs' f =
 
     gatCs <- plet $ pconstant gatCs'
 
-    passert "singleAuthorityTokenBurned" $ singleAuthorityTokenBurned gatCs txInfo' mint
+    passert "A single authority token has been burned" $ singleAuthorityTokenBurned gatCs txInfo' mint
 
-    f datum' txOutRef' txInfo'
+    f gatCs datum' txOutRef' txInfo'
 
 --------------------------------------------------------------------------------
+
+-- | Dummy effect which can only burn its GAT.
+noopEffect :: CurrencySymbol -> ClosedTerm PValidator
+noopEffect =
+  ( `makeEffect`
+      \_gatCs (_datum :: Term _ PUnit) _txOutRef _txInfo -> P.do
+        popaque (pconstant ())
+  )

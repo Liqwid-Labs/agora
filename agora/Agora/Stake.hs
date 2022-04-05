@@ -100,7 +100,7 @@ newtype Stake = Stake
 
      Vaguely this is the dependency graph for this locking
      interaction. Both the stake validator and the proposal
-     validator are only able to check for eachother through
+     validator are only able to check for one another through
      the datum belonging to the ST:
 
      @
@@ -143,7 +143,8 @@ data StakeRedeemer
     PermitVote ProposalLock
   | -- | Retract a vote, removing it from the 'lockedBy' field. See 'ProposalLock'.
     --   This action checks for permission of the 'Proposal'. Finished proposals are
-    --   always allowed to be retracted with.
+    --   always allowed to have votes retracted and won't affect the Proposal datum,
+    --   allowing 'Stake's to be unlocked.
     RetractVotes [ProposalLock]
   deriving stock (Show, GHC.Generic)
 
@@ -166,7 +167,7 @@ data StakeDatum = StakeDatum
   -- TODO Support for MultiSig/Scripts is tracked here:
   --      https://github.com/Liqwid-Labs/agora/issues/45
   , lockedBy :: [ProposalLock]
-  -- ^ The proposal locks in place. This field must be empty
+  -- ^ The current proposals locking this stake. This field must be empty
   -- for the stake to be usable for deposits and withdrawals.
   }
   deriving stock (Show, GHC.Generic)

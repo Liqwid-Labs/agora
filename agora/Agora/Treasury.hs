@@ -57,7 +57,7 @@ treasuryValidator gatCs' = plam $ \datum redeemer ctx' -> P.do
 
   gatCs <- plet $ pconstant gatCs'
 
-  passert "singleAuthorityTokenBurned" $ singleAuthorityTokenBurned gatCs txInfo' mint
+  passert "A single authority token has been burned" $ singleAuthorityTokenBurned gatCs txInfo' mint
 
   popaque $ pconstant ()
 

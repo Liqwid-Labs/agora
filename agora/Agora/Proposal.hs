@@ -158,7 +158,11 @@ data ProposalDatum = ProposalDatum
 
 PlutusTx.makeIsDataIndexed ''ProposalDatum [('ProposalDatum, 0)]
 
--- | Identifies a Proposal, issued upon creation of a proposal.
+{- | Identifies a Proposal, issued upon creation of a proposal.
+     In practice, this number starts at zero, and increments by one
+     for each proposal. The 100th proposal will be @'ProposalTag' 99@.
+     This counter lives in the 'Governor', see 'nextProposalTag'.
+-}
 newtype ProposalTag = ProposalTag {proposalTag :: Integer}
   deriving newtype (PlutusTx.ToData, PlutusTx.FromData, PlutusTx.UnsafeFromData)
   deriving stock (Eq, Show, GHC.Generic)

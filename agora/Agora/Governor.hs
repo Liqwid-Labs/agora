@@ -18,14 +18,16 @@ module Agora.Governor (
   governorValidator,
 ) where
 
-import Agora.Proposal (ProposalThresholds)
+import Agora.Proposal (ProposalTag, ProposalThresholds)
 import Plutarch (popaque)
 import Plutarch.Api.V1 (PMintingPolicy, PValidator)
 
 -- | Datum for the Governor script.
-newtype GovernorDatum = GovernorDatum
+data GovernorDatum = GovernorDatum
   { proposalThresholds :: ProposalThresholds
   -- ^ Gets copied over upon creation of a 'Agora.Proposal.ProposalDatum'.
+  , nextProposalTag :: ProposalTag
+  -- ^ What tag the next proposal will get upon creating.
   }
 
 {- | Redeemer for Governor script. The governor has two primary
