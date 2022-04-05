@@ -939,8 +939,6 @@
         "hpc-coveralls": "hpc-coveralls_3",
         "nix-tools": "nix-tools_3",
         "nixpkgs": [
-          "plutarch",
-          "haskell-nix",
           "nixpkgs-2111"
         ],
         "nixpkgs-2003": "nixpkgs-2003_3",
@@ -1623,17 +1621,17 @@
         "validity": "validity"
       },
       "locked": {
-        "lastModified": 1648578429,
-        "narHash": "sha256-nEB6ujvX5aSpSk1EJ7/tAxW2lxB/eWXzJmyj7qyInpQ=",
+        "lastModified": 1648639396,
+        "narHash": "sha256-pAkEsIDXJckVYufVPUzD/4sq4/uE7iyV0IR2BuLhZjY=",
         "owner": "peter-mlabs",
         "repo": "plutarch",
-        "rev": "b4e71dc0f685d0d0c325eabbaac8c5b3352bfcf8",
+        "rev": "a7a410da209b9c14c834a41e07b1c197c2a4dcd6",
         "type": "github"
       },
       "original": {
         "owner": "peter-mlabs",
-        "ref": "liqwid/extra",
         "repo": "plutarch",
+        "rev": "a7a410da209b9c14c834a41e07b1c197c2a4dcd6",
         "type": "github"
       }
     },

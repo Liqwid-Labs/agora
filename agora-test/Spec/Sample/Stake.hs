@@ -51,8 +51,9 @@ import Plutus.V1.Ledger.Value qualified as Value
 
 --------------------------------------------------------------------------------
 
-import Agora.SafeMoney
+import Agora.SafeMoney (GTTag)
 import Agora.Stake
+import Plutarch.SafeMoney
 import Spec.Util (datumPair, toDatumHash)
 
 --------------------------------------------------------------------------------
@@ -62,7 +63,7 @@ stake :: Stake
 stake =
   Stake
     { gtClassRef =
-        AssetClassRef
+        Tagged
           ( AssetClass
               ( "da8c30857834c6ae7203935b89278c532b3995245295456f993e1d24"
               , "LQ"
@@ -94,7 +95,7 @@ stakeCreation :: ScriptContext
 stakeCreation =
   let st = Value.singleton policySymbol validatorHashTN 1 -- Stake ST
       datum :: Datum
-      datum = Datum (toBuiltinData $ StakeDatum 424242424242 signer)
+      datum = Datum (toBuiltinData $ StakeDatum 424242424242 signer [])
    in ScriptContext
         { scriptContextTxInfo =
             TxInfo
@@ -122,7 +123,7 @@ stakeCreation =
 stakeCreationWrongDatum :: ScriptContext
 stakeCreationWrongDatum =
   let datum :: Datum
-      datum = Datum (toBuiltinData $ StakeDatum 4242424242424242 signer) -- Too much GT
+      datum = Datum (toBuiltinData $ StakeDatum 4242424242424242 signer []) -- Too much GT
    in ScriptContext
         { scriptContextTxInfo = stakeCreation.scriptContextTxInfo {txInfoData = [("", datum)]}
         , scriptContextPurpose = Minting policySymbol
@@ -143,9 +144,9 @@ stakeCreationUnsigned =
 
 -- | Config for creating a ScriptContext that deposits or withdraws.
 data DepositWithdrawExample = DepositWithdrawExample
-  { startAmount :: Discrete GTTag
+  { startAmount :: Tagged GTTag Integer
   -- ^ The amount of GT stored before the transaction.
-  , delta :: Discrete GTTag
+  , delta :: Tagged GTTag Integer
   -- ^ The amount of GT deposited or withdrawn from the Stake.
   }
 
@@ -154,7 +155,7 @@ stakeDepositWithdraw :: DepositWithdrawExample -> ScriptContext
 stakeDepositWithdraw config =
   let st = Value.singleton policySymbol validatorHashTN 1 -- Stake ST
       stakeBefore :: StakeDatum
-      stakeBefore = StakeDatum config.startAmount signer
+      stakeBefore = StakeDatum config.startAmount signer []
 
       stakeAfter :: StakeDatum
       stakeAfter = stakeBefore {stakedAmount = stakeBefore.stakedAmount + config.delta}
@@ -168,7 +169,7 @@ stakeDepositWithdraw config =
                         { txOutAddress = Address (ScriptCredential $ validatorHash validator) Nothing
                         , txOutValue =
                             st
-                              <> discreteValue stake.gtClassRef stakeBefore.stakedAmount
+                              <> Value.assetClassValue (untag stake.gtClassRef) (untag stakeBefore.stakedAmount)
                         , txOutDatumHash = Just (toDatumHash stakeAfter)
                         }
                   ]
@@ -177,7 +178,7 @@ stakeDepositWithdraw config =
                       { txOutAddress = Address (ScriptCredential $ validatorHash validator) Nothing
                       , txOutValue =
                           st
-                            <> discreteValue stake.gtClassRef stakeAfter.stakedAmount
+                            <> Value.assetClassValue (untag stake.gtClassRef) (untag stakeAfter.stakedAmount)
                       , txOutDatumHash = Just (toDatumHash stakeAfter)
                       }
                   ]

@@ -7,7 +7,9 @@
   # see https://github.com/NixOS/nix/issues/6013
   inputs.nixpkgs-2111 = { url = "github:NixOS/nixpkgs/nixpkgs-21.11-darwin"; };
 
-  inputs.plutarch.url = "github:peter-mlabs/plutarch/liqwid/extra";
+  # Rev is this PR https://github.com/peter-mlabs/plutarch/pull/5.
+  inputs.plutarch.url =
+    "github:peter-mlabs/plutarch?rev=a7a410da209b9c14c834a41e07b1c197c2a4dcd6";
   inputs.plutarch.inputs.nixpkgs.follows =
     "plutarch/haskell-nix/nixpkgs-unstable";
 
@@ -24,7 +26,6 @@
     "github:mlabs-haskell/apropos?rev=3734bb3baa297ed990725a5ef14efcbb6a1c1c23";
   inputs.apropos.inputs.nixpkgs.follows =
     "plutarch/haskell-nix/nixpkgs-unstable";
-
 
   outputs = inputs@{ self, nixpkgs, haskell-nix, plutarch, ... }:
     let
@@ -57,8 +58,13 @@
           extraSources = plutarch.extraSources ++ [
             {
               src = inputs.plutarch;
-              subdirs =
-                [ "." "plutarch-test" "plutarch-extra" "plutarch-numeric" ];
+              subdirs = [
+                "."
+                "plutarch-test"
+                "plutarch-extra"
+                "plutarch-numeric"
+                "plutarch-safemoney"
+              ];
             }
             {
               src = inputs.apropos-tx;
@@ -98,6 +104,7 @@
               ps.apropos
               ps.plutarch-extra
               ps.plutarch-numeric
+              ps.plutarch-safemoney
               ps.plutarch-test
               ps.apropos
             ];

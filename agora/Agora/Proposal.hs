@@ -14,11 +14,20 @@ module Agora.Proposal (
   ProposalStatus (..),
   ProposalThresholds (..),
   ProposalVotes (..),
+  ProposalTag (..),
   ResultTag (..),
 
   -- * Plutarch-land
   PProposalDatum (..),
+  PProposalStatus (..),
+  PProposalThresholds (..),
+  PProposalVotes (..),
+  PProposalTag (..),
   PResultTag (..),
+
+  -- * Scripts
+  proposalValidator,
+  proposalPolicy,
 ) where
 
 import GHC.Generics qualified as GHC
@@ -26,19 +35,26 @@ import Generics.SOP (Generic, I (I))
 import Plutarch.Api.V1 (
   PDatumHash,
   PMap,
+  PMintingPolicy,
   PPubKeyHash,
+  PValidator,
   PValidatorHash,
  )
 import Plutarch.DataRepr (
+  DerivePConstantViaData (..),
   PDataFields,
   PIsDataReprInstances (PIsDataReprInstances),
  )
 import Plutus.V1.Ledger.Api (DatumHash, PubKeyHash, ValidatorHash)
 import PlutusTx qualified
+import PlutusTx.AssocMap qualified as AssocMap
 
 --------------------------------------------------------------------------------
 
-import Agora.SafeMoney (Discrete, GTTag, PDiscrete)
+import Agora.SafeMoney (GTTag)
+import Plutarch (popaque)
+import Plutarch.Lift (DerivePConstantViaNewtype (..), PUnsafeLiftDecl (..))
+import Plutarch.SafeMoney (PDiscrete, Tagged)
 
 --------------------------------------------------------------------------------
 -- Haskell-land
@@ -51,7 +67,7 @@ import Agora.SafeMoney (Discrete, GTTag, PDiscrete)
 @
 -}
 newtype ResultTag = ResultTag {getResultTag :: Integer}
-  deriving stock (Eq, Show)
+  deriving stock (Eq, Show, Ord)
   deriving newtype (PlutusTx.ToData, PlutusTx.FromData, PlutusTx.UnsafeFromData)
 
 {- | The "status" of the proposal. This is only useful for state transitions,
@@ -84,6 +100,7 @@ data ProposalStatus
     --
     --   TODO: The owner of the proposal may choose to reclaim their proposal.
     Finished
+  deriving stock (Eq, Show, GHC.Generic)
 
 PlutusTx.makeIsDataIndexed ''ProposalStatus [('Draft, 0), ('VotingReady, 1), ('Finished, 2)]
 
@@ -92,14 +109,15 @@ PlutusTx.makeIsDataIndexed ''ProposalStatus [('Draft, 0), ('VotingReady, 1), ('F
      to 'Proposal's when they are created.
 -}
 data ProposalThresholds = ProposalThresholds
-  { execute :: Discrete GTTag
+  { execute :: Tagged GTTag Integer
   -- ^ How much GT minimum must a particular 'ResultTag' accumulate for it to pass.
-  , draft :: Discrete GTTag
+  , draft :: Tagged GTTag Integer
   -- ^ How much GT required to "create" a proposal.
-  , vote :: Discrete GTTag
+  , vote :: Tagged GTTag Integer
   -- ^ How much GT required to allow voting to happen.
   -- (i.e. to move into 'VotingReady')
   }
+  deriving stock (Eq, Show, GHC.Generic)
 
 PlutusTx.makeIsDataIndexed ''ProposalThresholds [('ProposalThresholds, 0)]
 
@@ -115,9 +133,10 @@ PlutusTx.makeIsDataIndexed ''ProposalThresholds [('ProposalThresholds, 0)]
    @[('ResultTag' 0, n), ('ResultTag' 1, m)]@
 -}
 newtype ProposalVotes = ProposalVotes
-  { getProposalVotes :: [(ResultTag, Integer)]
+  { getProposalVotes :: AssocMap.Map ResultTag Integer
   }
   deriving newtype (PlutusTx.ToData, PlutusTx.FromData, PlutusTx.UnsafeFromData)
+  deriving stock (Eq, Show, GHC.Generic)
 
 -- | Haskell-level datum for Proposal scripts.
 data ProposalDatum = ProposalDatum
@@ -135,8 +154,18 @@ data ProposalDatum = ProposalDatum
   , votes :: ProposalVotes
   -- ^ Vote tally on the proposal
   }
+  deriving stock (Eq, Show, GHC.Generic)
 
 PlutusTx.makeIsDataIndexed ''ProposalDatum [('ProposalDatum, 0)]
+
+{- | Identifies a Proposal, issued upon creation of a proposal.
+     In practice, this number starts at zero, and increments by one
+     for each proposal. The 100th proposal will be @'ProposalTag' 99@.
+     This counter lives in the 'Governor', see 'nextProposalTag'.
+-}
+newtype ProposalTag = ProposalTag {proposalTag :: Integer}
+  deriving newtype (PlutusTx.ToData, PlutusTx.FromData, PlutusTx.UnsafeFromData)
+  deriving stock (Eq, Show, GHC.Generic)
 
 -- | Parameters that identify the Proposal validator script.
 data Proposal = Proposal
@@ -147,6 +176,22 @@ data Proposal = Proposal
 -- | Plutarch-level version of 'ResultTag'.
 newtype PResultTag (s :: S) = PResultTag (Term s PInteger)
   deriving (PlutusType, PIsData, PEq, POrd) via (DerivePNewtype PResultTag PInteger)
+
+instance PUnsafeLiftDecl PResultTag where type PLifted PResultTag = ResultTag
+deriving via
+  (DerivePConstantViaNewtype ResultTag PResultTag PInteger)
+  instance
+    (PConstant ResultTag)
+
+-- | Plutarch-level version of 'PProposalTag'.
+newtype PProposalTag (s :: S) = PProposalTag (Term s PInteger)
+  deriving (PlutusType, PIsData, PEq, POrd) via (DerivePNewtype PProposalTag PInteger)
+
+instance PUnsafeLiftDecl PProposalTag where type PLifted PProposalTag = ProposalTag
+deriving via
+  (DerivePConstantViaNewtype ProposalTag PProposalTag PInteger)
+  instance
+    (PConstant ProposalTag)
 
 -- | Plutarch-level version of 'ProposalStatus'.
 data PProposalStatus (s :: S)
@@ -161,6 +206,9 @@ data PProposalStatus (s :: S)
   deriving
     (PlutusType, PIsData)
     via PIsDataReprInstances PProposalStatus
+
+instance PUnsafeLiftDecl PProposalStatus where type PLifted PProposalStatus = ProposalStatus
+deriving via (DerivePConstantViaData ProposalStatus PProposalStatus) instance (PConstant ProposalStatus)
 
 -- | Plutarch-level version of 'ProposalThresholds'.
 newtype PProposalThresholds (s :: S) = PProposalThresholds
@@ -181,10 +229,19 @@ newtype PProposalThresholds (s :: S) = PProposalThresholds
     (PlutusType, PIsData, PDataFields)
     via (PIsDataReprInstances PProposalThresholds)
 
+instance PUnsafeLiftDecl PProposalThresholds where type PLifted PProposalThresholds = ProposalThresholds
+deriving via (DerivePConstantViaData ProposalThresholds PProposalThresholds) instance (PConstant ProposalThresholds)
+
 -- | Plutarch-level version of 'ProposalVotes'.
 newtype PProposalVotes (s :: S)
   = PProposalVotes (Term s (PMap PResultTag PInteger))
   deriving (PlutusType, PIsData) via (DerivePNewtype PProposalVotes (PMap PResultTag PInteger))
+
+instance PUnsafeLiftDecl PProposalVotes where type PLifted PProposalVotes = ProposalVotes
+deriving via
+  (DerivePConstantViaNewtype ProposalVotes PProposalVotes (PMap PResultTag PInteger))
+  instance
+    (PConstant ProposalVotes)
 
 -- | Plutarch-level version of 'ProposalDatum'.
 newtype PProposalDatum (s :: S) = PProposalDatum
@@ -206,3 +263,20 @@ newtype PProposalDatum (s :: S) = PProposalDatum
   deriving
     (PlutusType, PIsData, PDataFields)
     via (PIsDataReprInstances PProposalDatum)
+
+instance PUnsafeLiftDecl PProposalDatum where type PLifted PProposalDatum = ProposalDatum
+deriving via (DerivePConstantViaData ProposalDatum PProposalDatum) instance (PConstant ProposalDatum)
+
+--------------------------------------------------------------------------------
+
+-- | Policy for Proposals.
+proposalPolicy :: Proposal -> ClosedTerm PMintingPolicy
+proposalPolicy _ =
+  plam $ \_redeemer _ctx' -> P.do
+    popaque (pconstant ())
+
+-- | Validator for Proposals.
+proposalValidator :: Proposal -> ClosedTerm PValidator
+proposalValidator _ =
+  plam $ \_datum _redeemer _ctx' -> P.do
+    popaque (pconstant ())

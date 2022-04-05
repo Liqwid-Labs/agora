@@ -10,7 +10,7 @@ module Agora.Treasury (module Agora.Treasury) where
 
 import GHC.Generics qualified as GHC
 import Generics.SOP
-import Plutarch.Api.V1.Contexts (PScriptContext, PScriptPurpose (PMinting))
+import Plutarch.Api.V1.Contexts (PScriptPurpose (PMinting))
 import Plutarch.Api.V1.Value (PCurrencySymbol, PValue)
 import Plutarch.DataRepr (
   PDataFields,
@@ -21,23 +21,25 @@ import Plutus.V1.Ledger.Value (CurrencySymbol)
 
 --------------------------------------------------------------------------------
 
-import Agora.AuthorityToken (authorityTokensValidIn)
-import Agora.Utils (allInputs, passert, psymbolValueOf)
+import Agora.AuthorityToken (singleAuthorityTokenBurned)
+import Agora.Utils (passert)
+import Plutarch (popaque)
+import Plutarch.Api.V1 (PValidator)
+import Plutarch.Unsafe (punsafeCoerce)
 
 {- | Validator ensuring that transactions consuming the treasury
      do so in a valid manner.
 -}
-treasuryV ::
-  forall {s :: S}.
+treasuryValidator ::
   CurrencySymbol ->
-  Term
-    s
-    ( PAsData PTreasuryDatum
-        :--> PAsData PTreasuryRedeemer
-        :--> PAsData PScriptContext
-        :--> PUnit
-    )
-treasuryV cs = plam $ \_d r ctx' -> P.do
+  ClosedTerm PValidator
+treasuryValidator gatCs' = plam $ \datum redeemer ctx' -> P.do
+  -- TODO: Use PTryFrom
+  let treasuryRedeemer :: Term _ (PAsData PTreasuryRedeemer)
+      treasuryRedeemer = punsafeCoerce redeemer
+      _treasuryDatum' :: Term _ (PAsData PTreasuryDatum)
+      _treasuryDatum' = punsafeCoerce datum
+
   -- plet required fields from script context.
   ctx <- pletFields @["txInfo", "purpose"] ctx'
 
@@ -45,25 +47,19 @@ treasuryV cs = plam $ \_d r ctx' -> P.do
   PMinting _ <- pmatch ctx.purpose
 
   -- Ensure redeemer type is valid.
-  PAlterTreasuryParams _ <- pmatch $ pfromData r
+  PAlterTreasuryParams _ <- pmatch $ pfromData treasuryRedeemer
 
   -- Get the minted value from txInfo.
   txInfo' <- plet ctx.txInfo
   txInfo <- pletFields @'["mint"] txInfo'
-  let mint :: Term s PValue
+  let mint :: Term _ PValue
       mint = txInfo.mint
-      gatAmountMinted :: Term s PInteger
-      gatAmountMinted = psymbolValueOf # pconstant cs # mint
 
-  passert "GAT not burned." $ gatAmountMinted #== -1
+  gatCs <- plet $ pconstant gatCs'
 
-  passert "All inputs only have valid GATs" $
-    allInputs @PUnit # pfromData ctx.txInfo #$ plam $ \txOut _value _address _datum ->
-      authorityTokensValidIn
-        # pconstant cs
-        # txOut
+  passert "A single authority token has been burned" $ singleAuthorityTokenBurned gatCs txInfo' mint
 
-  pconstant ()
+  popaque $ pconstant ()
 
 {- | Plutarch level type representing datum of the treasury.
      Contains:
