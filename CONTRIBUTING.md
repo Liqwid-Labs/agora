@@ -8,8 +8,8 @@ Before making any form of contribution, it is advised that one familiarises them
 
 This document will make reference to the _Agora core team_. These are the people who work on Agora professionally and will be responsible for maintaining the project in its open source life. They include:
 
-  - [Emily Martins](https://github.com/emiflake)
-  - [Jack Hodgkinson](https://github.com/jhodgdev)
+- [Emily Martins](https://github.com/emiflake)
+- [Jack Hodgkinson](https://github.com/jhodgdev)
 
 ## Issues
 
@@ -40,18 +40,27 @@ Before submitting a PR, please write an issue pertaining to the problem that you
 
 Contributors should expect that if their work is insufficiently documented (either on GitHub or within the codebase) that their PR will not be reviewed by core Agora team members. Contributors should expect that an Agora maintainer may offer constructive feedback and request changes to be made, prior to the PR being incorporated into the project.
 
+### Technical requirements
+
+Agora utilises [Plutarch](https://github.com/plutonomicon/plutarch) and your work must be written with Plutarch, when appropriate. Plutarch can prove _complicated_ but the documentation is extensive. We would encourage you to dive deeply into the documentation, whilst stating that Plutarch's [Tricks.md](https://github.com/Plutonomicon/plutarch/blob/master/docs/Tricks.md) could prove particularly helpful.
+
+### Stylistic guidelines
+
+All work must comply with the [MLabs style guide](https://github.com/mlabs-haskell/styleguide/). 
+
 ### Continuous integration
 
-For your PR to be merged it must pass three automated checks: 
-  1. A [`fourmolu`](https://github.com/fourmolu/fourmolu) formatting check.
-  2. A [`hlint`](https://github.com/ndmitchell/hlint) linting check.
-  3. A Cabal build check.
+For your PR to be merged it must pass three automated checks:
+
+1. A [`fourmolu`](https://github.com/fourmolu/fourmolu) formatting check.
+2. A [`hlint`](https://github.com/ndmitchell/hlint) linting check.
+3. A Cabal build check.
 
 Our custom `fourmolu` rules may be found in the [base of the repository](./fourmolu.yaml). You can ensure that your work will pass CI by:
 
-  1. Running `make format` from the included `Makefile`.
-  2. Running `make lint` from the included `Makefile` and applying any recommendations.
-  3. Ensuring that `cabal build` terminates successfully on your machine in the provided Nix environment.
+1. Running `make format` from the included `Makefile`.
+2. Running `make lint` from the included `Makefile` and applying any recommendations.
+3. Ensuring that `cabal build` terminates successfully on your machine in the provided Nix environment.
 
 ## Documentation
 
