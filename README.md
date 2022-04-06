@@ -25,6 +25,10 @@ Open a development shell with `nix develop` and build the project with `cabal bu
 
 Documentation for Agora may be found in [docs](./docs).
 
+### Using Agora for your protocol
+
+If you are a protocol wanting to use Agora, read [Using Agora](./docs/using-agora.md).
+
 ## Road-map
 
 ### v1
