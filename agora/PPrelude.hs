@@ -11,7 +11,8 @@ module PPrelude (
   module Plutarch,
 ) where
 
--- These are not exported by Plutarch.Prelude, for some reason. Maybe we can 'fix' this upstream?
-import Plutarch (ClosedTerm, compile)
+-- NOTE: These are not exported by Plutarch.Prelude, for some reason.
+-- Maybe we can 'fix' this upstream?
+import Plutarch (ClosedTerm, POpaque, compile)
 import Plutarch.Prelude
 import Prelude

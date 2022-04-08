@@ -77,13 +77,13 @@ deriving via (DerivePConstantViaData MultiSig PMultiSig) instance (PConstant Mul
 
 --------------------------------------------------------------------------------
 
--- | Check if a Haskell-level MultiSig signs this transaction
+-- | Check if a Haskell-level MultiSig signs this transaction.
 validatedByMultisig :: MultiSig -> Term s (PTxInfo :--> PBool)
 validatedByMultisig params =
   phoistAcyclic $
     pvalidatedByMultisig # pconstant params
 
--- | Check if a Plutarch-level MultiSig signs this transaction
+-- | Check if a Plutarch-level MultiSig signs this transaction.
 pvalidatedByMultisig :: Term s (PMultiSig :--> PTxInfo :--> PBool)
 pvalidatedByMultisig =
   phoistAcyclic $

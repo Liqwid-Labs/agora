@@ -8,6 +8,7 @@ Tokens acting as redeemable proofs of DAO authority.
 module Agora.AuthorityToken (
   authorityTokenPolicy,
   authorityTokensValidIn,
+  singleAuthorityTokenBurned,
   AuthorityToken (..),
 ) where
 
@@ -15,14 +16,14 @@ import Plutarch.Api.V1 (
   PAddress (..),
   PCredential (..),
   PCurrencySymbol (..),
-  PMap (..),
   PScriptContext (..),
   PScriptPurpose (..),
   PTxInInfo (..),
   PTxInfo (..),
   PTxOut (..),
-  PValue (..),
  )
+import Plutarch.Api.V1.AssocMap (PMap (PMap))
+import Plutarch.Api.V1.Value (PValue (PValue))
 import Plutarch.Builtin (pforgetData)
 import Plutarch.List (pfoldr')
 import Plutarch.Monadic qualified as P
@@ -32,7 +33,15 @@ import Prelude
 
 --------------------------------------------------------------------------------
 
-import Agora.Utils (allOutputs, passert, passetClassValueOf, passetClassValueOf', plookup)
+import Agora.Utils (
+  allInputs,
+  allOutputs,
+  passert,
+  passetClassValueOf,
+  passetClassValueOf',
+  plookup,
+  psymbolValueOf,
+ )
 
 --------------------------------------------------------------------------------
 
@@ -84,6 +93,27 @@ authorityTokensValidIn = phoistAcyclic $
       PNothing ->
         -- No GATs exist at this output!
         pconstant True
+
+-- | Assert that a single authority token has been burned.
+singleAuthorityTokenBurned ::
+  forall (s :: S).
+  Term s PCurrencySymbol ->
+  Term s (PAsData PTxInfo) ->
+  Term s PValue ->
+  Term s PBool
+singleAuthorityTokenBurned gatCs txInfo mint = P.do
+  let gatAmountMinted :: Term _ PInteger
+      gatAmountMinted = psymbolValueOf # gatCs # mint
+
+  foldr1
+    (#&&)
+    [ ptraceIfFalse "GAT not burned." $ gatAmountMinted #== -1
+    , ptraceIfFalse "All inputs only have valid GATs" $
+        allInputs @PUnit # pfromData txInfo #$ plam $ \txOut _value _address _datum ->
+          authorityTokensValidIn
+            # gatCs
+            # txOut
+    ]
 
 -- | Policy given 'AuthorityToken' params.
 authorityTokenPolicy ::

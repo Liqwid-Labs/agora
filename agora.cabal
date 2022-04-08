@@ -95,6 +95,9 @@ common deps
     , data-default-class
     , generics-sop
     , plutarch
+    , plutarch-extra
+    , plutarch-numeric
+    , plutarch-safemoney
     , plutus-core
     , plutus-ledger-api
     , plutus-tx
@@ -107,6 +110,7 @@ common deps
 
 common test-deps
   build-depends:
+    , apropos
     , apropos-tx
     , QuickCheck
     , quickcheck-instances
@@ -120,16 +124,15 @@ library
     Agora.AuthorityToken
     Agora.MultiSig
     Agora.SafeMoney
-    Agora.SafeMoney.QQ
     Agora.Stake
+    Agora.Effect
     Agora.Treasury
-    Agora.Voting
+    Agora.Governor
+    Agora.Proposal
 
   other-modules:
     Agora.Utils
     Agora.Utils.Value
-    Plutarch.Api.V1.These
-    Plutarch.These
 
   hs-source-dirs:  agora
 

@@ -25,6 +25,7 @@ module Agora.Utils (
   pfindTxInByTxOutRef,
   psingletonValue,
   pfindMap,
+  pnotNull,
 
   -- * Functions which should (probably) not be upstreamed
   anyOutput,
@@ -44,7 +45,6 @@ import Plutarch.Api.V1 (
   PCurrencySymbol,
   PDatum,
   PDatumHash,
-  PMap (PMap),
   PMaybeData (PDJust),
   PPubKeyHash,
   PTokenName,
@@ -53,8 +53,9 @@ import Plutarch.Api.V1 (
   PTxInfo (PTxInfo),
   PTxOut (PTxOut),
   PTxOutRef,
-  PValue (PValue),
  )
+import Plutarch.Api.V1.AssocMap (PMap (PMap))
+import Plutarch.Api.V1.Value (PValue (PValue))
 import Plutarch.Builtin (ppairDataBuiltin)
 import Plutarch.Internal (punsafeCoerce)
 import Plutarch.Monadic qualified as P
@@ -183,21 +184,21 @@ passetClassValueOf' :: AssetClass -> Term s (PValue :--> PInteger)
 passetClassValueOf' (AssetClass (sym, token)) =
   passetClassValueOf # pconstant sym # pconstant token
 
--- | Return '>=' on two values comparing by only a particular AssetClass
+-- | Return '>=' on two values comparing by only a particular AssetClass.
 pgeqByClass :: Term s (PCurrencySymbol :--> PTokenName :--> PValue :--> PValue :--> PBool)
 pgeqByClass =
   phoistAcyclic $
     plam $ \cs tn a b ->
       passetClassValueOf # cs # tn # b #<= passetClassValueOf # cs # tn # a
 
--- | Return '>=' on two values comparing by only a particular CurrencySymbol
+-- | Return '>=' on two values comparing by only a particular CurrencySymbol.
 pgeqBySymbol :: Term s (PCurrencySymbol :--> PValue :--> PValue :--> PBool)
 pgeqBySymbol =
   phoistAcyclic $
     plam $ \cs a b ->
       psymbolValueOf # cs # b #<= psymbolValueOf # cs # a
 
--- | Return '>=' on two values comparing by only a particular Haskell-level AssetClass
+-- | Return '>=' on two values comparing by only a particular Haskell-level AssetClass.
 pgeqByClass' :: AssetClass -> Term s (PValue :--> PValue :--> PBool)
 pgeqByClass' ac =
   phoistAcyclic $
@@ -233,7 +234,7 @@ pmapUnionWith = phoistAcyclic $
             # ys
     pcon (PMap $ pconcat # ls # rs)
 
--- | Add two 'PValue's together
+-- | Add two 'PValue's together.
 paddValue :: forall s. Term s (PValue :--> PValue :--> PValue)
 paddValue = phoistAcyclic $
   plam $ \a' b' -> P.do
@@ -280,6 +281,10 @@ pfindTxInByTxOutRef = phoistAcyclic $
                     (pcon PNothing)
           )
         #$ (pfield @"inputs" # txInfo)
+
+-- | True if a list is not empty.
+pnotNull :: forall list a. PIsListLike list a => Term _ (list a :--> PBool)
+pnotNull = phoistAcyclic $ plam $ pelimList (\_ _ -> pcon PTrue) (pcon PFalse)
 
 --------------------------------------------------------------------------------
 {- Functions which should (probably) not be upstreamed

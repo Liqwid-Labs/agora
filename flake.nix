@@ -3,20 +3,28 @@
 
   inputs.nixpkgs.follows = "plutarch/nixpkgs";
   inputs.haskell-nix.follows = "plutarch/haskell-nix";
-
-  # https://github.com/mlabs-haskell/apropos-tx/pull/28
-  inputs.apropos-tx.url =
-    "github:mlabs-haskell/apropos-tx?rev=5b74ba897a6f02718c163bf588a08c5e3e9de204";
-  inputs.apropos-tx.inputs.nixpkgs.follows =
-    "plutarch/haskell-nix/nixpkgs-unstable";
-
   # temporary fix for nix versions that have the transitive follows bug
   # see https://github.com/NixOS/nix/issues/6013
   inputs.nixpkgs-2111 = { url = "github:NixOS/nixpkgs/nixpkgs-21.11-darwin"; };
 
+  # Rev is this PR https://github.com/peter-mlabs/plutarch/pull/5.
   inputs.plutarch.url =
-    "github:Plutonomicon/plutarch?rev=cb29ca64df4ed193d94a062e3fe26aa37e59b7bc";
+    "github:peter-mlabs/plutarch?rev=a7a410da209b9c14c834a41e07b1c197c2a4dcd6";
   inputs.plutarch.inputs.nixpkgs.follows =
+    "plutarch/haskell-nix/nixpkgs-unstable";
+
+  # Follows jhodgdev's forks of apropos and apropos-tx, as these
+  # are not constrained to `base ^>= 4.14`. Once these are merged
+  # to their respective master branches, we should change the
+  # inputs to follow a commit on those master branches. For more
+  # info, see: https://github.com/mlabs-haskell/apropos-tx/pull/37
+  inputs.apropos-tx.url =
+    "github:jhodgdev/apropos-tx?rev=4eca3fac23c339caee04ea6176e641a4b3857a25";
+  inputs.apropos-tx.inputs.nixpkgs.follows =
+    "plutarch/haskell-nix/nixpkgs-unstable";
+  inputs.apropos.url =
+    "github:mlabs-haskell/apropos?rev=3734bb3baa297ed990725a5ef14efcbb6a1c1c23";
+  inputs.apropos.inputs.nixpkgs.follows =
     "plutarch/haskell-nix/nixpkgs-unstable";
 
   outputs = inputs@{ self, nixpkgs, haskell-nix, plutarch, ... }:
@@ -32,7 +40,6 @@
           overlays = [ haskell-nix.overlay ];
           inherit (haskell-nix) config;
         };
-
       nixpkgsFor' = system:
         import nixpkgs {
           inherit system;
@@ -51,10 +58,20 @@
           extraSources = plutarch.extraSources ++ [
             {
               src = inputs.plutarch;
-              subdirs = [ "." "plutarch-test" "plutarch-extra" ];
+              subdirs = [
+                "."
+                "plutarch-test"
+                "plutarch-extra"
+                "plutarch-numeric"
+                "plutarch-safemoney"
+              ];
             }
             {
               src = inputs.apropos-tx;
+              subdirs = [ "." ];
+            }
+            {
+              src = inputs.apropos;
               subdirs = [ "." ];
             }
           ];
@@ -66,24 +83,30 @@
 
             # We use the ones from Nixpkgs, since they are cached reliably.
             # Eventually we will probably want to build these with haskell.nix.
-            nativeBuildInputs = [
-              pkgs'.git
-              pkgs'.haskellPackages.apply-refact
-              pkgs'.fd
-              pkgs'.cabal-install
-              pkgs'.haskell.packages."${ghcVersion}".hlint
-              pkgs'.haskellPackages.cabal-fmt
-              pkgs'.nixpkgs-fmt
-              pkgs'.graphviz
+            nativeBuildInputs = with pkgs'; [
+              entr
+              haskellPackages.apply-refact
+              git
+              fd
+              cabal-install
+              haskell.packages."${ghcVersion}".hlint
+              haskellPackages.cabal-fmt
+              nixpkgs-fmt
+              graphviz
             ];
 
             inherit (plutarch) tools;
 
             additional = ps: [
               ps.plutarch
-              ps.plutarch-test
+              ps.tasty-quickcheck
               ps.apropos-tx
+              ps.apropos
               ps.plutarch-extra
+              ps.plutarch-numeric
+              ps.plutarch-safemoney
+              ps.plutarch-test
+              ps.apropos
             ];
           };
         };
@@ -92,17 +115,15 @@
         let
           pkgs = nixpkgsFor system;
           pkgs' = nixpkgsFor' system;
-          inherit (pkgs.haskell-nix.tools ghcVersion {
-            inherit (plutarch.tools) fourmolu;
-          })
-            fourmolu;
         in pkgs.runCommand "format-check" {
           nativeBuildInputs = [
             pkgs'.git
             pkgs'.fd
             pkgs'.haskellPackages.cabal-fmt
             pkgs'.nixpkgs-fmt
-            fourmolu
+            (pkgs.haskell-nix.tools ghcVersion {
+              inherit (plutarch.tools) fourmolu;
+            }).fourmolu
           ];
         } ''
           export LC_CTYPE=C.UTF-8

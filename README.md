@@ -1,4 +1,5 @@
-# Agora
+# Agora :classical_building:
+![integrate.yaml badge](https://github.com/Liqwid-Labs/agora/actions/workflows/integrate.yaml/badge.svg?branch=master)
 
 Agora is a set of Plutus scripts that compose together to form a governance system.
 
@@ -23,6 +24,10 @@ Open a development shell with `nix develop` and build the project with `cabal bu
 ## Documentation
 
 Documentation for Agora may be found in [docs](./docs).
+
+### Using Agora for your protocol
+
+If you are a protocol wanting to use Agora, read [Using Agora](./docs/using-agora.md).
 
 ## Road-map
 
