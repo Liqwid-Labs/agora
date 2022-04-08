@@ -19,7 +19,7 @@
   # inputs to follow a commit on those master branches. For more
   # info, see: https://github.com/mlabs-haskell/apropos-tx/pull/37
   inputs.apropos-tx.url =
-    "github:jhodgdev/apropos-tx?rev=4eca3fac23c339caee04ea6176e641a4b3857a25";
+    "github:mlabs-haskell/apropos-tx?rev=5257325e3dd2603d09c0ebe468eec676eeb233b8";
   inputs.apropos-tx.inputs.nixpkgs.follows =
     "plutarch/haskell-nix/nixpkgs-unstable";
   inputs.apropos.url =

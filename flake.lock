@@ -103,17 +103,17 @@
         "plutus": "plutus"
       },
       "locked": {
-        "lastModified": 1648805998,
-        "narHash": "sha256-TWEiUifHkhgCHqe70aNn9j6LdFFWv2nMbSWV8hR59oE=",
-        "owner": "jhodgdev",
+        "lastModified": 1649421738,
+        "narHash": "sha256-07LdyHykRDObI984W04lIXgvh6sWKDEW8enAGhIijQU=",
+        "owner": "mlabs-haskell",
         "repo": "apropos-tx",
-        "rev": "4eca3fac23c339caee04ea6176e641a4b3857a25",
+        "rev": "5257325e3dd2603d09c0ebe468eec676eeb233b8",
         "type": "github"
       },
       "original": {
-        "owner": "jhodgdev",
+        "owner": "mlabs-haskell",
         "repo": "apropos-tx",
-        "rev": "4eca3fac23c339caee04ea6176e641a4b3857a25",
+        "rev": "5257325e3dd2603d09c0ebe468eec676eeb233b8",
         "type": "github"
       }
     },
