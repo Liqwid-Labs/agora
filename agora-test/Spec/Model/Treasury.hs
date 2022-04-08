@@ -21,7 +21,7 @@ import Apropos (
   runGeneratorTestsWhere,
   (:+),
  )
-import Apropos.Script (HasScriptRunner (expect, runScriptTestsWhere, script))
+import Apropos.Script (ScriptModel (expect, runScriptTestsWhere, script))
 import Data.Maybe (fromMaybe)
 import Data.Set (Set)
 import Plutus.V1.Ledger.Address (Address (addressCredential))
@@ -134,7 +134,7 @@ instance HasParameterisedGenerator TreasuryTxProp TreasuryTxModel where
         else undefined
     undefined
 
-instance HasScriptRunner TreasuryTxProp TreasuryTxModel where
+instance ScriptModel TreasuryTxProp TreasuryTxModel where
   expect = undefined
   script = undefined
 
