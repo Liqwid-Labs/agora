@@ -31,13 +31,13 @@ One writes a proposal effect, as one would write any Plutus script with the cave
 
 Consider an example NFT project, wherein the minting of each NFT is a community action. For this scenario, one would require a template `MintNFT` effect, which mints its corresponding NFT upon the passing of the relevant proposal. The proposal being passed will issue an authority token to the effect. Each NFT's policy will verify that such an authority token was burned upon minting, which demonstrates that the minting of the NFT was indeed authorized by the DAO.
 
-Making your protocol's components aware of authority tokens, and implementing relevant effects are the only two chores of using Agora in practice. The former is the only one that involves adapting your own scripts. Effect scripts can be written after your protocol and its governance has deployed, provided the authority tokens are respected by the components.
+Making your protocol's components aware of authority tokens, and implementing relevant effects are the only two chores of using Agora in practice. The former is the only one that involves adapting your own scripts. Effect scripts can be written after your protocol and its governance have deployed, provided that the authority tokens are respected by the components.
 
 ## What Agora leaves up to you
 
 Agora’s concern is the on-chain components and scripts. Any front-ends are the concern of the protocol's developers. In the best case, our documentation and program design will inspire you in developing a front-end solution. There is scope for Agora containing some off-chain functionality in-future. This would allow the user to create and experiment with transactions.
 
-It’s worth noting that, while the actual functionality of the _frontends_ isn’t a concern, creating standards for off-chain metadata _is_. For example, metadata tagging proposal descriptions, tags, dates, etc. These are all important features that Agora aims to standardize, in hopes of helping the interoperability between various instances of Agora. This effort is similar to [CIP-25](https://cips.cardano.org/cips/cip25/), which aims to standardize metadata for NFTs.
+It’s worth noting that, while the actual functionality of the _front-ends_ is not a concern, creating standards for off-chain metadata _is_. For example, metadata tagging proposal descriptions, tags, dates. These are all important features that Agora aims to standardize, in hopes of facilitating interoperability between various instances of Agora. This effort is similar to [CIP-25](https://cips.cardano.org/cips/cip25/), which aims to standardize metadata for NFTs.
 
 You're welcome to write any new effects you require for your protocol. If you believe any effects you write are sufficiently general and could serve as a benefit to our community, we would encourage you to up-stream them. Guidelines for doing so may be found in our [contribution guide](/CONTRIBUTING.md). Agora provides a number of effects out-of-the-box and intends to add more with time.
 
