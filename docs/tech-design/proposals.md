@@ -4,7 +4,7 @@ This document gives an overview of the technical design of the proposals system 
 
 | Specification | Implementation | Last revision |
 |:-----------:|:-----------:|:-------------:|
-| WIP         |  WIP        | v0.1 2022-04-07    |
+| WIP         |  WIP        | v0.1 2022-04-11    |
 
 ---
 
@@ -49,25 +49,21 @@ Consider the following 'stages' of a proposal:
 -   `L`: the length of the locking period.
 -   `E`: the length of the execution period.
 
-| Action                              | Valid POSIXTimeRange               | Valid _stored_ state(s) |
-|-------------------------------------|------------------------------------|-------------------------|
-| Witness                             | \[S, ∞)                             | \*                       |
+| Action                              | Valid POSIXTimeRange                | Valid _stored_ state(s) |
+|-------------------------------------|-------------------------------------|-------------------------|
+| Witness                             | \[S, ∞)                             | \*                      |
 | Cosign                              | \[S, S + D)                         | Draft                   |
 | AdvanceProposal                     | \[S, S + D)                         | Draft                   |
 | Vote                                | \[S + D, S + D + V)                 | Voting                  |
-| Unlock                              | \[S + D, ∞)                         | \*                       |
-| CountVotes (? see spec comment)     | \[S + D + V, S + D + V + L)         | Voting                  |
+| Unlock                              | \[S + D, ∞)                         | \*                      |
+| CountVotes                          | \[S + D + V, S + D + V + L)         | Voting                  |
 | ExecuteProposal (if quorum reached) | \[S + D + V + L, S + D + V + L + E) | Voting                  |
-
-```diff
-- CountVotes takes a snapshot after voting has ended, it allows users to unlock their stake without affecting votes, after the lock period has ended. This is an optional feature of locking, do we want this?
-```
 
 > Jack 2022-02-02: I will consider revising this table further at a later time.
 
 #### Draft phase
 
-During the draft phase, a new UTXO at the proposal script  has been created. At this stage, only votes in favor of co-signing the draft are counted. For the proposal to transition to the voting phase, a threshold of GT will have to be staked backing the proposal. This threshold will be determined on a per-system basis and could itself be a 'governable' parameter.
+During the draft phase, a new UTXO at the proposal script  has been created. At this stage, only votes in favor of co-signing the draft are counted. For the proposal to transition to the voting phase, a threshold of GT will have to be staked backing the proposal. This threshold will be determined on a per-system basis and could itself be a 'governable' parameter. It's important to note that cosignatures are not locking votes. Cosignatures are more like a delegated approval to a proposal. The sum of all cosignatures must tally to the threshold, and all cosigner stake datums must fit in a single transaction to witness their size.
 
 #### Voting phase
 

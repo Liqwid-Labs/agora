@@ -2,7 +2,7 @@
 
 | Specification | Implementation    | Last revision |
 |:-----------:|:--------------:|:-------------:|
-| WIP         |  WIP           | v0.1 2022-02-03 |
+| WIP         |  WIP           | v0.1 2022-04-11 |
 
 ---
 
@@ -32,12 +32,14 @@ We don't. Effects will be _unable_ to alter the system without burning [_governa
 
 All 'governable' components of a system must be able to interface with effects and allow them to make necessary changes, so long as they are in possession of a GAT.
 
+In order for effects to be identifiable through some off-chain metadata and verification of source code, it helps for effects to be reusable, their varied functionality being dependent onn their datum. This allows for effects to be given names, be audited, and to be tracked. The datums are more easily inspected because of their human-readable encoding, CBOR.
+
 ## What can an effect _be_?
 
 The range of powers an effect may have is at the discretion of the protocol maker. For usability purposes, Agora might  offer a _buffet approach_ as an option for proposals and effects.
 
 <p align="center">
-  <img height=300 src="https://images.unsplash.com/photo-1583338917496-7ea264c374ce?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1740&q=80" alt="Get the effects, whilst they're hot!"/> 
+  <img height=300 src="https://images.unsplash.com/photo-1583338917496-7ea264c374ce?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1740&q=80" alt="Get the effects, whilst they're hot!"/>
 </p>
 
 In this model, a proposal is defined by the _combination_ of _effect templates_, in much the same way a diner's meal at a buffet is defined by which dishes they choose.
@@ -51,3 +53,9 @@ Whilst Agora may offer this functionality, there is nothing stopping DAO members
 An anticipated problem with this model is the danger of 'partial execution'. The model relies on the assumption that desired effects will be processed by community members, as they are seen as desirable.There could however be an issue, if users deem some effects as more desirable than others. If the effects of a proposal are not executed **in their entirety**, this may lead to unanticipated and undesirable outcomes.
 
 This should not be a major limitation in the system, as community members _should_ recognise the necessity to implement the proposal in its entirety. However, one might consider _incentivising effect execution_ to prevent such an occurrence.
+
+## Guidelines for building effects
+
+One of the first targets for safety regarding handling of GATs in effects is that an effect ought to only allow transactions which include the burning of exactly one GAT. This essentially prevents all of the issues of authority token leaking, multi-GAT burn issues, etc.
+
+Furthermore, an effect could require that no funds are sent to the effect within the spend transaction. This prevents issues with residue datums leaking into future uses of the same script (reuse of scripts is a *requirement* for correct tagging, implementation safety, etc).
