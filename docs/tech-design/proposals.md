@@ -63,7 +63,7 @@ Consider the following 'stages' of a proposal:
 
 #### Draft phase
 
-During the draft phase, a new UTXO at the proposal script  has been created. At this stage, only votes in favor of co-signing the draft are counted. For the proposal to transition to the voting phase, a threshold of GT will have to be staked backing the proposal. This threshold will be determined on a per-system basis and could itself be a 'governable' parameter. It's important to note that cosignatures are not locking votes. Cosignatures are more like a delegated approval to a proposal. The sum of all cosignatures must tally to the threshold, and all cosigner stake datums must fit in a single transaction to witness their size.
+During the draft phase, a new UTXO at the proposal script  has been created. At this stage, only votes in favor of co-signing the draft are counted. For the proposal to transition to the voting phase, a threshold of GT will have to be staked backing the proposal. This threshold will be determined on a per-system basis and could itself be a 'governable' parameter. It's important to note that cosignatures are not locking votes. Cosignatures are more like a delegated approval to a proposal. The sum of all cosignatures must tally to the threshold, and all cosigner stake datums must fit into a single transaction to witness their size.
 
 #### Voting phase
 
@@ -83,7 +83,7 @@ There will be a deadline before which a proposal's effects will have to be execu
 
 #### Encoding of results
 
-Most proposals are simply looking for approval for a particular transaction to take place. We encode the potential outcomes of the proposal in the following way (calling it "effects"):
+Most proposals are simply looking for approval for a particular transaction to take place. We encode the potential outcomes of the proposal in the following way (calling them "effects"):
 
 ```haskell
 type Effect =
@@ -120,6 +120,6 @@ Encoding multiple different outcomes is possible by adding more pairs to the map
 
 #### Proposal metadata
 
-Proposals carry very little metadata in their datums. They carry only the id, which identifies them in a convenient incremental number; and their original cosigners. The rest is all very functional information required for their functioning. It may however be useful to carry some extra metadata on-chain in order for frontends to be able to identify and display relevant information to the users.
+Proposals carry very little metadata in their datums. They carry only their id -- which identifies them in a convenient incremental number -- and their original cosigners. The rest is data required for their functioning. It may however be useful to carry some extra metadata on-chain in order for the front-end to be able to identify and display relevant information to the users.
 
-In order to achieve this, we can, upon the creation of a proposal, pass along the relevant information in the metadata field. Establishing a standard for how this should be laid out is yet to be done, but it could look as simple as a number of fields indicating the title, description, tags, etc. Since this metadata is only present in the creation of the proposal, it won't weigh the future transactions belonging to the proposal. The information can still be looked up by looking at the mint transaction of that particulara proposal state thread.
+In order to achieve this, we can, upon the creation of a proposal, pass along the relevant information in the metadata field. Establishing a standard for how this should be laid out is yet to be done, but it could look as simple as a number of fields indicating the title, description, tags, etc. Since this metadata is only present in the creation of the proposal, it won't add to the transaction size for future transactions belonging to the proposal. The information can still be looked up by looking at the mint transaction of that particular proposal state thread.

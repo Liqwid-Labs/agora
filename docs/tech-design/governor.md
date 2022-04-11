@@ -21,7 +21,7 @@
 
 **Current Status**:
 
-First draft. Subject to review by @emiflake.
+First draft.
 
 ---
 
@@ -39,6 +39,6 @@ The main responsibility for the governor is allowing the minting of [authority t
 
 The governor is also responsible for allowing the _creation_ of proposals. There are a few rules for the creation of a proposal, and the governor ensures these rules are followed.
 
-In order for proposals to have sequential IDs, the governor keeps track of a counter which it uses to ensure the ID has not been taken yet. The governor also needs to keep global settings that influence how proposals behave: thresholds for state transitions, how long each phase lasts, etc.
+In order for proposals to have sequential IDs, the governor keeps track of a counter which it uses to ensure an ID has not been taken yet. The governor also needs to keep global settings that influence how proposals behave: thresholds for state transitions, how long each phase lasts, etc.
 
-The governor itself is sensitive to authority token burning in order to allow all of this to be able to mutate.
+The governor, in-line with other Agora components, allows its state to be mutated, subject to the burning of an authority token.
