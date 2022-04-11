@@ -18,7 +18,7 @@ module Agora.Governor (
   governorValidator,
 ) where
 
-import Agora.Proposal (ProposalTag, ProposalThresholds)
+import Agora.Proposal (ProposalId, ProposalThresholds)
 import Plutarch (popaque)
 import Plutarch.Api.V1 (PMintingPolicy, PValidator)
 
@@ -26,7 +26,7 @@ import Plutarch.Api.V1 (PMintingPolicy, PValidator)
 data GovernorDatum = GovernorDatum
   { proposalThresholds :: ProposalThresholds
   -- ^ Gets copied over upon creation of a 'Agora.Proposal.ProposalDatum'.
-  , nextProposalTag :: ProposalTag
+  , nextProposalId :: ProposalId
   -- ^ What tag the next proposal will get upon creating.
   }
 

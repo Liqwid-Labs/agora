@@ -4,7 +4,7 @@ This document gives an overview of the technical design of the proposals system 
 
 | Specification | Implementation | Last revision |
 |:-----------:|:-----------:|:-------------:|
-| WIP         |  WIP        | v0.1 2022-02-02    |
+| WIP         |  WIP        | v0.1 2022-04-07    |
 
 ---
 
@@ -84,3 +84,46 @@ Failed proposals will not be interacted with further. The only value they will c
 Successful proposals will be verified by the governor component, which will issue ['governance authority tokens'](/docs/tech-design/authority-tokens.md) (GATs) to a proposal's separate 'effects'. The burning of these tokens will be a pre-requisite for system changes to be made, therefore the possession of one will serve as a form of 'licence' for making the changes.
 
 There will be a deadline before which a proposal's effects will have to be executed. As any passed proposal's effects will necessarily have been supported by the community, it can be presumed that community members will have be incentivised to ensure the effects are enacted soon after the proposal has been passed.
+
+#### Encoding of results
+
+Most proposals are simply looking for approval for a particular transaction to take place. We encode the potential outcomes of the proposal in the following way (calling it "effects"):
+
+```haskell
+type Effect =
+  -- Effect validator hash
+  ( ValidatorHash
+  -- Hash of datum sent to effect validator with GAT
+  , DatumHash
+  )
+
+-- We need to tag the various possible outcomes with some sort of tag.
+data ResultTag = ResultTag Integer
+
+-- Finally, we can encode all possible outcomes, each having zero or more effects.
+data ProposalDatum = ProposalDatum
+  { ... -- omitted
+  , effects :: Map ResultTag [Effect]
+  }
+```
+
+In order to now encode a simple approval vote as described above, we just need to encode both the approval and disapproval outcomes:
+
+```haskell
+yesNo :: [Effect] -> Map ResultTag [Effect]
+yesNo positiveEffects =
+  Map.fromList
+    [ -- Proposal didn't gain approval, nothing happens.
+      (ResultTag 0, [])
+      -- Proposal gained approval, the effects promised are executed.
+    , (ResultTag 1, yes)
+    ]
+```
+
+Encoding multiple different outcomes is possible by adding more pairs to the map. As part of validation of creation of a proposal, it's important to ensure that there is always a "negative" outcome. Otherwise an attacker could create a proposal that encodes two different outcomes, yet with both a net-negative towards the system.
+
+#### Proposal metadata
+
+Proposals carry very little metadata in their datums. They carry only the id, which identifies them in a convenient incremental number; and their original cosigners. The rest is all very functional information required for their functioning. It may however be useful to carry some extra metadata on-chain in order for frontends to be able to identify and display relevant information to the users.
+
+In order to achieve this, we can, upon the creation of a proposal, pass along the relevant information in the metadata field. Establishing a standard for how this should be laid out is yet to be done, but it could look as simple as a number of fields indicating the title, description, tags, etc. Since this metadata is only present in the creation of the proposal, it won't weigh the future transactions belonging to the proposal. The information can still be looked up by looking at the mint transaction of that particulara proposal state thread.
