@@ -129,6 +129,7 @@ library
     Agora.Treasury
     Agora.Governor
     Agora.Proposal
+    Agora.Effect.TreasuryWithdrawal
 
   other-modules:
     Agora.Utils
