@@ -122,13 +122,13 @@ library
   import:          lang, deps
   exposed-modules:
     Agora.AuthorityToken
+    Agora.Effect
+    Agora.Governor
     Agora.MultiSig
+    Agora.Proposal
     Agora.SafeMoney
     Agora.Stake
-    Agora.Effect
     Agora.Treasury
-    Agora.Governor
-    Agora.Proposal
 
   other-modules:
     Agora.Utils
@@ -151,8 +151,8 @@ test-suite agora-test
   main-is:        Spec.hs
   hs-source-dirs: agora-test
   other-modules:
-    Spec.Model.Treasury
     Spec.Model.MultiSig
+    Spec.Model.Treasury
     Spec.Sample.Stake
     Spec.Sample.Treasury
     Spec.Stake
