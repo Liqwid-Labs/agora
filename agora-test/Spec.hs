@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wwarn #-}
+
 --------------------------------------------------------------------------------
 
 import Prelude
@@ -9,6 +11,7 @@ import Test.Tasty (defaultMain, testGroup)
 --------------------------------------------------------------------------------
 
 import Spec.Model.MultiSig qualified as MultiSig
+import Spec.Model.Treasury qualified as Treasury
 import Spec.Stake qualified as Stake
 
 -- | The Agora test suite.
@@ -26,6 +29,13 @@ main =
               "MultiSig"
               [ MultiSig.plutarchTests
               , MultiSig.genTests
+              ]
+          ]
+      , testGroup
+          "Treasury tests"
+          [ testGroup
+              "Treasury"
+              [ Treasury.genTests
               ]
           ]
       ]

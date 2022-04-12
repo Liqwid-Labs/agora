@@ -69,30 +69,48 @@ newtype AuthorityToken = AuthorityToken
      are tagged with a TokenName that matches where they live.
 -}
 authorityTokensValidIn :: Term s (PCurrencySymbol :--> PTxOut :--> PBool)
-authorityTokensValidIn = phoistAcyclic $
+authorityTokensValidIn = phoistAcyclic $ -- /Lift/ the `Term`.
   plam $ \authorityTokenSym txOut'' -> P.do
+    -- Extract the desired fields: address and value, from the
+    -- transaction output info.
     PTxOut txOut' <- pmatch txOut''
     txOut <- pletFields @'["address", "value"] $ txOut'
     PAddress address <- pmatch txOut.address
     PValue value' <- pmatch txOut.value
     PMap value <- pmatch value'
+
+    -- Search the transaction output info's value for the
+    -- provided currency symbol for the authority token.
     pmatch (plookup # pdata authorityTokenSym # value) $ \case
+      -- In the case of `PNothing`, no GATs exist at this output
+      -- and ipso facto they are all valid.
+      PNothing -> pconstant True
+      -- This is the case wherein a TokenName/Integer map /has/
+      -- been found for the given currency symbol.
       PJust (pfromData -> tokenMap') ->
+        -- Now we need to look at the transaction output's
+        -- address.
         pmatch (pfield @"credential" # address) $ \case
-          PPubKeyCredential _ ->
-            -- GATs should only be sent to Effect validators
-            pconstant False
+          -- GATs should only be sent to Effect validators,
+          -- therefore we consider this invalid and return False.
+          PPubKeyCredential _ -> pconstant False
+          -- This is a script address. We need to ensure that
+          -- the the `TokenName`s associated with the given
+          -- currency symbol are all equal to this script
+          -- address.
           PScriptCredential ((pfromData . (pfield @"_0" #)) -> cred) -> P.do
+            -- Unwrap the `TokenName`/`Integer` map.
             PMap tokenMap <- pmatch tokenMap'
+
+            -- Check that the `TokenName` is equal to the validator
+            -- hash for all of the `TokenName` keys in the map.
             pall
               # plam
-                ( \pair ->
-                    pforgetData (pfstBuiltin # pair) #== pforgetData (pdata cred)
+                ( \tnMap ->
+                    pforgetData (pfstBuiltin # tnMap)
+                      #== pforgetData (pdata cred)
                 )
               # tokenMap
-      PNothing ->
-        -- No GATs exist at this output!
-        pconstant True
 
 -- | Assert that a single authority token has been burned.
 singleAuthorityTokenBurned ::
