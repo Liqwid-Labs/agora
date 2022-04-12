@@ -131,6 +131,7 @@ library
     Agora.Effect
     Agora.Effect.NoOp
     Agora.Effect.TreasuryWithdrawal
+    Agora.Effects.GovernorMutation
     Agora.Governor
     Agora.Governor.Scripts
     Agora.MultiSig
