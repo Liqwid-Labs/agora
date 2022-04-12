@@ -54,7 +54,7 @@ The script for an Agora treasury is described in this section. For clarity, all 
 
 ### Datum
 
-```hs
+```haskell
 newtype TreasuryDatum = TreasuryDatum
   { -- | Currency symbol of the treasury state thread.
     stateThread :: CurrencySymbol
@@ -63,7 +63,7 @@ newtype TreasuryDatum = TreasuryDatum
 
 ### Redeemers
 
-```hs
+```haskell
 newtype TreasuryRedeemer = AlterTreasuryParams
 ```
 
@@ -71,7 +71,7 @@ At the current stage, it is sufficient to allow users to simply grant funds to t
 
 ### Validators
 
-```hs
+```haskell
 treasuryV ::
   CurrencySymbol ->
   TreasuryDatum ->
