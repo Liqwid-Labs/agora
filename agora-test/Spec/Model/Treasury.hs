@@ -54,6 +54,7 @@ import Apropos (
 import Apropos.Gen.Contexts (scriptContext, txInInfo)
 import Apropos.Gen.Value (currencySymbol)
 import Apropos.Script (ScriptModel (expect, runScriptTestsWhere, script))
+import Data.Bifunctor (Bifunctor (first))
 import Data.Set (Set)
 import Plutarch.Api.V1 (PCurrencySymbol, PScriptContext)
 import Plutarch.Builtin (pforgetData)
@@ -121,9 +122,7 @@ authorityTokensValidIn cs out =
         PubKeyCredential _ -> False
         ScriptCredential (ValidatorHash vh) ->
           all (\tn -> vh == unTokenName tn) $ keys m
-   in case tokenMap of
-        Nothing -> True
-        Just m -> validCred m
+   in maybe True validCred tokenMap
 
 instance HasLogicalModel TreasuryTxProp TreasuryTxModel where
   satisfiesProperty :: TreasuryTxProp -> TreasuryTxModel -> Bool
@@ -177,7 +176,7 @@ replaceValue (Value v) cs tn n = Value $ unionWith (\_ x -> x) v v'
     v' = singleton cs $ singleton tn n
 
 kmap :: (k -> k') -> Map k v -> Map k' v
-kmap g = fromList . fmap (\(x, y) -> (g x, y)) . toList
+kmap g = fromList . fmap (first g) . toList
 
 fixTokenNames :: TxInInfo -> TxInInfo
 fixTokenNames inf =
@@ -271,8 +270,8 @@ instance ScriptModel TreasuryTxProp TreasuryTxModel where
       result :: Term s POpaque
       result =
         treasuryValidator cs
-          # (pforgetData $ pdata d)
-          # (pforgetData $ pdata r)
+          # pforgetData (pdata d)
+          # pforgetData (pdata r)
           # ctx
 
       cs :: CurrencySymbol
@@ -285,7 +284,7 @@ instance ScriptModel TreasuryTxProp TreasuryTxModel where
           adaStateThread = pconstant $ CurrencySymbol ""
 
           fields :: Term _ (PDataRecord '["stateThread" ':= PCurrencySymbol])
-          fields = pdcons # (pdata adaStateThread) # pdnil
+          fields = pdcons # pdata adaStateThread # pdnil
 
       r :: Term s PTreasuryRedeemer
       r = pcon $ PAlterTreasuryParams pdnil
