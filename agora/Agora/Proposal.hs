@@ -14,7 +14,7 @@ module Agora.Proposal (
   ProposalStatus (..),
   ProposalThresholds (..),
   ProposalVotes (..),
-  ProposalTag (..),
+  ProposalId (..),
   ResultTag (..),
 
   -- * Plutarch-land
@@ -22,7 +22,7 @@ module Agora.Proposal (
   PProposalStatus (..),
   PProposalThresholds (..),
   PProposalVotes (..),
-  PProposalTag (..),
+  PProposalId (..),
   PResultTag (..),
 
   -- * Scripts
@@ -143,7 +143,7 @@ data ProposalDatum = ProposalDatum
   { -- TODO: could we encode this more efficiently?
   -- This is shaped this way for future proofing.
   -- See https://github.com/Liqwid-Labs/agora/issues/39
-  effects :: [(ResultTag, [(ValidatorHash, DatumHash)])]
+  effects :: AssocMap.Map ResultTag [(ValidatorHash, DatumHash)]
   -- ^ Effect lookup table. First by result, then by effect hash.
   , status :: ProposalStatus
   -- ^ The status the proposal is in.
@@ -160,10 +160,10 @@ PlutusTx.makeIsDataIndexed ''ProposalDatum [('ProposalDatum, 0)]
 
 {- | Identifies a Proposal, issued upon creation of a proposal.
      In practice, this number starts at zero, and increments by one
-     for each proposal. The 100th proposal will be @'ProposalTag' 99@.
-     This counter lives in the 'Governor', see 'nextProposalTag'.
+     for each proposal. The 100th proposal will be @'ProposalId' 99@.
+     This counter lives in the 'Governor', see 'nextProposalId'.
 -}
-newtype ProposalTag = ProposalTag {proposalTag :: Integer}
+newtype ProposalId = ProposalId {proposalTag :: Integer}
   deriving newtype (PlutusTx.ToData, PlutusTx.FromData, PlutusTx.UnsafeFromData)
   deriving stock (Eq, Show, GHC.Generic)
 
@@ -183,15 +183,15 @@ deriving via
   instance
     (PConstant ResultTag)
 
--- | Plutarch-level version of 'PProposalTag'.
-newtype PProposalTag (s :: S) = PProposalTag (Term s PInteger)
-  deriving (PlutusType, PIsData, PEq, POrd) via (DerivePNewtype PProposalTag PInteger)
+-- | Plutarch-level version of 'PProposalId'.
+newtype PProposalId (s :: S) = PProposalId (Term s PInteger)
+  deriving (PlutusType, PIsData, PEq, POrd) via (DerivePNewtype PProposalId PInteger)
 
-instance PUnsafeLiftDecl PProposalTag where type PLifted PProposalTag = ProposalTag
+instance PUnsafeLiftDecl PProposalId where type PLifted PProposalId = ProposalId
 deriving via
-  (DerivePConstantViaNewtype ProposalTag PProposalTag PInteger)
+  (DerivePConstantViaNewtype ProposalId PProposalId PInteger)
   instance
-    (PConstant ProposalTag)
+    (PConstant ProposalId)
 
 -- | Plutarch-level version of 'ProposalStatus'.
 data PProposalStatus (s :: S)

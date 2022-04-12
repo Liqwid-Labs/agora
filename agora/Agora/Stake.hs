@@ -56,7 +56,7 @@ import Plutus.V1.Ledger.Value (AssetClass (AssetClass))
 
 --------------------------------------------------------------------------------
 
-import Agora.Proposal (PProposalTag, PResultTag, ProposalTag (..), ResultTag (..))
+import Agora.Proposal (PProposalId, PResultTag, ProposalId (..), ResultTag (..))
 import Agora.SafeMoney (GTTag)
 import Agora.Utils (
   anyInput,
@@ -119,8 +119,8 @@ data ProposalLock = ProposalLock
   { vote :: ResultTag
   -- ^ What was voted on. This allows retracting votes to
   --   undo their vote.
-  , proposalTag :: ProposalTag
-  -- ^ Identifies the proposal. See 'ProposalTag' for further
+  , proposalId :: ProposalId
+  -- ^ Identifies the proposal. See 'ProposalId' for further
   -- comments on its significance.
   }
   deriving stock (Show, GHC.Generic)
@@ -222,7 +222,7 @@ newtype PProposalLock (s :: S) = PProposalLock
       s
       ( PDataRecord
           '[ "vote" ':= PResultTag
-           , "proposalTag" ':= PProposalTag
+           , "proposalTag" ':= PProposalId
            ]
       )
   }
