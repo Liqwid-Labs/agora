@@ -1,4 +1,5 @@
 {-# LANGUAGE TemplateHaskell #-}
+{-# OPTIONS_GHC -Wno-unused-matches #-}
 
 {- |
 Module     : Agora.Proposal
@@ -28,6 +29,7 @@ module Agora.Proposal (
   -- * Scripts
   proposalValidator,
   proposalPolicy,
+  proposalDatumValid,
 ) where
 
 import GHC.Generics qualified as GHC
@@ -52,9 +54,14 @@ import PlutusTx.AssocMap qualified as AssocMap
 --------------------------------------------------------------------------------
 
 import Agora.SafeMoney (GTTag)
+import Agora.Utils (pnotNull)
 import Plutarch (popaque)
+import Plutarch.Builtin (PBuiltinMap)
 import Plutarch.Lift (DerivePConstantViaNewtype (..), PUnsafeLiftDecl (..))
+import Plutarch.Monadic qualified as P
 import Plutarch.SafeMoney (PDiscrete, Tagged)
+import Plutarch.Unsafe (punsafeCoerce)
+import Plutus.V1.Ledger.Value (AssetClass)
 
 --------------------------------------------------------------------------------
 -- Haskell-land
@@ -169,6 +176,9 @@ newtype ProposalId = ProposalId {proposalTag :: Integer}
 
 -- | Parameters that identify the Proposal validator script.
 data Proposal = Proposal
+  { governorSTAssetClass :: AssetClass
+  }
+  deriving stock (Show, Eq)
 
 --------------------------------------------------------------------------------
 -- Plutarch-land
@@ -251,7 +261,7 @@ newtype PProposalDatum (s :: S) = PProposalDatum
       ( PDataRecord
           '[ "effects" ':= PMap PResultTag (PMap PValidatorHash PDatumHash)
            , "status" ':= PProposalStatus
-           , "cosigners" ':= PBuiltinList PPubKeyHash
+           , "cosigners" ':= PBuiltinList (PAsData PPubKeyHash)
            , "thresholds" ':= PProposalThresholds
            , "votes" ':= PProposalVotes
            ]
@@ -269,7 +279,11 @@ deriving via (DerivePConstantViaData ProposalDatum PProposalDatum) instance (PCo
 
 --------------------------------------------------------------------------------
 
--- | Policy for Proposals.
+{- | Policy for Proposals.
+   This needs to perform two checks:
+     - Governor is happy with mint.
+     - Datum is valid
+-}
 proposalPolicy :: Proposal -> ClosedTerm PMintingPolicy
 proposalPolicy _ =
   plam $ \_redeemer _ctx' -> P.do
@@ -280,3 +294,26 @@ proposalValidator :: Proposal -> ClosedTerm PValidator
 proposalValidator _ =
   plam $ \_datum _redeemer _ctx' -> P.do
     popaque (pconstant ())
+
+{- | Check for various invariants a proposal must uphold.
+     This can be used to check both upopn creation and
+     upon any following state transitions in the proposal.
+-}
+proposalDatumValid :: Term s (PProposalDatum :--> PBool)
+proposalDatumValid =
+  phoistAcyclic $
+    plam $ \datum' -> P.do
+      datum <- pletFields @'["effects", "cosigners"] $ datum'
+
+      let effects :: Term _ (PBuiltinMap PResultTag (PBuiltinMap PValidatorHash PDatumHash))
+          effects = punsafeCoerce datum.effects
+
+          atLeastOneNegativeResult :: Term _ PBool
+          atLeastOneNegativeResult =
+            pany # plam (\pair -> pnull #$ pfromData $ psndBuiltin # pair) # effects
+
+      foldr1
+        (#&&)
+        [ ptraceIfFalse "Proposal has at least one ResultTag has no effects" atLeastOneNegativeResult
+        , ptraceIfFalse "Proposal has at least one cosigner" $ pnotNull # pfromData datum.cosigners
+        ]
