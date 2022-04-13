@@ -8,26 +8,30 @@ Description: An Effect that withdraws treasury deposit
 module Agora.Effect.TreasuryWithdrawal (TreasuryWithdrawalDatum, PTreasuryWithdrawalDatum, treasuryWithdrawalValidator) where
 
 import GHC.Generics qualified as GHC
-import Generics.SOP ( I(I), Generic )
+import Generics.SOP (Generic, I (I))
 
 import Agora.Effect (makeEffect)
-import Agora.Utils (passert)
+import Agora.Utils ( passert, passetClassValueOf' )
 import Plutarch (popaque)
-import Plutarch.Api.V1 (
-  PCredential,
-  PTuple,
-  PValidator,
-  PValue,
-  ptuple,
+import Plutarch.Api.V1
+    ( PTxInfo,
+      PTxOutRef,
+      PValidator,
+      PTuple,
+      PValue,
+      PCredential,
+      ptuple,
+      PTxInInfo,
+      PTxOut )
+import Plutarch.DataRepr (
+  DerivePConstantViaData (..),
+  PDataFields,
+  PIsDataReprInstances (..),
  )
-import Plutarch.DataRepr
-    ( PDataFields,
-      PIsDataReprInstances(..),
-      DerivePConstantViaData(..) )
-import Plutarch.Lift ( PUnsafeLiftDecl(..) )
+import Plutarch.Lift (PUnsafeLiftDecl (..))
 import Plutarch.Monadic qualified as P
-import Plutus.V1.Ledger.Credential ( Credential )
-import Plutus.V1.Ledger.Value ( CurrencySymbol, Value )
+import Plutus.V1.Ledger.Credential (Credential)
+import Plutus.V1.Ledger.Value (AssetClass (..), CurrencySymbol, Value)
 import PlutusTx qualified
 
 data TreasuryWithdrawalDatum = TreasuryWithdrawalDatum {receivers :: [(Credential, Value)]}
@@ -58,6 +62,19 @@ deriving via
   instance
     (PConstant TreasuryWithdrawalDatum)
 
+findOwnInput :: Term s (PTxInfo :--> PTxOutRef :--> PTxInInfo)
+findOwnInput = phoistAcyclic $
+  plam $ \txInfo spending' -> P.do
+    input <- plet $ pfromData $ pfield @"inputs" # txInfo
+    spending <- plet $ pdata spending'
+    PJust result <- pmatch $ pfind # plam (\x -> pfield @"outRef" # x #== spending) # input
+    pfromData result
+
+findOwnAddress :: Term s (PTxInfo :--> PTxOutRef :--> PTxOut)
+findOwnAddress = phoistAcyclic $
+  plam $ \txInfo spending -> P.do
+    pfromData $ pfield @"resolved" #$ findOwnInput # txInfo # spending
+
 treasuryWithdrawalValidator :: forall {s :: S}. CurrencySymbol -> Term s PValidator
 treasuryWithdrawalValidator currSymbol = makeEffect currSymbol $
   \_cs (_datum :: Term _ PTreasuryWithdrawalDatum) _txOutRef _txInfo -> P.do
@@ -77,10 +94,20 @@ treasuryWithdrawalValidator currSymbol = makeEffect currSymbol $
             # plam (\_out -> pelem # _out # outputValues)
             #$ receivers
         outputNumberMatchesRecivers = plength # receivers #== plength # (pfromData txInfo.outputs)
-        outputIsNotPayingToEffect = pconstant True -- How to check if it's not paying to effect itself?
+        outputIsNotPayingToEffect = P.do
+          input <- pletFields @'["address", "value"] $ findOwnAddress # pfromData _txInfo # _txOutRef
+          let correctMinimum = passetClassValueOf' (AssetClass ("", "")) # input.value #== 2000000
+              notPayingToEffect =
+                pnot #$ pany
+                  # plam
+                    ( \x ->
+                        input.address #== pfield @"address" # pfromData x
+                    )
+                  # pfromData txInfo.outputs
+          correctMinimum #&& notPayingToEffect
 
-    passert "Transaction output does not match receivers"
-      $     outputContentMatchesRecivers
+    passert "Transaction output does not match receivers" $
+      outputContentMatchesRecivers
         #&& outputNumberMatchesRecivers
         #&& outputIsNotPayingToEffect
 
