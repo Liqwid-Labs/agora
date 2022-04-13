@@ -17,8 +17,6 @@ module Agora.Utils (
   plookup,
   pfromMaybe,
   psymbolValueOf,
-  passetClassValueOf,
-  passetClassValueOf',
   pgeqByClass,
   pgeqBySymbol,
   pgeqByClass',
@@ -27,6 +25,7 @@ module Agora.Utils (
   pfindMap,
   pnotNull,
   pisJust,
+  ptokenSpent,
 
   -- * Functions which should (probably) not be upstreamed
   anyOutput,
@@ -63,6 +62,7 @@ import Plutarch.Api.V1 (
   PValue,
  )
 import Plutarch.Api.V1.AssocMap (PMap (PMap))
+import Plutarch.Api.V1.Extra (PAssetClass, passetClassValueOf, pvalueOf)
 import Plutarch.Api.V1.Value (PValue (PValue))
 import Plutarch.Builtin (ppairDataBuiltin)
 import Plutarch.Internal (punsafeCoerce)
@@ -183,30 +183,17 @@ psymbolValueOf =
       PMap m <- pmatch (pfromData m')
       pfoldr # plam (\x v -> pfromData (psndBuiltin # x) + v) # 0 # m
 
--- | Extract amount from PValue belonging to a Plutarch-level asset class.
-passetClassValueOf ::
-  Term s (PCurrencySymbol :--> PTokenName :--> PValue :--> PInteger)
-passetClassValueOf =
-  phoistAcyclic $
-    plam $ \sym token value'' -> P.do
-      PValue value' <- pmatch value''
-      PMap value <- pmatch value'
-      m' <- pexpectJust 0 (plookup # pdata sym # value)
-      PMap m <- pmatch (pfromData m')
-      v <- pexpectJust 0 (plookup # pdata token # m)
-      pfromData v
-
 -- | Extract amount from PValue belonging to a Haskell-level AssetClass.
 passetClassValueOf' :: AssetClass -> Term s (PValue :--> PInteger)
 passetClassValueOf' (AssetClass (sym, token)) =
-  passetClassValueOf # pconstant sym # pconstant token
+  phoistAcyclic $ plam $ \value -> pvalueOf # value # pconstant sym # pconstant token
 
 -- | Return '>=' on two values comparing by only a particular AssetClass.
 pgeqByClass :: Term s (PCurrencySymbol :--> PTokenName :--> PValue :--> PValue :--> PBool)
 pgeqByClass =
   phoistAcyclic $
     plam $ \cs tn a b ->
-      passetClassValueOf # cs # tn # b #<= passetClassValueOf # cs # tn # a
+      pvalueOf # b # cs # tn #<= pvalueOf # a # cs # tn
 
 -- | Return '>=' on two values comparing by only a particular CurrencySymbol.
 pgeqBySymbol :: Term s (PCurrencySymbol :--> PValue :--> PValue :--> PBool)
@@ -421,3 +408,19 @@ findTxOutDatum = phoistAcyclic $
     case datumHash' of
       PDJust ((pfield @"_0" #) -> datumHash) -> pfindDatum # datumHash # info
       _ -> pcon PNothing
+
+-- | Check if a particular asset class has been spent in the input list.
+ptokenSpent :: forall {s :: S}. Term s (PAssetClass :--> PBuiltinList (PAsData PTxInInfo) :--> PBool)
+ptokenSpent =
+  plam $ \tokenClass inputs ->
+    0
+      #< pfoldr @PBuiltinList
+        # ( plam $ \txInInfo' acc -> P.do
+              PTxInInfo txInInfo <- pmatch (pfromData txInInfo')
+              PTxOut txOut' <- pmatch $ pfromData $ pfield @"resolved" # txInInfo
+              txOut <- pletFields @'["value"] txOut'
+              let txOutValue = pfromData txOut.value
+              acc + passetClassValueOf # txOutValue # tokenClass
+          )
+        # 0
+        # inputs

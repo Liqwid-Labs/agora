@@ -1,5 +1,4 @@
 {-# LANGUAGE TemplateHaskell #-}
-{-# OPTIONS_GHC -Wno-unused-matches #-}
 
 {- |
 Module     : Agora.Proposal
@@ -39,6 +38,9 @@ import Plutarch.Api.V1 (
   PMap,
   PMintingPolicy,
   PPubKeyHash,
+  PScriptContext (PScriptContext),
+  PScriptPurpose (PMinting, PSpending),
+  PTxInfo (PTxInfo),
   PValidator,
   PValidatorHash,
  )
@@ -54,14 +56,15 @@ import PlutusTx.AssocMap qualified as AssocMap
 --------------------------------------------------------------------------------
 
 import Agora.SafeMoney (GTTag)
-import Agora.Utils (pnotNull)
+import Agora.Utils (passert, pnotNull, ptokenSpent)
 import Plutarch (popaque)
+import Plutarch.Api.V1.Extra (passetClass, passetClassValueOf)
 import Plutarch.Builtin (PBuiltinMap)
 import Plutarch.Lift (DerivePConstantViaNewtype (..), PUnsafeLiftDecl (..))
 import Plutarch.Monadic qualified as P
 import Plutarch.SafeMoney (PDiscrete, Tagged)
 import Plutarch.Unsafe (punsafeCoerce)
-import Plutus.V1.Ledger.Value (AssetClass)
+import Plutus.V1.Ledger.Value (AssetClass (AssetClass))
 
 --------------------------------------------------------------------------------
 -- Haskell-land
@@ -282,17 +285,46 @@ deriving via (DerivePConstantViaData ProposalDatum PProposalDatum) instance (PCo
 {- | Policy for Proposals.
    This needs to perform two checks:
      - Governor is happy with mint.
-     - Datum is valid
+     - Exactly 1 token is minted.
+
+   NOTE: The governor needs to check that the datum is correct
+         and sent to the right address.
 -}
 proposalPolicy :: Proposal -> ClosedTerm PMintingPolicy
-proposalPolicy _ =
-  plam $ \_redeemer _ctx' -> P.do
+proposalPolicy proposal =
+  plam $ \_redeemer ctx' -> P.do
+    PScriptContext ctx' <- pmatch ctx'
+    ctx <- pletFields @'["txInfo", "purpose"] ctx'
+    PTxInfo txInfo' <- pmatch $ pfromData ctx.txInfo
+    txInfo <- pletFields @'["inputs", "mint"] txInfo'
+    PMinting _ownSymbol <- pmatch $ pfromData ctx.purpose
+
+    let inputs = txInfo.inputs
+        mintedValue = pfromData txInfo.mint
+        AssetClass (govCs, govTn) = proposal.governorSTAssetClass
+
+    PMinting ownSymbol' <- pmatch $ pfromData ctx.purpose
+    let mintedProposalST = passetClassValueOf # mintedValue # (passetClass # (pfield @"_0" # ownSymbol') # pconstant "")
+
+    passert "Governance state-thread token must move" $
+      ptokenSpent
+        # (passetClass # pconstant govCs # pconstant govTn)
+        # inputs
+
+    passert "Minted exactly one proposal ST" $
+      mintedProposalST #== 1
+
     popaque (pconstant ())
 
 -- | Validator for Proposals.
 proposalValidator :: Proposal -> ClosedTerm PValidator
 proposalValidator _ =
-  plam $ \_datum _redeemer _ctx' -> P.do
+  plam $ \_datum _redeemer ctx' -> P.do
+    PScriptContext ctx' <- pmatch ctx'
+    ctx <- pletFields @'["txInfo", "purpose"] ctx'
+    PTxInfo txInfo' <- pmatch $ pfromData ctx.txInfo
+    _txInfo <- pletFields @'["inputs", "mint"] txInfo'
+    PSpending _txOutRef <- pmatch $ pfromData ctx.purpose
     popaque (pconstant ())
 
 {- | Check for various invariants a proposal must uphold.

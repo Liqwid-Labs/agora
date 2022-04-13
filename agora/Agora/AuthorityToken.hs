@@ -18,16 +18,14 @@ import Plutarch.Api.V1 (
   PCurrencySymbol (..),
   PScriptContext (..),
   PScriptPurpose (..),
-  PTxInInfo (..),
   PTxInfo (..),
   PTxOut (..),
  )
 import Plutarch.Api.V1.AssocMap (PMap (PMap))
 import Plutarch.Api.V1.Value (PValue (PValue))
 import Plutarch.Builtin (pforgetData)
-import Plutarch.List (pfoldr')
 import Plutarch.Monadic qualified as P
-import Plutus.V1.Ledger.Value (AssetClass)
+import Plutus.V1.Ledger.Value (AssetClass (AssetClass))
 
 import Prelude
 
@@ -36,11 +34,11 @@ import Prelude
 import Agora.Utils (
   allOutputs,
   passert,
-  passetClassValueOf,
-  passetClassValueOf',
   plookup,
   psymbolValueOf,
+  ptokenSpent,
  )
+import Plutarch.Api.V1.Extra (passetClass, passetClassValueOf)
 
 --------------------------------------------------------------------------------
 
@@ -132,26 +130,19 @@ authorityTokenPolicy params =
       PTxInfo txInfo' <- pmatch $ pfromData ctx.txInfo
       txInfo <- pletFields @'["inputs", "mint"] txInfo'
       let inputs = txInfo.inputs
-      let authorityTokenInputs =
-            pfoldr' @PBuiltinList
-              ( \txInInfo' acc -> P.do
-                  PTxInInfo txInInfo <- pmatch (pfromData txInInfo')
-                  PTxOut txOut' <- pmatch $ pfromData $ pfield @"resolved" # txInInfo
-                  txOut <- pletFields @'["value"] txOut'
-                  let txOutValue = pfromData txOut.value
-                  passetClassValueOf' params.authority # txOutValue + acc
-              )
-              # 0
-              # inputs
-      let mintedValue = pfromData txInfo.mint
-      let tokenMoved = 0 #< authorityTokenInputs
+          mintedValue = pfromData txInfo.mint
+          AssetClass (govCs, govTn) = params.authority
+          govAc = passetClass # pconstant govCs # pconstant govTn
+          govTokenSpent = ptokenSpent # govAc # inputs
+
       PMinting ownSymbol' <- pmatch $ pfromData ctx.purpose
+
       let ownSymbol = pfromData $ pfield @"_0" # ownSymbol'
-      let mintedATs = passetClassValueOf # ownSymbol # pconstant "" # mintedValue
+          mintedATs = passetClassValueOf # mintedValue # (passetClass # ownSymbol # pconstant "")
       pif
         (0 #< mintedATs)
         ( P.do
-            passert "Parent token did not move in minting GATs" tokenMoved
+            passert "Parent token did not move in minting GATs" govTokenSpent
             passert "All outputs only emit valid GATs" $
               allOutputs @PUnit # pfromData ctx.txInfo #$ plam $ \txOut _value _address _datum ->
                 authorityTokensValidIn
