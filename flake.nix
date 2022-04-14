@@ -115,15 +115,19 @@
         let
           pkgs = nixpkgsFor system;
           pkgs' = nixpkgsFor' system;
+
+          inherit (pkgs.haskell-nix.tools ghcVersion {
+            inherit (plutarch.tools) fourmolu;
+          })
+            fourmolu;
         in pkgs.runCommand "format-check" {
           nativeBuildInputs = [
             pkgs'.git
             pkgs'.fd
             pkgs'.haskellPackages.cabal-fmt
             pkgs'.nixpkgs-fmt
-            (pkgs.haskell-nix.tools ghcVersion {
-              inherit (plutarch.tools) fourmolu;
-            }).fourmolu
+            fourmolu
+            pkgs'.haskell.packages."${ghcVersion}".hlint
           ];
         } ''
           export LC_CTYPE=C.UTF-8
@@ -131,6 +135,7 @@
           export LANG=C.UTF-8
           cd ${self}
           make format_check || (echo "    Please run 'make format'" ; exit 1)
+          find -name '*.hs' -not -path './dist*/*' -not -path './haddock/*' | xargs hlint
           mkdir $out
         '';
     in {
