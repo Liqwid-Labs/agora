@@ -4,6 +4,8 @@
 Module     : Agora.Effect.TreasuryWithdrawal
 Maintainer : seungheon.ooh@gmail.com
 Description: An Effect that withdraws treasury deposit
+
+An Effect that withdraws treasury deposit
 -}
 module Agora.Effect.TreasuryWithdrawal (TreasuryWithdrawalDatum, PTreasuryWithdrawalDatum, treasuryWithdrawalValidator) where
 
@@ -77,25 +79,25 @@ findOwnAddress = phoistAcyclic $
 
 treasuryWithdrawalValidator :: forall {s :: S}. CurrencySymbol -> Term s PValidator
 treasuryWithdrawalValidator currSymbol = makeEffect currSymbol $
-  \_cs (_datum :: Term _ PTreasuryWithdrawalDatum) _txOutRef _txInfo -> P.do
-    receivers <- plet $ pfromData $ pfield @"receivers" # _datum
-    txInfo <- pletFields @'["outputs"] _txInfo
+  \_cs (datum' :: Term _ PTreasuryWithdrawalDatum) txOutRef' txInfo' -> P.do
+    receivers <- plet $ pfromData $ pfield @"receivers" # datum'
+    txInfo <- pletFields @'["outputs"] txInfo'
     let outputValues =
           pmap
             # plam
-              ( \_out -> P.do
-                  out <- pletFields @'["address", "value"] $ pfromData _out
+              ( \out' -> P.do
+                  out <- pletFields @'["address", "value"] $ pfromData out'
                   cred <- pletFields @'["credential"] $ pfromData out.address
                   pdata $ ptuple # cred.credential # out.value
               )
             #$ txInfo.outputs
         outputContentMatchesRecivers =
           pall # plam id #$ pmap
-            # plam (\_out -> pelem # _out # outputValues)
+            # plam (\out -> pelem # out # outputValues)
             #$ receivers
         outputNumberMatchesRecivers = plength # receivers #== plength # (pfromData txInfo.outputs)
         outputIsNotPayingToEffect = P.do
-          input <- pletFields @'["address", "value"] $ findOwnAddress # pfromData _txInfo # _txOutRef
+          input <- pletFields @'["address", "value"] $ findOwnAddress # pfromData txInfo' # txOutRef'
           let correctMinimum = passetClassValueOf' (AssetClass ("", "")) # input.value #== 2000000
               notPayingToEffect =
                 pnot #$ pany
