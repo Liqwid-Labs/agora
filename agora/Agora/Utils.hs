@@ -32,6 +32,9 @@ module Agora.Utils (
   allOutputs,
   anyInput,
   allInputs,
+  pisScriptAddress,
+  pfindEffectInput,
+  pfindEffectAddress,
 ) where
 
 --------------------------------------------------------------------------------
@@ -42,10 +45,11 @@ import Plutus.V1.Ledger.Value (AssetClass (..))
 
 import Plutarch.Api.V1 (
   PAddress,
+  PCredential (PScriptCredential),
   PCurrencySymbol,
   PDatum,
   PDatumHash,
-  PMaybeData (PDJust),
+  PMaybeData (PDJust, PDNothing),
   PPubKeyHash,
   PTokenName,
   PTuple,
@@ -390,3 +394,32 @@ psingletonValue = phoistAcyclic $
         outerTup = pcon $ PMap $ psingleton #$ ppairDataBuiltin # pdata sym # pdata innerTup
         res = pcon $ PValue outerTup
      in res
+
+-- | Determine if an address is a script address
+pisScriptAddress :: Term s (PAddress :--> PBool)
+pisScriptAddress = phoistAcyclic $
+  plam $ \addr' -> P.do
+    address <- pletFields @'["credential", "stakingCredential"] addr'
+    scred <- pmatch $ pfromData address.stakingCredential
+    case scred of
+      PDNothing _ -> P.do
+        cred <- pmatch $ pfromData address.credential
+        case cred of
+          PScriptCredential _ -> pconstant True
+          _ -> pconstant False
+      _ -> pconstant False
+
+-- | Finds the TxInInfo of an effect from TxInfo and TxOutRef
+pfindEffectInput :: Term s (PTxInfo :--> PTxOutRef :--> PTxInInfo)
+pfindEffectInput = phoistAcyclic $
+  plam $ \txInfo spending' -> P.do
+    input <- plet $ pfromData $ pfield @"inputs" # txInfo
+    spending <- plet $ pdata spending'
+    PJust result <- pmatch $ pfind # plam (\x -> pfield @"outRef" # x #== spending) # input
+    pfromData result
+
+-- | Finds the address of an effect from TxInfo and TxOutRef
+pfindEffectAddress :: Term s (PTxInfo :--> PTxOutRef :--> PTxOut)
+pfindEffectAddress = phoistAcyclic $
+  plam $ \txInfo spending -> P.do
+    pfromData $ pfield @"resolved" #$ pfindEffectInput # txInfo # spending
