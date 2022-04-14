@@ -217,11 +217,10 @@ pmapUnionWith = phoistAcyclic $
             # plam
               ( \p -> P.do
                   pf <- plet $ pfstBuiltin # p
-                  ps <- plet $ psndBuiltin # p
                   pmatch (plookup # pf # ys) $ \case
                     PJust v ->
                       -- Data conversions here are silly, aren't they?
-                      ppairDataBuiltin # pf # pdata (f # pfromData ps # pfromData v)
+                      ppairDataBuiltin # pf # pdata (f # pfromData (psndBuiltin # p) # pfromData v)
                     PNothing -> p
               )
             # xs
