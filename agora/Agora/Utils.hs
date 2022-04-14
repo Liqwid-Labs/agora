@@ -26,15 +26,18 @@ module Agora.Utils (
   psingletonValue,
   pfindMap,
   pnotNull,
+  pisJust,
 
   -- * Functions which should (probably) not be upstreamed
   anyOutput,
   allOutputs,
   anyInput,
   allInputs,
-  pisScriptAddress,
   pfindEffectInput,
   pfindEffectAddress,
+  pscriptHashFromAddress,
+  pfindOutputsToAddress,
+  pfindTxOutDatum,
 ) where
 
 --------------------------------------------------------------------------------
@@ -49,7 +52,8 @@ import Plutarch.Api.V1 (
   PCurrencySymbol,
   PDatum,
   PDatumHash,
-  PMaybeData (PDJust, PDNothing),
+  PMap,
+  PMaybeData (PDJust),
   PPubKeyHash,
   PTokenName,
   PTuple,
@@ -57,11 +61,14 @@ import Plutarch.Api.V1 (
   PTxInfo (PTxInfo),
   PTxOut (PTxOut),
   PTxOutRef,
+  PValidatorHash,
+  PValue,
  )
 import Plutarch.Api.V1.AssocMap (PMap (PMap))
 import Plutarch.Api.V1.Value (PValue (PValue))
 import Plutarch.Builtin (ppairDataBuiltin)
 import Plutarch.Internal (punsafeCoerce)
+import Plutarch.List (pconvertLists)
 import Plutarch.Monadic qualified as P
 
 --------------------------------------------------------------------------------
@@ -146,6 +153,15 @@ pfromMaybe = phoistAcyclic $
     pmatch a $ \case
       PJust a' -> a'
       PNothing -> e
+
+-- | Yield True is a given PMaybe is of form PJust _
+pisJust :: forall a s. Term s (PMaybe a :--> PBool)
+pisJust = phoistAcyclic $
+  plam $ \v' -> P.do
+    v <- pmatch v'
+    case v of
+      PJust _ -> pconstant True
+      PNothing -> pconstant False
 
 -- | Escape with a particular value on expecting 'Just'. For use in monadic context.
 pexpectJust ::
@@ -395,20 +411,6 @@ psingletonValue = phoistAcyclic $
         res = pcon $ PValue outerTup
      in res
 
--- | Determine if an address is a script address
-pisScriptAddress :: Term s (PAddress :--> PBool)
-pisScriptAddress = phoistAcyclic $
-  plam $ \addr' -> P.do
-    address <- pletFields @'["credential", "stakingCredential"] addr'
-    scred <- pmatch $ pfromData address.stakingCredential
-    case scred of
-      PDNothing _ -> P.do
-        cred <- pmatch $ pfromData address.credential
-        case cred of
-          PScriptCredential _ -> pconstant True
-          _ -> pconstant False
-      _ -> pconstant False
-
 -- | Finds the TxInInfo of an effect from TxInfo and TxOutRef
 pfindEffectInput :: Term s (PTxInfo :--> PTxOutRef :--> PTxInInfo)
 pfindEffectInput = phoistAcyclic $
@@ -423,3 +425,36 @@ pfindEffectAddress :: Term s (PTxInfo :--> PTxOutRef :--> PTxOut)
 pfindEffectAddress = phoistAcyclic $
   plam $ \txInfo spending -> P.do
     pfromData $ pfield @"resolved" #$ pfindEffectInput # txInfo # spending
+
+-- | Get script hash from an Address.
+pscriptHashFromAddress :: Term s (PAddress :--> PMaybe PValidatorHash)
+pscriptHashFromAddress = phoistAcyclic $
+  plam $ \addr -> P.do
+    cred <- pmatch $ pfromData $ pfield @"credential" # addr
+    case cred of
+      PScriptCredential h -> pcon $ PJust $ pfield @"_0" # h
+      _ -> pcon PNothing
+
+-- | Find all TxOuts sent to an Address
+pfindOutputsToAddress :: Term s (PTxInfo :--> PAddress :--> PList PTxOut)
+pfindOutputsToAddress = phoistAcyclic $
+  plam $ \info address' -> P.do
+    address <- plet $ pdata address'
+    let outputs = pfromData $ pfield @"outputs" # info
+        filteredOutputs =
+          pfilter
+            # ( plam $ \(pfromData -> txOut) -> P.do
+                  selfAddress <- plet $ pfield @"address" # txOut
+                  selfAddress #== address
+              )
+            # outputs
+    pmap @PList # plam pfromData #$ pconvertLists # filteredOutputs
+
+-- | Find datum in a TxOut
+pfindTxOutDatum :: Term s (PTxInfo :--> PTxOut :--> PMaybe PDatum)
+pfindTxOutDatum = phoistAcyclic $
+  plam $ \info out -> P.do
+    datumHash' <- pmatch $ pfromData $ pfield @"datumHash" # out
+    case datumHash' of
+      PDJust ((pfield @"_0" #) -> datumHash) -> pfindDatum # datumHash # info
+      _ -> pcon PNothing
