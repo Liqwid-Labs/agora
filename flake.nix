@@ -127,7 +127,7 @@
             pkgs'.haskellPackages.cabal-fmt
             pkgs'.nixpkgs-fmt
             fourmolu
-            plutarch.tools.hlint
+            pkgs'.haskell.packages."${ghcVersion}".hlint
           ];
         } ''
           export LC_CTYPE=C.UTF-8
