@@ -15,6 +15,7 @@ module Agora.Governor (
 
   -- * Plutarch-land
   PGovernorDatum (..),
+  PGovernorRedeemer (..),
 
   -- * Scripts
   governorPolicy,
@@ -28,7 +29,7 @@ import Generics.SOP (Generic, I (I))
 
 --------------------------------------------------------------------------------
 
-import Agora.Proposal (ProposalId, ProposalThresholds, PProposalThresholds, PProposalId)
+import Agora.Proposal (PProposalId, PProposalThresholds, ProposalId, ProposalThresholds)
 
 --------------------------------------------------------------------------------
 
@@ -54,7 +55,7 @@ data GovernorDatum = GovernorDatum
   -- ^ Gets copied over upon creation of a 'Agora.Proposal.ProposalDatum'.
   , nextProposalId :: ProposalId
   -- ^ What tag the next proposal will get upon creating.
-  } 
+  }
   deriving stock (Show, GHC.Generic)
 
 PlutusTx.makeIsDataIndexed ''GovernorDatum [('GovernorDatum, 0)]
@@ -71,38 +72,40 @@ data GovernorRedeemer
   | -- | Checks that a SINGLE proposal finished correctly,
     --   and allows minting GATs for each effect script.
     MintGATs
-    -- | Allow effects to mutate the datum
-  | MutateDatum
+  | -- | Allow effects to mutate the datum
+    MutateDatum
   deriving stock (Show, GHC.Generic)
 
-PlutusTx.makeIsDataIndexed 
-  ''GovernorRedeemer 
-  [('CreateProposal,0)
-  ,('MintGATs, 1)
-  ,('MutateDatum, 2)
+PlutusTx.makeIsDataIndexed
+  ''GovernorRedeemer
+  [ ('CreateProposal, 0)
+  , ('MintGATs, 1)
+  , ('MutateDatum, 2)
   ]
 
 -- | Parameters for creating Governor scripts.
-data Governor
-  = Governor {
-    -- | NFT that identifies the governor datum
-    datumNFT :: AssetClass
+data Governor = Governor
+  { datumNFT :: AssetClass
+  -- ^ NFT that identifies the governor datum
   }
 
 --------------------------------------------------------------------------------
 
 -- | Plutarch-level datum for the Governor script.
-
-newtype PGovernorDatum (s::S)= PGovernorDatum { getGovernorDatum ::
-  Term s (PDataRecord '[
-    "proposalThresholds" ':= PProposalThresholds,
-    "nextProposalId" ':= PProposalId
-  ])
-}
+newtype PGovernorDatum (s :: S) = PGovernorDatum
+  { getGovernorDatum ::
+    Term
+      s
+      ( PDataRecord
+          '[ "proposalThresholds" ':= PProposalThresholds
+           , "nextProposalId" ':= PProposalId
+           ]
+      )
+  }
   deriving stock (GHC.Generic)
   deriving anyclass (Generic)
   deriving anyclass (PIsDataRepr)
-  deriving 
+  deriving
     (PlutusType, PIsData, PDataFields)
     via PIsDataReprInstances PGovernorDatum
 
@@ -110,16 +113,15 @@ instance PUnsafeLiftDecl PGovernorDatum where type PLifted PGovernorDatum = Gove
 deriving via (DerivePConstantViaData GovernorDatum PGovernorDatum) instance (PConstant GovernorDatum)
 
 -- | Plutarch-level version of 'GovernorRedeemer'
-
-data PGovernorRedeemer (s :: S) = 
-  PCreateProposal (Term s (PDataRecord '[]))
+data PGovernorRedeemer (s :: S)
+  = PCreateProposal (Term s (PDataRecord '[]))
   | PMintGATs (Term s (PDataRecord '[]))
   | PMutateDatum (Term s (PDataRecord '[]))
   deriving stock (GHC.Generic)
   deriving anyclass (Generic)
   deriving anyclass (PIsDataRepr)
-  deriving 
-    (PlutusType, PIsData) 
+  deriving
+    (PlutusType, PIsData)
     via PIsDataReprInstances PGovernorRedeemer
 
 instance PUnsafeLiftDecl PGovernorRedeemer where type PLifted PGovernorRedeemer = GovernorRedeemer
