@@ -67,7 +67,6 @@ import Plutarch.Api.V1.AssocMap (PMap (PMap))
 import Plutarch.Api.V1.Value (PValue (PValue))
 import Plutarch.Builtin (ppairDataBuiltin)
 import Plutarch.Internal (punsafeCoerce)
-import Plutarch.List (pconvertLists)
 import Plutarch.Monadic qualified as P
 
 --------------------------------------------------------------------------------
@@ -423,11 +422,11 @@ scriptHashFromAddress :: Term s (PAddress :--> PMaybe PValidatorHash)
 scriptHashFromAddress = phoistAcyclic $
   plam $ \addr ->
     pmatch (pfromData $ pfield @"credential" # addr) $ \case
-      PScriptCredential h -> pcon $ PJust $ pfield @"_0" # h
+      PScriptCredential ((pfield @"_0" #) -> h) -> pcon $ PJust h
       _ -> pcon PNothing
 
 -- | Find all TxOuts sent to an Address
-findOutputsToAddress :: Term s (PTxInfo :--> PAddress :--> PBuiltinList PTxOut)
+findOutputsToAddress :: Term s (PTxInfo :--> PAddress :--> PBuiltinList (PAsData PTxOut))
 findOutputsToAddress = phoistAcyclic $
   plam $ \info address' -> P.do
     address <- plet $ pdata address'
@@ -435,12 +434,9 @@ findOutputsToAddress = phoistAcyclic $
         filteredOutputs =
           pfilter
             # plam
-              ( \(pfromData -> txOut) -> P.do
-                  selfAddress <- plet $ pfield @"address" # txOut
-                  selfAddress #== address
-              )
+              (\(pfromData -> txOut) -> pfield @"address" # txOut #== address)
             # outputs
-    pmap # plam pfromData #$ pconvertLists # filteredOutputs
+    filteredOutputs
 
 -- | Find the data corresponding to a TxOut, if there is one
 findTxOutDatum :: Term s (PTxInfo :--> PTxOut :--> PMaybe PDatum)
