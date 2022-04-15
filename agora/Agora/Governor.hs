@@ -20,9 +20,26 @@ module Agora.Governor (
   governorValidator,
 ) where
 
+--------------------------------------------------------------------------------
+
+import GHC.Generics qualified as GHC
+
+--------------------------------------------------------------------------------
+
 import Agora.Proposal (ProposalId, ProposalThresholds)
+
+--------------------------------------------------------------------------------
+
+import Plutarch (popaque)
 import Plutarch.Api.V1 (PMintingPolicy, PValidator)
 import PlutusTx qualified
+
+--------------------------------------------------------------------------------
+
+import Plutus.V1.Ledger.Value (AssetClass)
+import PlutusTx qualified
+
+--------------------------------------------------------------------------------
 
 -- | Datum for the Governor script.
 data GovernorDatum = GovernorDatum
@@ -30,7 +47,8 @@ data GovernorDatum = GovernorDatum
   -- ^ Gets copied over upon creation of a 'Agora.Proposal.ProposalDatum'.
   , nextProposalId :: ProposalId
   -- ^ What tag the next proposal will get upon creating.
-  }
+  } 
+  deriving stock (Show, GHC.Generic)
 
 PlutusTx.makeIsDataIndexed ''GovernorDatum [('GovernorDatum, 0)]
 
@@ -46,12 +64,23 @@ data GovernorRedeemer
   | -- | Checks that a SINGLE proposal finished correctly,
     --   and allows minting GATs for each effect script.
     MintGATs
+    -- | Allow effects to mutate the datum
+  | MutateDatum
+  deriving stock (Show, GHC.Generic)
 
-PlutusTx.makeIsDataIndexed ''GovernorRedeemer [('CreateProposal, 0), ('MintGATs, 1)]
+PlutusTx.makeIsDataIndexed 
+  ''GovernorRedeemer 
+  [('CreateProposal,0)
+  ,('MintGATs, 1)
+  ,('MutateDatum, 2)
+  ]
 
 -- | Parameters for creating Governor scripts.
 data Governor
-  = Governor
+  = Governor {
+    -- | NFT that identifies the governor datum
+    datumNFT :: AssetClass
+  }
 
 --------------------------------------------------------------------------------
 
