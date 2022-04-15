@@ -14,6 +14,7 @@ module Agora.Governor (
   Governor (..),
 
   -- * Plutarch-land
+  PGovernorDatum (..),
 
   -- * Scripts
   governorPolicy,
@@ -23,16 +24,22 @@ module Agora.Governor (
 --------------------------------------------------------------------------------
 
 import GHC.Generics qualified as GHC
+import Generics.SOP (Generic, I (I))
 
 --------------------------------------------------------------------------------
 
-import Agora.Proposal (ProposalId, ProposalThresholds)
+import Agora.Proposal (ProposalId, ProposalThresholds, PProposalThresholds, PProposalId)
 
 --------------------------------------------------------------------------------
 
 import Plutarch (popaque)
 import Plutarch.Api.V1 (PMintingPolicy, PValidator)
-import PlutusTx qualified
+import Plutarch.DataRepr (
+  DerivePConstantViaData (..),
+  PDataFields,
+  PIsDataReprInstances (PIsDataReprInstances),
+ )
+import Plutarch.Lift (PUnsafeLiftDecl (..))
 
 --------------------------------------------------------------------------------
 
@@ -81,6 +88,42 @@ data Governor
     -- | NFT that identifies the governor datum
     datumNFT :: AssetClass
   }
+
+--------------------------------------------------------------------------------
+
+-- | Plutarch-level datum for the Governor script.
+
+newtype PGovernorDatum (s::S)= PGovernorDatum { getGovernorDatum ::
+  Term s (PDataRecord '[
+    "proposalThresholds" ':= PProposalThresholds,
+    "nextProposalId" ':= PProposalId
+  ])
+}
+  deriving stock (GHC.Generic)
+  deriving anyclass (Generic)
+  deriving anyclass (PIsDataRepr)
+  deriving 
+    (PlutusType, PIsData, PDataFields)
+    via PIsDataReprInstances PGovernorDatum
+
+instance PUnsafeLiftDecl PGovernorDatum where type PLifted PGovernorDatum = GovernorDatum
+deriving via (DerivePConstantViaData GovernorDatum PGovernorDatum) instance (PConstant GovernorDatum)
+
+-- | Plutarch-level version of 'GovernorRedeemer'
+
+data PGovernorRedeemer (s :: S) = 
+  PCreateProposal (Term s (PDataRecord '[]))
+  | PMintGATs (Term s (PDataRecord '[]))
+  | PMutateDatum (Term s (PDataRecord '[]))
+  deriving stock (GHC.Generic)
+  deriving anyclass (Generic)
+  deriving anyclass (PIsDataRepr)
+  deriving 
+    (PlutusType, PIsData) 
+    via PIsDataReprInstances PGovernorRedeemer
+
+instance PUnsafeLiftDecl PGovernorRedeemer where type PLifted PGovernorRedeemer = GovernorRedeemer
+deriving via (DerivePConstantViaData GovernorRedeemer PGovernorRedeemer) instance (PConstant GovernorRedeemer)
 
 --------------------------------------------------------------------------------
 
