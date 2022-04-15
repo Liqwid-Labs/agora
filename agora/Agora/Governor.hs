@@ -30,20 +30,23 @@ import Generics.SOP (Generic, I (I))
 --------------------------------------------------------------------------------
 
 import Agora.Proposal (PProposalId, PProposalThresholds, ProposalId, ProposalThresholds)
+import Agora.Utils (findOutputsToAddress, passert, passetClassValueOf', pfindTxInByTxOutRef)
 
 --------------------------------------------------------------------------------
 
 import Plutarch (popaque)
-import Plutarch.Api.V1 (PMintingPolicy, PValidator)
+import Plutarch.Api.V1 (PMaybeData (PDJust), PMintingPolicy, PScriptPurpose (PSpending), PValidator, PValue)
 import Plutarch.DataRepr (
   DerivePConstantViaData (..),
   PDataFields,
   PIsDataReprInstances (PIsDataReprInstances),
  )
 import Plutarch.Lift (PUnsafeLiftDecl (..))
+import Plutarch.Monadic qualified as P
 
 --------------------------------------------------------------------------------
 
+import Plutarch.Unsafe (punsafeCoerce)
 import Plutus.V1.Ledger.Value (AssetClass)
 import PlutusTx qualified
 
@@ -72,7 +75,7 @@ data GovernorRedeemer
   | -- | Checks that a SINGLE proposal finished correctly,
     --   and allows minting GATs for each effect script.
     MintGATs
-  | -- | Allow effects to mutate the datum
+  | -- | Allows effects to mutate the datum.
     MutateDatum
   deriving stock (Show, GHC.Generic)
 
@@ -86,7 +89,7 @@ PlutusTx.makeIsDataIndexed
 -- | Parameters for creating Governor scripts.
 data Governor = Governor
   { datumNFT :: AssetClass
-  -- ^ NFT that identifies the governor datum
+  -- ^ NFT that identifies the governor datum.
   }
 
 --------------------------------------------------------------------------------
@@ -112,7 +115,7 @@ newtype PGovernorDatum (s :: S) = PGovernorDatum
 instance PUnsafeLiftDecl PGovernorDatum where type PLifted PGovernorDatum = GovernorDatum
 deriving via (DerivePConstantViaData GovernorDatum PGovernorDatum) instance (PConstant GovernorDatum)
 
--- | Plutarch-level version of 'GovernorRedeemer'
+-- | Plutarch-level version of 'GovernorRedeemer'.
 data PGovernorRedeemer (s :: S)
   = PCreateProposal (Term s (PDataRecord '[]))
   | PMintGATs (Term s (PDataRecord '[]))
@@ -137,6 +140,48 @@ governorPolicy _ =
 
 -- | Validator for Governors.
 governorValidator :: Governor -> ClosedTerm PValidator
-governorValidator _ =
-  plam $ \_datum _redeemer _ctx' -> P.do
-    popaque (pconstant ())
+governorValidator params =
+  plam $ \_datum' redeemer' ctx' -> P.do
+    -- TODO: use `PTryFrom`
+    redeemer <- pmatch $ pfromData @PGovernorRedeemer $ punsafeCoerce redeemer'
+    ctx <- pletFields @'["txInfo", "purpose"] ctx'
+
+    txInfo <- plet $ pfromData $ ctx.txInfo
+
+    PSpending ((pfield @"_0" #) -> txOutRef') <- pmatch $ pfromData ctx.purpose
+    let txOutRef = pfromData txOutRef'
+
+    PJust ((pfield @"resolved" #) -> ownInput') <- pmatch $ pfindTxInByTxOutRef # txOutRef # txInfo
+    ownInput <- pletFields @'["address", "value", "datumHash"] ownInput'
+    selfAddress <- plet $ pfromData $ ownInput.address
+
+    let ownInputDatumNFTAmount = datumNFTValueOf # ownInput.value
+    passert "own input should have exactly one datum NFT" $ ownInputDatumNFTAmount #== 1
+
+    ownOutputs <- plet $ findOutputsToAddress # txInfo # selfAddress
+    passert "exactly one utxo should be sent to the governor" $ plength # ownOutputs #== 1
+
+    ownOutput <- pletFields @'["value", "datumHash"] $ phead # ownOutputs
+    let ownOuputDatumNFTAmount = datumNFTValueOf # ownOutput.value
+    passert "datum NFT should stay at governor's address" $ ownOuputDatumNFTAmount #== 1
+    passert "output utxo to governor should have datum" $ pisDJust # ownOutput.datumHash
+
+    -- datum <- plet $ pfromData @PGovernorDatum $ punsafeCoerce datum'
+
+    case redeemer of
+      PCreateProposal _ -> P.do
+        perror
+      _ -> perror
+  where
+    datumNFTValueOf :: Term s (PValue :--> PInteger)
+    datumNFTValueOf = passetClassValueOf' params.datumNFT
+
+pisDJust :: Term s (PMaybeData a :--> PBool)
+pisDJust = phoistAcyclic $
+  plam $ \x ->
+    pmatch
+      x
+      ( \case
+          PDJust _ -> pconstant True
+          _ -> pconstant False
+      )
