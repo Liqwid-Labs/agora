@@ -105,8 +105,9 @@ data ProposalStatus
     --   proposal will be able to be voted on.
     VotingReady
   | -- | The proposal has been voted on, and the votes have been locked
-    --   permanently. The proposal can now be executed.
-    Voted
+    --   permanently. The proposal now goes into a locking time after the
+    --   normal voting time. After this, it's possible to execute the proposal.
+    Locked
   | -- | The proposal has finished.
     --
     --   This can mean it's been voted on and completed, but it can also mean
@@ -121,7 +122,7 @@ data ProposalStatus
     Finished
   deriving stock (Eq, Show, GHC.Generic)
 
-PlutusTx.makeIsDataIndexed ''ProposalStatus [('Draft, 0), ('VotingReady, 1), ('Voted, 2), ('Finished, 3)]
+PlutusTx.makeIsDataIndexed ''ProposalStatus [('Draft, 0), ('VotingReady, 1), ('Locked, 2), ('Finished, 3)]
 
 {- | The threshold values for various state transitions to happen.
      This data is stored centrally (in the 'Agora.Governor.Governor') and copied over
@@ -198,12 +199,12 @@ data ProposalRedeemer
     --     1. The sum of all of the cosigner's GT is larger than the 'vote' field of 'ProposalThresholds'.
     --     2. The proposal hasn't been alive for longer than the review time.
     --
-    --   @'VotingReady' -> 'Voted'@:
+    --   @'VotingReady' -> 'Locked'@:
     --     1. The sum of all votes is larger than 'countVoting'.
     --     2. The winning 'ResultTag' has more votes than all other 'ResultTag's.
     --     3. The proposal hasn't been alive for longer than the voting time.
     --
-    --   @'Voted' -> 'Finished'@:
+    --   @'Locked' -> 'Finished'@:
     --     Always valid provided the conditions for the transition are met.
     --
     --   @* -> 'Finished'@:

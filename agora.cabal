@@ -78,6 +78,7 @@ common lang
     UndecidableInstances
     ViewPatterns
     OverloadedRecordDot
+    OverloadedLabels
     QualifiedDo
 
   default-language:   Haskell2010
@@ -128,9 +129,11 @@ library
     Agora.Governor
     Agora.MultiSig
     Agora.Proposal
+    Agora.Proposal.Time
     Agora.SafeMoney
     Agora.Stake
     Agora.Treasury
+    Agora.Record
 
   other-modules:
     Agora.Utils
