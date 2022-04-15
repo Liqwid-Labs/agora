@@ -153,7 +153,7 @@ pfromMaybe = phoistAcyclic $
       PJust a' -> a'
       PNothing -> e
 
--- | Yield True if a given PMaybe is of form PJust _
+-- | Yield True if a given PMaybe is of form PJust _.
 pisJust :: forall a s. Term s (PMaybe a :--> PBool)
 pisJust = phoistAcyclic $
   plam $ \v' -> P.do
@@ -421,26 +421,26 @@ findTxOutByTxOutRef = phoistAcyclic $
 -- | Get script hash from an Address.
 scriptHashFromAddress :: Term s (PAddress :--> PMaybe PValidatorHash)
 scriptHashFromAddress = phoistAcyclic $
-  plam $ \addr -> P.do
-    cred <- pmatch $ pfromData $ pfield @"credential" # addr
-    case cred of
+  plam $ \addr ->
+    pmatch (pfromData $ pfield @"credential" # addr) $ \case
       PScriptCredential h -> pcon $ PJust $ pfield @"_0" # h
       _ -> pcon PNothing
 
 -- | Find all TxOuts sent to an Address
-findOutputsToAddress :: Term s (PTxInfo :--> PAddress :--> PList PTxOut)
+findOutputsToAddress :: Term s (PTxInfo :--> PAddress :--> PBuiltinList PTxOut)
 findOutputsToAddress = phoistAcyclic $
   plam $ \info address' -> P.do
     address <- plet $ pdata address'
     let outputs = pfromData $ pfield @"outputs" # info
         filteredOutputs =
           pfilter
-            # ( plam $ \(pfromData -> txOut) -> P.do
+            # plam
+              ( \(pfromData -> txOut) -> P.do
                   selfAddress <- plet $ pfield @"address" # txOut
                   selfAddress #== address
               )
             # outputs
-    pmap @PList # plam pfromData #$ pconvertLists # filteredOutputs
+    pmap # plam pfromData #$ pconvertLists # filteredOutputs
 
 -- | Find the data corresponding to a TxOut, if there is one
 findTxOutDatum :: Term s (PTxInfo :--> PTxOut :--> PMaybe PDatum)
