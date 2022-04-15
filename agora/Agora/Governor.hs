@@ -30,7 +30,7 @@ import Generics.SOP (Generic, I (I))
 --------------------------------------------------------------------------------
 
 import Agora.Proposal (PProposalId, PProposalThresholds, ProposalId, ProposalThresholds)
-import Agora.Utils (findOutputsToAddress, passert, passetClassValueOf', pfindTxInByTxOutRef)
+import Agora.Utils (findOutputsToAddress, passert, passetClassValueOf', pfindTxInByTxOutRef, findTxOutDatum)
 
 --------------------------------------------------------------------------------
 
@@ -141,7 +141,7 @@ governorPolicy _ =
 -- | Validator for Governors.
 governorValidator :: Governor -> ClosedTerm PValidator
 governorValidator params =
-  plam $ \_datum' redeemer' ctx' -> P.do
+  plam $ \datum' redeemer' ctx' -> P.do
     -- TODO: use `PTryFrom`
     redeemer <- pmatch $ pfromData @PGovernorRedeemer $ punsafeCoerce redeemer'
     ctx <- pletFields @'["txInfo", "purpose"] ctx'
@@ -153,11 +153,14 @@ governorValidator params =
 
     PJust ((pfield @"resolved" #) -> ownInput') <- pmatch $ pfindTxInByTxOutRef # txOutRef # txInfo
     ownInput <- pletFields @'["address", "value", "datumHash"] ownInput'
-    selfAddress <- plet $ pfromData $ ownInput.address
+    let selfAddress = pfromData $ ownInput.address
+        
+    PJust (((pfromData @PGovernorDatum) . punsafeCoerce) -> oldDatum') <-  pmatch $ findTxOutDatum # txInfo # ownInput'
+    oldDatum <- pletFields @'["proposalThresholds", "nextProposalId"] oldDatum'
 
     let ownInputDatumNFTAmount = datumNFTValueOf # ownInput.value
     passert "own input should have exactly one datum NFT" $ ownInputDatumNFTAmount #== 1
-
+    
     ownOutputs <- plet $ findOutputsToAddress # txInfo # selfAddress
     passert "exactly one utxo should be sent to the governor" $ plength # ownOutputs #== 1
 
@@ -166,12 +169,19 @@ governorValidator params =
     passert "datum NFT should stay at governor's address" $ ownOuputDatumNFTAmount #== 1
     passert "output utxo to governor should have datum" $ pisDJust # ownOutput.datumHash
 
-    -- datum <- plet $ pfromData @PGovernorDatum $ punsafeCoerce datum'
+    let newDatum' = pfromData @PGovernorDatum $ punsafeCoerce datum'
+    newDatum <- pletFields @'["proposalThresholds", "nextProposalId"] newDatum'
 
     case redeemer of
       PCreateProposal _ -> P.do
-        perror
-      _ -> perror
+        -- TODO: deriving a PNum instance for PProposalId
+        let oldPid = pto $ pfromData $ oldDatum.nextProposalId
+            newPid = pto $ pfromData $ newDatum.nextProposalId        
+        passert "proposal id should be advanced by 1" $ oldPid + 1 #== newPid
+        
+        ptraceError "not implemented yet"
+      PMintGATs _ -> perror
+      PMutateDatum _ -> perror
   where
     datumNFTValueOf :: Term s (PValue :--> PInteger)
     datumNFTValueOf = passetClassValueOf' params.datumNFT
