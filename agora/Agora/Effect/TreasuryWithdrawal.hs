@@ -64,6 +64,7 @@ deriving via
   instance
     (PConstant TreasuryWithdrawalDatum)
 
+-- These functions can be replaced with ones on Utils.hs once seungheonoh/util branch get merged.
 findOwnInput :: Term s (PTxInfo :--> PTxOutRef :--> PTxInInfo)
 findOwnInput = phoistAcyclic $
   plam $ \txInfo spending' -> P.do
@@ -95,7 +96,7 @@ treasuryWithdrawalValidator currSymbol = makeEffect currSymbol $
           pall # plam id #$ pmap
             # plam (\out -> pelem # out # outputValues)
             #$ receivers
-        outputNumberMatchesRecivers = plength # receivers #== plength # (pfromData txInfo.outputs)
+        outputNumberMatchesReceivers = plength # receivers #== plength # (pfromData txInfo.outputs)
         outputIsNotPayingToEffect = P.do
           input <- pletFields @'["address", "value"] $ findOwnAddress # pfromData txInfo' # txOutRef'
           let correctMinimum = passetClassValueOf' (AssetClass ("", "")) # input.value #== 2000000
@@ -108,9 +109,8 @@ treasuryWithdrawalValidator currSymbol = makeEffect currSymbol $
                   # pfromData txInfo.outputs
           correctMinimum #&& notPayingToEffect
 
-    passert "Transaction output does not match receivers" $
-      outputContentMatchesRecivers
-        #&& outputNumberMatchesRecivers
-        #&& outputIsNotPayingToEffect
+    passert "Transaction output does not match receivers" outputContentMatchesRecivers
+    passert "" outputNumberMatchesReceivers
+    passert "" outputIsNotPayingToEffect
 
     popaque $ pconstant ()
