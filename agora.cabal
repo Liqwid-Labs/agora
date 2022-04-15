@@ -122,13 +122,13 @@ library
   import:          lang, deps
   exposed-modules:
     Agora.AuthorityToken
+    Agora.Effect
+    Agora.Governor
     Agora.MultiSig
+    Agora.Proposal
     Agora.SafeMoney
     Agora.Stake
-    Agora.Effect
     Agora.Treasury
-    Agora.Governor
-    Agora.Proposal
 
   other-modules:
     Agora.Utils

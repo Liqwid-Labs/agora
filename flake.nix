@@ -50,8 +50,10 @@
 
       projectFor = system:
         let pkgs = nixpkgsFor system;
-        in let pkgs' = nixpkgsFor' system;
-        in (nixpkgsFor system).haskell-nix.cabalProject' {
+        in
+        let pkgs' = nixpkgsFor' system;
+        in
+        (nixpkgsFor system).haskell-nix.cabalProject' {
           src = ./.;
           compiler-nix-name = ghcVersion;
           inherit (plutarch) cabalProjectLocal;
@@ -120,16 +122,18 @@
             inherit (plutarch.tools) fourmolu;
           })
             fourmolu;
-        in pkgs.runCommand "format-check" {
-          nativeBuildInputs = [
-            pkgs'.git
-            pkgs'.fd
-            pkgs'.haskellPackages.cabal-fmt
-            pkgs'.nixpkgs-fmt
-            fourmolu
-            pkgs'.haskell.packages."${ghcVersion}".hlint
-          ];
-        } ''
+        in
+        pkgs.runCommand "format-check"
+          {
+            nativeBuildInputs = [
+              pkgs'.git
+              pkgs'.fd
+              pkgs'.haskellPackages.cabal-fmt
+              pkgs'.nixpkgs-fmt
+              fourmolu
+              pkgs'.haskell.packages."${ghcVersion}".hlint
+            ];
+          } ''
           export LC_CTYPE=C.UTF-8
           export LC_ALL=C.UTF-8
           export LANG=C.UTF-8
@@ -138,7 +142,8 @@
           find -name '*.hs' -not -path './dist*/*' -not -path './haddock/*' | xargs hlint
           mkdir $out
         '';
-    in {
+    in
+    {
       project = perSystem projectFor;
       flake = perSystem (system: (projectFor system).flake { });
 
@@ -152,9 +157,10 @@
           agora-test = self.flake.${system}.packages."agora:test:agora-test";
         });
       check = perSystem (system:
-        (nixpkgsFor system).runCommand "combined-test" {
-          checksss = builtins.attrValues self.checks.${system};
-        } ''
+        (nixpkgsFor system).runCommand "combined-test"
+          {
+            checksss = builtins.attrValues self.checks.${system};
+          } ''
           echo $checksss
           touch $out
         '');
