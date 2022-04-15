@@ -33,11 +33,10 @@ module Agora.Utils (
   allOutputs,
   anyInput,
   allInputs,
-  pfindEffectInput,
-  pfindEffectAddress,
-  pscriptHashFromAddress,
-  pfindOutputsToAddress,
-  pfindTxOutDatum,
+  findTxOutByTxOutRef,
+  scriptHashFromAddress,
+  findOutputsToAddress,
+  findTxOutDatum,
 ) where
 
 --------------------------------------------------------------------------------
@@ -154,7 +153,7 @@ pfromMaybe = phoistAcyclic $
       PJust a' -> a'
       PNothing -> e
 
--- | Yield True is a given PMaybe is of form PJust _
+-- | Yield True if a given PMaybe is of form PJust _
 pisJust :: forall a s. Term s (PMaybe a :--> PBool)
 pisJust = phoistAcyclic $
   plam $ \v' -> P.do
@@ -411,24 +410,17 @@ psingletonValue = phoistAcyclic $
         res = pcon $ PValue outerTup
      in res
 
--- | Finds the TxInInfo of an effect from TxInfo and TxOutRef
-pfindEffectInput :: Term s (PTxInfo :--> PTxOutRef :--> PTxInInfo)
-pfindEffectInput = phoistAcyclic $
-  plam $ \txInfo spending' -> P.do
-    input <- plet $ pfromData $ pfield @"inputs" # txInfo
-    spending <- plet $ pdata spending'
-    PJust result <- pmatch $ pfind # plam (\x -> pfield @"outRef" # x #== spending) # input
-    pfromData result
-
--- | Finds the address of an effect from TxInfo and TxOutRef
-pfindEffectAddress :: Term s (PTxInfo :--> PTxOutRef :--> PTxOut)
-pfindEffectAddress = phoistAcyclic $
-  plam $ \txInfo spending -> P.do
-    pfromData $ pfield @"resolved" #$ pfindEffectInput # txInfo # spending
+-- | Finds the TxOut of an effect from TxInfo and TxOutRef
+findTxOutByTxOutRef :: Term s (PTxOutRef :--> PTxInfo :--> PMaybe PTxOut)
+findTxOutByTxOutRef = phoistAcyclic $
+  plam $ \txOutRef txInfo ->
+    pmatch (pfindTxInByTxOutRef # txOutRef # txInfo) $ \case
+      PJust ((pfield @"resolved" #) -> txOut) -> pcon $ PJust txOut
+      PNothing -> pcon PNothing
 
 -- | Get script hash from an Address.
-pscriptHashFromAddress :: Term s (PAddress :--> PMaybe PValidatorHash)
-pscriptHashFromAddress = phoistAcyclic $
+scriptHashFromAddress :: Term s (PAddress :--> PMaybe PValidatorHash)
+scriptHashFromAddress = phoistAcyclic $
   plam $ \addr -> P.do
     cred <- pmatch $ pfromData $ pfield @"credential" # addr
     case cred of
@@ -436,8 +428,8 @@ pscriptHashFromAddress = phoistAcyclic $
       _ -> pcon PNothing
 
 -- | Find all TxOuts sent to an Address
-pfindOutputsToAddress :: Term s (PTxInfo :--> PAddress :--> PList PTxOut)
-pfindOutputsToAddress = phoistAcyclic $
+findOutputsToAddress :: Term s (PTxInfo :--> PAddress :--> PList PTxOut)
+findOutputsToAddress = phoistAcyclic $
   plam $ \info address' -> P.do
     address <- plet $ pdata address'
     let outputs = pfromData $ pfield @"outputs" # info
@@ -450,9 +442,9 @@ pfindOutputsToAddress = phoistAcyclic $
             # outputs
     pmap @PList # plam pfromData #$ pconvertLists # filteredOutputs
 
--- | Find datum in a TxOut
-pfindTxOutDatum :: Term s (PTxInfo :--> PTxOut :--> PMaybe PDatum)
-pfindTxOutDatum = phoistAcyclic $
+-- | Find the data corresponding to a TxOut, if there is one
+findTxOutDatum :: Term s (PTxInfo :--> PTxOut :--> PMaybe PDatum)
+findTxOutDatum = phoistAcyclic $
   plam $ \info out -> P.do
     datumHash' <- pmatch $ pfromData $ pfield @"datumHash" # out
     case datumHash' of
