@@ -57,12 +57,14 @@ import PlutusTx.AssocMap qualified as AssocMap
 
 import Agora.SafeMoney (GTTag)
 import Agora.Utils (passert, pnotNull, ptokenSpent)
+import Control.Arrow (first)
 import Plutarch (popaque)
 import Plutarch.Api.V1.Extra (passetClass, passetClassValueOf)
 import Plutarch.Builtin (PBuiltinMap)
 import Plutarch.Lift (DerivePConstantViaNewtype (..), PUnsafeLiftDecl (..))
 import Plutarch.Monadic qualified as P
 import Plutarch.SafeMoney (PDiscrete, Tagged)
+import Plutarch.TryFrom (PTryFrom (PTryFromExcess, ptryFrom'))
 import Plutarch.Unsafe (punsafeCoerce)
 import Plutus.V1.Ledger.Value (AssetClass (AssetClass))
 
@@ -102,26 +104,33 @@ data ProposalStatus
     --   This means that once the timing requirements align,
     --   proposal will be able to be voted on.
     VotingReady
+  | -- | The proposal has been voted on, and the votes have been locked
+    --   permanently. The proposal can now be executed.
+    Voted
   | -- | The proposal has finished.
     --
     --   This can mean it's been voted on and completed, but it can also mean
-    --   the proposal failed due to  time constraints or didn't
+    --   the proposal failed due to time constraints or didn't
     --   get to 'VotingReady' first.
+    --
+    --   At this stage, the 'votes' field of 'ProposalState' is frozen.
+    --
+    --   See 'AdvanceProposal' for documentation on state transitions.
     --
     --   TODO: The owner of the proposal may choose to reclaim their proposal.
     Finished
   deriving stock (Eq, Show, GHC.Generic)
 
-PlutusTx.makeIsDataIndexed ''ProposalStatus [('Draft, 0), ('VotingReady, 1), ('Finished, 2)]
+PlutusTx.makeIsDataIndexed ''ProposalStatus [('Draft, 0), ('VotingReady, 1), ('Voted, 2), ('Finished, 3)]
 
 {- | The threshold values for various state transitions to happen.
      This data is stored centrally (in the 'Agora.Governor.Governor') and copied over
      to 'Proposal's when they are created.
 -}
 data ProposalThresholds = ProposalThresholds
-  { execute :: Tagged GTTag Integer
+  { countVoting :: Tagged GTTag Integer
   -- ^ How much GT minimum must a particular 'ResultTag' accumulate for it to pass.
-  , draft :: Tagged GTTag Integer
+  , create :: Tagged GTTag Integer
   -- ^ How much GT required to "create" a proposal.
   , vote :: Tagged GTTag Integer
   -- ^ How much GT required to allow voting to happen.
@@ -168,6 +177,49 @@ data ProposalDatum = ProposalDatum
 
 PlutusTx.makeIsDataIndexed ''ProposalDatum [('ProposalDatum, 0)]
 
+-- | Haskell-level redeemer for Proposal scripts.
+data ProposalRedeemer
+  = -- | Cast one or more votes towards a particular 'ResultTag'.
+    Vote ResultTag
+  | -- | Add one or more public keys to the cosignature list. Must be signed by
+    --   those cosigning.
+    --
+    --   This is particularly used in the 'Draft' 'ProposalStatus'. Where matching
+    --   'Stake's can be called to advance the proposal, provided enough GT is shared
+    --   among them.
+    Cosign [PubKeyHash]
+  | -- | Allow unlocking one or more stakes with votes towards particular 'ResultTag'.
+    Unlock ResultTag
+  | -- | Advance the proposal, performing the required checks for whether that is legal.
+    --
+    --   These are roughly the checks for each possible transition:
+    --
+    --   @'Draft' -> 'VotingReady'@:
+    --     1. The sum of all of the cosigner's GT is larger than the 'vote' field of 'ProposalThresholds'.
+    --     2. The proposal hasn't been alive for longer than the review time.
+    --
+    --   @'VotingReady' -> 'Voted'@:
+    --     1. The sum of all votes is larger than 'countVoting'.
+    --     2. The winning 'ResultTag' has more votes than all other 'ResultTag's.
+    --     3. The proposal hasn't been alive for longer than the voting time.
+    --
+    --   @'Voted' -> 'Finished'@:
+    --     Always valid provided the conditions for the transition are met.
+    --
+    --   @* -> 'Finished'@:
+    --     If the proposal has run out of time for the current 'ProposalStatus', it will always be possible
+    --     to transition into 'Finished' state, because it has expired (and failed).
+    AdvanceProposal
+  deriving stock (Eq, Show, GHC.Generic)
+
+PlutusTx.makeIsDataIndexed
+  ''ProposalRedeemer
+  [ ('Vote, 0)
+  , ('Cosign, 1)
+  , ('Unlock, 2)
+  , ('AdvanceProposal, 3)
+  ]
+
 {- | Identifies a Proposal, issued upon creation of a proposal.
      In practice, this number starts at zero, and increments by one
      for each proposal. The 100th proposal will be @'ProposalId' 99@.
@@ -196,9 +248,29 @@ deriving via
   instance
     (PConstant ResultTag)
 
+-- FIXME: This instance and the one below, for 'PProposalId', should be derived.
+-- Soon this will be possible through 'DerivePNewtype'.
+instance PTryFrom PData (PAsData PResultTag) where
+  type PTryFromExcess PData (PAsData PResultTag) = PTryFromExcess PData (PAsData PInteger)
+  ptryFrom' d k =
+    ptryFrom' @_ @(PAsData PInteger) d $
+      -- JUSTIFICATION:
+      -- We are coercing from @PAsData underlying@ to @PAsData (PTagged tag underlying)@.
+      -- Since 'PTagged' is a simple newtype, their shape is the same.
+      k . first punsafeCoerce
+
 -- | Plutarch-level version of 'PProposalId'.
 newtype PProposalId (s :: S) = PProposalId (Term s PInteger)
   deriving (PlutusType, PIsData, PEq, POrd) via (DerivePNewtype PProposalId PInteger)
+
+instance PTryFrom PData (PAsData PProposalId) where
+  type PTryFromExcess PData (PAsData PProposalId) = PTryFromExcess PData (PAsData PInteger)
+  ptryFrom' d k =
+    ptryFrom' @_ @(PAsData PInteger) d $
+      -- JUSTIFICATION:
+      -- We are coercing from @PAsData underlying@ to @PAsData (PTagged tag underlying)@.
+      -- Since 'PTagged' is a simple newtype, their shape is the same.
+      k . first punsafeCoerce
 
 instance PUnsafeLiftDecl PProposalId where type PLifted PProposalId = ProposalId
 deriving via
@@ -279,6 +351,28 @@ newtype PProposalDatum (s :: S) = PProposalDatum
 
 instance PUnsafeLiftDecl PProposalDatum where type PLifted PProposalDatum = ProposalDatum
 deriving via (DerivePConstantViaData ProposalDatum PProposalDatum) instance (PConstant ProposalDatum)
+
+-- | Haskell-level redeemer for Proposal scripts.
+data PProposalRedeemer (s :: S)
+  = PVote (Term s (PDataRecord '["resultTag" ':= PResultTag]))
+  | PCosign (Term s (PDataRecord '["newCosigners" ':= PBuiltinList (PAsData PPubKeyHash)]))
+  | PUnlock (Term s (PDataRecord '["resultTag" ':= PResultTag]))
+  | PAdvanceProposal (Term s (PDataRecord '[]))
+  deriving stock (GHC.Generic)
+  deriving anyclass (Generic)
+  deriving anyclass (PIsDataRepr)
+  deriving
+    (PlutusType, PIsData)
+    via PIsDataReprInstances PProposalRedeemer
+
+-- TODO: Waiting on PTryFrom for 'PPubKeyHash'
+-- deriving via
+--   PAsData (PIsDataReprInstances PProposalRedeemer)
+--   instance
+--     PTryFrom PData (PAsData PProposalRedeemer)
+
+instance PUnsafeLiftDecl PProposalRedeemer where type PLifted PProposalRedeemer = ProposalRedeemer
+deriving via (DerivePConstantViaData ProposalRedeemer PProposalRedeemer) instance (PConstant ProposalRedeemer)
 
 --------------------------------------------------------------------------------
 

@@ -1621,17 +1621,17 @@
         "validity": "validity"
       },
       "locked": {
-        "lastModified": 1648639396,
-        "narHash": "sha256-pAkEsIDXJckVYufVPUzD/4sq4/uE7iyV0IR2BuLhZjY=",
+        "lastModified": 1650025193,
+        "narHash": "sha256-SXfkWYse308SdnWO34cMVjKliDvyYYx++Y5uiuUmGXE=",
         "owner": "peter-mlabs",
         "repo": "plutarch",
-        "rev": "a7a410da209b9c14c834a41e07b1c197c2a4dcd6",
+        "rev": "18e787d420912ed765fc5653c3558f20ab5e638a",
         "type": "github"
       },
       "original": {
         "owner": "peter-mlabs",
         "repo": "plutarch",
-        "rev": "a7a410da209b9c14c834a41e07b1c197c2a4dcd6",
+        "rev": "18e787d420912ed765fc5653c3558f20ab5e638a",
         "type": "github"
       }
     },

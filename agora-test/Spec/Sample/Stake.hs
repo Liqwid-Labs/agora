@@ -177,8 +177,7 @@ stakeDepositWithdraw config =
                   [ TxOut
                       { txOutAddress = Address (ScriptCredential $ validatorHash validator) Nothing
                       , txOutValue =
-                          st
-                            <> Value.assetClassValue (untag stake.gtClassRef) (untag stakeAfter.stakedAmount)
+                          st <> Value.assetClassValue (untag stake.gtClassRef) (untag stakeAfter.stakedAmount)
                       , txOutDatumHash = Just (toDatumHash stakeAfter)
                       }
                   ]

@@ -77,9 +77,10 @@ import Plutarch.Numeric
 import Plutarch.SafeMoney (
   PDiscrete,
   Tagged (..),
-  pdiscreteValue,
+  pdiscreteValue',
   untag,
  )
+import Plutarch.TryFrom (PTryFrom, ptryFrom)
 
 --------------------------------------------------------------------------------
 
@@ -205,13 +206,18 @@ data PStakeRedeemer (s :: S)
   | -- | Destroy a stake, retrieving its LQ, the minimum ADA and any other assets.
     PDestroy (Term s (PDataRecord '[]))
   | PPermitVote (Term s (PDataRecord '["lock" ':= PProposalLock]))
-  | PRetractVotes (Term s (PDataRecord '["locks" ':= PBuiltinList PProposalLock]))
+  | PRetractVotes (Term s (PDataRecord '["locks" ':= PBuiltinList (PAsData PProposalLock)]))
   deriving stock (GHC.Generic)
   deriving anyclass (Generic)
   deriving anyclass (PIsDataRepr)
   deriving
     (PlutusType, PIsData)
     via PIsDataReprInstances PStakeRedeemer
+
+deriving via
+  PAsData (PIsDataReprInstances PStakeRedeemer)
+  instance
+    PTryFrom PData (PAsData PStakeRedeemer)
 
 instance PUnsafeLiftDecl PStakeRedeemer where type PLifted PStakeRedeemer = StakeRedeemer
 deriving via (DerivePConstantViaData StakeRedeemer PStakeRedeemer) instance (PConstant StakeRedeemer)
@@ -232,6 +238,11 @@ newtype PProposalLock (s :: S) = PProposalLock
   deriving
     (PlutusType, PIsData, PDataFields)
     via (PIsDataReprInstances PProposalLock)
+
+deriving via
+  PAsData (PIsDataReprInstances PProposalLock)
+  instance
+    PTryFrom PData (PAsData PProposalLock)
 
 instance PUnsafeLiftDecl PProposalLock where type PLifted PProposalLock = ProposalLock
 deriving via (DerivePConstantViaData ProposalLock PProposalLock) instance (PConstant ProposalLock)
@@ -312,7 +323,7 @@ stakePolicy stake =
                             # 1
                     let expectedValue =
                           paddValue
-                            # (pdiscreteValue stake.gtClassRef # stakeDatum.stakedAmount)
+                            # (pdiscreteValue' stake.gtClassRef # stakeDatum.stakedAmount)
                             # stValue
                     let ownerSignsTransaction =
                           ptxSignedBy
@@ -352,10 +363,10 @@ stakeValidator stake =
     txInfo' <- plet ctx.txInfo
     txInfo <- pletFields @'["mint", "inputs", "outputs"] txInfo'
 
+    (pfromData -> stakeRedeemer, _) <- ptryFrom redeemer
+
     -- TODO: Use PTryFrom
-    let stakeRedeemer :: Term _ PStakeRedeemer
-        stakeRedeemer = pfromData $ punsafeCoerce redeemer
-        stakeDatum' :: Term _ PStakeDatum
+    let stakeDatum' :: Term _ PStakeDatum
         stakeDatum' = pfromData $ punsafeCoerce datum
     stakeDatum <- pletFields @'["owner", "stakedAmount"] stakeDatum'
 
@@ -425,7 +436,7 @@ stakeValidator stake =
                         -- do we need to check this, really?
                         zero #<= pfromData newStakeDatum.stakedAmount
                       ]
-              let expectedValue = paddValue # continuingValue # (pdiscreteValue stake.gtClassRef # delta)
+              let expectedValue = paddValue # continuingValue # (pdiscreteValue' stake.gtClassRef # delta)
 
               -- TODO: Same as above. This is quite inefficient now, as it does two lookups
               -- instead of a more efficient single pass,

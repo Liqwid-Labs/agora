@@ -9,7 +9,7 @@
 
   # Rev is this PR https://github.com/peter-mlabs/plutarch/pull/5.
   inputs.plutarch.url =
-    "github:peter-mlabs/plutarch?rev=a7a410da209b9c14c834a41e07b1c197c2a4dcd6";
+    "github:peter-mlabs/plutarch?rev=18e787d420912ed765fc5653c3558f20ab5e638a";
   inputs.plutarch.inputs.nixpkgs.follows =
     "plutarch/haskell-nix/nixpkgs-unstable";
 
