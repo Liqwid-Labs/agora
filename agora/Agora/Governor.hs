@@ -29,13 +29,34 @@ import Generics.SOP (Generic, I (I))
 
 --------------------------------------------------------------------------------
 
-import Agora.Proposal (PProposalId, PProposalThresholds, ProposalId, ProposalThresholds)
-import Agora.Utils (findOutputsToAddress, passert, passetClassValueOf', pfindTxInByTxOutRef, findTxOutDatum)
+import Agora.AuthorityToken (authorityTokensValidIn)
+import Agora.Proposal (
+  PProposalId,
+  PProposalThresholds,
+  ProposalId,
+  ProposalThresholds,
+ )
+import Agora.Utils (
+  allInputs,
+  findOutputsToAddress,
+  findTxOutDatum,
+  passert,
+  passetClassValueOf',
+  pfindTxInByTxOutRef,
+  pisDJust,
+  psymbolValueOf,
+ )
 
 --------------------------------------------------------------------------------
 
 import Plutarch (popaque)
-import Plutarch.Api.V1 (PMaybeData (PDJust), PMintingPolicy, PScriptPurpose (PSpending), PValidator, PValue)
+import Plutarch.Api.V1 (
+  PCurrencySymbol,
+  PMintingPolicy,
+  PScriptPurpose (PSpending),
+  PValidator,
+  PValue,
+ )
 import Plutarch.DataRepr (
   DerivePConstantViaData (..),
   PDataFields,
@@ -43,11 +64,11 @@ import Plutarch.DataRepr (
  )
 import Plutarch.Lift (PUnsafeLiftDecl (..))
 import Plutarch.Monadic qualified as P
+import Plutarch.Unsafe (punsafeCoerce)
 
 --------------------------------------------------------------------------------
 
-import Plutarch.Unsafe (punsafeCoerce)
-import Plutus.V1.Ledger.Value (AssetClass)
+import Plutus.V1.Ledger.Value (AssetClass, CurrencySymbol)
 import PlutusTx qualified
 
 --------------------------------------------------------------------------------
@@ -68,7 +89,7 @@ PlutusTx.makeIsDataIndexed ''GovernorDatum [('GovernorDatum, 0)]
 
      1. The gating of Proposal creation.
      2. The gating of minting authority tokens.
-     
+
      Parameters of the governor can also be mutated by an effect.
 -}
 data GovernorRedeemer
@@ -92,6 +113,8 @@ PlutusTx.makeIsDataIndexed
 data Governor = Governor
   { datumNFT :: AssetClass
   -- ^ NFT that identifies the governor datum.
+  , gatSymbol :: CurrencySymbol
+  -- ^ The symbol of Governance Authority Token
   }
 
 --------------------------------------------------------------------------------
@@ -156,44 +179,69 @@ governorValidator params =
     PJust ((pfield @"resolved" #) -> ownInput') <- pmatch $ pfindTxInByTxOutRef # txOutRef # txInfo
     ownInput <- pletFields @'["address", "value", "datumHash"] ownInput'
     let selfAddress = pfromData $ ownInput.address
-        
-    PJust (((pfromData @PGovernorDatum) . punsafeCoerce) -> oldDatum') <-  pmatch $ findTxOutDatum # txInfo # ownInput'
-    oldDatum <- pletFields @'["proposalThresholds", "nextProposalId"] oldDatum'
+
+    PJust oldDatum'' <- pmatch $ findTxOutDatum # txInfo # ownInput'
+    oldDatum' <- plet $ pto oldDatum''
+    let oldParams' = pfromData @PGovernorDatum $ punsafeCoerce oldDatum'
+    oldParams <- pletFields @'["proposalThresholds", "nextProposalId"] oldParams'
 
     let ownInputDatumNFTAmount = datumNFTValueOf # ownInput.value
-    passert "own input should have exactly one datum NFT" $ ownInputDatumNFTAmount #== 1
-    
+    passert "Own input should have exactly one datum NFT" $ ownInputDatumNFTAmount #== 1
+
     ownOutputs <- plet $ findOutputsToAddress # txInfo # selfAddress
-    passert "exactly one utxo should be sent to the governor" $ plength # ownOutputs #== 1
+    passert "Exactly one utxo should be sent to the governor" $ plength # ownOutputs #== 1
 
     ownOutput <- pletFields @'["value", "datumHash"] $ phead # ownOutputs
     let ownOuputDatumNFTAmount = datumNFTValueOf # ownOutput.value
-    passert "datum NFT should stay at governor's address" $ ownOuputDatumNFTAmount #== 1
-    passert "output utxo to governor should have datum" $ pisDJust # ownOutput.datumHash
+    passert "Datum NFT should stay at governor's address" $ ownOuputDatumNFTAmount #== 1
+    passert "Output utxo to governor should have datum" $ pisDJust # ownOutput.datumHash
 
+    -- TODO: use `PTryFrom` and reject bad datum
     let newDatum' = pfromData @PGovernorDatum $ punsafeCoerce datum'
-    newDatum <- pletFields @'["proposalThresholds", "nextProposalId"] newDatum'
+    newParams <- pletFields @'["proposalThresholds", "nextProposalId"] newDatum'
+
+    mint <- plet $ pfromData $ pfield @"mint" # txInfo
+    mint' <- plet $ pto $ pto $ pto $ mint
 
     case redeemer of
       PCreateProposal _ -> P.do
+        -- check that nothing is minted
+        passert "Nothing should be minted" $ plength # mint' #== 0
+
+        -- check proposal id +1
         -- TODO: deriving a PNum instance for PProposalId
-        let oldPid = pto $ pfromData $ oldDatum.nextProposalId
-            newPid = pto $ pfromData $ newDatum.nextProposalId        
-        passert "proposal id should be advanced by 1" $ oldPid + 1 #== newPid
-        
-        ptraceError "not implemented yet"
-      PMintGATs _ -> perror
-      PMutateParams _ -> perror
+        let oldPid = pto $ pfromData $ oldParams.nextProposalId
+            newPid = pto $ pfromData $ newParams.nextProposalId
+        passert "Proposal id should be advanced by 1" $
+          oldPid + 1 #== newPid
+
+        -- TODO: waiting for impl of proposal
+        ptraceError "Not implemented yet"
+      PMintGATs _ -> P.do
+        -- check datum is not changed
+        passert "Datum should not be changed" $ oldDatum' #== datum'
+
+        -- check exactly one(?) authority token is minted
+
+        -- TODO: waiting for impl of proposal
+        ptraceError "Not implemented yet"
+      PMutateParams _ -> P.do
+        -- check that input has exactly one GAT and will be burnt
+        let gatAmount = psymbolValueOf # gatS # mint
+        passert "One GAT should be burnt" $ gatAmount #== -1
+
+        -- nothing should be minted/burnt other than GAT
+        passert "No token should be minted/burnt other than GAT" $ plength # mint' #== 1
+
+        -- check that GAT is tagged by the address
+        passert "all input GATs are valid" $
+          allInputs @PUnit # txInfo #$ plam $ \txOut _ _ _ ->
+            authorityTokensValidIn # gatS # txOut
+
+        popaque $ pconstant ()
   where
     datumNFTValueOf :: Term s (PValue :--> PInteger)
     datumNFTValueOf = passetClassValueOf' params.datumNFT
 
-pisDJust :: Term s (PMaybeData a :--> PBool)
-pisDJust = phoistAcyclic $
-  plam $ \x ->
-    pmatch
-      x
-      ( \case
-          PDJust _ -> pconstant True
-          _ -> pconstant False
-      )
+    gatS :: Term s PCurrencySymbol
+    gatS = pconstant params.gatSymbol
