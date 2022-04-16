@@ -62,6 +62,20 @@ deriving via
   instance
     (PConstant TreasuryWithdrawalDatum)
 
+{- | Withdraws given list of values to specific target addresses.
+It can be evoked by burning GAT. The transaction should have correct
+outputs to the users and any left overs should be paid back to the treasury.
+
+The validator does not accept any Redeemer as all "parameters" are provided
+via encoded Datum.
+
+Note:
+It should check...
+1. Transaction outputs should contain all of what Datum specified
+2. Left over assests should be redirected back to Treasury
+It can be more flexiable over...
+- The number of outputs themselves
+-}
 treasuryWithdrawalValidator :: forall {s :: S}. CurrencySymbol -> Term s PValidator
 treasuryWithdrawalValidator currSymbol = makeEffect currSymbol $
   \_cs (datum' :: Term _ PTreasuryWithdrawalDatum) txOutRef' txInfo' -> P.do
