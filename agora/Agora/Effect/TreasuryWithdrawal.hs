@@ -13,18 +13,16 @@ import GHC.Generics qualified as GHC
 import Generics.SOP (Generic, I (I))
 
 import Agora.Effect (makeEffect)
-import Agora.Utils ( passert, passetClassValueOf' )
+import Agora.Utils (findTxOutByTxOutRef, passert)
 import Plutarch (popaque)
-import Plutarch.Api.V1
-    ( PTxInfo,
-      PTxOutRef,
-      PValidator,
-      PTuple,
-      PValue,
-      PCredential,
-      ptuple,
-      PTxInInfo,
-      PTxOut )
+import Plutarch.Api.V1 (
+  PCredential,
+  PTuple,
+  PValidator,
+  PValue,
+  ptuple,
+ )
+
 import Plutarch.DataRepr (
   DerivePConstantViaData (..),
   PDataFields,
@@ -33,17 +31,17 @@ import Plutarch.DataRepr (
 import Plutarch.Lift (PUnsafeLiftDecl (..))
 import Plutarch.Monadic qualified as P
 import Plutus.V1.Ledger.Credential (Credential)
-import Plutus.V1.Ledger.Value (AssetClass (..), CurrencySymbol, Value)
+import Plutus.V1.Ledger.Value (CurrencySymbol, Value)
 import PlutusTx qualified
 
-data TreasuryWithdrawalDatum = TreasuryWithdrawalDatum {receivers :: [(Credential, Value)]}
+newtype TreasuryWithdrawalDatum = TreasuryWithdrawalDatum {receivers :: [(Credential, Value)]}
   deriving stock (Show, GHC.Generic)
   deriving anyclass (Generic)
 
 PlutusTx.makeLift ''TreasuryWithdrawalDatum
 PlutusTx.unstableMakeIsData ''TreasuryWithdrawalDatum
 
-data PTreasuryWithdrawalDatum (s :: S)
+newtype PTreasuryWithdrawalDatum (s :: S)
   = PTreasuryWithdrawalDatum
       ( Term
           s
@@ -64,20 +62,6 @@ deriving via
   instance
     (PConstant TreasuryWithdrawalDatum)
 
--- These functions can be replaced with ones on Utils.hs once seungheonoh/util branch get merged.
-findOwnInput :: Term s (PTxInfo :--> PTxOutRef :--> PTxInInfo)
-findOwnInput = phoistAcyclic $
-  plam $ \txInfo spending' -> P.do
-    input <- plet $ pfromData $ pfield @"inputs" # txInfo
-    spending <- plet $ pdata spending'
-    PJust result <- pmatch $ pfind # plam (\x -> pfield @"outRef" # x #== spending) # input
-    pfromData result
-
-findOwnAddress :: Term s (PTxInfo :--> PTxOutRef :--> PTxOut)
-findOwnAddress = phoistAcyclic $
-  plam $ \txInfo spending -> P.do
-    pfromData $ pfield @"resolved" #$ findOwnInput # txInfo # spending
-
 treasuryWithdrawalValidator :: forall {s :: S}. CurrencySymbol -> Term s PValidator
 treasuryWithdrawalValidator currSymbol = makeEffect currSymbol $
   \_cs (datum' :: Term _ PTreasuryWithdrawalDatum) txOutRef' txInfo' -> P.do
@@ -93,21 +77,20 @@ treasuryWithdrawalValidator currSymbol = makeEffect currSymbol $
               )
             #$ txInfo.outputs
         outputContentMatchesRecivers =
-          pall # plam id #$ pmap
-            # plam (\out -> pelem # out # outputValues)
+          pall # plam (\out -> pelem # out # outputValues)
             #$ receivers
         outputNumberMatchesReceivers = plength # receivers #== plength # (pfromData txInfo.outputs)
         outputIsNotPayingToEffect = P.do
-          input <- pletFields @'["address", "value"] $ findOwnAddress # pfromData txInfo' # txOutRef'
-          let correctMinimum = passetClassValueOf' (AssetClass ("", "")) # input.value #== 2000000
-              notPayingToEffect =
+          PJust txOut <- pmatch $ findTxOutByTxOutRef # txOutRef' # pfromData txInfo'
+          input <- pletFields @'["address", "value"] $ txOut
+          let notPayingToEffect =
                 pnot #$ pany
                   # plam
                     ( \x ->
                         input.address #== pfield @"address" # pfromData x
                     )
                   # pfromData txInfo.outputs
-          correctMinimum #&& notPayingToEffect
+          notPayingToEffect
 
     passert "Transaction output does not match receivers" outputContentMatchesRecivers
     passert "" outputNumberMatchesReceivers
