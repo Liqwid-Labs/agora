@@ -26,12 +26,17 @@ module Agora.Utils (
   psingletonValue,
   pfindMap,
   pnotNull,
+  pisJust,
 
   -- * Functions which should (probably) not be upstreamed
   anyOutput,
   allOutputs,
   anyInput,
   allInputs,
+  findTxOutByTxOutRef,
+  scriptHashFromAddress,
+  findOutputsToAddress,
+  findTxOutDatum,
 ) where
 
 --------------------------------------------------------------------------------
@@ -42,9 +47,11 @@ import Plutus.V1.Ledger.Value (AssetClass (..))
 
 import Plutarch.Api.V1 (
   PAddress,
+  PCredential (PScriptCredential),
   PCurrencySymbol,
   PDatum,
   PDatumHash,
+  PMap,
   PMaybeData (PDJust),
   PPubKeyHash,
   PTokenName,
@@ -53,6 +60,8 @@ import Plutarch.Api.V1 (
   PTxInfo (PTxInfo),
   PTxOut (PTxOut),
   PTxOutRef,
+  PValidatorHash,
+  PValue,
  )
 import Plutarch.Api.V1.AssocMap (PMap (PMap))
 import Plutarch.Api.V1.Value (PValue (PValue))
@@ -143,6 +152,15 @@ pfromMaybe = phoistAcyclic $
       PJust a' -> a'
       PNothing -> e
 
+-- | Yield True if a given PMaybe is of form PJust _.
+pisJust :: forall a s. Term s (PMaybe a :--> PBool)
+pisJust = phoistAcyclic $
+  plam $ \v' -> P.do
+    v <- pmatch v'
+    case v of
+      PJust _ -> pconstant True
+      PNothing -> pconstant False
+
 -- | Escape with a particular value on expecting 'Just'. For use in monadic context.
 pexpectJust ::
   forall r a s.
@@ -217,11 +235,10 @@ pmapUnionWith = phoistAcyclic $
             # plam
               ( \p -> P.do
                   pf <- plet $ pfstBuiltin # p
-                  ps <- plet $ psndBuiltin # p
                   pmatch (plookup # pf # ys) $ \case
                     PJust v ->
                       -- Data conversions here are silly, aren't they?
-                      ppairDataBuiltin # pf # pdata (f # pfromData ps # pfromData v)
+                      ppairDataBuiltin # pf # pdata (f # pfromData (psndBuiltin # p) # pfromData v)
                     PNothing -> p
               )
             # xs
@@ -391,3 +408,41 @@ psingletonValue = phoistAcyclic $
         outerTup = pcon $ PMap $ psingleton #$ ppairDataBuiltin # pdata sym # pdata innerTup
         res = pcon $ PValue outerTup
      in res
+
+-- | Finds the TxOut of an effect from TxInfo and TxOutRef
+findTxOutByTxOutRef :: Term s (PTxOutRef :--> PTxInfo :--> PMaybe PTxOut)
+findTxOutByTxOutRef = phoistAcyclic $
+  plam $ \txOutRef txInfo ->
+    pmatch (pfindTxInByTxOutRef # txOutRef # txInfo) $ \case
+      PJust ((pfield @"resolved" #) -> txOut) -> pcon $ PJust txOut
+      PNothing -> pcon PNothing
+
+-- | Get script hash from an Address.
+scriptHashFromAddress :: Term s (PAddress :--> PMaybe PValidatorHash)
+scriptHashFromAddress = phoistAcyclic $
+  plam $ \addr ->
+    pmatch (pfromData $ pfield @"credential" # addr) $ \case
+      PScriptCredential ((pfield @"_0" #) -> h) -> pcon $ PJust h
+      _ -> pcon PNothing
+
+-- | Find all TxOuts sent to an Address
+findOutputsToAddress :: Term s (PTxInfo :--> PAddress :--> PBuiltinList (PAsData PTxOut))
+findOutputsToAddress = phoistAcyclic $
+  plam $ \info address' -> P.do
+    address <- plet $ pdata address'
+    let outputs = pfromData $ pfield @"outputs" # info
+        filteredOutputs =
+          pfilter
+            # plam
+              (\(pfromData -> txOut) -> pfield @"address" # txOut #== address)
+            # outputs
+    filteredOutputs
+
+-- | Find the data corresponding to a TxOut, if there is one
+findTxOutDatum :: Term s (PTxInfo :--> PTxOut :--> PMaybe PDatum)
+findTxOutDatum = phoistAcyclic $
+  plam $ \info out -> P.do
+    datumHash' <- pmatch $ pfromData $ pfield @"datumHash" # out
+    case datumHash' of
+      PDJust ((pfield @"_0" #) -> datumHash) -> pfindDatum # datumHash # info
+      _ -> pcon PNothing
