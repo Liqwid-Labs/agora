@@ -35,6 +35,7 @@ import Agora.Proposal (
   PProposalThresholds,
   ProposalId,
   ProposalThresholds,
+  pnextProposalId 
  )
 import Agora.Utils (
   allInputs,
@@ -208,12 +209,9 @@ governorValidator params =
         -- check that nothing is minted
         passert "Nothing should be minted" $ plength # mint' #== 0
 
-        -- check proposal id +1
-        -- TODO: deriving a PNum instance for PProposalId
-        let oldPid = pto $ pfromData $ oldParams.nextProposalId
-            newPid = pto $ pfromData $ newParams.nextProposalId
+        -- check that proposal is advanced
         passert "Proposal id should be advanced by 1" $
-          oldPid + 1 #== newPid
+          pnextProposalId # oldParams.nextProposalId #== newParams.nextProposalId
 
         -- TODO: waiting for impl of proposal
         ptraceError "Not implemented yet"

@@ -30,6 +30,9 @@ module Agora.Proposal (
 
   -- * Plutarch helpers
   proposalDatumValid,
+
+  -- * Utils
+  pnextProposalId
 ) where
 
 import GHC.Generics qualified as GHC
@@ -434,3 +437,8 @@ proposalDatumValid proposal =
         , ptraceIfFalse "Proposal has fewer cosigners than the limit" $ plength # (pfromData datum.cosigners) #<= pconstant proposal.maximumCosigners
         , ptraceIfFalse "Proposal votes and effects are compatible with each other" $ pkeysEqual # datum.effects # pto (pfromData datum.votes)
         ]
+
+--------------------------------------------------------------------------------
+
+pnextProposalId :: Term s (PProposalId :--> PProposalId)
+pnextProposalId = phoistAcyclic $ plam $ \(pto -> id) -> pcon $ PProposalId $ id + 1
