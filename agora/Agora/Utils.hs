@@ -29,6 +29,7 @@ module Agora.Utils (
   pkeysEqual,
   pnub,
   pisUniq,
+  pisDJust,
 
   -- * Functions which should (probably) not be upstreamed
   anyOutput,
@@ -357,6 +358,17 @@ pisUniq =
             #&& (self # xs)
       )
       (const $ pcon PTrue)
+      
+-- | Yield True if a given PMaybeData is of form PDJust _.
+pisDJust :: Term s (PMaybeData a :--> PBool)
+pisDJust = phoistAcyclic $
+  plam $ \x ->
+    pmatch
+      x
+      ( \case
+          PDJust _ -> pconstant True
+          _ -> pconstant False
+      )
 
 --------------------------------------------------------------------------------
 {- Functions which should (probably) not be upstreamed
