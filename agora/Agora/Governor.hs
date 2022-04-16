@@ -68,6 +68,8 @@ PlutusTx.makeIsDataIndexed ''GovernorDatum [('GovernorDatum, 0)]
 
      1. The gating of Proposal creation.
      2. The gating of minting authority tokens.
+     
+     Parameters of the governor can also be mutated by an effect.
 -}
 data GovernorRedeemer
   = -- | Checks that a proposal was created lawfully, and allows it.
@@ -75,15 +77,15 @@ data GovernorRedeemer
   | -- | Checks that a SINGLE proposal finished correctly,
     --   and allows minting GATs for each effect script.
     MintGATs
-  | -- | Allows effects to mutate the datum.
-    MutateDatum
+  | -- | Allows effects to mutate the parameters.
+    MutateParams
   deriving stock (Show, GHC.Generic)
 
 PlutusTx.makeIsDataIndexed
   ''GovernorRedeemer
   [ ('CreateProposal, 0)
   , ('MintGATs, 1)
-  , ('MutateDatum, 2)
+  , ('MutateParams, 2)
   ]
 
 -- | Parameters for creating Governor scripts.
@@ -119,7 +121,7 @@ deriving via (DerivePConstantViaData GovernorDatum PGovernorDatum) instance (PCo
 data PGovernorRedeemer (s :: S)
   = PCreateProposal (Term s (PDataRecord '[]))
   | PMintGATs (Term s (PDataRecord '[]))
-  | PMutateDatum (Term s (PDataRecord '[]))
+  | PMutateParams (Term s (PDataRecord '[]))
   deriving stock (GHC.Generic)
   deriving anyclass (Generic)
   deriving anyclass (PIsDataRepr)
@@ -181,7 +183,7 @@ governorValidator params =
         
         ptraceError "not implemented yet"
       PMintGATs _ -> perror
-      PMutateDatum _ -> perror
+      PMutateParams _ -> perror
   where
     datumNFTValueOf :: Term s (PValue :--> PInteger)
     datumNFTValueOf = passetClassValueOf' params.datumNFT
