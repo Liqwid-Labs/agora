@@ -441,4 +441,4 @@ proposalDatumValid proposal =
 --------------------------------------------------------------------------------
 
 pnextProposalId :: Term s (PProposalId :--> PProposalId)
-pnextProposalId = phoistAcyclic $ plam $ \(pto -> id) -> pcon $ PProposalId $ id + 1
+pnextProposalId = phoistAcyclic $ plam $ \(pto -> pid) -> pcon $ PProposalId $ pid + 1

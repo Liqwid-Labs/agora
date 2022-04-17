@@ -100,14 +100,14 @@ data GovernorRedeemer
     --   and allows minting GATs for each effect script.
     MintGATs
   | -- | Allows effects to mutate the parameters.
-    MutateParams
+    MutateMutateGovernor
   deriving stock (Show, GHC.Generic)
 
 PlutusTx.makeIsDataIndexed
   ''GovernorRedeemer
   [ ('CreateProposal, 0)
   , ('MintGATs, 1)
-  , ('MutateParams, 2)
+  , ('MutateMutateGovernor, 2)
   ]
 
 -- | Parameters for creating Governor scripts.
@@ -145,7 +145,7 @@ deriving via (DerivePConstantViaData GovernorDatum PGovernorDatum) instance (PCo
 data PGovernorRedeemer (s :: S)
   = PCreateProposal (Term s (PDataRecord '[]))
   | PMintGATs (Term s (PDataRecord '[]))
-  | PMutateParams (Term s (PDataRecord '[]))
+  | PMutateGovernor (Term s (PDataRecord '[]))
   deriving stock (GHC.Generic)
   deriving anyclass (Generic)
   deriving anyclass (PIsDataRepr)
@@ -223,7 +223,7 @@ governorValidator params =
 
         -- TODO: waiting for impl of proposal
         ptraceError "Not implemented yet"
-      PMutateParams _ -> P.do
+      PMutateGovernor _ -> P.do
         -- check that input has exactly one GAT and will be burnt
         let gatAmount = psymbolValueOf # gatS # mint
         passert "One GAT should be burnt" $ gatAmount #== -1
