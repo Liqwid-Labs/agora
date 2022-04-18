@@ -22,6 +22,8 @@ module Agora.Utils (
   pgeqByClass,
   pgeqBySymbol,
   pgeqByClass',
+  pmapUnionWith,
+  pmapAll,
   pfindTxInByTxOutRef,
   psingletonValue,
   pfindMap,
@@ -251,6 +253,12 @@ pmapUnionWith = phoistAcyclic $
             # ys
     pcon (PMap $ pconcat # ls # rs)
 
+-- | Determines if a condition is true for all values in a map.
+pmapAll :: forall k v s. PIsData v => Term s ((v :--> PBool) :--> PMap k v :--> PBool)
+pmapAll = plam $ \f m' -> P.do
+  PMap m <- pmatch m'
+  pall # plam (\x -> f # pfromData (psndBuiltin # x)) # m
+  
 -- | Add two 'PValue's together.
 paddValue :: forall s. Term s (PValue :--> PValue :--> PValue)
 paddValue = phoistAcyclic $

@@ -6,10 +6,15 @@ module Agora.Utils.Value (pgeq, pleq, pgt, plt) where
 import Plutarch.Api.V1.AssocMap (PMap (PMap))
 import Plutarch.Api.V1.These (PTheseData (..))
 import Plutarch.Api.V1.Tuple (ptupleFromBuiltin)
-import Plutarch.Api.V1.Value (PCurrencySymbol, PTokenName, PValue)
+import Plutarch.Api.V1.Value
 import Plutarch.Lift (PUnsafeLiftDecl)
 import Plutarch.List (pconvertLists)
 import Plutarch.Monadic qualified as P
+
+import Agora.Utils
+
+passocMapUnion :: forall k v r s. PIsData v => Term s (PMap k v :--> PMap k r :--> PMap k (PTheseData v r))
+passocMapUnion = undefined
 
 punionVal ::
   Term
@@ -20,21 +25,20 @@ punionVal ::
               PCurrencySymbol
               (PMap PTokenName (PTheseData PInteger PInteger))
     )
-punionVal = undefined
-
--- | Determines if a condition is true for all values in a map.
-pmapAll ::
-  (PUnsafeLiftDecl v, PIsData v) =>
-  Term s ((v :--> PBool) :--> PMap k v :--> PBool)
-pmapAll = plam $ \f m -> P.do
-  PMap builtinMap <- pmatch m
-
-  let getV = plam $ \bip -> P.do
-        let tuple = pfromData $ ptupleFromBuiltin (pdata bip)
-        pfromData $ pfield @"_1" # tuple
-
-  let vs = pmap # getV # builtinMap
-  pall # f # vs
+punionVal = plam $ \x' y' -> P.do
+  PValue x <- pmatch x'
+  PValue y <- pmatch y'
+  let combined = passocMapUnion # x # y
+      unThese :: Term s ((PTheseData (PMap PTokenName PInteger) (PMap PTokenName PInteger))
+                         :--> PMap PTokenName (PTheseData PInteger PInteger))
+      unThese = plam $ \k' ->
+        pmatch k' $ \case
+          PDThis (pfromData . (pfield @"_0" #) -> a') -> P.do
+            PMap a <- pmatch a'
+            pcon $ PMap $ pmap # plam (\v -> PBuiltinPair (pfstBuiltin # v) (psndBuiltin # v)) # a
+          PDThat (pfromData . (pfield @"_0" #) -> b) -> undefined
+          PDThese (pletFields @'["_0", "_1"] -> d) -> passocMapUnion # d._0 # d._1
+  combined
 
 pcheckPred ::
   forall {s :: S}.
@@ -45,12 +49,10 @@ pcheckPred ::
         :--> PValue
         :--> PBool
     )
-pcheckPred = plam $ \_f _l _r -> P.do
-  undefined
-
---  let inner :: Term s (PMap PTokenName (PTheseData PInteger PInteger) :--> PBool)
---      inner = pmapAll # f
---  pmapAll # inner # (punionVal # l # r)
+pcheckPred = plam $ \f l r -> P.do
+ let inner :: Term s (PMap PTokenName (PTheseData PInteger PInteger) :--> PBool)
+     inner = pmapAll # f
+ pmapAll # inner # (punionVal # l # r)
 
 pcheckBinRel ::
   forall {s :: S}.
