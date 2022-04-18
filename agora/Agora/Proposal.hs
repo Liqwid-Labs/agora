@@ -11,6 +11,7 @@ module Agora.Proposal (
   -- * Haskell-land
   Proposal (..),
   ProposalDatum (..),
+  ProposalRedeemer (..),
   ProposalStatus (..),
   ProposalThresholds (..),
   ProposalVotes (..),
@@ -19,6 +20,7 @@ module Agora.Proposal (
 
   -- * Plutarch-land
   PProposalDatum (..),
+  PProposalRedeemer (..),
   PProposalStatus (..),
   PProposalThresholds (..),
   PProposalVotes (..),
@@ -182,12 +184,12 @@ PlutusTx.makeIsDataIndexed ''ProposalDatum [('ProposalDatum, 0)]
 data ProposalRedeemer
   = -- | Cast one or more votes towards a particular 'ResultTag'.
     Vote ResultTag
-  | -- | Add one or more public keys to the cosignature list. Must be signed by
-    --   those cosigning.
+  | -- | Add one or more public keys to the cosignature list.
+    --   Must be signed by those cosigning.
     --
-    --   This is particularly used in the 'Draft' 'ProposalStatus'. Where matching
-    --   'Stake's can be called to advance the proposal, provided enough GT is shared
-    --   among them.
+    --   This is particularly used in the 'Draft' 'ProposalStatus',
+    --   where matching 'Stake's can be called to advance the proposal,
+    --   provided enough GT is shared  among them.
     Cosign [PubKeyHash]
   | -- | Allow unlocking one or more stakes with votes towards particular 'ResultTag'.
     Unlock ResultTag
@@ -195,19 +197,23 @@ data ProposalRedeemer
     --
     --   These are roughly the checks for each possible transition:
     --
-    --   @'Draft' -> 'VotingReady'@:
+    --   === @'Draft' -> 'VotingReady'@:
+    --
     --     1. The sum of all of the cosigner's GT is larger than the 'vote' field of 'ProposalThresholds'.
     --     2. The proposal hasn't been alive for longer than the review time.
     --
-    --   @'VotingReady' -> 'Locked'@:
+    --   === @'VotingReady' -> 'Locked'@:
+    --
     --     1. The sum of all votes is larger than 'countVoting'.
     --     2. The winning 'ResultTag' has more votes than all other 'ResultTag's.
     --     3. The proposal hasn't been alive for longer than the voting time.
     --
-    --   @'Locked' -> 'Finished'@:
+    --   === @'Locked' -> 'Finished'@:
+    --
     --     Always valid provided the conditions for the transition are met.
     --
-    --   @* -> 'Finished'@:
+    --   === @* -> 'Finished'@:
+    --
     --     If the proposal has run out of time for the current 'ProposalStatus', it will always be possible
     --     to transition into 'Finished' state, because it has expired (and failed).
     AdvanceProposal
@@ -221,10 +227,10 @@ PlutusTx.makeIsDataIndexed
   , ('AdvanceProposal, 3)
   ]
 
-{- | Identifies a Proposal, issued upon creation of a proposal.
-     In practice, this number starts at zero, and increments by one
-     for each proposal. The 100th proposal will be @'ProposalId' 99@.
-     This counter lives in the 'Governor', see 'nextProposalId'.
+{- | Identifies a Proposal, issued upon creation of a proposal. In practice,
+     this number starts at zero, and increments by one for each proposal.
+     The 100th proposal will be @'ProposalId' 99@. This counter lives
+     in the 'Agora.Governor.Governor', see 'Agora.Governor.nextProposalId'.
 -}
 newtype ProposalId = ProposalId {proposalTag :: Integer}
   deriving newtype (PlutusTx.ToData, PlutusTx.FromData, PlutusTx.UnsafeFromData)
