@@ -49,7 +49,10 @@ tests =
           (stakePolicy Stake.stake)
           ()
           Stake.stakeCreationUnsigned
-      , validatorSucceedsWith
+      ]
+  , testGroup
+      "validator"
+      [ validatorSucceedsWith
           "stakeDepositWithdraw deposit"
           (stakeValidator Stake.stake)
           (toDatum $ StakeDatum 100_000 signer [])

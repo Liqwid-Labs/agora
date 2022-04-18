@@ -73,6 +73,15 @@ import Plutus.V1.Ledger.Value (AssetClass (AssetClass))
 --------------------------------------------------------------------------------
 -- Haskell-land
 
+{- | Identifies a Proposal, issued upon creation of a proposal. In practice,
+     this number starts at zero, and increments by one for each proposal.
+     The 100th proposal will be @'ProposalId' 99@. This counter lives
+     in the 'Agora.Governor.Governor', see 'Agora.Governor.nextProposalId'.
+-}
+newtype ProposalId = ProposalId {proposalTag :: Integer}
+  deriving newtype (PlutusTx.ToData, PlutusTx.FromData, PlutusTx.UnsafeFromData)
+  deriving stock (Eq, Show, GHC.Generic)
+
 {- | Encodes a result. Typically, for a Yes/No proposal, we encode it like this:
 
 @
@@ -162,7 +171,9 @@ newtype ProposalVotes = ProposalVotes
 
 -- | Haskell-level datum for Proposal scripts.
 data ProposalDatum = ProposalDatum
-  { -- TODO: could we encode this more efficiently?
+  { proposalId :: ProposalId
+  -- ^ Identification of the proposal.
+  , -- TODO: could we encode this more efficiently?
   -- This is shaped this way for future proofing.
   -- See https://github.com/Liqwid-Labs/agora/issues/39
   effects :: AssocMap.Map ResultTag [(ValidatorHash, DatumHash)]
@@ -226,15 +237,6 @@ PlutusTx.makeIsDataIndexed
   , ('Unlock, 2)
   , ('AdvanceProposal, 3)
   ]
-
-{- | Identifies a Proposal, issued upon creation of a proposal. In practice,
-     this number starts at zero, and increments by one for each proposal.
-     The 100th proposal will be @'ProposalId' 99@. This counter lives
-     in the 'Agora.Governor.Governor', see 'Agora.Governor.nextProposalId'.
--}
-newtype ProposalId = ProposalId {proposalTag :: Integer}
-  deriving newtype (PlutusTx.ToData, PlutusTx.FromData, PlutusTx.UnsafeFromData)
-  deriving stock (Eq, Show, GHC.Generic)
 
 -- | Parameters that identify the Proposal validator script.
 data Proposal = Proposal
@@ -341,7 +343,8 @@ newtype PProposalDatum (s :: S) = PProposalDatum
     Term
       s
       ( PDataRecord
-          '[ "effects" ':= PMap PResultTag (PMap PValidatorHash PDatumHash)
+          '[ "id" ':= PProposalId
+           , "effects" ':= PMap PResultTag (PMap PValidatorHash PDatumHash)
            , "status" ':= PProposalStatus
            , "cosigners" ':= PBuiltinList (PAsData PPubKeyHash)
            , "thresholds" ':= PProposalThresholds

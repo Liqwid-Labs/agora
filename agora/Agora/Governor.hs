@@ -1,3 +1,5 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 {- |
 Module     : Agora.Governor
 Maintainer : emi@haskell.fyi
@@ -21,6 +23,7 @@ module Agora.Governor (
 import Agora.Proposal (ProposalId, ProposalThresholds)
 import Plutarch (popaque)
 import Plutarch.Api.V1 (PMintingPolicy, PValidator)
+import PlutusTx qualified
 
 -- | Datum for the Governor script.
 data GovernorDatum = GovernorDatum
@@ -29,6 +32,8 @@ data GovernorDatum = GovernorDatum
   , nextProposalId :: ProposalId
   -- ^ What tag the next proposal will get upon creating.
   }
+
+PlutusTx.makeIsDataIndexed ''GovernorDatum [('GovernorDatum, 0)]
 
 {- | Redeemer for Governor script. The governor has two primary
      responsibilities:
@@ -42,6 +47,8 @@ data GovernorRedeemer
   | -- | Checks that a SINGLE proposal finished correctly,
     --   and allows minting GATs for each effect script.
     MintGATs
+
+PlutusTx.makeIsDataIndexed ''GovernorRedeemer [('CreateProposal, 0), ('MintGATs, 1)]
 
 -- | Parameters for creating Governor scripts.
 data Governor

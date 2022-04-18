@@ -162,6 +162,8 @@ test-suite agora-test
     Spec.Sample.Effect.TreasuryWithdrawal
     Spec.Sample.Stake
     Spec.Stake
+    Spec.Sample.Proposal
+    Spec.Proposal
     Spec.Util
 
   build-depends:  agora
