@@ -13,15 +13,16 @@ import GHC.Generics qualified as GHC
 import Generics.SOP (Generic, I (I))
 
 import Agora.Effect (makeEffect)
-import Agora.Utils (findTxOutByTxOutRef, passert)
+import Agora.Utils ( paddValue, passert ) 
 import Plutarch (popaque)
-import Plutarch.Api.V1 (
-  PCredential,
-  PTuple,
-  PValidator,
-  PValue,
-  ptuple,
- )
+import Plutarch.Api.V1
+    ( PCredential,
+      PValue,
+      PTxOut(PTxOut),
+      PTxInInfo(PTxInInfo),
+      PTuple,
+      ptuple,
+      PValidator )
 
 import Plutarch.DataRepr (
   DerivePConstantViaData (..),
@@ -78,9 +79,9 @@ It can be more flexiable over...
 -}
 treasuryWithdrawalValidator :: forall {s :: S}. CurrencySymbol -> Term s PValidator
 treasuryWithdrawalValidator currSymbol = makeEffect currSymbol $
-  \_cs (datum' :: Term _ PTreasuryWithdrawalDatum) txOutRef' txInfo' -> P.do
+  \_cs (datum' :: Term _ PTreasuryWithdrawalDatum) _txOutRef' txInfo' -> P.do
     receivers <- plet $ pfromData $ pfield @"receivers" # datum'
-    txInfo <- pletFields @'["outputs"] txInfo'
+    txInfo <- pletFields @'["outputs", "inputs"] txInfo'
     let outputValues =
           pmap
             # plam
@@ -89,25 +90,41 @@ treasuryWithdrawalValidator currSymbol = makeEffect currSymbol $
                   cred <- pletFields @'["credential"] $ pfromData out.address
                   pdata $ ptuple # cred.credential # out.value
               )
-            #$ txInfo.outputs
+            # txInfo.outputs
         outputContentMatchesRecivers =
           pall # plam (\out -> pelem # out # outputValues)
             #$ receivers
-        outputNumberMatchesReceivers = plength # receivers #== plength # (pfromData txInfo.outputs)
-        outputIsNotPayingToEffect = P.do
-          PJust txOut <- pmatch $ findTxOutByTxOutRef # txOutRef' # pfromData txInfo'
-          input <- pletFields @'["address", "value"] $ txOut
-          let notPayingToEffect =
-                pnot #$ pany
-                  # plam
-                    ( \x ->
-                        input.address #== pfield @"address" # pfromData x
-                    )
-                  # pfromData txInfo.outputs
-          notPayingToEffect
+        sumValues = 
+          pfoldr
+            # plam
+              ( \((pfield @"_1" #) . pfromData -> x) y -> P.do
+                  paddValue # (pfromData x) # y
+              )
+            # (pconstant (mempty :: Value))
+        inputCred =
+          pmap
+            # plam (\inInfo -> P.do
+                     PTxInInfo inInfo' <- pmatch $ pfromData inInfo
+                     PTxOut out <- pmatch $ pfromData $ pfield @"resolved" # inInfo'
+                     let addr = pfromData $ pfield @"address" # out
+                     pfield @"credential" # addr)
+            # pfromData txInfo.inputs
+        totalInput =
+          pfoldr
+            # plam (\x' y -> P.do
+                   PTxInInfo x <- pmatch $ pfromData x'
+                   PTxOut out <- pmatch $ pfromData $ pfield @"resolved" # x
+                   paddValue # (pfromData $ pfield @"value" # out) # y)
+            # (pconstant (mempty :: Value))
+            # pfromData txInfo.inputs
+        sumOutputsToInputAddr = sumValues #$
+          pfilter
+            # plam (\((pfield @"_0" #) . pfromData -> addr) -> pelem # (addr) # inputCred) # outputValues
+        sumReceivers = sumValues # receivers
+-- TODO: Probably need to check/exclude the effect input...
+        excessShouldBePaidToInputs = pdata (paddValue # sumReceivers # sumOutputsToInputAddr) #== pdata totalInput
 
     passert "Transaction output does not match receivers" outputContentMatchesRecivers
-    passert "" outputNumberMatchesReceivers
-    passert "" outputIsNotPayingToEffect
+    passert "Remainders should be returned to the treasury" excessShouldBePaidToInputs
 
     popaque $ pconstant ()
