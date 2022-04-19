@@ -62,10 +62,9 @@ import PlutusTx.AssocMap qualified as AssocMap
 import Agora.SafeMoney (GTTag)
 import Agora.Utils (passert, pnotNull, psymbolValueOf, ptokenSpent, pvalueSpent)
 import Control.Arrow (first)
-import Plutarch (popaque)
 import Plutarch.Api.V1.Extra (passetClass, passetClassValueOf)
 import Plutarch.Builtin (PBuiltinMap)
-import Plutarch.Lift (DerivePConstantViaNewtype (..), PUnsafeLiftDecl (..))
+import Plutarch.Lift (DerivePConstantViaNewtype (..), PConstantDecl, PUnsafeLiftDecl (..))
 import Plutarch.Monadic qualified as P
 import Plutarch.SafeMoney (PDiscrete, Tagged)
 import Plutarch.TryFrom (PTryFrom (PTryFromExcess, ptryFrom'))
@@ -257,7 +256,7 @@ instance PUnsafeLiftDecl PResultTag where type PLifted PResultTag = ResultTag
 deriving via
   (DerivePConstantViaNewtype ResultTag PResultTag PInteger)
   instance
-    (PConstant ResultTag)
+    (PConstantDecl ResultTag)
 
 -- FIXME: This instance and the one below, for 'PProposalId', should be derived.
 -- Soon this will be possible through 'DerivePNewtype'.
@@ -287,7 +286,7 @@ instance PUnsafeLiftDecl PProposalId where type PLifted PProposalId = ProposalId
 deriving via
   (DerivePConstantViaNewtype ProposalId PProposalId PInteger)
   instance
-    (PConstant ProposalId)
+    (PConstantDecl ProposalId)
 
 -- | Plutarch-level version of 'ProposalStatus'.
 data PProposalStatus (s :: S)
@@ -304,7 +303,7 @@ data PProposalStatus (s :: S)
     via PIsDataReprInstances PProposalStatus
 
 instance PUnsafeLiftDecl PProposalStatus where type PLifted PProposalStatus = ProposalStatus
-deriving via (DerivePConstantViaData ProposalStatus PProposalStatus) instance (PConstant ProposalStatus)
+deriving via (DerivePConstantViaData ProposalStatus PProposalStatus) instance (PConstantDecl ProposalStatus)
 
 -- | Plutarch-level version of 'ProposalThresholds'.
 newtype PProposalThresholds (s :: S) = PProposalThresholds
@@ -326,7 +325,7 @@ newtype PProposalThresholds (s :: S) = PProposalThresholds
     via (PIsDataReprInstances PProposalThresholds)
 
 instance PUnsafeLiftDecl PProposalThresholds where type PLifted PProposalThresholds = ProposalThresholds
-deriving via (DerivePConstantViaData ProposalThresholds PProposalThresholds) instance (PConstant ProposalThresholds)
+deriving via (DerivePConstantViaData ProposalThresholds PProposalThresholds) instance (PConstantDecl ProposalThresholds)
 
 -- | Plutarch-level version of 'ProposalVotes'.
 newtype PProposalVotes (s :: S)
@@ -337,7 +336,7 @@ instance PUnsafeLiftDecl PProposalVotes where type PLifted PProposalVotes = Prop
 deriving via
   (DerivePConstantViaNewtype ProposalVotes PProposalVotes (PMap PResultTag PInteger))
   instance
-    (PConstant ProposalVotes)
+    (PConstantDecl ProposalVotes)
 
 -- | Plutarch-level version of 'ProposalDatum'.
 newtype PProposalDatum (s :: S) = PProposalDatum
@@ -362,7 +361,7 @@ newtype PProposalDatum (s :: S) = PProposalDatum
     via (PIsDataReprInstances PProposalDatum)
 
 instance PUnsafeLiftDecl PProposalDatum where type PLifted PProposalDatum = ProposalDatum
-deriving via (DerivePConstantViaData ProposalDatum PProposalDatum) instance (PConstant ProposalDatum)
+deriving via (DerivePConstantViaData ProposalDatum PProposalDatum) instance (PConstantDecl ProposalDatum)
 
 -- | Haskell-level redeemer for Proposal scripts.
 data PProposalRedeemer (s :: S)
@@ -384,7 +383,7 @@ data PProposalRedeemer (s :: S)
 --     PTryFrom PData (PAsData PProposalRedeemer)
 
 instance PUnsafeLiftDecl PProposalRedeemer where type PLifted PProposalRedeemer = ProposalRedeemer
-deriving via (DerivePConstantViaData ProposalRedeemer PProposalRedeemer) instance (PConstant ProposalRedeemer)
+deriving via (DerivePConstantViaData ProposalRedeemer PProposalRedeemer) instance (PConstantDecl ProposalRedeemer)
 
 --------------------------------------------------------------------------------
 

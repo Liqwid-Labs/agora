@@ -33,7 +33,6 @@ import PlutusTx qualified
 
 --------------------------------------------------------------------------------
 
-import Plutarch (popaque)
 import Plutarch.Api.V1 (
   PCredential (PPubKeyCredential, PScriptCredential),
   PMintingPolicy,
@@ -50,7 +49,7 @@ import Plutarch.DataRepr (
   PIsDataReprInstances (PIsDataReprInstances),
  )
 import Plutarch.Internal (punsafeCoerce)
-import Plutarch.Lift (PUnsafeLiftDecl (..))
+import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (..))
 import Plutarch.Monadic qualified as P
 import Plutus.V1.Ledger.Value (AssetClass (AssetClass))
 
@@ -197,7 +196,7 @@ newtype PStakeDatum (s :: S) = PStakeDatum
     via (PIsDataReprInstances PStakeDatum)
 
 instance PUnsafeLiftDecl PStakeDatum where type PLifted PStakeDatum = StakeDatum
-deriving via (DerivePConstantViaData StakeDatum PStakeDatum) instance (PConstant StakeDatum)
+deriving via (DerivePConstantViaData StakeDatum PStakeDatum) instance (PConstantDecl StakeDatum)
 
 -- | Plutarch-level redeemer for Stake scripts.
 data PStakeRedeemer (s :: S)
@@ -220,7 +219,7 @@ deriving via
     PTryFrom PData (PAsData PStakeRedeemer)
 
 instance PUnsafeLiftDecl PStakeRedeemer where type PLifted PStakeRedeemer = StakeRedeemer
-deriving via (DerivePConstantViaData StakeRedeemer PStakeRedeemer) instance (PConstant StakeRedeemer)
+deriving via (DerivePConstantViaData StakeRedeemer PStakeRedeemer) instance (PConstantDecl StakeRedeemer)
 
 newtype PProposalLock (s :: S) = PProposalLock
   { getProposalLock ::
@@ -245,7 +244,7 @@ deriving via
     PTryFrom PData (PAsData PProposalLock)
 
 instance PUnsafeLiftDecl PProposalLock where type PLifted PProposalLock = ProposalLock
-deriving via (DerivePConstantViaData ProposalLock PProposalLock) instance (PConstant ProposalLock)
+deriving via (DerivePConstantViaData ProposalLock PProposalLock) instance (PConstantDecl ProposalLock)
 
 --------------------------------------------------------------------------------
 {- What this Policy does

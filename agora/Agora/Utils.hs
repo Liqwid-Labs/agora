@@ -80,7 +80,7 @@ pfindDatum :: Term s (PDatumHash :--> PTxInfo :--> PMaybe PDatum)
 pfindDatum = phoistAcyclic $
   plam $ \datumHash txInfo'' -> P.do
     PTxInfo txInfo' <- pmatch txInfo''
-    plookupTuple # datumHash #$ pfield @"data" # txInfo'
+    plookupTuple # datumHash #$ pfield @"datums" # txInfo'
 
 {- | Find a datum with the given hash.
 NOTE: this is unsafe in the sense that, if the data layout is wrong, this is UB.

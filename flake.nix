@@ -7,9 +7,10 @@
   # see https://github.com/NixOS/nix/issues/6013
   inputs.nixpkgs-2111 = { url = "github:NixOS/nixpkgs/nixpkgs-21.11-darwin"; };
 
-  # Rev is this PR https://github.com/peter-mlabs/plutarch/pull/5.
   inputs.plutarch.url =
-    "github:peter-mlabs/plutarch?rev=18e787d420912ed765fc5653c3558f20ab5e638a";
+    "github:peter-mlabs/plutarch?rev=6ef18aacd02050fc07398e399cff5e8734c1045e";
+  inputs.plutarch.inputs.emanote.follows =
+    "plutarch/haskell-nix/nixpkgs-unstable";
   inputs.plutarch.inputs.nixpkgs.follows =
     "plutarch/haskell-nix/nixpkgs-unstable";
 

@@ -23,7 +23,6 @@ import Plutus.V1.Ledger.Value (CurrencySymbol)
 
 import Agora.AuthorityToken (singleAuthorityTokenBurned)
 import Agora.Utils (passert)
-import Plutarch (popaque)
 import Plutarch.Api.V1 (PValidator)
 import Plutarch.Unsafe (punsafeCoerce)
 

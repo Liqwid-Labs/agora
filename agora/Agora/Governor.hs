@@ -21,7 +21,6 @@ module Agora.Governor (
 ) where
 
 import Agora.Proposal (ProposalId, ProposalThresholds)
-import Plutarch (popaque)
 import Plutarch.Api.V1 (PMintingPolicy, PValidator)
 import PlutusTx qualified
 
