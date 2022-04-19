@@ -45,6 +45,8 @@ import Plutarch.Api.V1 (
   PTxInfo (PTxInfo),
   PValidator,
   PValidatorHash,
+  mintingPolicySymbol,
+  mkMintingPolicy,
  )
 import Plutarch.DataRepr (
   DerivePConstantViaData (..),
@@ -58,7 +60,7 @@ import PlutusTx.AssocMap qualified as AssocMap
 --------------------------------------------------------------------------------
 
 import Agora.SafeMoney (GTTag)
-import Agora.Utils (passert, pnotNull, ptokenSpent)
+import Agora.Utils (passert, pnotNull, psymbolValueOf, ptokenSpent, pvalueSpent)
 import Control.Arrow (first)
 import Plutarch (popaque)
 import Plutarch.Api.V1.Extra (passetClass, passetClassValueOf)
@@ -422,14 +424,46 @@ proposalPolicy proposal =
 
 -- | Validator for Proposals.
 proposalValidator :: Proposal -> ClosedTerm PValidator
-proposalValidator _ =
-  plam $ \_datum _redeemer ctx' -> P.do
+proposalValidator proposal =
+  plam $ \datum redeemer ctx' -> P.do
     PScriptContext ctx' <- pmatch ctx'
     ctx <- pletFields @'["txInfo", "purpose"] ctx'
     PTxInfo txInfo' <- pmatch $ pfromData ctx.txInfo
     _txInfo <- pletFields @'["inputs", "mint"] txInfo'
     PSpending _txOutRef <- pmatch $ pfromData ctx.purpose
-    popaque (pconstant ())
+
+    let _proposalDatum' :: Term _ PProposalDatum
+        _proposalDatum' = pfromData $ punsafeCoerce datum
+        proposalRedeemer :: Term _ PProposalRedeemer
+        proposalRedeemer = pfromData $ punsafeCoerce redeemer
+
+    stCurrencySymbol <- plet $ pconstant $ mintingPolicySymbol $ mkMintingPolicy (proposalPolicy proposal)
+    spentST <- plet $ psymbolValueOf # stCurrencySymbol #$ pvalueSpent # ctx.txInfo
+
+    pmatch proposalRedeemer $ \case
+      PVote _r -> P.do
+        passert "ST at inputs must be 1" $
+          spentST #== 1
+
+        popaque (pconstant ())
+      --------------------------------------------------------------------------
+      PCosign _r -> P.do
+        passert "ST at inputs must be 1" $
+          spentST #== 1
+
+        popaque (pconstant ())
+      --------------------------------------------------------------------------
+      PUnlock _r -> P.do
+        passert "ST at inputs must be 1" $
+          spentST #== 1
+
+        popaque (pconstant ())
+      --------------------------------------------------------------------------
+      PAdvanceProposal _r -> P.do
+        passert "ST at inputs must be 1" $
+          spentST #== 1
+
+        popaque (pconstant ())
 
 {- | Check for various invariants a proposal must uphold.
      This can be used to check both upopn creation and
