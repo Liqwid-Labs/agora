@@ -39,6 +39,7 @@ import Plutarch.Api.V1 (
   PPubKeyHash,
   PScriptPurpose (PMinting, PSpending),
   PTokenName,
+  PTxInfo,
   PValidator,
   mintingPolicySymbol,
   mkMintingPolicy,
@@ -266,13 +267,15 @@ stakePolicy :: Stake -> ClosedTerm PMintingPolicy
 stakePolicy stake =
   plam $ \_redeemer ctx' -> P.do
     ctx <- pletFields @'["txInfo", "purpose"] ctx'
-    txInfo' <- plet ctx.txInfo
-    txInfo <- pletFields @'["mint", "inputs", "outputs"] txInfo'
+    txInfo <- plet $ ctx.txInfo
+    let _a :: Term _ PTxInfo
+        _a = txInfo
+    txInfoF <- pletFields @'["mint", "inputs", "outputs"] txInfo
 
     PMinting ownSymbol' <- pmatch $ pfromData ctx.purpose
     ownSymbol <- plet $ pfield @"_0" # ownSymbol'
-    spentST <- plet $ psymbolValueOf # ownSymbol #$ pvalueSpent # pfromData txInfo'
-    mintedST <- plet $ psymbolValueOf # ownSymbol # txInfo.mint
+    spentST <- plet $ psymbolValueOf # ownSymbol #$ pvalueSpent # txInfoF.inputs
+    mintedST <- plet $ psymbolValueOf # ownSymbol # txInfoF.mint
 
     let burning = P.do
           passert "ST at inputs must be 1" $
@@ -282,7 +285,7 @@ stakePolicy stake =
             mintedST #== -1
 
           passert "An unlocked input existed containing an ST" $
-            anyInput @PStakeDatum # pfromData txInfo'
+            anyInput @PStakeDatum # txInfo
               #$ plam
               $ \value _ stakeDatum' -> P.do
                 let hasST = psymbolValueOf # ownSymbol # value #== 1
@@ -299,7 +302,7 @@ stakePolicy stake =
             mintedST #== 1
 
           passert "A UTXO must exist with the correct output" $
-            anyOutput @PStakeDatum # pfromData txInfo'
+            anyOutput @PStakeDatum # txInfo
               #$ plam
               $ \value address stakeDatum' -> P.do
                 let cred = pfield @"credential" # address
@@ -359,8 +362,8 @@ stakeValidator :: Stake -> ClosedTerm PValidator
 stakeValidator stake =
   plam $ \datum redeemer ctx' -> P.do
     ctx <- pletFields @'["txInfo", "purpose"] ctx'
-    txInfo' <- plet ctx.txInfo
-    txInfo <- pletFields @'["mint", "inputs", "outputs"] txInfo'
+    txInfo <- plet $ pfromData ctx.txInfo
+    txInfoF <- pletFields @'["mint", "inputs", "outputs"] txInfo
 
     (pfromData -> stakeRedeemer, _) <- ptryFrom redeemer
 
@@ -371,7 +374,7 @@ stakeValidator stake =
 
     PSpending txOutRef <- pmatch $ pfromData ctx.purpose
 
-    PJust txInInfo <- pmatch $ pfindTxInByTxOutRef # (pfield @"_0" # txOutRef) # txInfo'
+    PJust txInInfo <- pmatch $ pfindTxInByTxOutRef # (pfield @"_0" # txOutRef) # txInfoF.inputs
     ownAddress <- plet $ pfield @"address" #$ pfield @"resolved" # txInInfo
     let continuingValue = pfield @"value" #$ pfield @"resolved" # txInInfo
 
@@ -379,8 +382,8 @@ stakeValidator stake =
     ownerSignsTransaction <- plet $ ptxSignedBy # ctx.txInfo # stakeDatum.owner
 
     stCurrencySymbol <- plet $ pconstant $ mintingPolicySymbol $ mkMintingPolicy (stakePolicy stake)
-    mintedST <- plet $ psymbolValueOf # stCurrencySymbol # txInfo.mint
-    spentST <- plet $ psymbolValueOf # stCurrencySymbol #$ pvalueSpent # txInfo'
+    mintedST <- plet $ psymbolValueOf # stCurrencySymbol # txInfoF.mint
+    spentST <- plet $ psymbolValueOf # stCurrencySymbol #$ pvalueSpent # txInfoF.inputs
 
     -- Is the stake currently locked?
     stakeIsLocked <- plet $ stakeLocked # stakeDatum'
@@ -420,7 +423,7 @@ stakeValidator stake =
           "Owner signs this transaction"
           ownerSignsTransaction
         passert "A UTXO must exist with the correct output" $
-          anyOutput @PStakeDatum # txInfo'
+          anyOutput @PStakeDatum # txInfo
             #$ plam
             $ \value address newStakeDatum' -> P.do
               newStakeDatum <- pletFields @'["owner", "stakedAmount"] newStakeDatum'

@@ -60,7 +60,16 @@ import PlutusTx.AssocMap qualified as AssocMap
 --------------------------------------------------------------------------------
 
 import Agora.SafeMoney (GTTag)
-import Agora.Utils (passert, pnotNull, psymbolValueOf, ptokenSpent, pvalueSpent)
+import Agora.Utils (
+  anyOutput,
+  findTxOutByTxOutRef,
+  passert,
+  pnotNull,
+  psymbolValueOf,
+  ptokenSpent,
+  ptxSignedBy,
+  pvalueSpent,
+ )
 import Control.Arrow (first)
 import Plutarch.Api.V1.Extra (passetClass, passetClassValueOf)
 import Plutarch.Builtin (PBuiltinMap)
@@ -427,17 +436,25 @@ proposalValidator proposal =
   plam $ \datum redeemer ctx' -> P.do
     PScriptContext ctx' <- pmatch ctx'
     ctx <- pletFields @'["txInfo", "purpose"] ctx'
-    PTxInfo txInfo' <- pmatch $ pfromData ctx.txInfo
-    _txInfo <- pletFields @'["inputs", "mint"] txInfo'
-    PSpending _txOutRef <- pmatch $ pfromData ctx.purpose
+    txInfo <- plet $ pfromData ctx.txInfo
+    PTxInfo txInfo' <- pmatch $ txInfo
+    txInfoF <- pletFields @'["inputs", "mint"] txInfo'
+    PSpending ((pfield @"_0" #) -> txOutRef) <- pmatch $ pfromData ctx.purpose
 
-    let _proposalDatum' :: Term _ PProposalDatum
-        _proposalDatum' = pfromData $ punsafeCoerce datum
+    PJust txOut <- pmatch $ findTxOutByTxOutRef # txOutRef # txInfoF.inputs
+    txOutF <- pletFields @'["address"] $ txOut
+
+    let proposalDatum :: Term _ PProposalDatum
+        proposalDatum = pfromData $ punsafeCoerce datum
         proposalRedeemer :: Term _ PProposalRedeemer
         proposalRedeemer = pfromData $ punsafeCoerce redeemer
 
+    proposalF <- pletFields @'["cosigners"] proposalDatum
+
+    ownAddress <- plet $ txOutF.address
+
     stCurrencySymbol <- plet $ pconstant $ mintingPolicySymbol $ mkMintingPolicy (proposalPolicy proposal)
-    spentST <- plet $ psymbolValueOf # stCurrencySymbol #$ pvalueSpent # ctx.txInfo
+    spentST <- plet $ psymbolValueOf # stCurrencySymbol #$ pvalueSpent # txInfoF.inputs
 
     pmatch proposalRedeemer $ \case
       PVote _r -> P.do
@@ -446,9 +463,32 @@ proposalValidator proposal =
 
         popaque (pconstant ())
       --------------------------------------------------------------------------
-      PCosign _r -> P.do
+      PCosign r -> P.do
+        newSigs <- plet $ pfield @"newCosigners" # r
+
         passert "ST at inputs must be 1" $
           spentST #== 1
+
+        passert "Signed by all new cosigners" $
+          pall # plam (\sig -> ptxSignedBy # ctx.txInfo # sig) # newSigs
+
+        passert "Signatures are correctly added to cosignature list" $
+          anyOutput @PProposalDatum # ctx.txInfo
+            #$ plam
+            $ \_value address newProposalDatum -> P.do
+              newProposalF <- pletFields @'["cosigners"] newProposalDatum
+
+              let correctDatum =
+                    foldr1
+                      (#&&)
+                      [ newProposalF.cosigners #== proposalF.cosigners
+                      ]
+
+              foldr1
+                (#&&)
+                [ ptraceIfFalse "Datum must be correct" $ correctDatum
+                , ptraceIfFalse "Must be sent to Proposal's address" $ ownAddress #== pdata address
+                ]
 
         popaque (pconstant ())
       --------------------------------------------------------------------------

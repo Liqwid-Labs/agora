@@ -48,8 +48,7 @@ infix 7 .=
   forall (sym :: Symbol) (a :: PType) (as :: [PLabeledType]) (s :: S).
   FieldName sym ->
   Term s (PAsData a) ->
-  ( RecordMorphism s as ((sym ':= a) ': as)
-  )
+  RecordMorphism s as ((sym ':= a) ': as)
 _ .= x = RecordMorphism $ pcon . PDCons x
 
 infixr 6 .&

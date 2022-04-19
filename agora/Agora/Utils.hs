@@ -249,45 +249,60 @@ paddValue = phoistAcyclic $
       )
 
 -- | Sum of all value at input.
-pvalueSpent :: Term s (PTxInfo :--> PValue)
+pvalueSpent :: Term s (PBuiltinList (PAsData PTxInInfo) :--> PValue)
 pvalueSpent = phoistAcyclic $
-  plam $ \txInfo' ->
-    pmatch txInfo' $ \(PTxInfo txInfo) ->
-      pfoldr
-        # plam
-          ( \txInInfo' v ->
-              pmatch
-                (pfromData txInInfo')
-                $ \(PTxInInfo txInInfo) ->
-                  paddValue
-                    # pmatch
-                      (pfield @"resolved" # txInInfo)
-                      (\(PTxOut o) -> pfromData $ pfield @"value" # o)
-                    # v
-          )
-        # pconstant mempty
-        # (pfield @"inputs" # txInfo)
+  plam $ \inputs ->
+    pfoldr
+      # plam
+        ( \txInInfo' v ->
+            pmatch
+              (pfromData txInInfo')
+              $ \(PTxInInfo txInInfo) ->
+                paddValue
+                  # pmatch
+                    (pfield @"resolved" # txInInfo)
+                    (\(PTxOut o) -> pfromData $ pfield @"value" # o)
+                  # v
+        )
+      # pconstant mempty
+      # inputs
 
 -- | Find the TxInInfo by a TxOutRef.
-pfindTxInByTxOutRef :: Term s (PTxOutRef :--> PTxInfo :--> PMaybe PTxInInfo)
+pfindTxInByTxOutRef :: Term s (PTxOutRef :--> PBuiltinList (PAsData PTxInInfo) :--> PMaybe PTxInInfo)
 pfindTxInByTxOutRef = phoistAcyclic $
-  plam $ \txOutRef txInfo' ->
-    pmatch txInfo' $ \(PTxInfo txInfo) ->
-      pfindMap
-        # plam
-          ( \txInInfo' ->
-              plet (pfromData txInInfo') $ \r ->
-                pmatch r $ \(PTxInInfo txInInfo) ->
-                  pif
-                    (pdata txOutRef #== pfield @"outRef" # txInInfo)
-                    (pcon (PJust r))
-                    (pcon PNothing)
-          )
-        #$ (pfield @"inputs" # txInfo)
+  plam $ \txOutRef inputs ->
+    pfindMap
+      # plam
+        ( \txInInfo' ->
+            plet (pfromData txInInfo') $ \r ->
+              pmatch r $ \(PTxInInfo txInInfo) ->
+                pif
+                  (pdata txOutRef #== pfield @"outRef" # txInInfo)
+                  (pcon (PJust r))
+                  (pcon PNothing)
+        )
+      #$ inputs
 
 -- | True if a list is not empty.
 pnotNull :: forall list a. PIsListLike list a => Term _ (list a :--> PBool)
 pnotNull = phoistAcyclic $ plam $ pelimList (\_ _ -> pcon PTrue) (pcon PFalse)
+
+-- | Check if a particular asset class has been spent in the input list.
+ptokenSpent :: forall {s :: S}. Term s (PAssetClass :--> PBuiltinList (PAsData PTxInInfo) :--> PBool)
+ptokenSpent =
+  plam $ \tokenClass inputs ->
+    0
+      #< pfoldr @PBuiltinList
+        # plam
+          ( \txInInfo' acc -> P.do
+              PTxInInfo txInInfo <- pmatch (pfromData txInInfo')
+              PTxOut txOut' <- pmatch $ pfromData $ pfield @"resolved" # txInInfo
+              txOut <- pletFields @'["value"] txOut'
+              let txOutValue = pfromData txOut.value
+              acc + passetClassValueOf # txOutValue # tokenClass
+          )
+        # 0
+        # inputs
 
 --------------------------------------------------------------------------------
 {- Functions which should (probably) not be upstreamed
@@ -372,10 +387,10 @@ psingletonValue = phoistAcyclic $
      in res
 
 -- | Finds the TxOut of an effect from TxInfo and TxOutRef
-findTxOutByTxOutRef :: Term s (PTxOutRef :--> PTxInfo :--> PMaybe PTxOut)
+findTxOutByTxOutRef :: Term s (PTxOutRef :--> PBuiltinList (PAsData PTxInInfo) :--> PMaybe PTxOut)
 findTxOutByTxOutRef = phoistAcyclic $
-  plam $ \txOutRef txInfo ->
-    pmatch (pfindTxInByTxOutRef # txOutRef # txInfo) $ \case
+  plam $ \txOutRef inputs ->
+    pmatch (pfindTxInByTxOutRef # txOutRef # inputs) $ \case
       PJust ((pfield @"resolved" #) -> txOut) -> pcon $ PJust txOut
       PNothing -> pcon PNothing
 
@@ -408,20 +423,3 @@ findTxOutDatum = phoistAcyclic $
     case datumHash' of
       PDJust ((pfield @"_0" #) -> datumHash) -> pfindDatum # datumHash # info
       _ -> pcon PNothing
-
--- | Check if a particular asset class has been spent in the input list.
-ptokenSpent :: forall {s :: S}. Term s (PAssetClass :--> PBuiltinList (PAsData PTxInInfo) :--> PBool)
-ptokenSpent =
-  plam $ \tokenClass inputs ->
-    0
-      #< pfoldr @PBuiltinList
-        # plam
-          ( \txInInfo' acc -> P.do
-              PTxInInfo txInInfo <- pmatch (pfromData txInInfo')
-              PTxOut txOut' <- pmatch $ pfromData $ pfield @"resolved" # txInInfo
-              txOut <- pletFields @'["value"] txOut'
-              let txOutValue = pfromData txOut.value
-              acc + passetClassValueOf # txOutValue # tokenClass
-          )
-        # 0
-        # inputs
