@@ -12,6 +12,7 @@ module Agora.Governor (
   GovernorDatum (..),
   GovernorRedeemer (..),
   Governor (..),
+  governorStateTokenName,
 
   -- * Plutarch-land
   PGovernorDatum (..),
@@ -20,6 +21,9 @@ module Agora.Governor (
   -- * Scripts
   governorPolicy,
   governorValidator,
+
+  -- * Utilities
+  governorStateTokenAssetClass,
 ) where
 
 --------------------------------------------------------------------------------
@@ -42,9 +46,12 @@ import Agora.Utils (
   findOutputsToAddress,
   findTxOutDatum,
   passert,
+  passetClassValueOf,
   passetClassValueOf',
   pfindTxInByTxOutRef,
   pisDJust,
+  pisUxtoSpent,
+  pownCurrencySymbol,
   psymbolValueOf,
  )
 
@@ -57,7 +64,10 @@ import Plutarch.Api.V1 (
   PScriptPurpose (PSpending),
   PValidator,
   PValue,
+  mintingPolicySymbol,
+  mkMintingPolicy,
  )
+import Plutarch.Api.V1.Extra (pownMintValue)
 import Plutarch.DataRepr (
   DerivePConstantViaData (..),
   PDataFields,
@@ -69,7 +79,8 @@ import Plutarch.Unsafe (punsafeCoerce)
 
 --------------------------------------------------------------------------------
 
-import Plutus.V1.Ledger.Value (AssetClass, CurrencySymbol)
+import Plutus.V1.Ledger.Api (MintingPolicy, TxOutRef)
+import Plutus.V1.Ledger.Value (AssetClass (..), CurrencySymbol, TokenName (..))
 import PlutusTx qualified
 
 --------------------------------------------------------------------------------
@@ -112,11 +123,14 @@ PlutusTx.makeIsDataIndexed
 
 -- | Parameters for creating Governor scripts.
 data Governor = Governor
-  { datumNFT :: AssetClass
-  -- ^ NFT that identifies the governor datum.
+  { stORef :: TxOutRef
+  -- ^ The state token that identifies the governor datum will be minted using this utxo.
   , gatSymbol :: CurrencySymbol
-  -- ^ The symbol of Governance Authority Token
+  -- ^ The symbol of the Governance Authority Token.
   }
+
+governorStateTokenName :: TokenName
+governorStateTokenName = TokenName ""
 
 --------------------------------------------------------------------------------
 
@@ -158,10 +172,32 @@ deriving via (DerivePConstantViaData GovernorRedeemer PGovernorRedeemer) instanc
 
 --------------------------------------------------------------------------------
 
--- | Policy for Governors.
+{- | Policy for Governors.
+   This policy mints a state token for the 'governorValidator'.
+   It will check:
+
+    - The utxo specified in the Governor parameter is spent.
+    - Only one token is minted.
+    - Ensure the token name is "".
+-}
 governorPolicy :: Governor -> ClosedTerm PMintingPolicy
-governorPolicy _ =
-  plam $ \_redeemer _ctx' -> P.do
+governorPolicy params =
+  plam $ \_ ctx' -> P.do
+    ctx <- pletFields @'["txInfo", "purpose"] ctx'
+    let oref = pconstant params.stORef
+        ownSymbol = pownCurrencySymbol # ctx'
+
+    mintValue <- plet $ pownMintValue # ctx'
+
+    passert "Referenced utxo should be spent" $ pisUxtoSpent # oref # ctx.txInfo
+
+    passert "Exactly one token should be minted" $
+      psymbolValueOf # ownSymbol # mintValue #== 1
+        #&& passetClassValueOf # ownSymbol # pconstant governorStateTokenName # mintValue #== 1
+
+    passert "Nothing is minted other than the state token" $
+      (plength #$ pto $ pto $ pto mintValue) #== 1
+
     popaque (pconstant ())
 
 -- | Validator for Governors.
@@ -239,7 +275,18 @@ governorValidator params =
         popaque $ pconstant ()
   where
     datumNFTValueOf :: Term s (PValue :--> PInteger)
-    datumNFTValueOf = passetClassValueOf' params.datumNFT
+    datumNFTValueOf = passetClassValueOf' $ governorStateTokenAssetClass params
 
     gatS :: Term s PCurrencySymbol
     gatS = pconstant params.gatSymbol
+
+--------------------------------------------------------------------------------
+
+governorStateTokenAssetClass :: Governor -> AssetClass
+governorStateTokenAssetClass gov = AssetClass (symbol, governorStateTokenName)
+  where
+    policy :: MintingPolicy
+    policy = mkMintingPolicy $ governorPolicy gov
+
+    symbol :: CurrencySymbol
+    symbol = mintingPolicySymbol policy

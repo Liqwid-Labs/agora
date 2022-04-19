@@ -30,6 +30,8 @@ module Agora.Utils (
   pnub,
   pisUniq,
   pisDJust,
+  pownCurrencySymbol,
+  pisUxtoSpent,
 
   -- * Functions which should (probably) not be upstreamed
   anyOutput,
@@ -66,6 +68,8 @@ import Plutarch.Api.V1 (
   PMintingPolicy,
   PPubKeyHash,
   PTokenName (PTokenName),
+  PScriptContext,
+  PScriptPurpose (PMinting),
   PTuple,
   PTxInInfo (PTxInInfo),
   PTxInfo,
@@ -369,6 +373,19 @@ pisDJust = phoistAcyclic $
           PDJust _ -> pconstant True
           _ -> pconstant False
       )
+
+-- | The 'CurrencySymbol' of the current minting policy.
+pownCurrencySymbol :: Term s (PScriptContext :--> PCurrencySymbol)
+pownCurrencySymbol = phoistAcyclic $
+  plam $ \ctx -> P.do
+    PMinting m <- pmatch $ pfield @"purpose" # ctx
+    pfield @"_0" # m
+
+-- | Determines if a given utxo is spent.
+pisUxtoSpent :: Term s (PTxOutRef :--> PTxInfo :--> PBool)
+pisUxtoSpent = phoistAcyclic $
+  plam $ \oref info -> P.do
+    pisJust #$ pfindTxInByTxOutRef # oref # info
 
 --------------------------------------------------------------------------------
 {- Functions which should (probably) not be upstreamed
