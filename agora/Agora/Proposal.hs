@@ -249,8 +249,9 @@ PlutusTx.makeIsDataIndexed
   ]
 
 -- | Parameters that identify the Proposal validator script.
-newtype Proposal = Proposal
+data Proposal = Proposal
   { governorSTAssetClass :: AssetClass
+  , stakeSTAssetClass :: AssetClass
   }
   deriving stock (Show, Eq)
 
@@ -442,14 +443,23 @@ proposalValidator proposal =
     PSpending ((pfield @"_0" #) -> txOutRef) <- pmatch $ pfromData ctx.purpose
 
     PJust txOut <- pmatch $ findTxOutByTxOutRef # txOutRef # txInfoF.inputs
-    txOutF <- pletFields @'["address"] $ txOut
+    txOutF <- pletFields @'["address", "value"] $ txOut
 
     let proposalDatum :: Term _ PProposalDatum
         proposalDatum = pfromData $ punsafeCoerce datum
         proposalRedeemer :: Term _ PProposalRedeemer
         proposalRedeemer = pfromData $ punsafeCoerce redeemer
 
-    proposalF <- pletFields @'["cosigners"] proposalDatum
+    proposalF <-
+      pletFields
+        @'[ "id"
+          , "effects"
+          , "status"
+          , "cosigners"
+          , "thresholds"
+          , "votes"
+          ]
+        proposalDatum
 
     ownAddress <- plet $ txOutF.address
 
@@ -475,18 +485,35 @@ proposalValidator proposal =
         passert "Signatures are correctly added to cosignature list" $
           anyOutput @PProposalDatum # ctx.txInfo
             #$ plam
-            $ \_value address newProposalDatum -> P.do
-              newProposalF <- pletFields @'["cosigners"] newProposalDatum
+            $ \newValue address newProposalDatum -> P.do
+              newProposalF <-
+                pletFields
+                  @'[ "id"
+                    , "effects"
+                    , "status"
+                    , "cosigners"
+                    , "thresholds"
+                    , "votes"
+                    ]
+                  newProposalDatum
 
+              -- This is a little sad. Can we do better by
+              -- building a new ProposalDatum and then comparing?
               let correctDatum =
                     foldr1
                       (#&&)
-                      [ newProposalF.cosigners #== proposalF.cosigners
+                      [ newProposalF.cosigners #== pconcat # newSigs # proposalF.cosigners
+                      , newProposalF.id #== proposalF.id
+                      , newProposalF.effects #== proposalF.effects
+                      , newProposalF.status #== proposalF.status
+                      , newProposalF.thresholds #== proposalF.thresholds
+                      , newProposalF.votes #== proposalF.votes
                       ]
 
               foldr1
                 (#&&)
                 [ ptraceIfFalse "Datum must be correct" $ correctDatum
+                , ptraceIfFalse "Value should be correct" $ pdata txOutF.value #== pdata newValue
                 , ptraceIfFalse "Must be sent to Proposal's address" $ ownAddress #== pdata address
                 ]
 

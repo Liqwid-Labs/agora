@@ -69,11 +69,12 @@ stake =
               , "LQ"
               )
           )
+    , proposalSTClass = AssetClass ("", "")
     }
 
 -- | 'Stake' policy instance.
 policy :: MintingPolicy
-policy = mkMintingPolicy (stakePolicy stake)
+policy = mkMintingPolicy (stakePolicy stake.gtClassRef)
 
 policySymbol :: CurrencySymbol
 policySymbol = mintingPolicySymbol policy

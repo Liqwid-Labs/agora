@@ -287,7 +287,11 @@ pfindTxInByTxOutRef = phoistAcyclic $
 pnotNull :: forall list a. PIsListLike list a => Term _ (list a :--> PBool)
 pnotNull = phoistAcyclic $ plam $ pelimList (\_ _ -> pcon PTrue) (pcon PFalse)
 
--- | Check if a particular asset class has been spent in the input list.
+{- | Check if a particular asset class has been spent in the input list.
+
+     When using this as an authority check, you __MUST__ ensure the authority
+     knows how to ensure its end of the contract.
+-}
 ptokenSpent :: forall {s :: S}. Term s (PAssetClass :--> PBuiltinList (PAsData PTxInInfo) :--> PBool)
 ptokenSpent =
   plam $ \tokenClass inputs ->

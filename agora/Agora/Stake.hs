@@ -70,9 +70,11 @@ import Agora.Utils (
   pnotNull,
   psingletonValue,
   psymbolValueOf,
+  ptokenSpent,
   ptxSignedBy,
   pvalueSpent,
  )
+import Plutarch.Api.V1.Extra (passetClass)
 import Plutarch.Numeric
 import Plutarch.SafeMoney (
   PDiscrete,
@@ -85,9 +87,10 @@ import Plutarch.TryFrom (PTryFrom, ptryFrom)
 --------------------------------------------------------------------------------
 
 -- | Parameters for creating Stake scripts.
-newtype Stake = Stake
+data Stake = Stake
   { gtClassRef :: Tagged GTTag AssetClass
   -- ^ Used when inlining the AssetClass of a 'PDiscrete' in the script code.
+  , proposalSTClass :: AssetClass
   }
 
 {- | A lock placed on a Stake datum in order to prevent
@@ -147,6 +150,9 @@ data StakeRedeemer
     --   always allowed to have votes retracted and won't affect the Proposal datum,
     --   allowing 'Stake's to be unlocked.
     RetractVotes [ProposalLock]
+  | -- | The owner can consume stake if nothing is changed about it.
+    --   If the proposal token moves, this is equivalent to the owner consuming it.
+    WitnessStake
   deriving stock (Show, GHC.Generic)
 
 PlutusTx.makeIsDataIndexed
@@ -155,6 +161,7 @@ PlutusTx.makeIsDataIndexed
   , ('Destroy, 1)
   , ('PermitVote, 2)
   , ('RetractVotes, 3)
+  , ('WitnessStake, 4)
   ]
 
 -- | Haskell-level datum for Stake scripts.
@@ -207,6 +214,7 @@ data PStakeRedeemer (s :: S)
     PDestroy (Term s (PDataRecord '[]))
   | PPermitVote (Term s (PDataRecord '["lock" ':= PProposalLock]))
   | PRetractVotes (Term s (PDataRecord '["locks" ':= PBuiltinList (PAsData PProposalLock)]))
+  | PWitnessStake (Term s (PDataRecord '[]))
   deriving stock (GHC.Generic)
   deriving anyclass (Generic)
   deriving anyclass (PIsDataRepr)
@@ -263,8 +271,8 @@ deriving via (DerivePConstantViaData ProposalLock PProposalLock) instance (PCons
 --------------------------------------------------------------------------------
 
 -- | Policy for Stake state threads.
-stakePolicy :: Stake -> ClosedTerm PMintingPolicy
-stakePolicy stake =
+stakePolicy :: Tagged GTTag AssetClass -> ClosedTerm PMintingPolicy
+stakePolicy gtClassRef =
   plam $ \_redeemer ctx' -> P.do
     ctx <- pletFields @'["txInfo", "purpose"] ctx'
     txInfo <- plet $ ctx.txInfo
@@ -325,7 +333,7 @@ stakePolicy stake =
                             # 1
                     let expectedValue =
                           paddValue
-                            # (pdiscreteValue' stake.gtClassRef # stakeDatum.stakedAmount)
+                            # (pdiscreteValue' gtClassRef # stakeDatum.stakedAmount)
                             # stValue
                     let ownerSignsTransaction =
                           ptxSignedBy
@@ -339,7 +347,7 @@ stakePolicy stake =
                           foldr1
                             (#&&)
                             [ pgeqByClass' (AssetClass ("", "")) # value # expectedValue
-                            , pgeqByClass' (untag stake.gtClassRef)
+                            , pgeqByClass' (untag gtClassRef)
                                 # value
                                 # expectedValue
                             , pgeqByClass
@@ -381,7 +389,7 @@ stakeValidator stake =
     -- Whether the owner signs this transaction or not.
     ownerSignsTransaction <- plet $ ptxSignedBy # ctx.txInfo # stakeDatum.owner
 
-    stCurrencySymbol <- plet $ pconstant $ mintingPolicySymbol $ mkMintingPolicy (stakePolicy stake)
+    stCurrencySymbol <- plet $ pconstant $ mintingPolicySymbol $ mkMintingPolicy (stakePolicy stake.gtClassRef)
     mintedST <- plet $ psymbolValueOf # stCurrencySymbol # txInfoF.mint
     spentST <- plet $ psymbolValueOf # stCurrencySymbol #$ pvalueSpent # txInfoF.inputs
 
@@ -414,6 +422,35 @@ stakeValidator stake =
         -- TODO: check proposal constraints
         popaque (pconstant ())
       --------------------------------------------------------------------------
+      PWitnessStake _ -> P.do
+        passert "ST at inputs must be 1" $
+          spentST #== 1
+
+        let AssetClass (propCs, propTn) = stake.proposalSTClass
+            propAssetClass = passetClass # pconstant propCs # pconstant propTn
+            proposalTokenMoved =
+              ptokenSpent
+                # propAssetClass
+                # txInfoF.inputs
+
+        passert
+          "Owner signs this transaction OR proposal token is spent"
+          (ownerSignsTransaction #|| proposalTokenMoved)
+
+        passert "A UTXO must exist with the correct output" $
+          anyOutput @PStakeDatum # txInfo
+            #$ plam
+            $ \value address newStakeDatum' -> P.do
+              let isScriptAddress = pdata address #== ownAddress
+              let correctOutputDatum = pdata newStakeDatum' #== pdata stakeDatum'
+              let valueCorrect = pdata continuingValue #== pdata value
+              foldr1
+                (#&&)
+                [ ptraceIfFalse "isScriptAddress" isScriptAddress
+                , ptraceIfFalse "correctOutputDatum" correctOutputDatum
+                , ptraceIfFalse "valueCorrect" valueCorrect
+                ]
+        popaque (pconstant ())
       PDepositWithdraw r -> P.do
         passert "ST at inputs must be 1" $
           spentST #== 1

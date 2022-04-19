@@ -19,7 +19,7 @@ import Test.Tasty (TestTree, testGroup)
 
 --------------------------------------------------------------------------------
 
-import Agora.Stake (StakeDatum (StakeDatum), StakeRedeemer (DepositWithdraw), stakePolicy, stakeValidator)
+import Agora.Stake (Stake (..), StakeDatum (StakeDatum), StakeRedeemer (DepositWithdraw), stakePolicy, stakeValidator)
 
 --------------------------------------------------------------------------------
 
@@ -36,17 +36,17 @@ tests =
       "policy"
       [ policySucceedsWith
           "stakeCreation"
-          (stakePolicy Stake.stake)
+          (stakePolicy Stake.stake.gtClassRef)
           ()
           Stake.stakeCreation
       , policyFailsWith
           "stakeCreationWrongDatum"
-          (stakePolicy Stake.stake)
+          (stakePolicy Stake.stake.gtClassRef)
           ()
           Stake.stakeCreationWrongDatum
       , policyFailsWith
           "stakeCreationUnsigned"
-          (stakePolicy Stake.stake)
+          (stakePolicy Stake.stake.gtClassRef)
           ()
           Stake.stakeCreationUnsigned
       ]
