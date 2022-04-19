@@ -222,15 +222,15 @@ governorValidator params =
     let oldParams' = pfromData @PGovernorDatum $ punsafeCoerce oldDatum'
     oldParams <- pletFields @'["proposalThresholds", "nextProposalId"] oldParams'
 
-    let ownInputDatumNFTAmount = datumNFTValueOf # ownInput.value
-    passert "Own input should have exactly one datum NFT" $ ownInputDatumNFTAmount #== 1
+    let ownInputDatumNFTAmount = stateTokenValueOf # ownInput.value
+    passert "Own input should have exactly one state token" $ ownInputDatumNFTAmount #== 1
 
     ownOutputs <- plet $ findOutputsToAddress # txInfo # selfAddress
     passert "Exactly one utxo should be sent to the governor" $ plength # ownOutputs #== 1
 
     ownOutput <- pletFields @'["value", "datumHash"] $ phead # ownOutputs
-    let ownOuputDatumNFTAmount = datumNFTValueOf # ownOutput.value
-    passert "Datum NFT should stay at governor's address" $ ownOuputDatumNFTAmount #== 1
+    let ownOuputDatumNFTAmount = stateTokenValueOf # ownOutput.value
+    passert "State token should stay at governor's address" $ ownOuputDatumNFTAmount #== 1
     passert "Output utxo to governor should have datum" $ pisDJust # ownOutput.datumHash
 
     -- TODO: use `PTryFrom` and reject bad datum
@@ -274,8 +274,11 @@ governorValidator params =
 
         popaque $ pconstant ()
   where
-    datumNFTValueOf :: Term s (PValue :--> PInteger)
-    datumNFTValueOf = passetClassValueOf' $ governorStateTokenAssetClass params
+    stateTokenAssetClass :: AssetClass
+    stateTokenAssetClass = governorStateTokenAssetClass params
+
+    stateTokenValueOf :: Term s (PValue :--> PInteger)
+    stateTokenValueOf = passetClassValueOf' stateTokenAssetClass
 
     gatS :: Term s PCurrencySymbol
     gatS = pconstant params.gatSymbol
