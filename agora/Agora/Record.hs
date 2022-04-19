@@ -61,7 +61,7 @@ infixr 6 .&
     (a :: [PLabeledType])
     (b :: [PLabeledType])
     (c :: [PLabeledType]).
-  (RecordMorphism s b c) ->
-  (RecordMorphism s a b) ->
-  (RecordMorphism s a c)
+  RecordMorphism s b c ->
+  RecordMorphism s a b ->
+  RecordMorphism s a c
 (.&) = (.)

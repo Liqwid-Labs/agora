@@ -127,7 +127,7 @@ proposalCreation =
                 , status = Draft
                 , cosigners = [signer]
                 , thresholds = propThresholds
-                , votes = ProposalVotes $ AssocMap.empty
+                , votes = ProposalVotes AssocMap.empty
                 }
           )
 
@@ -156,7 +156,7 @@ proposalCreation =
                   [ TxInInfo
                       (TxOutRef "0b2086cbf8b6900f8cb65e012de4516cb66b5cb08a9aaba12a8b88be" 1)
                       TxOut
-                        { txOutAddress = Address (ScriptCredential $ validatorHash validator) Nothing
+                        { txOutAddress = Address (ScriptCredential $ validatorHash govValidator) Nothing
                         , txOutValue = Value.assetClassValue proposal.governorSTAssetClass 1
                         , txOutDatumHash = Just (toDatumHash govBefore)
                         }

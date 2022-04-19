@@ -239,7 +239,7 @@ PlutusTx.makeIsDataIndexed
   ]
 
 -- | Parameters that identify the Proposal validator script.
-data Proposal = Proposal
+newtype Proposal = Proposal
   { governorSTAssetClass :: AssetClass
   }
   deriving stock (Show, Eq)

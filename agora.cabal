@@ -60,6 +60,7 @@ common lang
     NamedFieldPuns
     NamedWildCards
     NumericUnderscores
+    OverloadedLabels
     OverloadedStrings
     PartialTypeSignatures
     PatternGuards
@@ -78,7 +79,6 @@ common lang
     UndecidableInstances
     ViewPatterns
     OverloadedRecordDot
-    OverloadedLabels
     QualifiedDo
 
   default-language:   Haskell2010
@@ -130,10 +130,10 @@ library
     Agora.MultiSig
     Agora.Proposal
     Agora.Proposal.Time
+    Agora.Record
     Agora.SafeMoney
     Agora.Stake
     Agora.Treasury
-    Agora.Record
 
   other-modules:
     Agora.Utils
@@ -159,11 +159,11 @@ test-suite agora-test
     Spec.AuthorityToken
     Spec.Effect.TreasuryWithdrawal
     Spec.Model.MultiSig
+    Spec.Proposal
     Spec.Sample.Effect.TreasuryWithdrawal
+    Spec.Sample.Proposal
     Spec.Sample.Stake
     Spec.Stake
-    Spec.Sample.Proposal
-    Spec.Proposal
     Spec.Util
 
   build-depends:  agora
