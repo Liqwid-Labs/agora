@@ -124,7 +124,7 @@ PlutusTx.makeIsDataIndexed
 -- | Parameters for creating Governor scripts.
 data Governor = Governor
   { stORef :: TxOutRef
-  -- ^ The state token that identifies the governor datum will be minted using this utxo.
+  -- ^ An utxo, which will be spent to mint the state token for the governor validator.
   , gatSymbol :: CurrencySymbol
   -- ^ The symbol of the Governance Authority Token.
   }
@@ -200,7 +200,26 @@ governorPolicy params =
 
     popaque (pconstant ())
 
--- | Validator for Governors.
+{- Validator for Governors.
+
+   A state token, minted by 'governorPolicy' is used to identify the datum utxo.
+
+   No matter what redeemer it receives, it will always check:
+    - The utxo which has the state token must be spent.
+    - The state token always stays at the script address.
+    - The utxo which holds the state token, has a well well-formed 'GovernorDatum' datum.
+
+   For 'CreateProposal' redeemer, it will check:
+    - Exactly one proposal token is minted.
+    - The datum which is corresponding to the proposal token must be correct.
+    - Proposal id in the governor datum must be advanced.
+
+   TODO: PMintGATs
+
+   For 'PMutateGovernor', it will check:
+    - A GAT is burnt.
+    - Said GAT must be tagged by the effect that is spending it.
+-}
 governorValidator :: Governor -> ClosedTerm PValidator
 governorValidator params =
   plam $ \datum' redeemer' ctx' -> P.do
