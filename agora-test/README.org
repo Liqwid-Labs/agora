@@ -7,4 +7,4 @@ This folder is the test suite for Agora governance system.
 - =/Spec/Sample= contains primitive hand-made example values.
 - =Util.hs= contains helper functions
 
-Currently, planning migration to =plutarch-test= with golden test.
+Currently, planning to introduce =plutarch-test= and golden testings.
