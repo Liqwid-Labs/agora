@@ -1,0 +1,40 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-comment">{- |
+Module     : Agora.SafeMoney
+Maintainer : emi@haskell.fyi
+Description: Tags and bonuses for Plutarch.SafeMoney.
+
+Tags and extras for &quot;Plutarch.SafeMoney&quot;.
+-}</span><span>
+</span><span id="line-8"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Agora.SafeMoney</span><span> </span><span class="hs-special">(</span><span>
+</span><span id="line-9"></span><span>  </span><span class="annot"><a href="Agora.SafeMoney.html#ADATag"><span class="hs-identifier">ADATag</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-10"></span><span>  </span><span class="annot"><a href="Agora.SafeMoney.html#GTTag"><span class="hs-identifier">GTTag</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-11"></span><span>  </span><span class="annot"><a href="Agora.SafeMoney.html#adaRef"><span class="hs-identifier">adaRef</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-12"></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-13"></span><span>
+</span><span id="line-14"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-15"></span><span>
+</span><span id="line-16"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/56s38y8krq5sxnvf6xk7nj5vchvg5gay-plutus-ledger-api-lib-plutus-ledger-api-0.1.0.0-haddock-doc/share/doc/plutus-ledger-api/html/src"><span class="hs-identifier">Plutus.V1.Ledger.Value</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/56s38y8krq5sxnvf6xk7nj5vchvg5gay-plutus-ledger-api-lib-plutus-ledger-api-0.1.0.0-haddock-doc/share/doc/plutus-ledger-api/html/src"><span class="hs-identifier">AssetClass</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/56s38y8krq5sxnvf6xk7nj5vchvg5gay-plutus-ledger-api-lib-plutus-ledger-api-0.1.0.0-haddock-doc/share/doc/plutus-ledger-api/html/src"><span class="hs-identifier">AssetClass</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-17"></span><span>
+</span><span id="line-18"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/hdn2zzf6sqipbv8vkckda3xsrbmsp7nw-plutarch-safemoney-lib-plutarch-safemoney-0.3-haddock-doc/share/doc/plutarch-safemoney/html/src"><span class="hs-identifier">Plutarch.SafeMoney</span></a></span><span>
+</span><span id="line-19"></span><span>
+</span><span id="line-20"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-21"></span><span class="hs-comment">-- Example tags</span><span>
+</span><span id="line-22"></span><span>
+</span><span id="line-23"></span><span class="hs-comment">-- | Governance token.</span><span>
+</span><span id="line-24"></span><span class="hs-keyword">data</span><span> </span><span id="GTTag"><span class="annot"><a href="Agora.SafeMoney.html#GTTag"><span class="hs-identifier hs-var">GTTag</span></a></span></span><span>
+</span><span id="line-25"></span><span>
+</span><span id="line-26"></span><span class="hs-comment">-- | ADA.</span><span>
+</span><span id="line-27"></span><span class="hs-keyword">data</span><span> </span><span id="ADATag"><span class="annot"><a href="Agora.SafeMoney.html#ADATag"><span class="hs-identifier hs-var">ADATag</span></a></span></span><span>
+</span><span id="line-28"></span><span>
+</span><span id="line-29"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-30"></span><span>
+</span><span id="line-31"></span><span class="hs-comment">-- | Resolves ada tags.</span><span>
+</span><span id="line-32"></span><span class="annot"><a href="Agora.SafeMoney.html#adaRef"><span class="hs-identifier hs-type">adaRef</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/x2bbdjr3sdyryx5y551a92axfpvafpc6-tagged-lib-tagged-0.8.6.1-haddock-doc/share/doc/tagged/html/src"><span class="hs-identifier hs-type">Tagged</span></a></span><span> </span><span class="annot"><a href="Agora.SafeMoney.html#ADATag"><span class="hs-identifier hs-type">ADATag</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/56s38y8krq5sxnvf6xk7nj5vchvg5gay-plutus-ledger-api-lib-plutus-ledger-api-0.1.0.0-haddock-doc/share/doc/plutus-ledger-api/html/src"><span class="hs-identifier hs-type">AssetClass</span></a></span><span>
+</span><span id="line-33"></span><span id="adaRef"><span class="annot"><span class="annottext">adaRef :: Tagged @Type ADATag AssetClass
+</span><a href="Agora.SafeMoney.html#adaRef"><span class="hs-identifier hs-var hs-var">adaRef</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">AssetClass -&gt; Tagged @Type ADATag AssetClass
+forall {k} (s :: k) b. b -&gt; Tagged @k s b
+</span><a href="../file:///nix/store/x2bbdjr3sdyryx5y551a92axfpvafpc6-tagged-lib-tagged-0.8.6.1-haddock-doc/share/doc/tagged/html/src"><span class="hs-identifier hs-var">Tagged</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(CurrencySymbol, TokenName) -&gt; AssetClass
+</span><a href="../file:///nix/store/56s38y8krq5sxnvf6xk7nj5vchvg5gay-plutus-ledger-api-lib-plutus-ledger-api-0.1.0.0-haddock-doc/share/doc/plutus-ledger-api/html/src"><span class="hs-identifier hs-var">AssetClass</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">CurrencySymbol
+</span><span class="hs-string">&quot;&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">TokenName
+</span><span class="hs-string">&quot;&quot;</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-34"></span></pre></body></html>

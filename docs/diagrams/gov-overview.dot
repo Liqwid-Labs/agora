@@ -1,7 +1,0 @@
-digraph {
-  Stakes -> Proposals [label="vote on"]
-  Proposals -> Effects [label="have"]
-  Governor -> Effects [label="issues GATs to"]
-  Users -> Stakes [label="lock GT in"]
-  Effects -> Treasury [label="release GT from"]
-}
