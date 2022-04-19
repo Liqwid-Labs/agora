@@ -32,7 +32,7 @@ module Agora.Proposal (
   proposalDatumValid,
 
   -- * Utils
-  pnextProposalId
+  pnextProposalId,
 ) where
 
 import GHC.Generics qualified as GHC
