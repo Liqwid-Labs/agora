@@ -69,7 +69,7 @@ import Agora.Utils (
 
 import Plutarch (popaque)
 import Plutarch.Api.V1 (
-  PCurrencySymbol (PCurrencySymbol),
+  PCurrencySymbol,
   PMintingPolicy,
   PScriptPurpose (PSpending),
   PValidator,
