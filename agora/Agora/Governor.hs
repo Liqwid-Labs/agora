@@ -149,8 +149,6 @@ PlutusTx.makeIsDataIndexed
 data Governor = Governor
   { stORef :: TxOutRef
   -- ^ An utxo, which will be spent to mint the state token for the governor validator.
-  , gatSymbol :: CurrencySymbol
-  -- ^ The symbol of the Governance Authority Token.
   }
 
 governorStateTokenName :: TokenName
@@ -353,7 +351,7 @@ governorValidator params =
         passert "No token should be minted/burnt other than GAT" $
           containsSingleCurrencySymbol # mint
 
-        popaque $ singleAuthorityTokenBurned gatSym ctx.txInfo mint
+        popaque $ singleAuthorityTokenBurned (pconstant authorityTokenSymbol) ctx.txInfo mint
   where
     stateTokenAssetClass :: AssetClass
     stateTokenAssetClass = governorStateTokenAssetClass params
@@ -389,12 +387,10 @@ governorValidator params =
         }
 
     authorityTokenSymbol :: CurrencySymbol
-    authorityTokenSymbol = undefined
+    authorityTokenSymbol = mintingPolicySymbol policy
       where
-        policy = authorityTokenPolicy authorityTokenParams
-
-    gatSym :: Term s PCurrencySymbol
-    gatSym = pconstant params.gatSymbol
+        policy :: MintingPolicy
+        policy = mkMintingPolicy $ authorityTokenPolicy authorityTokenParams
 
 --------------------------------------------------------------------------------
 
