@@ -7,8 +7,7 @@ This module tests primarily the happy path for Stake creation
 -}
 module Spec.Sample.Stake (
   stake,
-  policy,
-  policySymbol,
+  stakeSymbol,
   validatorHashTN,
   signer,
 
@@ -22,19 +21,14 @@ module Spec.Sample.Stake (
 
 --------------------------------------------------------------------------------
 import Plutarch.Api.V1 (
-  mintingPolicySymbol,
-  mkMintingPolicy,
   mkValidator,
   validatorHash,
  )
 import Plutus.V1.Ledger.Api (
   Address (Address),
   Credential (ScriptCredential),
-  CurrencySymbol,
   Datum (Datum),
   DatumHash (DatumHash),
-  MintingPolicy (..),
-  PubKeyHash,
   ScriptContext (..),
   ScriptPurpose (..),
   ToData (toBuiltinData),
@@ -45,8 +39,7 @@ import Plutus.V1.Ledger.Api (
  )
 import Plutus.V1.Ledger.Contexts (TxOut (TxOut), TxOutRef (TxOutRef))
 import Plutus.V1.Ledger.Interval qualified as Interval
-import Plutus.V1.Ledger.Scripts (Validator)
-import Plutus.V1.Ledger.Value (AssetClass (AssetClass), TokenName (TokenName))
+import Plutus.V1.Ledger.Value (TokenName (TokenName))
 import Plutus.V1.Ledger.Value qualified as Value
 
 --------------------------------------------------------------------------------
@@ -54,47 +47,19 @@ import Plutus.V1.Ledger.Value qualified as Value
 import Agora.SafeMoney (GTTag)
 import Agora.Stake
 import Plutarch.SafeMoney
+import Spec.Sample.Shared
 import Spec.Util (datumPair, toDatumHash)
 
 --------------------------------------------------------------------------------
 
--- | 'Stake' parameters for 'LQ'.
-stake :: Stake
-stake =
-  Stake
-    { gtClassRef =
-        Tagged
-          ( AssetClass
-              ( "da8c30857834c6ae7203935b89278c532b3995245295456f993e1d24"
-              , "LQ"
-              )
-          )
-    , proposalSTClass = AssetClass ("", "")
-    }
-
--- | 'Stake' policy instance.
-policy :: MintingPolicy
-policy = mkMintingPolicy (stakePolicy stake.gtClassRef)
-
-policySymbol :: CurrencySymbol
-policySymbol = mintingPolicySymbol policy
-
--- | A sample 'PubKeyHash'.
-signer :: PubKeyHash
-signer = "8a30896c4fd5e79843e4ca1bd2cdbaa36f8c0bc3be7401214142019c"
-
--- | 'Stake' validator instance.
-validator :: Validator
-validator = mkValidator (stakeValidator stake)
-
 -- | 'TokenName' that represents the hash of the 'Stake' validator.
 validatorHashTN :: TokenName
-validatorHashTN = let ValidatorHash vh = validatorHash validator in TokenName vh
+validatorHashTN = let ValidatorHash vh = validatorHash (mkValidator $ stakeValidator stake) in TokenName vh
 
 -- | This script context should be a valid transaction.
 stakeCreation :: ScriptContext
 stakeCreation =
-  let st = Value.singleton policySymbol validatorHashTN 1 -- Stake ST
+  let st = Value.singleton stakeSymbol validatorHashTN 1 -- Stake ST
       datum :: Datum
       datum = Datum (toBuiltinData $ StakeDatum 424242424242 signer [])
    in ScriptContext
@@ -103,7 +68,7 @@ stakeCreation =
               { txInfoInputs = []
               , txInfoOutputs =
                   [ TxOut
-                      { txOutAddress = Address (ScriptCredential $ validatorHash validator) Nothing
+                      { txOutAddress = Address (ScriptCredential stakeValidatorHash) Nothing
                       , txOutValue = st <> Value.singleton "da8c30857834c6ae7203935b89278c532b3995245295456f993e1d24" "LQ" 424242424242
                       , txOutDatumHash = Just (DatumHash "")
                       }
@@ -117,7 +82,7 @@ stakeCreation =
               , txInfoData = [("", datum)]
               , txInfoId = "0b2086cbf8b6900f8cb65e012de4516cb66b5cb08a9aaba12a8b88be"
               }
-        , scriptContextPurpose = Minting policySymbol
+        , scriptContextPurpose = Minting stakeSymbol
         }
 
 -- | This ScriptContext should fail because the datum has too much GT.
@@ -127,7 +92,7 @@ stakeCreationWrongDatum =
       datum = Datum (toBuiltinData $ StakeDatum 4242424242424242 signer []) -- Too much GT
    in ScriptContext
         { scriptContextTxInfo = stakeCreation.scriptContextTxInfo {txInfoData = [("", datum)]}
-        , scriptContextPurpose = Minting policySymbol
+        , scriptContextPurpose = Minting stakeSymbol
         }
 
 -- | This ScriptContext should fail because the datum has too much GT.
@@ -138,7 +103,7 @@ stakeCreationUnsigned =
         stakeCreation.scriptContextTxInfo
           { txInfoSignatories = []
           }
-    , scriptContextPurpose = Minting policySymbol
+    , scriptContextPurpose = Minting stakeSymbol
     }
 
 --------------------------------------------------------------------------------
@@ -154,7 +119,7 @@ data DepositWithdrawExample = DepositWithdrawExample
 -- | Create a ScriptContext that deposits or withdraws, given the config for it.
 stakeDepositWithdraw :: DepositWithdrawExample -> ScriptContext
 stakeDepositWithdraw config =
-  let st = Value.singleton policySymbol validatorHashTN 1 -- Stake ST
+  let st = Value.singleton stakeSymbol validatorHashTN 1 -- Stake ST
       stakeBefore :: StakeDatum
       stakeBefore = StakeDatum config.startAmount signer []
 
@@ -167,7 +132,7 @@ stakeDepositWithdraw config =
                   [ TxInInfo
                       (TxOutRef "0b2086cbf8b6900f8cb65e012de4516cb66b5cb08a9aaba12a8b88be" 1)
                       TxOut
-                        { txOutAddress = Address (ScriptCredential $ validatorHash validator) Nothing
+                        { txOutAddress = Address (ScriptCredential stakeValidatorHash) Nothing
                         , txOutValue =
                             st
                               <> Value.assetClassValue (untag stake.gtClassRef) (untag stakeBefore.stakedAmount)
@@ -176,7 +141,7 @@ stakeDepositWithdraw config =
                   ]
               , txInfoOutputs =
                   [ TxOut
-                      { txOutAddress = Address (ScriptCredential $ validatorHash validator) Nothing
+                      { txOutAddress = Address (ScriptCredential stakeValidatorHash) Nothing
                       , txOutValue =
                           st <> Value.assetClassValue (untag stake.gtClassRef) (untag stakeAfter.stakedAmount)
                       , txOutDatumHash = Just (toDatumHash stakeAfter)

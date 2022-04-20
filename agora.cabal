@@ -162,6 +162,7 @@ test-suite agora-test
     Spec.Proposal
     Spec.Sample.Effect.TreasuryWithdrawal
     Spec.Sample.Proposal
+    Spec.Sample.Shared
     Spec.Sample.Stake
     Spec.Stake
     Spec.Util

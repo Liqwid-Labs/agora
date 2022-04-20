@@ -3,9 +3,16 @@ Module     : Agora.Record
 Maintainer : emi@haskell.fyi
 Description: PDataRecord helper functions.
 
-PDataRecord helper functions.
+'PDataRecord' helper functions.
 -}
-module Agora.Record (build, (.=), (.&)) where
+module Agora.Record (
+  mkRecord,
+  mkRecordConstr,
+  (.=),
+  (.&),
+  RecordMorphism,
+  FieldName,
+) where
 
 import Control.Category (Category (..))
 import Data.Coerce (coerce)
@@ -20,17 +27,47 @@ data FieldName (sym :: Symbol) = FieldName
 {- | The use of two different 'Symbol's here allows unification to happen,
      ensuring 'FieldName' has a fully inferred 'Symbol'.
 
-     For example, @'build' (#foo .= 'pconstantData' (42 :: 'Integer'))@ gets
+     For example, @'mkRecord' (#foo .= 'pconstantData' (42 :: 'Integer'))@ gets
      the correct type. Namely, @'Term' s ('PDataRecord' '["foo" ':= 'PInteger'])@.
 -}
-instance forall (sym :: Symbol) (sym' :: Symbol). sym ~ sym' => IsLabel sym (FieldName sym') where
+instance forall (sym :: Symbol) (sym' :: Symbol). sym ~ sym' => IsLabel sym (FieldName sym) where
   fromLabel = FieldName
 
--- | Turn a builder into a fully built 'PDataRecord'.
-build :: forall (s :: S) (r :: [PLabeledType]). RecordMorphism s '[] r -> Term s (PDataRecord r)
-build f = coerce f pdnil
+-- | Turn a constant 'RecordMorphism' into a fully built 'PDataRecord'.
+mkRecord :: forall (r :: [PLabeledType]) (s :: S). RecordMorphism s '[] r -> Term s (PDataRecord r)
+mkRecord f = f.runRecordMorphism pdnil
 
--- | A morphism from one PDataRecord to another, representing some sort of consing of data.
+{- | 'mkRecord' but for known data-types.
+
+This allows you to dynamically construct a record type constructor.
+
+=== Example:
+@
+'mkRecordConstr'
+  'Agora.Stake.PStakeDatum'
+  ( #stakedAmount '.=' 'pconstantData' ('Plutarch.SafeMoney.Tagged' @GTTag 42)
+      '.&' #owner '.=' 'pconstantData' "aabbcc"
+      '.&' #lockedBy '.=' 'pdata' pnil
+  )
+@
+Is the same as
+
+@
+'pconstant' ('Agora.Stake.StakeDatum' ('Plutarch.SafeMoney.Tagged' 42) "aabbcc" [])
+@
+-}
+mkRecordConstr ::
+  forall (r :: [PLabeledType]) (s :: S) (pt :: PType).
+  PlutusType pt =>
+  -- | The constructor. This is just the Haskell-level constructor for the type.
+  --   For 'PMaybeData', this could be 'PDJust', or 'PNothing'.
+  (forall s'. Term s' (PDataRecord r) -> pt s') ->
+  -- | The morphism that builds the record.
+  RecordMorphism s '[] r ->
+  Term s pt
+mkRecordConstr ctr = pcon . ctr . mkRecord
+
+-- | A morphism from one 'PDataRecord' to another, representing some sort of consing of data.
 newtype RecordMorphism (s :: S) (as :: [PLabeledType]) (bs :: [PLabeledType]) = RecordMorphism
   { runRecordMorphism ::
     Term s (PDataRecord as) ->
@@ -46,14 +83,18 @@ infix 7 .=
 -- | Cons a labeled type as a 'RecordMorphism'.
 (.=) ::
   forall (sym :: Symbol) (a :: PType) (as :: [PLabeledType]) (s :: S).
+  -- | The field name. You can use @-XOverloadedLabels@ to enable the syntax:
+  --   @#hello ~ 'FieldName' "hello"@
   FieldName sym ->
+  -- | The value at that field. This must be 'PAsData', because the underlying
+  --   type is @'Constr' 'Integer' ['Data']@.
   Term s (PAsData a) ->
   RecordMorphism s as ((sym ':= a) ': as)
 _ .= x = RecordMorphism $ pcon . PDCons x
 
 infixr 6 .&
 
--- | Compose two morphisms between records.
+-- | Compose two 'RecordMorphism's.
 (.&) ::
   forall
     (s :: S)

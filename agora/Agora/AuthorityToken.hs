@@ -18,6 +18,7 @@ import Plutarch.Api.V1 (
   PCurrencySymbol (..),
   PScriptContext (..),
   PScriptPurpose (..),
+  PTxInInfo (PTxInInfo),
   PTxInfo (..),
   PTxOut (..),
  )

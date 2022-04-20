@@ -441,15 +441,20 @@ stakeValidator stake =
           anyOutput @PStakeDatum # txInfo
             #$ plam
             $ \value address newStakeDatum' -> P.do
+              PStakeDatum newStakeDatum <- pmatch newStakeDatum'
+              newStakeDatumF <- pletFields @'["stakedAmount"] newStakeDatum
               let isScriptAddress = pdata address #== ownAddress
               let correctOutputDatum = pdata newStakeDatum' #== pdata stakeDatum'
               let valueCorrect = pdata continuingValue #== pdata value
-              foldr1
-                (#&&)
-                [ ptraceIfFalse "isScriptAddress" isScriptAddress
-                , ptraceIfFalse "correctOutputDatum" correctOutputDatum
-                , ptraceIfFalse "valueCorrect" valueCorrect
-                ]
+              pif
+                isScriptAddress
+                ( foldl1
+                    (#&&)
+                    [ ptraceIfFalse "valueCorrect" valueCorrect
+                    , ptraceIfFalse "correctOutputDatum" correctOutputDatum
+                    ]
+                )
+                (pcon PFalse)
         popaque (pconstant ())
       PDepositWithdraw r -> P.do
         passert "ST at inputs must be 1" $

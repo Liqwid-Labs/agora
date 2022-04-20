@@ -24,7 +24,7 @@ module Agora.Proposal.Time (
   isDraftRange,
 ) where
 
-import Agora.Record (build, (.&), (.=))
+import Agora.Record (mkRecordConstr, (.&), (.=))
 import GHC.Generics qualified as GHC
 import Generics.SOP (Generic, I (I))
 import Plutarch.Api.V1 (PExtended (PFinite), PInterval (PInterval), PLowerBound (PLowerBound), PMaybeData (PDJust, PDNothing), PPOSIXTime, PPOSIXTimeRange, PUpperBound (PUpperBound))
@@ -149,23 +149,20 @@ currentProposalTime = phoistAcyclic $
     PUpperBound ub <- pmatch ivf.to
     lbf <- pletFields @'["_0", "_1"] lb
     ubf <- pletFields @'["_0", "_1"] ub
-    pcon
-      ( PProposalTime $
-          build $
-            #lowerBound
-              .= pdata
-                ( pmatch lbf._0 $
-                    \case
-                      PFinite d -> pcon (PDJust d)
-                      _ -> pcon (PDNothing pdnil)
-                )
-              .& #upperBound
-              .= pdata
-                ( pmatch ubf._0 $ \case
-                    PFinite d -> pcon (PDJust d)
-                    _ -> pcon (PDNothing pdnil)
-                )
-      )
+    mkRecordConstr PProposalTime $
+      #lowerBound
+        .= pdata
+          ( pmatch lbf._0 $
+              \case
+                PFinite d -> pcon (PDJust d)
+                _ -> pcon (PDNothing pdnil)
+          )
+        .& #upperBound
+        .= pdata
+          ( pmatch ubf._0 $ \case
+              PFinite d -> pcon (PDJust d)
+              _ -> pcon (PDNothing pdnil)
+          )
 
 -- | Check if 'PProposalTime' is within two 'PPOSIXTime'. Inclusive.
 proposalTimeWithin :: Term s (PPOSIXTime :--> PPOSIXTime :--> PProposalTime :--> PBool)

@@ -58,7 +58,7 @@ import PlutusTx qualified
 import PlutusTx.AssocMap qualified as AssocMap
 
 --------------------------------------------------------------------------------
-
+import Agora.Record (mkRecordConstr, (.&), (.=))
 import Agora.SafeMoney (GTTag)
 import Agora.Utils (
   anyOutput,
@@ -354,7 +354,7 @@ newtype PProposalDatum (s :: S) = PProposalDatum
     Term
       s
       ( PDataRecord
-          '[ "id" ':= PProposalId
+          '[ "proposalId" ':= PProposalId
            , "effects" ':= PMap PResultTag (PMap PValidatorHash PDatumHash)
            , "status" ':= PProposalStatus
            , "cosigners" ':= PBuiltinList (PAsData PPubKeyHash)
@@ -438,7 +438,7 @@ proposalValidator proposal =
     PScriptContext ctx' <- pmatch ctx'
     ctx <- pletFields @'["txInfo", "purpose"] ctx'
     txInfo <- plet $ pfromData ctx.txInfo
-    PTxInfo txInfo' <- pmatch $ txInfo
+    PTxInfo txInfo' <- pmatch txInfo
     txInfoF <- pletFields @'["inputs", "mint"] txInfo'
     PSpending ((pfield @"_0" #) -> txOutRef) <- pmatch $ pfromData ctx.purpose
 
@@ -452,7 +452,7 @@ proposalValidator proposal =
 
     proposalF <-
       pletFields
-        @'[ "id"
+        @'[ "proposalId"
           , "effects"
           , "status"
           , "cosigners"
@@ -464,7 +464,10 @@ proposalValidator proposal =
     ownAddress <- plet $ txOutF.address
 
     stCurrencySymbol <- plet $ pconstant $ mintingPolicySymbol $ mkMintingPolicy (proposalPolicy proposal)
-    spentST <- plet $ psymbolValueOf # stCurrencySymbol #$ pvalueSpent # txInfoF.inputs
+    valueSpent <- plet $ pvalueSpent # txInfoF.inputs
+    spentST <- plet $ psymbolValueOf # stCurrencySymbol #$ valueSpent
+    let AssetClass (stakeSym, stakeTn) = proposal.stakeSTAssetClass
+    spentStakeST <- plet $ passetClassValueOf # valueSpent # (passetClass # pconstant stakeSym # pconstant stakeTn)
 
     pmatch proposalRedeemer $ \case
       PVote _r -> P.do
@@ -482,37 +485,33 @@ proposalValidator proposal =
         passert "Signed by all new cosigners" $
           pall # plam (\sig -> ptxSignedBy # ctx.txInfo # sig) # newSigs
 
+        passert "As many new cosigners as Stake datums" $
+          spentStakeST #== plength # newSigs
+
         passert "Signatures are correctly added to cosignature list" $
           anyOutput @PProposalDatum # ctx.txInfo
             #$ plam
             $ \newValue address newProposalDatum -> P.do
-              newProposalF <-
-                pletFields
-                  @'[ "id"
-                    , "effects"
-                    , "status"
-                    , "cosigners"
-                    , "thresholds"
-                    , "votes"
-                    ]
-                  newProposalDatum
-
               -- This is a little sad. Can we do better by
               -- building a new ProposalDatum and then comparing?
               let correctDatum =
-                    foldr1
-                      (#&&)
-                      [ newProposalF.cosigners #== pconcat # newSigs # proposalF.cosigners
-                      , newProposalF.id #== proposalF.id
-                      , newProposalF.effects #== proposalF.effects
-                      , newProposalF.status #== proposalF.status
-                      , newProposalF.thresholds #== proposalF.thresholds
-                      , newProposalF.votes #== proposalF.votes
-                      ]
+                    pdata newProposalDatum
+                      #== pdata
+                        ( mkRecordConstr
+                            PProposalDatum
+                            ( #proposalId .= proposalF.proposalId
+                                .& #effects .= proposalF.effects
+                                .& #status .= proposalF.status
+                                .& #cosigners .= pdata (pconcat # newSigs # proposalF.cosigners)
+                                .& #thresholds .= proposalF.thresholds
+                                .& #votes .= proposalF.votes
+                            )
+                        )
 
               foldr1
                 (#&&)
-                [ ptraceIfFalse "Datum must be correct" $ correctDatum
+                [ pcon PTrue
+                , ptraceIfFalse "Datum must be correct" correctDatum
                 , ptraceIfFalse "Value should be correct" $ pdata txOutF.value #== pdata newValue
                 , ptraceIfFalse "Must be sent to Proposal's address" $ ownAddress #== pdata address
                 ]

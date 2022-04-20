@@ -6,31 +6,21 @@ Description: Sample based testing for Proposal utxos
 This module tests primarily the happy path for Proposal interactions
 -}
 module Spec.Sample.Proposal (
-  proposal,
-  propPolicy,
-  propPolicySymbol,
-  propThresholds,
-  signer,
-  signer2,
-
   -- * Script contexts
   proposalCreation,
   cosignProposal,
+  proposalRef,
+  stakeRef,
 ) where
 
 --------------------------------------------------------------------------------
 import Plutarch.Api.V1 (
-  mintingPolicySymbol,
-  mkMintingPolicy,
-  mkValidator,
   validatorHash,
  )
 import Plutus.V1.Ledger.Api (
   Address (Address),
   Credential (ScriptCredential),
-  CurrencySymbol,
   Datum (Datum),
-  MintingPolicy (..),
   PubKeyHash,
   ScriptContext (..),
   ScriptPurpose (..),
@@ -41,105 +31,33 @@ import Plutus.V1.Ledger.Api (
   TxOutRef (TxOutRef),
  )
 import Plutus.V1.Ledger.Interval qualified as Interval
-import Plutus.V1.Ledger.Scripts (Validator, ValidatorHash)
 import Plutus.V1.Ledger.Value qualified as Value
 
 --------------------------------------------------------------------------------
 
 import Agora.Governor (
-  Governor (Governor),
   GovernorDatum (GovernorDatum, nextProposalId, proposalThresholds),
-  governorPolicy,
-  governorValidator,
  )
 import Agora.Proposal (
   Proposal (..),
   ProposalDatum (..),
   ProposalId (..),
   ProposalStatus (..),
-  ProposalThresholds (..),
   ProposalVotes (..),
   ResultTag (..),
-  proposalPolicy,
-  proposalValidator,
  )
-import Agora.Stake (Stake (..), stakePolicy)
-import Plutarch.SafeMoney
-import Plutus.V1.Ledger.Address (scriptHashAddress)
+import Agora.Stake (Stake (..), StakeDatum (StakeDatum))
+import Plutarch.SafeMoney (Tagged (Tagged), untag)
 import PlutusTx.AssocMap qualified as AssocMap
+import Spec.Sample.Shared
 import Spec.Util (datumPair, toDatumHash)
 
 --------------------------------------------------------------------------------
 
-stake :: Stake
-stake =
-  Stake
-    { gtClassRef = Tagged $ Value.assetClass govSymbol ""
-    , proposalSTClass = Value.assetClass propPolicySymbol ""
-    }
-
-stakeSymbol :: CurrencySymbol
-stakeSymbol = mintingPolicySymbol $ mkMintingPolicy $ stakePolicy stake.gtClassRef
-
-governor :: Governor
-governor = Governor
-
-govPolicy :: MintingPolicy
-govPolicy = mkMintingPolicy (governorPolicy governor)
-
-govValidator :: Validator
-govValidator = mkValidator (governorValidator governor)
-
-govSymbol :: CurrencySymbol
-govSymbol = mintingPolicySymbol govPolicy
-
-proposal :: Proposal
-proposal =
-  Proposal
-    { governorSTAssetClass =
-        -- TODO: if we had a governor here
-        Value.assetClass govSymbol ""
-    , stakeSTAssetClass =
-        Value.assetClass stakeSymbol ""
-    }
-
--- | 'Proposal' policy instance.
-propPolicy :: MintingPolicy
-propPolicy = mkMintingPolicy (proposalPolicy proposal)
-
-propPolicySymbol :: CurrencySymbol
-propPolicySymbol = mintingPolicySymbol propPolicy
-
--- | A sample 'PubKeyHash'.
-signer :: PubKeyHash
-signer = "8a30896c4fd5e79843e4ca1bd2cdbaa36f8c0bc3be7401214142019c"
-
--- | Another sample 'PubKeyHash'.
-signer2 :: PubKeyHash
-signer2 = "8a30896c4fd5e79843e4ca1bd2cdbaa36f8c0bc3be74012141420192"
-
--- | 'Proposal' validator instance.
-propValidator :: Validator
-propValidator = mkValidator (proposalValidator proposal)
-
-propValidatorHash :: ValidatorHash
-propValidatorHash = validatorHash propValidator
-
-propValidatorAddress :: Address
-propValidatorAddress = scriptHashAddress propValidatorHash
-
-propThresholds :: ProposalThresholds
-propThresholds =
-  ProposalThresholds
-    { countVoting = Tagged 1000
-    , create = Tagged 1
-    , vote = Tagged 10
-    }
-
 -- | This script context should be a valid transaction.
 proposalCreation :: ScriptContext
 proposalCreation =
-  let st = Value.singleton propPolicySymbol "" 1 -- Proposal ST
+  let st = Value.singleton proposalPolicySymbol "" 1 -- Proposal ST
       proposalDatum :: Datum
       proposalDatum =
         Datum
@@ -153,7 +71,7 @@ proposalCreation =
                       ]
                 , status = Draft
                 , cosigners = [signer]
-                , thresholds = propThresholds
+                , thresholds = defaultProposalThresholds
                 , votes = ProposalVotes AssocMap.empty
                 }
           )
@@ -163,7 +81,7 @@ proposalCreation =
         Datum
           ( toBuiltinData $
               GovernorDatum
-                { proposalThresholds = propThresholds
+                { proposalThresholds = defaultProposalThresholds
                 , nextProposalId = ProposalId 0
                 }
           )
@@ -172,7 +90,7 @@ proposalCreation =
         Datum
           ( toBuiltinData $
               GovernorDatum
-                { proposalThresholds = propThresholds
+                { proposalThresholds = defaultProposalThresholds
                 , nextProposalId = ProposalId 1
                 }
           )
@@ -190,7 +108,7 @@ proposalCreation =
                   ]
               , txInfoOutputs =
                   [ TxOut
-                      { txOutAddress = Address (ScriptCredential $ validatorHash propValidator) Nothing
+                      { txOutAddress = Address (ScriptCredential proposalValidatorHash) Nothing
                       , txOutValue =
                           mconcat
                             [ st
@@ -221,13 +139,19 @@ proposalCreation =
                   ]
               , txInfoId = "0b2086cbf8b6900f8cb65e012de4516cb66b5cb08a9aaba12a8b88be"
               }
-        , scriptContextPurpose = Minting propPolicySymbol
+        , scriptContextPurpose = Minting proposalPolicySymbol
         }
 
+proposalRef :: TxOutRef
+proposalRef = TxOutRef "0b2086cbf8b6900f8cb65e012de4516cb66b5cb08a9aaba12a8b88be" 1
+
+stakeRef :: TxOutRef
+stakeRef = TxOutRef "0ca36f3a357bc69579ab2531aecd1e7d3714d993c7820f40b864be15" 0
+
 -- | This script context should be a valid transaction.
-cosignProposal :: [PubKeyHash] -> ScriptContext
+cosignProposal :: [PubKeyHash] -> TxInfo
 cosignProposal newSigners =
-  let st = Value.singleton propPolicySymbol "" 1 -- Proposal ST
+  let st = Value.singleton proposalPolicySymbol "" 1 -- Proposal ST
       proposalBefore :: ProposalDatum
       proposalBefore =
         ProposalDatum
@@ -239,50 +163,70 @@ cosignProposal newSigners =
                 ]
           , status = Draft
           , cosigners = [signer]
-          , thresholds = propThresholds
+          , thresholds = defaultProposalThresholds
           , votes = ProposalVotes AssocMap.empty
           }
+      stakeDatum :: StakeDatum
+      stakeDatum = StakeDatum (Tagged 50_000_000) signer2 []
       proposalAfter :: ProposalDatum
       proposalAfter = proposalBefore {cosigners = newSigners <> proposalBefore.cosigners}
-      proposalRef = (TxOutRef "0b2086cbf8b6900f8cb65e012de4516cb66b5cb08a9aaba12a8b88be" 1)
-   in ScriptContext
-        { scriptContextTxInfo =
-            TxInfo
-              { txInfoInputs =
-                  [ TxInInfo
-                      proposalRef
-                      TxOut
-                        { txOutAddress = propValidatorAddress
-                        , txOutValue =
-                            mconcat
-                              [ st
-                              , Value.singleton "" "" 10_000_000
-                              ]
-                        , txOutDatumHash = Just (toDatumHash proposalBefore)
-                        }
-                  ]
-              , txInfoOutputs =
-                  [ TxOut
-                      { txOutAddress = Address (ScriptCredential $ validatorHash propValidator) Nothing
-                      , txOutValue =
-                          mconcat
-                            [ st
-                            , Value.singleton "" "" 10_000_000
-                            ]
-                      , txOutDatumHash = Just (toDatumHash . Datum $ toBuiltinData proposalAfter)
-                      }
-                  ]
-              , txInfoFee = Value.singleton "" "" 2
-              , txInfoMint = st
-              , txInfoDCert = []
-              , txInfoWdrl = []
-              , txInfoValidRange = Interval.always
-              , txInfoSignatories = newSigners
-              , txInfoData =
-                  [ datumPair . Datum $ toBuiltinData proposalBefore
-                  , datumPair . Datum $ toBuiltinData proposalAfter
-                  ]
-              , txInfoId = "0b2086cbf8b6900f8cb65e012de4516cb66b5cb08a9aaba12a8b88be"
-              }
-        , scriptContextPurpose = Spending proposalRef
+   in TxInfo
+        { txInfoInputs =
+            [ TxInInfo
+                proposalRef
+                TxOut
+                  { txOutAddress = proposalValidatorAddress
+                  , txOutValue =
+                      mconcat
+                        [ st
+                        , Value.singleton "" "" 10_000_000
+                        ]
+                  , txOutDatumHash = Just (toDatumHash proposalBefore)
+                  }
+            , TxInInfo
+                stakeRef
+                TxOut
+                  { txOutAddress = stakeAddress
+                  , txOutValue =
+                      mconcat
+                        [ Value.singleton "" "" 10_000_000
+                        , Value.assetClassValue (untag stake.gtClassRef) 50_000_000
+                        , Value.singleton stakeSymbol "" 1
+                        ]
+                  , txOutDatumHash = Just (toDatumHash stakeDatum)
+                  }
+            ]
+        , txInfoOutputs =
+            [ TxOut
+                { txOutAddress = Address (ScriptCredential proposalValidatorHash) Nothing
+                , txOutValue =
+                    mconcat
+                      [ st
+                      , Value.singleton "" "" 10_000_000
+                      ]
+                , txOutDatumHash = Just (toDatumHash . Datum $ toBuiltinData proposalAfter)
+                }
+            , TxOut
+                { txOutAddress = stakeAddress
+                , txOutValue =
+                    mconcat
+                      [ Value.singleton "" "" 10_000_000
+                      , Value.assetClassValue (untag stake.gtClassRef) 50_000_000
+                      , Value.singleton stakeSymbol "" 1
+                      ]
+                , txOutDatumHash = Just (toDatumHash stakeDatum)
+                }
+            ]
+        , txInfoFee = Value.singleton "" "" 2
+        , txInfoMint = st
+        , txInfoDCert = []
+        , txInfoWdrl = []
+        , txInfoValidRange = Interval.always
+        , txInfoSignatories = newSigners
+        , txInfoData =
+            [ datumPair . Datum $ toBuiltinData proposalBefore
+            , datumPair . Datum $ toBuiltinData proposalAfter
+            , datumPair . Datum $ toBuiltinData stakeDatum
+            ]
+        , txInfoId = "0b2086cbf8b6900f8cb65e012de4516cb66b5cb08a9aaba12a8b88be"
         }
