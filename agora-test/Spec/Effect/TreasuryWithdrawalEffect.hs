@@ -12,11 +12,20 @@ import Plutus.V1.Ledger.Api
 import Plutus.V1.Ledger.Interval qualified as Interval
 import Plutus.V1.Ledger.Value qualified as Value
 
-import Agora.Effect.TreasuryWithdrawal (treasuryWithdrawalValidator)
+import Agora.Effect.TreasuryWithdrawal
+
+--receiverList :: TreasuryWithdrawalDatum
+--receiverList = TreasuryWithdrawalDatum [(mempty, mempty)]
+
+_datum :: TreasuryWithdrawalDatum
+_datum =
+  TreasuryWithdrawalDatum
+  [ (PubKeyCredential signer, Value.singleton currSymbol validatorHashTN 1)
+  ]
 
 -- | A sample Currency Symbol
 currSymbol :: CurrencySymbol
-currSymbol = CurrencySymbol "Orange19721121"
+currSymbol = CurrencySymbol "Orangebottle19721121"
 
 -- | A sample 'PubKeyHash'.
 signer :: PubKeyHash
@@ -36,11 +45,25 @@ withdrawalEffect =
     { scriptContextTxInfo =
         TxInfo
           { txInfoInputs =
-              [ TxInInfo
-                  (TxOutRef "0b2086cbf8b6900f8cb65e012de4516cb66b5cb08a9aaba12a8b88be" 1)
+              [ TxInInfo -- Initiator
+                  (TxOutRef "Initiator" 1)
                   TxOut
                     { txOutAddress = Address (ScriptCredential $ validatorHash validator) Nothing
-                    , txOutValue = Value.singleton currSymbol validatorHashTN 1
+                    , txOutValue = Value.singleton "" "" 2000000
+                    , txOutDatumHash = Nothing
+                    }
+              , TxInInfo -- Treasury 1
+                  (TxOutRef "Treasury 1" 1)
+                  TxOut
+                    { txOutAddress = Address (ScriptCredential $ validatorHash validator) Nothing
+                    , txOutValue = Value.singleton currSymbol validatorHashTN 10
+                    , txOutDatumHash = Nothing
+                    }
+              , TxInInfo -- Treasury 2
+                  (TxOutRef "Treasury 2" 1)
+                  TxOut
+                    { txOutAddress = Address (ScriptCredential $ validatorHash validator) Nothing
+                    , txOutValue = Value.singleton currSymbol validatorHashTN 10
                     , txOutDatumHash = Nothing
                     }
               ]
@@ -54,5 +77,6 @@ withdrawalEffect =
           , txInfoData = []
           , txInfoId = "0b2086cbf8b6900f8cb65e012de4516cb66b5cb08a9aaba12a8b88be"
           }
-    , scriptContextPurpose = Spending (TxOutRef "0b2086cbf8b6900f8cb65e012de4516cb66b5cb08a9aaba12a8b88be" 1)
+    , scriptContextPurpose =
+        Spending (TxOutRef "0b2086cbf8b6900f8cb65e012de4516cb66b5cb08a9aaba12a8b88be" 1)
     }

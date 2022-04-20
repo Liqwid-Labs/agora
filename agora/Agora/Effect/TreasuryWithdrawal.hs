@@ -7,7 +7,11 @@ Description: An Effect that withdraws treasury deposit
 
 An Effect that withdraws treasury deposit
 -}
-module Agora.Effect.TreasuryWithdrawal (TreasuryWithdrawalDatum, PTreasuryWithdrawalDatum, treasuryWithdrawalValidator) where
+module Agora.Effect.TreasuryWithdrawal (
+  TreasuryWithdrawalDatum(..),
+  PTreasuryWithdrawalDatum(..),
+  treasuryWithdrawalValidator,
+  ) where
 
 import GHC.Generics qualified as GHC
 import Generics.SOP (Generic, I (I))
