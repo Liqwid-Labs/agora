@@ -36,6 +36,7 @@ import Generics.SOP (Generic, I (I))
 import Agora.AuthorityToken (
   AuthorityToken (..),
   authorityTokenPolicy,
+  authorityTokensValidIn,
   singleAuthorityTokenBurned,
  )
 import Agora.Proposal (
@@ -43,10 +44,12 @@ import Agora.Proposal (
   PProposalId,
   PProposalStatus (PDraft),
   PProposalThresholds,
+  PResultTag,
   Proposal (..),
   ProposalId,
   ProposalThresholds,
   pnextProposalId,
+  proposalDatumValid,
   proposalPolicy,
   proposalValidator,
  )
@@ -61,18 +64,24 @@ import Agora.Utils (
   pfindTxInByTxOutRef,
   pisDJust,
   pisUxtoSpent,
+  plookup,
   pownCurrencySymbol,
   psymbolValueOf,
+  scriptHashFromAddress,
  )
 
 --------------------------------------------------------------------------------
 
 import Plutarch (popaque)
 import Plutarch.Api.V1 (
+  PAddress,
   PCurrencySymbol,
+  PDatumHash,
+  PMaybeData (PDJust),
   PMintingPolicy,
   PScriptPurpose (PSpending),
   PValidator,
+  PValidatorHash,
   PValue,
   mintingPolicySymbol,
   mkMintingPolicy,
@@ -91,7 +100,7 @@ import Plutarch.Unsafe (punsafeCoerce)
 
 --------------------------------------------------------------------------------
 
-import Plutarch.Builtin (pforgetData)
+import Plutarch.Builtin (PBuiltinMap, pforgetData)
 import Plutus.V1.Ledger.Api (
   Address (Address),
   Credential (ScriptCredential),
@@ -240,11 +249,12 @@ governorPolicy params =
 
    For 'MintGATs' redeemer, it will check:
     - State datum is not changed.
-    - Exactly one GAT is minted.
-    - The GAT is properly tagged. (Should we do this?)
-    - The GAT is sent to the appropraite effect. (Should we do this?)
+    - Exactly one proposal is being processed.
+    - Mint one GAT for every effect.
+    - The GATs is properly tagged. (Should we do this?)
+    - The GATs are sent to the appropraite effects. (Should we do this?)
 
-   For 'PMutateGovernor', it will check:
+   For 'MutateGovernor', it will check:
     - A GAT is burnt.
     - Said GAT must be tagged by the effect that is spending it.
 -}
@@ -255,12 +265,13 @@ governorValidator params =
     redeemer <- pmatch $ pfromData @PGovernorRedeemer $ punsafeCoerce redeemer'
     ctx <- pletFields @'["txInfo", "purpose"] ctx'
 
-    txInfo <- plet $ pfromData $ ctx.txInfo
+    txInfo' <- plet $ pfromData $ ctx.txInfo
+    txInfo <- pletFields @'["mint", "inputs", "outputs"] txInfo'
 
     PSpending ((pfield @"_0" #) -> txOutRef') <- pmatch $ pfromData ctx.purpose
     let txOutRef = pfromData txOutRef'
 
-    PJust ((pfield @"resolved" #) -> ownInput') <- pmatch $ pfindTxInByTxOutRef # txOutRef # txInfo
+    PJust ((pfield @"resolved" #) -> ownInput') <- pmatch $ pfindTxInByTxOutRef # txOutRef # txInfo'
     ownInput <- pletFields @'["address", "value"] ownInput'
     let selfAddress = pfromData $ ownInput.address
 
@@ -272,7 +283,7 @@ governorValidator params =
     passert "Own input should have exactly one state token" $
       ownInputDatumNFTAmount #== 1
 
-    ownOutputs <- plet $ findOutputsToAddress # txInfo # selfAddress
+    ownOutputs <- plet $ findOutputsToAddress # txInfo' # selfAddress
     passert "Exactly one utxo should be sent to the governor" $
       plength # ownOutputs #== 1
 
@@ -287,17 +298,13 @@ governorValidator params =
     newDatum' <- plet $ mustFindDatum' @PGovernorDatum # ownOutput.datumHash # ctx.txInfo
     newParams <- pletFields @'["proposalThresholds", "nextProposalId"] newDatum'
 
-    mint <- plet $ pfromData $ pfield @"mint" # txInfo
-
     case redeemer of
       PCreateProposal _ -> P.do
-        pSym <- plet $ pconstant proposalSymbol
-
         passert "Proposal id should be advanced by 1" $
           pnextProposalId # oldParams.nextProposalId #== newParams.nextProposalId
 
         passert "Exactly one proposal token must be minted" $
-          hasOnlyOneTokenOfCurrencySymbol # pSym # mint
+          hasOnlyOneTokenOfCurrencySymbol # pProposalSym # txInfo.mint
 
         outputs <- plet $ findOutputsToAddress # ctx.txInfo # pconstant proposalValidatorAddress
         passert "Exactly one utxo should be sent to the proposal validator" $
@@ -305,7 +312,7 @@ governorValidator params =
 
         output <- pletFields @'["value", "datumHash"] $ phead # outputs
         passert "The proposal state token must be sent to the proposal validator" $
-          psymbolValueOf # pSym # output.value #== 1
+          psymbolValueOf # pProposalSym # output.value #== 1
 
         passert "The utxo paid to the proposal validator must have datum" $
           pisDJust # output.datumHash
@@ -335,8 +342,8 @@ governorValidator params =
             PDraft _ -> pconstant True
             _ -> pconstant False
 
-        passert "Initial proposal cosigners should be empty" $
-          pnull #$ pfromData proposalParams.cosigners
+        passert "Proposal datum must be valid" $
+          proposalDatumValid # proposalDatum'
 
         -- TODO: proposal impl not done yet
         ptraceError "Not implemented yet"
@@ -345,23 +352,95 @@ governorValidator params =
           -- FIXME: There should be a better way to do this
           (pforgetData $ pdata newDatum') #== datum'
 
-        passert "Exactly one GAT should be minted" $
-          hasOnlyOneTokenOfCurrencySymbol # pGATSym # mint
-
-        passert "No token should be minted other than GAT" $
-          containsSingleCurrencySymbol # mint
-
         -- TODO: any need to check the proposal datum here?
 
-        -- check exactly one(?) authority token is minted
+        inputsWithProposalStateToken <-
+          plet $
+            pfilter
+              # ( plam $ \(((pfield @"value" #) . (pfield @"resolved" #)) -> value) ->
+                    0 #< psymbolValueOf # pProposalSym # value
+                )
+              #$ pfromData txInfo.inputs
 
-        -- TODO: waiting for impl of proposal
-        ptraceError "Not implemented yet"
+        passert "One proposal at a time" $
+          plength # inputsWithProposalStateToken #== 1
+
+        proposalInputTxOut <-
+          pletFields @'["address", "value", "datumHash"] $
+            pfield @"resolved" #$ phead # inputsWithProposalStateToken
+
+        proposalDatum' <- plet $ mustFindDatum' @PProposalDatum # proposalInputTxOut.datumHash # txInfo'
+
+        passert "Proposal datum must be valid" $
+          proposalDatumValid # proposalDatum'
+
+        proposalDatum <- pletFields @'["id", "effects", "status", "cosigners", "thresholds", "votes"] proposalDatum'
+
+        let effects' :: Term _ (PBuiltinMap PResultTag (PBuiltinMap PValidatorHash PDatumHash))
+            effects' = punsafeCoerce proposalDatum.effects
+
+        effectMapList <-
+          plet $
+            pfoldr
+              # ( plam $ \m l -> P.do
+                    let theMap = pfromData $ psndBuiltin # m
+                    pconcat # theMap # l
+                )
+              # pcon PNil
+              # effects'
+
+        gatCount <- plet $ plength # effectMapList
+
+        passert "Required amount of GATs should be minted" $
+          psymbolValueOf # pProposalSym # txInfo.mint #== gatCount
+
+        passert "No token should be minted other than GAT" $
+          containsSingleCurrencySymbol # txInfo.mint
+
+        outputsWithGAT <-
+          plet $
+            pfilter
+              # ( plam $ \((pfield @"value" #) -> value) ->
+                    0 #< psymbolValueOf # pGATSym # value
+                )
+              #$ pfromData txInfo.outputs
+
+        passert "Minted GAT amount should equal to amount of output GAT" $
+          plength # outputsWithGAT #== gatCount
+
+        passert "All GAT must be properly tagged" $
+          pall
+            # ( plam $ \(pfromData -> outInfo) ->
+                  authorityTokensValidIn # pGATSym # outInfo
+              )
+            # outputsWithGAT
+
+        popaque $
+          pfoldr
+            # ( plam $ \(pfromData -> outputInfo') _ -> P.do
+                  outputInfo <- pletFields @'["address", "datumHash"] $ outputInfo'
+                  passert "GAT must be properly tagged" $ authorityTokensValidIn # pGATSym # outputInfo'
+                  passert "Output to the effect should have datum" $ pisDJust # outputInfo.datumHash
+                  PDJust ((pfield @"_0" #) -> datumHash) <- pmatch outputInfo.datumHash
+                  let scriptHash = scriptHashFromAddress' # outputInfo.address
+                  expectedDatumHash' <- pmatch $ plookup # (pdata scriptHash) # effectMapList
+                  case expectedDatumHash' of
+                    PJust expectedDatumHash ->
+                      passert "An unexpected datum hash is found sent to the effect" $
+                        datumHash #== expectedDatumHash
+                    _ -> passert "A GAT is not sent to an effect" $ pconstant False
+                  pconstant ()
+              )
+            # pconstant ()
+            # outputsWithGAT
+
+      -- TODO: check proposal votes and timing
+      -- TODO: waiting for impl of proposal
       PMutateGovernor _ -> P.do
         passert "No token should be burnt other than GAT" $
-          containsSingleCurrencySymbol # mint
+          containsSingleCurrencySymbol # txInfo.mint
 
-        popaque $ singleAuthorityTokenBurned pGATSym ctx.txInfo mint
+        popaque $ singleAuthorityTokenBurned pGATSym ctx.txInfo txInfo.mint
   where
     stateTokenAssetClass :: AssetClass
     stateTokenAssetClass = governorStateTokenAssetClass params
@@ -377,6 +456,9 @@ governorValidator params =
       where
         policy :: MintingPolicy
         policy = mkMintingPolicy $ proposalPolicy proposalParams
+
+    pProposalSym :: Term s PCurrencySymbol
+    pProposalSym = phoistAcyclic $ pconstant proposalSymbol
 
     proposalValidatorAddress :: Address
     proposalValidatorAddress = Address (ScriptCredential hash) Nothing
@@ -404,6 +486,14 @@ governorValidator params =
 
     pGATSym :: Term s PCurrencySymbol
     pGATSym = phoistAcyclic $ pconstant authorityTokenSymbol
+
+    scriptHashFromAddress' :: Term s (PAddress :--> PValidatorHash)
+    scriptHashFromAddress' = phoistAcyclic $
+      plam $ \addr -> P.do
+        mh <- pmatch $ scriptHashFromAddress # addr
+        case mh of
+          PJust vh -> vh
+          _ -> ptraceError "Not a valid validator address"
 
 --------------------------------------------------------------------------------
 

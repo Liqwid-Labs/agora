@@ -16,12 +16,12 @@ import Plutarch.Api.V1 (
   PAddress (..),
   PCredential (..),
   PCurrencySymbol (..),
+  PMintingPolicy,
   PScriptContext (..),
   PScriptPurpose (..),
   PTxInInfo (PTxInInfo),
   PTxInfo (..),
   PTxOut (..),
-  PMintingPolicy
  )
 import Plutarch.Api.V1.AssocMap (PMap (PMap))
 import Plutarch.Api.V1.Value (PValue (PValue))
