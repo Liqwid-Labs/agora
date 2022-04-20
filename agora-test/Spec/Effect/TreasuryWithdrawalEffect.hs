@@ -17,6 +17,7 @@ import Plutus.V1.Ledger.Value qualified as Value
 import Data.ByteString.Hash
 
 import Agora.Effect.TreasuryWithdrawal
+import Agora.AuthorityToken
 
 import Spec.Util
 
@@ -27,7 +28,13 @@ import Test.Tasty
 
 -- | A sample Currency Symbol.
 currSymbol :: CurrencySymbol
-currSymbol = CurrencySymbol "ff"
+currSymbol = CurrencySymbol "12312099"
+
+gtSymbol :: CurrencySymbol
+gtSymbol = CurrencySymbol "abb"
+
+gtToken :: TokenName
+gtToken = TokenName "hey"
 
 -- | A sample 'PubKeyHash'.
 signer :: PubKeyHash
@@ -51,13 +58,16 @@ treasuries =
         , "asdf"
         ]
 
+_aa :: [Credential]
+_aa = treasuries
+
 -- | Datum for Treasury Withdrawal Effect Validator.
 datum :: TreasuryWithdrawalDatum
 datum =
   TreasuryWithdrawalDatum
-    [ (users !! 0, Value.singleton currSymbol validatorHashTN 1)
-    , (users !! 1, Value.singleton currSymbol validatorHashTN 1)
-    , (users !! 2, Value.singleton currSymbol validatorHashTN 1)
+    [ (users !! 0, Value.singleton gtSymbol gtToken 1)
+    , (users !! 1, Value.singleton gtSymbol gtToken 1)
+    , (users !! 2, Value.singleton gtSymbol gtToken 1)
     ]
 
 -- | Effect validator instance.
@@ -73,59 +83,59 @@ scriptContext1 =
   ScriptContext
     { scriptContextTxInfo =
         TxInfo
-          { txInfoInputs =
+          { txInfoInputs = 
               [ TxInInfo -- Initiator
                   (TxOutRef "0b2086cbf8b6900f8cb65e012de4516cb66b5cb08a9aaba12a8b88be" 1)
                   TxOut
                     { txOutAddress = Address (ScriptCredential $ validatorHash validator) Nothing
-                    , txOutValue = Value.singleton "" "" 2000000
-                    , txOutDatumHash = Nothing
+                    , txOutValue = Value.singleton currSymbol validatorHashTN 1 -- Stake ST
+                    , txOutDatumHash = Just (DatumHash "")
                     }
-              , TxInInfo -- Treasury 1
-                  (TxOutRef "Treasury 1" 2)
-                  TxOut
-                    { txOutAddress = Address (treasuries !! 0) Nothing
-                    , txOutValue = Value.singleton currSymbol validatorHashTN 10
-                    , txOutDatumHash = Nothing
-                    }
-              , TxInInfo -- Treasury 2
-                  (TxOutRef "Treasury 2" 3)
-                  TxOut
-                    { txOutAddress = Address (treasuries !! 1) Nothing
-                    , txOutValue = Value.singleton currSymbol validatorHashTN 10
-                    , txOutDatumHash = Nothing
-                    }
+              -- , TxInInfo -- Treasury 1
+              --     (TxOutRef "0b121212121212121212121212121212121212121212121212121221" 2)
+              --     TxOut
+              --       { txOutAddress = Address (treasuries !! 0) Nothing
+              --       , txOutValue = Value.singleton gtSymbol gtToken 10
+              --       , txOutDatumHash = Just (DatumHash "")
+              --       }
+              -- , TxInInfo -- Treasury 2
+              --     (TxOutRef "0b121212121212121212a41212121212121212121212121212121221" 3)
+              --     TxOut
+              --       { txOutAddress = Address (treasuries !! 1) Nothing
+              --       , txOutValue = Value.singleton "1234ab" "LQLQLQL" 10
+              --       , txOutDatumHash = Just (DatumHash "")
+              --       }
               ]
-          , txInfoOutputs =
+          , txInfoOutputs = 
               [ TxOut
                   { txOutAddress = Address (users !! 0) Nothing
-                  , txOutValue = Value.singleton currSymbol validatorHashTN 1
+                  , txOutValue = Value.singleton gtSymbol gtToken 1
                   , txOutDatumHash = Nothing
                   }
               , TxOut
                   { txOutAddress = Address (users !! 1) Nothing
-                  , txOutValue = Value.singleton currSymbol validatorHashTN 1
+                  , txOutValue = Value.singleton gtSymbol gtToken 1
                   , txOutDatumHash = Nothing
                   }
               , TxOut
                   { txOutAddress = Address (users !! 2) Nothing
-                  , txOutValue = Value.singleton currSymbol validatorHashTN 1
+                  , txOutValue = Value.singleton gtSymbol gtToken 1
                   , txOutDatumHash = Nothing
                   }
               -- Send left overs to treasuries
               , TxOut
                   { txOutAddress = Address (treasuries !! 0) Nothing
-                  , txOutValue = Value.singleton currSymbol validatorHashTN 7
+                  , txOutValue = Value.singleton gtSymbol gtToken 7
                   , txOutDatumHash = Nothing
                   }
               , TxOut
                   { txOutAddress = Address (treasuries !! 1) Nothing
-                  , txOutValue = Value.singleton currSymbol validatorHashTN 10
+                  , txOutValue = Value.singleton gtSymbol gtToken 10
                   , txOutDatumHash = Nothing
                   }                  
               ]
           , txInfoFee = Value.singleton "" "" 2
-          , txInfoMint = mempty
+          , txInfoMint = Value.singleton currSymbol validatorHashTN (-1)
           , txInfoDCert = []
           , txInfoWdrl = []
           , txInfoValidRange = Interval.always
@@ -153,3 +163,87 @@ _asdfa = do
         putStrLn $ show e <> " Traces: " <> show traces
       Right _v ->
         pure ()
+
+_test :: IO ()
+_test = do
+    let (res, _budget, traces) = evalScript $ compile (authorityTokensValidIn # pconstant currSymbol # (pconstant $
+                                            TxOut { txOutAddress = Address (ScriptCredential $ validatorHash validator) Nothing ,
+                                                    txOutValue = Value.singleton currSymbol validatorHashTN 1,
+                                                    txOutDatumHash = Just (DatumHash "")}))
+    case res of
+      Left e -> do
+        putStrLn $ show e <> " Traces: " <> show traces
+      Right _v ->
+        pure ()
+
+_test2 :: IO()
+_test2 = do
+    let (res, _budget, traces) = evalScript $ compile (singleAuthorityTokenBurned (pconstant currSymbol) (pconstantData tinfo) (pconstant mv))
+    case res of
+      Left e -> do
+        putStrLn $ show e <> " Traces: " <> show traces
+      Right _v ->
+        putStrLn $ show res
+    where
+      mv = mempty -- Value.singleton currSymbol validatorHashTN (1)
+      tinfo =         TxInfo
+          { txInfoInputs = 
+              [ TxInInfo -- Initiator
+                  (TxOutRef "0b2086cbf8b6900f8cb65e012de4516cb66b5cb08a9aaba12a8b88be" 1)
+                  TxOut
+                    { txOutAddress = Address (ScriptCredential $ validatorHash validator) Nothing
+                    , txOutValue = mempty
+                    , txOutDatumHash = Just (DatumHash "")
+                    }
+              , TxInInfo -- Treasury 1
+                  (TxOutRef "0b121212121212121212121212121212121212121212121212121221" 2)
+                  TxOut
+                    { txOutAddress = Address (treasuries !! 0) Nothing
+                    , txOutValue = Value.singleton gtSymbol gtToken 10
+                    , txOutDatumHash = Just (DatumHash "")
+                    }
+              , TxInInfo -- Treasury 2
+                  (TxOutRef "0b121212121212121212a41212121212121212121212121212121221" 3)
+                  TxOut
+                    { txOutAddress = Address (treasuries !! 1) Nothing
+                    , txOutValue = Value.singleton "1234ab" "LQLQLQL" 10
+                    , txOutDatumHash = Just (DatumHash "")
+                    }
+              ]
+          , txInfoOutputs = 
+              [ TxOut
+                  { txOutAddress = Address (users !! 0) Nothing
+                  , txOutValue = Value.singleton gtSymbol gtToken 1
+                  , txOutDatumHash = Nothing
+                  }
+              , TxOut
+                  { txOutAddress = Address (users !! 1) Nothing
+                  , txOutValue = Value.singleton gtSymbol gtToken 1
+                  , txOutDatumHash = Nothing
+                  }
+              , TxOut
+                  { txOutAddress = Address (users !! 2) Nothing
+                  , txOutValue = Value.singleton gtSymbol gtToken 1
+                  , txOutDatumHash = Nothing
+                  }
+              -- Send left overs to treasuries
+              , TxOut
+                  { txOutAddress = Address (treasuries !! 0) Nothing
+                  , txOutValue = Value.singleton gtSymbol gtToken 7
+                  , txOutDatumHash = Nothing
+                  }
+              , TxOut
+                  { txOutAddress = Address (treasuries !! 1) Nothing
+                  , txOutValue = Value.singleton gtSymbol gtToken 10
+                  , txOutDatumHash = Nothing
+                  }                  
+              ]
+          , txInfoFee = Value.singleton "" "" 2
+          , txInfoMint = mempty -- Value.singleton currSymbol validatorHashTN (-1)
+          , txInfoDCert = []
+          , txInfoWdrl = []
+          , txInfoValidRange = Interval.always
+          , txInfoSignatories = [signer]
+          , txInfoData = []
+          , txInfoId = "0b2086cbf8b6900f8cb65e012de4516cb66b5cb08a9aaba12a8b88be"
+          }
