@@ -44,6 +44,9 @@ module Agora.Utils (
   validatorHashToTokenName,
   pvalidatorHashToTokenName,
   getMintingPolicySymbol,
+  hasOnlyOneTokenOfAssetClass',
+  hasOnlyOneTokenOfCurrencySymbol,
+  mustFindDatum',
 ) where
 
 --------------------------------------------------------------------------------
@@ -518,3 +521,32 @@ pvalidatorHashToTokenName vh = pcon (PTokenName (pto vh))
 -- | Get the CurrencySymbol of a PMintingPolicy.
 getMintingPolicySymbol :: ClosedTerm PMintingPolicy -> CurrencySymbol
 getMintingPolicySymbol v = mintingPolicySymbol $ mkMintingPolicy v
+
+hasOnlyOneTokenOfAssetClass' :: AssetClass -> Term s (PValue :--> PBool)
+hasOnlyOneTokenOfAssetClass' ac@(AssetClass (as, _)) = phoistAcyclic $
+  plam $ \vs -> P.do
+    let ps = pconstant as
+
+    psymbolValueOf # ps # vs #== 1
+      #&& passetClassValueOf' ac # vs #== 1
+      #&& (plength #$ pto $ pto $ pto vs) #== 1
+
+hasOnlyOneTokenOfCurrencySymbol :: Term s (PCurrencySymbol :--> PValue :--> PBool)
+hasOnlyOneTokenOfCurrencySymbol = phoistAcyclic $
+  plam $ \cs vs -> P.do
+    psymbolValueOf # cs # vs #== 1
+      #&& (plength #$ pto $ pto $ pto vs) #== 1
+
+{- Find datum, in an unsafe manner.
+
+   FIXME: reimplement using 'ptryFrom'.
+-}
+mustFindDatum' ::
+  forall (datum :: PType).
+  PIsData datum =>
+  forall s. Term s (PMaybeData PDatumHash :--> PTxInfo :--> datum)
+mustFindDatum' = phoistAcyclic $
+  plam $ \mdh info -> P.do
+    PDJust ((pfield @"_0" #) -> dh) <- pmatch mdh
+    PJust dt <- pmatch $ pfindDatum # dh # info
+    pfromData $ punsafeCoerce dt

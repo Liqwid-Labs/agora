@@ -35,16 +35,22 @@ import Generics.SOP (Generic, I (I))
 
 import Agora.AuthorityToken (authorityTokensValidIn)
 import Agora.Proposal (
+  PProposalDatum,
   PProposalId,
+  PProposalStatus (PDraft),
   PProposalThresholds,
+  Proposal (..),
   ProposalId,
   ProposalThresholds,
   pnextProposalId,
+  proposalPolicy,
+  proposalValidator,
  )
 import Agora.Utils (
   allInputs,
   findOutputsToAddress,
-  findTxOutDatum,
+  hasOnlyOneTokenOfCurrencySymbol,
+  mustFindDatum',
   passert,
   passetClassValueOf,
   passetClassValueOf',
@@ -66,6 +72,8 @@ import Plutarch.Api.V1 (
   PValue,
   mintingPolicySymbol,
   mkMintingPolicy,
+  mkValidator,
+  validatorHash,
  )
 import Plutarch.Api.V1.Extra (pownMintValue)
 import Plutarch.DataRepr (
@@ -79,8 +87,20 @@ import Plutarch.Unsafe (punsafeCoerce)
 
 --------------------------------------------------------------------------------
 
-import Plutus.V1.Ledger.Api (MintingPolicy, TxOutRef)
-import Plutus.V1.Ledger.Value (AssetClass (..), CurrencySymbol, TokenName (..))
+import Plutarch.Builtin (pforgetData)
+import Plutus.V1.Ledger.Api (
+  Address (Address),
+  Credential (ScriptCredential),
+  CurrencySymbol (..),
+  MintingPolicy,
+  TxOutRef,
+  Validator,
+  ValidatorHash,
+ )
+import Plutus.V1.Ledger.Value (
+  AssetClass (..),
+  TokenName (..),
+ )
 import PlutusTx qualified
 
 --------------------------------------------------------------------------------
@@ -210,8 +230,10 @@ governorPolicy params =
     - The utxo which holds the state token, has a well well-formed 'GovernorDatum' datum.
 
    For 'CreateProposal' redeemer, it will check:
-    - Exactly one proposal token is minted.
-    - The datum which is corresponding to the proposal token must be correct.
+    - Exactly one proposal state token is minted.
+    - Exactly one utxo should be sent to the proposal validator.
+    - The utxo must contain the proposal state token.
+    - The datum of said utxo must be correct.
     - Proposal id in the governor datum must be advanced.
 
    TODO: PMintGATs
@@ -223,7 +245,7 @@ governorPolicy params =
 governorValidator :: Governor -> ClosedTerm PValidator
 governorValidator params =
   plam $ \datum' redeemer' ctx' -> P.do
-    -- TODO: use `PTryFrom`
+    -- TODO: use ptryFrom
     redeemer <- pmatch $ pfromData @PGovernorRedeemer $ punsafeCoerce redeemer'
     ctx <- pletFields @'["txInfo", "purpose"] ctx'
 
@@ -233,27 +255,30 @@ governorValidator params =
     let txOutRef = pfromData txOutRef'
 
     PJust ((pfield @"resolved" #) -> ownInput') <- pmatch $ pfindTxInByTxOutRef # txOutRef # txInfo
-    ownInput <- pletFields @'["address", "value", "datumHash"] ownInput'
+    ownInput <- pletFields @'["address", "value"] ownInput'
     let selfAddress = pfromData $ ownInput.address
 
-    PJust oldDatum'' <- pmatch $ findTxOutDatum # txInfo # ownInput'
-    oldDatum' <- plet $ pto oldDatum''
-    let oldParams' = pfromData @PGovernorDatum $ punsafeCoerce oldDatum'
+    -- TODO: use ptryFrom
+    let oldParams' = pfromData @PGovernorDatum $ punsafeCoerce datum'
     oldParams <- pletFields @'["proposalThresholds", "nextProposalId"] oldParams'
 
     let ownInputDatumNFTAmount = stateTokenValueOf # ownInput.value
-    passert "Own input should have exactly one state token" $ ownInputDatumNFTAmount #== 1
+    passert "Own input should have exactly one state token" $
+      ownInputDatumNFTAmount #== 1
 
     ownOutputs <- plet $ findOutputsToAddress # txInfo # selfAddress
-    passert "Exactly one utxo should be sent to the governor" $ plength # ownOutputs #== 1
+    passert "Exactly one utxo should be sent to the governor" $
+      plength # ownOutputs #== 1
 
     ownOutput <- pletFields @'["value", "datumHash"] $ phead # ownOutputs
     let ownOuputDatumNFTAmount = stateTokenValueOf # ownOutput.value
-    passert "State token should stay at governor's address" $ ownOuputDatumNFTAmount #== 1
-    passert "Output utxo to governor should have datum" $ pisDJust # ownOutput.datumHash
+    passert "State token should stay at governor's address" $
+      ownOuputDatumNFTAmount #== 1
+    passert "Output utxo to governor should have datum" $
+      pisDJust # ownOutput.datumHash
 
     -- TODO: use `PTryFrom` and reject bad datum
-    let newDatum' = pfromData @PGovernorDatum $ punsafeCoerce datum'
+    newDatum' <- plet $ mustFindDatum' @PGovernorDatum # ownOutput.datumHash # ctx.txInfo
     newParams <- pletFields @'["proposalThresholds", "nextProposalId"] newDatum'
 
     mint <- plet $ pfromData $ pfield @"mint" # txInfo
@@ -261,18 +286,59 @@ governorValidator params =
 
     case redeemer of
       PCreateProposal _ -> P.do
-        -- check that nothing is minted
-        passert "Nothing should be minted" $ plength # mint' #== 0
-
         -- check that proposal is advanced
         passert "Proposal id should be advanced by 1" $
           pnextProposalId # oldParams.nextProposalId #== newParams.nextProposalId
 
-        -- TODO: waiting for impl of proposal
+        -- check that exactly one proposal token is minted
+        pps <- plet $ pconstant proposalSymbol
+        passert "Exactly one proposal token must be minted" $
+          hasOnlyOneTokenOfCurrencySymbol # pps # mint
+
+        outputs <- plet $ findOutputsToAddress # ctx.txInfo # pconstant proposalValidatorAddress
+        passert "Exactly one utxo should be sent to the proposal validator" $
+          plength # outputs #== 1
+
+        output <- pletFields @'["value", "datumHash"] $ phead # outputs
+        passert "The proposal state token must be sent to the proposal validator" $
+          psymbolValueOf # pconstant proposalSymbol # output.value #== 1
+
+        passert "The utxo paid to the proposal validator must have datum" $
+          pisDJust # output.datumHash
+
+        let proposalDatum' =
+              mustFindDatum' @PProposalDatum
+                # output.datumHash
+                # ctx.txInfo
+
+        proposalParams <-
+          pletFields
+            @'["id", "status", "cosigners", "thresholds", "votes"]
+            proposalDatum'
+
+        passert "Invalid proposal id in proposal parameters" $
+          proposalParams.id #== oldParams.nextProposalId
+
+        passert "Invalid thresholds in proposal parameters" $
+          proposalParams.thresholds #== oldParams.proposalThresholds
+
+        passert "Initial proposal votes should be zero" $
+          pnull #$ pto $ pto $ pfromData proposalParams.votes
+
+        passert "Initial proposal status should be Draft" $ P.do
+          s <- pmatch $ proposalParams.status
+          case s of
+            PDraft _ -> pconstant True
+            _ -> pconstant False
+
+        passert "Initial proposal cosigners should be empty" $
+          pnull #$ pfromData proposalParams.cosigners
+
         ptraceError "Not implemented yet"
       PMintGATs _ -> P.do
         -- check datum is not changed
-        passert "Datum should not be changed" $ oldDatum' #== datum'
+        passert "Datum should not be changed" $
+          (pforgetData $ pdata newDatum') #== datum'
 
         -- check exactly one(?) authority token is minted
 
@@ -281,10 +347,12 @@ governorValidator params =
       PMutateGovernor _ -> P.do
         -- check that input has exactly one GAT and will be burnt
         let gatAmount = psymbolValueOf # gatS # mint
-        passert "One GAT should be burnt" $ gatAmount #== -1
+        passert "One GAT should be burnt" $
+          gatAmount #== -1
 
         -- nothing should be minted/burnt other than GAT
-        passert "No token should be minted/burnt other than GAT" $ plength # mint' #== 1
+        passert "No token should be minted/burnt other than GAT" $
+          plength # mint' #== 1
 
         -- check that GAT is tagged by the address
         passert "all input GATs are valid" $
@@ -295,6 +363,27 @@ governorValidator params =
   where
     stateTokenAssetClass :: AssetClass
     stateTokenAssetClass = governorStateTokenAssetClass params
+
+    proposalParams :: Proposal
+    proposalParams =
+      Proposal
+        { governorSTAssetClass = stateTokenAssetClass
+        }
+
+    proposalSymbol :: CurrencySymbol
+    proposalSymbol = mintingPolicySymbol policy
+      where
+        policy :: MintingPolicy
+        policy = mkMintingPolicy $ proposalPolicy proposalParams
+
+    proposalValidatorAddress :: Address
+    proposalValidatorAddress = Address (ScriptCredential hash) Nothing
+      where
+        hash :: ValidatorHash
+        hash = validatorHash validator
+
+        validator :: Validator
+        validator = mkValidator $ proposalValidator proposalParams
 
     stateTokenValueOf :: Term s (PValue :--> PInteger)
     stateTokenValueOf = passetClassValueOf' stateTokenAssetClass
