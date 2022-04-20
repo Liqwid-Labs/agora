@@ -155,6 +155,7 @@ test-suite agora-test
     Spec.Sample.Stake
     Spec.Stake
     Spec.Util
+    Spec.AuthorityToken
 
   build-depends:  agora
 

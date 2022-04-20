@@ -8,6 +8,7 @@ import Test.Tasty (defaultMain, testGroup)
 
 --------------------------------------------------------------------------------
 
+import Spec.AuthorityToken qualified as AuthorityToken
 import Spec.Model.MultiSig qualified as MultiSig
 import Spec.Stake qualified as Stake
 
@@ -28,4 +29,7 @@ main =
               , MultiSig.genTests
               ]
           ]
+      , testGroup
+          "AuthorityToken tests"
+          AuthorityToken.tests
       ]
