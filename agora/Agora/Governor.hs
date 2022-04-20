@@ -69,7 +69,7 @@ import Agora.Utils (
 
 import Plutarch (popaque)
 import Plutarch.Api.V1 (
-  PCurrencySymbol,
+  PCurrencySymbol (PCurrencySymbol),
   PMintingPolicy,
   PScriptPurpose (PSpending),
   PValidator,
@@ -238,7 +238,11 @@ governorPolicy params =
     - The datum of said utxo must be correct.
     - Proposal id in the governor datum must be advanced.
 
-   TODO: PMintGATs
+   For 'MintGATs' redeemer, it will check:
+    - State datum is not changed.
+    - Exactly one GAT is minted.
+    - The GAT is properly tagged. (Should we do this?)
+    - The GAT is sent to the appropraite effect. (Should we do this?)
 
    For 'PMutateGovernor', it will check:
     - A GAT is burnt.
@@ -337,9 +341,15 @@ governorValidator params =
         -- TODO: proposal impl not done yet
         ptraceError "Not implemented yet"
       PMintGATs _ -> P.do
-        -- check datum is not changed
         passert "Datum should not be changed" $
+          -- FIXME: There should be a better way to do this
           (pforgetData $ pdata newDatum') #== datum'
+
+        passert "Exactly one GAT should be minted" $
+          hasOnlyOneTokenOfCurrencySymbol # pGATSym # mint
+
+        passert "No token should be minted other than GAT" $
+          containsSingleCurrencySymbol # mint
 
         -- TODO: any need to check the proposal datum here?
 
@@ -348,10 +358,10 @@ governorValidator params =
         -- TODO: waiting for impl of proposal
         ptraceError "Not implemented yet"
       PMutateGovernor _ -> P.do
-        passert "No token should be minted/burnt other than GAT" $
+        passert "No token should be burnt other than GAT" $
           containsSingleCurrencySymbol # mint
 
-        popaque $ singleAuthorityTokenBurned (pconstant authorityTokenSymbol) ctx.txInfo mint
+        popaque $ singleAuthorityTokenBurned pGATSym ctx.txInfo mint
   where
     stateTokenAssetClass :: AssetClass
     stateTokenAssetClass = governorStateTokenAssetClass params
@@ -391,6 +401,9 @@ governorValidator params =
       where
         policy :: MintingPolicy
         policy = mkMintingPolicy $ authorityTokenPolicy authorityTokenParams
+
+    pGATSym :: Term s PCurrencySymbol
+    pGATSym = phoistAcyclic $ pconstant authorityTokenSymbol
 
 --------------------------------------------------------------------------------
 
