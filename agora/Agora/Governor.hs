@@ -33,7 +33,7 @@ import Generics.SOP (Generic, I (I))
 
 --------------------------------------------------------------------------------
 
-import Agora.AuthorityToken (authorityTokensValidIn)
+import Agora.AuthorityToken (singleAuthorityTokenBurned)
 import Agora.Proposal (
   PProposalDatum,
   PProposalId,
@@ -47,7 +47,6 @@ import Agora.Proposal (
   proposalValidator,
  )
 import Agora.Utils (
-  allInputs,
   findOutputsToAddress,
   hasOnlyOneTokenOfCurrencySymbol,
   mustFindDatum',
@@ -59,6 +58,7 @@ import Agora.Utils (
   pisUxtoSpent,
   pownCurrencySymbol,
   psymbolValueOf,
+  containsSingleCurrencySymbol
  )
 
 --------------------------------------------------------------------------------
@@ -216,7 +216,7 @@ governorPolicy params =
         #&& passetClassValueOf # ownSymbol # pconstant governorStateTokenName # mintValue #== 1
 
     passert "Nothing is minted other than the state token" $
-      (plength #$ pto $ pto $ pto mintValue) #== 1
+      containsSingleCurrencySymbol # mintValue
 
     popaque (pconstant ())
 
@@ -282,18 +282,16 @@ governorValidator params =
     newParams <- pletFields @'["proposalThresholds", "nextProposalId"] newDatum'
 
     mint <- plet $ pfromData $ pfield @"mint" # txInfo
-    mint' <- plet $ pto $ pto $ pto mint
 
     case redeemer of
       PCreateProposal _ -> P.do
-        -- check that proposal is advanced
+        pSym <- plet $ pconstant proposalSymbol
+
         passert "Proposal id should be advanced by 1" $
           pnextProposalId # oldParams.nextProposalId #== newParams.nextProposalId
 
-        -- check that exactly one proposal token is minted
-        pps <- plet $ pconstant proposalSymbol
         passert "Exactly one proposal token must be minted" $
-          hasOnlyOneTokenOfCurrencySymbol # pps # mint
+          hasOnlyOneTokenOfCurrencySymbol # pSym # mint
 
         outputs <- plet $ findOutputsToAddress # ctx.txInfo # pconstant proposalValidatorAddress
         passert "Exactly one utxo should be sent to the proposal validator" $
@@ -301,7 +299,7 @@ governorValidator params =
 
         output <- pletFields @'["value", "datumHash"] $ phead # outputs
         passert "The proposal state token must be sent to the proposal validator" $
-          psymbolValueOf # pconstant proposalSymbol # output.value #== 1
+          psymbolValueOf # pSym # output.value #== 1
 
         passert "The utxo paid to the proposal validator must have datum" $
           pisDJust # output.datumHash
@@ -334,32 +332,25 @@ governorValidator params =
         passert "Initial proposal cosigners should be empty" $
           pnull #$ pfromData proposalParams.cosigners
 
+        -- TODO: proposal impl not done yet
         ptraceError "Not implemented yet"
       PMintGATs _ -> P.do
         -- check datum is not changed
         passert "Datum should not be changed" $
           (pforgetData $ pdata newDatum') #== datum'
 
+        -- TODO: any need to check the proposal datum here?
+
         -- check exactly one(?) authority token is minted
 
         -- TODO: waiting for impl of proposal
         ptraceError "Not implemented yet"
       PMutateGovernor _ -> P.do
-        -- check that input has exactly one GAT and will be burnt
-        let gatAmount = psymbolValueOf # gatS # mint
-        passert "One GAT should be burnt" $
-          gatAmount #== -1
-
-        -- nothing should be minted/burnt other than GAT
         passert "No token should be minted/burnt other than GAT" $
-          plength # mint' #== 1
+          containsSingleCurrencySymbol # mint
+        
+        popaque $ singleAuthorityTokenBurned gatSym ctx.txInfo mint
 
-        -- check that GAT is tagged by the address
-        passert "all input GATs are valid" $
-          allInputs @PUnit # txInfo #$ plam $ \txOut _ _ _ ->
-            authorityTokensValidIn # gatS # txOut
-
-        popaque $ pconstant ()
   where
     stateTokenAssetClass :: AssetClass
     stateTokenAssetClass = governorStateTokenAssetClass params
@@ -388,8 +379,8 @@ governorValidator params =
     stateTokenValueOf :: Term s (PValue :--> PInteger)
     stateTokenValueOf = passetClassValueOf' stateTokenAssetClass
 
-    gatS :: Term s PCurrencySymbol
-    gatS = pconstant params.gatSymbol
+    gatSym :: Term s PCurrencySymbol
+    gatSym = pconstant params.gatSymbol
 
 --------------------------------------------------------------------------------
 

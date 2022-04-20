@@ -47,6 +47,7 @@ module Agora.Utils (
   hasOnlyOneTokenOfAssetClass',
   hasOnlyOneTokenOfCurrencySymbol,
   mustFindDatum',
+  containsSingleCurrencySymbol
 ) where
 
 --------------------------------------------------------------------------------
@@ -550,3 +551,7 @@ mustFindDatum' = phoistAcyclic $
     PDJust ((pfield @"_0" #) -> dh) <- pmatch mdh
     PJust dt <- pmatch $ pfindDatum # dh # info
     pfromData $ punsafeCoerce dt
+
+containsSingleCurrencySymbol :: Term s (PValue :--> PBool)
+containsSingleCurrencySymbol = phoistAcyclic $ plam $ \v -> P.do
+   (plength #$ pto $ pto $ pto v) #== 1
