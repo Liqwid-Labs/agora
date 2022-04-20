@@ -33,7 +33,11 @@ import Generics.SOP (Generic, I (I))
 
 --------------------------------------------------------------------------------
 
-import Agora.AuthorityToken (singleAuthorityTokenBurned)
+import Agora.AuthorityToken (
+  AuthorityToken (..),
+  authorityTokenPolicy,
+  singleAuthorityTokenBurned,
+ )
 import Agora.Proposal (
   PProposalDatum,
   PProposalId,
@@ -47,6 +51,7 @@ import Agora.Proposal (
   proposalValidator,
  )
 import Agora.Utils (
+  containsSingleCurrencySymbol,
   findOutputsToAddress,
   hasOnlyOneTokenOfCurrencySymbol,
   mustFindDatum',
@@ -58,7 +63,6 @@ import Agora.Utils (
   pisUxtoSpent,
   pownCurrencySymbol,
   psymbolValueOf,
-  containsSingleCurrencySymbol
  )
 
 --------------------------------------------------------------------------------
@@ -348,9 +352,8 @@ governorValidator params =
       PMutateGovernor _ -> P.do
         passert "No token should be minted/burnt other than GAT" $
           containsSingleCurrencySymbol # mint
-        
-        popaque $ singleAuthorityTokenBurned gatSym ctx.txInfo mint
 
+        popaque $ singleAuthorityTokenBurned gatSym ctx.txInfo mint
   where
     stateTokenAssetClass :: AssetClass
     stateTokenAssetClass = governorStateTokenAssetClass params
@@ -378,6 +381,17 @@ governorValidator params =
 
     stateTokenValueOf :: Term s (PValue :--> PInteger)
     stateTokenValueOf = passetClassValueOf' stateTokenAssetClass
+
+    authorityTokenParams :: AuthorityToken
+    authorityTokenParams =
+      AuthorityToken
+        { authority = stateTokenAssetClass
+        }
+
+    authorityTokenSymbol :: CurrencySymbol
+    authorityTokenSymbol = undefined
+      where
+        policy = authorityTokenPolicy authorityTokenParams
 
     gatSym :: Term s PCurrencySymbol
     gatSym = pconstant params.gatSymbol
