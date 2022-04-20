@@ -5,31 +5,45 @@ Description: Sample based testing for Treasury Withdrawal Effect
 
 This module tests the Treasury Withdrawal Effect.
 -}
-module Spec.Effect.TreasuryWithdrawalEffect (currSymbol, signer, validator, validatorHashTN, withdrawalEffect) where
+module Spec.Effect.TreasuryWithdrawalEffect (currSymbol, signer, validator, validatorHashTN, scriptContext1) where
 
 import Plutarch.Api.V1
 import Plutus.V1.Ledger.Api
 import Plutus.V1.Ledger.Interval qualified as Interval
 import Plutus.V1.Ledger.Value qualified as Value
 
+import Data.ByteString.Hash
+
 import Agora.Effect.TreasuryWithdrawal
 
---receiverList :: TreasuryWithdrawalDatum
---receiverList = TreasuryWithdrawalDatum [(mempty, mempty)]
+-- receiverList :: TreasuryWithdrawalDatum
+-- receiverList = TreasuryWithdrawalDatum [(mempty, mempty)]
 
-_datum :: TreasuryWithdrawalDatum
-_datum =
-  TreasuryWithdrawalDatum
-  [ (PubKeyCredential signer, Value.singleton currSymbol validatorHashTN 1)
-  ]
-
--- | A sample Currency Symbol
+-- | A sample Currency Symbol.
 currSymbol :: CurrencySymbol
 currSymbol = CurrencySymbol "Orangebottle19721121"
 
 -- | A sample 'PubKeyHash'.
 signer :: PubKeyHash
 signer = "8a30896c4fd5e79843e4ca1bd2cdbaa36f8c0bc3be7401214142019c"
+
+-- | List of users who the effect will pay to.
+users :: [Credential]
+users =
+  PubKeyCredential . PubKeyHash . toBuiltin . sha2
+    <$> [ "Hello world"
+        , "Hello Agora"
+        , "Hello Plutarch"
+        ]
+
+-- | Datum for Treasury Withdrawal Effect Validator.
+_datum :: TreasuryWithdrawalDatum
+_datum =
+  TreasuryWithdrawalDatum
+    [ (users !! 0, Value.singleton currSymbol validatorHashTN 1)
+    , (users !! 1, Value.singleton currSymbol validatorHashTN 1)
+    , (users !! 2, Value.singleton currSymbol validatorHashTN 1)
+    ]
 
 -- | Effect validator instance.
 validator :: Validator
@@ -39,8 +53,8 @@ validator = mkValidator $ treasuryWithdrawalValidator currSymbol
 validatorHashTN :: TokenName
 validatorHashTN = let ValidatorHash vh = validatorHash validator in TokenName vh
 
-withdrawalEffect :: ScriptContext
-withdrawalEffect =
+scriptContext1 :: ScriptContext
+scriptContext1 =
   ScriptContext
     { scriptContextTxInfo =
         TxInfo
@@ -67,7 +81,23 @@ withdrawalEffect =
                     , txOutDatumHash = Nothing
                     }
               ]
-          , txInfoOutputs = []
+          , txInfoOutputs =
+              [ TxOut
+                  { txOutAddress = Address (users !! 0) Nothing
+                  , txOutValue = Value.singleton currSymbol validatorHashTN 1
+                  , txOutDatumHash = Nothing
+                  }
+              , TxOut
+                  { txOutAddress = Address (users !! 1) Nothing
+                  , txOutValue = Value.singleton currSymbol validatorHashTN 1
+                  , txOutDatumHash = Nothing
+                  }
+              , TxOut
+                  { txOutAddress = Address (users !! 2) Nothing
+                  , txOutValue = Value.singleton currSymbol validatorHashTN 1
+                  , txOutDatumHash = Nothing
+                  }
+              ]
           , txInfoFee = Value.singleton "" "" 2
           , txInfoMint = mempty
           , txInfoDCert = []
