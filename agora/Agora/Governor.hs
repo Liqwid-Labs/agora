@@ -22,8 +22,8 @@ module Agora.Governor (
   governorValidator,
 
   -- * Utilities
-  governorStateTokenAssetClass,
-  authorityTokenSymbolFromGovernor,
+  gstAssetClass,
+  gatSymbolFromGovernor,
 ) where
 
 --------------------------------------------------------------------------------
@@ -235,7 +235,7 @@ governorPolicy params =
 
     popaque (pconstant ())
 
-{- Validator for Governors.
+{- | Validator for Governors.
 
    No matter what redeemer it receives, it will always check:
     - The utxo which has the GST must be spent.
@@ -490,7 +490,7 @@ governorValidator params =
         popaque $ singleAuthorityTokenBurned pgatSym ctx.txInfo txInfo.mint
   where
     stateTokenAssetClass :: AssetClass
-    stateTokenAssetClass = governorStateTokenAssetClass params
+    stateTokenAssetClass = gstAssetClass params
 
     proposalDatum :: Proposal
     proposalDatum =
@@ -523,7 +523,7 @@ governorValidator params =
     stateTokenValueOf = passetClassValueOf' stateTokenAssetClass
 
     pgatSym :: Term s PCurrencySymbol
-    pgatSym = phoistAcyclic $ pconstant $ authorityTokenSymbolFromGovernor params
+    pgatSym = phoistAcyclic $ pconstant $ gatSymbolFromGovernor params
 
     pyesResultTag :: Term s PResultTag
     pyesResultTag = phoistAcyclic $ pcon $ PResultTag $ pconstant 1
@@ -533,8 +533,8 @@ governorValidator params =
 
 --------------------------------------------------------------------------------
 
-governorStateTokenAssetClass :: Governor -> AssetClass
-governorStateTokenAssetClass gov = AssetClass (symbol, gov.gstName)
+gstAssetClass :: Governor -> AssetClass
+gstAssetClass gov = AssetClass (symbol, gov.gstName)
   where
     policy :: MintingPolicy
     policy = mkMintingPolicy $ governorPolicy gov
@@ -542,8 +542,8 @@ governorStateTokenAssetClass gov = AssetClass (symbol, gov.gstName)
     symbol :: CurrencySymbol
     symbol = mintingPolicySymbol policy
 
-authorityTokenSymbolFromGovernor :: Governor -> CurrencySymbol
-authorityTokenSymbolFromGovernor gov = mintingPolicySymbol policy
+gatSymbolFromGovernor :: Governor -> CurrencySymbol
+gatSymbolFromGovernor gov = mintingPolicySymbol policy
   where
-    params = AuthorityToken $ governorStateTokenAssetClass gov
+    params = AuthorityToken $ gstAssetClass gov
     policy = mkMintingPolicy $ authorityTokenPolicy params
