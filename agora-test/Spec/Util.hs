@@ -131,7 +131,6 @@ validatorFailsWith tag policy datum redeemer scriptContext =
           # pconstant scriptContext
       )
 
-
 -- | Check that a validator script succeeds, given a name and arguments.
 effectSucceedsWith ::
   ( PLift datum

@@ -22,8 +22,6 @@ import Plutarch (popaque)
 import Plutarch.Api.V1 (
   PCredential,
   PTuple,
-  PTxInInfo (PTxInInfo),
-  PTxOut (PTxOut),
   PValidator,
   PValue,
   ptuple,
@@ -92,58 +90,55 @@ treasuryWithdrawalValidator currSymbol = makeEffect currSymbol $
     let outputValues =
           pmap
             # plam
-              ( \out' -> P.do
-                  out <- pletFields @'["address", "value"] $ pfromData out'
+              ( \(pfromData -> out') -> P.do
+                  out <- pletFields @'["address", "value"] $ out'
                   cred <- pletFields @'["credential"] $ pfromData out.address
                   pdata $ ptuple # cred.credential # out.value
               )
             # txInfo.outputs
+        inputValues =
+          pmap
+            # plam
+              ( \((pfield @"resolved" #) . pfromData -> txOut') -> P.do
+                  txOut <- pletFields @'["address", "value"] $ txOut'
+                  pdata $ ptuple # txOut.address # txOut.value
+              )
+            # txInfo.inputs
+        treasuryInputValues =
+          pfilter
+            # plam (\((pfield @"_0" #) . pfromData -> addr) -> pnot #$ addr #== effInput.address)
+            # inputValues
+        treasuryCredentials =
+          pmap
+            # plam ((pfield @"credential" #) . pfromData . (pfield @"_0" #) . pfromData)
+            # treasuryInputValues
+        treasuryOutputValues =
+          pfilter
+            # plam
+              ( \((pfield @"_0" #) . pfromData -> addr) -> P.do
+                  pelem # addr # treasuryCredentials
+              )
+            # outputValues
+        treasuryInputValuesSum =
+          pfoldr
+            # plam (\((pfield @"_1" #) . pfromData -> x) y -> paddValue # pfromData x # y)
+            # pconstant (mempty :: Value)
+            # treasuryInputValues
+        treasuryOutputValuesSum =
+          pfoldr
+            # plam (\((pfield @"_1" #) . pfromData -> x) y -> paddValue # pfromData x # y)
+            # pconstant (mempty :: Value)
+            # treasuryOutputValues
+        receiverValuesSum =
+          pfoldr
+            # plam (\((pfield @"_1" #) . pfromData -> x) y -> paddValue # pfromData x # y)
+            # pconstant (mempty :: Value)
+            # receivers
         outputContentMatchesRecivers =
           pall # plam (\out -> pelem # out # outputValues)
             #$ receivers
-        sumValues =
-          pfoldr
-            # plam
-              ( \((pfield @"_1" #) . pfromData -> x) y -> P.do
-                  paddValue # pfromData x # y
-              )
-            # pconstant (mempty :: Value)
-        inputCred =
-          pmap
-            # plam
-              ( \inInfo -> P.do
-                  PTxInInfo inInfo' <- pmatch $ pfromData inInfo
-                  PTxOut out <- pmatch $ pfromData $ pfield @"resolved" # inInfo'
-                  let addr = pfromData $ pfield @"address" # out
-                  pfield @"credential" # addr
-              )
-            # pfromData txInfo.inputs
-        totalTreasuryInputs =
-          pfoldr
-            # plam
-              ( \x' y -> P.do
-                  PTxInInfo x <- pmatch $ pfromData x'
-                  PTxOut out <- pmatch $ pfromData $ pfield @"resolved" # x
-                  -- only take ones from treasury
-                  pif
-                    (effInput.address #== pfield @"address" # out)
-                    (paddValue # pfromData (pfield @"value" # out) # y)
-                    y
-              )
-            # pconstant (mempty :: Value)
-            # pfromData txInfo.inputs
-        sumOutputsToTreasury =
-          sumValues
-            #$ pfilter
-            # plam
-              ( \((pfield @"_0" #) . pfromData -> addr) ->
-                  pelem # addr # inputCred
-                    #&& pnot # (addr #== pfield @"credential" # effInput.address)
-              )
-            # outputValues
-        -- TODO: Probably need to check/exclude the effect input...
         excessShouldBePaidToInputs =
-          pdata (paddValue # (sumValues # receivers) # sumOutputsToTreasury) #== pdata totalTreasuryInputs
+          pdata (paddValue # receiverValuesSum # treasuryOutputValuesSum) #== pdata treasuryInputValuesSum
         shouldNotPayToEffect =
           pnot #$ pany
             # plam
@@ -154,5 +149,5 @@ treasuryWithdrawalValidator currSymbol = makeEffect currSymbol $
 
     passert "Transaction output does not match receivers" outputContentMatchesRecivers
     passert "Transaction should not pay to effects" shouldNotPayToEffect
-    passert "Remainders should be returned to the treasury" excessShouldBePaidToInputs -- We might not need this.
+    passert "Remainders should be returned to the treasury" excessShouldBePaidToInputs
     popaque $ pconstant ()
