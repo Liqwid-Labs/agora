@@ -109,8 +109,8 @@ singleAuthorityTokenBurned gatCs txInfo mint = P.do
 
   foldr1
     (#&&)
-    [ ptraceIfFalse "GAT not burned." $ gatAmountMinted #== -1
-    , ptraceIfFalse "All inputs only have valid GATs" $
+    [ ptraceIfFalse "singleAuthorityTokenBurned: Must burn exactly 1 GAT" $ gatAmountMinted #== -1
+    , ptraceIfFalse "singleAuthorityTokenBurned: All GAT tokens must be valid at the inputs" $
         pall
           # plam
             ( \txInInfo' -> P.do
