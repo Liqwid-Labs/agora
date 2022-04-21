@@ -304,6 +304,7 @@ data PProposalStatus (s :: S)
     -- e.g. like Tilde used 'pmatchEnum'.
     PDraft (Term s (PDataRecord '[]))
   | PVotingReady (Term s (PDataRecord '[]))
+  | PLocked (Term s (PDataRecord '[]))
   | PFinished (Term s (PDataRecord '[]))
   deriving stock (GHC.Generic)
   deriving anyclass (Generic)

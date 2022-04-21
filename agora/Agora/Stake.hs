@@ -441,8 +441,6 @@ stakeValidator stake =
           anyOutput @PStakeDatum # txInfo
             #$ plam
             $ \value address newStakeDatum' -> P.do
-              PStakeDatum newStakeDatum <- pmatch newStakeDatum'
-              newStakeDatumF <- pletFields @'["stakedAmount"] newStakeDatum
               let isScriptAddress = pdata address #== ownAddress
               let correctOutputDatum = pdata newStakeDatum' #== pdata stakeDatum'
               let valueCorrect = pdata continuingValue #== pdata value
