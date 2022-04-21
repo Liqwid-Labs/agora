@@ -8,6 +8,7 @@ import Test.Tasty (defaultMain, testGroup)
 
 --------------------------------------------------------------------------------
 
+import Spec.Effect.TreasuryWithdrawal qualified as TreasuryWithdrawal
 import Spec.AuthorityToken qualified as AuthorityToken
 import Spec.Model.MultiSig qualified as MultiSig
 import Spec.Stake qualified as Stake
@@ -19,6 +20,12 @@ main =
     testGroup
       "test suite"
       [ testGroup
+          "Effects"
+          [ testGroup
+              "Treasury Withdrawal Effect"
+              TreasuryWithdrawal.tests
+          ]
+      , testGroup
           "Stake tests"
           Stake.tests
       , testGroup
