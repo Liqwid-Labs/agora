@@ -43,7 +43,6 @@ import Agora.AuthorityToken (
 import Agora.Proposal (
   PProposalDatum,
   PProposalId,
-  PProposalStatus (PDraft),
   PProposalThresholds,
   PProposalVotes (PProposalVotes),
   PResultTag (PResultTag),
@@ -65,7 +64,6 @@ import Agora.Utils (
   passert,
   passetClassValueOf,
   passetClassValueOf',
-  pfindDatum,
   pfindTxInByTxOutRef,
   pisDJust,
   pisUxtoSpent,
@@ -78,21 +76,17 @@ import Agora.Utils (
 
 import Plutarch (popaque)
 import Plutarch.Api.V1 (
-  PAddress,
   PCurrencySymbol,
-  PDatumHash,
-  PMaybeData (PDJust),
   PMintingPolicy,
   PScriptPurpose (PSpending),
   PValidator,
-  PValidatorHash,
   PValue,
   mintingPolicySymbol,
   mkMintingPolicy,
   mkValidator,
   validatorHash,
  )
-import Plutarch.Api.V1.Extra (pownMintValue)
+import Plutarch.Api.V1.Extra (passetClass, passetClassValueOf, pownMintValue)
 import Plutarch.DataRepr (
   DerivePConstantViaData (..),
   PDataFields,
@@ -104,8 +98,9 @@ import Plutarch.Unsafe (punsafeCoerce)
 
 --------------------------------------------------------------------------------
 
-import Plutarch.Builtin (PBuiltinMap, pforgetData)
+import Plutarch.Builtin (pforgetData)
 import Plutarch.Map.Extra (plookup, plookup')
+import Plutarch.SafeMoney (puntag)
 import Plutus.V1.Ledger.Api (
   Address (Address),
   Credential (ScriptCredential),
@@ -255,6 +250,7 @@ governorPolicy params =
    For 'MintGATs' redeemer, it will check:
     - State datum is not changed.
     - Exactly one proposal is being processed.
+    - Select the right effect group.
     - Mint one GAT for every effect.
     - The GATs is properly tagged. (Should we do this?)
     - The GATs are sent to the appropraite effects. (Should we do this?)
@@ -381,13 +377,20 @@ governorValidator params =
 
         proposalDatum <- pletFields @'["id", "effects", "status", "cosigners", "thresholds", "votes"] proposalDatum'
 
+        -- TODO: something else to check here?
+
         PProposalVotes votes' <- pmatch $ pfromData proposalDatum.votes
         votes <- plet votes'
 
-        let yesVotes = plookup' # pyesResultTag # votes
+        let minimumVotes = puntag $ pfromData $ pfield @"execute" # proposalDatum.thresholds
+
+            yesVotes = plookup' # pyesResultTag # votes
             noVotes = plookup' # pnoResultTag # votes
-            -- TODO: check thresholds here
-            finalResultTag = pif (yesVotes #< noVotes) pnoResultTag pyesResultTag
+            biggerVotes = pif (yesVotes #< noVotes) noVotes yesVotes
+
+        passert "Votes should be more than mininum votes" $ minimumVotes #< biggerVotes
+
+        let finalResultTag = pif (yesVotes #< noVotes) pnoResultTag pyesResultTag
 
         effects <- plet $ plookup' # finalResultTag #$ proposalDatum.effects
 
@@ -420,7 +423,7 @@ governorValidator params =
                       datumHash =
                         mustBePDJust # "Output to effect should have datum"
                           #$ output.datumHash
- 
+
                       expectedDatumHash =
                         mustBePJust # "Receiver is not in effect list"
                           #$ plookup # scriptHash # effects
@@ -432,7 +435,6 @@ governorValidator params =
             # (pconstant ())
             # outputsWithGAT
 
-      -- TODO: check proposal votes and timing
       -- TODO: waiting for impl of proposal
       PMutateGovernor _ -> P.do
         passert "No token should be burnt other than GAT" $
