@@ -42,7 +42,7 @@ import Agora.AuthorityToken (
 import Agora.Proposal (
   PProposalDatum,
   PProposalId,
-  PProposalStatus (PExecutable, PFinished, PDraft),
+  PProposalStatus (PDraft, PExecutable, PFinished),
   PProposalThresholds,
   PProposalVotes (PProposalVotes),
   PResultTag (PResultTag),
@@ -159,7 +159,7 @@ PlutusTx.makeIsDataIndexed
   , ('MutateMutateGovernor, 2)
   ]
 
-{- | Parameters for creating Governor scripts. 
+{- | Parameters for creating Governor scripts.
 
    Governance State Token, aka GST, is an NFT which idetifies the governance state utxo.
 -}
@@ -253,7 +253,7 @@ governorPolicy params =
     - Exactly one proposal(the input proposal) is being processed.
     - The input proposal must be in executable state and have required amount of votes.
     - An appropriate effect group is selected to be executed.
-    - A valid GAT is minted and sent to every effect, 
+    - A valid GAT is minted and sent to every effect,
     - Exactly one utxo should be sent back to the proposal validator. This utxo must contain the proposal state token, and also has a valid datum of type 'ProposalDatum'(the output proposal).
     - Said output proposal's status should be `Finished`. Other than that, nothing should be changed compare to the input proposal.
 
@@ -347,9 +347,9 @@ governorValidator params =
 
         let isProposalDraft = pmatch (pfromData proposalDatum.status) $ \case
               PDraft _ -> pconstant True
-              _ -> pconstant False 
+              _ -> pconstant False
 
-        passert "Proposal state should be draft" $ isProposalDraft
+        passert "Proposal state should be draft" isProposalDraft
 
         popaque $ pconstant ()
       PMintGATs _ -> P.do
@@ -360,7 +360,8 @@ governorValidator params =
         inputsWithProposalStateToken <-
           plet $
             pfilter
-              # ( plam $ \(((pfield @"value" #) . (pfield @"resolved" #)) -> value) ->
+              # plam
+                ( \((pfield @"value" #) . (pfield @"resolved" #) -> value) ->
                     psymbolValueOf # pproposalSym # value #== 1
                 )
               #$ pfromData txInfo.inputs
@@ -368,7 +369,8 @@ governorValidator params =
         outputsWithProposalStateToken <-
           plet $
             pfilter
-              # ( plam $ \((pfield @"value" #) -> value) ->
+              # plam
+                ( \((pfield @"value" #) -> value) ->
                     psymbolValueOf # pproposalSym # value #== 1
                 )
               #$ pfromData txInfo.outputs
@@ -410,13 +412,13 @@ governorValidator params =
               PExecutable _ -> pconstant True
               _ -> pconstant False
 
-        passert "Proposal must be in executable state in order to execute effects" $ isProposalExecutable
+        passert "Proposal must be in executable state in order to execute effects" isProposalExecutable
 
         -- TODO: not sure if I did the right thing, can't use haskell level constructor here
         let fields =
               pdcons @"id" # inputProposalDatum.id
                 #$ pdcons @"effects" # inputProposalDatum.effects
-                #$ pdcons @"status" # (pdata $ pcon $ PFinished pdnil)
+                #$ pdcons @"status" # pdata (pcon $ PFinished pdnil)
                 #$ pdcons @"cosigners" # inputProposalDatum.cosigners
                 #$ pdcons @"thresholds" # inputProposalDatum.thresholds
                 #$ pdcons @"votes" # inputProposalDatum.votes # pdnil
@@ -424,7 +426,7 @@ governorValidator params =
             expectedOutputDatum = pforgetData $ pdata fields
 
         passert "Unexpected output proposal datum" $
-          (pforgetData $ pdata outputProposalDatum') #== expectedOutputDatum
+          pforgetData (pdata outputProposalDatum') #== expectedOutputDatum
 
         -- TODO: anything else to check here?
 
@@ -452,7 +454,8 @@ governorValidator params =
         outputsWithGAT <-
           plet $
             pfilter
-              # ( plam $ \((pfield @"value" #) -> value) ->
+              # plam
+                ( \((pfield @"value" #) -> value) ->
                     0 #< psymbolValueOf # pgatSym # value
                 )
               #$ pfromData txInfo.outputs
@@ -462,7 +465,8 @@ governorValidator params =
 
         popaque $
           pfoldr
-            # ( plam $ \(pfromData -> output') _ -> P.do
+            # plam
+              ( \(pfromData -> output') _ -> P.do
                   output <- pletFields @'["address", "datumHash"] $ output'
 
                   let scriptHash =
@@ -478,9 +482,9 @@ governorValidator params =
 
                   passert "GAT must be tagged by the effect hash" $ authorityTokensValidIn # pgatSym # output'
                   passert "Unexpected datum" $ datumHash #== expectedDatumHash
-                  (pconstant ())
+                  pconstant ()
               )
-            # (pconstant ())
+            # pconstant ()
             # outputsWithGAT
       PMutateGovernor _ -> P.do
         popaque $ singleAuthorityTokenBurned pgatSym ctx.txInfo txInfo.mint
