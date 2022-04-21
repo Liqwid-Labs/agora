@@ -12,7 +12,6 @@ module Agora.Governor (
   GovernorDatum (..),
   GovernorRedeemer (..),
   Governor (..),
-  governorStateTokenName,
 
   -- * Plutarch-land
   PGovernorDatum (..),
@@ -163,12 +162,10 @@ PlutusTx.makeIsDataIndexed
 
 -- | Parameters for creating Governor scripts.
 data Governor = Governor
-  { stORef :: TxOutRef
+  { stORef :: TxOutRef,
   -- ^ An utxo, which will be spent to mint the state token for the governor validator.
+    stName :: TokenName
   }
-
-governorStateTokenName :: TokenName
-governorStateTokenName = TokenName ""
 
 --------------------------------------------------------------------------------
 
@@ -216,7 +213,7 @@ deriving via (DerivePConstantViaData GovernorRedeemer PGovernorRedeemer) instanc
 
     - The utxo specified in the Governor parameter is spent.
     - Only one token is minted.
-    - Ensure the token name is "".
+    - Ensure the token name is 'stName'.
 -}
 governorPolicy :: Governor -> ClosedTerm PMintingPolicy
 governorPolicy params =
@@ -224,6 +221,7 @@ governorPolicy params =
     ctx <- pletFields @'["txInfo", "purpose"] ctx'
     let oref = pconstant params.stORef
         ownSymbol = pownCurrencySymbol # ctx'
+        ownAssetClass = passetClass # ownSymbol # pconstant params.stName
 
     mintValue <- plet $ pownMintValue # ctx'
 
@@ -538,7 +536,7 @@ governorValidator params =
 --------------------------------------------------------------------------------
 
 governorStateTokenAssetClass :: Governor -> AssetClass
-governorStateTokenAssetClass gov = AssetClass (symbol, governorStateTokenName)
+governorStateTokenAssetClass gov = AssetClass (symbol, gov.stName)
   where
     policy :: MintingPolicy
     policy = mkMintingPolicy $ governorPolicy gov
