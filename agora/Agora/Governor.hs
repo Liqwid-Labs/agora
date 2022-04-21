@@ -24,6 +24,7 @@ module Agora.Governor (
 
   -- * Utilities
   governorStateTokenAssetClass,
+  authorityTokenSymbolFromGovernor,
 ) where
 
 --------------------------------------------------------------------------------
@@ -472,20 +473,8 @@ governorValidator params =
     stateTokenValueOf :: Term s (PValue :--> PInteger)
     stateTokenValueOf = passetClassValueOf' stateTokenAssetClass
 
-    authorityTokenParams :: AuthorityToken
-    authorityTokenParams =
-      AuthorityToken
-        { authority = stateTokenAssetClass
-        }
-
-    authorityTokenSymbol :: CurrencySymbol
-    authorityTokenSymbol = mintingPolicySymbol policy
-      where
-        policy :: MintingPolicy
-        policy = mkMintingPolicy $ authorityTokenPolicy authorityTokenParams
-
     pGATSym :: Term s PCurrencySymbol
-    pGATSym = phoistAcyclic $ pconstant authorityTokenSymbol
+    pGATSym = phoistAcyclic $ pconstant $ authorityTokenSymbolFromGovernor params
 
     scriptHashFromAddress' :: Term s (PAddress :--> PValidatorHash)
     scriptHashFromAddress' = phoistAcyclic $
@@ -505,3 +494,9 @@ governorStateTokenAssetClass gov = AssetClass (symbol, governorStateTokenName)
 
     symbol :: CurrencySymbol
     symbol = mintingPolicySymbol policy
+
+authorityTokenSymbolFromGovernor :: Governor -> CurrencySymbol
+authorityTokenSymbolFromGovernor gov = mintingPolicySymbol policy
+  where
+    params = AuthorityToken $ governorStateTokenAssetClass gov
+    policy = mkMintingPolicy $ authorityTokenPolicy params
