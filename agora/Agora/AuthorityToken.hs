@@ -34,7 +34,6 @@ import Prelude
 --------------------------------------------------------------------------------
 
 import Agora.Utils (
-  allInputs,
   allOutputs,
   passert,
   passetClassValueOf,
@@ -81,15 +80,16 @@ authorityTokensValidIn = phoistAcyclic $
         pmatch (pfield @"credential" # address) $ \case
           PPubKeyCredential _ ->
             -- GATs should only be sent to Effect validators
-            pconstant False
+            ptraceIfFalse "authorityTokensValidIn: GAT incorrectly lives at PubKey" $ pconstant False
           PScriptCredential ((pfromData . (pfield @"_0" #)) -> cred) -> P.do
             PMap tokenMap <- pmatch tokenMap'
-            pall
-              # plam
-                ( \pair ->
-                    pforgetData (pfstBuiltin # pair) #== pforgetData (pdata cred)
-                )
-              # tokenMap
+            ptraceIfFalse "authorityTokensValidIn: GAT TokenName doesn't match ScriptHash" $
+              pall
+                # plam
+                  ( \pair ->
+                      pforgetData (pfstBuiltin # pair) #== pforgetData (pdata cred)
+                  )
+                # tokenMap
       PNothing ->
         -- No GATs exist at this output!
         pconstant True
@@ -105,14 +105,20 @@ singleAuthorityTokenBurned gatCs txInfo mint = P.do
   let gatAmountMinted :: Term _ PInteger
       gatAmountMinted = psymbolValueOf # gatCs # mint
 
+  txInfoF <- pletFields @'["inputs"] $ txInfo
+
   foldr1
     (#&&)
-    [ ptraceIfFalse "GAT not burned." $ gatAmountMinted #== -1
-    , ptraceIfFalse "All inputs only have valid GATs" $
-        allInputs @PUnit # pfromData txInfo #$ plam $ \txOut _value _address _datum ->
-          authorityTokensValidIn
-            # gatCs
-            # txOut
+    [ ptraceIfFalse "singleAuthorityTokenBurned: Must burn exactly 1 GAT" $ gatAmountMinted #== -1
+    , ptraceIfFalse "singleAuthorityTokenBurned: All GAT tokens must be valid at the inputs" $
+        pall
+          # plam
+            ( \txInInfo' -> P.do
+                PTxInInfo txInInfo <- pmatch (pfromData txInInfo')
+                let txOut' = pfield @"resolved" # txInInfo
+                authorityTokensValidIn # gatCs # pfromData txOut'
+            )
+          # txInfoF.inputs
     ]
 
 -- | Policy given 'AuthorityToken' params.
