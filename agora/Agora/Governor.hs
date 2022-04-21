@@ -43,7 +43,7 @@ import Agora.AuthorityToken (
 import Agora.Proposal (
   PProposalDatum,
   PProposalId,
-  PProposalStatus (PFinished, PLocked),
+  PProposalStatus (PFinished, PExecutable),
   PProposalThresholds,
   PProposalVotes (PProposalVotes),
   PResultTag (PResultTag),
@@ -409,11 +409,11 @@ governorValidator params =
           pletFields @'["id", "effects", "status", "cosigners", "thresholds", "votes"]
             inputProposalDatum'
 
-        let isInputLocked = pmatch (pfromData inputProposalDatum.status) $ \case
-              PLocked _ -> pconstant False
+        let isExecutable = pmatch (pfromData inputProposalDatum.status) $ \case
+              PExecutable _ -> pconstant True
               _ -> pconstant False
 
-        passert "Proposal must be in locked state in order to execute effects" $ isInputLocked
+        passert "Proposal must be in executable state in order to execute effects" $ isExecutable
 
         let fields =
               pdcons @"id" # inputProposalDatum.id
@@ -439,7 +439,8 @@ governorValidator params =
             noVotes = plookup' # pnoResultTag # votes
             biggerVotes = pif (yesVotes #< noVotes) noVotes yesVotes
 
-        passert "Number of votes doesn't meet the minimum requirement" $ minimumVotes #< biggerVotes
+        passert "Number of votes doesn't meet the minimum requirement" $
+          minimumVotes #< biggerVotes
 
         let finalResultTag = pif (yesVotes #< noVotes) pnoResultTag pyesResultTag
 
