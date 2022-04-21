@@ -43,6 +43,7 @@ import Agora.AuthorityToken (
 import Agora.Proposal (
   PProposalDatum,
   PProposalId,
+  PProposalStatus (PFinished, PLocked),
   PProposalThresholds,
   PProposalVotes (PProposalVotes),
   PResultTag (PResultTag),
@@ -69,6 +70,7 @@ import Agora.Utils (
   pisUxtoSpent,
   pownCurrencySymbol,
   psymbolValueOf,
+  pvalueSpent,
   scriptHashFromAddress,
  )
 
@@ -318,7 +320,7 @@ governorValidator params =
         passert "The utxo paid to the proposal validator must have datum" $
           pisDJust # output.datumHash
 
-        let proposalDatum' =
+        let inputProposalDatum' =
               mustFindDatum' @PProposalDatum
                 # output.datumHash
                 # ctx.txInfo
@@ -326,7 +328,7 @@ governorValidator params =
         proposalParams <-
           pletFields
             @'["id", "status", "cosigners", "thresholds", "votes"]
-            proposalDatum'
+            inputProposalDatum'
 
         passert "Invalid proposal id in proposal parameters" $
           proposalParams.id #== oldParams.nextProposalId
@@ -344,7 +346,7 @@ governorValidator params =
         --     _ -> pconstant False
 
         passert "Proposal datum must be valid" $
-          proposalDatumValid # proposalDatum'
+          proposalDatumValid # inputProposalDatum'
 
         -- TODO: proposal impl not done yet
         ptraceError "Not implemented yet"
@@ -353,36 +355,66 @@ governorValidator params =
           -- FIXME: There should be a better way to do this
           (pforgetData $ pdata newDatum') #== datum'
 
-        -- TODO: any need to check the proposal datum here?
-
         inputsWithProposalStateToken <-
           plet $
             pfilter
               # ( plam $ \(((pfield @"value" #) . (pfield @"resolved" #)) -> value) ->
-                    0 #< psymbolValueOf # pProposalSym # value
+                    psymbolValueOf # pProposalSym # value #== 1
                 )
               #$ pfromData txInfo.inputs
 
+        outputsWithProposalStateToken <-
+          plet $
+            pfilter
+              # ( plam $ \((pfield @"value" #) -> value) ->
+                    psymbolValueOf # pProposalSym # value #== 1
+                )
+              #$ pfromData txInfo.outputs
+
         passert "One proposal at a time" $
           plength # inputsWithProposalStateToken #== 1
+            #&& (psymbolValueOf # pProposalSym #$ pvalueSpent # txInfo') #== 1
 
         proposalInputTxOut <-
           pletFields @'["address", "value", "datumHash"] $
             pfield @"resolved" #$ phead # inputsWithProposalStateToken
+        proposalOutputTxOut <-
+          pletFields @'["address", "value", "datumHash"] $
+            phead # outputsWithProposalStateToken
 
-        proposalDatum' <- plet $ mustFindDatum' @PProposalDatum # proposalInputTxOut.datumHash # txInfo'
+        inputProposalDatum' <- plet $ mustFindDatum' @PProposalDatum # proposalInputTxOut.datumHash # txInfo'
+        outputProposalDatum' <- plet $ mustFindDatum' @PProposalDatum # proposalOutputTxOut.datumHash # txInfo'
 
         passert "Proposal datum must be valid" $
-          proposalDatumValid # proposalDatum'
+          proposalDatumValid # inputProposalDatum' #&& proposalDatumValid # outputProposalDatum'
 
-        proposalDatum <- pletFields @'["id", "effects", "status", "cosigners", "thresholds", "votes"] proposalDatum'
+        inputProposalDatum <- pletFields @'["id", "effects", "status", "cosigners", "thresholds", "votes"] inputProposalDatum'
+
+        let isInputLocked = pmatch (pfromData inputProposalDatum.status) $ \case
+              PLocked _ -> pconstant False
+              _ -> pconstant False
+
+        passert "Input proposal status must be locked" $ isInputLocked
+
+        let fields =
+              pdcons @"id" # inputProposalDatum.id
+                #$ pdcons @"effects" # inputProposalDatum.effects
+                #$ pdcons @"status" # (pdata $ pcon $ PFinished pdnil)
+                #$ pdcons @"cosigners" # inputProposalDatum.cosigners
+                #$ pdcons @"thresholds" # inputProposalDatum.thresholds
+                #$ pdcons @"votes" # inputProposalDatum.votes # pdnil
+
+            expectedOutputDatum = pforgetData $ pdata fields
+
+        passert "Unexpected output proposal datum" $
+          (pforgetData $ pdata outputProposalDatum') #== expectedOutputDatum
 
         -- TODO: something else to check here?
 
-        PProposalVotes votes' <- pmatch $ pfromData proposalDatum.votes
+        PProposalVotes votes' <- pmatch $ pfromData inputProposalDatum.votes
         votes <- plet votes'
 
-        let minimumVotes = puntag $ pfromData $ pfield @"execute" # proposalDatum.thresholds
+        let minimumVotes = puntag $ pfromData $ pfield @"execute" # inputProposalDatum.thresholds
 
             yesVotes = plookup' # pyesResultTag # votes
             noVotes = plookup' # pnoResultTag # votes
@@ -392,7 +424,7 @@ governorValidator params =
 
         let finalResultTag = pif (yesVotes #< noVotes) pnoResultTag pyesResultTag
 
-        effects <- plet $ plookup' # finalResultTag #$ proposalDatum.effects
+        effects <- plet $ plookup' # finalResultTag #$ inputProposalDatum.effects
 
         gatCount <- plet $ plength #$ pto $ pto effects
 
