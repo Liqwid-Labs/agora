@@ -42,7 +42,7 @@ import Agora.AuthorityToken (
 import Agora.Proposal (
   PProposalDatum,
   PProposalId,
-  PProposalStatus (PFinished, PExecutable),
+  PProposalStatus (PExecutable, PFinished),
   PProposalThresholds,
   PProposalVotes (PProposalVotes),
   PResultTag (PResultTag),
@@ -55,7 +55,6 @@ import Agora.Proposal (
   proposalValidator,
  )
 import Agora.Utils (
-  containsSingleCurrencySymbol,
   findOutputsToAddress,
   hasOnlyOneTokenOfCurrencySymbol,
   mustBePDJust,
@@ -162,9 +161,9 @@ PlutusTx.makeIsDataIndexed
 
 -- | Parameters for creating Governor scripts.
 data Governor = Governor
-  { stORef :: TxOutRef,
+  { stORef :: TxOutRef
   -- ^ An utxo, which will be spent to mint the state token for the governor validator.
-    stName :: TokenName
+  , stName :: TokenName
   }
 
 --------------------------------------------------------------------------------
@@ -230,9 +229,6 @@ governorPolicy params =
     passert "Exactly one token should be minted" $
       psymbolValueOf # ownSymbol # mintValue #== 1
         #&& passetClassValueOf # ownSymbol # pconstant governorStateTokenName # mintValue #== 1
-
-    passert "Nothing is minted other than the state token" $
-      containsSingleCurrencySymbol # mintValue
 
     popaque (pconstant ())
 
@@ -323,33 +319,34 @@ governorValidator params =
         passert "The utxo paid to the proposal validator must have datum" $
           pisDJust # output.datumHash
 
-        let inputProposalDatum' =
-              mustFindDatum' @PProposalDatum
-                # output.datumHash
-                # ctx.txInfo
+        outputProposalDatum' <-
+          plet $
+            mustFindDatum' @PProposalDatum
+              # output.datumHash
+              # ctx.txInfo
+
+        passert "Proposal datum must be valid" $
+          proposalDatumValid # outputProposalDatum'
 
         proposalParams <-
           pletFields
             @'["id", "status", "cosigners", "thresholds", "votes"]
-            inputProposalDatum'
+            outputProposalDatum'
 
-        passert "Invalid proposal id in proposal parameters" $
+        passert "Invalid proposal id in proposal datum" $
           proposalParams.id #== oldParams.nextProposalId
 
-        passert "Invalid thresholds in proposal parameters" $
+        passert "Invalid thresholds in proposal datum" $
           proposalParams.thresholds #== oldParams.proposalThresholds
 
-        -- passert "Initial proposal votes should be empty" $
-        --   pnull #$ pto $ pto $ pfromData proposalParams.votes
+        passert "Initial proposal votes should be empty" $
+          pnull #$ pto $ pto $ pfromData proposalParams.votes
 
         -- passert "Initial proposal status should be Draft" $ P.do
         --   s <- pmatch $ proposalParams.status
         --   case s of
         --     PDraft _ -> pconstant True
         --     _ -> pconstant False
-
-        passert "Proposal datum must be valid" $
-          proposalDatumValid # inputProposalDatum'
 
         -- TODO: proposal impl not done yet
         ptraceError "Not implemented yet"
@@ -449,9 +446,6 @@ governorValidator params =
         passert "Required amount of GATs should be minted" $
           psymbolValueOf # pproposalSym # txInfo.mint #== gatCount
 
-        passert "No token should be minted other than GAT" $
-          containsSingleCurrencySymbol # txInfo.mint
-
         outputsWithGAT <-
           plet $
             pfilter
@@ -486,9 +480,6 @@ governorValidator params =
             # (pconstant ())
             # outputsWithGAT
       PMutateGovernor _ -> P.do
-        passert "No token should be burnt other than GAT" $
-          containsSingleCurrencySymbol # txInfo.mint
-
         popaque $ singleAuthorityTokenBurned pgatSym ctx.txInfo txInfo.mint
   where
     stateTokenAssetClass :: AssetClass
