@@ -45,7 +45,8 @@ import Agora.Proposal (
   PProposalId,
   PProposalStatus (PDraft),
   PProposalThresholds,
-  PResultTag,
+  PProposalVotes (PProposalVotes),
+  PResultTag (PResultTag),
   Proposal (..),
   ProposalId,
   ProposalThresholds,
@@ -58,14 +59,16 @@ import Agora.Utils (
   containsSingleCurrencySymbol,
   findOutputsToAddress,
   hasOnlyOneTokenOfCurrencySymbol,
+  mustBePDJust,
+  mustBePJust,
   mustFindDatum',
   passert,
   passetClassValueOf,
   passetClassValueOf',
+  pfindDatum,
   pfindTxInByTxOutRef,
   pisDJust,
   pisUxtoSpent,
-  plookup,
   pownCurrencySymbol,
   psymbolValueOf,
   scriptHashFromAddress,
@@ -102,6 +105,7 @@ import Plutarch.Unsafe (punsafeCoerce)
 --------------------------------------------------------------------------------
 
 import Plutarch.Builtin (PBuiltinMap, pforgetData)
+import Plutarch.Map.Extra (plookup, plookup')
 import Plutus.V1.Ledger.Api (
   Address (Address),
   Credential (ScriptCredential),
@@ -334,14 +338,14 @@ governorValidator params =
         passert "Invalid thresholds in proposal parameters" $
           proposalParams.thresholds #== oldParams.proposalThresholds
 
-        passert "Initial proposal votes should be zero" $
-          pnull #$ pto $ pto $ pfromData proposalParams.votes
+        -- passert "Initial proposal votes should be empty" $
+        --   pnull #$ pto $ pto $ pfromData proposalParams.votes
 
-        passert "Initial proposal status should be Draft" $ P.do
-          s <- pmatch $ proposalParams.status
-          case s of
-            PDraft _ -> pconstant True
-            _ -> pconstant False
+        -- passert "Initial proposal status should be Draft" $ P.do
+        --   s <- pmatch $ proposalParams.status
+        --   case s of
+        --     PDraft _ -> pconstant True
+        --     _ -> pconstant False
 
         passert "Proposal datum must be valid" $
           proposalDatumValid # proposalDatum'
@@ -377,20 +381,17 @@ governorValidator params =
 
         proposalDatum <- pletFields @'["id", "effects", "status", "cosigners", "thresholds", "votes"] proposalDatum'
 
-        let effects' :: Term _ (PBuiltinMap PResultTag (PBuiltinMap PValidatorHash PDatumHash))
-            effects' = punsafeCoerce proposalDatum.effects
+        PProposalVotes votes' <- pmatch $ pfromData proposalDatum.votes
+        votes <- plet votes'
 
-        effectMapList <-
-          plet $
-            pfoldr
-              # ( plam $ \m l -> P.do
-                    let theMap = pfromData $ psndBuiltin # m
-                    pconcat # theMap # l
-                )
-              # pcon PNil
-              # effects'
+        let yesVotes = plookup' # pyesResultTag # votes
+            noVotes = plookup' # pnoResultTag # votes
+            -- TODO: check thresholds here
+            finalResultTag = pif (yesVotes #< noVotes) pnoResultTag pyesResultTag
 
-        gatCount <- plet $ plength # effectMapList
+        effects <- plet $ plookup' # finalResultTag #$ proposalDatum.effects
+
+        gatCount <- plet $ plength #$ pto $ pto effects
 
         passert "Required amount of GATs should be minted" $
           psymbolValueOf # pProposalSym # txInfo.mint #== gatCount
@@ -405,34 +406,30 @@ governorValidator params =
                     0 #< psymbolValueOf # pGATSym # value
                 )
               #$ pfromData txInfo.outputs
-
         passert "Minted GAT amount should equal to amount of output GAT" $
           plength # outputsWithGAT #== gatCount
 
-        passert "All GAT must be properly tagged" $
-          pall
-            # ( plam $ \(pfromData -> outInfo) ->
-                  authorityTokensValidIn # pGATSym # outInfo
-              )
-            # outputsWithGAT
-
         popaque $
           pfoldr
-            # ( plam $ \(pfromData -> outputInfo') _ -> P.do
-                  outputInfo <- pletFields @'["address", "datumHash"] $ outputInfo'
-                  passert "GAT must be properly tagged" $ authorityTokensValidIn # pGATSym # outputInfo'
-                  passert "Output to the effect should have datum" $ pisDJust # outputInfo.datumHash
-                  PDJust ((pfield @"_0" #) -> datumHash) <- pmatch outputInfo.datumHash
-                  let scriptHash = scriptHashFromAddress' # outputInfo.address
-                  expectedDatumHash' <- pmatch $ plookup # (pdata scriptHash) # effectMapList
-                  case expectedDatumHash' of
-                    PJust expectedDatumHash ->
-                      passert "An unexpected datum hash is found sent to the effect" $
-                        datumHash #== expectedDatumHash
-                    _ -> passert "A GAT is not sent to an effect" $ pconstant False
-                  pconstant ()
+            # ( plam $ \(pfromData -> output') _ -> P.do
+                  output <- pletFields @'["address", "datumHash"] $ output'
+
+                  let scriptHash =
+                        mustBePJust # "GAT receiver is not a script"
+                          #$ scriptHashFromAddress # output.address
+                      datumHash =
+                        mustBePDJust # "Output to effect should have datum"
+                          #$ output.datumHash
+ 
+                      expectedDatumHash =
+                        mustBePJust # "Receiver is not in effect list"
+                          #$ plookup # scriptHash # effects
+
+                  passert "GAT must be tagged by the effect hash" $ authorityTokensValidIn # pGATSym # output'
+                  passert "Unexpected datum" $ datumHash #== expectedDatumHash
+                  (pconstant ())
               )
-            # pconstant ()
+            # (pconstant ())
             # outputsWithGAT
 
       -- TODO: check proposal votes and timing
@@ -476,13 +473,11 @@ governorValidator params =
     pGATSym :: Term s PCurrencySymbol
     pGATSym = phoistAcyclic $ pconstant $ authorityTokenSymbolFromGovernor params
 
-    scriptHashFromAddress' :: Term s (PAddress :--> PValidatorHash)
-    scriptHashFromAddress' = phoistAcyclic $
-      plam $ \addr -> P.do
-        mh <- pmatch $ scriptHashFromAddress # addr
-        case mh of
-          PJust vh -> vh
-          _ -> ptraceError "Not a valid validator address"
+    pyesResultTag :: Term s PResultTag
+    pyesResultTag = phoistAcyclic $ pcon $ PResultTag $ pconstant 1
+
+    pnoResultTag :: Term s PResultTag
+    pnoResultTag = phoistAcyclic $ pcon $ PResultTag $ pconstant 0
 
 --------------------------------------------------------------------------------
 

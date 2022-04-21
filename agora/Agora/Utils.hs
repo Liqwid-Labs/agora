@@ -48,6 +48,8 @@ module Agora.Utils (
   hasOnlyOneTokenOfCurrencySymbol,
   mustFindDatum',
   containsSingleCurrencySymbol,
+  mustBePJust,
+  mustBePDJust,
 ) where
 
 --------------------------------------------------------------------------------
@@ -556,3 +558,15 @@ containsSingleCurrencySymbol :: Term s (PValue :--> PBool)
 containsSingleCurrencySymbol = phoistAcyclic $
   plam $ \v -> P.do
     (plength #$ pto $ pto $ pto v) #== 1
+
+mustBePJust :: forall a s. Term s (PString :--> PMaybe a :--> a)
+mustBePJust = phoistAcyclic $
+  plam $ \emsg mv' -> pmatch mv' $ \case
+    PJust v -> v
+    _ -> ptraceError emsg
+
+mustBePDJust :: forall a s. (PIsData a) => Term s (PString :--> PMaybeData a :--> a)
+mustBePDJust = phoistAcyclic $
+  plam $ \emsg mv' -> pmatch mv' $ \case
+    PDJust ((pfield @"_0" #) -> v) -> v
+    _ -> ptraceError emsg
