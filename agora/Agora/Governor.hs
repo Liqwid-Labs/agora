@@ -356,7 +356,7 @@ governorValidator params =
         -- TODO: proposal impl not done yet
         ptraceError "Not implemented yet"
       PMintGATs _ -> P.do
-        passert "Datum should not be changed" $
+        passert "Governor state should not be changed" $
           -- FIXME: There should be a better way to do this
           (pforgetData $ pdata newDatum') #== datum'
 
@@ -376,7 +376,7 @@ governorValidator params =
                 )
               #$ pfromData txInfo.outputs
 
-        passert "One proposal at a time" $
+        passert "The governor can only process one proposal at a time" $
           plength # inputsWithProposalStateToken #== 1
             #&& (psymbolValueOf # pproposalSym #$ pvalueSpent # txInfo') #== 1
 
@@ -413,7 +413,7 @@ governorValidator params =
               PLocked _ -> pconstant False
               _ -> pconstant False
 
-        passert "Input proposal status must be locked" $ isInputLocked
+        passert "Proposal must be in locked state in order to execute effects" $ isInputLocked
 
         let fields =
               pdcons @"id" # inputProposalDatum.id
@@ -439,7 +439,7 @@ governorValidator params =
             noVotes = plookup' # pnoResultTag # votes
             biggerVotes = pif (yesVotes #< noVotes) noVotes yesVotes
 
-        passert "Votes should be more than mininum votes" $ minimumVotes #< biggerVotes
+        passert "Number of votes doesn't meet the minimum requirement" $ minimumVotes #< biggerVotes
 
         let finalResultTag = pif (yesVotes #< noVotes) pnoResultTag pyesResultTag
 
@@ -460,7 +460,8 @@ governorValidator params =
                     0 #< psymbolValueOf # pgatSym # value
                 )
               #$ pfromData txInfo.outputs
-        passert "Minted GAT amount should equal to amount of output GAT" $
+
+        passert "Output GATs is more than minted GATs" $
           plength # outputsWithGAT #== gatCount
 
         popaque $
@@ -476,7 +477,7 @@ governorValidator params =
                           #$ output.datumHash
 
                       expectedDatumHash =
-                        mustBePJust # "Receiver is not in effect list"
+                        mustBePJust # "Receiver is not in the effect list"
                           #$ plookup # scriptHash # effects
 
                   passert "GAT must be tagged by the effect hash" $ authorityTokensValidIn # pgatSym # output'
