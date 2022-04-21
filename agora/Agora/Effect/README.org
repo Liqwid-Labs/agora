@@ -1,0 +1,17 @@
+#+title: Effects - Under Construction
+
+Effects describe a modification in the goverance system. Its job is to
+overlook transaction and to validate that transaction is doing a
+correct job. Thus, if an effect is compromised, the governance system
+will be exposed to fraudulent transactions.
+
+In Agora, Effects can be built with given `makeEffect` function. This
+function is a simple boilderplate that checks for correct handling of
+GAT, leaving effect creator only with the effect logic itself.
+
+* Making an Effect
+All effects are used once, and all required data will be sent via
+Datum, not Redeemer. So, at first, one must setup a datum for an
+effect. It is recommanded to have both Haskell-level(Plutus style) and
+plutarch-level definition of the datum. These two can be bridge with
+Plutarch's [[https://github.com/Plutonomicon/plutarch/blob/master/docs/Typeclasses/PConstant%20and%20PLift.md][`PConstant` and `PLift`]]. 
