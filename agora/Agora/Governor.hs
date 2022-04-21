@@ -42,7 +42,7 @@ import Agora.AuthorityToken (
 import Agora.Proposal (
   PProposalDatum,
   PProposalId,
-  PProposalStatus (PExecutable, PFinished),
+  PProposalStatus (PExecutable, PFinished, PVotingReady, PDraft),
   PProposalThresholds,
   PProposalVotes (PProposalVotes),
   PResultTag (PResultTag),
@@ -328,28 +328,29 @@ governorValidator params =
         passert "Proposal datum must be valid" $
           proposalDatumValid # outputProposalDatum'
 
-        proposalParams <-
+        proposalDatum <-
           pletFields
             @'["id", "status", "cosigners", "thresholds", "votes"]
             outputProposalDatum'
 
         passert "Invalid proposal id in proposal datum" $
-          proposalParams.id #== oldParams.nextProposalId
+          proposalDatum.id #== oldParams.nextProposalId
 
         passert "Invalid thresholds in proposal datum" $
-          proposalParams.thresholds #== oldParams.proposalThresholds
+          proposalDatum.thresholds #== oldParams.proposalThresholds
 
         passert "Initial proposal votes should be empty" $
-          pnull #$ pto $ pto $ pfromData proposalParams.votes
+          pnull #$ pto $ pto $ pfromData proposalDatum.votes
 
-        -- passert "Initial proposal status should be Draft" $ P.do
-        --   s <- pmatch $ proposalParams.status
-        --   case s of
-        --     PDraft _ -> pconstant True
-        --     _ -> pconstant False
+        -- TODO: should we check cosigners here?
 
-        -- TODO: proposal impl not done yet
-        ptraceError "Not implemented yet"
+        let isProposalDraft = pmatch (pfromData proposalDatum.status) $ \case
+              PDraft _ -> pconstant True
+              _ -> pconstant False 
+
+        passert "Proposal state should be draft" $ isProposalDraft
+
+        popaque $ pconstant ()
       PMintGATs _ -> P.do
         passert "Governor state should not be changed" $
           -- FIXME: There should be a better way to do this
@@ -404,11 +405,11 @@ governorValidator params =
           pletFields @'["id", "effects", "status", "cosigners", "thresholds", "votes"]
             inputProposalDatum'
 
-        let isExecutable = pmatch (pfromData inputProposalDatum.status) $ \case
+        let isProposalExecutable = pmatch (pfromData inputProposalDatum.status) $ \case
               PExecutable _ -> pconstant True
               _ -> pconstant False
 
-        passert "Proposal must be in executable state in order to execute effects" $ isExecutable
+        passert "Proposal must be in executable state in order to execute effects" $ isProposalExecutable
 
         let fields =
               pdcons @"id" # inputProposalDatum.id
@@ -485,8 +486,8 @@ governorValidator params =
     stateTokenAssetClass :: AssetClass
     stateTokenAssetClass = governorStateTokenAssetClass params
 
-    proposalParams :: Proposal
-    proposalParams =
+    proposalDatum :: Proposal
+    proposalDatum =
       Proposal
         { governorSTAssetClass = stateTokenAssetClass
         }
@@ -495,7 +496,7 @@ governorValidator params =
     proposalSymbol = mintingPolicySymbol policy
       where
         policy :: MintingPolicy
-        policy = mkMintingPolicy $ proposalPolicy proposalParams
+        policy = mkMintingPolicy $ proposalPolicy proposalDatum
 
     pproposalSym :: Term s PCurrencySymbol
     pproposalSym = phoistAcyclic $ pconstant proposalSymbol
@@ -507,7 +508,7 @@ governorValidator params =
         hash = validatorHash validator
 
         validator :: Validator
-        validator = mkValidator $ proposalValidator proposalParams
+        validator = mkValidator $ proposalValidator proposalDatum
 
     pproposalValidatorAddress :: Term s PAddress
     pproposalValidatorAddress = phoistAcyclic $ pconstant proposalValidatorAddress
