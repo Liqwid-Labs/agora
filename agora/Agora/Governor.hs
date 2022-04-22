@@ -23,6 +23,7 @@ module Agora.Governor (
 
   -- * Utilities
   gstAssetClass,
+  gatSymbol,
 ) where
 
 --------------------------------------------------------------------------------
@@ -97,12 +98,12 @@ import Plutarch.DataRepr (
 import Plutarch.Lift (PUnsafeLiftDecl (..))
 import Plutarch.Monadic qualified as P
 import Plutarch.Unsafe (punsafeCoerce)
-
---------------------------------------------------------------------------------
-
 import Plutarch.Builtin (pforgetData)
 import Plutarch.Map.Extra (plookup, plookup')
 import Plutarch.SafeMoney (puntag)
+
+--------------------------------------------------------------------------------
+
 import Plutus.V1.Ledger.Api (
   Address (Address),
   Credential (ScriptCredential),
@@ -512,14 +513,8 @@ governorValidator gov =
     stateTokenValueOf :: Term s (PValue :--> PInteger)
     stateTokenValueOf = passetClassValueOf' stateTokenAssetClass
 
-    gatSymbol :: CurrencySymbol
-    gatSymbol = mintingPolicySymbol policy
-      where
-        at = AuthorityToken $ gstAssetClass gov
-        policy = mkMintingPolicy $ authorityTokenPolicy at
-
     pgatSym :: Term s PCurrencySymbol
-    pgatSym = phoistAcyclic $ pconstant gatSymbol
+    pgatSym = phoistAcyclic $ pconstant $ gatSymbol gov
 
     pyesResultTag :: Term s PResultTag
     pyesResultTag = phoistAcyclic $ pcon $ PResultTag $ pconstant 1
@@ -537,3 +532,9 @@ gstAssetClass gov = AssetClass (symbol, gov.gstName)
 
     symbol :: CurrencySymbol
     symbol = mintingPolicySymbol policy
+
+gatSymbol :: Governor -> CurrencySymbol
+gatSymbol gov = mintingPolicySymbol policy
+  where
+    at = AuthorityToken $ gstAssetClass gov
+    policy = mkMintingPolicy $ authorityTokenPolicy at
