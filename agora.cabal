@@ -152,13 +152,13 @@ test-suite agora-test
   main-is:        Spec.hs
   hs-source-dirs: agora-test
   other-modules:
+    Spec.AuthorityToken
     Spec.Effect.TreasuryWithdrawal
-    Spec.Sample.Effect.TreasuryWithdrawal
     Spec.Model.MultiSig
+    Spec.Sample.Effect.TreasuryWithdrawal
     Spec.Sample.Stake
     Spec.Stake
     Spec.Util
-    Spec.AuthorityToken
 
   build-depends:  agora
 
