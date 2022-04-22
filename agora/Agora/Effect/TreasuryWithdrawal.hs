@@ -67,18 +67,18 @@ deriving via
     (PConstant TreasuryWithdrawalDatum)
 
 {- | Withdraws given list of values to specific target addresses.
-It can be evoked by burning GAT. The transaction should have correct
-outputs to the users and any left overs should be paid back to the treasury.
+     It can be evoked by burning GAT. The transaction should have correct
+     outputs to the users and any left overs should be paid back to the treasury.
 
-The validator does not accept any Redeemer as all "parameters" are provided
-via encoded Datum.
+     The validator does not accept any Redeemer as all "parameters" are provided
+     via encoded Datum.
 
-Note:
-It should check...
-1. Transaction outputs should contain all of what Datum specified
-2. Left over assests should be redirected back to Treasury
-It can be more flexiable over...
-- The number of outputs themselves
+     Note:
+     It should check...
+     1. Transaction outputs should contain all of what Datum specified
+     2. Left over assests should be redirected back to Treasury
+     It can be more flexiable over...
+     - The number of outputs themselves
 -}
 treasuryWithdrawalValidator :: forall {s :: S}. CurrencySymbol -> Term s PValidator
 treasuryWithdrawalValidator currSymbol = makeEffect currSymbol $
@@ -104,11 +104,11 @@ treasuryWithdrawalValidator currSymbol = makeEffect currSymbol $
                   pdata $ ptuple # txOut.address # txOut.value
               )
             # txInfo.inputs
-        treasuryInputValues =
-          pfilter
-            # plam (\((pfield @"_0" #) . pfromData -> addr) -> pnot #$ addr #== effInput.address)
-            # inputValues
-        treasuryCredentials =
+    treasuryInputValues <- plet $ 
+      pfilter
+        # plam (\((pfield @"_0" #) . pfromData -> addr) -> pnot #$ addr #== effInput.address)
+        # inputValues
+    let treasuryCredentials =
           pmap
             # plam ((pfield @"credential" #) . pfromData . (pfield @"_0" #) . pfromData)
             # treasuryInputValues

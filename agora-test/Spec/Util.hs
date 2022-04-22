@@ -142,13 +142,7 @@ effectSucceedsWith ::
   ScriptContext ->
   TestTree
 effectSucceedsWith tag eff datum scriptContext =
-  scriptSucceeds tag $
-    compile
-      ( eff
-          # pforgetData (pconstantData datum)
-          # pforgetData (pconstantData ())
-          # pconstant scriptContext
-      )
+  validatorSucceedsWith tag eff datum () scriptContext
 
 -- | Check that a validator script fails, given a name and arguments.
 effectFailsWith ::
@@ -161,14 +155,8 @@ effectFailsWith ::
   ScriptContext ->
   TestTree
 effectFailsWith tag eff datum scriptContext =
-  scriptFails tag $
-    compile
-      ( eff
-          # pforgetData (pconstantData datum)
-          # pforgetData (pconstantData ())
-          # pconstant scriptContext
-      )
-
+  validatorFailsWith tag eff datum () scriptContext
+  
 -- | Check that an arbitrary script doesn't error when evaluated, given a name.
 scriptSucceeds :: String -> Script -> TestTree
 scriptSucceeds name script = testCase name $ do
