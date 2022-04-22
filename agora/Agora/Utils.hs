@@ -510,6 +510,7 @@ findTxOutDatum = phoistAcyclic $
       PDJust ((pfield @"_0" #) -> datumHash) -> pfindDatum # datumHash # datums
       _ -> pcon PNothing
 
+<<<<<<< HEAD
 {- | Safely convert a 'PValidatorHash' into a 'PTokenName'. This can be useful for tagging
      tokens for extra safety.
 -}
@@ -524,6 +525,8 @@ pvalidatorHashToTokenName vh = pcon (PTokenName (pto vh))
 getMintingPolicySymbol :: ClosedTerm PMintingPolicy -> CurrencySymbol
 getMintingPolicySymbol v = mintingPolicySymbol $ mkMintingPolicy v
 
+=======
+>>>>>>> 93fe9ca (fix compilation erros; format && lint)
 hasOnlyOneTokenOfAssetClass' :: AssetClass -> Term s (PValue :--> PBool)
 hasOnlyOneTokenOfAssetClass' ac@(AssetClass (as, _)) = phoistAcyclic $
   plam $ \vs -> P.do

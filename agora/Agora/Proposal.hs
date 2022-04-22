@@ -178,10 +178,10 @@ emptyVotesFor = ProposalVotes . AssocMap.mapWithKey (const . const 0)
 data ProposalDatum = ProposalDatum
   { proposalId :: ProposalId
   -- ^ Identification of the proposal.
-  , -- TODO: could we encode this more efficiently?
+  -- TODO: could we encode this more efficiently?
   -- This is shaped this way for future proofing.
   -- See https://github.com/Liqwid-Labs/agora/issues/39
-  effects :: AssocMap.Map ResultTag [(ValidatorHash, DatumHash)]
+  , effects :: AssocMap.Map ResultTag [(ValidatorHash, DatumHash)]
   -- ^ Effect lookup table. First by result, then by effect hash.
   , status :: ProposalStatus
   -- ^ The status the proposal is in.

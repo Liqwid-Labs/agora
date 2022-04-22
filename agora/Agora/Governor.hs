@@ -87,8 +87,6 @@ import Plutarch.Api.V1 (
   validatorHash,
  )
 import Plutarch.Api.V1.Extra (
-  passetClass,
-  passetClassValueOf,
   pownMintValue,
  )
 import Plutarch.DataRepr (
@@ -220,7 +218,6 @@ governorPolicy gov =
     ctx <- pletFields @'["txInfo", "purpose"] ctx'
     let oref = pconstant gov.gstORef
         ownSymbol = pownCurrencySymbol # ctx'
-        ownAssetClass = passetClass # ownSymbol # pconstant gov.gstName
 
     mintValue <- plet $ pownMintValue # ctx'
 
@@ -228,7 +225,7 @@ governorPolicy gov =
 
     passert "Exactly one token should be minted" $
       psymbolValueOf # ownSymbol # mintValue #== 1
-        #&& passetClassValueOf # ownSymbol # pconstant governorStateTokenName # mintValue #== 1
+        #&& passetClassValueOf # ownSymbol # pconstant gov.gstName # mintValue #== 1
 
     popaque (pconstant ())
 
@@ -515,14 +512,14 @@ governorValidator gov =
     stateTokenValueOf :: Term s (PValue :--> PInteger)
     stateTokenValueOf = passetClassValueOf' stateTokenAssetClass
 
-    gatSymbol :: CurrencySymbol 
-    gatSymbol = mintingPolicySymbol policy 
+    gatSymbol :: CurrencySymbol
+    gatSymbol = mintingPolicySymbol policy
       where
         at = AuthorityToken $ gstAssetClass gov
         policy = mkMintingPolicy $ authorityTokenPolicy at
 
     pgatSym :: Term s PCurrencySymbol
-    pgatSym = phoistAcyclic $ pconstant $ gatSymbol
+    pgatSym = phoistAcyclic $ pconstant gatSymbol
 
     pyesResultTag :: Term s PResultTag
     pyesResultTag = phoistAcyclic $ pcon $ PResultTag $ pconstant 1
