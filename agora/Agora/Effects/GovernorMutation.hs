@@ -23,8 +23,6 @@ import Plutarch.Api.V1 (
   PTxOutRef,
   PValidator,
   PValue,
-  mintingPolicySymbol,
-  mkMintingPolicy,
  )
 import Plutarch.Builtin (pforgetData)
 import Plutarch.DataRepr (
@@ -42,13 +40,13 @@ import PlutusTx qualified
 
 --------------------------------------------------------------------------------
 
-import Agora.AuthorityToken
 import Agora.Effect (makeEffect)
 import Agora.Governor (
   Governor,
   GovernorDatum,
   PGovernorDatum,
   gstAssetClass,
+  gatSymbol,
  )
 import Agora.Utils (
   findOutputsToAddress,
@@ -93,7 +91,7 @@ deriving via (DerivePConstantViaData MutateGovernorDatum PMutateGovernorDatum) i
 --------------------------------------------------------------------------------
 
 mutateGovernorValidator :: Governor -> ClosedTerm PValidator
-mutateGovernorValidator gov = makeEffect gatSymbol $
+mutateGovernorValidator gov = makeEffect (gatSymbol gov) $
   \_gatCs (datum :: Term _ PMutateGovernorDatum) _txOutRef txInfo' -> P.do
     let newDatum = pforgetData $ pfield @"newDatum" # datum
         pinnedGovernor = pfield @"governorRef" # datum
@@ -152,12 +150,5 @@ mutateGovernorValidator gov = makeEffect gatSymbol $
           _ -> ptraceError "Output datum not found"
       _ -> ptraceError "Ouput to governor should have datum"
   where
-    -- Copy-Paste from governor
-    -- TODO: export as a util function from governor
-    gatSymbol = mintingPolicySymbol policy
-      where
-        at = AuthorityToken $ gstAssetClass gov
-        policy = mkMintingPolicy $ authorityTokenPolicy at
-
     gstValueOf :: Term s (PValue :--> PInteger)
     gstValueOf = passetClassValueOf' $ gstAssetClass gov
