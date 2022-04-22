@@ -23,6 +23,8 @@ import Plutarch.Api.V1 (
   PTxOutRef,
   PValidator,
   PValue,
+  mintingPolicySymbol,
+  mkMintingPolicy,
  )
 import Plutarch.Builtin (pforgetData)
 import Plutarch.DataRepr (
@@ -40,16 +42,15 @@ import PlutusTx qualified
 
 --------------------------------------------------------------------------------
 
+import Agora.AuthorityToken
 import Agora.Effect (makeEffect)
 import Agora.Governor (
   Governor,
   GovernorDatum,
   PGovernorDatum,
-  authorityTokenSymbolFromGovernor,
-  governorStateTokenAssetClass,
+  gstAssetClass,
  )
 import Agora.Utils (
-  containsSingleCurrencySymbol,
   findOutputsToAddress,
   passert,
   passetClassValueOf',
@@ -99,8 +100,11 @@ mutateGovernorValidator gov = makeEffect gatSymbol $
 
     txInfo <- pletFields @'["mint", "inputs", "outputs"] txInfo'
 
+    let mint :: Term _ (PBuiltinList _)
+        mint = pto $ pto $ pto $ pfromData txInfo.mint
+
     passert "Nothing should be minted/burnt other than GAT" $
-      containsSingleCurrencySymbol # txInfo.mint
+      plength # mint #== 1
 
     filteredInputs <-
       plet $
@@ -148,8 +152,12 @@ mutateGovernorValidator gov = makeEffect gatSymbol $
           _ -> ptraceError "Output datum not found"
       _ -> ptraceError "Ouput to governor should have datum"
   where
-    gatSymbol = authorityTokenSymbolFromGovernor gov
-    gstAssetClass = governorStateTokenAssetClass gov
+    -- Copy-Paste from governor
+    -- TODO: export as a util function from governor
+    gatSymbol = mintingPolicySymbol policy
+      where
+        at = AuthorityToken $ gstAssetClass gov
+        policy = mkMintingPolicy $ authorityTokenPolicy at
 
     gstValueOf :: Term s (PValue :--> PInteger)
-    gstValueOf = passetClassValueOf' gstAssetClass
+    gstValueOf = passetClassValueOf' $ gstAssetClass gov
