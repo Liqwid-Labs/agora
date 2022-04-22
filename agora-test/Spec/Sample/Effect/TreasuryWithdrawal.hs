@@ -112,7 +112,7 @@ outputUser indx val =
     }
 
 buildReceiversOutputFromDatum :: TreasuryWithdrawalDatum -> [TxOut]
-buildReceiversOutputFromDatum (TreasuryWithdrawalDatum xs) = f <$> xs
+buildReceiversOutputFromDatum (TreasuryWithdrawalDatum xs _) = f <$> xs
   where
     f x =
       TxOut

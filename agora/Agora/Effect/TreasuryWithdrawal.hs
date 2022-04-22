@@ -38,7 +38,11 @@ import Plutus.V1.Ledger.Credential (Credential)
 import Plutus.V1.Ledger.Value (CurrencySymbol, Value)
 import PlutusTx qualified
 
-newtype TreasuryWithdrawalDatum = TreasuryWithdrawalDatum {receivers :: [(Credential, Value)]}
+data TreasuryWithdrawalDatum =
+  TreasuryWithdrawalDatum
+    { receivers :: [(Credential, Value)]
+    , treasuries :: [Credential]
+    }
   deriving stock (Show, GHC.Generic)
   deriving anyclass (Generic)
 
@@ -50,7 +54,9 @@ newtype PTreasuryWithdrawalDatum (s :: S)
       ( Term
           s
           ( PDataRecord
-              '["receivers" ':= PBuiltinList (PAsData (PTuple PCredential PValue))]
+              '[ "receivers" ':= PBuiltinList (PAsData (PTuple PCredential PValue))
+               , "treasuries" ':= PBuiltinList (PAsData PCredential)
+               ]
           )
       )
   deriving stock (GHC.Generic)
@@ -83,17 +89,17 @@ deriving via
 treasuryWithdrawalValidator :: forall {s :: S}. CurrencySymbol -> Term s PValidator
 treasuryWithdrawalValidator currSymbol = makeEffect currSymbol $
   \_cs (datum' :: Term _ PTreasuryWithdrawalDatum) txOutRef' txInfo' -> P.do
-    receivers <- plet $ pfromData $ pfield @"receivers" # datum'
+    datum <- pletFields @'["receivers", "treasuries"] datum'
     txInfo <- pletFields @'["outputs", "inputs"] txInfo'
     PJust txOut <- pmatch $ findTxOutByTxOutRef # txOutRef' # pfromData txInfo'
     effInput <- pletFields @'["address", "value"] $ txOut
     let outputValues =
           pmap
             # plam
-              ( \(pfromData -> out') -> P.do
-                  out <- pletFields @'["address", "value"] $ out'
-                  cred <- pletFields @'["credential"] $ pfromData out.address
-                  pdata $ ptuple # cred.credential # out.value
+              ( \(pfromData -> txOut') -> P.do
+                  txOut <- pletFields @'["address", "value"] $ txOut'
+                  let cred = pfield @"credential" # pfromData txOut.address
+                  pdata $ ptuple # cred # txOut.value
               )
             # txInfo.outputs
         inputValues =
@@ -101,23 +107,19 @@ treasuryWithdrawalValidator currSymbol = makeEffect currSymbol $
             # plam
               ( \((pfield @"resolved" #) . pfromData -> txOut') -> P.do
                   txOut <- pletFields @'["address", "value"] $ txOut'
-                  pdata $ ptuple # txOut.address # txOut.value
+                  let cred = pfield @"credential" # pfromData txOut.address
+                  pdata $ ptuple # cred # txOut.value
               )
             # txInfo.inputs
-    treasuryInputValues <- plet $ 
-      pfilter
-        # plam (\((pfield @"_0" #) . pfromData -> addr) -> pnot #$ addr #== effInput.address)
-        # inputValues
-    let treasuryCredentials =
-          pmap
-            # plam ((pfield @"credential" #) . pfromData . (pfield @"_0" #) . pfromData)
-            # treasuryInputValues
-        treasuryOutputValues =
+    treasuryInputValues <-
+      plet $
+        pfilter
+          # plam (\((pfield @"_0" #) . pfromData -> cred) -> pelem # cred # datum.treasuries)
+          # inputValues
+    let treasuryOutputValues =
           pfilter
             # plam
-              ( \((pfield @"_0" #) . pfromData -> addr) -> P.do
-                  pelem # addr # treasuryCredentials
-              )
+              ( \((pfield @"_0" #) . pfromData -> cred) -> pelem # cred # datum.treasuries)
             # outputValues
         treasuryInputValuesSum =
           pfoldr
@@ -133,10 +135,10 @@ treasuryWithdrawalValidator currSymbol = makeEffect currSymbol $
           pfoldr
             # plam (\((pfield @"_1" #) . pfromData -> x) y -> paddValue # pfromData x # y)
             # pconstant (mempty :: Value)
-            # receivers
+            # datum.receivers
         outputContentMatchesRecivers =
           pall # plam (\out -> pelem # out # outputValues)
-            #$ receivers
+            #$ datum.receivers
         excessShouldBePaidToInputs =
           pdata (paddValue # receiverValuesSum # treasuryOutputValuesSum) #== pdata treasuryInputValuesSum
         shouldNotPayToEffect =

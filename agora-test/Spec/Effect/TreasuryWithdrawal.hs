@@ -7,16 +7,16 @@ This module tests the Treasury Withdrawal Effect.
 -}
 module Spec.Effect.TreasuryWithdrawal (tests) where
 
-import Spec.Sample.Effect.TreasuryWithdrawal (
-  buildReceiversOutputFromDatum,
-  buildScriptContext,
-  currSymbol,
-  inputGAT,
-  inputTreasury,
-  outputTreasury,
-  outputUser,
-  users,
- )
+import Spec.Sample.Effect.TreasuryWithdrawal
+    ( currSymbol,
+      users,
+      treasuries,
+      inputGAT,
+      inputTreasury,
+      outputTreasury,
+      outputUser,
+      buildReceiversOutputFromDatum,
+      buildScriptContext )
 
 import Agora.Effect.TreasuryWithdrawal (
   TreasuryWithdrawalDatum (TreasuryWithdrawalDatum),
@@ -102,6 +102,18 @@ tests =
                 ]
                 ++ drop 1 (buildReceiversOutputFromDatum datum2)
           )
+      , effectFailsWith
+          "Unauthorized treasury"
+          (treasuryWithdrawalValidator currSymbol)
+          datum3
+          ( buildScriptContext
+              [ inputGAT
+              , inputTreasury 999 (asset1 20)
+              ]
+              $ [ outputTreasury 999 (asset1 17)
+                ]
+                ++ buildReceiversOutputFromDatum datum3
+          )          
       ]
   ]
   where
@@ -112,10 +124,26 @@ tests =
         [ (head users, asset1 1)
         , (users !! 1, asset1 1)
         , (users !! 2, asset1 1)
+        ] $
+        [ head treasuries
+        , treasuries !! 1
+        , treasuries !! 2
         ]
     datum2 =
       TreasuryWithdrawalDatum
         [ (head users, asset1 4 <> asset2 5)
         , (users !! 1, asset1 2 <> asset2 1)
         , (users !! 2, asset1 1)
+        ] $
+        [ head treasuries
+        , treasuries !! 1
+        , treasuries !! 2
         ]
+    datum3 =
+      TreasuryWithdrawalDatum
+        [ (head users, asset1 1)
+        , (users !! 1, asset1 1)
+        , (users !! 2, asset1 1)
+        ] $
+        [ treasuries !! 1
+        ]        
