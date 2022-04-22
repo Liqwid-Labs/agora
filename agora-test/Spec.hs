@@ -8,8 +8,8 @@ import Test.Tasty (defaultMain, testGroup)
 
 --------------------------------------------------------------------------------
 
-import Spec.Effect.TreasuryWithdrawal qualified as TreasuryWithdrawal
 import Spec.AuthorityToken qualified as AuthorityToken
+import Spec.Effect.TreasuryWithdrawal qualified as TreasuryWithdrawal
 import Spec.Model.MultiSig qualified as MultiSig
 import Spec.Stake qualified as Stake
 

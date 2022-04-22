@@ -5,20 +5,117 @@ Description: Sample based testing for Treasury Withdrawal Effect
 
 This module tests the Treasury Withdrawal Effect.
 -}
-module Spec.Effect.TreasuryWithdrawal (currSymbol, signer, validator, validatorHashTN, scriptContext1, tests) where
+module Spec.Effect.TreasuryWithdrawal (tests) where
 
-import Spec.Sample.Effect.TreasuryWithdrawal
+import Spec.Sample.Effect.TreasuryWithdrawal (
+  buildReceiversOutputFromDatum,
+  buildScriptContext,
+  currSymbol,
+  inputGAT,
+  inputTreasury,
+  outputTreasury,
+  outputUser,
+  users,
+ )
 
+import Agora.Effect.TreasuryWithdrawal (
+  TreasuryWithdrawalDatum (TreasuryWithdrawalDatum),
+  treasuryWithdrawalValidator,
+ )
 
-import Agora.Effect.TreasuryWithdrawal
+import Plutus.V1.Ledger.Value qualified as Value
+import Spec.Util (effectFailsWith, effectSucceedsWith)
 
-import Spec.Util
-
-import Test.Tasty
+import Test.Tasty (TestTree, testGroup)
 
 tests :: [TestTree]
 tests =
   [ testGroup
       "effect"
-      [effectSucceedsWith "test1" (treasuryWithdrawalValidator currSymbol) datum scriptContext1]
+      [ effectSucceedsWith
+          "Simple"
+          (treasuryWithdrawalValidator currSymbol)
+          datum1
+          ( buildScriptContext
+              [ inputGAT
+              , inputTreasury 1 (asset1 10)
+              ]
+              $ outputTreasury 1 (asset1 7) :
+              buildReceiversOutputFromDatum datum1
+          )
+      , effectSucceedsWith
+          "Simple with multiple treasuries "
+          (treasuryWithdrawalValidator currSymbol)
+          datum1
+          ( buildScriptContext
+              [ inputGAT
+              , inputTreasury 1 (asset1 10)
+              , inputTreasury 2 (asset1 100)
+              , inputTreasury 3 (asset1 500)
+              ]
+              $ [ outputTreasury 1 (asset1 7)
+                , outputTreasury 2 (asset1 100)
+                , outputTreasury 3 (asset1 500)
+                ]
+                ++ buildReceiversOutputFromDatum datum1
+          )
+      , effectSucceedsWith
+          "Mixed Assets"
+          (treasuryWithdrawalValidator currSymbol)
+          datum2
+          ( buildScriptContext
+              [ inputGAT
+              , inputTreasury 1 (asset1 20)
+              , inputTreasury 2 (asset2 20)
+              ]
+              $ [ outputTreasury 1 (asset1 13)
+                , outputTreasury 2 (asset2 14)
+                ]
+                ++ buildReceiversOutputFromDatum datum2
+          )
+      , effectFailsWith
+          "Pay to uknown 3rd party"
+          (treasuryWithdrawalValidator currSymbol)
+          datum2
+          ( buildScriptContext
+              [ inputGAT
+              , inputTreasury 1 (asset1 20)
+              , inputTreasury 2 (asset2 20)
+              ]
+              $ [ outputUser 100 (asset1 2)
+                , outputTreasury 1 (asset1 11)
+                , outputTreasury 2 (asset2 14)
+                ]
+                ++ buildReceiversOutputFromDatum datum2
+          )
+      , effectFailsWith
+          "Missing receiver"
+          (treasuryWithdrawalValidator currSymbol)
+          datum2
+          ( buildScriptContext
+              [ inputGAT
+              , inputTreasury 1 (asset1 20)
+              , inputTreasury 2 (asset2 20)
+              ]
+              $ [ outputTreasury 1 (asset1 13)
+                , outputTreasury 2 (asset2 14)
+                ]
+                ++ drop 1 (buildReceiversOutputFromDatum datum2)
+          )
+      ]
   ]
+  where
+    asset1 = Value.singleton "abbc12" "OrangeBottle"
+    asset2 = Value.singleton "abbc12" "19721121"
+    datum1 =
+      TreasuryWithdrawalDatum
+        [ (head users, asset1 1)
+        , (users !! 1, asset1 1)
+        , (users !! 2, asset1 1)
+        ]
+    datum2 =
+      TreasuryWithdrawalDatum
+        [ (head users, asset1 4 <> asset2 5)
+        , (users !! 1, asset1 2 <> asset2 1)
+        , (users !! 2, asset1 1)
+        ]
