@@ -2,12 +2,15 @@
 
 {- |
 Module     : Agora.Governor
-Maintainer : emi@haskell.fyi
+Maintainer : chfanghr@gmail.com
 Description: Governor entity scripts acting as authority of entire system.
 
 Governor entity scripts acting as authority of entire system.
 -}
 module Agora.Governor (
+  -- * GST
+  -- $gst
+
   -- * Haskell-land
   GovernorDatum (..),
   GovernorRedeemer (..),
@@ -90,17 +93,17 @@ import Plutarch.Api.V1 (
 import Plutarch.Api.V1.Extra (
   pownMintValue,
  )
+import Plutarch.Builtin (pforgetData)
 import Plutarch.DataRepr (
   DerivePConstantViaData (..),
   PDataFields,
   PIsDataReprInstances (PIsDataReprInstances),
  )
 import Plutarch.Lift (PUnsafeLiftDecl (..))
-import Plutarch.Monadic qualified as P
-import Plutarch.Unsafe (punsafeCoerce)
-import Plutarch.Builtin (pforgetData)
 import Plutarch.Map.Extra (plookup, plookup')
+import Plutarch.Monadic qualified as P
 import Plutarch.SafeMoney (puntag)
+import Plutarch.Unsafe (punsafeCoerce)
 
 --------------------------------------------------------------------------------
 
@@ -119,7 +122,17 @@ import PlutusTx qualified
 
 --------------------------------------------------------------------------------
 
--- | Datum for the Governor script.
+{- $gst
+   Governance state token, aka. GST, it's a NFT that identifies an UTXO that carries the state datum of the Governance script.
+
+   This token is minted by a one-shot monetary policy 'governorPolicy', meaning that the token has guaranteed uniqueness.
+
+   The 'governorValidator' ensures that exactly one GST stays at the address of itself forever.
+-}
+
+--------------------------------------------------------------------------------
+
+-- | State datum for the Governor script.
 data GovernorDatum = GovernorDatum
   { proposalThresholds :: ProposalThresholds
   -- ^ Gets copied over upon creation of a 'Agora.Proposal.ProposalDatum'.
@@ -145,25 +158,22 @@ data GovernorRedeemer
     --   and allows minting GATs for each effect script.
     MintGATs
   | -- | Allows effects to mutate the parameters.
-    MutateMutateGovernor
+    MutateGovernor
   deriving stock (Show, GHC.Generic)
 
 PlutusTx.makeIsDataIndexed
   ''GovernorRedeemer
   [ ('CreateProposal, 0)
   , ('MintGATs, 1)
-  , ('MutateMutateGovernor, 2)
+  , ('MutateGovernor, 2)
   ]
 
-{- | Parameters for creating Governor scripts.
-
-   Governance State Token, aka GST, is an NFT which idetifies the governance state utxo.
--}
+-- | Parameters for creating Governor scripts.
 data Governor = Governor
   { gstORef :: TxOutRef
-  -- ^ Referenced utxo will be spent to mint the GST
+  -- ^ Referenced utxo will be spent to mint the GST.
   , gstName :: TokenName
-  -- ^ Name of the GST token
+  -- ^ Name of the GST token.
   }
 
 --------------------------------------------------------------------------------
@@ -206,23 +216,27 @@ deriving via (DerivePConstantViaData GovernorRedeemer PGovernorRedeemer) instanc
 
 --------------------------------------------------------------------------------
 
-{- | Policy for Governors.
-   This policy mints a GST. It perform the following checks:
+{- | Policy for minting GSTs.
 
-    - The utxo specified in the Governor parameter is spent.
-    - Only one token is minted.
+   This policy perform the following checks:
+
+    - The UTXO referenced in the parameter is spent in the transaction.
+    - Exactly one GST is minted.
     - Ensure the token name is 'gstName'.
+
+  NOTE: It's user's responsibility to make sure the token is sent to the corresponding governor validator.
+        We /can't/ really check this in the policy, otherwise we create a cyclic reference issue.
 -}
 governorPolicy :: Governor -> ClosedTerm PMintingPolicy
 governorPolicy gov =
   plam $ \_ ctx' -> P.do
-    ctx <- pletFields @'["txInfo", "purpose"] ctx'
     let oref = pconstant gov.gstORef
         ownSymbol = pownCurrencySymbol # ctx'
 
     mintValue <- plet $ pownMintValue # ctx'
 
-    passert "Referenced utxo should be spent" $ pisUxtoSpent # oref # ctx.txInfo
+    passert "Referenced utxo should be spent" $
+      pisUxtoSpent # oref #$ pfield @"txInfo" # ctx'
 
     passert "Exactly one token should be minted" $
       psymbolValueOf # ownSymbol # mintValue #== 1
@@ -232,29 +246,78 @@ governorPolicy gov =
 
 {- | Validator for Governors.
 
-   No matter what redeemer it receives, it will always check:
-    - The utxo which has the GST must be spent.
-    - The GST always stays at the script address.
-    - The state utxo has a valid 'GovernorDatum' datum.
+== Common checks
 
-   For 'CreateProposal' redeemers, it will check:
-    - Governance state 'nextProposalId' must be advanced.
-    - Exactly one proposal state token is minted, or rather, only one proposal is created.
-    - Exactly one utxo should be sent to the proposal validator. This utxo must contain the proposal state token, and has a valid datum of type 'ProposalDatum'.
-    - Said proposal copies its id and thresholds from the governor, is in draft state, and has zero votes.
+The validator always ensures:
 
-   For 'MintGATs' redeemers, it will check:
-    - Governance state datum is not changed.
-    - Exactly one proposal(the input proposal) is being processed.
-    - The input proposal must be in executable state and have required amount of votes.
-    - An appropriate effect group is selected to be executed.
-    - A valid GAT is minted and sent to every effect,
-    - Exactly one utxo should be sent back to the proposal validator. This utxo must contain the proposal state token, and also has a valid datum of type 'ProposalDatum'(the output proposal).
-    - Said output proposal's status should be `Finished`. Other than that, nothing should be changed compare to the input proposal.
+  - The UTXO which holds the GST must be spent.
+  - The GST always stays at the validator's address.
+  - The new state UTXO has a valid datum of type 'GovernorDatum'.
 
-   For 'MutateGovernors' redeemers, it will check:
-    - Exactly one GAT is burnt.
-    - Said GAT must be valid.
+== Creating a Proposal
+
+When the redeemer is 'CreateProposal', the script will check:
+
+- For governor's state datum:
+
+    * 'nextProposalId' is advanced.
+    * Nothing is changed other that that.
+
+- Exactly one new proposal state token is minted.
+- Exactly one UTXO is sent to the proposal validator, this UTXO must:
+
+    * Hold the newly minted proposal state token.
+    * Have a valid datum of type 'Agora.Proposal.ProposalDatum', the datum must:
+
+        - Copy its id and thresholds from the governor's state.
+        - Have status set to 'Proposal.Draft'.
+        - Have zero votes.
+        - TODO: should we check cosigners?
+
+== Minting GATs
+
+When the redeemer is 'MintGATs', the script will check:
+
+- Governor's state is not changed.
+- Exactly only one proposal is in the inputs. Let's call this the /input proposal/.
+- The proposal is in the 'Proposal.Executable' state.
+
+NOTE: The input proposal is found by looking for the UTXO with a proposal state token in the inputs.
+
+=== Effect Group Selection
+
+Currently a proposal can two or more than two options to vote on, 
+  meaning that it can conatinas two or more effect groups, 
+  according to [#39](https://github.com/Liqwid-Labs/agora/issues/39).
+
+Either way, the shapes of 'Proposal.votes' and 'Proposal.effects' should be the same. 
+  This is checked by 'Proposal.proposalDatumValid'.
+
+The script will look at the the 'Proposal.votes' to determine which group has the highest votes, 
+  said group shoud be executed.
+
+During the process, minimum votes requirement will also be enforced.
+
+Next, the script will:
+
+- Ensure that for every effect in the said effect group, 
+  exactly one valid GAT is minted and sent to the effect.
+- The amount of GAT minted in the transaction should be equal to the number of effects.
+- A new UTXO is sent to the proposal validator, this UTXO should:
+
+    * Include the one proposal state token.
+    * Have a valid datum of type 'Proposal.ProposalDatum'. 
+      This datum should be as same as the one of the input proposal,
+      except its status should be 'Proposal.Finished'.
+
+== Changing the State
+
+Redeemer 'MutateGovernor' allows the state datum to be changed by an external effect.
+
+In this case, the script will check
+
+- Exactly one GAT is burnt in the transaction.
+- Said GAT is tagged by the effect.
 -}
 governorValidator :: Governor -> ClosedTerm PValidator
 governorValidator gov =
@@ -300,6 +363,8 @@ governorValidator gov =
       PCreateProposal _ -> P.do
         passert "Proposal id should be advanced by 1" $
           pnextProposalId # oldParams.nextProposalId #== newParams.nextProposalId
+
+        -- TODO: check other fields of the state datum
 
         passert "Exactly one proposal token must be minted" $
           hasOnlyOneTokenOfCurrencySymbol # pproposalSymbol # txInfo.mint
@@ -425,6 +490,8 @@ governorValidator gov =
 
         -- TODO: anything else to check here?
 
+        -- TODO: support more than two effect group.
+
         PProposalVotes votes' <- pmatch $ pfromData inputProposalDatum.votes
         votes <- plet votes'
 
@@ -524,6 +591,7 @@ governorValidator gov =
 
 --------------------------------------------------------------------------------
 
+-- | Get the assetclass of GST from governor parameters.
 gstAssetClass :: Governor -> AssetClass
 gstAssetClass gov = AssetClass (symbol, gov.gstName)
   where
@@ -533,6 +601,7 @@ gstAssetClass gov = AssetClass (symbol, gov.gstName)
     symbol :: CurrencySymbol
     symbol = mintingPolicySymbol policy
 
+-- | Get the currency symbol of GAT from governor parameters.
 gatSymbol :: Governor -> CurrencySymbol
 gatSymbol gov = mintingPolicySymbol policy
   where
