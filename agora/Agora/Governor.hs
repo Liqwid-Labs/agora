@@ -23,7 +23,6 @@ module Agora.Governor (
 
   -- * Utilities
   gstAssetClass,
-  gatSymbolFromGovernor,
 ) where
 
 --------------------------------------------------------------------------------
@@ -112,8 +111,6 @@ import Plutus.V1.Ledger.Api (
   CurrencySymbol (..),
   MintingPolicy,
   TxOutRef,
-  Validator,
-  ValidatorHash,
  )
 import Plutus.V1.Ledger.Value (
   AssetClass (..),
@@ -218,12 +215,12 @@ deriving via (DerivePConstantViaData GovernorRedeemer PGovernorRedeemer) instanc
     - Ensure the token name is 'gstName'.
 -}
 governorPolicy :: Governor -> ClosedTerm PMintingPolicy
-governorPolicy params =
+governorPolicy gov =
   plam $ \_ ctx' -> P.do
     ctx <- pletFields @'["txInfo", "purpose"] ctx'
-    let oref = pconstant params.gstORef
+    let oref = pconstant gov.gstORef
         ownSymbol = pownCurrencySymbol # ctx'
-        ownAssetClass = passetClass # ownSymbol # pconstant params.gstName
+        ownAssetClass = passetClass # ownSymbol # pconstant gov.gstName
 
     mintValue <- plet $ pownMintValue # ctx'
 
@@ -262,7 +259,7 @@ governorPolicy params =
     - Said GAT must be valid.
 -}
 governorValidator :: Governor -> ClosedTerm PValidator
-governorValidator params =
+governorValidator gov =
   plam $ \datum' redeemer' ctx' -> P.do
     -- TODO: use ptryFrom
     redeemer <- pmatch $ pfromData @PGovernorRedeemer $ punsafeCoerce redeemer'
@@ -307,7 +304,7 @@ governorValidator params =
           pnextProposalId # oldParams.nextProposalId #== newParams.nextProposalId
 
         passert "Exactly one proposal token must be minted" $
-          hasOnlyOneTokenOfCurrencySymbol # pproposalSym # txInfo.mint
+          hasOnlyOneTokenOfCurrencySymbol # pproposalSymbol # txInfo.mint
 
         outputs <- plet $ findOutputsToAddress # ctx.txInfo # pproposalValidatorAddress
         passert "Exactly one utxo should be sent to the proposal validator" $
@@ -315,7 +312,7 @@ governorValidator params =
 
         output <- pletFields @'["value", "datumHash"] $ phead # outputs
         passert "The proposal state token must be sent to the proposal validator" $
-          psymbolValueOf # pproposalSym # output.value #== 1
+          psymbolValueOf # pproposalSymbol # output.value #== 1
 
         passert "The utxo paid to the proposal validator must have datum" $
           pisDJust # output.datumHash
@@ -362,7 +359,7 @@ governorValidator params =
             pfilter
               # plam
                 ( \((pfield @"value" #) . (pfield @"resolved" #) -> value) ->
-                    psymbolValueOf # pproposalSym # value #== 1
+                    psymbolValueOf # pproposalSymbol # value #== 1
                 )
               #$ pfromData txInfo.inputs
 
@@ -371,13 +368,13 @@ governorValidator params =
             pfilter
               # plam
                 ( \((pfield @"value" #) -> value) ->
-                    psymbolValueOf # pproposalSym # value #== 1
+                    psymbolValueOf # pproposalSymbol # value #== 1
                 )
               #$ pfromData txInfo.outputs
 
         passert "The governor can only process one proposal at a time" $
           plength # inputsWithProposalStateToken #== 1
-            #&& (psymbolValueOf # pproposalSym #$ pvalueSpent # txInfo') #== 1
+            #&& (psymbolValueOf # pproposalSymbol #$ pvalueSpent # txInfo') #== 1
 
         proposalInputTxOut <-
           pletFields @'["address", "value", "datumHash"] $
@@ -449,7 +446,7 @@ governorValidator params =
         gatCount <- plet $ plength #$ pto $ pto effects
 
         passert "Required amount of GATs should be minted" $
-          psymbolValueOf # pproposalSym # txInfo.mint #== gatCount
+          psymbolValueOf # pproposalSymbol # txInfo.mint #== gatCount
 
         outputsWithGAT <-
           plet $
@@ -490,7 +487,7 @@ governorValidator params =
         popaque $ singleAuthorityTokenBurned pgatSym ctx.txInfo txInfo.mint
   where
     stateTokenAssetClass :: AssetClass
-    stateTokenAssetClass = gstAssetClass params
+    stateTokenAssetClass = gstAssetClass gov
 
     proposalDatum :: Proposal
     proposalDatum =
@@ -501,19 +498,15 @@ governorValidator params =
     proposalSymbol :: CurrencySymbol
     proposalSymbol = mintingPolicySymbol policy
       where
-        policy :: MintingPolicy
         policy = mkMintingPolicy $ proposalPolicy proposalDatum
 
-    pproposalSym :: Term s PCurrencySymbol
-    pproposalSym = phoistAcyclic $ pconstant proposalSymbol
+    pproposalSymbol :: Term s PCurrencySymbol
+    pproposalSymbol = phoistAcyclic $ pconstant proposalSymbol
 
     proposalValidatorAddress :: Address
     proposalValidatorAddress = Address (ScriptCredential hash) Nothing
       where
-        hash :: ValidatorHash
         hash = validatorHash validator
-
-        validator :: Validator
         validator = mkValidator $ proposalValidator proposalDatum
 
     pproposalValidatorAddress :: Term s PAddress
@@ -522,8 +515,14 @@ governorValidator params =
     stateTokenValueOf :: Term s (PValue :--> PInteger)
     stateTokenValueOf = passetClassValueOf' stateTokenAssetClass
 
+    gatSymbol :: CurrencySymbol 
+    gatSymbol = mintingPolicySymbol policy 
+      where
+        at = AuthorityToken $ gstAssetClass gov
+        policy = mkMintingPolicy $ authorityTokenPolicy at
+
     pgatSym :: Term s PCurrencySymbol
-    pgatSym = phoistAcyclic $ pconstant $ gatSymbolFromGovernor params
+    pgatSym = phoistAcyclic $ pconstant $ gatSymbol
 
     pyesResultTag :: Term s PResultTag
     pyesResultTag = phoistAcyclic $ pcon $ PResultTag $ pconstant 1
@@ -541,9 +540,3 @@ gstAssetClass gov = AssetClass (symbol, gov.gstName)
 
     symbol :: CurrencySymbol
     symbol = mintingPolicySymbol policy
-
-gatSymbolFromGovernor :: Governor -> CurrencySymbol
-gatSymbolFromGovernor gov = mintingPolicySymbol policy
-  where
-    params = AuthorityToken $ gstAssetClass gov
-    policy = mkMintingPolicy $ authorityTokenPolicy params
