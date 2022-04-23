@@ -43,7 +43,7 @@ import Agora.AuthorityToken (
   singleAuthorityTokenBurned,
  )
 import Agora.Proposal (
-  PProposalDatum,
+  PProposalDatum (..),
   PProposalId,
   PProposalStatus (PDraft, PExecutable, PFinished),
   PProposalThresholds,
@@ -64,6 +64,7 @@ import Agora.Utils (
   passert,
   passetClassValueOf,
   passetClassValueOf',
+  pfindDatum,
   pfindTxInByTxOutRef,
   pisDJust,
   pisJust,
@@ -358,16 +359,28 @@ governorValidator gov =
     passert "Output utxo to governor should have datum" $
       pisDJust # ownOutput.datumHash
 
-    -- TODO: use `PTryFrom` and reject bad datum
-    newDatum' <- plet $ mustFindDatum' @PGovernorDatum # ownOutput.datumHash # ctx.txInfo
-    newParams <- pletFields @'["proposalThresholds", "nextProposalId"] newDatum'
+    let outputGovernorStateDatumHash = mustBePDJust # "Output governor state datum hash not found" # ownOutput.datumHash
+
+    newDatumData <-
+      plet $
+        pforgetData $
+          pdata $
+            mustBePJust # "Ouput governor state datum not found"
+              #$ pfindDatum # outputGovernorStateDatumHash # txInfo'
 
     case redeemer of
       PCreateProposal _ -> P.do
-        passert "Proposal id should be advanced by 1" $
-          pnextProposalId # oldParams.nextProposalId #== newParams.nextProposalId
+        let expectedNextProposalId = pnextProposalId # oldParams.nextProposalId
 
-        -- TODO: check other fields of the state datum
+            expectedNewDatum :: Term _ PGovernorDatum
+            expectedNewDatum =
+              pcon $
+                PGovernorDatum $
+                  pdcons @"proposalThresholds" # oldParams.proposalThresholds
+                    #$ pdcons @"nextProposalId" # pdata expectedNextProposalId # pdnil
+
+        passert "Unexpected governor state datum" $
+          newDatumData #== (pforgetData $ pdata $ expectedNewDatum)
 
         passert "Exactly one proposal token must be minted" $
           hasOnlyOneTokenOfCurrencySymbol # pproposalSymbol # txInfo.mint
@@ -416,9 +429,7 @@ governorValidator gov =
 
         popaque $ pconstant ()
       PMintGATs _ -> P.do
-        passert "Governor state should not be changed" $
-          -- FIXME: There should be a better way to do this
-          (pforgetData $ pdata newDatum') #== datum'
+        passert "Governor state should not be changed" $ newDatumData #== datum'
 
         inputsWithProposalStateToken <-
           plet $
@@ -477,16 +488,17 @@ governorValidator gov =
 
         passert "Proposal must be in executable state in order to execute effects" isProposalExecutable
 
-        -- TODO: not sure if I did the right thing, can't use haskell level constructor here
-        let fields =
-              pdcons @"id" # inputProposalDatum.id
-                #$ pdcons @"effects" # inputProposalDatum.effects
-                #$ pdcons @"status" # pdata (pcon $ PFinished pdnil)
-                #$ pdcons @"cosigners" # inputProposalDatum.cosigners
-                #$ pdcons @"thresholds" # inputProposalDatum.thresholds
-                #$ pdcons @"votes" # inputProposalDatum.votes # pdnil
-
-            expectedOutputDatum = pforgetData $ pdata fields
+        let expectedOutputDatum =
+              pforgetData $
+                pdata $
+                  pcon $
+                    PProposalDatum $
+                      pdcons @"id" # inputProposalDatum.id
+                        #$ pdcons @"effects" # inputProposalDatum.effects
+                        #$ pdcons @"status" # pdata (pcon $ PFinished pdnil)
+                        #$ pdcons @"cosigners" # inputProposalDatum.cosigners
+                        #$ pdcons @"thresholds" # inputProposalDatum.thresholds
+                        #$ pdcons @"votes" # inputProposalDatum.votes # pdnil
 
         passert "Unexpected output proposal datum" $
           pforgetData (pdata outputProposalDatum') #== expectedOutputDatum
