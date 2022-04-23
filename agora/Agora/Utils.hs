@@ -555,7 +555,7 @@ mustFindDatum' = phoistAcyclic $
     PJust dt <- pmatch $ pfindDatum # dh # info
     pfromData $ punsafeCoerce dt
 
-{- | Extract the value stored in a PMaybe container. 
+{- | Extract the value stored in a PMaybe container.
      If there's no value, throw an error with the given message.
 -}
 mustBePJust :: forall a s. Term s (PString :--> PMaybe a :--> a)
@@ -564,7 +564,7 @@ mustBePJust = phoistAcyclic $
     PJust v -> v
     _ -> ptraceError emsg
 
-{- | Extract the value stored in a PMaybeData container. 
+{- | Extract the value stored in a PMaybeData container.
      If there's no value, throw an error with the given message.
 -}
 mustBePDJust :: forall a s. (PIsData a) => Term s (PString :--> PMaybeData a :--> a)

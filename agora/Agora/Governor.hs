@@ -371,8 +371,6 @@ governorValidator gov =
     case redeemer of
       PCreateProposal _ -> P.do
         let expectedNextProposalId = pnextProposalId # oldParams.nextProposalId
-
-            expectedNewDatum :: Term _ PGovernorDatum
             expectedNewDatum =
               pcon $
                 PGovernorDatum $
@@ -380,7 +378,7 @@ governorValidator gov =
                     #$ pdcons @"nextProposalId" # pdata expectedNextProposalId # pdnil
 
         passert "Unexpected governor state datum" $
-          newDatumData #== (pforgetData $ pdata $ expectedNewDatum)
+          newDatumData #== pforgetData (pdata expectedNewDatum)
 
         passert "Exactly one proposal token must be minted" $
           hasOnlyOneTokenOfCurrencySymbol # pproposalSymbol # txInfo.mint
@@ -520,8 +518,10 @@ governorValidator gov =
                         (pcon $ PJust pair)
                   )
 
+            votesList = pto $ pto $ pfromData inputProposalDatum.votes
+
             winner' =
-              pfoldr # highestVoteFolder # (pcon $ PNothing) #$ pto $ pto $ pfromData inputProposalDatum.votes
+              pfoldr # highestVoteFolder # (pcon PNothing) # votesList
 
         winner <- plet $ mustBePJust # "Empty votes" # winner'
 
@@ -542,13 +542,13 @@ governorValidator gov =
         outputsWithGAT <-
           plet $
             pfilter
-              # ( phoistAcyclic $
-                    plam
-                      ( \((pfield @"value" #) -> value) ->
-                          0 #< psymbolValueOf # pgatSym # value
-                      )
+              # phoistAcyclic
+                ( plam
+                    ( \((pfield @"value" #) -> value) ->
+                        0 #< psymbolValueOf # pgatSym # value
+                    )
                 )
-              #$ pfromData txInfo.outputs
+              # pfromData txInfo.outputs
 
         passert "Output GATs is more than minted GATs" $
           plength # outputsWithGAT #== gatCount
