@@ -7,16 +7,18 @@ This module tests the Treasury Withdrawal Effect.
 -}
 module Spec.Effect.TreasuryWithdrawal (tests) where
 
-import Spec.Sample.Effect.TreasuryWithdrawal
-    ( currSymbol,
-      users,
-      treasuries,
-      inputGAT,
-      inputTreasury,
-      outputTreasury,
-      outputUser,
-      buildReceiversOutputFromDatum,
-      buildScriptContext )
+import Spec.Sample.Effect.TreasuryWithdrawal (
+  buildReceiversOutputFromDatum,
+  buildScriptContext,
+  currSymbol,
+  inputGAT,
+  inputTreasury,
+  inputUser,
+  outputTreasury,
+  outputUser,
+  treasuries,
+  users,
+ )
 
 import Agora.Effect.TreasuryWithdrawal (
   TreasuryWithdrawalDatum (TreasuryWithdrawalDatum),
@@ -110,10 +112,23 @@ tests =
               [ inputGAT
               , inputTreasury 999 (asset1 20)
               ]
-              $ [ outputTreasury 999 (asset1 17)
+              $ outputTreasury 999 (asset1 17) :
+              buildReceiversOutputFromDatum datum3
+          )
+      , effectFailsWith
+          "Prevent transactions besides the withdrawal"
+          (treasuryWithdrawalValidator currSymbol)
+          datum3
+          ( buildScriptContext
+              [ inputGAT
+              , inputTreasury 1 (asset1 20)
+              , inputUser 99 (asset2 100)
+              ]
+              $ [ outputTreasury 1 (asset1 17)
+                , outputUser 100 (asset2 100)
                 ]
                 ++ buildReceiversOutputFromDatum datum3
-          )          
+          )
       ]
   ]
   where
@@ -124,17 +139,17 @@ tests =
         [ (head users, asset1 1)
         , (users !! 1, asset1 1)
         , (users !! 2, asset1 1)
-        ] $
-        [ head treasuries
-        , treasuries !! 1
+        ]
+        [ treasuries !! 1
         , treasuries !! 2
+        , treasuries !! 3
         ]
     datum2 =
       TreasuryWithdrawalDatum
         [ (head users, asset1 4 <> asset2 5)
         , (users !! 1, asset1 2 <> asset2 1)
         , (users !! 2, asset1 1)
-        ] $
+        ]
         [ head treasuries
         , treasuries !! 1
         , treasuries !! 2
@@ -144,6 +159,5 @@ tests =
         [ (head users, asset1 1)
         , (users !! 1, asset1 1)
         , (users !! 2, asset1 1)
-        ] $
-        [ treasuries !! 1
-        ]        
+        ]
+        [treasuries !! 1]

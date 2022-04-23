@@ -141,8 +141,7 @@ effectSucceedsWith ::
   PLifted datum ->
   ScriptContext ->
   TestTree
-effectSucceedsWith tag eff datum scriptContext =
-  validatorSucceedsWith tag eff datum () scriptContext
+effectSucceedsWith tag eff datum = validatorSucceedsWith tag eff datum ()
 
 -- | Check that a validator script fails, given a name and arguments.
 effectFailsWith ::
@@ -154,8 +153,7 @@ effectFailsWith ::
   PLifted datum ->
   ScriptContext ->
   TestTree
-effectFailsWith tag eff datum scriptContext =
-  validatorFailsWith tag eff datum () scriptContext
+effectFailsWith tag eff datum = validatorFailsWith tag eff datum ()
 
 -- | Check that an arbitrary script doesn't error when evaluated, given a name.
 scriptSucceeds :: String -> Script -> TestTree

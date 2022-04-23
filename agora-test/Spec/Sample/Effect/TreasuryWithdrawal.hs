@@ -7,6 +7,7 @@ This module provides smaples for Treasury Withdrawal Effect tests.
 -}
 module Spec.Sample.Effect.TreasuryWithdrawal (
   inputTreasury,
+  inputUser,
   inputGAT,
   outputTreasury,
   outputUser,
@@ -77,7 +78,7 @@ treasuries = ScriptCredential . ValidatorHash . toBuiltin . sha2 . C.pack . show
 
 inputGAT :: TxInInfo
 inputGAT =
-  TxInInfo -- Initiator
+  TxInInfo
     (TxOutRef "0b2086cbf8b6900f8cb65e012de4516cb66b5cb08a9aaba12a8b88be" 1)
     TxOut
       { txOutAddress = Address (ScriptCredential $ validatorHash validator) Nothing
@@ -87,10 +88,20 @@ inputGAT =
 
 inputTreasury :: Int -> Value -> TxInInfo
 inputTreasury indx val =
-  TxInInfo -- Initiator
+  TxInInfo
     (TxOutRef "" 1)
     TxOut
       { txOutAddress = Address (treasuries !! indx) Nothing
+      , txOutValue = val
+      , txOutDatumHash = Just (DatumHash "")
+      }
+
+inputUser :: Int -> Value -> TxInInfo
+inputUser indx val =
+  TxInInfo
+    (TxOutRef "" 1)
+    TxOut
+      { txOutAddress = Address (users !! indx) Nothing
       , txOutValue = val
       , txOutDatumHash = Just (DatumHash "")
       }

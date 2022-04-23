@@ -38,11 +38,10 @@ import Plutus.V1.Ledger.Credential (Credential)
 import Plutus.V1.Ledger.Value (CurrencySymbol, Value)
 import PlutusTx qualified
 
-data TreasuryWithdrawalDatum =
-  TreasuryWithdrawalDatum
-    { receivers :: [(Credential, Value)]
-    , treasuries :: [Credential]
-    }
+data TreasuryWithdrawalDatum = TreasuryWithdrawalDatum
+  { receivers :: [(Credential, Value)]
+  , treasuries :: [Credential]
+  }
   deriving stock (Show, GHC.Generic)
   deriving anyclass (Generic)
 
@@ -119,23 +118,15 @@ treasuryWithdrawalValidator currSymbol = makeEffect currSymbol $
     let treasuryOutputValues =
           pfilter
             # plam
-              ( \((pfield @"_0" #) . pfromData -> cred) -> pelem # cred # datum.treasuries)
+              (\((pfield @"_0" #) . pfromData -> cred) -> pelem # cred # datum.treasuries)
             # outputValues
-        treasuryInputValuesSum =
+        sumValues =
           pfoldr
             # plam (\((pfield @"_1" #) . pfromData -> x) y -> paddValue # pfromData x # y)
             # pconstant (mempty :: Value)
-            # treasuryInputValues
-        treasuryOutputValuesSum =
-          pfoldr
-            # plam (\((pfield @"_1" #) . pfromData -> x) y -> paddValue # pfromData x # y)
-            # pconstant (mempty :: Value)
-            # treasuryOutputValues
-        receiverValuesSum =
-          pfoldr
-            # plam (\((pfield @"_1" #) . pfromData -> x) y -> paddValue # pfromData x # y)
-            # pconstant (mempty :: Value)
-            # datum.receivers
+        treasuryInputValuesSum = sumValues # treasuryInputValues
+        treasuryOutputValuesSum = sumValues # treasuryOutputValues
+        receiverValuesSum = sumValues # datum.receivers
         outputContentMatchesRecivers =
           pall # plam (\out -> pelem # out # outputValues)
             #$ datum.receivers
@@ -148,8 +139,17 @@ treasuryWithdrawalValidator currSymbol = makeEffect currSymbol $
                   effInput.address #== pfield @"address" # pfromData x
               )
             # pfromData txInfo.outputs
+        inputsAreOnlyTreasuries =
+          pall
+            # plam
+              ( \((pfield @"_0" #) . pfromData -> cred) ->
+                  cred #== pfield @"credential" # effInput.address
+                    #|| pelem # cred # datum.treasuries
+              )
+            # inputValues
 
     passert "Transaction output does not match receivers" outputContentMatchesRecivers
     passert "Transaction should not pay to effects" shouldNotPayToEffect
+    passert "Transaction should only have treasuries specified in the datum as input" inputsAreOnlyTreasuries
     passert "Remainders should be returned to the treasury" excessShouldBePaidToInputs
     popaque $ pconstant ()
