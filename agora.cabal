@@ -159,10 +159,7 @@ test-suite agora-test
   hs-source-dirs: agora-test
   other-modules:
     Spec.AuthorityToken
-<<<<<<< HEAD
     Spec.Effect.TreasuryWithdrawal
-=======
->>>>>>> 0f1b4f3 (rewrite the doc for governor components)
     Spec.Model.MultiSig
     Spec.Proposal
     Spec.Sample.Effect.TreasuryWithdrawal

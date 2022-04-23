@@ -510,7 +510,6 @@ findTxOutDatum = phoistAcyclic $
       PDJust ((pfield @"_0" #) -> datumHash) -> pfindDatum # datumHash # datums
       _ -> pcon PNothing
 
-<<<<<<< HEAD
 {- | Safely convert a 'PValidatorHash' into a 'PTokenName'. This can be useful for tagging
      tokens for extra safety.
 -}
@@ -525,8 +524,7 @@ pvalidatorHashToTokenName vh = pcon (PTokenName (pto vh))
 getMintingPolicySymbol :: ClosedTerm PMintingPolicy -> CurrencySymbol
 getMintingPolicySymbol v = mintingPolicySymbol $ mkMintingPolicy v
 
-=======
->>>>>>> 93fe9ca (fix compilation erros; format && lint)
+-- | The entire value only contains one token of the specific assetclass.
 hasOnlyOneTokenOfAssetClass' :: AssetClass -> Term s (PValue :--> PBool)
 hasOnlyOneTokenOfAssetClass' ac@(AssetClass (as, _)) = phoistAcyclic $
   plam $ \vs -> P.do
@@ -536,13 +534,14 @@ hasOnlyOneTokenOfAssetClass' ac@(AssetClass (as, _)) = phoistAcyclic $
       #&& passetClassValueOf' ac # vs #== 1
       #&& (plength #$ pto $ pto $ pto vs) #== 1
 
+-- | The entire value only contains one token of the specific currency symbol.
 hasOnlyOneTokenOfCurrencySymbol :: Term s (PCurrencySymbol :--> PValue :--> PBool)
 hasOnlyOneTokenOfCurrencySymbol = phoistAcyclic $
   plam $ \cs vs -> P.do
     psymbolValueOf # cs # vs #== 1
       #&& (plength #$ pto $ pto $ pto vs) #== 1
 
-{- Find datum, in an unsafe manner.
+{- Find datum given a maybe datum hash, in an unsafe manner.
 
    FIXME: reimplement using 'ptryFrom'.
 -}
@@ -556,12 +555,18 @@ mustFindDatum' = phoistAcyclic $
     PJust dt <- pmatch $ pfindDatum # dh # info
     pfromData $ punsafeCoerce dt
 
+{- | Extract the value stored in a PMaybe container. 
+     If there's no value, throw an error with the given message.
+-}
 mustBePJust :: forall a s. Term s (PString :--> PMaybe a :--> a)
 mustBePJust = phoistAcyclic $
   plam $ \emsg mv' -> pmatch mv' $ \case
     PJust v -> v
     _ -> ptraceError emsg
 
+{- | Extract the value stored in a PMaybeData container. 
+     If there's no value, throw an error with the given message.
+-}
 mustBePDJust :: forall a s. (PIsData a) => Term s (PString :--> PMaybeData a :--> a)
 mustBePDJust = phoistAcyclic $
   plam $ \emsg mv' -> pmatch mv' $ \case
