@@ -92,41 +92,38 @@ treasuryWithdrawalValidator currSymbol = makeEffect currSymbol $
     txInfo <- pletFields @'["outputs", "inputs"] txInfo'
     PJust txOut <- pmatch $ findTxOutByTxOutRef # txOutRef' # pfromData txInfo'
     effInput <- pletFields @'["address", "value"] $ txOut
-    let outputValues =
-          pmap
-            # plam
-              ( \(pfromData -> txOut') -> P.do
-                  txOut <- pletFields @'["address", "value"] $ txOut'
-                  let cred = pfield @"credential" # pfromData txOut.address
-                  pdata $ ptuple # cred # txOut.value
-              )
-            # txInfo.outputs
-        inputValues =
-          pmap
-            # plam
-              ( \((pfield @"resolved" #) . pfromData -> txOut') -> P.do
-                  txOut <- pletFields @'["address", "value"] $ txOut'
-                  let cred = pfield @"credential" # pfromData txOut.address
-                  pdata $ ptuple # cred # txOut.value
-              )
-            # txInfo.inputs
-    treasuryInputValues <-
+    outputValues <-
       plet $
-        pfilter
-          # plam (\((pfield @"_0" #) . pfromData -> cred) -> pelem # cred # datum.treasuries)
-          # inputValues
-    let treasuryOutputValues =
+        pmap
+          # plam
+            ( \(pfromData -> txOut') -> P.do
+                txOut <- pletFields @'["address", "value"] $ txOut'
+                let cred = pfield @"credential" # pfromData txOut.address
+                pdata $ ptuple # cred # txOut.value
+            )
+          # txInfo.outputs
+    inputValues <-
+      plet $
+        pmap
+          # plam
+            ( \((pfield @"resolved" #) . pfromData -> txOut') -> P.do
+                txOut <- pletFields @'["address", "value"] $ txOut'
+                let cred = pfield @"credential" # pfromData txOut.address
+                pdata $ ptuple # cred # txOut.value
+            )
+          # txInfo.inputs
+    let ofTreasury =
           pfilter
-            # plam
-              (\((pfield @"_0" #) . pfromData -> cred) -> pelem # cred # datum.treasuries)
-            # outputValues
+            # plam (\((pfield @"_0" #) . pfromData -> cred) -> pelem # cred # datum.treasuries)
         sumValues =
           pfoldr
             # plam (\((pfield @"_1" #) . pfromData -> x) y -> paddValue # pfromData x # y)
             # pconstant (mempty :: Value)
-        treasuryInputValuesSum = sumValues # treasuryInputValues
-        treasuryOutputValuesSum = sumValues # treasuryOutputValues
+        treasuryInputValuesSum = sumValues #$ ofTreasury # inputValues
+        treasuryOutputValuesSum = sumValues #$ ofTreasury # outputValues
         receiverValuesSum = sumValues # datum.receivers
+
+        -- Constraints
         outputContentMatchesRecivers =
           pall # plam (\out -> pelem # out # outputValues)
             #$ datum.receivers
@@ -148,8 +145,8 @@ treasuryWithdrawalValidator currSymbol = makeEffect currSymbol $
               )
             # inputValues
 
-    passert "Transaction output does not match receivers" outputContentMatchesRecivers
     passert "Transaction should not pay to effects" shouldNotPayToEffect
-    passert "Transaction should only have treasuries specified in the datum as input" inputsAreOnlyTreasuries
+    passert "Transaction output does not match receivers" outputContentMatchesRecivers
     passert "Remainders should be returned to the treasury" excessShouldBePaidToInputs
+    passert "Transaction should only have treasuries specified in the datum as input" inputsAreOnlyTreasuries
     popaque $ pconstant ()
