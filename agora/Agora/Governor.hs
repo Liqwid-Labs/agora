@@ -47,8 +47,6 @@ import Agora.Proposal (
   PProposalId,
   PProposalStatus (PDraft, PExecutable, PFinished),
   PProposalThresholds,
-  PProposalVotes (PProposalVotes),
-  PResultTag (PResultTag),
   Proposal (..),
   ProposalId,
   ProposalThresholds,
@@ -68,6 +66,7 @@ import Agora.Utils (
   passetClassValueOf',
   pfindTxInByTxOutRef,
   pisDJust,
+  pisJust,
   pisUxtoSpent,
   pownCurrencySymbol,
   psymbolValueOf,
@@ -81,9 +80,13 @@ import Plutarch (popaque)
 import Plutarch.Api.V1 (
   PAddress,
   PCurrencySymbol,
+  PDatumHash,
+  PMap,
   PMintingPolicy,
   PScriptPurpose (PSpending),
+  PTxOut,
   PValidator,
+  PValidatorHash,
   PValue,
   mintingPolicySymbol,
   mkMintingPolicy,
@@ -286,27 +289,27 @@ NOTE: The input proposal is found by looking for the UTXO with a proposal state 
 
 === Effect Group Selection
 
-Currently a proposal can two or more than two options to vote on, 
-  meaning that it can conatinas two or more effect groups, 
+Currently a proposal can two or more than two options to vote on,
+  meaning that it can conatinas two or more effect groups,
   according to [#39](https://github.com/Liqwid-Labs/agora/issues/39).
 
-Either way, the shapes of 'Proposal.votes' and 'Proposal.effects' should be the same. 
+Either way, the shapes of 'Proposal.votes' and 'Proposal.effects' should be the same.
   This is checked by 'Proposal.proposalDatumValid'.
 
-The script will look at the the 'Proposal.votes' to determine which group has the highest votes, 
+The script will look at the the 'Proposal.votes' to determine which group has the highest votes,
   said group shoud be executed.
 
 During the process, minimum votes requirement will also be enforced.
 
 Next, the script will:
 
-- Ensure that for every effect in the said effect group, 
+- Ensure that for every effect in the said effect group,
   exactly one valid GAT is minted and sent to the effect.
 - The amount of GAT minted in the transaction should be equal to the number of effects.
 - A new UTXO is sent to the proposal validator, this UTXO should:
 
     * Include the one proposal state token.
-    * Have a valid datum of type 'Proposal.ProposalDatum'. 
+    * Have a valid datum of type 'Proposal.ProposalDatum'.
       This datum should be as same as the one of the input proposal,
       except its status should be 'Proposal.Finished'.
 
@@ -490,25 +493,36 @@ governorValidator gov =
 
         -- TODO: anything else to check here?
 
-        -- TODO: support more than two effect group.
+        let highestVoteFolder =
+              phoistAcyclic $
+                plam
+                  ( \pair last' ->
+                      pif
+                        (pisJust # last')
+                        ( P.do
+                            PJust last <- pmatch last'
+                            let lastHighestVote = pfromData $ psndBuiltin # last
+                                thisVote = pfromData $ psndBuiltin # pair
+                            pif (lastHighestVote #< thisVote) (pcon $ PJust pair) last'
+                        )
+                        (pcon $ PJust pair)
+                  )
 
-        PProposalVotes votes' <- pmatch $ pfromData inputProposalDatum.votes
-        votes <- plet votes'
+            winner' =
+              pfoldr # highestVoteFolder # (pcon $ PNothing) #$ pto $ pto $ pfromData inputProposalDatum.votes
 
-        let minimumVotes = puntag $ pfromData $ pfield @"execute" # inputProposalDatum.thresholds
+        winner <- plet $ mustBePJust # "Empty votes" # winner'
 
-            yesVotes = plookup' # pyesResultTag # votes
-            noVotes = plookup' # pnoResultTag # votes
-            biggerVotes = pif (yesVotes #< noVotes) noVotes yesVotes
+        let highestVote = pfromData $ psndBuiltin # winner
+            minimumVotes = puntag $ pfromData $ pfield @"execute" # inputProposalDatum.thresholds
 
-        passert "Number of votes doesn't meet the minimum requirement" $
-          minimumVotes #< biggerVotes
+        passert "Higgest vote doesn't meet the minimum requirement" $ minimumVotes #<= highestVote
 
-        let finalResultTag = pif (yesVotes #< noVotes) pnoResultTag pyesResultTag
+        let finalResultTag = pfromData $ pfstBuiltin # winner
 
-        effects <- plet $ plookup' # finalResultTag #$ inputProposalDatum.effects
+        effectGroup <- plet $ plookup' # finalResultTag #$ inputProposalDatum.effects
 
-        gatCount <- plet $ plength #$ pto $ pto effects
+        gatCount <- plet $ plength #$ pto $ pto effectGroup
 
         passert "Required amount of GATs should be minted" $
           psymbolValueOf # pproposalSymbol # txInfo.mint #== gatCount
@@ -516,36 +530,45 @@ governorValidator gov =
         outputsWithGAT <-
           plet $
             pfilter
-              # plam
-                ( \((pfield @"value" #) -> value) ->
-                    0 #< psymbolValueOf # pgatSym # value
+              # ( phoistAcyclic $
+                    plam
+                      ( \((pfield @"value" #) -> value) ->
+                          0 #< psymbolValueOf # pgatSym # value
+                      )
                 )
               #$ pfromData txInfo.outputs
 
         passert "Output GATs is more than minted GATs" $
           plength # outputsWithGAT #== gatCount
 
+        let gatOutputValidator' :: Term s ((PMap PValidatorHash PDatumHash) :--> (PAsData PTxOut) :--> PUnit :--> PUnit)
+            gatOutputValidator' =
+              phoistAcyclic $
+                plam
+                  ( \effects (pfromData -> output') _ -> P.do
+                      output <- pletFields @'["address", "datumHash"] $ output'
+
+                      let scriptHash =
+                            mustBePJust # "GAT receiver is not a script"
+                              #$ scriptHashFromAddress # output.address
+                          datumHash =
+                            mustBePDJust # "Output to effect should have datum"
+                              #$ output.datumHash
+
+                          expectedDatumHash =
+                            mustBePJust # "Receiver is not in the effect list"
+                              #$ plookup # scriptHash # effects
+
+                      passert "GAT must be tagged by the effect hash" $ authorityTokensValidIn # pgatSym # output'
+                      passert "Unexpected datum" $ datumHash #== expectedDatumHash
+                      pconstant ()
+                  )
+
+            gatOutputValidator = gatOutputValidator' # effectGroup
+
         popaque $
           pfoldr
-            # plam
-              ( \(pfromData -> output') _ -> P.do
-                  output <- pletFields @'["address", "datumHash"] $ output'
-
-                  let scriptHash =
-                        mustBePJust # "GAT receiver is not a script"
-                          #$ scriptHashFromAddress # output.address
-                      datumHash =
-                        mustBePDJust # "Output to effect should have datum"
-                          #$ output.datumHash
-
-                      expectedDatumHash =
-                        mustBePJust # "Receiver is not in the effect list"
-                          #$ plookup # scriptHash # effects
-
-                  passert "GAT must be tagged by the effect hash" $ authorityTokensValidIn # pgatSym # output'
-                  passert "Unexpected datum" $ datumHash #== expectedDatumHash
-                  pconstant ()
-              )
+            # gatOutputValidator
             # pconstant ()
             # outputsWithGAT
       PMutateGovernor _ -> P.do
@@ -582,12 +605,6 @@ governorValidator gov =
 
     pgatSym :: Term s PCurrencySymbol
     pgatSym = phoistAcyclic $ pconstant $ gatSymbol gov
-
-    pyesResultTag :: Term s PResultTag
-    pyesResultTag = phoistAcyclic $ pcon $ PResultTag $ pconstant 1
-
-    pnoResultTag :: Term s PResultTag
-    pnoResultTag = phoistAcyclic $ pcon $ PResultTag $ pconstant 0
 
 --------------------------------------------------------------------------------
 
