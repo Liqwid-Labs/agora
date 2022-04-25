@@ -115,7 +115,7 @@ inputCollateral indx =
       { txOutAddress = Address (users !! indx) Nothing
       , txOutValue = Value.singleton "" "" 2000000
       , txOutDatumHash = Just (DatumHash "")
-      }  
+      }
 
 outputTreasury :: Int -> Value -> TxOut
 outputTreasury indx val =

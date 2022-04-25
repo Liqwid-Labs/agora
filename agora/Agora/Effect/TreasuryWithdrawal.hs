@@ -20,12 +20,12 @@ import Agora.Effect (makeEffect)
 import Agora.Utils (findTxOutByTxOutRef, paddValue, passert)
 import Plutarch (popaque)
 import Plutarch.Api.V1 (
-  ptuple,
-  PValidator,
+  PCredential (..),
   PTuple,
+  PValidator,
   PValue,
-  PCredential(..)
-  )
+  ptuple,
+ )
 
 import Plutarch.DataRepr (
   DerivePConstantViaData (..),
@@ -34,7 +34,7 @@ import Plutarch.DataRepr (
  )
 import Plutarch.Lift (PUnsafeLiftDecl (..))
 import Plutarch.Monadic qualified as P
-import Plutus.V1.Ledger.Credential ( Credential )
+import Plutus.V1.Ledger.Credential (Credential)
 import Plutus.V1.Ledger.Value (CurrencySymbol, Value)
 import PlutusTx qualified
 
@@ -125,7 +125,7 @@ treasuryWithdrawalValidator currSymbol = makeEffect currSymbol $
         isCollateral = plam $ \cred -> P.do
           pmatch cred $ \case
             PPubKeyCredential _ -> pcon PTrue
-            PScriptCredential _ -> pcon PFalse     
+            PScriptCredential _ -> pcon PFalse
 
         -- Constraints
         outputContentMatchesRecivers =
