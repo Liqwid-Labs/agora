@@ -7,7 +7,16 @@ Description: An effect that mutates governor settings
 
 An effect for mutating governor settings
 -}
-module Agora.Effects.GovernorMutation (mutateGovernorValidator, PMutateGovernorDatum (..), MutateGovernorDatum (..)) where
+module Agora.Effects.GovernorMutation (
+  -- * Haskell-land
+  MutateGovernorDatum (..),
+
+  -- * Plutarch-land
+  PMutateGovernorDatum (..),
+  
+  -- * Scripts
+  mutateGovernorValidator,
+) where
 
 --------------------------------------------------------------------------------
 
@@ -45,8 +54,8 @@ import Agora.Governor (
   Governor,
   GovernorDatum,
   PGovernorDatum,
-  gstAssetClass,
   gatSymbol,
+  gstAssetClass,
  )
 import Agora.Utils (
   findOutputsToAddress,
@@ -57,9 +66,12 @@ import Agora.Utils (
 
 --------------------------------------------------------------------------------
 
+-- | Haskell-level datum for the governor mutation effect script.
 data MutateGovernorDatum = MutateGovernorDatum
-  { governorRef :: TxOutRef
+  { governorRef :: TxOutRef 
+    -- ^ Referenced governor state UTXO should be updated by the effect.
   , newDatum :: GovernorDatum
+    -- ^ The new settings for the governor.
   }
   deriving stock (Show, GHC.Generic)
   deriving anyclass (Generic)
@@ -68,6 +80,7 @@ PlutusTx.makeIsDataIndexed ''MutateGovernorDatum [('MutateGovernorDatum, 0)]
 
 --------------------------------------------------------------------------------
 
+-- | Plutarch-level version of 'MutateGovernorDatum'.
 newtype PMutateGovernorDatum (s :: S)
   = PMutateGovernorDatum
       ( Term
@@ -90,6 +103,21 @@ deriving via (DerivePConstantViaData MutateGovernorDatum PMutateGovernorDatum) i
 
 --------------------------------------------------------------------------------
 
+{- | Validator for the governor mutation effect. 
+
+   This effect is implemented using the 'Agora.Effect.makeEffect' wrapper, 
+    meaning that the burning of GAT is checked in the said wrapper.
+
+   In order to locate the governor, the validator is parametrized with a 'Agora.Governor.Governor'.
+
+   All the information it need to validate the effect is encoded in the 'MutateGovernorDatum',
+    so regardless what redeemer it's given, it will check:
+
+   - No token is minted/burnt other than GAT.
+   - The reference UTXO in the datum should be spent.
+   - Said UTXO carries the GST.
+   - A new UTXO, containing the GST and the new governor state datum, is paid to the governor.
+-}
 mutateGovernorValidator :: Governor -> ClosedTerm PValidator
 mutateGovernorValidator gov = makeEffect (gatSymbol gov) $
   \_gatCs (datum :: Term _ PMutateGovernorDatum) _txOutRef txInfo' -> P.do
