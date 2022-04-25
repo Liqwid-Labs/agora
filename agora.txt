@@ -559,7 +559,15 @@ module Agora.Effect
 --   In some situations, it may be the case that we need more control over
 --   how an effect is implemented. In such situations, it's okay to not use
 --   this helper.
-makeEffect :: forall (datum :: PType). PIsData datum => CurrencySymbol -> (forall (s :: S). Term s PCurrencySymbol -> Term s datum -> Term s PTxOutRef -> Term s (PAsData PTxInfo) -> Term s POpaque) -> ClosedTerm PValidator
+makeEffect :: forall (datum :: PType). (PIsData datum, PTryFrom PData datum) => CurrencySymbol -> (forall (s :: S). Term s PCurrencySymbol -> Term s datum -> Term s PTxOutRef -> Term s (PAsData PTxInfo) -> Term s POpaque) -> ClosedTerm PValidator
+
+
+-- | A dumb effect that only burns its GAT.
+module Agora.Effect.NoOp
 
 -- | Dummy effect which can only burn its GAT.
-noopEffect :: CurrencySymbol -> ClosedTerm PValidator
+noOpValidator :: CurrencySymbol -> ClosedTerm PValidator
+data PNoOp (s :: S)
+instance Plutarch.Builtin.PIsData Agora.Effect.NoOp.PNoOp
+instance Plutarch.Internal.PlutusType.PlutusType Agora.Effect.NoOp.PNoOp
+instance Plutarch.TryFrom.PTryFrom Plutarch.Builtin.PData Agora.Effect.NoOp.PNoOp

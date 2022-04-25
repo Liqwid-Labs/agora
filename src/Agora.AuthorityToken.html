@@ -68,7 +68,7 @@ Tokens acting as redeemable proofs of DAO authority.
      In other words, check that all assets of a particular currency symbol
      are tagged with a TokenName that matches where they live.
 -}</span><span>
-</span><span id="line-70"></span><span id="local-6989586621679312287"><span class="annot"><a href="Agora.AuthorityToken.html#authorityTokensValidIn"><span class="hs-identifier hs-type">authorityTokensValidIn</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679312287"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PCurrencySymbol</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-type">:--&gt;</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PTxOut</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-type">:--&gt;</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PBool</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-70"></span><span id="local-6989586621679312973"><span class="annot"><a href="Agora.AuthorityToken.html#authorityTokensValidIn"><span class="hs-identifier hs-type">authorityTokensValidIn</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679312973"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PCurrencySymbol</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-type">:--&gt;</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PTxOut</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-type">:--&gt;</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PBool</span></a></span><span class="hs-special">)</span></span><span>
 </span><span id="line-71"></span><span id="authorityTokensValidIn"><span class="annot"><span class="annottext">authorityTokensValidIn :: forall (s :: S). Term s (PCurrencySymbol :--&gt; (PTxOut :--&gt; PBool))
 </span><a href="Agora.AuthorityToken.html#authorityTokensValidIn"><span class="hs-identifier hs-var hs-var">authorityTokensValidIn</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(forall (s :: S).
  Term s (PCurrencySymbol :--&gt; (PTxOut :--&gt; PBool)))
@@ -94,10 +94,10 @@ PLamN a b s =&gt;
 -&gt; (Term s PCurrencySymbol -&gt; Term s PTxOut -&gt; Term s PBool)
 -&gt; Term s (PCurrencySymbol :--&gt; (PTxOut :--&gt; PBool))
 forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><a href="../file:///nix/store/kq3z27pzg8pc38yjr84kzncicvpzhan0-ghc-9.2.1-doc/share/doc/ghc/html/libraries/base-4.16.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679311949"><span class="annot"><span class="annottext">Term s PCurrencySymbol
-</span><a href="#local-6989586621679311949"><span class="hs-identifier hs-var">authorityTokenSym</span></a></span></span><span> </span><span id="local-6989586621679311948"><span class="annot"><span class="annottext">Term s PTxOut
-</span><a href="#local-6989586621679311948"><span class="hs-identifier hs-var">txOut''</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">P.do</span><span>
-</span><span id="line-73"></span><span>    </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PTxOut</span></a></span><span> </span><span id="local-6989586621679311946"><span class="annot"><span class="annottext">Term
+</span><a href="../file:///nix/store/kq3z27pzg8pc38yjr84kzncicvpzhan0-ghc-9.2.1-doc/share/doc/ghc/html/libraries/base-4.16.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679312635"><span class="annot"><span class="annottext">Term s PCurrencySymbol
+</span><a href="#local-6989586621679312635"><span class="hs-identifier hs-var">authorityTokenSym</span></a></span></span><span> </span><span id="local-6989586621679312634"><span class="annot"><span class="annottext">Term s PTxOut
+</span><a href="#local-6989586621679312634"><span class="hs-identifier hs-var">txOut''</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">P.do</span><span>
+</span><span id="line-73"></span><span>    </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PTxOut</span></a></span><span> </span><span id="local-6989586621679312632"><span class="annot"><span class="annottext">Term
   s
   (PDataRecord
      ((':)
@@ -110,13 +110,13 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
               @PLabeledType
               (&quot;datumHash&quot; ':= PMaybeData PDatumHash)
               ('[] @PLabeledType)))))
-</span><a href="#local-6989586621679311946"><span class="hs-identifier hs-var">txOut'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Term s PTxOut -&gt; (PTxOut s -&gt; Term s PBool) -&gt; Term s PBool
+</span><a href="#local-6989586621679312632"><span class="hs-identifier hs-var">txOut'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Term s PTxOut -&gt; (PTxOut s -&gt; Term s PBool) -&gt; Term s PBool
 forall (a :: PType) (s :: S) (b :: PType).
 PMatch a =&gt;
 Term s a -&gt; (a s -&gt; Term s b) -&gt; Term s b
 </span><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pmatch</span></a></span><span> </span><span class="annot"><span class="annottext">Term s PTxOut
-</span><a href="#local-6989586621679311948"><span class="hs-identifier hs-var">txOut''</span></a></span><span>
-</span><span id="line-74"></span><span>    </span><span id="local-6989586621679311944"><span class="annot"><span class="annottext">HRec
+</span><a href="#local-6989586621679312634"><span class="hs-identifier hs-var">txOut''</span></a></span><span>
+</span><span id="line-74"></span><span>    </span><span id="local-6989586621679312630"><span class="annot"><span class="annottext">HRec
   ((':)
      @Type
      (Labeled @Symbol &quot;address&quot; (Term s (PAsData PAddress)))
@@ -124,7 +124,7 @@ Term s a -&gt; (a s -&gt; Term s b) -&gt; Term s b
         @Type
         (Labeled @Symbol &quot;value&quot; (Term s (PAsData PValue)))
         ('[] @Type)))
-</span><a href="#local-6989586621679311944"><span class="hs-identifier hs-var">txOut</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">forall (fs :: [Symbol]) (a :: PType) (s :: S) (b :: PType)
+</span><a href="#local-6989586621679312630"><span class="hs-identifier hs-var">txOut</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">forall (fs :: [Symbol]) (a :: PType) (s :: S) (b :: PType)
        (ps :: [PLabeledType]) (bs :: [ToBind]).
 (PDataFields a,
  (ps :: [PLabeledType]) ~ (PFields a :: [PLabeledType]),
@@ -203,8 +203,8 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
               @PLabeledType
               (&quot;datumHash&quot; ':= PMaybeData PDatumHash)
               ('[] @PLabeledType)))))
-</span><a href="#local-6989586621679311946"><span class="hs-identifier hs-var">txOut'</span></a></span><span>
-</span><span id="line-75"></span><span>    </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PAddress</span></a></span><span> </span><span id="local-6989586621679311941"><span class="annot"><span class="annottext">Term
+</span><a href="#local-6989586621679312632"><span class="hs-identifier hs-var">txOut'</span></a></span><span>
+</span><span id="line-75"></span><span>    </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PAddress</span></a></span><span> </span><span id="local-6989586621679312627"><span class="annot"><span class="annottext">Term
   s
   (PDataRecord
      ((':)
@@ -214,7 +214,7 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
            @PLabeledType
            (&quot;stakingCredential&quot; ':= PMaybeData PStakingCredential)
            ('[] @PLabeledType))))
-</span><a href="#local-6989586621679311941"><span class="hs-identifier hs-var">address</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Term s PAddress -&gt; (PAddress s -&gt; Term s PBool) -&gt; Term s PBool
+</span><a href="#local-6989586621679312627"><span class="hs-identifier hs-var">address</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Term s PAddress -&gt; (PAddress s -&gt; Term s PBool) -&gt; Term s PBool
 forall (a :: PType) (s :: S) (b :: PType).
 PMatch a =&gt;
 Term s a -&gt; (a s -&gt; Term s b) -&gt; Term s b
@@ -226,9 +226,9 @@ Term s a -&gt; (a s -&gt; Term s b) -&gt; Term s b
         @Type
         (Labeled @Symbol &quot;value&quot; (Term s (PAsData PValue)))
         ('[] @Type)))
-</span><a href="#local-6989586621679311944"><span class="hs-identifier hs-var">txOut</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">address</span><span>
-</span><span id="line-76"></span><span>    </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PValue</span></a></span><span> </span><span id="local-6989586621679311940"><span class="annot"><span class="annottext">Term s (PMap PCurrencySymbol (PMap PTokenName (PInteger @S)))
-</span><a href="#local-6989586621679311940"><span class="hs-identifier hs-var">value'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Term s PValue -&gt; (PValue s -&gt; Term s PBool) -&gt; Term s PBool
+</span><a href="#local-6989586621679312630"><span class="hs-identifier hs-var">txOut</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">address</span><span>
+</span><span id="line-76"></span><span>    </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PValue</span></a></span><span> </span><span id="local-6989586621679312626"><span class="annot"><span class="annottext">Term s (PMap PCurrencySymbol (PMap PTokenName (PInteger @S)))
+</span><a href="#local-6989586621679312626"><span class="hs-identifier hs-var">value'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Term s PValue -&gt; (PValue s -&gt; Term s PBool) -&gt; Term s PBool
 forall (a :: PType) (s :: S) (b :: PType).
 PMatch a =&gt;
 Term s a -&gt; (a s -&gt; Term s b) -&gt; Term s b
@@ -240,10 +240,10 @@ Term s a -&gt; (a s -&gt; Term s b) -&gt; Term s b
         @Type
         (Labeled @Symbol &quot;value&quot; (Term s (PAsData PValue)))
         ('[] @Type)))
-</span><a href="#local-6989586621679311944"><span class="hs-identifier hs-var">txOut</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">value</span><span>
-</span><span id="line-77"></span><span>    </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PMap</span></a></span><span> </span><span id="local-6989586621679311939"><span class="annot"><span class="annottext">Term
+</span><a href="#local-6989586621679312630"><span class="hs-identifier hs-var">txOut</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">value</span><span>
+</span><span id="line-77"></span><span>    </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PMap</span></a></span><span> </span><span id="local-6989586621679312625"><span class="annot"><span class="annottext">Term
   s (PBuiltinMap PCurrencySymbol (PMap PTokenName (PInteger @S)))
-</span><a href="#local-6989586621679311939"><span class="hs-identifier hs-var">value</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Term s (PMap PCurrencySymbol (PMap PTokenName (PInteger @S)))
+</span><a href="#local-6989586621679312625"><span class="hs-identifier hs-var">value</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Term s (PMap PCurrencySymbol (PMap PTokenName (PInteger @S)))
 -&gt; (PMap PCurrencySymbol (PMap PTokenName (PInteger @S)) s
     -&gt; Term s PBool)
 -&gt; Term s PBool
@@ -251,7 +251,7 @@ forall (a :: PType) (s :: S) (b :: PType).
 PMatch a =&gt;
 Term s a -&gt; (a s -&gt; Term s b) -&gt; Term s b
 </span><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pmatch</span></a></span><span> </span><span class="annot"><span class="annottext">Term s (PMap PCurrencySymbol (PMap PTokenName (PInteger @S)))
-</span><a href="#local-6989586621679311940"><span class="hs-identifier hs-var">value'</span></a></span><span>
+</span><a href="#local-6989586621679312626"><span class="hs-identifier hs-var">value'</span></a></span><span>
 </span><span id="line-78"></span><span>    </span><span class="annot"><span class="annottext">Term s (PMaybe (PAsData (PMap PTokenName (PInteger @S))))
 -&gt; (PMaybe (PAsData (PMap PTokenName (PInteger @S))) s
     -&gt; Term s PBool)
@@ -284,7 +284,7 @@ forall (a :: PType) (s :: S).
 PIsData a =&gt;
 Term s a -&gt; Term s (PAsData a)
 </span><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pdata</span></a></span><span> </span><span class="annot"><span class="annottext">Term s PCurrencySymbol
-</span><a href="#local-6989586621679311949"><span class="hs-identifier hs-var">authorityTokenSym</span></a></span><span> </span><span class="annot"><span class="annottext">Term
+</span><a href="#local-6989586621679312635"><span class="hs-identifier hs-var">authorityTokenSym</span></a></span><span> </span><span class="annot"><span class="annottext">Term
   s
   (PBuiltinMap PCurrencySymbol (PMap PTokenName (PInteger @S))
    :--&gt; PMaybe (PAsData (PMap PTokenName (PInteger @S))))
@@ -295,7 +295,7 @@ forall (s :: S) (a :: PType) (b :: PType).
 Term s (a :--&gt; b) -&gt; Term s a -&gt; Term s b
 </span><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-var">#</span></a></span><span> </span><span class="annot"><span class="annottext">Term
   s (PBuiltinMap PCurrencySymbol (PMap PTokenName (PInteger @S)))
-</span><a href="#local-6989586621679311939"><span class="hs-identifier hs-var">value</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">((PMaybe (PAsData (PMap PTokenName (PInteger @S))) s
+</span><a href="#local-6989586621679312625"><span class="hs-identifier hs-var">value</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">((PMaybe (PAsData (PMap PTokenName (PInteger @S))) s
   -&gt; Term s PBool)
  -&gt; Term s PBool)
 -&gt; (PMaybe (PAsData (PMap PTokenName (PInteger @S))) s
@@ -308,8 +308,8 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 forall (a :: PType) (s :: S).
 PIsData a =&gt;
 Term s (PAsData a) -&gt; Term s a
-</span><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pfromData</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span id="local-6989586621679311934"><span class="annot"><span class="annottext">Term s (PMap PTokenName (PInteger @S))
-</span><a href="#local-6989586621679311934"><span class="hs-identifier hs-var">tokenMap'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pfromData</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span id="local-6989586621679312620"><span class="annot"><span class="annottext">Term s (PMap PTokenName (PInteger @S))
+</span><a href="#local-6989586621679312620"><span class="hs-identifier hs-var">tokenMap'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
 </span><span id="line-80"></span><span>        </span><span class="annot"><span class="annottext">Term s PCredential
 -&gt; (PCredential s -&gt; Term s PBool) -&gt; Term s PBool
 forall (a :: PType) (s :: S) (b :: PType).
@@ -357,7 +357,7 @@ Term s (a :--&gt; b) -&gt; Term s a -&gt; Term s b
            @PLabeledType
            (&quot;stakingCredential&quot; ':= PMaybeData PStakingCredential)
            ('[] @PLabeledType))))
-</span><a href="#local-6989586621679311941"><span class="hs-identifier hs-var">address</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">((PCredential s -&gt; Term s PBool) -&gt; Term s PBool)
+</span><a href="#local-6989586621679312627"><span class="hs-identifier hs-var">address</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">((PCredential s -&gt; Term s PBool) -&gt; Term s PBool)
 -&gt; (PCredential s -&gt; Term s PBool) -&gt; Term s PBool
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><a href="../file:///nix/store/kq3z27pzg8pc38yjr84kzncicvpzhan0-ghc-9.2.1-doc/share/doc/ghc/html/libraries/base-4.16.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
@@ -402,17 +402,17 @@ forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
  (a :: PType) ~ (PUnLabel (IndexList @PLabeledType n as) :: PType),
  PFromDataable a b) =&gt;
 Term s (p :--&gt; b)
-</span><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pfield</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-string">&quot;_0&quot;</span></span><span> </span><span class="hs-operator">#</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span id="local-6989586621679311927"><span class="annot"><span class="annottext">Term s PValidatorHash
-</span><a href="#local-6989586621679311927"><span class="hs-identifier hs-var">cred</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">P.do</span><span>
-</span><span id="line-85"></span><span>            </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PMap</span></a></span><span> </span><span id="local-6989586621679311926"><span class="annot"><span class="annottext">Term s (PBuiltinMap PTokenName (PInteger @S))
-</span><a href="#local-6989586621679311926"><span class="hs-identifier hs-var">tokenMap</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Term s (PMap PTokenName (PInteger @S))
+</span><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pfield</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-string">&quot;_0&quot;</span></span><span> </span><span class="hs-operator">#</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span id="local-6989586621679312613"><span class="annot"><span class="annottext">Term s PValidatorHash
+</span><a href="#local-6989586621679312613"><span class="hs-identifier hs-var">cred</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">P.do</span><span>
+</span><span id="line-85"></span><span>            </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PMap</span></a></span><span> </span><span id="local-6989586621679312612"><span class="annot"><span class="annottext">Term s (PBuiltinMap PTokenName (PInteger @S))
+</span><a href="#local-6989586621679312612"><span class="hs-identifier hs-var">tokenMap</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Term s (PMap PTokenName (PInteger @S))
 -&gt; (PMap PTokenName (PInteger @S) s -&gt; Term s PBool)
 -&gt; Term s PBool
 forall (a :: PType) (s :: S) (b :: PType).
 PMatch a =&gt;
 Term s a -&gt; (a s -&gt; Term s b) -&gt; Term s b
 </span><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pmatch</span></a></span><span> </span><span class="annot"><span class="annottext">Term s (PMap PTokenName (PInteger @S))
-</span><a href="#local-6989586621679311934"><span class="hs-identifier hs-var">tokenMap'</span></a></span><span>
+</span><a href="#local-6989586621679312620"><span class="hs-identifier hs-var">tokenMap'</span></a></span><span>
 </span><span id="line-86"></span><span>            </span><span class="annot"><span class="annottext">Term s (PString @S) -&gt; Term s PBool -&gt; Term s PBool
 forall (s :: S).
 Term s (PString @S) -&gt; Term s PBool -&gt; Term s PBool
@@ -445,21 +445,21 @@ PLifted PBool
 </span><span id="line-96"></span><span>
 </span><span id="line-97"></span><span class="hs-comment">-- | Assert that a single authority token has been burned.</span><span>
 </span><span id="line-98"></span><span class="annot"><a href="Agora.AuthorityToken.html#singleAuthorityTokenBurned"><span class="hs-identifier hs-type">singleAuthorityTokenBurned</span></a></span><span> </span><span class="hs-glyph">::</span><span>
-</span><span id="line-99"></span><span>  </span><span class="hs-keyword">forall</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679312135"><span class="annot"><a href="#local-6989586621679312135"><span class="hs-identifier hs-type">s</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">S</span></a></span><span class="hs-special">)</span><span class="hs-operator">.</span><span>
-</span><span id="line-100"></span><span>  </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679312135"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PCurrencySymbol</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
-</span><span id="line-101"></span><span>  </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679312135"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PAsData</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PTxInfo</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
-</span><span id="line-102"></span><span>  </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679312135"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PValue</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
-</span><span id="line-103"></span><span>  </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679312135"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PBool</span></a></span><span>
+</span><span id="line-99"></span><span>  </span><span class="hs-keyword">forall</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679312821"><span class="annot"><a href="#local-6989586621679312821"><span class="hs-identifier hs-type">s</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">S</span></a></span><span class="hs-special">)</span><span class="hs-operator">.</span><span>
+</span><span id="line-100"></span><span>  </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679312821"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PCurrencySymbol</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-101"></span><span>  </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679312821"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PAsData</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PTxInfo</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-102"></span><span>  </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679312821"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PValue</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-103"></span><span>  </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679312821"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PBool</span></a></span><span>
 </span><span id="line-104"></span><span id="singleAuthorityTokenBurned"><span class="annot"><span class="annottext">singleAuthorityTokenBurned :: forall (s :: S).
 Term s PCurrencySymbol
 -&gt; Term s (PAsData PTxInfo) -&gt; Term s PValue -&gt; Term s PBool
-</span><a href="Agora.AuthorityToken.html#singleAuthorityTokenBurned"><span class="hs-identifier hs-var hs-var">singleAuthorityTokenBurned</span></a></span></span><span> </span><span id="local-6989586621679311869"><span class="annot"><span class="annottext">Term s PCurrencySymbol
-</span><a href="#local-6989586621679311869"><span class="hs-identifier hs-var">gatCs</span></a></span></span><span> </span><span id="local-6989586621679311868"><span class="annot"><span class="annottext">Term s (PAsData PTxInfo)
-</span><a href="#local-6989586621679311868"><span class="hs-identifier hs-var">txInfo</span></a></span></span><span> </span><span id="local-6989586621679311867"><span class="annot"><span class="annottext">Term s PValue
-</span><a href="#local-6989586621679311867"><span class="hs-identifier hs-var">mint</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">P.do</span><span>
-</span><span id="line-105"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span class="annot"><a href="#local-6989586621679311866"><span class="hs-identifier hs-type">gatAmountMinted</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span> </span><span class="annot"><span class="hs-identifier">_</span></span><span> </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PInteger</span></a></span><span>
-</span><span id="line-106"></span><span>      </span><span id="local-6989586621679311866"><span class="annot"><span class="annottext">gatAmountMinted :: Term s (PInteger @S)
-</span><a href="#local-6989586621679311866"><span class="hs-identifier hs-var hs-var">gatAmountMinted</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Term s (PCurrencySymbol :--&gt; (PValue :--&gt; PInteger @S))
+</span><a href="Agora.AuthorityToken.html#singleAuthorityTokenBurned"><span class="hs-identifier hs-var hs-var">singleAuthorityTokenBurned</span></a></span></span><span> </span><span id="local-6989586621679312555"><span class="annot"><span class="annottext">Term s PCurrencySymbol
+</span><a href="#local-6989586621679312555"><span class="hs-identifier hs-var">gatCs</span></a></span></span><span> </span><span id="local-6989586621679312554"><span class="annot"><span class="annottext">Term s (PAsData PTxInfo)
+</span><a href="#local-6989586621679312554"><span class="hs-identifier hs-var">txInfo</span></a></span></span><span> </span><span id="local-6989586621679312553"><span class="annot"><span class="annottext">Term s PValue
+</span><a href="#local-6989586621679312553"><span class="hs-identifier hs-var">mint</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">P.do</span><span>
+</span><span id="line-105"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span class="annot"><a href="#local-6989586621679312552"><span class="hs-identifier hs-type">gatAmountMinted</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span> </span><span class="annot"><span class="hs-identifier">_</span></span><span> </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PInteger</span></a></span><span>
+</span><span id="line-106"></span><span>      </span><span id="local-6989586621679312552"><span class="annot"><span class="annottext">gatAmountMinted :: Term s (PInteger @S)
+</span><a href="#local-6989586621679312552"><span class="hs-identifier hs-var hs-var">gatAmountMinted</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Term s (PCurrencySymbol :--&gt; (PValue :--&gt; PInteger @S))
 forall (s :: S).
 Term s (PCurrencySymbol :--&gt; (PValue :--&gt; PInteger @S))
 </span><a href="Agora.Utils.html#psymbolValueOf"><span class="hs-identifier hs-var">psymbolValueOf</span></a></span><span> </span><span class="annot"><span class="annottext">Term s (PCurrencySymbol :--&gt; (PValue :--&gt; PInteger @S))
@@ -467,14 +467,14 @@ Term s (PCurrencySymbol :--&gt; (PValue :--&gt; PInteger @S))
 forall (s :: S) (a :: PType) (b :: PType).
 Term s (a :--&gt; b) -&gt; Term s a -&gt; Term s b
 </span><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-var">#</span></a></span><span> </span><span class="annot"><span class="annottext">Term s PCurrencySymbol
-</span><a href="#local-6989586621679311869"><span class="hs-identifier hs-var">gatCs</span></a></span><span> </span><span class="annot"><span class="annottext">Term s (PValue :--&gt; PInteger @S)
+</span><a href="#local-6989586621679312555"><span class="hs-identifier hs-var">gatCs</span></a></span><span> </span><span class="annot"><span class="annottext">Term s (PValue :--&gt; PInteger @S)
 -&gt; Term s PValue -&gt; Term s (PInteger @S)
 forall (s :: S) (a :: PType) (b :: PType).
 Term s (a :--&gt; b) -&gt; Term s a -&gt; Term s b
 </span><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-var">#</span></a></span><span> </span><span class="annot"><span class="annottext">Term s PValue
-</span><a href="#local-6989586621679311867"><span class="hs-identifier hs-var">mint</span></a></span><span>
+</span><a href="#local-6989586621679312553"><span class="hs-identifier hs-var">mint</span></a></span><span>
 </span><span id="line-107"></span><span>
-</span><span id="line-108"></span><span>  </span><span id="local-6989586621679311865"><span class="annot"><span class="annottext">HRec
+</span><span id="line-108"></span><span>  </span><span id="local-6989586621679312551"><span class="annot"><span class="annottext">HRec
   ((':)
      @Type
      (Labeled
@@ -482,7 +482,7 @@ Term s (a :--&gt; b) -&gt; Term s a -&gt; Term s b
         &quot;inputs&quot;
         (Term s (PAsData (PBuiltinList (PAsData PTxInInfo)))))
      ('[] @Type))
-</span><a href="#local-6989586621679311865"><span class="hs-identifier hs-var">txInfoF</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">forall (fs :: [Symbol]) (a :: PType) (s :: S) (b :: PType)
+</span><a href="#local-6989586621679312551"><span class="hs-identifier hs-var">txInfoF</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">forall (fs :: [Symbol]) (a :: PType) (s :: S) (b :: PType)
        (ps :: [PLabeledType]) (bs :: [ToBind]).
 (PDataFields a,
  (ps :: [PLabeledType]) ~ (PFields a :: [PLabeledType]),
@@ -567,7 +567,7 @@ Term s a -&gt; (HRec (BoundTerms ps bs s) -&gt; Term s b) -&gt; Term s b
 -&gt; Term s PBool
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><a href="../file:///nix/store/kq3z27pzg8pc38yjr84kzncicvpzhan0-ghc-9.2.1-doc/share/doc/ghc/html/libraries/base-4.16.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Term s (PAsData PTxInfo)
-</span><a href="#local-6989586621679311868"><span class="hs-identifier hs-var">txInfo</span></a></span><span>
+</span><a href="#local-6989586621679312554"><span class="hs-identifier hs-var">txInfo</span></a></span><span>
 </span><span id="line-109"></span><span>
 </span><span id="line-110"></span><span>  </span><span class="annot"><span class="annottext">(Term s PBool -&gt; Term s PBool -&gt; Term s PBool)
 -&gt; [Term s PBool] -&gt; Term s PBool
@@ -585,7 +585,7 @@ Term s (PString @S) -&gt; Term s PBool -&gt; Term s PBool
 </span><span class="hs-string">&quot;singleAuthorityTokenBurned: Must burn exactly 1 GAT&quot;</span></span><span> </span><span class="annot"><span class="annottext">(Term s PBool -&gt; Term s PBool) -&gt; Term s PBool -&gt; Term s PBool
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><a href="../file:///nix/store/kq3z27pzg8pc38yjr84kzncicvpzhan0-ghc-9.2.1-doc/share/doc/ghc/html/libraries/base-4.16.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Term s (PInteger @S)
-</span><a href="#local-6989586621679311866"><span class="hs-identifier hs-var">gatAmountMinted</span></a></span><span> </span><span class="annot"><span class="annottext">Term s (PInteger @S) -&gt; Term s (PInteger @S) -&gt; Term s PBool
+</span><a href="#local-6989586621679312552"><span class="hs-identifier hs-var">gatAmountMinted</span></a></span><span> </span><span class="annot"><span class="annottext">Term s (PInteger @S) -&gt; Term s (PInteger @S) -&gt; Term s PBool
 forall (t :: PType) (s :: S).
 PEq t =&gt;
 Term s t -&gt; Term s t -&gt; Term s PBool
@@ -616,14 +616,14 @@ Term s ((a :--&gt; PBool) :--&gt; (list a :--&gt; PBool))
 </span><span>    </span><span class="hs-special">]</span><span>
 </span><span id="line-123"></span><span>
 </span><span id="line-124"></span><span class="hs-comment">-- | Policy given 'AuthorityToken' params.</span><span>
-</span><span id="line-125"></span><span id="local-6989586621679312117"><span class="annot"><a href="Agora.AuthorityToken.html#authorityTokenPolicy"><span class="hs-identifier hs-type">authorityTokenPolicy</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-125"></span><span id="local-6989586621679312803"><span class="annot"><a href="Agora.AuthorityToken.html#authorityTokenPolicy"><span class="hs-identifier hs-type">authorityTokenPolicy</span></a></span><span> </span><span class="hs-glyph">::</span><span>
 </span><span id="line-126"></span><span>  </span><span class="annot"><a href="Agora.AuthorityToken.html#AuthorityToken"><span class="hs-identifier hs-type">AuthorityToken</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
-</span><span id="line-127"></span><span>  </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679312117"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PData</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-type">:--&gt;</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PScriptContext</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-type">:--&gt;</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PUnit</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-127"></span><span>  </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679312803"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PData</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-type">:--&gt;</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PScriptContext</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-type">:--&gt;</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PUnit</span></a></span><span class="hs-special">)</span></span><span>
 </span><span id="line-128"></span><span id="authorityTokenPolicy"><span class="annot"><span class="annottext">authorityTokenPolicy :: forall (s :: S).
 AuthorityToken
 -&gt; Term s (PData :--&gt; (PScriptContext :--&gt; PUnit @S))
-</span><a href="Agora.AuthorityToken.html#authorityTokenPolicy"><span class="hs-identifier hs-var hs-var">authorityTokenPolicy</span></a></span></span><span> </span><span id="local-6989586621679311748"><span class="annot"><span class="annottext">AuthorityToken
-</span><a href="#local-6989586621679311748"><span class="hs-identifier hs-var">params</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="Agora.AuthorityToken.html#authorityTokenPolicy"><span class="hs-identifier hs-var hs-var">authorityTokenPolicy</span></a></span></span><span> </span><span id="local-6989586621679312434"><span class="annot"><span class="annottext">AuthorityToken
+</span><a href="#local-6989586621679312434"><span class="hs-identifier hs-var">params</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-129"></span><span>  </span><span class="annot"><span class="annottext">(Term s PData -&gt; Term s PScriptContext -&gt; Term s (PUnit @S))
 -&gt; Term s (PData :--&gt; (PScriptContext :--&gt; PUnit @S))
 forall a (b :: PType) (s :: S) (c :: PType).
@@ -634,19 +634,19 @@ PLamN a b s =&gt;
 -&gt; (Term s PData -&gt; Term s PScriptContext -&gt; Term s (PUnit @S))
 -&gt; Term s (PData :--&gt; (PScriptContext :--&gt; PUnit @S))
 forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><a href="../file:///nix/store/kq3z27pzg8pc38yjr84kzncicvpzhan0-ghc-9.2.1-doc/share/doc/ghc/html/libraries/base-4.16.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679311747"><span class="annot"><span class="annottext">Term s PData
-</span><a href="#local-6989586621679311747"><span class="hs-identifier hs-var">_redeemer</span></a></span></span><span> </span><span id="local-6989586621679311746"><span class="annot"><span class="annottext">Term s PScriptContext
-</span><a href="#local-6989586621679311746"><span class="hs-identifier hs-var">ctx'</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><a href="../file:///nix/store/kq3z27pzg8pc38yjr84kzncicvpzhan0-ghc-9.2.1-doc/share/doc/ghc/html/libraries/base-4.16.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679312433"><span class="annot"><span class="annottext">Term s PData
+</span><a href="#local-6989586621679312433"><span class="hs-identifier hs-var">_redeemer</span></a></span></span><span> </span><span id="local-6989586621679312432"><span class="annot"><span class="annottext">Term s PScriptContext
+</span><a href="#local-6989586621679312432"><span class="hs-identifier hs-var">ctx'</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
 </span><span id="line-130"></span><span>    </span><span class="annot"><span class="annottext">Term s PScriptContext
 -&gt; (PScriptContext s -&gt; Term s (PUnit @S)) -&gt; Term s (PUnit @S)
 forall (a :: PType) (s :: S) (b :: PType).
 PMatch a =&gt;
 Term s a -&gt; (a s -&gt; Term s b) -&gt; Term s b
 </span><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pmatch</span></a></span><span> </span><span class="annot"><span class="annottext">Term s PScriptContext
-</span><a href="#local-6989586621679311746"><span class="hs-identifier hs-var">ctx'</span></a></span><span> </span><span class="annot"><span class="annottext">((PScriptContext s -&gt; Term s (PUnit @S)) -&gt; Term s (PUnit @S))
+</span><a href="#local-6989586621679312432"><span class="hs-identifier hs-var">ctx'</span></a></span><span> </span><span class="annot"><span class="annottext">((PScriptContext s -&gt; Term s (PUnit @S)) -&gt; Term s (PUnit @S))
 -&gt; (PScriptContext s -&gt; Term s (PUnit @S)) -&gt; Term s (PUnit @S)
 forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><a href="../file:///nix/store/kq3z27pzg8pc38yjr84kzncicvpzhan0-ghc-9.2.1-doc/share/doc/ghc/html/libraries/base-4.16.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PScriptContext</span></a></span><span> </span><span id="local-6989586621679311744"><span class="annot"><span class="annottext">Term
+</span><a href="../file:///nix/store/kq3z27pzg8pc38yjr84kzncicvpzhan0-ghc-9.2.1-doc/share/doc/ghc/html/libraries/base-4.16.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PScriptContext</span></a></span><span> </span><span id="local-6989586621679312430"><span class="annot"><span class="annottext">Term
   s
   (PDataRecord
      ((':)
@@ -654,8 +654,8 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
         (&quot;txInfo&quot; ':= PTxInfo)
         ((':)
            @PLabeledType (&quot;purpose&quot; ':= PScriptPurpose) ('[] @PLabeledType))))
-</span><a href="#local-6989586621679311744"><span class="hs-identifier hs-var">ctx'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">P.do</span><span>
-</span><span id="line-131"></span><span>      </span><span id="local-6989586621679311743"><span class="annot"><span class="annottext">HRec
+</span><a href="#local-6989586621679312430"><span class="hs-identifier hs-var">ctx'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">P.do</span><span>
+</span><span id="line-131"></span><span>      </span><span id="local-6989586621679312429"><span class="annot"><span class="annottext">HRec
   ((':)
      @Type
      (Labeled @Symbol &quot;txInfo&quot; (Term s (PAsData PTxInfo)))
@@ -663,7 +663,7 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
         @Type
         (Labeled @Symbol &quot;purpose&quot; (Term s (PAsData PScriptPurpose)))
         ('[] @Type)))
-</span><a href="#local-6989586621679311743"><span class="hs-identifier hs-var">ctx</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">forall (fs :: [Symbol]) (a :: PType) (s :: S) (b :: PType)
+</span><a href="#local-6989586621679312429"><span class="hs-identifier hs-var">ctx</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">forall (fs :: [Symbol]) (a :: PType) (s :: S) (b :: PType)
        (ps :: [PLabeledType]) (bs :: [ToBind]).
 (PDataFields a,
  (ps :: [PLabeledType]) ~ (PFields a :: [PLabeledType]),
@@ -678,8 +678,8 @@ Term s a -&gt; (HRec (BoundTerms ps bs s) -&gt; Term s b) -&gt; Term s b
         (&quot;txInfo&quot; ':= PTxInfo)
         ((':)
            @PLabeledType (&quot;purpose&quot; ':= PScriptPurpose) ('[] @PLabeledType))))
-</span><a href="#local-6989586621679311744"><span class="hs-identifier hs-var">ctx'</span></a></span><span>
-</span><span id="line-132"></span><span>      </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PTxInfo</span></a></span><span> </span><span id="local-6989586621679311741"><span class="annot"><span class="annottext">Term
+</span><a href="#local-6989586621679312430"><span class="hs-identifier hs-var">ctx'</span></a></span><span>
+</span><span id="line-132"></span><span>      </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PTxInfo</span></a></span><span> </span><span id="local-6989586621679312427"><span class="annot"><span class="annottext">Term
   s
   (PDataRecord
      ((':)
@@ -712,7 +712,7 @@ Term s a -&gt; (HRec (BoundTerms ps bs s) -&gt; Term s b) -&gt; Term s b
                                 @PLabeledType
                                 (&quot;data&quot; ':= PBuiltinList (PAsData (PTuple PDatumHash PDatum)))
                                 ((':) @PLabeledType (&quot;id&quot; ':= PTxId) ('[] @PLabeledType))))))))))))
-</span><a href="#local-6989586621679311741"><span class="hs-identifier hs-var">txInfo'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Term s PTxInfo
+</span><a href="#local-6989586621679312427"><span class="hs-identifier hs-var">txInfo'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Term s PTxInfo
 -&gt; (PTxInfo s -&gt; Term s (PUnit @S)) -&gt; Term s (PUnit @S)
 forall (a :: PType) (s :: S) (b :: PType).
 PMatch a =&gt;
@@ -735,8 +735,8 @@ Term s (PAsData a) -&gt; Term s a
         @Type
         (Labeled @Symbol &quot;purpose&quot; (Term s (PAsData PScriptPurpose)))
         ('[] @Type)))
-</span><a href="#local-6989586621679311743"><span class="hs-identifier hs-var">ctx</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">txInfo</span><span>
-</span><span id="line-133"></span><span>      </span><span id="local-6989586621679311740"><span class="annot"><span class="annottext">HRec
+</span><a href="#local-6989586621679312429"><span class="hs-identifier hs-var">ctx</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">txInfo</span><span>
+</span><span id="line-133"></span><span>      </span><span id="local-6989586621679312426"><span class="annot"><span class="annottext">HRec
   ((':)
      @Type
      (Labeled
@@ -747,7 +747,7 @@ Term s (PAsData a) -&gt; Term s a
         @Type
         (Labeled @Symbol &quot;mint&quot; (Term s (PAsData PValue)))
         ('[] @Type)))
-</span><a href="#local-6989586621679311740"><span class="hs-identifier hs-var">txInfo</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">forall (fs :: [Symbol]) (a :: PType) (s :: S) (b :: PType)
+</span><a href="#local-6989586621679312426"><span class="hs-identifier hs-var">txInfo</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">forall (fs :: [Symbol]) (a :: PType) (s :: S) (b :: PType)
        (ps :: [PLabeledType]) (bs :: [ToBind]).
 (PDataFields a,
  (ps :: [PLabeledType]) ~ (PFields a :: [PLabeledType]),
@@ -787,9 +787,9 @@ Term s a -&gt; (HRec (BoundTerms ps bs s) -&gt; Term s b) -&gt; Term s b
                                 @PLabeledType
                                 (&quot;data&quot; ':= PBuiltinList (PAsData (PTuple PDatumHash PDatum)))
                                 ((':) @PLabeledType (&quot;id&quot; ':= PTxId) ('[] @PLabeledType))))))))))))
-</span><a href="#local-6989586621679311741"><span class="hs-identifier hs-var">txInfo'</span></a></span><span>
-</span><span id="line-134"></span><span>      </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679311739"><span class="annot"><span class="annottext">inputs :: Term s (PBuiltinList (PAsData PTxInInfo))
-</span><a href="#local-6989586621679311739"><span class="hs-identifier hs-var hs-var">inputs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">HRec
+</span><a href="#local-6989586621679312427"><span class="hs-identifier hs-var">txInfo'</span></a></span><span>
+</span><span id="line-134"></span><span>      </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679312425"><span class="annot"><span class="annottext">inputs :: Term s (PBuiltinList (PAsData PTxInInfo))
+</span><a href="#local-6989586621679312425"><span class="hs-identifier hs-var hs-var">inputs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">HRec
   ((':)
      @Type
      (Labeled
@@ -800,25 +800,25 @@ Term s a -&gt; (HRec (BoundTerms ps bs s) -&gt; Term s b) -&gt; Term s b
         @Type
         (Labeled @Symbol &quot;mint&quot; (Term s (PAsData PValue)))
         ('[] @Type)))
-</span><a href="#local-6989586621679311740"><span class="hs-identifier hs-var">txInfo</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">inputs</span><span>
-</span><span id="line-135"></span><span>      </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679311738"><span class="annot"><span class="annottext">authorityTokenInputs :: Term s (PInteger @S)
-</span><a href="#local-6989586621679311738"><span class="hs-identifier hs-var hs-var">authorityTokenInputs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="#local-6989586621679312426"><span class="hs-identifier hs-var">txInfo</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">inputs</span><span>
+</span><span id="line-135"></span><span>      </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679312424"><span class="annot"><span class="annottext">authorityTokenInputs :: Term s (PInteger @S)
+</span><a href="#local-6989586621679312424"><span class="hs-identifier hs-var hs-var">authorityTokenInputs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-136"></span><span>            </span><span class="annot"><span class="annottext">forall (list :: PType -&gt; PType) (a :: PType) (b :: PType) (s :: S).
 PIsListLike list a =&gt;
 (forall (s1 :: S). Term s1 a -&gt; Term s1 b -&gt; Term s1 b)
 -&gt; Term s (b :--&gt; (list a :--&gt; b))
 </span><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pfoldr'</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PBuiltinList</span></a></span><span>
-</span><span id="line-137"></span><span>              </span><span class="hs-special">(</span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679311705"><span class="annot"><span class="annottext">Term s1 (PAsData PTxInInfo)
-</span><a href="#local-6989586621679311705"><span class="hs-identifier hs-var">txInInfo'</span></a></span></span><span> </span><span id="local-6989586621679311704"><span class="annot"><span class="annottext">Term s1 (PInteger @S)
-</span><a href="#local-6989586621679311704"><span class="hs-identifier hs-var">acc</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">P.do</span><span>
-</span><span id="line-138"></span><span>                  </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PTxInInfo</span></a></span><span> </span><span id="local-6989586621679311703"><span class="annot"><span class="annottext">Term
+</span><span id="line-137"></span><span>              </span><span class="hs-special">(</span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679312391"><span class="annot"><span class="annottext">Term s1 (PAsData PTxInInfo)
+</span><a href="#local-6989586621679312391"><span class="hs-identifier hs-var">txInInfo'</span></a></span></span><span> </span><span id="local-6989586621679312390"><span class="annot"><span class="annottext">Term s1 (PInteger @S)
+</span><a href="#local-6989586621679312390"><span class="hs-identifier hs-var">acc</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">P.do</span><span>
+</span><span id="line-138"></span><span>                  </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PTxInInfo</span></a></span><span> </span><span id="local-6989586621679312389"><span class="annot"><span class="annottext">Term
   s1
   (PDataRecord
      ((':)
         @PLabeledType
         (&quot;outRef&quot; ':= PTxOutRef)
         ((':) @PLabeledType (&quot;resolved&quot; ':= PTxOut) ('[] @PLabeledType))))
-</span><a href="#local-6989586621679311703"><span class="hs-identifier hs-var">txInInfo</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Term s1 PTxInInfo
+</span><a href="#local-6989586621679312389"><span class="hs-identifier hs-var">txInInfo</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Term s1 PTxInInfo
 -&gt; (PTxInInfo s1 -&gt; Term s1 (PInteger @S)) -&gt; Term s1 (PInteger @S)
 forall (a :: PType) (s :: S) (b :: PType).
 PMatch a =&gt;
@@ -828,8 +828,8 @@ forall (a :: PType) (s :: S).
 PIsData a =&gt;
 Term s (PAsData a) -&gt; Term s a
 </span><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pfromData</span></a></span><span> </span><span class="annot"><span class="annottext">Term s1 (PAsData PTxInInfo)
-</span><a href="#local-6989586621679311705"><span class="hs-identifier hs-var">txInInfo'</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-139"></span><span>                  </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PTxOut</span></a></span><span> </span><span id="local-6989586621679311702"><span class="annot"><span class="annottext">Term
+</span><a href="#local-6989586621679312391"><span class="hs-identifier hs-var">txInInfo'</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-139"></span><span>                  </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PTxOut</span></a></span><span> </span><span id="local-6989586621679312388"><span class="annot"><span class="annottext">Term
   s1
   (PDataRecord
      ((':)
@@ -842,7 +842,7 @@ Term s (PAsData a) -&gt; Term s a
               @PLabeledType
               (&quot;datumHash&quot; ':= PMaybeData PDatumHash)
               ('[] @PLabeledType)))))
-</span><a href="#local-6989586621679311702"><span class="hs-identifier hs-var">txOut'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Term s1 PTxOut
+</span><a href="#local-6989586621679312388"><span class="hs-identifier hs-var">txOut'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Term s1 PTxOut
 -&gt; (PTxOut s1 -&gt; Term s1 (PInteger @S)) -&gt; Term s1 (PInteger @S)
 forall (a :: PType) (s :: S) (b :: PType).
 PMatch a =&gt;
@@ -893,13 +893,13 @@ Term s (a :--&gt; b) -&gt; Term s a -&gt; Term s b
         @PLabeledType
         (&quot;outRef&quot; ':= PTxOutRef)
         ((':) @PLabeledType (&quot;resolved&quot; ':= PTxOut) ('[] @PLabeledType))))
-</span><a href="#local-6989586621679311703"><span class="hs-identifier hs-var">txInInfo</span></a></span><span>
-</span><span id="line-140"></span><span>                  </span><span id="local-6989586621679311701"><span class="annot"><span class="annottext">HRec
+</span><a href="#local-6989586621679312389"><span class="hs-identifier hs-var">txInInfo</span></a></span><span>
+</span><span id="line-140"></span><span>                  </span><span id="local-6989586621679312387"><span class="annot"><span class="annottext">HRec
   ((':)
      @Type
      (Labeled @Symbol &quot;value&quot; (Term s1 (PAsData PValue)))
      ('[] @Type))
-</span><a href="#local-6989586621679311701"><span class="hs-identifier hs-var">txOut</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">forall (fs :: [Symbol]) (a :: PType) (s :: S) (b :: PType)
+</span><a href="#local-6989586621679312387"><span class="hs-identifier hs-var">txOut</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">forall (fs :: [Symbol]) (a :: PType) (s :: S) (b :: PType)
        (ps :: [PLabeledType]) (bs :: [ToBind]).
 (PDataFields a,
  (ps :: [PLabeledType]) ~ (PFields a :: [PLabeledType]),
@@ -919,9 +919,9 @@ Term s a -&gt; (HRec (BoundTerms ps bs s) -&gt; Term s b) -&gt; Term s b
               @PLabeledType
               (&quot;datumHash&quot; ':= PMaybeData PDatumHash)
               ('[] @PLabeledType)))))
-</span><a href="#local-6989586621679311702"><span class="hs-identifier hs-var">txOut'</span></a></span><span>
-</span><span id="line-141"></span><span>                  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679311700"><span class="annot"><span class="annottext">txOutValue :: Term s1 PValue
-</span><a href="#local-6989586621679311700"><span class="hs-identifier hs-var hs-var">txOutValue</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Term s1 (PAsData PValue) -&gt; Term s1 PValue
+</span><a href="#local-6989586621679312388"><span class="hs-identifier hs-var">txOut'</span></a></span><span>
+</span><span id="line-141"></span><span>                  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679312386"><span class="annot"><span class="annottext">txOutValue :: Term s1 PValue
+</span><a href="#local-6989586621679312386"><span class="hs-identifier hs-var hs-var">txOutValue</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Term s1 (PAsData PValue) -&gt; Term s1 PValue
 forall (a :: PType) (s :: S).
 PIsData a =&gt;
 Term s (PAsData a) -&gt; Term s a
@@ -930,25 +930,25 @@ Term s (PAsData a) -&gt; Term s a
      @Type
      (Labeled @Symbol &quot;value&quot; (Term s1 (PAsData PValue)))
      ('[] @Type))
-</span><a href="#local-6989586621679311701"><span class="hs-identifier hs-var">txOut</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">value</span><span>
+</span><a href="#local-6989586621679312387"><span class="hs-identifier hs-var">txOut</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">value</span><span>
 </span><span id="line-142"></span><span>                  </span><span class="annot"><span class="annottext">AssetClass -&gt; Term s1 (PValue :--&gt; PInteger @S)
 forall (s :: S). AssetClass -&gt; Term s (PValue :--&gt; PInteger @S)
 </span><a href="Agora.Utils.html#passetClassValueOf%27"><span class="hs-identifier hs-var">passetClassValueOf'</span></a></span><span> </span><span class="annot"><span class="annottext">AuthorityToken
-</span><a href="#local-6989586621679311748"><span class="hs-identifier hs-var">params</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">authority</span><span> </span><span class="annot"><span class="annottext">Term s1 (PValue :--&gt; PInteger @S)
+</span><a href="#local-6989586621679312434"><span class="hs-identifier hs-var">params</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">authority</span><span> </span><span class="annot"><span class="annottext">Term s1 (PValue :--&gt; PInteger @S)
 -&gt; Term s1 PValue -&gt; Term s1 (PInteger @S)
 forall (s :: S) (a :: PType) (b :: PType).
 Term s (a :--&gt; b) -&gt; Term s a -&gt; Term s b
 </span><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-var">#</span></a></span><span> </span><span class="annot"><span class="annottext">Term s1 PValue
-</span><a href="#local-6989586621679311700"><span class="hs-identifier hs-var">txOutValue</span></a></span><span> </span><span class="annot"><span class="annottext">Term s1 (PInteger @S)
+</span><a href="#local-6989586621679312386"><span class="hs-identifier hs-var">txOutValue</span></a></span><span> </span><span class="annot"><span class="annottext">Term s1 (PInteger @S)
 -&gt; Term s1 (PInteger @S) -&gt; Term s1 (PInteger @S)
 forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><a href="../file:///nix/store/kq3z27pzg8pc38yjr84kzncicvpzhan0-ghc-9.2.1-doc/share/doc/ghc/html/libraries/base-4.16.0.0/src"><span class="hs-operator hs-var">+</span></a></span><span> </span><span class="annot"><span class="annottext">Term s1 (PInteger @S)
-</span><a href="#local-6989586621679311704"><span class="hs-identifier hs-var">acc</span></a></span><span>
+</span><a href="#local-6989586621679312390"><span class="hs-identifier hs-var">acc</span></a></span><span>
 </span><span id="line-143"></span><span>              </span><span class="hs-special">)</span><span class="hs-cpp">
               # 0
 </span><span class="hs-cpp">              # inputs
-</span><span>      </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679311698"><span class="annot"><span class="annottext">mintedValue :: Term s PValue
-</span><a href="#local-6989586621679311698"><span class="hs-identifier hs-var hs-var">mintedValue</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Term s (PAsData PValue) -&gt; Term s PValue
+</span><span>      </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679312384"><span class="annot"><span class="annottext">mintedValue :: Term s PValue
+</span><a href="#local-6989586621679312384"><span class="hs-identifier hs-var hs-var">mintedValue</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Term s (PAsData PValue) -&gt; Term s PValue
 forall (a :: PType) (s :: S).
 PIsData a =&gt;
 Term s (PAsData a) -&gt; Term s a
@@ -963,21 +963,21 @@ Term s (PAsData a) -&gt; Term s a
         @Type
         (Labeled @Symbol &quot;mint&quot; (Term s (PAsData PValue)))
         ('[] @Type)))
-</span><a href="#local-6989586621679311740"><span class="hs-identifier hs-var">txInfo</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">mint</span><span>
-</span><span id="line-147"></span><span>      </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679311697"><span class="annot"><span class="annottext">tokenMoved :: Term s PBool
-</span><a href="#local-6989586621679311697"><span class="hs-identifier hs-var hs-var">tokenMoved</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Term s (PInteger @S)
+</span><a href="#local-6989586621679312426"><span class="hs-identifier hs-var">txInfo</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">mint</span><span>
+</span><span id="line-147"></span><span>      </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679312383"><span class="annot"><span class="annottext">tokenMoved :: Term s PBool
+</span><a href="#local-6989586621679312383"><span class="hs-identifier hs-var hs-var">tokenMoved</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Term s (PInteger @S)
 </span><span class="hs-number">0</span></span><span> </span><span class="annot"><span class="annottext">Term s (PInteger @S) -&gt; Term s (PInteger @S) -&gt; Term s PBool
 forall (t :: PType) (s :: S).
 POrd t =&gt;
 Term s t -&gt; Term s t -&gt; Term s PBool
 </span><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-var">#&lt;</span></a></span><span> </span><span class="annot"><span class="annottext">Term s (PInteger @S)
-</span><a href="#local-6989586621679311738"><span class="hs-identifier hs-var">authorityTokenInputs</span></a></span><span>
-</span><span id="line-148"></span><span>      </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PMinting</span></a></span><span> </span><span id="local-6989586621679311694"><span class="annot"><span class="annottext">Term
+</span><a href="#local-6989586621679312424"><span class="hs-identifier hs-var">authorityTokenInputs</span></a></span><span>
+</span><span id="line-148"></span><span>      </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PMinting</span></a></span><span> </span><span id="local-6989586621679312380"><span class="annot"><span class="annottext">Term
   s
   (PDataRecord
      ((':)
         @PLabeledType (&quot;_0&quot; ':= PCurrencySymbol) ('[] @PLabeledType)))
-</span><a href="#local-6989586621679311694"><span class="hs-identifier hs-var">ownSymbol'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Term s PScriptPurpose
+</span><a href="#local-6989586621679312380"><span class="hs-identifier hs-var">ownSymbol'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Term s PScriptPurpose
 -&gt; (PScriptPurpose s -&gt; Term s (PUnit @S)) -&gt; Term s (PUnit @S)
 forall (a :: PType) (s :: S) (b :: PType).
 PMatch a =&gt;
@@ -1000,9 +1000,9 @@ Term s (PAsData a) -&gt; Term s a
         @Type
         (Labeled @Symbol &quot;purpose&quot; (Term s (PAsData PScriptPurpose)))
         ('[] @Type)))
-</span><a href="#local-6989586621679311743"><span class="hs-identifier hs-var">ctx</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">purpose</span><span>
-</span><span id="line-149"></span><span>      </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679311693"><span class="annot"><span class="annottext">ownSymbol :: Term s PCurrencySymbol
-</span><a href="#local-6989586621679311693"><span class="hs-identifier hs-var hs-var">ownSymbol</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Term s (PAsData PCurrencySymbol) -&gt; Term s PCurrencySymbol
+</span><a href="#local-6989586621679312429"><span class="hs-identifier hs-var">ctx</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">purpose</span><span>
+</span><span id="line-149"></span><span>      </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679312379"><span class="annot"><span class="annottext">ownSymbol :: Term s PCurrencySymbol
+</span><a href="#local-6989586621679312379"><span class="hs-identifier hs-var hs-var">ownSymbol</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Term s (PAsData PCurrencySymbol) -&gt; Term s PCurrencySymbol
 forall (a :: PType) (s :: S).
 PIsData a =&gt;
 Term s (PAsData a) -&gt; Term s a
@@ -1035,9 +1035,9 @@ Term s (a :--&gt; b) -&gt; Term s a -&gt; Term s b
   (PDataRecord
      ((':)
         @PLabeledType (&quot;_0&quot; ':= PCurrencySymbol) ('[] @PLabeledType)))
-</span><a href="#local-6989586621679311694"><span class="hs-identifier hs-var">ownSymbol'</span></a></span><span>
-</span><span id="line-150"></span><span>      </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679311692"><span class="annot"><span class="annottext">mintedATs :: Term s (PInteger @S)
-</span><a href="#local-6989586621679311692"><span class="hs-identifier hs-var hs-var">mintedATs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Term
+</span><a href="#local-6989586621679312380"><span class="hs-identifier hs-var">ownSymbol'</span></a></span><span>
+</span><span id="line-150"></span><span>      </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679312378"><span class="annot"><span class="annottext">mintedATs :: Term s (PInteger @S)
+</span><a href="#local-6989586621679312378"><span class="hs-identifier hs-var hs-var">mintedATs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Term
   s
   (PCurrencySymbol :--&gt; (PTokenName :--&gt; (PValue :--&gt; PInteger @S)))
 forall (s :: S).
@@ -1052,7 +1052,7 @@ Term
 forall (s :: S) (a :: PType) (b :: PType).
 Term s (a :--&gt; b) -&gt; Term s a -&gt; Term s b
 </span><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-var">#</span></a></span><span> </span><span class="annot"><span class="annottext">Term s PCurrencySymbol
-</span><a href="#local-6989586621679311693"><span class="hs-identifier hs-var">ownSymbol</span></a></span><span> </span><span class="annot"><span class="annottext">Term s (PTokenName :--&gt; (PValue :--&gt; PInteger @S))
+</span><a href="#local-6989586621679312379"><span class="hs-identifier hs-var">ownSymbol</span></a></span><span> </span><span class="annot"><span class="annottext">Term s (PTokenName :--&gt; (PValue :--&gt; PInteger @S))
 -&gt; Term s PTokenName -&gt; Term s (PValue :--&gt; PInteger @S)
 forall (s :: S) (a :: PType) (b :: PType).
 Term s (a :--&gt; b) -&gt; Term s a -&gt; Term s b
@@ -1065,7 +1065,7 @@ TokenName
 forall (s :: S) (a :: PType) (b :: PType).
 Term s (a :--&gt; b) -&gt; Term s a -&gt; Term s b
 </span><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-var">#</span></a></span><span> </span><span class="annot"><span class="annottext">Term s PValue
-</span><a href="#local-6989586621679311698"><span class="hs-identifier hs-var">mintedValue</span></a></span><span>
+</span><a href="#local-6989586621679312384"><span class="hs-identifier hs-var">mintedValue</span></a></span><span>
 </span><span id="line-151"></span><span>      </span><span class="annot"><span class="annottext">Term s PBool
 -&gt; Term s (PUnit @S) -&gt; Term s (PUnit @S) -&gt; Term s (PUnit @S)
 forall (s :: S) (a :: PType).
@@ -1077,7 +1077,7 @@ forall (t :: PType) (s :: S).
 POrd t =&gt;
 Term s t -&gt; Term s t -&gt; Term s PBool
 </span><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-var">#&lt;</span></a></span><span> </span><span class="annot"><span class="annottext">Term s (PInteger @S)
-</span><a href="#local-6989586621679311692"><span class="hs-identifier hs-var">mintedATs</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679312378"><span class="hs-identifier hs-var">mintedATs</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-153"></span><span>        </span><span class="hs-special">(</span><span> </span><span class="hs-keyword">P.do</span><span>
 </span><span id="line-154"></span><span>            </span><span class="annot"><span class="annottext">Term s (PString @S)
 -&gt; Term s PBool -&gt; Term s (PUnit @S) -&gt; Term s (PUnit @S)
@@ -1085,7 +1085,7 @@ forall (s :: S) (k :: PType).
 Term s (PString @S) -&gt; Term s PBool -&gt; Term s k -&gt; Term s k
 </span><a href="Agora.Utils.html#passert"><span class="hs-identifier hs-var">passert</span></a></span><span> </span><span class="annot"><span class="annottext">Term s (PString @S)
 </span><span class="hs-string">&quot;Parent token did not move in minting GATs&quot;</span></span><span> </span><span class="annot"><span class="annottext">Term s PBool
-</span><a href="#local-6989586621679311697"><span class="hs-identifier hs-var">tokenMoved</span></a></span><span>
+</span><a href="#local-6989586621679312383"><span class="hs-identifier hs-var">tokenMoved</span></a></span><span>
 </span><span id="line-155"></span><span>            </span><span class="annot"><span class="annottext">Term s (PString @S)
 -&gt; Term s PBool -&gt; Term s (PUnit @S) -&gt; Term s (PUnit @S)
 forall (s :: S) (k :: PType).
@@ -1128,7 +1128,7 @@ Term s (PAsData a) -&gt; Term s a
         @Type
         (Labeled @Symbol &quot;purpose&quot; (Term s (PAsData PScriptPurpose)))
         ('[] @Type)))
-</span><a href="#local-6989586621679311743"><span class="hs-identifier hs-var">ctx</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">txInfo</span><span> </span><span class="annot"><span class="annottext">Term
+</span><a href="#local-6989586621679312429"><span class="hs-identifier hs-var">ctx</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">txInfo</span><span> </span><span class="annot"><span class="annottext">Term
   s
   ((PTxOut :--&gt; (PValue :--&gt; (PAddress :--&gt; (PUnit @S :--&gt; PBool))))
    :--&gt; PBool)
@@ -1163,11 +1163,11 @@ PLamN a b s =&gt;
 -&gt; Term
      s (PTxOut :--&gt; (PValue :--&gt; (PAddress :--&gt; (PUnit @S :--&gt; PBool))))
 forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><a href="../file:///nix/store/kq3z27pzg8pc38yjr84kzncicvpzhan0-ghc-9.2.1-doc/share/doc/ghc/html/libraries/base-4.16.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679311689"><span class="annot"><span class="annottext">Term s PTxOut
-</span><a href="#local-6989586621679311689"><span class="hs-identifier hs-var">txOut</span></a></span></span><span> </span><span id="local-6989586621679311688"><span class="annot"><span class="annottext">Term s PValue
-</span><a href="#local-6989586621679311688"><span class="hs-identifier hs-var">_value</span></a></span></span><span> </span><span id="local-6989586621679311687"><span class="annot"><span class="annottext">Term s PAddress
-</span><a href="#local-6989586621679311687"><span class="hs-identifier hs-var">_address</span></a></span></span><span> </span><span id="local-6989586621679311686"><span class="annot"><span class="annottext">Term s (PUnit @S)
-</span><a href="#local-6989586621679311686"><span class="hs-identifier hs-var">_datum</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><a href="../file:///nix/store/kq3z27pzg8pc38yjr84kzncicvpzhan0-ghc-9.2.1-doc/share/doc/ghc/html/libraries/base-4.16.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679312375"><span class="annot"><span class="annottext">Term s PTxOut
+</span><a href="#local-6989586621679312375"><span class="hs-identifier hs-var">txOut</span></a></span></span><span> </span><span id="local-6989586621679312374"><span class="annot"><span class="annottext">Term s PValue
+</span><a href="#local-6989586621679312374"><span class="hs-identifier hs-var">_value</span></a></span></span><span> </span><span id="local-6989586621679312373"><span class="annot"><span class="annottext">Term s PAddress
+</span><a href="#local-6989586621679312373"><span class="hs-identifier hs-var">_address</span></a></span></span><span> </span><span id="local-6989586621679312372"><span class="annot"><span class="annottext">Term s (PUnit @S)
+</span><a href="#local-6989586621679312372"><span class="hs-identifier hs-var">_datum</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
 </span><span id="line-157"></span><span>                </span><span class="annot"><span class="annottext">Term s (PCurrencySymbol :--&gt; (PTxOut :--&gt; PBool))
 forall (s :: S). Term s (PCurrencySymbol :--&gt; (PTxOut :--&gt; PBool))
 </span><a href="Agora.AuthorityToken.html#authorityTokensValidIn"><span class="hs-identifier hs-var">authorityTokensValidIn</span></a></span><span class="hs-cpp">
