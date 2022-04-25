@@ -11,6 +11,7 @@ module Agora.Utils (
   pfind',
   pfindDatum,
   pfindDatum',
+  ptryFindDatum,
   pvalueSpent,
   ptxSignedBy,
   paddValue,
@@ -67,6 +68,7 @@ import Plutarch.Api.V1.Value (PValue (PValue))
 import Plutarch.Builtin (ppairDataBuiltin)
 import Plutarch.Internal (punsafeCoerce)
 import Plutarch.Monadic qualified as P
+import Plutarch.TryFrom (PTryFrom, ptryFrom)
 
 --------------------------------------------------------------------------------
 -- Validator-level utility functions
@@ -81,6 +83,17 @@ pfindDatum = phoistAcyclic $
   plam $ \datumHash txInfo'' -> P.do
     PTxInfo txInfo' <- pmatch txInfo''
     plookupTuple # datumHash #$ pfield @"datums" # txInfo'
+
+-- | Find a datum with the given hash, and `ptryFrom` it.
+ptryFindDatum :: PTryFrom PData a => Term s (PDatumHash :--> PTxInfo :--> PMaybe a)
+ptryFindDatum = phoistAcyclic $
+  plam $ \datumHash txInfo'' -> P.do
+    PTxInfo txInfo' <- pmatch txInfo''
+    pmatch (plookupTuple # datumHash #$ pfield @"datums" # txInfo') $ \case
+      PNothing -> pcon PNothing
+      PJust datum -> P.do
+        (datum', _) <- ptryFrom $ pto datum
+        pcon (PJust datum')
 
 {- | Find a datum with the given hash.
 NOTE: this is unsafe in the sense that, if the data layout is wrong, this is UB.

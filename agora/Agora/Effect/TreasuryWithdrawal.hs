@@ -19,7 +19,6 @@ import Generics.SOP (Generic, I (I))
 
 import Agora.Effect (makeEffect)
 import Agora.Utils (findTxOutByTxOutRef, paddValue, passert)
-import Plutarch (popaque)
 import Plutarch.Api.V1 (
   PCredential (..),
   PTuple,
@@ -34,7 +33,7 @@ import Plutarch.DataRepr (
   PDataFields,
   PIsDataReprInstances (..),
  )
-import Plutarch.Lift (PUnsafeLiftDecl (..))
+import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (..))
 import Plutarch.Monadic qualified as P
 import Plutarch.TryFrom (PTryFrom (..))
 import Plutus.V1.Ledger.Credential (Credential)
@@ -69,10 +68,11 @@ newtype PTreasuryWithdrawalDatum (s :: S)
 
 instance PUnsafeLiftDecl PTreasuryWithdrawalDatum where
   type PLifted PTreasuryWithdrawalDatum = TreasuryWithdrawalDatum
+
 deriving via
   (DerivePConstantViaData TreasuryWithdrawalDatum PTreasuryWithdrawalDatum)
   instance
-    (PConstant TreasuryWithdrawalDatum)
+    (PConstantDecl TreasuryWithdrawalDatum)
 
 instance PTryFrom PData PTreasuryWithdrawalDatum where
   type PTryFromExcess PData PTreasuryWithdrawalDatum = Const ()
@@ -99,7 +99,7 @@ treasuryWithdrawalValidator currSymbol = makeEffect currSymbol $
   \_cs (datum' :: Term _ PTreasuryWithdrawalDatum) txOutRef' txInfo' -> P.do
     datum <- pletFields @'["receivers", "treasuries"] datum'
     txInfo <- pletFields @'["outputs", "inputs"] txInfo'
-    PJust txOut <- pmatch $ findTxOutByTxOutRef # txOutRef' # pfromData txInfo'
+    PJust txOut <- pmatch $ findTxOutByTxOutRef # txOutRef' # pfromData txInfo.inputs
     effInput <- pletFields @'["address", "value"] $ txOut
     outputValues <-
       plet $
