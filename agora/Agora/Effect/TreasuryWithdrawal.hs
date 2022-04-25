@@ -20,12 +20,12 @@ import Agora.Effect (makeEffect)
 import Agora.Utils (findTxOutByTxOutRef, paddValue, passert)
 import Plutarch (popaque)
 import Plutarch.Api.V1 (
-  PCredential,
-  PTuple,
-  PValidator,
-  PValue,
   ptuple,
- )
+  PValidator,
+  PTuple,
+  PValue,
+  PCredential(..)
+  )
 
 import Plutarch.DataRepr (
   DerivePConstantViaData (..),
@@ -34,7 +34,7 @@ import Plutarch.DataRepr (
  )
 import Plutarch.Lift (PUnsafeLiftDecl (..))
 import Plutarch.Monadic qualified as P
-import Plutus.V1.Ledger.Credential (Credential)
+import Plutus.V1.Ledger.Credential ( Credential )
 import Plutus.V1.Ledger.Value (CurrencySymbol, Value)
 import PlutusTx qualified
 
@@ -122,6 +122,10 @@ treasuryWithdrawalValidator currSymbol = makeEffect currSymbol $
         treasuryInputValuesSum = sumValues #$ ofTreasury # inputValues
         treasuryOutputValuesSum = sumValues #$ ofTreasury # outputValues
         receiverValuesSum = sumValues # datum.receivers
+        isCollateral = plam $ \cred -> P.do
+          pmatch cred $ \case
+            PPubKeyCredential _ -> pcon PTrue
+            PScriptCredential _ -> pcon PFalse     
 
         -- Constraints
         outputContentMatchesRecivers =
@@ -136,17 +140,18 @@ treasuryWithdrawalValidator currSymbol = makeEffect currSymbol $
                   effInput.address #== pfield @"address" # pfromData x
               )
             # pfromData txInfo.outputs
-        inputsAreOnlyTreasuries =
+        inputsAreOnlyTreasuriesOrCollateral =
           pall
             # plam
               ( \((pfield @"_0" #) . pfromData -> cred) ->
                   cred #== pfield @"credential" # effInput.address
                     #|| pelem # cred # datum.treasuries
+                    #|| isCollateral # pfromData cred
               )
             # inputValues
 
     passert "Transaction should not pay to effects" shouldNotPayToEffect
     passert "Transaction output does not match receivers" outputContentMatchesRecivers
     passert "Remainders should be returned to the treasury" excessShouldBePaidToInputs
-    passert "Transaction should only have treasuries specified in the datum as input" inputsAreOnlyTreasuries
+    passert "Transaction should only have treasuries specified in the datum as input" inputsAreOnlyTreasuriesOrCollateral
     popaque $ pconstant ()

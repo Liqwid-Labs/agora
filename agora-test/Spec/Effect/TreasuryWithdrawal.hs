@@ -14,6 +14,7 @@ import Spec.Sample.Effect.TreasuryWithdrawal (
   inputGAT,
   inputTreasury,
   inputUser,
+  inputCollateral,
   outputTreasury,
   outputUser,
   treasuries,
@@ -40,6 +41,7 @@ tests =
           datum1
           ( buildScriptContext
               [ inputGAT
+              , inputCollateral 10
               , inputTreasury 1 (asset1 10)
               ]
               $ outputTreasury 1 (asset1 7) :
@@ -51,6 +53,7 @@ tests =
           datum1
           ( buildScriptContext
               [ inputGAT
+              , inputCollateral 10
               , inputTreasury 1 (asset1 10)
               , inputTreasury 2 (asset1 100)
               , inputTreasury 3 (asset1 500)
@@ -67,6 +70,7 @@ tests =
           datum2
           ( buildScriptContext
               [ inputGAT
+              , inputCollateral 10
               , inputTreasury 1 (asset1 20)
               , inputTreasury 2 (asset2 20)
               ]
@@ -81,6 +85,7 @@ tests =
           datum2
           ( buildScriptContext
               [ inputGAT
+              , inputCollateral 10
               , inputTreasury 1 (asset1 20)
               , inputTreasury 2 (asset2 20)
               ]
@@ -96,6 +101,7 @@ tests =
           datum2
           ( buildScriptContext
               [ inputGAT
+              , inputCollateral 10
               , inputTreasury 1 (asset1 20)
               , inputTreasury 2 (asset2 20)
               ]
@@ -110,6 +116,7 @@ tests =
           datum3
           ( buildScriptContext
               [ inputGAT
+              , inputCollateral 10
               , inputTreasury 999 (asset1 20)
               ]
               $ outputTreasury 999 (asset1 17) :
@@ -122,6 +129,7 @@ tests =
           ( buildScriptContext
               [ inputGAT
               , inputTreasury 1 (asset1 20)
+              , inputTreasury 999 (asset1 20)
               , inputUser 99 (asset2 100)
               ]
               $ [ outputTreasury 1 (asset1 17)

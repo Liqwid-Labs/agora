@@ -9,6 +9,7 @@ module Spec.Sample.Effect.TreasuryWithdrawal (
   inputTreasury,
   inputUser,
   inputGAT,
+  inputCollateral,
   outputTreasury,
   outputUser,
   buildReceiversOutputFromDatum,
@@ -105,6 +106,16 @@ inputUser indx val =
       , txOutValue = val
       , txOutDatumHash = Just (DatumHash "")
       }
+
+inputCollateral :: Int -> TxInInfo
+inputCollateral indx =
+  TxInInfo -- Initiator
+    (TxOutRef "" 1)
+    TxOut
+      { txOutAddress = Address (users !! indx) Nothing
+      , txOutValue = Value.singleton "" "" 2000000
+      , txOutDatumHash = Just (DatumHash "")
+      }  
 
 outputTreasury :: Int -> Value -> TxOut
 outputTreasury indx val =
