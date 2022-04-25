@@ -123,8 +123,8 @@ library
   exposed-modules:
     Agora.AuthorityToken
     Agora.Effect
-    Agora.Effect.TreasuryWithdrawal
     Agora.Effect.NoOp
+    Agora.Effect.TreasuryWithdrawal
     Agora.Governor
     Agora.MultiSig
     Agora.Proposal
