@@ -562,6 +562,46 @@ module Agora.Effect
 makeEffect :: forall (datum :: PType). (PIsData datum, PTryFrom PData datum) => CurrencySymbol -> (forall (s :: S). Term s PCurrencySymbol -> Term s datum -> Term s PTxOutRef -> Term s (PAsData PTxInfo) -> Term s POpaque) -> ClosedTerm PValidator
 
 
+-- | An Effect that withdraws treasury deposit
+module Agora.Effect.TreasuryWithdrawal
+data TreasuryWithdrawalDatum
+TreasuryWithdrawalDatum :: [(Credential, Value)] -> [Credential] -> TreasuryWithdrawalDatum
+[receivers] :: TreasuryWithdrawalDatum -> [(Credential, Value)]
+[treasuries] :: TreasuryWithdrawalDatum -> [Credential]
+newtype PTreasuryWithdrawalDatum (s :: S)
+PTreasuryWithdrawalDatum :: Term s (PDataRecord '["receivers" := PBuiltinList (PAsData (PTuple PCredential PValue)), "treasuries" := PBuiltinList (PAsData PCredential)]) -> PTreasuryWithdrawalDatum (s :: S)
+
+-- | Withdraws given list of values to specific target addresses. It can be
+--   evoked by burning GAT. The transaction should have correct outputs to
+--   the users and any left overs should be paid back to the treasury.
+--   
+--   The validator does not accept any Redeemer as all "parameters" are
+--   provided via encoded Datum.
+--   
+--   Note: It should check... 1. Transaction outputs should contain all of
+--   what Datum specified 2. Left over assests should be redirected back to
+--   Treasury It can be more flexiable over... - The number of outputs
+--   themselves
+treasuryWithdrawalValidator :: forall {s :: S}. CurrencySymbol -> Term s PValidator
+instance Plutarch.DataRepr.Internal.Field.PDataFields Agora.Effect.TreasuryWithdrawal.PTreasuryWithdrawalDatum
+instance Plutarch.Builtin.PIsData Agora.Effect.TreasuryWithdrawal.PTreasuryWithdrawalDatum
+instance Plutarch.Internal.PlutusType.PlutusType Agora.Effect.TreasuryWithdrawal.PTreasuryWithdrawalDatum
+instance Plutarch.DataRepr.Internal.PIsDataRepr Agora.Effect.TreasuryWithdrawal.PTreasuryWithdrawalDatum
+instance forall (s :: Plutarch.Internal.S). Generics.SOP.Universe.Generic (Agora.Effect.TreasuryWithdrawal.PTreasuryWithdrawalDatum s)
+instance forall (s :: Plutarch.Internal.S). GHC.Generics.Generic (Agora.Effect.TreasuryWithdrawal.PTreasuryWithdrawalDatum s)
+instance Plutarch.Lift.PConstant Agora.Effect.TreasuryWithdrawal.TreasuryWithdrawalDatum
+instance Plutarch.Lift.PUnsafeLiftDecl Agora.Effect.TreasuryWithdrawal.PTreasuryWithdrawalDatum
+instance Plutarch.TryFrom.PTryFrom Plutarch.Builtin.PData Agora.Effect.TreasuryWithdrawal.PTreasuryWithdrawalDatum
+instance PlutusTx.IsData.Class.ToData Agora.Effect.TreasuryWithdrawal.TreasuryWithdrawalDatum
+instance PlutusTx.IsData.Class.FromData Agora.Effect.TreasuryWithdrawal.TreasuryWithdrawalDatum
+instance PlutusTx.IsData.Class.UnsafeFromData Agora.Effect.TreasuryWithdrawal.TreasuryWithdrawalDatum
+instance PlutusTx.Lift.Class.Typeable @Type PlutusCore.Default.Universe.DefaultUni Agora.Effect.TreasuryWithdrawal.TreasuryWithdrawalDatum
+instance PlutusTx.Lift.Class.Lift PlutusCore.Default.Universe.DefaultUni Agora.Effect.TreasuryWithdrawal.TreasuryWithdrawalDatum
+instance Generics.SOP.Universe.Generic Agora.Effect.TreasuryWithdrawal.TreasuryWithdrawalDatum
+instance GHC.Generics.Generic Agora.Effect.TreasuryWithdrawal.TreasuryWithdrawalDatum
+instance GHC.Show.Show Agora.Effect.TreasuryWithdrawal.TreasuryWithdrawalDatum
+
+
 -- | A dumb effect that only burns its GAT.
 module Agora.Effect.NoOp
 
