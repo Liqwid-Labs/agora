@@ -127,7 +127,7 @@ import PlutusTx qualified
 --------------------------------------------------------------------------------
 
 {- $gst
-   Governance state token, aka. GST, it's a NFT that identifies an UTXO that carries the state datum of the Governance script.
+   Governance state token, aka. GST, is an NFT that identifies an UTXO that carries the state datum of the Governance script.
 
    This token is minted by a one-shot monetary policy 'governorPolicy', meaning that the token has guaranteed uniqueness.
 
@@ -290,8 +290,8 @@ NOTE: The input proposal is found by looking for the UTXO with a proposal state 
 
 === Effect Group Selection
 
-Currently a proposal can two or more than two options to vote on,
-  meaning that it can conatinas two or more effect groups,
+Currently a proposal can have two or more than two options to vote on,
+  meaning that it can contains two or more effect groups,
   according to [#39](https://github.com/Liqwid-Labs/agora/issues/39).
 
 Either way, the shapes of 'Proposal.votes' and 'Proposal.effects' should be the same.
