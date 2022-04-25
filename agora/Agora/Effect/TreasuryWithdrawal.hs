@@ -122,7 +122,7 @@ treasuryWithdrawalValidator currSymbol = makeEffect currSymbol $
         treasuryInputValuesSum = sumValues #$ ofTreasury # inputValues
         treasuryOutputValuesSum = sumValues #$ ofTreasury # outputValues
         receiverValuesSum = sumValues # datum.receivers
-        isCollateral = plam $ \cred -> P.do
+        isPubkey = plam $ \cred -> P.do
           pmatch cred $ \case
             PPubKeyCredential _ -> pcon PTrue
             PScriptCredential _ -> pcon PFalse
@@ -146,7 +146,7 @@ treasuryWithdrawalValidator currSymbol = makeEffect currSymbol $
               ( \((pfield @"_0" #) . pfromData -> cred) ->
                   cred #== pfield @"credential" # effInput.address
                     #|| pelem # cred # datum.treasuries
-                    #|| isCollateral # pfromData cred
+                    #|| isPubkey # pfromData cred
               )
             # inputValues
 
