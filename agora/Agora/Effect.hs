@@ -33,17 +33,24 @@ makeEffect gatCs' f =
     ctx <- pletFields @'["txInfo", "purpose"] ctx'
     txInfo' <- plet ctx.txInfo
 
+    -- convert input datum, PData, into desierable type
+    -- the way this conversion is performed should be defined
+    -- by PTryFrom for each datum in effect script.
     (datum', _) <- ptryFrom @datum datum
 
+    -- ensure purpose is Spending.
     PSpending txOutRef <- pmatch $ pfromData ctx.purpose
     txOutRef' <- plet (pfield @"_0" # txOutRef)
 
+    -- fetch minted values to ensure single GAT is burned
     txInfo <- pletFields @'["mint"] txInfo'
     let mint :: Term _ PValue
         mint = txInfo.mint
 
+    -- fetch script context
     gatCs <- plet $ pconstant gatCs'
 
     passert "A single authority token has been burned" $ singleAuthorityTokenBurned gatCs txInfo' mint
 
+    -- run effect function
     f gatCs datum' txOutRef' txInfo'
