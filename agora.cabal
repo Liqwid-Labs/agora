@@ -124,6 +124,7 @@ library
     Agora.AuthorityToken
     Agora.Effect
     Agora.Effect.TreasuryWithdrawal
+    Agora.Effect.NoOp
     Agora.Governor
     Agora.MultiSig
     Agora.Proposal
