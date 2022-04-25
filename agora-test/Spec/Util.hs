@@ -13,6 +13,8 @@ module Spec.Util (
   policyFailsWith,
   validatorSucceedsWith,
   validatorFailsWith,
+  effectSucceedsWith,
+  effectFailsWith,
 
   -- * Plutus-land utils
   datumHash,
@@ -128,6 +130,30 @@ validatorFailsWith tag policy datum redeemer scriptContext =
           # pforgetData (pconstantData redeemer)
           # pconstant scriptContext
       )
+
+-- | Check that a validator script succeeds, given a name and arguments.
+effectSucceedsWith ::
+  ( PLift datum
+  , PlutusTx.ToData (PLifted datum)
+  ) =>
+  String ->
+  ClosedTerm PValidator ->
+  PLifted datum ->
+  ScriptContext ->
+  TestTree
+effectSucceedsWith tag eff datum = validatorSucceedsWith tag eff datum ()
+
+-- | Check that a validator script fails, given a name and arguments.
+effectFailsWith ::
+  ( PLift datum
+  , PlutusTx.ToData (PLifted datum)
+  ) =>
+  String ->
+  ClosedTerm PValidator ->
+  PLifted datum ->
+  ScriptContext ->
+  TestTree
+effectFailsWith tag eff datum = validatorFailsWith tag eff datum ()
 
 -- | Check that an arbitrary script doesn't error when evaluated, given a name.
 scriptSucceeds :: String -> Script -> TestTree

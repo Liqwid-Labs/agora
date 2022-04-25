@@ -124,6 +124,7 @@ library
     Agora.AuthorityToken
     Agora.Effect
     Agora.Effect.NoOp
+    Agora.Effect.TreasuryWithdrawal
     Agora.Governor
     Agora.MultiSig
     Agora.Proposal
@@ -153,7 +154,9 @@ test-suite agora-test
   hs-source-dirs: agora-test
   other-modules:
     Spec.AuthorityToken
+    Spec.Effect.TreasuryWithdrawal
     Spec.Model.MultiSig
+    Spec.Sample.Effect.TreasuryWithdrawal
     Spec.Sample.Stake
     Spec.Stake
     Spec.Util
