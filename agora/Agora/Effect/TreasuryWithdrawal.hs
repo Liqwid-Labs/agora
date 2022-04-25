@@ -15,10 +15,12 @@ module Agora.Effect.TreasuryWithdrawal (
 
 import GHC.Generics qualified as GHC
 import Generics.SOP (Generic, I (I))
+import Control.Applicative (Const)
 
 import Agora.Effect (makeEffect)
 import Agora.Utils (findTxOutByTxOutRef, paddValue, passert)
 import Plutarch (popaque)
+import Plutarch.Internal (punsafeCoerce)
 import Plutarch.Api.V1 (
   PCredential (..),
   PTuple,
@@ -32,6 +34,7 @@ import Plutarch.DataRepr (
   PDataFields,
   PIsDataReprInstances (..),
  )
+import Plutarch.TryFrom ( PTryFrom(..) ) 
 import Plutarch.Lift (PUnsafeLiftDecl (..))
 import Plutarch.Monadic qualified as P
 import Plutus.V1.Ledger.Credential (Credential)
@@ -70,6 +73,13 @@ deriving via
   (DerivePConstantViaData TreasuryWithdrawalDatum PTreasuryWithdrawalDatum)
   instance
     (PConstant TreasuryWithdrawalDatum)
+
+instance PTryFrom PData PTreasuryWithdrawalDatum where
+  type PTryFromExcess PData PTreasuryWithdrawalDatum = Const ()
+  ptryFrom' opq cont =
+    -- this will need to not use punsafeCoerce...
+    cont (punsafeCoerce opq, ())
+
 
 {- | Withdraws given list of values to specific target addresses.
      It can be evoked by burning GAT. The transaction should have correct
