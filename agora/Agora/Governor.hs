@@ -45,7 +45,7 @@ import Agora.AuthorityToken (
 import Agora.Proposal (
   PProposalDatum (..),
   PProposalId,
-  PProposalStatus (PDraft, PExecutable, PFinished),
+  PProposalStatus (PFinished),
   PProposalThresholds,
   Proposal (..),
   ProposalId,
@@ -53,7 +53,7 @@ import Agora.Proposal (
   pnextProposalId,
   proposalDatumValid,
   proposalPolicy,
-  proposalValidator,
+  proposalValidator,ProposalStatus (Draft, Executable)
  )
 import Agora.Utils (
   findOutputsToAddress,
@@ -419,11 +419,7 @@ governorValidator gov =
 
         -- TODO: should we check cosigners here?
 
-        let isProposalDraft = pmatch (pfromData proposalDatum.status) $ \case
-              PDraft _ -> pconstant True
-              _ -> pconstant False
-
-        passert "Proposal state should be draft" isProposalDraft
+        passert "Proposal state should be draft" $ proposalDatum.status #== pconstantData Draft
 
         popaque $ pconstant ()
       PMintGATs _ -> P.do
@@ -480,11 +476,8 @@ governorValidator gov =
           pletFields @'["id", "effects", "status", "cosigners", "thresholds", "votes"]
             inputProposalDatum'
 
-        let isProposalExecutable = pmatch (pfromData inputProposalDatum.status) $ \case
-              PExecutable _ -> pconstant True
-              _ -> pconstant False
-
-        passert "Proposal must be in executable state in order to execute effects" isProposalExecutable
+        passert "Proposal must be in executable state in order to execute effects" $ 
+          inputProposalDatum.status #== pconstantData Executable 
 
         let expectedOutputDatum =
               pforgetData $

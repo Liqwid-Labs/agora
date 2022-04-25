@@ -530,9 +530,8 @@ hasOnlyOneTokenOfAssetClass' ac@(AssetClass (as, _)) = phoistAcyclic $
   plam $ \vs -> P.do
     let ps = pconstant as
 
-    psymbolValueOf # ps # vs #== 1
+    hasOnlyOneTokenOfCurrencySymbol # ps # vs 
       #&& passetClassValueOf' ac # vs #== 1
-      #&& (plength #$ pto $ pto $ pto vs) #== 1
 
 -- | The entire value only contains one token of the specific currency symbol.
 hasOnlyOneTokenOfCurrencySymbol :: Term s (PCurrencySymbol :--> PValue :--> PBool)
