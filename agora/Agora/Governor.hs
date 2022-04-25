@@ -174,7 +174,7 @@ PlutusTx.makeIsDataIndexed
 
 -- | Parameters for creating Governor scripts.
 data Governor = Governor
-  { gstORef :: TxOutRef
+  { gstOutRef :: TxOutRef
   -- ^ Referenced utxo will be spent to mint the GST.
   , gstName :: TokenName
   -- ^ Name of the GST token.
@@ -234,7 +234,7 @@ deriving via (DerivePConstantViaData GovernorRedeemer PGovernorRedeemer) instanc
 governorPolicy :: Governor -> ClosedTerm PMintingPolicy
 governorPolicy gov =
   plam $ \_ ctx' -> P.do
-    let oref = pconstant gov.gstORef
+    let oref = pconstant gov.gstOutRef
         ownSymbol = pownCurrencySymbol # ctx'
 
     mintValue <- plet $ pownMintValue # ctx'
