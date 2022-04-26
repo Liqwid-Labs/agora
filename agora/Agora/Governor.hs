@@ -49,11 +49,12 @@ import Agora.Proposal (
   PProposalThresholds,
   Proposal (..),
   ProposalId,
+  ProposalStatus (Draft, Executable),
   ProposalThresholds,
   pnextProposalId,
   proposalDatumValid,
   proposalPolicy,
-  proposalValidator,ProposalStatus (Draft, Executable)
+  proposalValidator,
  )
 import Agora.Utils (
   findOutputsToAddress,
@@ -380,21 +381,32 @@ governorValidator gov =
         passert "Exactly one proposal token must be minted" $
           hasOnlyOneTokenOfCurrencySymbol # pproposalSymbol # txInfo.mint
 
-        outputs <- plet $ findOutputsToAddress # ctx.txInfo # pproposalValidatorAddress
-        passert "Exactly one utxo should be sent to the proposal validator" $
-          plength # outputs #== 1
+        filteredOutputs <-
+          plet $
+            pfilter
+              # ( phoistAcyclic $
+                    plam
+                      ( \txOut' -> P.do
+                          txOut <- pletFields @'["address", "value"] txOut'
 
-        output <- pletFields @'["value", "datumHash"] $ phead # outputs
-        passert "The proposal state token must be sent to the proposal validator" $
-          psymbolValueOf # pproposalSymbol # output.value #== 1
+                          txOut.address #== pdata pproposalValidatorAddress
+                            #&& psymbolValueOf # pproposalSymbol # txOut.value #== 1
+                      )
+                )
+              # pfromData txInfo.outputs
+
+        passert "Exactly one utxo with proposal state token should be sent to the proposal validator" $
+          plength # filteredOutputs #== 1
+
+        outputDatumHash <- plet $ pfield @"datumHash" #$ phead # filteredOutputs
 
         passert "The utxo paid to the proposal validator must have datum" $
-          pisDJust # output.datumHash
+          pisDJust # outputDatumHash
 
         outputProposalDatum' <-
           plet $
             mustFindDatum' @PProposalDatum
-              # output.datumHash
+              # outputDatumHash
               # ctx.txInfo
 
         passert "Proposal datum must be valid" $
@@ -473,8 +485,8 @@ governorValidator gov =
           pletFields @'["id", "effects", "status", "cosigners", "thresholds", "votes"]
             inputProposalDatum'
 
-        passert "Proposal must be in executable state in order to execute effects" $ 
-          inputProposalDatum.status #== pconstantData Executable 
+        passert "Proposal must be in executable state in order to execute effects" $
+          inputProposalDatum.status #== pconstantData Executable
 
         let expectedOutputProposalDatum =
               pforgetData $
