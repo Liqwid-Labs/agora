@@ -128,6 +128,9 @@ data ProposalThresholds = ProposalThresholds
   -- ^ How much GT minimum must a particular 'ResultTag' accumulate for it to pass.
   , create :: Tagged GTTag Integer
   -- ^ How much GT required to "create" a proposal.
+  --
+  -- It is recommended this be a high enough amount, in order to prevent DOS from bad
+  -- actors.
   , vote :: Tagged GTTag Integer
   -- ^ How much GT required to allow voting to happen.
   -- (i.e. to move into 'VotingReady')

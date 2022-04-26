@@ -56,7 +56,7 @@ import Plutarch.Api.V1 (
   PTokenName,
   PTuple,
   PTxInInfo (PTxInInfo),
-  PTxInfo (PTxInfo),
+  PTxInfo,
   PTxOut (PTxOut),
   PTxOutRef,
   PValidatorHash,
@@ -78,35 +78,30 @@ passert :: Term s PString -> Term s PBool -> Term s k -> Term s k
 passert errorMessage check k = pif check k (ptraceError errorMessage)
 
 -- | Find a datum with the given hash.
-pfindDatum :: Term s (PDatumHash :--> PTxInfo :--> PMaybe PDatum)
+pfindDatum :: Term s (PDatumHash :--> PBuiltinList (PAsData (PTuple PDatumHash PDatum)) :--> PMaybe PDatum)
 pfindDatum = phoistAcyclic $
-  plam $ \datumHash txInfo'' -> P.do
-    PTxInfo txInfo' <- pmatch txInfo''
-    plookupTuple # datumHash #$ pfield @"datums" # txInfo'
+  plam $ \datumHash datums -> plookupTuple # datumHash # datums
 
 -- | Find a datum with the given hash, and `ptryFrom` it.
-ptryFindDatum :: PTryFrom PData a => Term s (PDatumHash :--> PTxInfo :--> PMaybe a)
+ptryFindDatum :: PTryFrom PData a => Term s (PDatumHash :--> PBuiltinList (PAsData (PTuple PDatumHash PDatum)) :--> PMaybe a)
 ptryFindDatum = phoistAcyclic $
-  plam $ \datumHash txInfo'' -> P.do
-    PTxInfo txInfo' <- pmatch txInfo''
-    pmatch (plookupTuple # datumHash #$ pfield @"datums" # txInfo') $ \case
+  plam $ \datumHash inputs -> P.do
+    pmatch (pfindDatum # datumHash # inputs) $ \case
       PNothing -> pcon PNothing
       PJust datum -> P.do
-        (datum', _) <- ptryFrom $ pto datum
+        (datum', _) <- ptryFrom (pto datum)
         pcon (PJust datum')
 
 {- | Find a datum with the given hash.
 NOTE: this is unsafe in the sense that, if the data layout is wrong, this is UB.
 -}
-pfindDatum' :: PIsData a => Term s (PDatumHash :--> PTxInfo :--> PMaybe (PAsData a))
+pfindDatum' :: PIsData a => Term s (PDatumHash :--> PBuiltinList (PAsData (PTuple PDatumHash PDatum)) :--> PMaybe (PAsData a))
 pfindDatum' = phoistAcyclic $ plam $ \dh x -> punsafeCoerce $ pfindDatum # dh # x
 
 -- | Check if a PubKeyHash signs this transaction.
-ptxSignedBy :: Term s (PTxInfo :--> PAsData PPubKeyHash :--> PBool)
+ptxSignedBy :: Term s (PBuiltinList (PAsData PPubKeyHash) :--> PAsData PPubKeyHash :--> PBool)
 ptxSignedBy = phoistAcyclic $
-  plam $ \txInfo' pkh -> P.do
-    txInfo <- pletFields @'["signatories"] txInfo'
-    pelem @PBuiltinList # pkh # txInfo.signatories
+  plam $ \sigs sig -> pelem # sig # sigs
 
 -- | Get the first element that matches a predicate or return Nothing.
 pfind' ::
@@ -334,14 +329,14 @@ anyOutput ::
   Term s (PTxInfo :--> (PValue :--> PAddress :--> datum :--> PBool) :--> PBool)
 anyOutput = phoistAcyclic $
   plam $ \txInfo' predicate -> P.do
-    txInfo <- pletFields @'["outputs"] txInfo'
+    txInfo <- pletFields @'["outputs", "datums"] txInfo'
     pany
       # plam
         ( \txOut'' -> P.do
             PTxOut txOut' <- pmatch (pfromData txOut'')
             txOut <- pletFields @'["value", "datumHash", "address"] txOut'
             PDJust dh <- pmatch txOut.datumHash
-            pmatch (pfindDatum' @datum # (pfield @"_0" # dh) # txInfo') $ \case
+            pmatch (pfindDatum' @datum # (pfield @"_0" # dh) # txInfo.datums) $ \case
               PJust datum -> P.do
                 predicate # txOut.value # txOut.address # pfromData datum
               PNothing -> pcon PFalse
@@ -356,14 +351,14 @@ allOutputs ::
   Term s (PTxInfo :--> (PTxOut :--> PValue :--> PAddress :--> datum :--> PBool) :--> PBool)
 allOutputs = phoistAcyclic $
   plam $ \txInfo' predicate -> P.do
-    txInfo <- pletFields @'["outputs"] txInfo'
+    txInfo <- pletFields @'["outputs", "datums"] txInfo'
     pall
       # plam
         ( \txOut'' -> P.do
             PTxOut txOut' <- pmatch (pfromData txOut'')
             txOut <- pletFields @'["value", "datumHash", "address"] txOut'
             PDJust dh <- pmatch txOut.datumHash
-            pmatch (pfindDatum' @datum # (pfield @"_0" # dh) # txInfo') $ \case
+            pmatch (pfindDatum' @datum # (pfield @"_0" # dh) # txInfo.datums) $ \case
               PJust datum -> P.do
                 predicate # pfromData txOut'' # txOut.value # txOut.address # pfromData datum
               PNothing -> pcon PFalse
@@ -378,7 +373,7 @@ anyInput ::
   Term s (PTxInfo :--> (PValue :--> PAddress :--> datum :--> PBool) :--> PBool)
 anyInput = phoistAcyclic $
   plam $ \txInfo' predicate -> P.do
-    txInfo <- pletFields @'["inputs"] txInfo'
+    txInfo <- pletFields @'["inputs", "datums"] txInfo'
     pany
       # plam
         ( \txInInfo'' -> P.do
@@ -387,7 +382,7 @@ anyInput = phoistAcyclic $
             PTxOut txOut' <- pmatch (pfromData txOut'')
             txOut <- pletFields @'["value", "datumHash", "address"] txOut'
             PDJust dh <- pmatch txOut.datumHash
-            pmatch (pfindDatum' @datum # (pfield @"_0" # dh) # txInfo') $ \case
+            pmatch (pfindDatum' @datum # (pfield @"_0" # dh) # txInfo.datums) $ \case
               PJust datum -> P.do
                 predicate # txOut.value # txOut.address # pfromData datum
               PNothing -> pcon PFalse
@@ -420,23 +415,18 @@ scriptHashFromAddress = phoistAcyclic $
       _ -> pcon PNothing
 
 -- | Find all TxOuts sent to an Address
-findOutputsToAddress :: Term s (PTxInfo :--> PAddress :--> PBuiltinList (PAsData PTxOut))
+findOutputsToAddress :: Term s (PBuiltinList (PAsData PTxOut) :--> PAddress :--> PBuiltinList (PAsData PTxOut))
 findOutputsToAddress = phoistAcyclic $
-  plam $ \info address' -> P.do
+  plam $ \outputs address' -> P.do
     address <- plet $ pdata address'
-    let outputs = pfromData $ pfield @"outputs" # info
-        filteredOutputs =
-          pfilter
-            # plam
-              (\(pfromData -> txOut) -> pfield @"address" # txOut #== address)
-            # outputs
-    filteredOutputs
+    pfilter # plam (\(pfromData -> txOut) -> pfield @"address" # txOut #== address)
+      # outputs
 
 -- | Find the data corresponding to a TxOut, if there is one
-findTxOutDatum :: Term s (PTxInfo :--> PTxOut :--> PMaybe PDatum)
+findTxOutDatum :: Term s (PBuiltinList (PAsData (PTuple PDatumHash PDatum)) :--> PTxOut :--> PMaybe PDatum)
 findTxOutDatum = phoistAcyclic $
-  plam $ \info out -> P.do
+  plam $ \datums out -> P.do
     datumHash' <- pmatch $ pfromData $ pfield @"datumHash" # out
     case datumHash' of
-      PDJust ((pfield @"_0" #) -> datumHash) -> pfindDatum # datumHash # info
+      PDJust ((pfield @"_0" #) -> datumHash) -> pfindDatum # datumHash # datums
       _ -> pcon PNothing

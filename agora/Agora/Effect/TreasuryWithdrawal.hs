@@ -40,9 +40,12 @@ import Plutus.V1.Ledger.Credential (Credential)
 import Plutus.V1.Ledger.Value (CurrencySymbol, Value)
 import PlutusTx qualified
 
+-- | Datum that encodes behavior of Treasury Withdrawal effect.
 data TreasuryWithdrawalDatum = TreasuryWithdrawalDatum
   { receivers :: [(Credential, Value)]
+  -- ^ AssocMap for Value sent to each receiver from the treasury.
   , treasuries :: [Credential]
+  -- ^ What Credentials is spending from legal.
   }
   deriving stock (Show, GHC.Generic)
   deriving anyclass (Generic)
@@ -77,7 +80,8 @@ deriving via
 instance PTryFrom PData PTreasuryWithdrawalDatum where
   type PTryFromExcess PData PTreasuryWithdrawalDatum = Const ()
   ptryFrom' opq cont =
-    -- this will need to not use punsafeCoerce...
+    -- TODO: This should not use 'punsafeCoerce'.
+    -- Blocked by 'PCredential', and 'PTuple'.
     cont (punsafeCoerce opq, ())
 
 {- | Withdraws given list of values to specific target addresses.
@@ -90,7 +94,7 @@ instance PTryFrom PData PTreasuryWithdrawalDatum where
      Note:
      It should check...
      1. Transaction outputs should contain all of what Datum specified
-     2. Left over assests should be redirected back to Treasury
+     2. Left over assets should be redirected back to Treasury
      It can be more flexiable over...
      - The number of outputs themselves
 -}

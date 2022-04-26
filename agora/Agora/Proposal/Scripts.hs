@@ -4,14 +4,18 @@ module Agora.Proposal.Scripts (
   proposalDatumValid,
 ) where
 
-import Agora.Proposal
+import Agora.Proposal (
+  PProposalDatum (PProposalDatum),
+  PProposalRedeemer (..),
+  PResultTag,
+  Proposal (governorSTAssetClass, stakeSTAssetClass),
+ )
 import Agora.Record (mkRecordConstr, (.&), (.=))
-import Agora.Stake (PStakeDatum)
+import Agora.Stake (findStakeOwnedBy)
 import Agora.Utils (
   anyOutput,
   findTxOutByTxOutRef,
   passert,
-  pfindDatum',
   pnotNull,
   psymbolValueOf,
   ptokenSpent,
@@ -20,14 +24,10 @@ import Agora.Utils (
  )
 import Plutarch.Api.V1 (
   PDatumHash,
-  PMaybeData (PDJust, PDNothing),
   PMintingPolicy,
-  PPubKeyHash,
   PScriptContext (PScriptContext),
   PScriptPurpose (PMinting, PSpending),
-  PTxInInfo (PTxInInfo),
   PTxInfo (PTxInfo),
-  PTxOut (PTxOut),
   PValidator,
   PValidatorHash,
   mintingPolicySymbol,
@@ -47,20 +47,20 @@ import Plutus.V1.Ledger.Value (AssetClass (AssetClass))
    NOTE: The governor needs to check that the datum is correct
          and sent to the right address.
 -}
-proposalPolicy :: Proposal -> ClosedTerm PMintingPolicy
+proposalPolicy :: Agora.Proposal.Proposal -> ClosedTerm Plutarch.Api.V1.PMintingPolicy
 proposalPolicy proposal =
   plam $ \_redeemer ctx' -> P.do
-    PScriptContext ctx' <- pmatch ctx'
+    Plutarch.Api.V1.PScriptContext ctx' <- pmatch ctx'
     ctx <- pletFields @'["txInfo", "purpose"] ctx'
-    PTxInfo txInfo' <- pmatch $ pfromData ctx.txInfo
+    Plutarch.Api.V1.PTxInfo txInfo' <- pmatch $ pfromData ctx.txInfo
     txInfo <- pletFields @'["inputs", "mint"] txInfo'
-    PMinting _ownSymbol <- pmatch $ pfromData ctx.purpose
+    Plutarch.Api.V1.PMinting _ownSymbol <- pmatch $ pfromData ctx.purpose
 
     let inputs = txInfo.inputs
         mintedValue = pfromData txInfo.mint
         AssetClass (govCs, govTn) = proposal.governorSTAssetClass
 
-    PMinting ownSymbol' <- pmatch $ pfromData ctx.purpose
+    Plutarch.Api.V1.PMinting ownSymbol' <- pmatch $ pfromData ctx.purpose
     let mintedProposalST = passetClassValueOf # mintedValue # (passetClass # (pfield @"_0" # ownSymbol') # pconstant "")
 
     passert "Governance state-thread token must move" $
@@ -74,22 +74,22 @@ proposalPolicy proposal =
     popaque (pconstant ())
 
 -- | Validator for Proposals.
-proposalValidator :: Proposal -> ClosedTerm PValidator
+proposalValidator :: Agora.Proposal.Proposal -> ClosedTerm Plutarch.Api.V1.PValidator
 proposalValidator proposal =
   plam $ \datum redeemer ctx' -> P.do
-    PScriptContext ctx' <- pmatch ctx'
+    Plutarch.Api.V1.PScriptContext ctx' <- pmatch ctx'
     ctx <- pletFields @'["txInfo", "purpose"] ctx'
     txInfo <- plet $ pfromData ctx.txInfo
-    PTxInfo txInfo' <- pmatch txInfo
-    txInfoF <- pletFields @'["inputs", "mint"] txInfo'
-    PSpending ((pfield @"_0" #) -> txOutRef) <- pmatch $ pfromData ctx.purpose
+    Plutarch.Api.V1.PTxInfo txInfo' <- pmatch txInfo
+    txInfoF <- pletFields @'["inputs", "mint", "datums", "signatories"] txInfo'
+    Plutarch.Api.V1.PSpending ((pfield @"_0" #) -> txOutRef) <- pmatch $ pfromData ctx.purpose
 
     PJust txOut <- pmatch $ findTxOutByTxOutRef # txOutRef # txInfoF.inputs
     txOutF <- pletFields @'["address", "value"] $ txOut
 
-    let proposalDatum :: Term _ PProposalDatum
+    let proposalDatum :: Term _ Agora.Proposal.PProposalDatum
         proposalDatum = pfromData $ punsafeCoerce datum
-        proposalRedeemer :: Term _ PProposalRedeemer
+        proposalRedeemer :: Term _ Agora.Proposal.PProposalRedeemer
         proposalRedeemer = pfromData $ punsafeCoerce redeemer
 
     proposalF <-
@@ -105,73 +105,53 @@ proposalValidator proposal =
 
     ownAddress <- plet $ txOutF.address
 
-    stCurrencySymbol <- plet $ pconstant $ mintingPolicySymbol $ mkMintingPolicy (proposalPolicy proposal)
+    stCurrencySymbol <- plet $ pconstant $ Plutarch.Api.V1.mintingPolicySymbol $ Plutarch.Api.V1.mkMintingPolicy (proposalPolicy proposal)
     valueSpent <- plet $ pvalueSpent # txInfoF.inputs
     spentST <- plet $ psymbolValueOf # stCurrencySymbol #$ valueSpent
     let AssetClass (stakeSym, stakeTn) = proposal.stakeSTAssetClass
     stakeSTAssetClass <- plet $ passetClass # pconstant stakeSym # pconstant stakeTn
     spentStakeST <- plet $ passetClassValueOf # valueSpent # stakeSTAssetClass
 
+    signedBy <- plet $ ptxSignedBy # txInfoF.signatories
+
     pmatch proposalRedeemer $ \case
-      PVote _r -> P.do
+      Agora.Proposal.PVote _r -> P.do
         passert "ST at inputs must be 1" $
           spentST #== 1
 
         popaque (pconstant ())
       --------------------------------------------------------------------------
-      PCosign r -> P.do
+      Agora.Proposal.PCosign r -> P.do
         newSigs <- plet $ pfield @"newCosigners" # r
 
         passert "ST at inputs must be 1" $
           spentST #== 1
 
         passert "Signed by all new cosigners" $
-          pall # plam (\sig -> ptxSignedBy # ctx.txInfo # sig) # newSigs
+          pall # signedBy # newSigs
 
         passert "As many new cosigners as Stake datums" $
           spentStakeST #== plength # newSigs
 
-        let stakeDatumOwnedBy :: Term _ (PPubKeyHash :--> PStakeDatum :--> PBool)
-            stakeDatumOwnedBy =
-              phoistAcyclic $
-                plam $ \pk stakeDatum -> P.do
-                  stakeDatumF <- pletFields @'["owner"] $ pto stakeDatum
-                  stakeDatumF.owner #== pdata pk
-
-        -- Does the input have a `Stake` owned by a particular PK?
-        let isInputStakeOwnedBy :: Term _ (PAsData PPubKeyHash :--> PAsData PTxInInfo :--> PBool)
-            isInputStakeOwnedBy =
-              plam $ \ss txInInfo' -> P.do
-                PTxInInfo ((pfield @"resolved" #) -> txOut) <- pmatch $ pfromData txInInfo'
-                PTxOut txOut' <- pmatch txOut
-                txOutF <- pletFields @'["value", "datumHash"] txOut'
-                outStakeST <- plet $ passetClassValueOf # txOutF.value # stakeSTAssetClass
-                pmatch txOutF.datumHash $ \case
-                  PDNothing _ -> pcon PFalse
-                  PDJust ((pfield @"_0" #) -> datumHash) ->
-                    pif
-                      (outStakeST #== 1)
-                      -- TODO: use 'ptryFindDatum' instead in the future
-                      ( pmatch (pfindDatum' # datumHash # txInfo) $ \case
-                          PNothing -> pcon PFalse
-                          PJust v -> stakeDatumOwnedBy # pfromData ss # pfromData v
-                      )
-                      (pcon PFalse)
-
         passert "All new cosigners are witnessed by their Stake datums" $
           pall
-            # plam (\sig -> pany # (isInputStakeOwnedBy # sig) # txInfoF.inputs)
+            # plam
+              ( \sig ->
+                  pmatch (findStakeOwnedBy # stakeSTAssetClass # pfromData sig # txInfoF.datums # txInfoF.inputs) $ \case
+                    PNothing -> pcon PFalse
+                    PJust _ -> pcon PTrue
+              )
             # newSigs
 
         passert "Signatures are correctly added to cosignature list" $
-          anyOutput @PProposalDatum # ctx.txInfo
+          anyOutput @Agora.Proposal.PProposalDatum # ctx.txInfo
             #$ plam
             $ \newValue address newProposalDatum -> P.do
               let correctDatum =
                     pdata newProposalDatum
                       #== pdata
                         ( mkRecordConstr
-                            PProposalDatum
+                            Agora.Proposal.PProposalDatum
                             ( #proposalId .= proposalF.proposalId
                                 .& #effects .= proposalF.effects
                                 .& #status .= proposalF.status
@@ -191,13 +171,13 @@ proposalValidator proposal =
 
         popaque (pconstant ())
       --------------------------------------------------------------------------
-      PUnlock _r -> P.do
+      Agora.Proposal.PUnlock _r -> P.do
         passert "ST at inputs must be 1" $
           spentST #== 1
 
         popaque (pconstant ())
       --------------------------------------------------------------------------
-      PAdvanceProposal _r -> P.do
+      Agora.Proposal.PAdvanceProposal _r -> P.do
         passert "ST at inputs must be 1" $
           spentST #== 1
 
@@ -207,13 +187,13 @@ proposalValidator proposal =
      This can be used to check both upopn creation and
      upon any following state transitions in the proposal.
 -}
-proposalDatumValid :: Term s (PProposalDatum :--> PBool)
+proposalDatumValid :: Term s (Agora.Proposal.PProposalDatum :--> PBool)
 proposalDatumValid =
   phoistAcyclic $
     plam $ \datum' -> P.do
       datum <- pletFields @'["effects", "cosigners"] $ datum'
 
-      let effects :: Term _ (PBuiltinMap PResultTag (PBuiltinMap PValidatorHash PDatumHash))
+      let effects :: Term _ (PBuiltinMap Agora.Proposal.PResultTag (PBuiltinMap Plutarch.Api.V1.PValidatorHash Plutarch.Api.V1.PDatumHash))
           effects = punsafeCoerce datum.effects
 
           atLeastOneNegativeResult :: Term _ PBool
@@ -224,4 +204,5 @@ proposalDatumValid =
         (#&&)
         [ ptraceIfFalse "Proposal has at least one ResultTag has no effects" atLeastOneNegativeResult
         , ptraceIfFalse "Proposal has at least one cosigner" $ pnotNull # pfromData datum.cosigners
+        , ptraceIfFalse "Proposal has at most five cosigners" $ plength # (pfromData datum.cosigners) #< 6
         ]

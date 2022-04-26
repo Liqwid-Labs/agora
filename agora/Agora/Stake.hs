@@ -18,6 +18,7 @@ module Agora.Stake (
   stakePolicy,
   stakeValidator,
   stakeLocked,
+  findStakeOwnedBy,
 ) where
 
 --------------------------------------------------------------------------------
@@ -35,11 +36,17 @@ import PlutusTx qualified
 
 import Plutarch.Api.V1 (
   PCredential (PPubKeyCredential, PScriptCredential),
+  PDatum,
+  PDatumHash,
+  PMaybeData (PDJust, PDNothing),
   PMintingPolicy,
   PPubKeyHash,
   PScriptPurpose (PMinting, PSpending),
   PTokenName,
+  PTuple,
+  PTxInInfo (PTxInInfo),
   PTxInfo,
+  PTxOut (PTxOut),
   PValidator,
   mintingPolicySymbol,
   mkMintingPolicy,
@@ -63,6 +70,7 @@ import Agora.Utils (
   anyOutput,
   paddValue,
   passert,
+  pfindDatum,
   pfindTxInByTxOutRef,
   pgeqByClass,
   pgeqByClass',
@@ -74,7 +82,7 @@ import Agora.Utils (
   ptxSignedBy,
   pvalueSpent,
  )
-import Plutarch.Api.V1.Extra (passetClass)
+import Plutarch.Api.V1.Extra (PAssetClass, passetClass, passetClassValueOf)
 import Plutarch.Numeric
 import Plutarch.SafeMoney (
   PDiscrete,
@@ -278,7 +286,7 @@ stakePolicy gtClassRef =
     txInfo <- plet $ ctx.txInfo
     let _a :: Term _ PTxInfo
         _a = txInfo
-    txInfoF <- pletFields @'["mint", "inputs", "outputs"] txInfo
+    txInfoF <- pletFields @'["mint", "inputs", "outputs", "signatories"] txInfo
 
     PMinting ownSymbol' <- pmatch $ pfromData ctx.purpose
     ownSymbol <- plet $ pfield @"_0" # ownSymbol'
@@ -337,7 +345,7 @@ stakePolicy gtClassRef =
                             # stValue
                     let ownerSignsTransaction =
                           ptxSignedBy
-                            # ctx.txInfo
+                            # txInfoF.signatories
                             # stakeDatum.owner
 
                     -- TODO: This is quite inefficient now, as it does two lookups
@@ -371,7 +379,7 @@ stakeValidator stake =
   plam $ \datum redeemer ctx' -> P.do
     ctx <- pletFields @'["txInfo", "purpose"] ctx'
     txInfo <- plet $ pfromData ctx.txInfo
-    txInfoF <- pletFields @'["mint", "inputs", "outputs"] txInfo
+    txInfoF <- pletFields @'["mint", "inputs", "outputs", "signatories"] txInfo
 
     (pfromData -> stakeRedeemer, _) <- ptryFrom redeemer
 
@@ -387,7 +395,7 @@ stakeValidator stake =
     let continuingValue = pfield @"value" #$ pfield @"resolved" # txInInfo
 
     -- Whether the owner signs this transaction or not.
-    ownerSignsTransaction <- plet $ ptxSignedBy # ctx.txInfo # stakeDatum.owner
+    ownerSignsTransaction <- plet $ ptxSignedBy # txInfoF.signatories # stakeDatum.owner
 
     stCurrencySymbol <- plet $ pconstant $ mintingPolicySymbol $ mkMintingPolicy (stakePolicy stake.gtClassRef)
     mintedST <- plet $ psymbolValueOf # stCurrencySymbol # txInfoF.mint
@@ -514,3 +522,60 @@ stakeLocked = phoistAcyclic $
     let locks :: Term _ (PBuiltinList (PAsData PProposalLock))
         locks = pfield @"lockedBy" # stakeDatum
      in pnotNull # locks
+
+-- | Find a stake owned by a particular PK.
+findStakeOwnedBy ::
+  Term
+    s
+    ( PAssetClass
+        :--> PPubKeyHash
+        :--> PBuiltinList (PAsData (PTuple PDatumHash PDatum))
+        :--> PBuiltinList (PAsData PTxInInfo)
+        :--> PMaybe PTxOut
+    )
+findStakeOwnedBy = phoistAcyclic $
+  plam $ \ac pk datums inputs ->
+    pmatch (pfind # (isInputStakeOwnedBy # ac # pk # datums) # inputs) $ \case
+      PNothing -> pcon PNothing
+      PJust (pfromData -> v) -> P.do
+        let txOut = pfield @"resolved" # pto v
+        txOutF <- pletFields @'["datumHash"] $ txOut
+        pmatch txOutF.datumHash $ \case
+          PDNothing _ -> pcon PNothing
+          PDJust ((pfield @"_0" #) -> dh) ->
+            -- TODO: PTryFrom here
+            punsafeCoerce $ pfindDatum # dh # datums
+
+stakeDatumOwnedBy :: Term _ (PPubKeyHash :--> PStakeDatum :--> PBool)
+stakeDatumOwnedBy =
+  phoistAcyclic $
+    plam $ \pk stakeDatum -> P.do
+      stakeDatumF <- pletFields @'["owner"] $ pto stakeDatum
+      stakeDatumF.owner #== pdata pk
+
+-- Does the input have a `Stake` owned by a particular PK?
+isInputStakeOwnedBy ::
+  Term
+    _
+    ( PAssetClass :--> PPubKeyHash
+        :--> PBuiltinList (PAsData (PTuple PDatumHash PDatum))
+        :--> PAsData PTxInInfo
+        :--> PBool
+    )
+isInputStakeOwnedBy =
+  plam $ \ac ss datums txInInfo' -> P.do
+    PTxInInfo ((pfield @"resolved" #) -> txOut) <- pmatch $ pfromData txInInfo'
+    PTxOut txOut' <- pmatch txOut
+    txOutF <- pletFields @'["value", "datumHash"] txOut'
+    outStakeST <- plet $ passetClassValueOf # txOutF.value # ac
+    pmatch txOutF.datumHash $ \case
+      PDNothing _ -> pcon PFalse
+      PDJust ((pfield @"_0" #) -> datumHash) ->
+        pif
+          (outStakeST #== 1)
+          -- TODO: use 'ptryFindDatum' instead in the future
+          ( pmatch (pfindDatum # datumHash # datums) $ \case
+              PNothing -> pcon PFalse
+              PJust v -> stakeDatumOwnedBy # ss # pfromData (punsafeCoerce v)
+          )
+          (pcon PFalse)
