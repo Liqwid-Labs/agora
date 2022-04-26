@@ -526,12 +526,8 @@ getMintingPolicySymbol v = mintingPolicySymbol $ mkMintingPolicy v
 
 -- | The entire value only contains one token of the specific assetclass.
 hasOnlyOneTokenOfAssetClass' :: AssetClass -> Term s (PValue :--> PBool)
-hasOnlyOneTokenOfAssetClass' ac@(AssetClass (as, _)) = phoistAcyclic $
-  plam $ \vs -> P.do
-    let ps = pconstant as
-
-    hasOnlyOneTokenOfCurrencySymbol # ps # vs
-      #&& passetClassValueOf' ac # vs #== 1
+hasOnlyOneTokenOfAssetClass' ac = phoistAcyclic $
+  plam $ \vs -> passetClassValueOf' ac # vs #== 1
 
 -- | The entire value only contains one token of the specific currency symbol.
 hasOnlyOneTokenOfCurrencySymbol :: Term s (PCurrencySymbol :--> PValue :--> PBool)
