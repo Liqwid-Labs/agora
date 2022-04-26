@@ -120,7 +120,6 @@ import Plutus.V1.Ledger.Api (
  )
 import Plutus.V1.Ledger.Value (
   AssetClass (..),
-  TokenName (..),
  )
 import PlutusTx qualified
 
@@ -176,8 +175,6 @@ PlutusTx.makeIsDataIndexed
 data Governor = Governor
   { gstOutRef :: TxOutRef
   -- ^ Referenced utxo will be spent to mint the GST.
-  , gstName :: TokenName
-  -- ^ Name of the GST token.
   }
 
 --------------------------------------------------------------------------------
@@ -226,7 +223,7 @@ deriving via (DerivePConstantViaData GovernorRedeemer PGovernorRedeemer) instanc
 
     - The UTXO referenced in the parameter is spent in the transaction.
     - Exactly one GST is minted.
-    - Ensure the token name is 'gstName'.
+    - Ensure the token name is empty.
 
   NOTE: It's user's responsibility to make sure the token is sent to the corresponding governor validator.
         We /can't/ really check this in the policy, otherwise we create a cyclic reference issue.
@@ -244,7 +241,7 @@ governorPolicy gov =
 
     passert "Exactly one token should be minted" $
       psymbolValueOf # ownSymbol # mintValue #== 1
-        #&& passetClassValueOf # ownSymbol # pconstant gov.gstName # mintValue #== 1
+        #&& passetClassValueOf # ownSymbol # pconstant "" # mintValue #== 1
 
     popaque (pconstant ())
 
@@ -615,7 +612,7 @@ governorValidator gov =
 
 -- | Get the assetclass of GST from governor parameters.
 gstAssetClass :: Governor -> AssetClass
-gstAssetClass gov = AssetClass (symbol, gov.gstName)
+gstAssetClass gov = AssetClass (symbol, "")
   where
     policy :: MintingPolicy
     policy = mkMintingPolicy $ governorPolicy gov
