@@ -547,12 +547,14 @@ hasOnlyOneTokenOfCurrencySymbol = phoistAcyclic $
 mustFindDatum' ::
   forall (datum :: PType).
   PIsData datum =>
-  forall s. Term s (PMaybeData PDatumHash :--> PTxInfo :--> datum)
+  forall s. Term s (PMaybeData PDatumHash :--> 
+    (PBuiltinList (PAsData (PTuple PDatumHash PDatum))) 
+    :--> datum)
 mustFindDatum' = phoistAcyclic $
-  plam $ \mdh info -> P.do
+  plam $ \mdh datums -> P.do
     PDJust ((pfield @"_0" #) -> dh) <- pmatch mdh
-    PJust dt <- pmatch $ pfindDatum # dh # info
-    pfromData $ punsafeCoerce dt
+    PJust dt <- pmatch $ plookupTuple # dh # datums
+    punsafeCoerce dt
 
 {- | Extract the value stored in a PMaybe container.
      If there's no value, throw an error with the given message.
