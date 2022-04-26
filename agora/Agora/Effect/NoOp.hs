@@ -14,6 +14,7 @@ import Plutarch.Api.V1 (PValidator)
 import Plutarch.TryFrom (PTryFrom (..))
 import Plutus.V1.Ledger.Value (CurrencySymbol)
 
+-- | Dummy datum for NoOp effect.
 newtype PNoOp (s :: S) = PNoOp (Term s PUnit)
   deriving (PlutusType, PIsData) via (DerivePNewtype PNoOp PUnit)
 

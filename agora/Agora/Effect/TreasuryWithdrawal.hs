@@ -40,7 +40,12 @@ import Plutus.V1.Ledger.Credential (Credential)
 import Plutus.V1.Ledger.Value (CurrencySymbol, Value)
 import PlutusTx qualified
 
--- | Datum that encodes behavior of Treasury Withdrawal effect.
+{- | Datum that encodes behavior of Treasury Withdrawal effect.
+
+Note: This Datum acts like a "predefined redeemer". Which is to say that
+it encodes the properties a redeemer would, but is locked in-place until
+spend.
+-}
 data TreasuryWithdrawalDatum = TreasuryWithdrawalDatum
   { receivers :: [(Credential, Value)]
   -- ^ AssocMap for Value sent to each receiver from the treasury.
@@ -51,8 +56,9 @@ data TreasuryWithdrawalDatum = TreasuryWithdrawalDatum
   deriving anyclass (Generic)
 
 PlutusTx.makeLift ''TreasuryWithdrawalDatum
-PlutusTx.unstableMakeIsData ''TreasuryWithdrawalDatum
+PlutusTx.makeIsDataIndexed ''TreasuryWithdrawalDatum [('TreasuryWithdrawalDatum, 0)]
 
+-- | Haskell-level version of 'TreasuryWithdrawalDatum'.
 newtype PTreasuryWithdrawalDatum (s :: S)
   = PTreasuryWithdrawalDatum
       ( Term

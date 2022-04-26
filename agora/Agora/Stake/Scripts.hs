@@ -54,15 +54,16 @@ import Prelude hiding (Num (..))
 
    === For minting:
 
-   - Check that exactly one state thread is minted
-   - Check that an output exists with a state thread and a valid datum
-   - Check that no state thread is an input
-   - assert @'TokenName' == 'ValidatorHash'@ of the script that we pay to
+   - Check that exactly one state thread is minted.
+   - Check that an output exists with a state thread and a valid datum.
+   - Check that no state thread is an input.
+   - assert @'Plutus.V1.Ledger.Api.TokenName' == 'Plutus.V1.Ledger.Api.ValidatorHash'@
+     of the script that we pay to.
 
    === For burning:
 
-   - Check that exactly one state thread is burned
-   - Check that datum at state thread is valid and not locked
+   - Check that exactly one state thread is burned.
+   - Check that datum at state thread is valid and not locked.
 -}
 stakePolicy :: Tagged GTTag AssetClass -> ClosedTerm PMintingPolicy
 stakePolicy gtClassRef =

@@ -27,7 +27,15 @@ module Agora.Proposal.Time (
 import Agora.Record (mkRecordConstr, (.&), (.=))
 import GHC.Generics qualified as GHC
 import Generics.SOP (Generic, I (I))
-import Plutarch.Api.V1 (PExtended (PFinite), PInterval (PInterval), PLowerBound (PLowerBound), PMaybeData (PDJust, PDNothing), PPOSIXTime, PPOSIXTimeRange, PUpperBound (PUpperBound))
+import Plutarch.Api.V1 (
+  PExtended (PFinite),
+  PInterval (PInterval),
+  PLowerBound (PLowerBound),
+  PMaybeData (PDJust, PDNothing),
+  PPOSIXTime,
+  PPOSIXTimeRange,
+  PUpperBound (PUpperBound),
+ )
 import Plutarch.DataRepr (PDataFields, PIsDataReprInstances (..))
 import Plutarch.Monadic qualified as P
 import Plutarch.Numeric (AdditiveSemigroup ((+)))
@@ -74,16 +82,19 @@ newtype ProposalStartingTime = ProposalStartingTime
   deriving newtype (PlutusTx.ToData, PlutusTx.FromData, PlutusTx.UnsafeFromData)
   deriving stock (Eq, Show, GHC.Generic)
 
--- | Configuration of proposal timings.
+{- | Configuration of proposal timings.
+
+ See: https://github.com/Liqwid-Labs/agora/blob/master/docs/tech-design/proposals.md#when-may-interactions-occur
+-}
 data ProposalTimingConfig = ProposalTimingConfig
   { draftTime :: POSIXTime
-  -- ^ `D`: the length of the draft period.
+  -- ^ "D": the length of the draft period.
   , votingTime :: POSIXTime
-  -- ^ `V`: the length of the voting period.
+  -- ^ "V": the length of the voting period.
   , lockingTime :: POSIXTime
-  -- ^ `L`: the length of the locking period.
+  -- ^ "L": the length of the locking period.
   , executingTime :: POSIXTime
-  -- ^ `E`: the length of the execution period.
+  -- ^ "E": the length of the execution period.
   }
   deriving stock (Eq, Show, GHC.Generic)
 
@@ -139,7 +150,7 @@ newtype PProposalTimingConfig (s :: S) = PProposalTimingConfig
 instance AdditiveSemigroup (Term s PPOSIXTime) where
   (punsafeCoerce @_ @_ @PInteger -> x) + (punsafeCoerce @_ @_ @PInteger -> y) = punsafeCoerce $ x + y
 
--- | Get the current proposal time, from the 'txInfoValidRange' field.
+-- | Get the current proposal time, from the 'Plutus.V1.Ledger.Api.txInfoValidRange' field.
 currentProposalTime :: forall (s :: S). Term s (PPOSIXTimeRange :--> PProposalTime)
 currentProposalTime = phoistAcyclic $
   plam $ \iv -> P.do

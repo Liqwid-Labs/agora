@@ -29,8 +29,10 @@ import PlutusTx qualified
 
 --------------------------------------------------------------------------------
 
+-- | Redeemer for Treasury actions.
 data TreasuryRedeemer
-  = SpendTreasuryGAT
+  = -- | Allow transaction to pass by delegating to GAT burn.
+    SpendTreasuryGAT
   deriving stock (Eq, Show, GHC.Generic)
 
 PlutusTx.makeIsDataIndexed

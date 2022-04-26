@@ -60,7 +60,8 @@ mkRecordConstr ::
   forall (r :: [PLabeledType]) (s :: S) (pt :: PType).
   PlutusType pt =>
   -- | The constructor. This is just the Haskell-level constructor for the type.
-  --   For 'PMaybeData', this could be 'PDJust', or 'PNothing'.
+  --   For 'Plutarch.Api.V1.Maybe.PMaybeData', this would
+  --   be 'Plutarch.Api.V1.Maybe.PDJust', or 'Plutarch.Api.V1.Maybe.PNothing'.
   (forall s'. Term s' (PDataRecord r) -> pt s') ->
   -- | The morphism that builds the record.
   RecordMorphism s '[] r ->
@@ -87,7 +88,7 @@ infix 7 .=
   --   @#hello ~ 'FieldName' "hello"@
   FieldName sym ->
   -- | The value at that field. This must be 'PAsData', because the underlying
-  --   type is @'Constr' 'Integer' ['Data']@.
+  --   type is @'PlutusCore.Data.Constr' 'Integer' ['PlutusCore.Data.Data']@.
   Term s (PAsData a) ->
   RecordMorphism s as ((sym ':= a) ': as)
 _ .= x = RecordMorphism $ pcon . PDCons x

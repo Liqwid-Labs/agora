@@ -109,7 +109,7 @@ data ProposalStatus
     --   the proposal failed due to time constraints or didn't
     --   get to 'VotingReady' first.
     --
-    --   At this stage, the 'votes' field of 'ProposalState' is frozen.
+    --   At this stage, the 'votes' field of 'ProposalDatum' is frozen.
     --
     --   See 'AdvanceProposal' for documentation on state transitions.
     --
@@ -186,7 +186,7 @@ data ProposalRedeemer
     --   Must be signed by those cosigning.
     --
     --   This is particularly used in the 'Draft' 'ProposalStatus',
-    --   where matching 'Stake's can be called to advance the proposal,
+    --   where matching 'Agora.Stake.Stake's can be called to advance the proposal,
     --   provided enough GT is shared  among them.
     Cosign [PubKeyHash]
   | -- | Allow unlocking one or more stakes with votes towards particular 'ResultTag'.
@@ -351,7 +351,7 @@ newtype PProposalDatum (s :: S) = PProposalDatum
 instance PUnsafeLiftDecl PProposalDatum where type PLifted PProposalDatum = ProposalDatum
 deriving via (DerivePConstantViaData ProposalDatum PProposalDatum) instance (PConstantDecl ProposalDatum)
 
--- | Haskell-level redeemer for Proposal scripts.
+-- | Plutarch-level version of 'ProposalRedeemer'.
 data PProposalRedeemer (s :: S)
   = PVote (Term s (PDataRecord '["resultTag" ':= PResultTag]))
   | PCosign (Term s (PDataRecord '["newCosigners" ':= PBuiltinList (PAsData PPubKeyHash)]))

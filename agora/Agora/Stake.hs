@@ -127,14 +127,14 @@ data StakeRedeemer
   | -- | Destroy a stake, retrieving its LQ, the minimum ADA and any other assets.
     --   Stake must be unlocked.
     Destroy
-  | -- | Permit a Vote to be added onto a 'Proposal'.
+  | -- | Permit a Vote to be added onto a 'Agora.Proposal.Proposal'.
     --   This also adds a lock to the 'lockedBy' field. See 'ProposalLock'.
     --   This needs to be done in sync with casting a vote, otherwise
     --   it's possible for a lock to be permanently placed on the stake,
     --   and then the funds are lost.
     PermitVote ProposalLock
   | -- | Retract a vote, removing it from the 'lockedBy' field. See 'ProposalLock'.
-    --   This action checks for permission of the 'Proposal'. Finished proposals are
+    --   This action checks for permission of the 'Agora.Proposal.Proposal'. Finished proposals are
     --   always allowed to have votes retracted and won't affect the Proposal datum,
     --   allowing 'Stake's to be unlocked.
     RetractVotes [ProposalLock]
@@ -156,7 +156,7 @@ PlutusTx.makeIsDataIndexed
 data StakeDatum = StakeDatum
   { stakedAmount :: Tagged GTTag Integer
   -- ^ Tracks the amount of governance token staked in the datum.
-  -- This also acts as the voting weight for 'Proposal's.
+  -- This also acts as the voting weight for 'Agora.Proposal.Proposal's.
   , owner :: PubKeyHash
   -- ^ The hash of the public key this stake belongs to.
   --
@@ -218,6 +218,7 @@ deriving via
 instance PUnsafeLiftDecl PStakeRedeemer where type PLifted PStakeRedeemer = StakeRedeemer
 deriving via (DerivePConstantViaData StakeRedeemer PStakeRedeemer) instance (PConstantDecl StakeRedeemer)
 
+-- | Plutarch-level version of 'ProposalLock'.
 newtype PProposalLock (s :: S) = PProposalLock
   { getProposalLock ::
     Term
