@@ -341,18 +341,18 @@ governorValidator gov =
     let oldParams' = pfromData @PGovernorDatum $ punsafeCoerce datum'
     oldParams <- pletFields @'["proposalThresholds", "nextProposalId"] oldParams'
 
-    let ownInputDatumNFTAmount = stateTokenValueOf # ownInput.value
+    let ownInputGSTAmount = stateTokenValueOf # ownInput.value
     passert "Own input should have exactly one state token" $
-      ownInputDatumNFTAmount #== 1
+      ownInputGSTAmount #== 1
 
     ownOutputs <- plet $ findOutputsToAddress # txInfo' # selfAddress
     passert "Exactly one utxo should be sent to the governor" $
       plength # ownOutputs #== 1
 
     ownOutput <- pletFields @'["value", "datumHash"] $ phead # ownOutputs
-    let ownOuputDatumNFTAmount = stateTokenValueOf # ownOutput.value
+    let ownOuputGSTAmount = stateTokenValueOf # ownOutput.value
     passert "State token should stay at governor's address" $
-      ownOuputDatumNFTAmount #== 1
+      ownOuputGSTAmount #== 1
     passert "Output utxo to governor should have datum" $
       pisDJust # ownOutput.datumHash
 
@@ -400,23 +400,23 @@ governorValidator gov =
         passert "Proposal datum must be valid" $
           proposalDatumValid # outputProposalDatum'
 
-        proposalDatum <-
+        outputProposalDatum <-
           pletFields
             @'["id", "status", "cosigners", "thresholds", "votes"]
             outputProposalDatum'
 
         passert "Invalid proposal id in proposal datum" $
-          proposalDatum.id #== oldParams.nextProposalId
+          outputProposalDatum.id #== oldParams.nextProposalId
 
         passert "Invalid thresholds in proposal datum" $
-          proposalDatum.thresholds #== oldParams.proposalThresholds
+          outputProposalDatum.thresholds #== oldParams.proposalThresholds
 
         passert "Initial proposal votes should be empty" $
-          pnull #$ pto $ pto $ pfromData proposalDatum.votes
+          pnull #$ pto $ pto $ pfromData outputProposalDatum.votes
 
         -- TODO: should we check cosigners here?
 
-        passert "Proposal state should be draft" $ proposalDatum.status #== pconstantData Draft
+        passert "Proposal state should be draft" $ outputProposalDatum.status #== pconstantData Draft
 
         popaque $ pconstant ()
       PMintGATs _ -> P.do
@@ -476,7 +476,7 @@ governorValidator gov =
         passert "Proposal must be in executable state in order to execute effects" $ 
           inputProposalDatum.status #== pconstantData Executable 
 
-        let expectedOutputDatum =
+        let expectedOutputProposalDatum =
               pforgetData $
                 pdata $
                   pcon $
@@ -489,7 +489,7 @@ governorValidator gov =
                         #$ pdcons @"votes" # inputProposalDatum.votes # pdnil
 
         passert "Unexpected output proposal datum" $
-          pforgetData (pdata outputProposalDatum') #== expectedOutputDatum
+          pforgetData (pdata outputProposalDatum') #== expectedOutputProposalDatum
 
         -- TODO: anything else to check here?
 
@@ -535,7 +535,7 @@ governorValidator gov =
               # phoistAcyclic
                 ( plam
                     ( \((pfield @"value" #) -> value) ->
-                        0 #< psymbolValueOf # pgatSym # value
+                        0 #< psymbolValueOf # pgatSymbol # value
                     )
                 )
               # pfromData txInfo.outputs
@@ -561,7 +561,7 @@ governorValidator gov =
                             mustBePJust # "Receiver is not in the effect list"
                               #$ plookup # scriptHash # effects
 
-                      passert "GAT must be tagged by the effect hash" $ authorityTokensValidIn # pgatSym # output'
+                      passert "GAT must be tagged by the effect hash" $ authorityTokensValidIn # pgatSymbol # output'
                       passert "Unexpected datum" $ datumHash #== expectedDatumHash
                       pconstant ()
                   )
@@ -574,13 +574,13 @@ governorValidator gov =
             # pconstant ()
             # outputsWithGAT
       PMutateGovernor _ -> P.do
-        popaque $ singleAuthorityTokenBurned pgatSym ctx.txInfo txInfo.mint
+        popaque $ singleAuthorityTokenBurned pgatSymbol ctx.txInfo txInfo.mint
   where
     stateTokenAssetClass :: AssetClass
     stateTokenAssetClass = gstAssetClass gov
 
-    proposalDatum :: Proposal
-    proposalDatum =
+    proposalParameters :: Proposal
+    proposalParameters =
       Proposal
         { governorSTAssetClass = stateTokenAssetClass
         }
@@ -588,7 +588,7 @@ governorValidator gov =
     proposalSymbol :: CurrencySymbol
     proposalSymbol = mintingPolicySymbol policy
       where
-        policy = mkMintingPolicy $ proposalPolicy proposalDatum
+        policy = mkMintingPolicy $ proposalPolicy proposalParameters
 
     pproposalSymbol :: Term s PCurrencySymbol
     pproposalSymbol = phoistAcyclic $ pconstant proposalSymbol
@@ -597,7 +597,7 @@ governorValidator gov =
     proposalValidatorAddress = Address (ScriptCredential hash) Nothing
       where
         hash = validatorHash validator
-        validator = mkValidator $ proposalValidator proposalDatum
+        validator = mkValidator $ proposalValidator proposalParameters
 
     pproposalValidatorAddress :: Term s PAddress
     pproposalValidatorAddress = phoistAcyclic $ pconstant proposalValidatorAddress
@@ -605,8 +605,8 @@ governorValidator gov =
     stateTokenValueOf :: Term s (PValue :--> PInteger)
     stateTokenValueOf = passetClassValueOf' stateTokenAssetClass
 
-    pgatSym :: Term s PCurrencySymbol
-    pgatSym = phoistAcyclic $ pconstant $ gatSymbol gov
+    pgatSymbol :: Term s PCurrencySymbol
+    pgatSymbol = phoistAcyclic $ pconstant $ gatSymbol gov
 
 --------------------------------------------------------------------------------
 
