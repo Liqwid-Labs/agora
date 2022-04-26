@@ -22,6 +22,9 @@ module Agora.Proposal.Time (
   -- * Compute ranges given config and starting time.
   currentProposalTime,
   isDraftRange,
+  isVotingRange,
+  isLockingRange,
+  isExecutionRange,
 ) where
 
 import Agora.Record (mkRecordConstr, (.&), (.=))
@@ -196,3 +199,24 @@ isDraftRange :: forall (s :: S). Term s (PProposalTimingConfig :--> PProposalSta
 isDraftRange = phoistAcyclic $
   plam $ \config s' -> pmatch s' $ \(PProposalStartingTime s) ->
     proposalTimeWithin # s # (s + pfield @"draftTime" # config)
+
+-- | True if the 'PProposalTime' is in the voting period.
+isVotingRange :: forall (s :: S). Term s (PProposalTimingConfig :--> PProposalStartingTime :--> PProposalTime :--> PBool)
+isVotingRange = phoistAcyclic $
+  plam $ \config s' -> pmatch s' $ \(PProposalStartingTime s) ->
+    pletFields @'["draftTime", "votingTime"] config $ \f ->
+      proposalTimeWithin # s # (s + f.draftTime + f.votingTime)
+
+-- | True if the 'PProposalTime' is in the locking period.
+isLockingRange :: forall (s :: S). Term s (PProposalTimingConfig :--> PProposalStartingTime :--> PProposalTime :--> PBool)
+isLockingRange = phoistAcyclic $
+  plam $ \config s' -> pmatch s' $ \(PProposalStartingTime s) ->
+    pletFields @'["draftTime", "votingTime", "lockingTime"] config $ \f ->
+      proposalTimeWithin # s # (s + f.draftTime + f.votingTime + f.lockingTime)
+
+-- | True if the 'PProposalTime' is in the execution period.
+isExecutionRange :: forall (s :: S). Term s (PProposalTimingConfig :--> PProposalStartingTime :--> PProposalTime :--> PBool)
+isExecutionRange = phoistAcyclic $
+  plam $ \config s' -> pmatch s' $ \(PProposalStartingTime s) ->
+    pletFields @'["draftTime", "votingTime", "lockingTime", "executingTime"] config $ \f ->
+      proposalTimeWithin # s # (s + f.draftTime + f.votingTime + f.lockingTime + f.executingTime)

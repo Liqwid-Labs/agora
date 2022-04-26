@@ -252,8 +252,8 @@ instance PTryFrom PData (PAsData PResultTag) where
   ptryFrom' d k =
     ptryFrom' @_ @(PAsData PInteger) d $
       -- JUSTIFICATION:
-      -- We are coercing from @PAsData underlying@ to @PAsData (PTagged tag underlying)@.
-      -- Since 'PTagged' is a simple newtype, their shape is the same.
+      -- We are coercing from @PAsData PInteger@ to @PAsData PResultTag@.
+      -- Since 'PResultTag' is a simple newtype, their shape is the same.
       k . first punsafeCoerce
 
 -- | Plutarch-level version of 'PProposalId'.
@@ -265,8 +265,8 @@ instance PTryFrom PData (PAsData PProposalId) where
   ptryFrom' d k =
     ptryFrom' @_ @(PAsData PInteger) d $
       -- JUSTIFICATION:
-      -- We are coercing from @PAsData underlying@ to @PAsData (PTagged tag underlying)@.
-      -- Since 'PTagged' is a simple newtype, their shape is the same.
+      -- We are coercing from @PAsData PInteger@ to @PAsData PProposalId@.
+      -- Since 'PProposalId' is a simple newtype, their shape is the same.
       k . first punsafeCoerce
 
 instance PUnsafeLiftDecl PProposalId where type PLifted PProposalId = ProposalId
