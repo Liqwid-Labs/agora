@@ -410,14 +410,13 @@ governorValidator gov =
         inputsFromStakeValidatorWithStateToken <-
           plet $
             pfilter
-              # ( phoistAcyclic $
-                    plam
-                      ( \((pfield @"resolved" #) -> txOut') -> P.do
-                          txOut <- pletFields @'["address", "value"] txOut'
+              # phoistAcyclic
+                ( plam $
+                    \((pfield @"resolved" #) -> txOut') -> P.do
+                      txOut <- pletFields @'["address", "value"] txOut'
 
-                          txOut.address #== pdata pstakeValidatorAddress
-                            #&& psymbolValueOf # pstakeStateSymbol # txOut.value #== 1
-                      )
+                      txOut.address #== pdata pstakeValidatorAddress
+                        #&& psymbolValueOf # pstakeStateSymbol # txOut.value #== 1
                 )
               # pfromData txInfo.inputs
 
@@ -449,14 +448,13 @@ governorValidator gov =
         outputsToProposalValidatorWithStateToken <-
           plet $
             pfilter
-              # ( phoistAcyclic $
-                    plam
-                      ( \txOut' -> P.do
-                          txOut <- pletFields @'["address", "value"] txOut'
+              # phoistAcyclic
+                ( plam $
+                    \txOut' -> P.do
+                      txOut <- pletFields @'["address", "value"] txOut'
 
-                          txOut.address #== pdata pproposalValidatorAddress
-                            #&& psymbolValueOf # pproposalSymbol # txOut.value #== 1
-                      )
+                      txOut.address #== pdata pproposalValidatorAddress
+                        #&& psymbolValueOf # pproposalSymbol # txOut.value #== 1
                 )
               # pfromData txInfo.outputs
 
@@ -507,14 +505,13 @@ governorValidator gov =
         outputToStakeValidatorWithStateToken <-
           plet $
             pfilter
-              # ( phoistAcyclic $
-                    plam
-                      ( \(txOut') -> P.do
-                          txOut <- pletFields @'["address", "value"] txOut'
+              # phoistAcyclic
+                ( plam $
+                    \txOut' -> P.do
+                      txOut <- pletFields @'["address", "value"] txOut'
 
-                          txOut.address #== pdata pstakeValidatorAddress
-                            #&& psymbolValueOf # pstakeStateSymbol # txOut.value #== 1
-                      )
+                      txOut.address #== pdata pstakeValidatorAddress
+                        #&& psymbolValueOf # pstakeStateSymbol # txOut.value #== 1
                 )
               # pfromData txInfo.outputs
 
@@ -654,7 +651,7 @@ governorValidator gov =
             votesList = pto $ pto $ pfromData inputProposalDatum.votes
 
             winner' =
-              pfoldr # highestVoteFolder # (pcon PNothing) # votesList
+              pfoldr # highestVoteFolder # pcon PNothing # votesList
 
         winner <- plet $ mustBePJust # "Empty votes" # winner'
 

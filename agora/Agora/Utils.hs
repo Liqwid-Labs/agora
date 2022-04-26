@@ -530,7 +530,7 @@ hasOnlyOneTokenOfAssetClass' ac@(AssetClass (as, _)) = phoistAcyclic $
   plam $ \vs -> P.do
     let ps = pconstant as
 
-    hasOnlyOneTokenOfCurrencySymbol # ps # vs 
+    hasOnlyOneTokenOfCurrencySymbol # ps # vs
       #&& passetClassValueOf' ac # vs #== 1
 
 -- | The entire value only contains one token of the specific currency symbol.
@@ -547,9 +547,13 @@ hasOnlyOneTokenOfCurrencySymbol = phoistAcyclic $
 mustFindDatum' ::
   forall (datum :: PType).
   PIsData datum =>
-  forall s. Term s (PMaybeData PDatumHash :--> 
-    (PBuiltinList (PAsData (PTuple PDatumHash PDatum))) 
-    :--> datum)
+  forall s.
+  Term
+    s
+    ( PMaybeData PDatumHash
+        :--> (PBuiltinList (PAsData (PTuple PDatumHash PDatum)))
+        :--> datum
+    )
 mustFindDatum' = phoistAcyclic $
   plam $ \mdh datums -> P.do
     PDJust ((pfield @"_0" #) -> dh) <- pmatch mdh
