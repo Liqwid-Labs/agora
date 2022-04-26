@@ -1,3 +1,10 @@
+{- |
+Module     : Agora.Proposal.Scripts
+Maintainer : emi@haskell.fyi
+Description: Plutus Scripts for Proposals.
+
+Plutus Scripts for Proposals.
+-}
 module Agora.Proposal.Scripts (
   proposalValidator,
   proposalPolicy,

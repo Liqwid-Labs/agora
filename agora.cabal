@@ -134,6 +134,7 @@ library
     Agora.Record
     Agora.SafeMoney
     Agora.Stake
+    Agora.Stake.Scripts
     Agora.Treasury
 
   other-modules:

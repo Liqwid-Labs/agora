@@ -40,10 +40,13 @@ import Agora.Governor (
 import Agora.Proposal (
   Proposal (..),
   ProposalThresholds (..),
+ )
+import Agora.Proposal.Scripts (
   proposalPolicy,
   proposalValidator,
  )
-import Agora.Stake (Stake (..), stakePolicy, stakeValidator)
+import Agora.Stake (Stake (..))
+import Agora.Stake.Scripts (stakePolicy, stakeValidator)
 import Plutarch.Api.V1 (
   mintingPolicySymbol,
   mkMintingPolicy,

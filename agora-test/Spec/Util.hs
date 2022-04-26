@@ -90,7 +90,6 @@ policyFailsWith tag policy redeemer scriptContext =
 -- | Check that a validator script succeeds, given a name and arguments.
 validatorSucceedsWith ::
   ( PLift datum
-  , Show (PLifted datum)
   , PlutusTx.ToData (PLifted datum)
   , PLift redeemer
   , PlutusTx.ToData (PLifted redeemer)

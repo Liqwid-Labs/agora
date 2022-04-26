@@ -36,6 +36,7 @@ module Agora.Utils (
   scriptHashFromAddress,
   findOutputsToAddress,
   findTxOutDatum,
+  validatorHashToTokenName,
 ) where
 
 --------------------------------------------------------------------------------
@@ -53,7 +54,7 @@ import Plutarch.Api.V1 (
   PMap,
   PMaybeData (PDJust),
   PPubKeyHash,
-  PTokenName,
+  PTokenName (PTokenName),
   PTuple,
   PTxInInfo (PTxInInfo),
   PTxInfo,
@@ -430,3 +431,6 @@ findTxOutDatum = phoistAcyclic $
     case datumHash' of
       PDJust ((pfield @"_0" #) -> datumHash) -> pfindDatum # datumHash # datums
       _ -> pcon PNothing
+
+validatorHashToTokenName :: forall (s :: S). Term s PValidatorHash -> Term s PTokenName
+validatorHashToTokenName vh = pcon (PTokenName (pto vh))

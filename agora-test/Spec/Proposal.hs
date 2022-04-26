@@ -21,13 +21,16 @@ import Agora.Proposal (
   cosigners,
   effects,
   proposalId,
-  proposalPolicy,
-  proposalValidator,
   status,
   thresholds,
   votes,
  )
-import Agora.Stake (StakeDatum (StakeDatum), StakeRedeemer (WitnessStake), stakeValidator)
+import Agora.Proposal.Scripts (
+  proposalPolicy,
+  proposalValidator,
+ )
+import Agora.Stake (StakeDatum (StakeDatum), StakeRedeemer (WitnessStake))
+import Agora.Stake.Scripts (stakeValidator)
 import Plutarch.SafeMoney (Tagged (Tagged))
 import Plutus.V1.Ledger.Api (ScriptContext (..), ScriptPurpose (..))
 import PlutusTx.AssocMap qualified as AssocMap
@@ -36,10 +39,6 @@ import Spec.Sample.Shared (signer, signer2)
 import Spec.Sample.Shared qualified as Shared
 import Spec.Util (policySucceedsWith, validatorSucceedsWith)
 import Test.Tasty (TestTree, testGroup)
-
---------------------------------------------------------------------------------
-
---------------------------------------------------------------------------------
 
 --------------------------------------------------------------------------------
 

@@ -46,6 +46,7 @@ import Plutus.V1.Ledger.Value qualified as Value
 
 import Agora.SafeMoney (GTTag)
 import Agora.Stake
+import Agora.Stake.Scripts (stakeValidator)
 import Plutarch.SafeMoney
 import Spec.Sample.Shared
 import Spec.Util (datumPair, toDatumHash)

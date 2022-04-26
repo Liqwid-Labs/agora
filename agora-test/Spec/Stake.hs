@@ -19,7 +19,8 @@ import Test.Tasty (TestTree, testGroup)
 
 --------------------------------------------------------------------------------
 
-import Agora.Stake (Stake (..), StakeDatum (StakeDatum), StakeRedeemer (DepositWithdraw), stakePolicy, stakeValidator)
+import Agora.Stake (Stake (..), StakeDatum (StakeDatum), StakeRedeemer (DepositWithdraw))
+import Agora.Stake.Scripts (stakePolicy, stakeValidator)
 
 --------------------------------------------------------------------------------
 

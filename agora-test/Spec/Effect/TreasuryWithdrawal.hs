@@ -7,6 +7,11 @@ This module tests the Treasury Withdrawal Effect.
 -}
 module Spec.Effect.TreasuryWithdrawal (tests) where
 
+import Agora.Effect.TreasuryWithdrawal (
+  TreasuryWithdrawalDatum (TreasuryWithdrawalDatum),
+  treasuryWithdrawalValidator,
+ )
+import Plutus.V1.Ledger.Value qualified as Value
 import Spec.Sample.Effect.TreasuryWithdrawal (
   buildReceiversOutputFromDatum,
   buildScriptContext,
@@ -20,15 +25,7 @@ import Spec.Sample.Effect.TreasuryWithdrawal (
   treasuries,
   users,
  )
-
-import Agora.Effect.TreasuryWithdrawal (
-  TreasuryWithdrawalDatum (TreasuryWithdrawalDatum),
-  treasuryWithdrawalValidator,
- )
-
-import Plutus.V1.Ledger.Value qualified as Value
 import Spec.Util (effectFailsWith, effectSucceedsWith)
-
 import Test.Tasty (TestTree, testGroup)
 
 tests :: [TestTree]
