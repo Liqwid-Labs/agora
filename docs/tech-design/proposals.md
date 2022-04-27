@@ -35,9 +35,9 @@ Initiating a proposal requires the proposer to have more than a certain amount o
 
 ### Voting stages
 
-The life-cycle of a proposal is neatly represented by a state machine, with the 'draft' phase being the initial state, and 'executed' and 'failed' being the terminating states.
+The life-cycle of a proposal is neatly represented by a state machine, with the 'draft' state being the initial state, and 'executed' and 'failed' being the terminating states.
 
-**Please note that this state-machine representation is purely conceptual and should not be expected to reflect technical implementation.** This is because some state transitions in the state machine representation don't need to happen in the actual implementation as a transaction. A key example is going from the "lock" phase to the "execution" phase. The only thing that needs to happen is that time goes by. So under the hood, they are represented the same in the Proposal's datum.
+**Please note that this state-machine representation is purely conceptual and should not be expected to reflect technical implementation.** This is because some state transitions in the state machine representation don't need to happen in the actual implementation as a transaction. A key example is going from the "lock" phase to the "execution" phase. The only thing that needs to happen is that time goes by. So under the hood, they are represented the same in the Proposal's datum. Furthermore, in order to make our wording consistent, we use _"period"_ to mean a time-based, and _"status"_ to mean what is encoded in the datum. "State", then, refers to the more vague notion of what the state machine would look like.
 
 > Emily 2022-04-27: This is quite confusing still, I feel. @Jack, could you try to reword this and make it more clear?
 
@@ -54,21 +54,21 @@ Consider the following 'stages' of a proposal:
 -   `L`: the length of the locking period.
 -   `E`: the length of the execution period.
 
-| Action                              | Valid POSIXTimeRange                | Valid _stored_ state(s) |
-|-------------------------------------|-------------------------------------|-------------------------|
-| Witness                             | \[S, ∞)                             | \*                      |
-| Cosign                              | \[S, S + D)                         | Draft                   |
-| AdvanceProposal                     | \[S, S + D)                         | Draft                   |
-| Vote                                | \[S + D, S + D + V)                 | Voting                  |
-| Unlock                              | \[S + D, ∞)                         | \*                      |
-| CountVotes                          | \[S + D + V, S + D + V + L)         | Voting                  |
-| ExecuteProposal (if quorum reached) | \[S + D + V + L, S + D + V + L + E) | Voting                  |
+| Action                              | Valid POSIXTimeRange                | Valid _stored_ status(es) |
+|-------------------------------------|-------------------------------------|---------------------------|
+| Witness                             | \[S, ∞)                             | \*                        |
+| Cosign                              | \[S, S + D)                         | Draft                     |
+| AdvanceProposal                     | \[S, S + D)                         | Draft                     |
+| Vote                                | \[S + D, S + D + V)                 | Voting                    |
+| Unlock                              | \[S + D, ∞)                         | \*                        |
+| CountVotes                          | \[S + D + V, S + D + V + L)         | Voting                    |
+| ExecuteProposal (if quorum reached) | \[S + D + V + L, S + D + V + L + E) | Voting                    |
 
 > Jack 2022-02-02: I will consider revising this table further at a later time.
 
 #### Draft phase
 
-During the draft phase, a new UTXO at the proposal script  has been created. At this stage, only votes in favor of co-signing the draft are counted. For the proposal to transition to the voting phase, a threshold of GT will have to be staked backing the proposal. This threshold will be determined on a per-system basis and could itself be a 'governable' parameter. It's important to note that cosignatures are not locking votes. Cosignatures are more like a delegated approval to a proposal. The sum of all cosignatures must tally to the threshold, and all cosigner stake datums must fit into a single transaction to witness their size.
+During the draft phase, a new UTXO at the proposal script  has been created. At this stage, only votes in favor of co-signing the draft are counted. For the proposal to transition to the voting phase, a threshold of GT will have to be staked backing the proposal. This threshold will be determined on a per-system basis and could itself be a 'governable' parameter. It's important to note that cosignatures are not locking votes. Cosignatures are more like a delegated approval to a proposal. The sum of all cosignatures must tally to the threshold, and all cosigner stake datums must fit into a single transaction to witness their size. A limit on the maximum amount of cosigners is placed in order to prevent a situation where the stake datums no longer fit in the transaction. The number doesn't matter and may be expressed in a parametrized way.
 
 #### Voting phase
 

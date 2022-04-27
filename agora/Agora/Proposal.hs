@@ -84,8 +84,10 @@ newtype ResultTag = ResultTag {getResultTag :: Integer}
   deriving stock (Eq, Show, Ord)
   deriving newtype (PlutusTx.ToData, PlutusTx.FromData, PlutusTx.UnsafeFromData)
 
-{- | The "status" of the proposal. This is only useful for state transitions,
-     as opposed to time-based "phases".
+{- | The "status" of the proposal. This is only useful for state transitions that
+     need to happen as a result of a transaction as opposed to time-based "periods".
+
+     See the note on wording & the state machine in the tech-design.
 
      If the proposal is 'VotingReady', for instance, that doesn't necessarily
      mean that voting is possible, as this also requires the timing to be right.
@@ -220,7 +222,7 @@ data ProposalRedeemer
     --   === @* -> 'Finished'@:
     --
     --     If the proposal has run out of time for the current 'ProposalStatus', it will always be possible
-    --     to transition into 'Finished' state, because it has expired (and failed).
+    --     to transition into 'Finished' status, because it has expired (and failed).
     AdvanceProposal
   deriving stock (Eq, Show, GHC.Generic)
 
@@ -236,6 +238,8 @@ PlutusTx.makeIsDataIndexed
 data Proposal = Proposal
   { governorSTAssetClass :: AssetClass
   , stakeSTAssetClass :: AssetClass
+  , maximumCosigners :: Integer
+  -- ^ Arbitrary limit for maximum amount of cosigners on a proposal.
   }
   deriving stock (Show, Eq)
 
@@ -395,11 +399,11 @@ deriving via (DerivePConstantViaData ProposalRedeemer PProposalRedeemer) instanc
 --------------------------------------------------------------------------------
 
 {- | Check for various invariants a proposal must uphold.
-     This can be used to check both upopn creation and
+     This can be used to check both upon creation and
      upon any following state transitions in the proposal.
 -}
-proposalDatumValid :: Term s (Agora.Proposal.PProposalDatum :--> PBool)
-proposalDatumValid =
+proposalDatumValid :: Proposal -> Term s (Agora.Proposal.PProposalDatum :--> PBool)
+proposalDatumValid proposal =
   phoistAcyclic $
     plam $ \datum' -> P.do
       datum <- pletFields @'["effects", "cosigners"] $ datum'
@@ -420,5 +424,5 @@ proposalDatumValid =
         (#&&)
         [ ptraceIfFalse "Proposal has at least one ResultTag has no effects" atLeastOneNegativeResult
         , ptraceIfFalse "Proposal has at least one cosigner" $ pnotNull # pfromData datum.cosigners
-        , ptraceIfFalse "Proposal has at most five cosigners" $ plength # (pfromData datum.cosigners) #< 6
+        , ptraceIfFalse "Proposal has at most five cosigners" $ plength # (pfromData datum.cosigners) #<= pconstant proposal.maximumCosigners
         ]

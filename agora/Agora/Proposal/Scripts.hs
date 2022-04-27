@@ -48,20 +48,20 @@ import Plutus.V1.Ledger.Value (AssetClass (AssetClass))
    NOTE: The governor needs to check that the datum is correct
          and sent to the right address.
 -}
-proposalPolicy :: Agora.Proposal.Proposal -> ClosedTerm Plutarch.Api.V1.PMintingPolicy
+proposalPolicy :: Proposal -> ClosedTerm PMintingPolicy
 proposalPolicy proposal =
   plam $ \_redeemer ctx' -> P.do
-    Plutarch.Api.V1.PScriptContext ctx' <- pmatch ctx'
+    PScriptContext ctx' <- pmatch ctx'
     ctx <- pletFields @'["txInfo", "purpose"] ctx'
-    Plutarch.Api.V1.PTxInfo txInfo' <- pmatch $ pfromData ctx.txInfo
+    PTxInfo txInfo' <- pmatch $ pfromData ctx.txInfo
     txInfo <- pletFields @'["inputs", "mint"] txInfo'
-    Plutarch.Api.V1.PMinting _ownSymbol <- pmatch $ pfromData ctx.purpose
+    PMinting _ownSymbol <- pmatch $ pfromData ctx.purpose
 
     let inputs = txInfo.inputs
         mintedValue = pfromData txInfo.mint
         AssetClass (govCs, govTn) = proposal.governorSTAssetClass
 
-    Plutarch.Api.V1.PMinting ownSymbol' <- pmatch $ pfromData ctx.purpose
+    PMinting ownSymbol' <- pmatch $ pfromData ctx.purpose
     let mintedProposalST = passetClassValueOf # mintedValue # (passetClass # (pfield @"_0" # ownSymbol') # pconstant "")
 
     passert "Governance state-thread token must move" $
@@ -75,15 +75,15 @@ proposalPolicy proposal =
     popaque (pconstant ())
 
 -- | Validator for Proposals.
-proposalValidator :: Agora.Proposal.Proposal -> ClosedTerm Plutarch.Api.V1.PValidator
+proposalValidator :: Proposal -> ClosedTerm PValidator
 proposalValidator proposal =
   plam $ \datum redeemer ctx' -> P.do
-    Plutarch.Api.V1.PScriptContext ctx' <- pmatch ctx'
+    PScriptContext ctx' <- pmatch ctx'
     ctx <- pletFields @'["txInfo", "purpose"] ctx'
     txInfo <- plet $ pfromData ctx.txInfo
-    Plutarch.Api.V1.PTxInfo txInfo' <- pmatch txInfo
+    PTxInfo txInfo' <- pmatch txInfo
     txInfoF <- pletFields @'["inputs", "mint", "datums", "signatories"] txInfo'
-    Plutarch.Api.V1.PSpending ((pfield @"_0" #) -> txOutRef) <- pmatch $ pfromData ctx.purpose
+    PSpending ((pfield @"_0" #) -> txOutRef) <- pmatch $ pfromData ctx.purpose
 
     PJust txOut <- pmatch $ findTxOutByTxOutRef # txOutRef # txInfoF.inputs
     txOutF <- pletFields @'["address", "value"] $ txOut
@@ -114,13 +114,13 @@ proposalValidator proposal =
     signedBy <- plet $ ptxSignedBy # txInfoF.signatories
 
     pmatch proposalRedeemer $ \case
-      Agora.Proposal.PVote _r -> P.do
+      PVote _r -> P.do
         passert "ST at inputs must be 1" $
           spentST #== 1
 
         popaque (pconstant ())
       --------------------------------------------------------------------------
-      Agora.Proposal.PCosign r -> P.do
+      PCosign r -> P.do
         newSigs <- plet $ pfield @"newCosigners" # r
 
         passert "ST at inputs must be 1" $
@@ -143,14 +143,14 @@ proposalValidator proposal =
             # newSigs
 
         passert "Signatures are correctly added to cosignature list" $
-          anyOutput @Agora.Proposal.PProposalDatum # ctx.txInfo
+          anyOutput @PProposalDatum # ctx.txInfo
             #$ plam
             $ \newValue address newProposalDatum -> P.do
               let correctDatum =
                     pdata newProposalDatum
                       #== pdata
                         ( mkRecordConstr
-                            Agora.Proposal.PProposalDatum
+                            PProposalDatum
                             ( #proposalId .= proposalF.proposalId
                                 .& #effects .= proposalF.effects
                                 .& #status .= proposalF.status
@@ -170,13 +170,13 @@ proposalValidator proposal =
 
         popaque (pconstant ())
       --------------------------------------------------------------------------
-      Agora.Proposal.PUnlock _r -> P.do
+      PUnlock _r -> P.do
         passert "ST at inputs must be 1" $
           spentST #== 1
 
         popaque (pconstant ())
       --------------------------------------------------------------------------
-      Agora.Proposal.PAdvanceProposal _r -> P.do
+      PAdvanceProposal _r -> P.do
         passert "ST at inputs must be 1" $
           spentST #== 1
 

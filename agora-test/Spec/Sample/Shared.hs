@@ -107,6 +107,7 @@ proposal =
         Value.assetClass govSymbol ""
     , stakeSTAssetClass =
         Value.assetClass stakeSymbol ""
+    , maximumCosigners = 6
     }
 
 proposalPolicySymbol :: CurrencySymbol
