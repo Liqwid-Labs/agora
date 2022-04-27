@@ -4,7 +4,7 @@ This document gives an overview of the technical design of the proposals system 
 
 | Specification | Implementation | Last revision |
 |:-----------:|:-----------:|:-------------:|
-| WIP         |  WIP        | v0.1 2022-04-11    |
+| WIP         |  WIP        | v0.1 2022-04-27    |
 
 ---
 
@@ -35,7 +35,12 @@ Initiating a proposal requires the proposer to have more than a certain amount o
 
 ### Voting stages
 
-The life-cycle of a proposal is neatly represented by a state machine, with the 'draft' phase being the initial state, and 'executed' and 'failed' being the terminating states. Please note that this state-machine representation is purely conceptual and should not be expected to reflect technical implementation.
+The life-cycle of a proposal is neatly represented by a state machine, with the 'draft' phase being the initial state, and 'executed' and 'failed' being the terminating states.
+
+**Please note that this state-machine representation is purely conceptual and should not be expected to reflect technical implementation.** This is because some state transitions in the state machine representation don't need to happen in the actual implementation as a transaction. A key example is going from the "lock" phase to the "execution" phase. The only thing that needs to happen is that time goes by. So under the hood, they are represented the same in the Proposal's datum.
+
+> Emily 2022-04-27: This is quite confusing still, I feel. @Jack, could you try to reword this and make it more clear?
+
 
 ![](../diagrams/ProposalStateMachine.svg)
 

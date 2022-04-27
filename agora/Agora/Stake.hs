@@ -61,16 +61,17 @@ import Plutus.V1.Ledger.Value (AssetClass)
 import Agora.Proposal (PProposalId, PResultTag, ProposalId (..), ResultTag (..))
 import Agora.SafeMoney (GTTag)
 import Agora.Utils (
-  pfindDatum,
   pnotNull,
+  ptryFindDatum,
  )
+import Control.Applicative (Const)
 import Plutarch.Api.V1.Extra (PAssetClass, passetClassValueOf)
 import Plutarch.Numeric ()
 import Plutarch.SafeMoney (
   PDiscrete,
   Tagged (..),
  )
-import Plutarch.TryFrom (PTryFrom)
+import Plutarch.TryFrom (PTryFrom (PTryFromExcess, ptryFrom'))
 
 --------------------------------------------------------------------------------
 
@@ -191,6 +192,11 @@ newtype PStakeDatum (s :: S) = PStakeDatum
     (PlutusType, PIsData, PDataFields)
     via (PIsDataReprInstances PStakeDatum)
 
+instance PTryFrom PData (PAsData PStakeDatum) where
+  type PTryFromExcess PData (PAsData PStakeDatum) = Const ()
+  ptryFrom' d k =
+    k (punsafeCoerce d, ())
+
 instance PUnsafeLiftDecl PStakeDatum where type PLifted PStakeDatum = StakeDatum
 deriving via (DerivePConstantViaData StakeDatum PStakeDatum) instance (PConstantDecl StakeDatum)
 
@@ -262,7 +268,7 @@ findStakeOwnedBy ::
         :--> PPubKeyHash
         :--> PBuiltinList (PAsData (PTuple PDatumHash PDatum))
         :--> PBuiltinList (PAsData PTxInInfo)
-        :--> PMaybe PTxOut
+        :--> PMaybe (PAsData PStakeDatum)
     )
 findStakeOwnedBy = phoistAcyclic $
   plam $ \ac pk datums inputs ->
@@ -273,9 +279,8 @@ findStakeOwnedBy = phoistAcyclic $
         txOutF <- pletFields @'["datumHash"] $ txOut
         pmatch txOutF.datumHash $ \case
           PDNothing _ -> pcon PNothing
-          PDJust ((pfield @"_0" #) -> dh) ->
-            -- TODO: PTryFrom here
-            punsafeCoerce $ pfindDatum # dh # datums
+          PDJust ((pfield @"_0" #) -> dh) -> P.do
+            ptryFindDatum @(PAsData PStakeDatum) # dh # datums
 
 stakeDatumOwnedBy :: Term _ (PPubKeyHash :--> PStakeDatum :--> PBool)
 stakeDatumOwnedBy =
@@ -304,8 +309,7 @@ isInputStakeOwnedBy =
       PDJust ((pfield @"_0" #) -> datumHash) ->
         pif
           (outStakeST #== 1)
-          -- TODO: use 'ptryFindDatum' instead in the future
-          ( pmatch (pfindDatum # datumHash # datums) $ \case
+          ( pmatch (ptryFindDatum @(PAsData PStakeDatum) # datumHash # datums) $ \case
               PNothing -> pcon PFalse
               PJust v -> stakeDatumOwnedBy # ss # pfromData (punsafeCoerce v)
           )

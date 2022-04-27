@@ -8,13 +8,11 @@ Plutus Scripts for Proposals.
 module Agora.Proposal.Scripts (
   proposalValidator,
   proposalPolicy,
-  proposalDatumValid,
 ) where
 
 import Agora.Proposal (
   PProposalDatum (PProposalDatum),
   PProposalRedeemer (..),
-  PResultTag,
   Proposal (governorSTAssetClass, stakeSTAssetClass),
  )
 import Agora.Record (mkRecordConstr, (.&), (.=))
@@ -23,27 +21,23 @@ import Agora.Utils (
   anyOutput,
   findTxOutByTxOutRef,
   passert,
-  pnotNull,
   psymbolValueOf,
   ptokenSpent,
   ptxSignedBy,
   pvalueSpent,
  )
 import Plutarch.Api.V1 (
-  PDatumHash,
   PMintingPolicy,
   PScriptContext (PScriptContext),
   PScriptPurpose (PMinting, PSpending),
   PTxInfo (PTxInfo),
   PValidator,
-  PValidatorHash,
   mintingPolicySymbol,
   mkMintingPolicy,
  )
 import Plutarch.Api.V1.Extra (passetClass, passetClassValueOf)
-import Plutarch.Builtin (PBuiltinMap)
 import Plutarch.Monadic qualified as P
-import Plutarch.Unsafe (punsafeCoerce)
+import Plutarch.TryFrom (ptryFrom)
 import Plutus.V1.Ledger.Value (AssetClass (AssetClass))
 
 {- | Policy for Proposals.
@@ -94,10 +88,8 @@ proposalValidator proposal =
     PJust txOut <- pmatch $ findTxOutByTxOutRef # txOutRef # txInfoF.inputs
     txOutF <- pletFields @'["address", "value"] $ txOut
 
-    let proposalDatum :: Term _ Agora.Proposal.PProposalDatum
-        proposalDatum = pfromData $ punsafeCoerce datum
-        proposalRedeemer :: Term _ Agora.Proposal.PProposalRedeemer
-        proposalRedeemer = pfromData $ punsafeCoerce redeemer
+    (pfromData -> proposalDatum, _) <- ptryFrom @(PAsData PProposalDatum) datum
+    (pfromData -> proposalRedeemer, _) <- ptryFrom @(PAsData PProposalRedeemer) redeemer
 
     proposalF <-
       pletFields
@@ -189,27 +181,3 @@ proposalValidator proposal =
           spentST #== 1
 
         popaque (pconstant ())
-
-{- | Check for various invariants a proposal must uphold.
-     This can be used to check both upopn creation and
-     upon any following state transitions in the proposal.
--}
-proposalDatumValid :: Term s (Agora.Proposal.PProposalDatum :--> PBool)
-proposalDatumValid =
-  phoistAcyclic $
-    plam $ \datum' -> P.do
-      datum <- pletFields @'["effects", "cosigners"] $ datum'
-
-      let effects :: Term _ (PBuiltinMap Agora.Proposal.PResultTag (PBuiltinMap Plutarch.Api.V1.PValidatorHash Plutarch.Api.V1.PDatumHash))
-          effects = punsafeCoerce datum.effects
-
-          atLeastOneNegativeResult :: Term _ PBool
-          atLeastOneNegativeResult =
-            pany # plam (\pair -> pnull #$ pfromData $ psndBuiltin # pair) # effects
-
-      foldr1
-        (#&&)
-        [ ptraceIfFalse "Proposal has at least one ResultTag has no effects" atLeastOneNegativeResult
-        , ptraceIfFalse "Proposal has at least one cosigner" $ pnotNull # pfromData datum.cosigners
-        , ptraceIfFalse "Proposal has at most five cosigners" $ plength # (pfromData datum.cosigners) #< 6
-        ]

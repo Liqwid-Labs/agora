@@ -26,6 +26,9 @@ module Agora.Proposal (
   PProposalVotes (..),
   PProposalId (..),
   PResultTag (..),
+
+  -- * Plutarch helpers
+  proposalDatumValid,
 ) where
 
 import GHC.Generics qualified as GHC
@@ -41,13 +44,17 @@ import PlutusTx.AssocMap qualified as AssocMap
 
 --------------------------------------------------------------------------------
 import Agora.SafeMoney (GTTag)
+import Agora.Utils (pnotNull)
+import Control.Applicative (Const)
 import Control.Arrow (first)
+import Plutarch.Builtin (PBuiltinMap)
 import Plutarch.DataRepr (DerivePConstantViaData (..), PDataFields, PIsDataReprInstances (..))
 import Plutarch.Lift (
   DerivePConstantViaNewtype (..),
   PConstantDecl,
   PUnsafeLiftDecl (..),
  )
+import Plutarch.Monadic qualified as P
 import Plutarch.SafeMoney (PDiscrete, Tagged)
 import Plutarch.TryFrom (PTryFrom (PTryFromExcess, ptryFrom'))
 import Plutarch.Unsafe (punsafeCoerce)
@@ -348,6 +355,12 @@ newtype PProposalDatum (s :: S) = PProposalDatum
     (PlutusType, PIsData, PDataFields)
     via (PIsDataReprInstances PProposalDatum)
 
+-- TODO: Derive this.
+instance PTryFrom PData (PAsData PProposalDatum) where
+  type PTryFromExcess PData (PAsData PProposalDatum) = Const ()
+  ptryFrom' d k =
+    k (punsafeCoerce d, ())
+
 instance PUnsafeLiftDecl PProposalDatum where type PLifted PProposalDatum = ProposalDatum
 deriving via (DerivePConstantViaData ProposalDatum PProposalDatum) instance (PConstantDecl ProposalDatum)
 
@@ -364,6 +377,12 @@ data PProposalRedeemer (s :: S)
     (PlutusType, PIsData)
     via PIsDataReprInstances PProposalRedeemer
 
+-- See below.
+instance PTryFrom PData (PAsData PProposalRedeemer) where
+  type PTryFromExcess PData (PAsData PProposalRedeemer) = Const ()
+  ptryFrom' d k =
+    k (punsafeCoerce d, ())
+
 -- TODO: Waiting on PTryFrom for 'PPubKeyHash'
 -- deriving via
 --   PAsData (PIsDataReprInstances PProposalRedeemer)
@@ -372,3 +391,34 @@ data PProposalRedeemer (s :: S)
 
 instance PUnsafeLiftDecl PProposalRedeemer where type PLifted PProposalRedeemer = ProposalRedeemer
 deriving via (DerivePConstantViaData ProposalRedeemer PProposalRedeemer) instance (PConstantDecl ProposalRedeemer)
+
+--------------------------------------------------------------------------------
+
+{- | Check for various invariants a proposal must uphold.
+     This can be used to check both upopn creation and
+     upon any following state transitions in the proposal.
+-}
+proposalDatumValid :: Term s (Agora.Proposal.PProposalDatum :--> PBool)
+proposalDatumValid =
+  phoistAcyclic $
+    plam $ \datum' -> P.do
+      datum <- pletFields @'["effects", "cosigners"] $ datum'
+
+      let effects :: Term _ (PBuiltinMap Agora.Proposal.PResultTag (PBuiltinMap Plutarch.Api.V1.PValidatorHash Plutarch.Api.V1.PDatumHash))
+          effects =
+            -- JUSTIFICATION:
+            -- @datum.effects : PMap PResultTag (PMap PValidatorHash PDatumHash)@
+            -- @PMap PResultTag (PMap PValidatorHash PDatumHash)@ is equivalent to
+            -- @PBuiltinMap PResultTag (PBuiltinMap Plutarch.Api.V1.PValidatorHash Plutarch.Api.V1.PDatumHash)@
+            punsafeCoerce datum.effects
+
+          atLeastOneNegativeResult :: Term _ PBool
+          atLeastOneNegativeResult =
+            pany # plam (\pair -> pnull #$ pfromData $ psndBuiltin # pair) # effects
+
+      foldr1
+        (#&&)
+        [ ptraceIfFalse "Proposal has at least one ResultTag has no effects" atLeastOneNegativeResult
+        , ptraceIfFalse "Proposal has at least one cosigner" $ pnotNull # pfromData datum.cosigners
+        , ptraceIfFalse "Proposal has at most five cosigners" $ plength # (pfromData datum.cosigners) #< 6
+        ]

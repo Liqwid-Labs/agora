@@ -35,7 +35,7 @@ import Plutarch.Api.V1 (
   mintingPolicySymbol,
   mkMintingPolicy,
  )
-import Plutarch.Api.V1.Extra (passetClass)
+import Plutarch.Api.V1.Extra (passetClass, passetClassValueOf)
 import Plutarch.Internal (punsafeCoerce)
 import Plutarch.Monadic qualified as P
 import Plutarch.Numeric
@@ -183,7 +183,12 @@ stakeValidator stake =
 
     stCurrencySymbol <- plet $ pconstant $ mintingPolicySymbol $ mkMintingPolicy (stakePolicy stake.gtClassRef)
     mintedST <- plet $ psymbolValueOf # stCurrencySymbol # txInfoF.mint
-    spentST <- plet $ psymbolValueOf # stCurrencySymbol #$ pvalueSpent # txInfoF.inputs
+    valueSpent <- plet $ pvalueSpent # txInfoF.inputs
+    spentST <- plet $ psymbolValueOf # stCurrencySymbol #$ valueSpent
+
+    let AssetClass (propCs, propTn) = stake.proposalSTClass
+        proposalSTClass = passetClass # pconstant propCs # pconstant propTn
+    spentProposalST <- plet $ passetClassValueOf # valueSpent # proposalSTClass
 
     -- Is the stake currently locked?
     stakeIsLocked <- plet $ stakeLocked # stakeDatum'
@@ -192,26 +197,76 @@ stakeValidator stake =
       PDestroy _ -> P.do
         passert "ST at inputs must be 1" $
           spentST #== 1
+
         passert "Should burn ST" $
           mintedST #== -1
+
         passert "Stake unlocked" $ pnot # stakeIsLocked
-        passert
-          "Owner signs this transaction"
-          ownerSignsTransaction
+
+        passert "Owner signs this transaction" ownerSignsTransaction
+
         popaque (pconstant ())
       --------------------------------------------------------------------------
       PRetractVotes _ -> P.do
         passert
           "Owner signs this transaction"
           ownerSignsTransaction
-        -- TODO: check proposal constraints
+
+        passert "ST at inputs must be 1" $
+          spentST #== 1
+
+        -- This puts trust into the Proposal. The Proposal must necessarily check
+        -- that this is not abused.
+        passert "Proposal ST spent" $
+          spentProposalST #== 1
+
+        passert "A UTXO must exist with the correct output" $
+          anyOutput @PStakeDatum # txInfo
+            #$ plam
+            $ \value address newStakeDatum' -> P.do
+              let isScriptAddress = pdata address #== ownAddress
+              let _correctOutputDatum = pdata newStakeDatum' #== pdata stakeDatum'
+              let valueCorrect = pdata continuingValue #== pdata value
+              pif
+                isScriptAddress
+                ( foldl1
+                    (#&&)
+                    [ ptraceIfFalse "valueCorrect" valueCorrect
+                    ]
+                )
+                (pcon PFalse)
+
         popaque (pconstant ())
       --------------------------------------------------------------------------
       PPermitVote _ -> P.do
         passert
           "Owner signs this transaction"
           ownerSignsTransaction
-        -- TODO: check proposal constraints
+
+        passert "ST at inputs must be 1" $
+          spentST #== 1
+
+        -- This puts trust into the Proposal. The Proposal must necessarily check
+        -- that this is not abused.
+        passert "Proposal ST spent" $
+          spentProposalST #== 1
+
+        passert "A UTXO must exist with the correct output" $
+          anyOutput @PStakeDatum # txInfo
+            #$ plam
+            $ \value address newStakeDatum' -> P.do
+              let isScriptAddress = pdata address #== ownAddress
+              let _correctOutputDatum = pdata newStakeDatum' #== pdata stakeDatum'
+              let valueCorrect = pdata continuingValue #== pdata value
+              pif
+                isScriptAddress
+                ( foldl1
+                    (#&&)
+                    [ ptraceIfFalse "valueCorrect" valueCorrect
+                    ]
+                )
+                (pcon PFalse)
+
         popaque (pconstant ())
       --------------------------------------------------------------------------
       PWitnessStake _ -> P.do
@@ -225,6 +280,9 @@ stakeValidator stake =
                 # propAssetClass
                 # txInfoF.inputs
 
+        -- In order for cosignature to be witnessed, it must be possible for a
+        -- proposal to allow this transaction to happen. This puts trust into the Proposal.
+        -- The Proposal must necessarily check that this is not abused.
         passert
           "Owner signs this transaction OR proposal token is spent"
           (ownerSignsTransaction #|| proposalTokenMoved)

@@ -84,7 +84,7 @@ pfindDatum = phoistAcyclic $
   plam $ \datumHash datums -> plookupTuple # datumHash # datums
 
 -- | Find a datum with the given hash, and `ptryFrom` it.
-ptryFindDatum :: PTryFrom PData a => Term s (PDatumHash :--> PBuiltinList (PAsData (PTuple PDatumHash PDatum)) :--> PMaybe a)
+ptryFindDatum :: forall (a :: PType) (s :: S). PTryFrom PData a => Term s (PDatumHash :--> PBuiltinList (PAsData (PTuple PDatumHash PDatum)) :--> PMaybe a)
 ptryFindDatum = phoistAcyclic $
   plam $ \datumHash inputs -> P.do
     pmatch (pfindDatum # datumHash # inputs) $ \case
@@ -326,6 +326,7 @@ ptokenSpent =
 anyOutput ::
   forall (datum :: PType) s.
   ( PIsData datum
+  , PTryFrom PData (PAsData datum)
   ) =>
   Term s (PTxInfo :--> (PValue :--> PAddress :--> datum :--> PBool) :--> PBool)
 anyOutput = phoistAcyclic $
@@ -337,7 +338,7 @@ anyOutput = phoistAcyclic $
             PTxOut txOut' <- pmatch (pfromData txOut'')
             txOut <- pletFields @'["value", "datumHash", "address"] txOut'
             PDJust dh <- pmatch txOut.datumHash
-            pmatch (pfindDatum' @datum # (pfield @"_0" # dh) # txInfo.datums) $ \case
+            pmatch (ptryFindDatum @(PAsData datum) # (pfield @"_0" # dh) # txInfo.datums) $ \case
               PJust datum -> P.do
                 predicate # txOut.value # txOut.address # pfromData datum
               PNothing -> pcon PFalse
@@ -348,6 +349,7 @@ anyOutput = phoistAcyclic $
 allOutputs ::
   forall (datum :: PType) s.
   ( PIsData datum
+  , PTryFrom PData (PAsData datum)
   ) =>
   Term s (PTxInfo :--> (PTxOut :--> PValue :--> PAddress :--> datum :--> PBool) :--> PBool)
 allOutputs = phoistAcyclic $
@@ -359,7 +361,7 @@ allOutputs = phoistAcyclic $
             PTxOut txOut' <- pmatch (pfromData txOut'')
             txOut <- pletFields @'["value", "datumHash", "address"] txOut'
             PDJust dh <- pmatch txOut.datumHash
-            pmatch (pfindDatum' @datum # (pfield @"_0" # dh) # txInfo.datums) $ \case
+            pmatch (ptryFindDatum @(PAsData datum) # (pfield @"_0" # dh) # txInfo.datums) $ \case
               PJust datum -> P.do
                 predicate # pfromData txOut'' # txOut.value # txOut.address # pfromData datum
               PNothing -> pcon PFalse

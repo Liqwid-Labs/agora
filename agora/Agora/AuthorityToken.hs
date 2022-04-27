@@ -145,7 +145,7 @@ authorityTokenPolicy params =
         ( P.do
             passert "Parent token did not move in minting GATs" govTokenSpent
             passert "All outputs only emit valid GATs" $
-              allOutputs @PUnit # pfromData ctx.txInfo #$ plam $ \txOut _value _address _datum ->
+              allOutputs @PData # pfromData ctx.txInfo #$ plam $ \txOut _value _address _datum ->
                 authorityTokensValidIn
                   # ownSymbol
                   # txOut
