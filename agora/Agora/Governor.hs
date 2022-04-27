@@ -50,7 +50,7 @@ import Agora.Proposal (
   PResultTag,
   Proposal (..),
   ProposalId,
-  ProposalStatus (Draft, Executable),
+  ProposalStatus (Draft, Locked),
   ProposalThresholds,
   pnextProposalId,
   proposalDatumValid,
@@ -613,8 +613,8 @@ governorValidator gov =
           pletFields @'["id", "effects", "status", "cosigners", "thresholds", "votes"]
             inputProposalDatum'
 
-        passert "Proposal must be in executable state in order to execute effects" $
-          inputProposalDatum.status #== pconstantData Executable
+        passert "Proposal must be in locked(executable) state in order to execute effects" $
+          inputProposalDatum.status #== pconstantData Locked
 
         let expectedOutputProposalDatum =
               pforgetData $
