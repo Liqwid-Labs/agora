@@ -11,7 +11,7 @@ All effects are used once, and all required data will be sent via
 Datum, not Redeemer. So, at first, one must setup a datum for an
 effect. It is recommanded to have both Haskell-level(Plutus style) and
 plutarch-level definition of the datum. These two can be bridge with
-Plutarch's [[https://github.com/Plutonomicon/plutarch/blob/master/docs/Typeclasses/PConstant%20and%20PLift.md][`PConstant` and `PLift`]]. Also `PTryFrom` instance is also
+Plutarch's [[https://github.com/Plutonomicon/plutarch/blob/master/docs/Typeclasses/PConstant%20and%20PLift.md][PConstant and PLift]]. Also ~PTryFrom~ instance is also
 required to parse raw `PData` from validator into the specified datum
 of effect Validator.
 
@@ -27,8 +27,8 @@ First, the Haskell-level definition of Datum--Plutus style.
 #+end_src
 
 Plutarch-level definition follows. Plutarch provides deriving strategy
-of for `PlutusType` and `PIsData` that conveniently defines bridge
-between `PData` and `PTreasurywithdrawaldatum`.
+of for ~PlutusType~ and ~PIsData~ that conveniently defines bridge
+between ~PData~ and ~PTreasurywithdrawaldatum~.
 #+begin_src haskell
   newtype PTreasuryWithdrawalDatum (s :: S)
     = PTreasuryWithdrawalDatum
@@ -47,8 +47,8 @@ between `PData` and `PTreasurywithdrawaldatum`.
       via PIsDataReprInstances PTreasuryWithdrawalDatum
 #+end_src
 
-Following is used to create `PConstant` and `PLift`: a bridge between
-Haskell-level `TreasuryWithdrawalDatum` and Plutarch-level `TreasuryWithdrawalDatum`
+Following is used to create ~PConstant~ and ~PLift~: a bridge between
+Haskell-level ~TreasuryWithdrawalDatum~ and Plutarch-level ~TreasuryWithdrawalDatum~
 #+begin_src haskell
   instance PUnsafeLiftDecl PTreasuryWithdrawalDatum where
     type PLifted PTreasuryWithdrawalDatum = TreasuryWithdrawalDatum
@@ -58,8 +58,8 @@ Haskell-level `TreasuryWithdrawalDatum` and Plutarch-level `TreasuryWithdrawalDa
       (PConstant TreasuryWithdrawalDatum)
 #+end_src
 
-Finally, `PTryFrom PData (Desired Datum type)` is
-required. +`punsafeCoerce` might not be the best+
+Finally, ~PTryFrom PData (Desired Datum type)~ is
+required. +~punsafeCoerce~ might not be the best+
 #+begin_src haskell
   instance PTryFrom PData PTreasuryWithdrawalDatum where
     type PTryFromExcess PData PTreasuryWithdrawalDatum = Const ()
@@ -69,7 +69,7 @@ required. +`punsafeCoerce` might not be the best+
 #+end_src
 
 ** Effect Validator
-In Agora, Effects can be built with given `makeEffect` function. This
+In Agora, Effects can be built with given ~makeEffect~ function. This
 function is a simple boilderplate that checks for correct handling of
 GAT, leaving effect creator only with the effect logic itself.
 
@@ -94,4 +94,4 @@ example
 #+end_src
 
 Again, conveniently, Script Context is already stripped into
-`PTxOutRef` and `PTxInfo`. 
+~PTxOutRef~ and ~PTxInfo~. 
