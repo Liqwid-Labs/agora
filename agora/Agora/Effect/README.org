@@ -102,6 +102,9 @@ one who starts the effect by burning the GAT. It is very useful for
 - checking who started the effect
 - accessing other informations
 
+#+begin_quote
+Utility functions handling ~PTxInfo~ and ~PTxInfo~ is provided in Agora/Util.hs
+#+end_quote
   
 
 
