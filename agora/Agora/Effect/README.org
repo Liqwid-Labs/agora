@@ -94,4 +94,14 @@ example
 #+end_src
 
 Again, conveniently, Script Context is already stripped into
-~PTxOutRef~ and ~PTxInfo~. 
+~PTxOutRef~ and ~PTxInfo~. ~PTxInfo~ will provide all informations
+about the transaction: inputs, outputs, minted tokens, fees, and
+more. ~PTxOutRef~ is the output reference for the effect signer, the
+one who starts the effect by burning the GAT. It is very useful for
+- finding the address of effect script
+- checking who started the effect
+- accessing other informations
+
+  
+
+
