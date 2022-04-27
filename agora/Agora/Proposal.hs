@@ -44,7 +44,7 @@ import PlutusTx.AssocMap qualified as AssocMap
 
 --------------------------------------------------------------------------------
 import Agora.SafeMoney (GTTag)
-import Agora.Utils (pnotNull)
+import Agora.Utils (pkeysEqual, pnotNull)
 import Control.Applicative (Const)
 import Control.Arrow (first)
 import Plutarch.Builtin (PBuiltinMap)
@@ -406,7 +406,7 @@ proposalDatumValid :: Proposal -> Term s (Agora.Proposal.PProposalDatum :--> PBo
 proposalDatumValid proposal =
   phoistAcyclic $
     plam $ \datum' -> P.do
-      datum <- pletFields @'["effects", "cosigners"] $ datum'
+      datum <- pletFields @'["effects", "cosigners", "votes"] $ datum'
 
       let effects :: Term _ (PBuiltinMap Agora.Proposal.PResultTag (PBuiltinMap Plutarch.Api.V1.PValidatorHash Plutarch.Api.V1.PDatumHash))
           effects =
@@ -425,4 +425,5 @@ proposalDatumValid proposal =
         [ ptraceIfFalse "Proposal has at least one ResultTag has no effects" atLeastOneNegativeResult
         , ptraceIfFalse "Proposal has at least one cosigner" $ pnotNull # pfromData datum.cosigners
         , ptraceIfFalse "Proposal has at most five cosigners" $ plength # (pfromData datum.cosigners) #<= pconstant proposal.maximumCosigners
+        , ptraceIfFalse "Proposal votes and effects are compatible with eachother" $ pkeysEqual # datum.effects # pto (pfromData datum.votes)
         ]

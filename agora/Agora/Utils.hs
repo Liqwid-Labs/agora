@@ -27,6 +27,7 @@ module Agora.Utils (
   pnotNull,
   pisJust,
   ptokenSpent,
+  pkeysEqual,
 
   -- * Functions which should (probably) not be upstreamed
   anyOutput,
@@ -68,6 +69,7 @@ import Plutarch.Api.V1.Extra (PAssetClass, passetClassValueOf, pvalueOf)
 import Plutarch.Api.V1.Value (PValue (PValue))
 import Plutarch.Builtin (ppairDataBuiltin)
 import Plutarch.Internal (punsafeCoerce)
+import Plutarch.Map.Extra (pkeys)
 import Plutarch.Monadic qualified as P
 import Plutarch.TryFrom (PTryFrom, ptryFrom)
 
@@ -316,6 +318,17 @@ ptokenSpent =
           )
         # 0
         # inputs
+
+{- | True if both maps have exactly the same keys.
+     Using @'#=='@ is not sufficient, because keys returned are not ordered.
+-}
+pkeysEqual :: forall (s :: S) k a b. Term s (PMap k a :--> PMap k b :--> PBool)
+pkeysEqual = phoistAcyclic $
+  plam $ \p q -> P.do
+    pks <- plet $ pkeys # p
+    qks <- plet $ pkeys # q
+    pall # plam (\pk -> pelem # pk # qks) # pks
+      #&& pall # plam (\qk -> pelem # qk # pks) # qks
 
 --------------------------------------------------------------------------------
 {- Functions which should (probably) not be upstreamed
