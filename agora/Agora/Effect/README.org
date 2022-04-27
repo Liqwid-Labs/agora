@@ -68,7 +68,11 @@ required. +~punsafeCoerce~ might not be the best+
       cont (punsafeCoerce opq, ())
 #+end_src
 
-** Effect Validator
+#+begin_quote
+All informations above is +well+ documented in [[https://github.com/Plutonomicon/plutarch/tree/master/docs][Plutonomicon/plutarch]]
+repository. Well, except ~PTryFrom~... 
+#+end_quote
+** Effect Validator Boilderplate
 In Agora, Effects can be built with given ~makeEffect~ function. This
 function is a simple boilderplate that checks for correct handling of
 GAT, leaving effect creator only with the effect logic itself.
@@ -97,7 +101,8 @@ Again, conveniently, Script Context is already stripped into
 ~PTxOutRef~ and ~PTxInfo~. ~PTxInfo~ will provide all informations
 about the transaction: inputs, outputs, minted tokens, fees, and
 more. ~PTxOutRef~ is the output reference for the effect signer, the
-one who starts the effect by burning the GAT. It is very useful for
+one who starts the effect by burning the GAT. It is easy to overlook
+it as useless, but, in fact, It is very useful for
 - finding the address of effect script
 - checking who started the effect
 - accessing other informations
@@ -105,6 +110,20 @@ one who starts the effect by burning the GAT. It is very useful for
 #+begin_quote
 Utility functions handling ~PTxInfo~ and ~PTxInfo~ is provided in Agora/Util.hs
 #+end_quote
-  
+
+** Effect Validator Logics
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
