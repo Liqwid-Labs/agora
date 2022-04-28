@@ -27,6 +27,7 @@ module Agora.Governor (
   -- * Utilities
   gstAssetClass,
   gatSymbol,
+  pgetNextProposalId
 ) where
 
 --------------------------------------------------------------------------------
@@ -44,7 +45,7 @@ import Agora.AuthorityToken (
  )
 import Agora.Proposal (
   PProposalDatum (..),
-  PProposalId,
+  PProposalId(..),
   PProposalStatus (PFinished),
   PProposalThresholds,
   PResultTag,
@@ -52,7 +53,6 @@ import Agora.Proposal (
   ProposalId,
   ProposalStatus (Draft, Locked),
   ProposalThresholds,
-  pnextProposalId,
   proposalDatumValid,
   proposalPolicy,
   proposalValidator,
@@ -392,7 +392,7 @@ governorValidator gov =
 
     case redeemer of
       PCreateProposal _ -> P.do
-        let expectedNextProposalId = pnextProposalId # oldParams.nextProposalId
+        let expectedNextProposalId = pgetNextProposalId # oldParams.nextProposalId
             expectedNewDatum =
               pcon $
                 PGovernorDatum $
@@ -789,3 +789,7 @@ gatSymbol gov = mintingPolicySymbol policy
   where
     at = AuthorityToken $ gstAssetClass gov
     policy = mkMintingPolicy $ authorityTokenPolicy at
+
+-- | Get next proposal id.
+pgetNextProposalId :: Term s (PProposalId :--> PProposalId)
+pgetNextProposalId = phoistAcyclic $ plam $ \(pto -> pid) -> pcon $ PProposalId $ pid + 1
