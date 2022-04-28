@@ -212,8 +212,7 @@ proposalValidator proposal =
 
               foldr1
                 (#&&)
-                [ pcon PTrue
-                , ptraceIfFalse "Datum must be correct" correctDatum
+                [ ptraceIfFalse "Datum must be correct" correctDatum
                 , ptraceIfFalse "Value should be correct" $
                     pdata txOutF.value #== pdata newValue
                 , ptraceIfFalse "Must be sent to Proposal's address" $

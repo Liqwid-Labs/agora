@@ -129,5 +129,5 @@ defaultProposalThresholds =
   ProposalThresholds
     { countVoting = Tagged 1000
     , create = Tagged 1
-    , vote = Tagged 10
+    , startVoting = Tagged 10
     }

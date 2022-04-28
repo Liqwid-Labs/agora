@@ -34,7 +34,6 @@ import Plutarch.Api.V1 (
   PExtended (PFinite),
   PInterval (PInterval),
   PLowerBound (PLowerBound),
-  PMaybeData (PDJust, PDNothing),
   PPOSIXTime,
   PPOSIXTimeRange,
   PUpperBound (PUpperBound),
@@ -71,8 +70,8 @@ import Prelude hiding ((+))
    We avoid 'PPOSIXTimeRange' where we can in order to save on operations.
 -}
 data ProposalTime = ProposalTime
-  { lowerBound :: Maybe POSIXTime
-  , upperBound :: Maybe POSIXTime
+  { lowerBound :: POSIXTime
+  , upperBound :: POSIXTime
   }
   deriving stock (Eq, Show, GHC.Generic)
 
@@ -111,8 +110,8 @@ newtype PProposalTime (s :: S)
       ( Term
           s
           ( PDataRecord
-              '[ "lowerBound" ':= PMaybeData PPOSIXTime
-               , "upperBound" ':= PMaybeData PPOSIXTime
+              '[ "lowerBound" ':= PPOSIXTime
+               , "upperBound" ':= PPOSIXTime
                ]
           )
       )
@@ -153,7 +152,11 @@ newtype PProposalTimingConfig (s :: S) = PProposalTimingConfig
 instance AdditiveSemigroup (Term s PPOSIXTime) where
   (punsafeCoerce @_ @_ @PInteger -> x) + (punsafeCoerce @_ @_ @PInteger -> y) = punsafeCoerce $ x + y
 
--- | Get the current proposal time, from the 'Plutus.V1.Ledger.Api.txInfoValidPeriod' field.
+{- | Get the current proposal time, from the 'Plutus.V1.Ledger.Api.txInfoValidPeriod' field.
+
+ If it's impossible to get a fully-bounded time, (e.g. either end of the 'PPOSIXTimeRange' is
+ an infinity) then we error out.
+-}
 currentProposalTime :: forall (s :: S). Term s (PPOSIXTimeRange :--> PProposalTime)
 currentProposalTime = phoistAcyclic $
   plam $ \iv -> P.do
@@ -165,17 +168,18 @@ currentProposalTime = phoistAcyclic $
     ubf <- pletFields @'["_0", "_1"] ub
     mkRecordConstr PProposalTime $
       #lowerBound
-        .= pdata
-          ( pmatch lbf._0 $
-              \case
-                PFinite d -> pcon (PDJust d)
-                _ -> pcon (PDNothing pdnil)
+        .= pmatch
+          lbf._0
+          ( \case
+              PFinite ((pfield @"_0" #) -> d) -> d
+              _ -> ptraceError "currentProposalTime: Can't get fully-bounded proposal time."
           )
         .& #upperBound
-        .= pdata
-          ( pmatch ubf._0 $ \case
-              PFinite d -> pcon (PDJust d)
-              _ -> pcon (PDNothing pdnil)
+        .= pmatch
+          ubf._0
+          ( \case
+              PFinite ((pfield @"_0" #) -> d) -> d
+              _ -> ptraceError "currentProposalTime: Can't get fully-bounded proposal time."
           )
 
 -- | Check if 'PProposalTime' is within two 'PPOSIXTime'. Inclusive.
@@ -193,12 +197,8 @@ proposalTimeWithin = phoistAcyclic $
     ptf <- pletFields @'["lowerBound", "upperBound"] proposalTime
     foldr1
       (#&&)
-      [ pmatch ptf.lowerBound $ \case
-          PDJust lb -> l #<= pfromData (pfield @"_0" # lb)
-          _ -> pcon PFalse
-      , pmatch ptf.upperBound $ \case
-          PDJust lb -> pfromData (pfield @"_0" # lb) #<= h
-          _ -> pcon PFalse
+      [ l #<= pfromData ptf.lowerBound
+      , pfromData ptf.upperBound #<= h
       ]
 
 -- | True if the 'PProposalTime' is in the draft period.

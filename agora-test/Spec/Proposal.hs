@@ -16,10 +16,10 @@ import Agora.Proposal (
   ProposalId (ProposalId),
   ProposalRedeemer (Cosign),
   ProposalStatus (Draft),
-  ProposalVotes (ProposalVotes),
   ResultTag (ResultTag),
   cosigners,
   effects,
+  emptyVotesFor,
   proposalId,
   status,
   thresholds,
@@ -70,7 +70,12 @@ tests =
                   , status = Draft
                   , cosigners = [signer]
                   , thresholds = Shared.defaultProposalThresholds
-                  , votes = ProposalVotes AssocMap.empty
+                  , votes =
+                      emptyVotesFor $
+                        AssocMap.fromList
+                          [ (ResultTag 0, [])
+                          , (ResultTag 1, [])
+                          ]
                   }
               )
               (Cosign [signer2])

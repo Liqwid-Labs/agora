@@ -43,7 +43,6 @@ import Agora.Proposal (
   ProposalDatum (..),
   ProposalId (..),
   ProposalStatus (..),
-  ProposalVotes (..),
   ResultTag (..),
   emptyVotesFor,
  )
