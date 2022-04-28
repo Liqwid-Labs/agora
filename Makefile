@@ -10,6 +10,7 @@ usage:
 	@echo "  hoogle -- Start local hoogle"
 	@echo "  format -- Format the project"
 	@echo "  haddock -- Generate Haddock docs for project"
+	@echo "  tag -- Generate CTAGS and ETAGS files for project"
 
 hoogle:
 	pkill hoogle || true
