@@ -70,11 +70,11 @@ import Plutus.V1.Ledger.Credential (Credential (PubKeyCredential, ScriptCredenti
 import Plutus.V1.Ledger.Scripts (Script, ValidatorHash (ValidatorHash))
 import Plutus.V1.Ledger.Value (
   CurrencySymbol (CurrencySymbol),
-  TokenName (unTokenName),
+  TokenName (TokenName, unTokenName),
   Value (Value, getValue),
  )
 import PlutusTx.AssocMap (Map, elems, fromList, keys, singleton, toList, unionWith)
-import PlutusTx.AssocMap qualified as AssocMap (lookup)
+import PlutusTx.AssocMap qualified as AssocMap (insert, lookup)
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.Hedgehog (fromGroup)
 
@@ -178,15 +178,26 @@ replaceValue (Value v) cs tn n = Value $ unionWith (\_ x -> x) v v'
 kmap :: (k -> k') -> Map k v -> Map k' v
 kmap g = fromList . fmap (first g) . toList
 
-fixTokenNames :: TxInInfo -> TxInInfo
-fixTokenNames inf =
+fixTokenNames :: CurrencySymbol -> TxInInfo -> TxInInfo
+fixTokenNames cs inf =
   let cred = inf.txInInfoResolved.txOutAddress.addressCredential
-      val = inf.txInInfoResolved.txOutValue
+      Value val = inf.txInInfoResolved.txOutValue
    in case cred of
         PubKeyCredential _ -> inf
-        ScriptCredential (ValidatorHash bs) -> undefined
+        ScriptCredential (ValidatorHash bs) ->
+          case AssocMap.lookup cs val of
+            Nothing -> inf
+            Just m ->
+              let tn :: TokenName = TokenName bs
+                  m' = kmap (\_ -> tn) m
+                  v' = Value $ AssocMap.insert cs m' val
+               in inf
+                    { txInInfoResolved =
+                        inf.txInInfoResolved
+                          { txOutValue = v'
+                          }
+                    }
 
--- | TODO: Define.
 instance HasPermutationGenerator TreasuryTxProp TreasuryTxModel where
   generators :: [Morphism TreasuryTxProp TreasuryTxModel]
   generators =
@@ -237,7 +248,7 @@ instance HasPermutationGenerator TreasuryTxProp TreasuryTxModel where
                           { scriptContextTxInfo =
                               txInfo
                                 { txInfoInputs =
-                                    fixTokenNames <$> infoInputs
+                                    fixTokenNames m.gatCs <$> infoInputs
                                 }
                           }
                     }
