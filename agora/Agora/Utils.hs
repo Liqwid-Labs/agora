@@ -10,7 +10,6 @@ module Agora.Utils (
   passert,
   pfind',
   pfindDatum,
-  pfindDatum',
   ptryFindDatum,
   pvalueSpent,
   ptxSignedBy,
@@ -74,7 +73,6 @@ import Plutarch.Api.V1.AssocMap (PMap (PMap))
 import Plutarch.Api.V1.Extra (PAssetClass, passetClassValueOf, pvalueOf)
 import Plutarch.Api.V1.Value (PValue (PValue))
 import Plutarch.Builtin (ppairDataBuiltin)
-import Plutarch.Internal (punsafeCoerce)
 import Plutarch.Map.Extra (pkeys)
 import Plutarch.Monadic qualified as P
 import Plutarch.TryFrom (PTryFrom, ptryFrom)
@@ -101,12 +99,6 @@ ptryFindDatum = phoistAcyclic $
       PJust datum -> P.do
         (datum', _) <- ptryFrom (pto datum)
         pcon (PJust datum')
-
-{- | Find a datum with the given hash.
-NOTE: this is unsafe in the sense that, if the data layout is wrong, this is UB.
--}
-pfindDatum' :: PIsData a => Term s (PDatumHash :--> PBuiltinList (PAsData (PTuple PDatumHash PDatum)) :--> PMaybe (PAsData a))
-pfindDatum' = phoistAcyclic $ plam $ \dh x -> punsafeCoerce $ pfindDatum # dh # x
 
 -- | Check if a PubKeyHash signs this transaction.
 ptxSignedBy :: Term s (PBuiltinList (PAsData PPubKeyHash) :--> PAsData PPubKeyHash :--> PBool)
@@ -416,6 +408,7 @@ allOutputs = phoistAcyclic $
 anyInput ::
   forall (datum :: PType) s.
   ( PIsData datum
+  , PTryFrom PData (PAsData datum)
   ) =>
   Term s (PTxInfo :--> (PValue :--> PAddress :--> datum :--> PBool) :--> PBool)
 anyInput = phoistAcyclic $
@@ -429,7 +422,7 @@ anyInput = phoistAcyclic $
             PTxOut txOut' <- pmatch (pfromData txOut'')
             txOut <- pletFields @'["value", "datumHash", "address"] txOut'
             PDJust dh <- pmatch txOut.datumHash
-            pmatch (pfindDatum' @datum # (pfield @"_0" # dh) # txInfo.datums) $ \case
+            pmatch (ptryFindDatum @(PAsData datum) # (pfield @"_0" # dh) # txInfo.datums) $ \case
               PJust datum -> P.do
                 predicate # txOut.value # txOut.address # pfromData datum
               PNothing -> pcon PFalse

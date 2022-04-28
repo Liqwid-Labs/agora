@@ -154,19 +154,20 @@ stakeRef = TxOutRef "0ca36f3a357bc69579ab2531aecd1e7d3714d993c7820f40b864be15" 0
 cosignProposal :: [PubKeyHash] -> TxInfo
 cosignProposal newSigners =
   let st = Value.singleton proposalPolicySymbol "" 1 -- Proposal ST
+      effects =
+        AssocMap.fromList
+          [ (ResultTag 0, [])
+          , (ResultTag 1, [])
+          ]
       proposalBefore :: ProposalDatum
       proposalBefore =
         ProposalDatum
           { proposalId = ProposalId 0
-          , effects =
-              AssocMap.fromList
-                [ (ResultTag 0, [])
-                , (ResultTag 1, [])
-                ]
+          , effects = effects
           , status = Draft
           , cosigners = [signer]
           , thresholds = defaultProposalThresholds
-          , votes = ProposalVotes AssocMap.empty
+          , votes = emptyVotesFor effects
           }
       stakeDatum :: StakeDatum
       stakeDatum = StakeDatum (Tagged 50_000_000) signer2 []
