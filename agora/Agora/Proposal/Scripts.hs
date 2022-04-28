@@ -20,7 +20,9 @@ import Agora.Stake (findStakeOwnedBy)
 import Agora.Utils (
   anyOutput,
   findTxOutByTxOutRef,
+  getMintingPolicySymbol,
   passert,
+  pisUniq,
   psymbolValueOf,
   ptokenSpent,
   ptxSignedBy,
@@ -32,8 +34,6 @@ import Plutarch.Api.V1 (
   PScriptPurpose (PMinting, PSpending),
   PTxInfo (PTxInfo),
   PValidator,
-  mintingPolicySymbol,
-  mkMintingPolicy,
  )
 import Plutarch.Api.V1.Extra (passetClass, passetClassValueOf)
 import Plutarch.Monadic qualified as P
@@ -41,12 +41,22 @@ import Plutarch.TryFrom (ptryFrom)
 import Plutus.V1.Ledger.Value (AssetClass (AssetClass))
 
 {- | Policy for Proposals.
-   This needs to perform two checks:
-     - Governor is happy with mint.
-     - Exactly 1 token is minted.
 
-   NOTE: The governor needs to check that the datum is correct
-         and sent to the right address.
+   == What this policy does
+
+   === For minting:
+
+   - Governor is happy with mint.
+
+     * The governor must do most of the checking for the validity of the
+       transaction. For example, the governor must check that the datum
+       is correct, and that the ST is correctly paid to the right validator.
+
+   - Exactly 1 token is minted.
+
+   === For burning:
+
+   - This policy cannot be burned.
 -}
 proposalPolicy :: Proposal -> ClosedTerm PMintingPolicy
 proposalPolicy proposal =
@@ -62,7 +72,10 @@ proposalPolicy proposal =
         AssetClass (govCs, govTn) = proposal.governorSTAssetClass
 
     PMinting ownSymbol' <- pmatch $ pfromData ctx.purpose
-    let mintedProposalST = passetClassValueOf # mintedValue # (passetClass # (pfield @"_0" # ownSymbol') # pconstant "")
+    let mintedProposalST =
+          passetClassValueOf
+            # mintedValue
+            # (passetClass # (pfield @"_0" # ownSymbol') # pconstant "")
 
     passert "Governance state-thread token must move" $
       ptokenSpent
@@ -74,7 +87,32 @@ proposalPolicy proposal =
 
     popaque (pconstant ())
 
--- | Validator for Proposals.
+{- | The validator for Proposals.
+
+The documentation for various of the redeemers lives at 'Agora.Proposal.ProposalRedeemer'.
+
+== What this validator does
+
+=== Voting/unlocking
+
+When voting and unlocking, the proposal must witness a state transition
+occuring in the relevant Stake. This transition must place a lock on
+the stake that is tagged with the right 'Agora.Proposal.ResultTag', and 'Agora.Proposal.ProposalId'.
+
+=== Periods
+
+Most redeemers are time-sensitive.
+
+A list of all time-sensitive redeemers and their requirements:
+
+- 'Agora.Proposal.Vote' can only be used when both the status is in 'Agora.Proposal.VotingReady',
+  and 'Agora.Proposal.Time.isVotingPeriod' is true.
+- 'Agora.Proposal.Cosign' can only be used when both the status is in 'Agora.Proposal.Draft',
+  and 'Agora.Proposal.Time.isDraftPeriod' is true.
+- 'Agora.Proposal.AdvanceProposal' can only be used when the status can be advanced
+  (see 'Agora.Proposal.AdvanceProposal' docs).
+- 'Agora.Proposal.Unlock' is always valid.
+-}
 proposalValidator :: Proposal -> ClosedTerm PValidator
 proposalValidator proposal =
   plam $ \datum redeemer ctx' -> P.do
@@ -88,8 +126,10 @@ proposalValidator proposal =
     PJust txOut <- pmatch $ findTxOutByTxOutRef # txOutRef # txInfoF.inputs
     txOutF <- pletFields @'["address", "value"] $ txOut
 
-    (pfromData -> proposalDatum, _) <- ptryFrom @(PAsData PProposalDatum) datum
-    (pfromData -> proposalRedeemer, _) <- ptryFrom @(PAsData PProposalRedeemer) redeemer
+    (pfromData -> proposalDatum, _) <-
+      ptryFrom @(PAsData PProposalDatum) datum
+    (pfromData -> proposalRedeemer, _) <-
+      ptryFrom @(PAsData PProposalRedeemer) redeemer
 
     proposalF <-
       pletFields
@@ -104,27 +144,30 @@ proposalValidator proposal =
 
     ownAddress <- plet $ txOutF.address
 
-    stCurrencySymbol <- plet $ pconstant $ Plutarch.Api.V1.mintingPolicySymbol $ Plutarch.Api.V1.mkMintingPolicy (proposalPolicy proposal)
+    let stCurrencySymbol =
+          pconstant $ getMintingPolicySymbol (proposalPolicy proposal)
     valueSpent <- plet $ pvalueSpent # txInfoF.inputs
     spentST <- plet $ psymbolValueOf # stCurrencySymbol #$ valueSpent
     let AssetClass (stakeSym, stakeTn) = proposal.stakeSTAssetClass
-    stakeSTAssetClass <- plet $ passetClass # pconstant stakeSym # pconstant stakeTn
-    spentStakeST <- plet $ passetClassValueOf # valueSpent # stakeSTAssetClass
+    stakeSTAssetClass <-
+      plet $ passetClass # pconstant stakeSym # pconstant stakeTn
+    spentStakeST <-
+      plet $ passetClassValueOf # valueSpent # stakeSTAssetClass
 
     signedBy <- plet $ ptxSignedBy # txInfoF.signatories
 
+    passert "ST at inputs must be 1" $
+      spentST #== 1
+
     pmatch proposalRedeemer $ \case
       PVote _r -> P.do
-        passert "ST at inputs must be 1" $
-          spentST #== 1
-
         popaque (pconstant ())
       --------------------------------------------------------------------------
       PCosign r -> P.do
         newSigs <- plet $ pfield @"newCosigners" # r
 
-        passert "ST at inputs must be 1" $
-          spentST #== 1
+        passert "Cosigners are unique" $
+          pisUniq # newSigs
 
         passert "Signed by all new cosigners" $
           pall # signedBy # newSigs
@@ -136,9 +179,15 @@ proposalValidator proposal =
           pall
             # plam
               ( \sig ->
-                  pmatch (findStakeOwnedBy # stakeSTAssetClass # pfromData sig # txInfoF.datums # txInfoF.inputs) $ \case
-                    PNothing -> pcon PFalse
-                    PJust _ -> pcon PTrue
+                  pmatch
+                    ( findStakeOwnedBy # stakeSTAssetClass
+                        # pfromData sig
+                        # txInfoF.datums
+                        # txInfoF.inputs
+                    )
+                    $ \case
+                      PNothing -> pcon PFalse
+                      PJust _ -> pcon PTrue
               )
             # newSigs
 
@@ -146,7 +195,8 @@ proposalValidator proposal =
           anyOutput @PProposalDatum # ctx.txInfo
             #$ plam
             $ \newValue address newProposalDatum -> P.do
-              let correctDatum =
+              let updatedSigs = pconcat # newSigs # proposalF.cosigners
+                  correctDatum =
                     pdata newProposalDatum
                       #== pdata
                         ( mkRecordConstr
@@ -154,7 +204,7 @@ proposalValidator proposal =
                             ( #proposalId .= proposalF.proposalId
                                 .& #effects .= proposalF.effects
                                 .& #status .= proposalF.status
-                                .& #cosigners .= pdata (pconcat # newSigs # proposalF.cosigners)
+                                .& #cosigners .= pdata updatedSigs
                                 .& #thresholds .= proposalF.thresholds
                                 .& #votes .= proposalF.votes
                             )
@@ -164,20 +214,16 @@ proposalValidator proposal =
                 (#&&)
                 [ pcon PTrue
                 , ptraceIfFalse "Datum must be correct" correctDatum
-                , ptraceIfFalse "Value should be correct" $ pdata txOutF.value #== pdata newValue
-                , ptraceIfFalse "Must be sent to Proposal's address" $ ownAddress #== pdata address
+                , ptraceIfFalse "Value should be correct" $
+                    pdata txOutF.value #== pdata newValue
+                , ptraceIfFalse "Must be sent to Proposal's address" $
+                    ownAddress #== pdata address
                 ]
 
         popaque (pconstant ())
       --------------------------------------------------------------------------
       PUnlock _r -> P.do
-        passert "ST at inputs must be 1" $
-          spentST #== 1
-
         popaque (pconstant ())
       --------------------------------------------------------------------------
       PAdvanceProposal _r -> P.do
-        passert "ST at inputs must be 1" $
-          spentST #== 1
-
         popaque (pconstant ())

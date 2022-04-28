@@ -45,6 +45,7 @@ import Agora.Proposal (
   ProposalStatus (..),
   ProposalVotes (..),
   ResultTag (..),
+  emptyVotesFor,
  )
 import Agora.Stake (Stake (..), StakeDatum (StakeDatum))
 import Plutarch.SafeMoney (Tagged (Tagged), untag)
@@ -58,21 +59,22 @@ import Spec.Util (datumPair, toDatumHash)
 proposalCreation :: ScriptContext
 proposalCreation =
   let st = Value.singleton proposalPolicySymbol "" 1 -- Proposal ST
+      effects =
+        AssocMap.fromList
+          [ (ResultTag 0, [])
+          , (ResultTag 1, [])
+          ]
       proposalDatum :: Datum
       proposalDatum =
         Datum
           ( toBuiltinData $
               ProposalDatum
                 { proposalId = ProposalId 0
-                , effects =
-                    AssocMap.fromList
-                      [ (ResultTag 0, [])
-                      , (ResultTag 1, [])
-                      ]
+                , effects = effects
                 , status = Draft
                 , cosigners = [signer]
                 , thresholds = defaultProposalThresholds
-                , votes = ProposalVotes AssocMap.empty
+                , votes = emptyVotesFor effects
                 }
           )
 

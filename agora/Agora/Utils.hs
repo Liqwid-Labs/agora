@@ -28,6 +28,8 @@ module Agora.Utils (
   pisJust,
   ptokenSpent,
   pkeysEqual,
+  pnub,
+  pisUniq,
 
   -- * Functions which should (probably) not be upstreamed
   anyOutput,
@@ -38,6 +40,7 @@ module Agora.Utils (
   findOutputsToAddress,
   findTxOutDatum,
   validatorHashToTokenName,
+  getMintingPolicySymbol,
 ) where
 
 --------------------------------------------------------------------------------
@@ -54,6 +57,7 @@ import Plutarch.Api.V1 (
   PDatumHash,
   PMap,
   PMaybeData (PDJust),
+  PMintingPolicy,
   PPubKeyHash,
   PTokenName (PTokenName),
   PTuple,
@@ -63,6 +67,8 @@ import Plutarch.Api.V1 (
   PTxOutRef,
   PValidatorHash,
   PValue,
+  mintingPolicySymbol,
+  mkMintingPolicy,
  )
 import Plutarch.Api.V1.AssocMap (PMap (PMap))
 import Plutarch.Api.V1.Extra (PAssetClass, passetClassValueOf, pvalueOf)
@@ -72,6 +78,7 @@ import Plutarch.Internal (punsafeCoerce)
 import Plutarch.Map.Extra (pkeys)
 import Plutarch.Monadic qualified as P
 import Plutarch.TryFrom (PTryFrom, ptryFrom)
+import Plutus.V1.Ledger.Api (CurrencySymbol)
 
 --------------------------------------------------------------------------------
 -- Validator-level utility functions
@@ -88,7 +95,7 @@ pfindDatum = phoistAcyclic $
 -- | Find a datum with the given hash, and `ptryFrom` it.
 ptryFindDatum :: forall (a :: PType) (s :: S). PTryFrom PData a => Term s (PDatumHash :--> PBuiltinList (PAsData (PTuple PDatumHash PDatum)) :--> PMaybe a)
 ptryFindDatum = phoistAcyclic $
-  plam $ \datumHash inputs -> P.do
+  plam $ \datumHash inputs ->
     pmatch (pfindDatum # datumHash # inputs) $ \case
       PNothing -> pcon PNothing
       PJust datum -> P.do
@@ -330,6 +337,30 @@ pkeysEqual = phoistAcyclic $
     pall # plam (\pk -> pelem # pk # qks) # pks
       #&& pall # plam (\qk -> pelem # qk # pks) # qks
 
+-- | / O(n^2) /. Clear out duplicates in a list. The order is not preserved.
+pnub :: forall list a (s :: S). (PEq a, PIsListLike list a) => Term s (list a :--> list a)
+pnub =
+  phoistAcyclic $
+    precList
+      ( \self x xs ->
+          pif
+            (pnot #$ pelem # x # xs)
+            (pcons # x # (self # xs))
+            (self # xs)
+      )
+      (const pnil)
+
+-- | / O(n^2) /. Check if a list contains no duplicates.
+pisUniq :: forall list a (s :: S). (PEq a, PIsListLike list a) => Term s (list a :--> PBool)
+pisUniq =
+  phoistAcyclic $
+    precList
+      ( \self x xs ->
+          (pnot #$ pelem # x # xs)
+            #&& (self # xs)
+      )
+      (const $ pcon PTrue)
+
 --------------------------------------------------------------------------------
 {- Functions which should (probably) not be upstreamed
    All of these functions are quite inefficient.
@@ -447,5 +478,12 @@ findTxOutDatum = phoistAcyclic $
       PDJust ((pfield @"_0" #) -> datumHash) -> pfindDatum # datumHash # datums
       _ -> pcon PNothing
 
+{- | Safely convert a 'PValidatorHash' into a 'PTokenName'. This can be useful for tagging
+     tokens for extra safety.
+-}
 validatorHashToTokenName :: forall (s :: S). Term s PValidatorHash -> Term s PTokenName
 validatorHashToTokenName vh = pcon (PTokenName (pto vh))
+
+-- | Get the CurrencySymbol of a PMintingPolicy.
+getMintingPolicySymbol :: ClosedTerm PMintingPolicy -> CurrencySymbol
+getMintingPolicySymbol v = mintingPolicySymbol $ mkMintingPolicy v

@@ -102,11 +102,8 @@ govSymbol = mintingPolicySymbol govPolicy
 proposal :: Proposal
 proposal =
   Proposal
-    { governorSTAssetClass =
-        -- TODO: if we had a governor here
-        Value.assetClass govSymbol ""
-    , stakeSTAssetClass =
-        Value.assetClass stakeSymbol ""
+    { governorSTAssetClass = Value.assetClass govSymbol ""
+    , stakeSTAssetClass = Value.assetClass stakeSymbol ""
     , maximumCosigners = 6
     }
 

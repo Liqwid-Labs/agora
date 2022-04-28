@@ -17,6 +17,7 @@ module Agora.Proposal (
   ProposalVotes (..),
   ProposalId (..),
   ResultTag (..),
+  emptyVotesFor,
 
   -- * Plutarch-land
   PProposalDatum (..),
@@ -67,7 +68,8 @@ import Plutus.V1.Ledger.Value (AssetClass)
 {- | Identifies a Proposal, issued upon creation of a proposal. In practice,
      this number starts at zero, and increments by one for each proposal.
      The 100th proposal will be @'ProposalId' 99@. This counter lives
-     in the 'Agora.Governor.Governor', see 'Agora.Governor.nextProposalId'.
+     in the 'Agora.Governor.Governor'. See 'Agora.Governor.nextProposalId', and
+     'Agora.Governor.pgetNextProposalId'.
 -}
 newtype ProposalId = ProposalId {proposalTag :: Integer}
   deriving newtype (PlutusTx.ToData, PlutusTx.FromData, PlutusTx.UnsafeFromData)
@@ -140,7 +142,7 @@ data ProposalThresholds = ProposalThresholds
   --
   -- It is recommended this be a high enough amount, in order to prevent DOS from bad
   -- actors.
-  , vote :: Tagged GTTag Integer
+  , startVoting :: Tagged GTTag Integer
   -- ^ How much GT required to allow voting to happen.
   -- (i.e. to move into 'VotingReady')
   }
@@ -164,6 +166,10 @@ newtype ProposalVotes = ProposalVotes
   }
   deriving newtype (PlutusTx.ToData, PlutusTx.FromData, PlutusTx.UnsafeFromData)
   deriving stock (Eq, Show, GHC.Generic)
+
+-- | Create a 'ProposalVotes' that has the same shape as the 'effects' field.
+emptyVotesFor :: forall a. AssocMap.Map ResultTag a -> ProposalVotes
+emptyVotesFor = ProposalVotes . AssocMap.mapWithKey (const . const 0)
 
 -- | Haskell-level datum for Proposal scripts.
 data ProposalDatum = ProposalDatum
@@ -206,18 +212,19 @@ data ProposalRedeemer
     --
     --   === @'Draft' -> 'VotingReady'@:
     --
-    --     1. The sum of all of the cosigner's GT is larger than the 'vote' field of 'ProposalThresholds'.
-    --     2. The proposal hasn't been alive for longer than the review time.
+    --     1. The sum of all of the cosigner's GT is larger than the 'startVoting' field of 'ProposalThresholds'.
+    --     2. The proposal's current time ensures 'isDraftPeriod'.
     --
     --   === @'VotingReady' -> 'Locked'@:
     --
     --     1. The sum of all votes is larger than 'countVoting'.
     --     2. The winning 'ResultTag' has more votes than all other 'ResultTag's.
-    --     3. The proposal hasn't been alive for longer than the voting time.
+    --     3. The proposal's current time ensures 'isVotingPeriod'.
     --
     --   === @'Locked' -> 'Finished'@:
     --
-    --     Always valid provided the conditions for the transition are met.
+    --     1. The proposal's current time ensures 'isExecutionPeriod'.
+    --     2. The transaction mints the GATs to the receiving effects.
     --
     --   === @* -> 'Finished'@:
     --
@@ -424,6 +431,6 @@ proposalDatumValid proposal =
         (#&&)
         [ ptraceIfFalse "Proposal has at least one ResultTag has no effects" atLeastOneNegativeResult
         , ptraceIfFalse "Proposal has at least one cosigner" $ pnotNull # pfromData datum.cosigners
-        , ptraceIfFalse "Proposal has at most five cosigners" $ plength # (pfromData datum.cosigners) #<= pconstant proposal.maximumCosigners
-        , ptraceIfFalse "Proposal votes and effects are compatible with eachother" $ pkeysEqual # datum.effects # pto (pfromData datum.votes)
+        , ptraceIfFalse "Proposal has fewer cosigners than the limit" $ plength # (pfromData datum.cosigners) #<= pconstant proposal.maximumCosigners
+        , ptraceIfFalse "Proposal votes and effects are compatible with each other" $ pkeysEqual # datum.effects # pto (pfromData datum.votes)
         ]

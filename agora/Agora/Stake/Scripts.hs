@@ -65,7 +65,10 @@ import Prelude hiding (Num (..))
    - Check that exactly one state thread is burned.
    - Check that datum at state thread is valid and not locked.
 -}
-stakePolicy :: Tagged GTTag AssetClass -> ClosedTerm PMintingPolicy
+stakePolicy ::
+  -- | The (governance) token that a Stake can store.
+  Tagged GTTag AssetClass ->
+  ClosedTerm PMintingPolicy
 stakePolicy gtClassRef =
   plam $ \_redeemer ctx' -> P.do
     ctx <- pletFields @'["txInfo", "purpose"] ctx'
@@ -157,7 +160,59 @@ stakePolicy gtClassRef =
 
 --------------------------------------------------------------------------------
 
--- | Validator intended for Stake UTXOs to live in.
+-- | Validator intended for Stake UTXOs to be locked by.
+--
+--
+-- == What this Validator does:
+--
+-- === 'DepositWithdraw'
+--
+-- Deposit or withdraw some GT to the stake.
+--
+-- - Tx must be signed by the owner.
+-- - The 'stakedAmount' field must be updated.
+-- - The stake must not be locked.
+-- - The new UTXO must have the previous value plus the difference
+--   as stated by the redeemer.
+--
+-- === 'PermitVote'
+--
+-- Allow a 'ProposalLock' to be put on the stake in order to vote
+-- on a proposal.
+--
+-- - A proposal token must be spent alongside the stake.
+--
+--   * Its total votes must be correctly updated to include this stake's
+--     contribution.
+--
+-- - Tx must be signed by the owner.
+--
+--
+-- === 'RetractVotes'
+--
+-- Remove a 'ProposalLock' set when voting on a proposal.
+--
+-- - A proposal token must be spent alongside the stake.
+-- - Tx must be signed by the owner.
+--
+--
+-- === 'Destroy'
+--
+-- Destroy the stake in order to reclaim the min ADA.
+--
+-- - The stake must not be locked.
+-- - Tx must be signed by the owner.
+--
+--
+-- === 'WitnessStake'
+--
+-- Allow this Stake to be included in a transaction without making
+-- any changes to it. In the future,
+-- this could use [CIP-31](https://cips.cardano.org/cips/cip31/) instead.
+--
+-- - Tx must be signed by the owner __or__ a proposal ST token must be spent
+--   alongside the stake.
+-- - The datum and value must remain unchanged.
 stakeValidator :: Stake -> ClosedTerm PValidator
 stakeValidator stake =
   plam $ \datum redeemer ctx' -> P.do
@@ -243,8 +298,6 @@ stakeValidator stake =
           "Owner signs this transaction"
           ownerSignsTransaction
 
-        passert "ST at inputs must be 1" $
-          spentST #== 1
 
         -- This puts trust into the Proposal. The Proposal must necessarily check
         -- that this is not abused.

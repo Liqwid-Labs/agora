@@ -19,12 +19,12 @@ module Agora.Proposal.Time (
   PProposalTimingConfig (..),
   PProposalStartingTime (..),
 
-  -- * Compute ranges given config and starting time.
+  -- * Compute periods given config and starting time.
   currentProposalTime,
-  isDraftRange,
-  isVotingRange,
-  isLockingRange,
-  isExecutionRange,
+  isDraftPeriod,
+  isVotingPeriod,
+  isLockingPeriod,
+  isExecutionPeriod,
 ) where
 
 import Agora.Record (mkRecordConstr, (.&), (.=))
@@ -58,14 +58,14 @@ import Prelude hiding ((+))
    For the purposes of proposals, there's a single most important feature:
    The ability to determine if we can perform an action. In order to correctly
    determine if we are able to perform certain actions, we need to know what
-   time it roughly is, compared to when the proposal got created.
+   time it roughly is, compared to when the proposal was created.
 
    'ProposalTime' represents "the time according to the proposal".
    Its representation is opaque, and doesn't matter.
 
    Various functions work simply on 'ProposalTime' and 'ProposalTimingConfig'.
    In particular, 'currentProposalTime' is useful for extracting the time
-   from the 'Plutus.V1.Ledger.Api.txInfoValidRange' field
+   from the 'Plutus.V1.Ledger.Api.txInfoValidPeriod' field
    of 'Plutus.V1.Ledger.Api.TxInfo'.
 
    We avoid 'PPOSIXTimeRange' where we can in order to save on operations.
@@ -153,7 +153,7 @@ newtype PProposalTimingConfig (s :: S) = PProposalTimingConfig
 instance AdditiveSemigroup (Term s PPOSIXTime) where
   (punsafeCoerce @_ @_ @PInteger -> x) + (punsafeCoerce @_ @_ @PInteger -> y) = punsafeCoerce $ x + y
 
--- | Get the current proposal time, from the 'Plutus.V1.Ledger.Api.txInfoValidRange' field.
+-- | Get the current proposal time, from the 'Plutus.V1.Ledger.Api.txInfoValidPeriod' field.
 currentProposalTime :: forall (s :: S). Term s (PPOSIXTimeRange :--> PProposalTime)
 currentProposalTime = phoistAcyclic $
   plam $ \iv -> P.do
@@ -179,7 +179,14 @@ currentProposalTime = phoistAcyclic $
           )
 
 -- | Check if 'PProposalTime' is within two 'PPOSIXTime'. Inclusive.
-proposalTimeWithin :: Term s (PPOSIXTime :--> PPOSIXTime :--> PProposalTime :--> PBool)
+proposalTimeWithin ::
+  Term
+    s
+    ( PPOSIXTime
+        :--> PPOSIXTime
+        :--> PProposalTime
+        :--> PBool
+    )
 proposalTimeWithin = phoistAcyclic $
   plam $ \l h proposalTime' -> P.do
     PProposalTime proposalTime <- pmatch proposalTime'
@@ -195,28 +202,61 @@ proposalTimeWithin = phoistAcyclic $
       ]
 
 -- | True if the 'PProposalTime' is in the draft period.
-isDraftRange :: forall (s :: S). Term s (PProposalTimingConfig :--> PProposalStartingTime :--> PProposalTime :--> PBool)
-isDraftRange = phoistAcyclic $
+isDraftPeriod ::
+  forall (s :: S).
+  Term
+    s
+    ( PProposalTimingConfig
+        :--> PProposalStartingTime
+        :--> PProposalTime
+        :--> PBool
+    )
+isDraftPeriod = phoistAcyclic $
   plam $ \config s' -> pmatch s' $ \(PProposalStartingTime s) ->
     proposalTimeWithin # s # (s + pfield @"draftTime" # config)
 
 -- | True if the 'PProposalTime' is in the voting period.
-isVotingRange :: forall (s :: S). Term s (PProposalTimingConfig :--> PProposalStartingTime :--> PProposalTime :--> PBool)
-isVotingRange = phoistAcyclic $
+isVotingPeriod ::
+  forall (s :: S).
+  Term
+    s
+    ( PProposalTimingConfig
+        :--> PProposalStartingTime
+        :--> PProposalTime
+        :--> PBool
+    )
+isVotingPeriod = phoistAcyclic $
   plam $ \config s' -> pmatch s' $ \(PProposalStartingTime s) ->
     pletFields @'["draftTime", "votingTime"] config $ \f ->
       proposalTimeWithin # s # (s + f.draftTime + f.votingTime)
 
 -- | True if the 'PProposalTime' is in the locking period.
-isLockingRange :: forall (s :: S). Term s (PProposalTimingConfig :--> PProposalStartingTime :--> PProposalTime :--> PBool)
-isLockingRange = phoistAcyclic $
+isLockingPeriod ::
+  forall (s :: S).
+  Term
+    s
+    ( PProposalTimingConfig
+        :--> PProposalStartingTime
+        :--> PProposalTime
+        :--> PBool
+    )
+isLockingPeriod = phoistAcyclic $
   plam $ \config s' -> pmatch s' $ \(PProposalStartingTime s) ->
     pletFields @'["draftTime", "votingTime", "lockingTime"] config $ \f ->
       proposalTimeWithin # s # (s + f.draftTime + f.votingTime + f.lockingTime)
 
 -- | True if the 'PProposalTime' is in the execution period.
-isExecutionRange :: forall (s :: S). Term s (PProposalTimingConfig :--> PProposalStartingTime :--> PProposalTime :--> PBool)
-isExecutionRange = phoistAcyclic $
+isExecutionPeriod ::
+  forall (s :: S).
+  Term
+    s
+    ( PProposalTimingConfig
+        :--> PProposalStartingTime
+        :--> PProposalTime
+        :--> PBool
+    )
+isExecutionPeriod = phoistAcyclic $
   plam $ \config s' -> pmatch s' $ \(PProposalStartingTime s) ->
     pletFields @'["draftTime", "votingTime", "lockingTime", "executingTime"] config $ \f ->
-      proposalTimeWithin # s # (s + f.draftTime + f.votingTime + f.lockingTime + f.executingTime)
+      proposalTimeWithin # s
+        # (s + f.draftTime + f.votingTime + f.lockingTime + f.executingTime)
