@@ -2,7 +2,7 @@
 
 {- |
 Module     : Agora.Governor
-Maintainer : chfanghr@gmail.com
+Maintainer : connor@mlabs.city
 Description: Governor entity scripts acting as authority of entire system.
 
 Governor entity scripts acting as authority of entire system.
@@ -137,7 +137,7 @@ import PlutusTx qualified
 --------------------------------------------------------------------------------
 
 {- $gst
-   Governance state token, aka. GST, is an NFT that identifies an UTXO that carries the state datum of the Governance script.
+   Governance state token, aka. GST, is an NFT that identifies a UTXO that carries the state datum of the Governance script.
 
    This token is minted by a one-shot monetary policy 'governorPolicy', meaning that the token has guaranteed uniqueness.
 
@@ -773,7 +773,7 @@ governorValidator gov =
 
 --------------------------------------------------------------------------------
 
--- | Get the assetclass of GST from governor parameters.
+-- | Get the 'AssetClass' of GST from 'Governor'.
 gstAssetClass :: Governor -> AssetClass
 gstAssetClass gov = AssetClass (symbol, "")
   where
@@ -783,7 +783,7 @@ gstAssetClass gov = AssetClass (symbol, "")
     symbol :: CurrencySymbol
     symbol = mintingPolicySymbol policy
 
--- | Get the currency symbol of GAT from governor parameters.
+-- | Get the `CurrencySymbol` of GAT from 'Governor'.
 gatSymbol :: Governor -> CurrencySymbol
 gatSymbol gov = mintingPolicySymbol policy
   where

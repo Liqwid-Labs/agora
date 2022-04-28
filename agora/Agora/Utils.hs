@@ -380,13 +380,15 @@ pisDJust = phoistAcyclic $
       )
 
 -- | The 'CurrencySymbol' of the current minting policy.
+-- FIXME: Yeet/reimplement this function, since passing the whole script context is highly inefficient.
 pownCurrencySymbol :: Term s (PScriptContext :--> PCurrencySymbol)
 pownCurrencySymbol = phoistAcyclic $
   plam $ \ctx -> P.do
     PMinting m <- pmatch $ pfield @"purpose" # ctx
     pfield @"_0" # m
 
--- | Determines if a given utxo is spent.
+-- | Determines if a given UTXO is spent.
+-- TODO: no need to pass the whole TxInfo here.
 pisUxtoSpent :: Term s (PTxOutRef :--> PTxInfo :--> PBool)
 pisUxtoSpent = phoistAcyclic $
   plam $ \oref info -> P.do
@@ -529,7 +531,7 @@ hasOnlyOneTokenOfAssetClass' :: AssetClass -> Term s (PValue :--> PBool)
 hasOnlyOneTokenOfAssetClass' ac = phoistAcyclic $
   plam $ \vs -> passetClassValueOf' ac # vs #== 1
 
--- | The entire value only contains one token of the specific currency symbol.
+-- | The entire value only contains one token of the given currency symbol.
 hasOnlyOneTokenOfCurrencySymbol :: Term s (PCurrencySymbol :--> PValue :--> PBool)
 hasOnlyOneTokenOfCurrencySymbol = phoistAcyclic $
   plam $ \cs vs -> P.do
