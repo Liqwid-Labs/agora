@@ -30,8 +30,7 @@ module Agora.Utils (
   pnub,
   pisUniq,
   pisDJust,
-  pownCurrencySymbol,
-  pisUxtoSpent,
+  pisUTXOSpent,
 
   -- * Functions which should (probably) not be upstreamed
   anyOutput,
@@ -379,18 +378,10 @@ pisDJust = phoistAcyclic $
           _ -> pconstant False
       )
 
--- | The 'CurrencySymbol' of the current minting policy.
--- FIXME: Yeet/reimplement this function, since passing the whole script context is highly inefficient.
-pownCurrencySymbol :: Term s (PScriptContext :--> PCurrencySymbol)
-pownCurrencySymbol = phoistAcyclic $
-  plam $ \ctx -> P.do
-    PMinting m <- pmatch $ pfield @"purpose" # ctx
-    pfield @"_0" # m
-
 -- | Determines if a given UTXO is spent.
 -- TODO: no need to pass the whole TxInfo here.
-pisUxtoSpent :: Term s (PTxOutRef :--> PTxInfo :--> PBool)
-pisUxtoSpent = phoistAcyclic $
+pisUTXOSpent :: Term s (PTxOutRef :--> PTxInfo :--> PBool)
+pisUTXOSpent = phoistAcyclic $
   plam $ \oref info -> P.do
     pisJust #$ pfindTxInByTxOutRef # oref # info
 

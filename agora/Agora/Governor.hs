@@ -78,8 +78,7 @@ import Agora.Utils (
   pfindTxInByTxOutRef,
   pisDJust,
   pisJust,
-  pisUxtoSpent,
-  pownCurrencySymbol,
+  pisUTXOSpent,
   psymbolValueOf,
   ptxSignedBy,
   pvalueSpent,
@@ -95,7 +94,7 @@ import Plutarch.Api.V1 (
   PDatumHash,
   PMap,
   PMintingPolicy,
-  PScriptPurpose (PSpending),
+  PScriptPurpose (PSpending, PMinting),
   PTxOut,
   PValidator,
   PValidatorHash,
@@ -244,12 +243,13 @@ governorPolicy :: Governor -> ClosedTerm PMintingPolicy
 governorPolicy gov =
   plam $ \_ ctx' -> P.do
     let oref = pconstant gov.gstOutRef
-        ownSymbol = pownCurrencySymbol # ctx'
+    
+    PMinting ((pfield @"_0" #) -> ownSymbol) <- pmatch (pfromData $ pfield @"purpose" # ctx')
 
     mintValue <- plet $ pownMintValue # ctx'
 
     passert "Referenced utxo should be spent" $
-      pisUxtoSpent # oref #$ pfield @"txInfo" # ctx'
+      pisUTXOSpent # oref #$ pfield @"txInfo" # ctx'
 
     passert "Exactly one token should be minted" $
       psymbolValueOf # ownSymbol # mintValue #== 1
