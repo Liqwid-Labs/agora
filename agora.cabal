@@ -127,6 +127,7 @@ library
     Agora.Effect.NoOp
     Agora.Effect.TreasuryWithdrawal
     Agora.Governor
+    Agora.Governor.Scripts
     Agora.MultiSig
     Agora.Proposal
     Agora.Proposal.Scripts
