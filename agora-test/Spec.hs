@@ -36,6 +36,7 @@ main =
           [ testGroup
               "Treasury"
               [ Treasury.genTests
+              , Treasury.plutarchTests
               ]
           ]
       ]

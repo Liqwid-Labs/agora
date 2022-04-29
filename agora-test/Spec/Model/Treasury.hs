@@ -35,11 +35,13 @@ import Apropos (
   Contract,
   Enumerable (enumerated),
   Formula (
+    All,
     Not,
     Some,
     Var,
     Yes,
-    (:&&:)
+    (:&&:),
+    (:||:)
   ),
   Gen,
   HasLogicalModel (satisfiesProperty),
@@ -48,20 +50,25 @@ import Apropos (
   LogicalModel (logic),
   Morphism (Morphism, contract, match, morphism, name),
   add,
+  choice,
+  remove,
   runGeneratorTestsWhere,
   (:+),
  )
-import Apropos.Gen.Contexts (scriptContext, txInInfo)
+import Apropos.Gen.Contexts (scriptContext, txInInfo, txOutRef)
+import Apropos.Gen.Credential (stakingCredential)
+import Apropos.Gen.DCert (dCert)
 import Apropos.Gen.Value (currencySymbol)
 import Apropos.Script (ScriptModel (expect, runScriptTestsWhere, script))
 import Data.Bifunctor (Bifunctor (first))
+import Data.Maybe (listToMaybe)
 import Data.Set (Set)
 import Plutarch.Api.V1 (PCurrencySymbol, PScriptContext)
 import Plutarch.Builtin (pforgetData)
 import Plutus.V1.Ledger.Address (Address (addressCredential))
 import Plutus.V1.Ledger.Contexts (
   ScriptContext (scriptContextPurpose, scriptContextTxInfo),
-  ScriptPurpose (Minting),
+  ScriptPurpose (Certifying, Minting, Rewarding, Spending),
   TxInInfo (txInInfoResolved),
   TxInfo (txInfoInputs, txInfoMint, txInfoOutputs),
   TxOut (txOutAddress, txOutValue),
@@ -73,8 +80,9 @@ import Plutus.V1.Ledger.Value (
   TokenName (TokenName, unTokenName),
   Value (Value, getValue),
  )
+import Plutus.V1.Ledger.Value qualified as Value (unionWith)
 import PlutusTx.AssocMap (Map, elems, fromList, keys, singleton, toList, unionWith)
-import PlutusTx.AssocMap qualified as AssocMap (insert, lookup)
+import PlutusTx.AssocMap qualified as AssocMap (delete, insert, lookup)
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.Hedgehog (fromGroup)
 
@@ -86,12 +94,7 @@ data TreasuryTxProp
 
 instance LogicalModel TreasuryTxProp where
   logic :: Formula TreasuryTxProp
-  logic =
-    Some
-      [ Var GATIsBurned
-      , Var AllGATsValid
-      , Var ScriptPurposeIsMinting
-      ]
+  logic = Yes
 
 data TreasuryTxModel = TreasuryTxModel
   { gatCs :: CurrencySymbol
@@ -183,7 +186,9 @@ fixTokenNames cs inf =
   let cred = inf.txInInfoResolved.txOutAddress.addressCredential
       Value val = inf.txInInfoResolved.txOutValue
    in case cred of
-        PubKeyCredential _ -> inf
+        PubKeyCredential _ ->
+          let newVal = Value $ AssocMap.delete cs val
+           in inf {txInInfoResolved = inf.txInInfoResolved {txOutValue = newVal}}
         ScriptCredential (ValidatorHash bs) ->
           case AssocMap.lookup cs val of
             Nothing -> inf
@@ -266,6 +271,77 @@ instance HasPermutationGenerator TreasuryTxProp TreasuryTxModel where
                       }
                 }
         }
+    , Morphism
+        { name = "Ensure GAT is not burned"
+        , match = Var GATIsBurned
+        , contract = remove GATIsBurned
+        , morphism = \m ->
+            let ctx' = m.ctx
+                txInfo = ctx'.scriptContextTxInfo
+                mint = txInfo.txInfoMint
+                newMint = replaceValue mint m.gatCs "gat" 0
+             in return
+                  m
+                    { ctx =
+                        ctx'
+                          { scriptContextTxInfo =
+                              txInfo
+                                { txInfoMint = newMint
+                                }
+                          }
+                    }
+        }
+    , Morphism
+        { name = "Ensure ScriptPurpose is not Minting"
+        , match = Var ScriptPurposeIsMinting
+        , contract = remove ScriptPurposeIsMinting
+        , morphism = \m -> do
+            newPurpose <-
+              choice
+                [ Spending <$> txOutRef
+                , Rewarding <$> stakingCredential
+                , Certifying <$> dCert
+                ]
+            return m {ctx = m.ctx {scriptContextPurpose = newPurpose}}
+        }
+    , Morphism
+        { name = "Ensure not all GATs are valid."
+        , match = Var AllGATsValid
+        , contract = remove AllGATsValid
+        , morphism = \m -> do
+            dummyInp <- txInInfo
+            let ctx' = m.ctx
+                txInfo = ctx'.scriptContextTxInfo
+                inputs = txInfo.txInfoInputs
+                firstIn = listToMaybe inputs
+                inp = case firstIn of
+                  Nothing -> dummyInp
+                  Just inp' -> inp'
+                inVal = inp.txInInfoResolved.txOutValue
+                invalidGat =
+                  Value $
+                    singleton m.gatCs $
+                      singleton "notAnAddress" (-1)
+                newVal = Value.unionWith (+) inVal invalidGat
+                newIn =
+                  inp
+                    { txInInfoResolved =
+                        inp.txInInfoResolved
+                          { txOutValue = newVal
+                          }
+                    }
+                newInputs = newIn : drop 1 inputs
+            return
+              m
+                { ctx =
+                    ctx'
+                      { scriptContextTxInfo =
+                          txInfo
+                            { txInfoInputs = newInputs
+                            }
+                      }
+                }
+        }
     ]
 
 instance ScriptModel TreasuryTxProp TreasuryTxModel where
@@ -274,7 +350,6 @@ instance ScriptModel TreasuryTxProp TreasuryTxModel where
     Var GATIsBurned
       :&&: Var AllGATsValid
       :&&: Var ScriptPurposeIsMinting
-
   script :: (TreasuryTxModel :+ TreasuryTxProp) -> TreasuryTxModel -> Script
   script _ m = compile result
     where
