@@ -24,11 +24,11 @@ import Plutarch.Api.V1 (
   PTxOut (..),
  )
 import Plutarch.Api.V1.AssocMap (PMap (PMap))
+import Plutarch.Api.V1.Extra (passetClass, passetClassValueOf)
 import Plutarch.Api.V1.Value (PValue (PValue))
 import Plutarch.Builtin (pforgetData)
 import Plutarch.Monadic qualified as P
 import Plutus.V1.Ledger.Value (AssetClass (AssetClass))
-import Plutarch.Api.V1.Extra (passetClass, passetClassValueOf)
 
 import Prelude
 

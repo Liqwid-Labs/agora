@@ -47,6 +47,7 @@ module Agora.Utils (
   mustFindDatum',
   mustBePJust,
   mustBePDJust,
+  validatorHashToAddress,
 ) where
 
 --------------------------------------------------------------------------------
@@ -55,6 +56,8 @@ import Plutus.V1.Ledger.Api (
   CurrencySymbol,
   TokenName (..),
   ValidatorHash (..),
+  Credential(..),
+  Address(..),
  )
 import Plutus.V1.Ledger.Value (AssetClass (..))
 
@@ -71,8 +74,6 @@ import Plutarch.Api.V1 (
   PMintingPolicy,
   PPubKeyHash,
   PTokenName (PTokenName),
-  PScriptContext,
-  PScriptPurpose (PMinting),
   PTuple,
   PTxInInfo (PTxInInfo),
   PTxInfo,
@@ -86,7 +87,7 @@ import Plutarch.Api.V1 (
 import Plutarch.Api.V1.AssocMap (PMap (PMap))
 import Plutarch.Api.V1.Extra (PAssetClass, passetClassValueOf, pvalueOf)
 import Plutarch.Api.V1.Value (PValue (PValue))
-import Plutarch.Builtin (ppairDataBuiltin)
+import Plutarch.Builtin (pforgetData, ppairDataBuiltin)
 import Plutarch.Map.Extra (pkeys)
 import Plutarch.Monadic qualified as P
 import Plutarch.TryFrom (PTryFrom, ptryFrom)
@@ -365,7 +366,7 @@ pisUniq =
             #&& (self # xs)
       )
       (const $ pcon PTrue)
-      
+
 -- | Yield True if a given PMaybeData is of form PDJust _.
 pisDJust :: Term s (PMaybeData a :--> PBool)
 pisDJust = phoistAcyclic $
@@ -377,12 +378,13 @@ pisDJust = phoistAcyclic $
           _ -> pconstant False
       )
 
--- | Determines if a given UTXO is spent.
--- TODO: no need to pass the whole TxInfo here.
-pisUTXOSpent :: Term s (PTxOutRef :--> PTxInfo :--> PBool)
+{- | Determines if a given UTXO is spent.
+ TODO: no need to pass the whole TxInfo here.
+-}
+pisUTXOSpent :: Term s (PTxOutRef :--> PBuiltinList (PAsData PTxInInfo) :--> PBool)
 pisUTXOSpent = phoistAcyclic $
-  plam $ \oref info -> P.do
-    pisJust #$ pfindTxInByTxOutRef # oref # info
+  plam $ \oref inputs -> P.do
+    pisJust #$ pfindTxInByTxOutRef # oref # inputs
 
 --------------------------------------------------------------------------------
 {- Functions which should (probably) not be upstreamed
@@ -526,7 +528,7 @@ hasOnlyOneTokenOfCurrencySymbol = phoistAcyclic $
 -- | Find datum given a maybe datum hash
 mustFindDatum' ::
   forall (datum :: PType).
-  (PIsData datum, PTryFrom PData (PAsData datum))=>
+  (PIsData datum, PTryFrom PData (PAsData datum)) =>
   forall s.
   Term
     s
@@ -538,7 +540,7 @@ mustFindDatum' = phoistAcyclic $
   plam $ \mdh datums -> P.do
     let dh = mustBePDJust # "Given TxOut dones't have a datum" # mdh
         dt = mustBePJust # "Datum not found in the transaction" #$ plookupTuple # dh # datums
-    (d, _ ) <- ptryFrom $ pforgetData $ pdata dt
+    (d, _) <- ptryFrom $ pforgetData $ pdata dt
     pfromData d
 
 {- | Extract the value stored in a PMaybe container.
@@ -558,3 +560,6 @@ mustBePDJust = phoistAcyclic $
   plam $ \emsg mv' -> pmatch mv' $ \case
     PDJust ((pfield @"_0" #) -> v) -> v
     _ -> ptraceError emsg
+
+validatorHashToAddress :: ValidatorHash -> Address
+validatorHashToAddress vh = Address (ScriptCredential vh) Nothing

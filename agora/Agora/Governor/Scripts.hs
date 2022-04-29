@@ -13,17 +13,21 @@ module Agora.Governor.Scripts (
   governorPolicy,
   governorValidator,
 
-  -- * Utilities
-  gstAssetClass,
-  gatSymbol,
-  pgetNextProposalId,
+  -- * Bridges
+  governorSTSymbolFromGovernor,
+  governorSTAssetClassFromGovernor,
+  atSymbolFromGovernor,
+  proposalSTAssetClassFromGovernor,
+  stakeSTSymbolFromGovernor,
+  stakeFromGovernor,
+  stakeValidatorHashFromGovernor,
+  proposalFromGovernor,
+  proposalValidatorHashFromGovernor,
 ) where
 
-import Agora.Governor (
-  Governor (gstOutRef, gtClassRef),
-  PGovernorDatum (PGovernorDatum),
-  PGovernorRedeemer (PCreateProposal, PMintGATs, PMutateGovernor),
- )
+--------------------------------------------------------------------------------
+
+import Data.Coerce (coerce)
 
 --------------------------------------------------------------------------------
 
@@ -33,6 +37,12 @@ import Agora.AuthorityToken (
   authorityTokensValidIn,
   singleAuthorityTokenBurned,
  )
+import Agora.Governor (
+  Governor (gstOutRef, gtClassRef, maximumCosigners),
+  PGovernorDatum (PGovernorDatum),
+  PGovernorRedeemer (PCreateProposal, PMintGATs, PMutateGovernor),
+  pgetNextProposalId,
+ )
 import Agora.Proposal (
   PProposalDatum (..),
   PProposalId (..),
@@ -41,6 +51,8 @@ import Agora.Proposal (
   Proposal (..),
   ProposalStatus (Draft, Locked),
   proposalDatumValid,
+ )
+import Agora.Proposal.Scripts (
   proposalPolicy,
   proposalValidator,
  )
@@ -49,6 +61,8 @@ import Agora.Stake (
   PProposalLock (..),
   PStakeDatum (..),
   Stake (..),
+ )
+import Agora.Stake.Scripts (
   stakePolicy,
   stakeValidator,
  )
@@ -59,8 +73,6 @@ import Agora.Utils (
   mustBePJust,
   mustFindDatum',
   passert,
-  passetClassValueOf,
-  passetClassValueOf',
   pfindDatum,
   pfindTxInByTxOutRef,
   pisDJust,
@@ -70,11 +82,11 @@ import Agora.Utils (
   ptxSignedBy,
   pvalueSpent,
   scriptHashFromAddress,
+  validatorHashToAddress,
  )
 
 --------------------------------------------------------------------------------
 
-import Plutarch (popaque)
 import Plutarch.Api.V1 (
   PAddress,
   PCurrencySymbol,
@@ -92,7 +104,8 @@ import Plutarch.Api.V1 (
   validatorHash,
  )
 import Plutarch.Api.V1.Extra (
-  pownMintValue,
+  passetClass,
+  passetClassValueOf,
  )
 import Plutarch.Builtin (pforgetData)
 import Plutarch.Map.Extra (
@@ -104,18 +117,18 @@ import Plutarch.Monadic qualified as P
 import Plutarch.SafeMoney (
   PDiscrete,
   puntag,
-  pvalueDiscrete,
+  pvalueDiscrete',
  )
 import Plutarch.TryFrom (ptryFrom)
 
 --------------------------------------------------------------------------------
 
 import Plutus.V1.Ledger.Api (
-  Address (Address),
-  Credential (ScriptCredential),
   CurrencySymbol (..),
   MintingPolicy,
+  TokenName (..),
  )
+import Plutus.V1.Ledger.Scripts (ValidatorHash (..))
 import Plutus.V1.Ledger.Value (
   AssetClass (..),
  )
@@ -123,13 +136,13 @@ import Plutus.V1.Ledger.Value (
 --------------------------------------------------------------------------------
 
 {- $gst
-   Governance state token, aka. GST, is an NFT that identifies a UTXO that 
+   Governance state token, aka. GST, is an NFT that identifies a UTXO that
     carries the state datum of the Governance script.
 
-   This token is minted by a one-shot monetary policy 'governorPolicy', 
+   This token is minted by a one-shot monetary policy 'governorPolicy',
     meaning that the token has guaranteed uniqueness.
 
-   The 'governorValidator' ensures that exactly one GST stays 
+   The 'governorValidator' ensures that exactly one GST stays
     at the address of itself forever.
 -}
 
@@ -152,15 +165,17 @@ governorPolicy gov =
     let oref = pconstant gov.gstOutRef
 
     PMinting ((pfield @"_0" #) -> ownSymbol) <- pmatch (pfromData $ pfield @"purpose" # ctx')
+    let ownAssetClass = passetClass # ownSymbol # pconstant ""
+        txInfo = pfromData $ pfield @"txInfo" # ctx'
 
-    mintValue <- plet $ pownMintValue # ctx'
+    txInfoF <- pletFields @'["mint", "inputs"] txInfo
 
     passert "Referenced utxo should be spent" $
-      pisUTXOSpent # oref #$ pfield @"txInfo" # ctx'
+      pisUTXOSpent # oref # txInfoF.inputs
 
     passert "Exactly one token should be minted" $
-      psymbolValueOf # ownSymbol # mintValue #== 1
-        #&& passetClassValueOf # ownSymbol # pconstant "" # mintValue #== 1
+      psymbolValueOf # ownSymbol # txInfoF.mint #== 1
+        #&& passetClassValueOf # txInfoF.mint # ownAssetClass #== 1
 
     popaque (pconstant ())
 
@@ -255,32 +270,30 @@ governorValidator gov =
     ctx <- pletFields @'["txInfo", "purpose"] ctx'
 
     txInfo' <- plet $ pfromData $ ctx.txInfo
-    txInfo <- pletFields @'["mint", "inputs", "outputs"] txInfo'
+    txInfo <- pletFields @'["mint", "inputs", "outputs", "datums", "signatories"] txInfo'
 
-    datums <- plet $ pfromData $ pfield @"data" # txInfo'
-
-    valueSpent <- plet $ pvalueSpent # txInfo'
+    valueSpent <- plet $ pvalueSpent # txInfo.inputs
 
     PSpending ((pfield @"_0" #) -> txOutRef') <- pmatch $ pfromData ctx.purpose
     let txOutRef = pfromData txOutRef'
 
-    PJust ((pfield @"resolved" #) -> ownInput') <- pmatch $ pfindTxInByTxOutRef # txOutRef # txInfo'
+    PJust ((pfield @"resolved" #) -> ownInput') <- pmatch $ pfindTxInByTxOutRef # txOutRef # txInfo.inputs
     ownInput <- pletFields @'["address", "value"] ownInput'
     let selfAddress = pfromData $ ownInput.address
 
     (pfromData -> (oldParams' :: Term _ PGovernorDatum), _) <- ptryFrom datum'
     oldParams <- pletFields @'["proposalThresholds", "nextProposalId"] oldParams'
 
-    let ownInputGSTAmount = stateTokenValueOf # ownInput.value
+    let ownInputGSTAmount = psymbolValueOf # pgstSymbol # ownInput.value
     passert "Own input should have exactly one state token" $
       ownInputGSTAmount #== 1
 
-    ownOutputs <- plet $ findOutputsToAddress # txInfo' # selfAddress
+    ownOutputs <- plet $ findOutputsToAddress # txInfo.outputs # selfAddress
     passert "Exactly one utxo should be sent to the governor" $
       plength # ownOutputs #== 1
 
     ownOutput <- pletFields @'["value", "datumHash"] $ phead # ownOutputs
-    let ownOuputGSTAmount = stateTokenValueOf # ownOutput.value
+    let ownOuputGSTAmount = psymbolValueOf # pgstSymbol # ownOutput.value
     passert "State token should stay at governor's address" $
       ownOuputGSTAmount #== 1
     passert "Output utxo to governor should have datum" $
@@ -293,7 +306,7 @@ governorValidator gov =
         pforgetData $
           pdata $
             mustBePJust # "Ouput governor state datum not found"
-              #$ pfindDatum # outputGovernorStateDatumHash # txInfo'
+              #$ pfindDatum # outputGovernorStateDatumHash # txInfo.datums
 
     pmatch redeemer $ \case
       PCreateProposal _ -> P.do
@@ -308,7 +321,7 @@ governorValidator gov =
           newDatumData #== pforgetData (pdata expectedNewDatum)
 
         passert "Exactly one proposal token must be minted" $
-          hasOnlyOneTokenOfCurrencySymbol # pproposalSymbol # txInfo.mint
+          hasOnlyOneTokenOfCurrencySymbol # ppstSymbol # txInfo.mint
 
         --
 
@@ -321,7 +334,7 @@ governorValidator gov =
                       txOut <- pletFields @'["address", "value"] txOut'
 
                       txOut.address #== pdata pstakeValidatorAddress
-                        #&& psymbolValueOf # pstakeStateSymbol # txOut.value #== 1
+                        #&& psymbolValueOf # psstSymbol # txOut.value #== 1
                 )
               # pfromData txInfo.inputs
 
@@ -337,7 +350,7 @@ governorValidator gov =
         passert "Stake input must have datum" $
           pisDJust # stakeInputDatumHash
 
-        let stakeInputDatum' = mustFindDatum' @PStakeDatum # stakeInputDatumHash # datums
+        let stakeInputDatum' = mustFindDatum' @PStakeDatum # stakeInputDatumHash # txInfo.datums
 
         stakeInputDatum <-
           pletFields @["stakedAmount", "owner", "lockedBy"] stakeInputDatum'
@@ -346,7 +359,7 @@ governorValidator gov =
           stakeInputDatum.stakedAmount #< (pgtValueOf # valueSpent)
 
         passert "Tx should be signed by the stake owner" $
-          ptxSignedBy # txInfo' # stakeInputDatum.owner
+          ptxSignedBy # txInfo.signatories # stakeInputDatum.owner
 
         --
 
@@ -359,7 +372,7 @@ governorValidator gov =
                       txOut <- pletFields @'["address", "value"] txOut'
 
                       txOut.address #== pdata pproposalValidatorAddress
-                        #&& psymbolValueOf # pproposalSymbol # txOut.value #== 1
+                        #&& psymbolValueOf # ppstSymbol # txOut.value #== 1
                 )
               # pfromData txInfo.outputs
 
@@ -375,18 +388,18 @@ governorValidator gov =
           plet $
             mustFindDatum' @PProposalDatum
               # outputDatumHash
-              # datums
+              # txInfo.datums
 
         passert "Proposal datum must be valid" $
-          proposalDatumValid # outputProposalDatum'
+          proposalDatumValid' # outputProposalDatum'
 
         outputProposalDatum <-
           pletFields
-            @'["id", "status", "cosigners", "thresholds", "votes"]
+            @'["proposalId", "status", "cosigners", "thresholds", "votes"]
             outputProposalDatum'
 
         passert "Invalid proposal id in proposal datum" $
-          outputProposalDatum.id #== oldParams.nextProposalId
+          outputProposalDatum.proposalId #== oldParams.nextProposalId
 
         passert "Invalid thresholds in proposal datum" $
           outputProposalDatum.thresholds #== oldParams.proposalThresholds
@@ -416,7 +429,7 @@ governorValidator gov =
                       txOut <- pletFields @'["address", "value"] txOut'
 
                       txOut.address #== pdata pstakeValidatorAddress
-                        #&& psymbolValueOf # pstakeStateSymbol # txOut.value #== 1
+                        #&& psymbolValueOf # psstSymbol # txOut.value #== 1
                 )
               # pfromData txInfo.outputs
 
@@ -433,7 +446,7 @@ governorValidator gov =
             stakeOutputDatum =
               pforgetData $
                 pdata $
-                  mustBePJust # "Stake output not found" #$ pfindDatum # stakeOutputDatumHash # txInfo'
+                  mustBePJust # "Stake output not found" #$ pfindDatum # stakeOutputDatumHash # txInfo.datums
 
         let possibleVoteResults = pkeys #$ pto $ pfromData outputProposalDatum.votes
 
@@ -450,7 +463,7 @@ governorValidator gov =
 
             expectedProposalLocks =
               pconcat # stakeInputDatum.lockedBy
-                #$ pmap # (mkProposalLock # outputProposalDatum.id) # possibleVoteResults
+                #$ pmap # (mkProposalLock # outputProposalDatum.proposalId) # possibleVoteResults
 
             expectedOutputDatum =
               pforgetData $
@@ -472,7 +485,7 @@ governorValidator gov =
             pfilter
               # plam
                 ( \((pfield @"value" #) . (pfield @"resolved" #) -> value) ->
-                    psymbolValueOf # pproposalSymbol # value #== 1
+                    psymbolValueOf # ppstSymbol # value #== 1
                 )
               #$ pfromData txInfo.inputs
 
@@ -481,13 +494,13 @@ governorValidator gov =
             pfilter
               # plam
                 ( \((pfield @"value" #) -> value) ->
-                    psymbolValueOf # pproposalSymbol # value #== 1
+                    psymbolValueOf # ppstSymbol # value #== 1
                 )
               #$ pfromData txInfo.outputs
 
         passert "The governor can only process one proposal at a time" $
           plength # inputsWithProposalStateToken #== 1
-            #&& (psymbolValueOf # pproposalSymbol #$ pvalueSpent # txInfo') #== 1
+            #&& (psymbolValueOf # ppstSymbol #$ pvalueSpent # txInfo.inputs) #== 1
 
         proposalInputTxOut <-
           pletFields @'["address", "value", "datumHash"] $
@@ -503,19 +516,19 @@ governorValidator gov =
           plet $
             mustFindDatum' @PProposalDatum
               # proposalInputTxOut.datumHash
-              # datums
+              # txInfo.datums
         outputProposalDatum' <-
           plet $
             mustFindDatum' @PProposalDatum
               # proposalOutputTxOut.datumHash
-              # datums
+              # txInfo.datums
 
         passert "Proposal datum must be valid" $
-          proposalDatumValid # inputProposalDatum'
-            #&& proposalDatumValid # outputProposalDatum'
+          proposalDatumValid' # inputProposalDatum'
+            #&& proposalDatumValid' # outputProposalDatum'
 
         inputProposalDatum <-
-          pletFields @'["id", "effects", "status", "cosigners", "thresholds", "votes"]
+          pletFields @'["proposalId", "effects", "status", "cosigners", "thresholds", "votes"]
             inputProposalDatum'
 
         passert "Proposal must be in locked(executable) state in order to execute effects" $
@@ -526,7 +539,7 @@ governorValidator gov =
                 pdata $
                   pcon $
                     PProposalDatum $
-                      pdcons @"id" # inputProposalDatum.id
+                      pdcons @"proposalId" # inputProposalDatum.proposalId
                         #$ pdcons @"effects" # inputProposalDatum.effects
                         #$ pdcons @"status" # pdata (pcon $ PFinished pdnil)
                         #$ pdcons @"cosigners" # inputProposalDatum.cosigners
@@ -572,7 +585,7 @@ governorValidator gov =
         gatCount <- plet $ plength #$ pto $ pto effectGroup
 
         passert "Required amount of GATs should be minted" $
-          psymbolValueOf # pproposalSymbol # txInfo.mint #== gatCount
+          psymbolValueOf # ppstSymbol # txInfo.mint #== gatCount
 
         outputsWithGAT <-
           plet $
@@ -580,7 +593,7 @@ governorValidator gov =
               # phoistAcyclic
                 ( plam
                     ( \((pfield @"value" #) -> value) ->
-                        0 #< psymbolValueOf # pgatSymbol # value
+                        0 #< psymbolValueOf # patSymbol # value
                     )
                 )
               # pfromData txInfo.outputs
@@ -606,7 +619,7 @@ governorValidator gov =
                             mustBePJust # "Receiver is not in the effect list"
                               #$ plookup # scriptHash # effects
 
-                      passert "GAT must be tagged by the effect hash" $ authorityTokensValidIn # pgatSymbol # output'
+                      passert "GAT must be tagged by the effect hash" $ authorityTokensValidIn # patSymbol # output'
                       passert "Unexpected datum" $ datumHash #== expectedDatumHash
                       pconstant ()
                   )
@@ -619,82 +632,111 @@ governorValidator gov =
             # pconstant ()
             # outputsWithGAT
       PMutateGovernor _ -> P.do
-        popaque $ singleAuthorityTokenBurned pgatSymbol ctx.txInfo txInfo.mint
+        popaque $ singleAuthorityTokenBurned patSymbol ctx.txInfo txInfo.mint
   where
-    stateTokenAssetClass :: AssetClass
-    stateTokenAssetClass = gstAssetClass gov
+    pgtValueOf :: Term s (PValue :--> PDiscrete GTTag)
+    pgtValueOf = phoistAcyclic $ pvalueDiscrete' gov.gtClassRef
 
-    outputProposalDatum :: Proposal
-    outputProposalDatum =
-      Proposal
-        { governorSTAssetClass = stateTokenAssetClass
-        }
+    patSymbol :: Term s PCurrencySymbol
+    patSymbol = phoistAcyclic $ pconstant $ atSymbolFromGovernor gov
 
-    proposalSymbol :: CurrencySymbol
-    proposalSymbol = mintingPolicySymbol policy
-      where
-        policy = mkMintingPolicy $ proposalPolicy outputProposalDatum
+    ppstSymbol :: Term s PCurrencySymbol
+    ppstSymbol =
+      let AssetClass (sym, _) = proposalSTAssetClassFromGovernor gov
+       in phoistAcyclic $ pconstant sym
 
-    pproposalSymbol :: Term s PCurrencySymbol
-    pproposalSymbol = phoistAcyclic $ pconstant proposalSymbol
-
-    proposalValidatorAddress :: Address
-    proposalValidatorAddress = Address (ScriptCredential hash) Nothing
-      where
-        hash = validatorHash validator
-        validator = mkValidator $ proposalValidator outputProposalDatum
+    proposalDatumValid' :: Term s (PProposalDatum :--> PBool)
+    proposalDatumValid' =
+      let params = proposalFromGovernor gov
+       in phoistAcyclic $ proposalDatumValid params
 
     pproposalValidatorAddress :: Term s PAddress
-    pproposalValidatorAddress = phoistAcyclic $ pconstant proposalValidatorAddress
-
-    stateTokenValueOf :: Term s (PValue :--> PInteger)
-    stateTokenValueOf = passetClassValueOf' stateTokenAssetClass
-
-    pgatSymbol :: Term s PCurrencySymbol
-    pgatSymbol = phoistAcyclic $ pconstant $ gatSymbol gov
-
-    stakeParameters :: Stake
-    stakeParameters = Stake gov.gtClassRef
-
-    stakeValidatorAddress :: Address
-    stakeValidatorAddress = Address (ScriptCredential hash) Nothing
-      where
-        validator = mkValidator $ stakeValidator stakeParameters
-        hash = validatorHash validator
-
-    stakeStateSymbol :: CurrencySymbol
-    stakeStateSymbol = mintingPolicySymbol policy
-      where
-        policy = mkMintingPolicy $ stakePolicy stakeParameters
+    pproposalValidatorAddress =
+      let vh = proposalValidatorHashFromGovernor gov
+       in phoistAcyclic $ pconstant $ validatorHashToAddress vh
 
     pstakeValidatorAddress :: Term s PAddress
-    pstakeValidatorAddress = phoistAcyclic $ pconstant stakeValidatorAddress
+    pstakeValidatorAddress =
+      let vh = stakeValidatorHashFromGovernor gov
+       in phoistAcyclic $ pconstant $ validatorHashToAddress vh
 
-    pstakeStateSymbol :: Term s PCurrencySymbol
-    pstakeStateSymbol = phoistAcyclic $ pconstant stakeStateSymbol
+    psstSymbol :: Term s PCurrencySymbol
+    psstSymbol =
+      let sym = stakeSTSymbolFromGovernor gov
+       in phoistAcyclic $ pconstant sym
 
-    pgtValueOf :: Term s (PValue :--> PDiscrete GTTag)
-    pgtValueOf = pvalueDiscrete gov.gtClassRef
+    pgstSymbol :: Term s PCurrencySymbol
+    pgstSymbol =
+      let sym = governorSTSymbolFromGovernor gov
+       in phoistAcyclic $ pconstant sym
 
 --------------------------------------------------------------------------------
 
--- | Get the 'AssetClass' of GST from 'Governor'.
-gstAssetClass :: Governor -> AssetClass
-gstAssetClass gov = AssetClass (symbol, "")
+governorSTSymbolFromGovernor :: Governor -> CurrencySymbol
+governorSTSymbolFromGovernor gov = mintingPolicySymbol policy
   where
     policy :: MintingPolicy
     policy = mkMintingPolicy $ governorPolicy gov
 
+{- | Get the 'AssetClass' of GST from 'Governor'.
+ TODO: tag GST?
+-}
+governorSTAssetClassFromGovernor :: Governor -> AssetClass
+governorSTAssetClassFromGovernor gov = AssetClass (symbol, "")
+  where
     symbol :: CurrencySymbol
-    symbol = mintingPolicySymbol policy
+    symbol = governorSTSymbolFromGovernor gov
 
 -- | Get the `CurrencySymbol` of GAT from 'Governor'.
-gatSymbol :: Governor -> CurrencySymbol
-gatSymbol gov = mintingPolicySymbol policy
+atSymbolFromGovernor :: Governor -> CurrencySymbol
+atSymbolFromGovernor gov = mintingPolicySymbol policy
   where
-    at = AuthorityToken $ gstAssetClass gov
+    at = AuthorityToken $ governorSTAssetClassFromGovernor gov
     policy = mkMintingPolicy $ authorityTokenPolicy at
 
--- | Get next proposal id.
-pgetNextProposalId :: Term s (PProposalId :--> PProposalId)
-pgetNextProposalId = phoistAcyclic $ plam $ \(pto -> pid) -> pcon $ PProposalId $ pid + 1
+proposalSTAssetClassFromGovernor :: Governor -> AssetClass
+proposalSTAssetClassFromGovernor gov = AssetClass (symbol, "")
+  where
+    gstAC = governorSTAssetClassFromGovernor gov
+    -- JUSTIFICATIONL: the PST policy doesn't care about the following two fields at all.
+    -- FIXME: refactor PST policy, parameterize it only with GST assetclass or something.
+    sstAC = AssetClass ("", "")
+    mc = -1
+    params = Proposal gstAC sstAC mc
+
+    policy = mkMintingPolicy $ proposalPolicy params
+    symbol = mintingPolicySymbol policy
+
+stakeSTSymbolFromGovernor :: Governor -> CurrencySymbol
+stakeSTSymbolFromGovernor gov = mintingPolicySymbol policy
+  where
+    policy = mkMintingPolicy $ stakePolicy gov.gtClassRef
+
+stakeFromGovernor :: Governor -> Stake
+stakeFromGovernor gov =
+  Stake gov.gtClassRef $
+    proposalSTAssetClassFromGovernor gov
+
+stakeValidatorHashFromGovernor :: Governor -> ValidatorHash
+stakeValidatorHashFromGovernor gov = validatorHash validator
+  where
+    params = stakeFromGovernor gov
+    validator = mkValidator $ stakeValidator params
+
+proposalFromGovernor :: Governor -> Proposal
+proposalFromGovernor gov = Proposal gstAC sstAC mc
+  where
+    gstAC = governorSTAssetClassFromGovernor gov
+    mc = gov.maximumCosigners
+
+    sstS = stakeSTSymbolFromGovernor gov
+    -- The stake state token is tagged with the address which it's sent to.
+    sstTN :: TokenName
+    sstTN = coerce $ stakeValidatorHashFromGovernor gov
+    sstAC = AssetClass (sstS, sstTN)
+
+proposalValidatorHashFromGovernor :: Governor -> ValidatorHash
+proposalValidatorHashFromGovernor gov = validatorHash validator
+  where
+    params = proposalFromGovernor gov
+    validator = mkValidator $ proposalValidator params

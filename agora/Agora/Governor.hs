@@ -16,6 +16,9 @@ module Agora.Governor (
   -- * Plutarch-land
   PGovernorDatum (..),
   PGovernorRedeemer (..),
+
+  -- * Plutus Utilities
+  pgetNextProposalId,
 ) where
 
 --------------------------------------------------------------------------------
@@ -27,7 +30,7 @@ import Generics.SOP (Generic, I (I))
 --------------------------------------------------------------------------------
 
 import Agora.Proposal (
-  PProposalId ,  
+  PProposalId (..),
   PProposalThresholds,
   ProposalId,
   ProposalThresholds,
@@ -41,7 +44,7 @@ import Plutarch.DataRepr (
   PDataFields,
   PIsDataReprInstances (PIsDataReprInstances),
  )
-import Plutarch.Lift (PUnsafeLiftDecl (..))
+import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (..))
 import Plutarch.SafeMoney (Tagged (..))
 import Plutarch.TryFrom (PTryFrom (..))
 import Plutarch.Unsafe (punsafeCoerce)
@@ -95,6 +98,10 @@ data Governor = Governor
   { gstOutRef :: TxOutRef
   -- ^ Referenced utxo will be spent to mint the GST.
   , gtClassRef :: Tagged GTTag AssetClass
+  -- ^ Governance token of the system.
+  , maximumCosigners :: Integer
+  -- ^ Arbitrary limit for maximum amount of cosigners on a proposal.
+  -- See `Agora.Proposal.proposalDatumValid`.
   }
 
 --------------------------------------------------------------------------------
@@ -118,7 +125,7 @@ newtype PGovernorDatum (s :: S) = PGovernorDatum
     via PIsDataReprInstances PGovernorDatum
 
 instance PUnsafeLiftDecl PGovernorDatum where type PLifted PGovernorDatum = GovernorDatum
-deriving via (DerivePConstantViaData GovernorDatum PGovernorDatum) instance (PConstant GovernorDatum)
+deriving via (DerivePConstantViaData GovernorDatum PGovernorDatum) instance (PConstantDecl GovernorDatum)
 
 -- FIXME: derive this via 'PIsDataReprInstances'
 -- Blocked by: PProposalThresholds
@@ -140,6 +147,12 @@ data PGovernorRedeemer (s :: S)
     via PIsDataReprInstances PGovernorRedeemer
 
 instance PUnsafeLiftDecl PGovernorRedeemer where type PLifted PGovernorRedeemer = GovernorRedeemer
-deriving via (DerivePConstantViaData GovernorRedeemer PGovernorRedeemer) instance (PConstant GovernorRedeemer)
+deriving via (DerivePConstantViaData GovernorRedeemer PGovernorRedeemer) instance (PConstantDecl GovernorRedeemer)
 
 deriving via PAsData (PIsDataReprInstances PGovernorRedeemer) instance PTryFrom PData (PAsData PGovernorRedeemer)
+
+--------------------------------------------------------------------------------
+
+-- | Get next proposal id.
+pgetNextProposalId :: Term s (PProposalId :--> PProposalId)
+pgetNextProposalId = phoistAcyclic $ plam $ \(pto -> pid) -> pcon $ PProposalId $ pid + 1
