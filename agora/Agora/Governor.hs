@@ -32,6 +32,7 @@ module Agora.Governor (
 
 --------------------------------------------------------------------------------
 
+import Control.Applicative (Const)
 import GHC.Generics qualified as GHC
 import Generics.SOP (Generic, I (I))
 
@@ -118,6 +119,7 @@ import Plutarch.Map.Extra (pkeys, plookup, plookup')
 import Plutarch.Monadic qualified as P
 import Plutarch.SafeMoney (PDiscrete, Tagged (..), puntag, pvalueDiscrete)
 import Plutarch.Unsafe (punsafeCoerce)
+import Plutarch.TryFrom(PTryFrom(..))
 
 --------------------------------------------------------------------------------
 
@@ -211,6 +213,14 @@ newtype PGovernorDatum (s :: S) = PGovernorDatum
 instance PUnsafeLiftDecl PGovernorDatum where type PLifted PGovernorDatum = GovernorDatum
 deriving via (DerivePConstantViaData GovernorDatum PGovernorDatum) instance (PConstant GovernorDatum)
 
+
+-- FIXME: derive this via 'PIsDataReprInstances'
+-- Blocked by: PProposalThresholds
+instance PTryFrom PData (PAsData PGovernorDatum) where
+  type PTryFromExcess PData (PAsData PGovernorDatum) = Const ()
+
+  ptryFrom' d k = k (punsafeCoerce d , ())
+
 -- | Plutarch-level version of 'GovernorRedeemer'.
 data PGovernorRedeemer (s :: S)
   = PCreateProposal (Term s (PDataRecord '[]))
@@ -225,6 +235,8 @@ data PGovernorRedeemer (s :: S)
 
 instance PUnsafeLiftDecl PGovernorRedeemer where type PLifted PGovernorRedeemer = GovernorRedeemer
 deriving via (DerivePConstantViaData GovernorRedeemer PGovernorRedeemer) instance (PConstant GovernorRedeemer)
+
+deriving via PAsData (PIsDataReprInstances PGovernorRedeemer) instance PTryFrom PData (PAsData PGovernorRedeemer)
 
 --------------------------------------------------------------------------------
 
