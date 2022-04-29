@@ -601,7 +601,7 @@ governorValidator gov =
         passert "Output GATs is more than minted GATs" $
           plength # outputsWithGAT #== gatCount
 
-        let gatOutputValidator' :: Term s ((PMap PValidatorHash PDatumHash) :--> (PAsData PTxOut) :--> PUnit :--> PUnit)
+        let gatOutputValidator' :: Term s (PMap PValidatorHash PDatumHash :--> PAsData PTxOut :--> PUnit :--> PUnit)
             gatOutputValidator' =
               phoistAcyclic $
                 plam

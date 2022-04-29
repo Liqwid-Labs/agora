@@ -533,7 +533,7 @@ mustFindDatum' ::
   Term
     s
     ( PMaybeData PDatumHash
-        :--> (PBuiltinList (PAsData (PTuple PDatumHash PDatum)))
+        :--> PBuiltinList (PAsData (PTuple PDatumHash PDatum))
         :--> datum
     )
 mustFindDatum' = phoistAcyclic $
