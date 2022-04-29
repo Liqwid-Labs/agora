@@ -119,7 +119,7 @@ import Plutarch.Map.Extra (pkeys, plookup, plookup')
 import Plutarch.Monadic qualified as P
 import Plutarch.SafeMoney (PDiscrete, Tagged (..), puntag, pvalueDiscrete)
 import Plutarch.Unsafe (punsafeCoerce)
-import Plutarch.TryFrom(PTryFrom(..))
+import Plutarch.TryFrom(PTryFrom(..), ptryFrom)
 
 --------------------------------------------------------------------------------
 
@@ -356,8 +356,7 @@ In this case, the script will check
 governorValidator :: Governor -> ClosedTerm PValidator
 governorValidator gov =
   plam $ \datum' redeemer' ctx' -> P.do
-    -- TODO: use ptryFrom
-    redeemer <- pmatch $ pfromData @PGovernorRedeemer $ punsafeCoerce redeemer'
+    (pfromData -> redeemer, _) <- ptryFrom redeemer'
     ctx <- pletFields @'["txInfo", "purpose"] ctx'
 
     txInfo' <- plet $ pfromData $ ctx.txInfo
@@ -374,8 +373,7 @@ governorValidator gov =
     ownInput <- pletFields @'["address", "value"] ownInput'
     let selfAddress = pfromData $ ownInput.address
 
-    -- TODO: use ptryFrom
-    let oldParams' = pfromData @PGovernorDatum $ punsafeCoerce datum'
+    (pfromData -> (oldParams' :: Term _ PGovernorDatum), _) <- ptryFrom datum'
     oldParams <- pletFields @'["proposalThresholds", "nextProposalId"] oldParams'
 
     let ownInputGSTAmount = stateTokenValueOf # ownInput.value
@@ -402,7 +400,7 @@ governorValidator gov =
             mustBePJust # "Ouput governor state datum not found"
               #$ pfindDatum # outputGovernorStateDatumHash # txInfo'
 
-    case redeemer of
+    pmatch redeemer $ \case 
       PCreateProposal _ -> P.do
         let expectedNextProposalId = pgetNextProposalId # oldParams.nextProposalId
             expectedNewDatum =

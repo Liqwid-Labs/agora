@@ -529,13 +529,10 @@ hasOnlyOneTokenOfCurrencySymbol = phoistAcyclic $
     psymbolValueOf # cs # vs #== 1
       #&& (plength #$ pto $ pto $ pto vs) #== 1
 
-{- Find datum given a maybe datum hash, in an unsafe manner.
-
-   FIXME: reimplement using 'ptryFrom'.
--}
+-- | Find datum given a maybe datum hash
 mustFindDatum' ::
   forall (datum :: PType).
-  PIsData datum =>
+  (PIsData datum, PTryFrom PData (PAsData datum))=>
   forall s.
   Term
     s
@@ -545,9 +542,10 @@ mustFindDatum' ::
     )
 mustFindDatum' = phoistAcyclic $
   plam $ \mdh datums -> P.do
-    PDJust ((pfield @"_0" #) -> dh) <- pmatch mdh
-    PJust dt <- pmatch $ plookupTuple # dh # datums
-    punsafeCoerce dt
+    let dh = mustBePDJust # "Given TxOut dones't have a datum" # mdh
+        dt = mustBePJust # "Datum not found in the transaction" #$ plookupTuple # dh # datums
+    (d, _ ) <- ptryFrom $ pforgetData $ pdata dt
+    pfromData d
 
 {- | Extract the value stored in a PMaybe container.
      If there's no value, throw an error with the given message.
