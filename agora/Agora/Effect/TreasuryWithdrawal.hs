@@ -40,6 +40,7 @@ import Plutarch.TryFrom (PTryFrom (..))
 import Plutus.V1.Ledger.Credential (Credential)
 import Plutus.V1.Ledger.Value (CurrencySymbol, Value)
 import PlutusTx qualified
+import Plutarch.Builtin 
 
 data TreasuryWithdrawalDatum = TreasuryWithdrawalDatum
   { receivers :: [(Credential, Value)]
@@ -76,9 +77,10 @@ deriving via
 
 instance PTryFrom PData PTreasuryWithdrawalDatum where
   type PTryFromExcess PData PTreasuryWithdrawalDatum = Const ()
-  ptryFrom' opq cont =
-    -- this will need to not use punsafeCoerce...
-    cont (punsafeCoerce opq, ())
+  ptryFrom' tData = runTermCont $ do
+    li <- tcont $ plet (ptrace "Converting to Constr List" $ psndBuiltin #$ pasConstr # tData)
+    tcont $ \f -> pif (plength # li #== 2) (f ()) (ptraceError ("Given datum have " <> pshow (plength # li) <> " fields, PTreasuryWithdrawalDatum requires 2."))
+    pure (punsafeCoerce tData, ())
 
 {- | Withdraws given list of values to specific target addresses.
      It can be evoked by burning GAT. The transaction should have correct
