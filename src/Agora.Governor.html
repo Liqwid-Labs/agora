@@ -1,105 +1,111 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-comment">{- |
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE TemplateHaskell #-}</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="hs-comment">{- |
 Module     : Agora.Governor
 Maintainer : emi@haskell.fyi
 Description: Governor entity scripts acting as authority of entire system.
 
 Governor entity scripts acting as authority of entire system.
 -}</span><span>
-</span><span id="line-8"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Agora.Governor</span><span> </span><span class="hs-special">(</span><span>
-</span><span id="line-9"></span><span>  </span><span class="annot"><span class="hs-comment">-- * Haskell-land</span></span><span>
-</span><span id="line-10"></span><span>  </span><span class="annot"><a href="Agora.Governor.html#GovernorDatum"><span class="hs-identifier">GovernorDatum</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
-</span><span id="line-11"></span><span>  </span><span class="annot"><a href="Agora.Governor.html#GovernorRedeemer"><span class="hs-identifier">GovernorRedeemer</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
-</span><span id="line-12"></span><span>  </span><span class="annot"><a href="Agora.Governor.html#Governor"><span class="hs-identifier">Governor</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
-</span><span id="line-13"></span><span>
-</span><span id="line-14"></span><span>  </span><span class="annot"><span class="hs-comment">-- * Plutarch-land</span></span><span>
+</span><span id="line-10"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Agora.Governor</span><span> </span><span class="hs-special">(</span><span>
+</span><span id="line-11"></span><span>  </span><span class="annot"><span class="hs-comment">-- * Haskell-land</span></span><span>
+</span><span id="line-12"></span><span>  </span><span class="annot"><a href="Agora.Governor.html#GovernorDatum"><span class="hs-identifier">GovernorDatum</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-13"></span><span>  </span><span class="annot"><a href="Agora.Governor.html#GovernorRedeemer"><span class="hs-identifier">GovernorRedeemer</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-14"></span><span>  </span><span class="annot"><a href="Agora.Governor.html#Governor"><span class="hs-identifier">Governor</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
 </span><span id="line-15"></span><span>
-</span><span id="line-16"></span><span>  </span><span class="annot"><span class="hs-comment">-- * Scripts</span></span><span>
-</span><span id="line-17"></span><span>  </span><span class="annot"><a href="Agora.Governor.html#governorPolicy"><span class="hs-identifier">governorPolicy</span></a></span><span class="hs-special">,</span><span>
-</span><span id="line-18"></span><span>  </span><span class="annot"><a href="Agora.Governor.html#governorValidator"><span class="hs-identifier">governorValidator</span></a></span><span class="hs-special">,</span><span>
-</span><span id="line-19"></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-20"></span><span>
-</span><span id="line-21"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Agora.Proposal.html"><span class="hs-identifier">Agora.Proposal</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Agora.Proposal.html#ProposalId"><span class="hs-identifier">ProposalId</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Agora.Proposal.html#ProposalThresholds"><span class="hs-identifier">ProposalThresholds</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-22"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier">Plutarch</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier">popaque</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-23"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier">Plutarch.Api.V1</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier">PMintingPolicy</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier">PValidator</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-24"></span><span>
-</span><span id="line-25"></span><span class="hs-comment">-- | Datum for the Governor script.</span><span>
-</span><span id="line-26"></span><span class="hs-keyword">data</span><span> </span><span id="GovernorDatum"><span class="annot"><a href="Agora.Governor.html#GovernorDatum"><span class="hs-identifier hs-var">GovernorDatum</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="GovernorDatum"><span class="annot"><a href="Agora.Governor.html#GovernorDatum"><span class="hs-identifier hs-var">GovernorDatum</span></a></span></span><span>
-</span><span id="line-27"></span><span>  </span><span class="hs-special">{</span><span> </span><span id="proposalThresholds"><span class="annot"><span class="annottext">GovernorDatum -&gt; ProposalThresholds
+</span><span id="line-16"></span><span>  </span><span class="annot"><span class="hs-comment">-- * Plutarch-land</span></span><span>
+</span><span id="line-17"></span><span>
+</span><span id="line-18"></span><span>  </span><span class="annot"><span class="hs-comment">-- * Scripts</span></span><span>
+</span><span id="line-19"></span><span>  </span><span class="annot"><a href="Agora.Governor.html#governorPolicy"><span class="hs-identifier">governorPolicy</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-20"></span><span>  </span><span class="annot"><a href="Agora.Governor.html#governorValidator"><span class="hs-identifier">governorValidator</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-21"></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-22"></span><span>
+</span><span id="line-23"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Agora.Proposal.html"><span class="hs-identifier">Agora.Proposal</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Agora.Proposal.html#ProposalId"><span class="hs-identifier">ProposalId</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Agora.Proposal.html#ProposalThresholds"><span class="hs-identifier">ProposalThresholds</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-24"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier">Plutarch.Api.V1</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier">PMintingPolicy</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier">PValidator</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-25"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/qn0ddilrgq135vpyajkaap3hzmlxvb4m-plutus-tx-lib-plutus-tx-0.1.0.0-haddock-doc/share/doc/plutus-tx/html/src"><span class="hs-identifier">PlutusTx</span></a></span><span> </span><span class="hs-keyword">qualified</span><span>
+</span><span id="line-26"></span><span>
+</span><span id="line-27"></span><span class="hs-comment">-- | Datum for the Governor script.</span><span>
+</span><span id="line-28"></span><span class="hs-keyword">data</span><span> </span><span id="GovernorDatum"><span class="annot"><a href="Agora.Governor.html#GovernorDatum"><span class="hs-identifier hs-var">GovernorDatum</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="GovernorDatum"><span class="annot"><a href="Agora.Governor.html#GovernorDatum"><span class="hs-identifier hs-var">GovernorDatum</span></a></span></span><span>
+</span><span id="line-29"></span><span>  </span><span class="hs-special">{</span><span> </span><span id="proposalThresholds"><span class="annot"><span class="annottext">GovernorDatum -&gt; ProposalThresholds
 </span><a href="Agora.Governor.html#proposalThresholds"><span class="hs-identifier hs-var hs-var">proposalThresholds</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Agora.Proposal.html#ProposalThresholds"><span class="hs-identifier hs-type">ProposalThresholds</span></a></span><span>
-</span><span id="line-28"></span><span>  </span><span class="hs-comment">-- ^ Gets copied over upon creation of a 'Agora.Proposal.ProposalDatum'.</span><span>
-</span><span id="line-29"></span><span>  </span><span class="hs-special">,</span><span> </span><span id="nextProposalId"><span class="annot"><span class="annottext">GovernorDatum -&gt; ProposalId
+</span><span id="line-30"></span><span>  </span><span class="hs-comment">-- ^ Gets copied over upon creation of a 'Agora.Proposal.ProposalDatum'.</span><span>
+</span><span id="line-31"></span><span>  </span><span class="hs-special">,</span><span> </span><span id="nextProposalId"><span class="annot"><span class="annottext">GovernorDatum -&gt; ProposalId
 </span><a href="Agora.Governor.html#nextProposalId"><span class="hs-identifier hs-var hs-var">nextProposalId</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Agora.Proposal.html#ProposalId"><span class="hs-identifier hs-type">ProposalId</span></a></span><span>
-</span><span id="line-30"></span><span>  </span><span class="hs-comment">-- ^ What tag the next proposal will get upon creating.</span><span>
-</span><span id="line-31"></span><span>  </span><span class="hs-special">}</span><span>
-</span><span id="line-32"></span><span>
-</span><span id="line-33"></span><span class="hs-comment">{- | Redeemer for Governor script. The governor has two primary
+</span><span id="line-32"></span><span>  </span><span class="hs-comment">-- ^ What tag the next proposal will get upon creating.</span><span>
+</span><span id="line-33"></span><span>  </span><span class="hs-special">}</span><span>
+</span><span id="line-34"></span><span>
+</span><span id="line-35"></span><span id="local-6989586621679404748"><span id="local-6989586621679404750"><span id="local-6989586621679404756"><span class="hs-identifier">PlutusTx.makeIsDataIndexed</span><span> </span><span class="hs-special">''</span><span class="hs-identifier">GovernorDatum</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="hs-special">'</span><span class="hs-identifier">GovernorDatum</span><span class="hs-special">,</span><span> </span><span class="hs-number">0</span><span class="hs-special">)</span><span class="hs-special">]</span></span></span></span><span>
+</span><span id="line-36"></span><span>
+</span><span id="line-37"></span><span class="hs-comment">{- | Redeemer for Governor script. The governor has two primary
      responsibilities:
 
      1. The gating of Proposal creation.
      2. The gating of minting authority tokens.
 -}</span><span>
-</span><span id="line-39"></span><span class="hs-keyword">data</span><span> </span><span id="GovernorRedeemer"><span class="annot"><a href="Agora.Governor.html#GovernorRedeemer"><span class="hs-identifier hs-var">GovernorRedeemer</span></a></span></span><span>
-</span><span id="line-40"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="hs-comment">-- | Checks that a proposal was created lawfully, and allows it.</span><span>
-</span><span id="line-41"></span><span>    </span><span id="CreateProposal"><span class="annot"><a href="Agora.Governor.html#CreateProposal"><span class="hs-identifier hs-var">CreateProposal</span></a></span></span><span>
-</span><span id="line-42"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="hs-comment">-- | Checks that a SINGLE proposal finished correctly,</span><span>
-</span><span id="line-43"></span><span>    </span><span class="hs-comment">--   and allows minting GATs for each effect script.</span><span>
-</span><span id="line-44"></span><span>    </span><span id="MintGATs"><span class="annot"><a href="Agora.Governor.html#MintGATs"><span class="hs-identifier hs-var">MintGATs</span></a></span></span><span>
-</span><span id="line-45"></span><span>
-</span><span id="line-46"></span><span class="hs-comment">-- | Parameters for creating Governor scripts.</span><span>
-</span><span id="line-47"></span><span class="hs-keyword">data</span><span> </span><span id="Governor"><span class="annot"><a href="Agora.Governor.html#Governor"><span class="hs-identifier hs-var">Governor</span></a></span></span><span>
-</span><span id="line-48"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="Governor"><span class="annot"><a href="Agora.Governor.html#Governor"><span class="hs-identifier hs-var">Governor</span></a></span></span><span>
+</span><span id="line-43"></span><span class="hs-keyword">data</span><span> </span><span id="GovernorRedeemer"><span class="annot"><a href="Agora.Governor.html#GovernorRedeemer"><span class="hs-identifier hs-var">GovernorRedeemer</span></a></span></span><span>
+</span><span id="line-44"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="hs-comment">-- | Checks that a proposal was created lawfully, and allows it.</span><span>
+</span><span id="line-45"></span><span>    </span><span id="CreateProposal"><span class="annot"><a href="Agora.Governor.html#CreateProposal"><span class="hs-identifier hs-var">CreateProposal</span></a></span></span><span>
+</span><span id="line-46"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="hs-comment">-- | Checks that a SINGLE proposal finished correctly,</span><span>
+</span><span id="line-47"></span><span>    </span><span class="hs-comment">--   and allows minting GATs for each effect script.</span><span>
+</span><span id="line-48"></span><span>    </span><span id="MintGATs"><span class="annot"><a href="Agora.Governor.html#MintGATs"><span class="hs-identifier hs-var">MintGATs</span></a></span></span><span>
 </span><span id="line-49"></span><span>
-</span><span id="line-50"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-50"></span><span id="local-6989586621679404678"><span id="local-6989586621679404680"><span id="local-6989586621679404682"><span class="hs-identifier">PlutusTx.makeIsDataIndexed</span><span> </span><span class="hs-special">''</span><span class="hs-identifier">GovernorRedeemer</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="hs-special">'</span><span class="hs-identifier">CreateProposal</span><span class="hs-special">,</span><span> </span><span class="hs-number">0</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="hs-special">'</span><span class="hs-identifier">MintGATs</span><span class="hs-special">,</span><span> </span><span class="hs-number">1</span><span class="hs-special">)</span><span class="hs-special">]</span></span></span></span><span>
 </span><span id="line-51"></span><span>
-</span><span id="line-52"></span><span class="hs-comment">-- | Policy for Governors.</span><span>
-</span><span id="line-53"></span><span class="annot"><a href="Agora.Governor.html#governorPolicy"><span class="hs-identifier hs-type">governorPolicy</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Agora.Governor.html#Governor"><span class="hs-identifier hs-type">Governor</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">ClosedTerm</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PMintingPolicy</span></a></span><span>
-</span><span id="line-54"></span><span id="governorPolicy"><span class="annot"><span class="annottext">governorPolicy :: Governor -&gt; ClosedTerm PMintingPolicy
+</span><span id="line-52"></span><span class="hs-comment">-- | Parameters for creating Governor scripts.</span><span>
+</span><span id="line-53"></span><span class="hs-keyword">data</span><span> </span><span id="Governor"><span class="annot"><a href="Agora.Governor.html#Governor"><span class="hs-identifier hs-var">Governor</span></a></span></span><span>
+</span><span id="line-54"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="Governor"><span class="annot"><a href="Agora.Governor.html#Governor"><span class="hs-identifier hs-var">Governor</span></a></span></span><span>
+</span><span id="line-55"></span><span>
+</span><span id="line-56"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-57"></span><span>
+</span><span id="line-58"></span><span class="hs-comment">-- | Policy for Governors.</span><span>
+</span><span id="line-59"></span><span class="annot"><a href="Agora.Governor.html#governorPolicy"><span class="hs-identifier hs-type">governorPolicy</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Agora.Governor.html#Governor"><span class="hs-identifier hs-type">Governor</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">ClosedTerm</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PMintingPolicy</span></a></span><span>
+</span><span id="line-60"></span><span id="governorPolicy"><span class="annot"><span class="annottext">governorPolicy :: Governor -&gt; ClosedTerm PMintingPolicy
 </span><a href="Agora.Governor.html#governorPolicy"><span class="hs-identifier hs-var hs-var">governorPolicy</span></a></span></span><span> </span><span class="annot"><span class="annottext">Governor
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-55"></span><span>  </span><span class="annot"><span class="annottext">(Term s PData -&gt; Term s PScriptContext -&gt; Term s POpaque)
+</span><span id="line-61"></span><span>  </span><span class="annot"><span class="annottext">(Term s PData -&gt; Term s PScriptContext -&gt; Term s POpaque)
 -&gt; Term s PMintingPolicy
 forall a (b :: PType) (s :: S) (c :: PType).
 PLamN a b s =&gt;
 (Term s c -&gt; a) -&gt; Term s (c :--&gt; b)
-</span><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">plam</span></a></span><span> </span><span class="annot"><span class="annottext">((Term s PData -&gt; Term s PScriptContext -&gt; Term s POpaque)
+</span><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">plam</span></a></span><span> </span><span class="annot"><span class="annottext">((Term s PData -&gt; Term s PScriptContext -&gt; Term s POpaque)
  -&gt; Term s PMintingPolicy)
 -&gt; (Term s PData -&gt; Term s PScriptContext -&gt; Term s POpaque)
 -&gt; Term s PMintingPolicy
 forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><a href="../file:///nix/store/kq3z27pzg8pc38yjr84kzncicvpzhan0-ghc-9.2.1-doc/share/doc/ghc/html/libraries/base-4.16.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679342591"><span class="annot"><span class="annottext">Term s PData
-</span><a href="#local-6989586621679342591"><span class="hs-identifier hs-var">_redeemer</span></a></span></span><span> </span><span id="local-6989586621679342590"><span class="annot"><span class="annottext">Term s PScriptContext
-</span><a href="#local-6989586621679342590"><span class="hs-identifier hs-var">_ctx'</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">P.do</span><span>
-</span><span id="line-56"></span><span>    </span><span class="annot"><span class="annottext">Term s (PUnit @S) -&gt; Term s POpaque
+</span><a href="../file:///nix/store/kq3z27pzg8pc38yjr84kzncicvpzhan0-ghc-9.2.1-doc/share/doc/ghc/html/libraries/base-4.16.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679404647"><span class="annot"><span class="annottext">Term s PData
+</span><a href="#local-6989586621679404647"><span class="hs-identifier hs-var">_redeemer</span></a></span></span><span> </span><span id="local-6989586621679404646"><span class="annot"><span class="annottext">Term s PScriptContext
+</span><a href="#local-6989586621679404646"><span class="hs-identifier hs-var">_ctx'</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">P.do</span><span>
+</span><span id="line-62"></span><span>    </span><span class="annot"><span class="annottext">Term s (PUnit @S) -&gt; Term s POpaque
 forall (s :: S) (a :: PType). Term s a -&gt; Term s POpaque
-</span><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">popaque</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">PLifted (PUnit @S) -&gt; Term s (PUnit @S)
+</span><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">popaque</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">PLifted (PUnit @S) -&gt; Term s (PUnit @S)
 forall (p :: PType) (s :: S). PLift p =&gt; PLifted p -&gt; Term s p
-</span><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pconstant</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-57"></span><span>
-</span><span id="line-58"></span><span class="hs-comment">-- | Validator for Governors.</span><span>
-</span><span id="line-59"></span><span class="annot"><a href="Agora.Governor.html#governorValidator"><span class="hs-identifier hs-type">governorValidator</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Agora.Governor.html#Governor"><span class="hs-identifier hs-type">Governor</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">ClosedTerm</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PValidator</span></a></span><span>
-</span><span id="line-60"></span><span id="governorValidator"><span class="annot"><span class="annottext">governorValidator :: Governor -&gt; ClosedTerm PValidator
+</span><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pconstant</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-63"></span><span>
+</span><span id="line-64"></span><span class="hs-comment">-- | Validator for Governors.</span><span>
+</span><span id="line-65"></span><span class="annot"><a href="Agora.Governor.html#governorValidator"><span class="hs-identifier hs-type">governorValidator</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Agora.Governor.html#Governor"><span class="hs-identifier hs-type">Governor</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">ClosedTerm</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PValidator</span></a></span><span>
+</span><span id="line-66"></span><span id="governorValidator"><span class="annot"><span class="annottext">governorValidator :: Governor -&gt; ClosedTerm PValidator
 </span><a href="Agora.Governor.html#governorValidator"><span class="hs-identifier hs-var hs-var">governorValidator</span></a></span></span><span> </span><span class="annot"><span class="annottext">Governor
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-61"></span><span>  </span><span class="annot"><span class="annottext">(Term s PData
+</span><span id="line-67"></span><span>  </span><span class="annot"><span class="annottext">(Term s PData
  -&gt; Term s PData -&gt; Term s PScriptContext -&gt; Term s POpaque)
 -&gt; Term s PValidator
 forall a (b :: PType) (s :: S) (c :: PType).
 PLamN a b s =&gt;
 (Term s c -&gt; a) -&gt; Term s (c :--&gt; b)
-</span><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">plam</span></a></span><span> </span><span class="annot"><span class="annottext">((Term s PData
+</span><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">plam</span></a></span><span> </span><span class="annot"><span class="annottext">((Term s PData
   -&gt; Term s PData -&gt; Term s PScriptContext -&gt; Term s POpaque)
  -&gt; Term s PValidator)
 -&gt; (Term s PData
     -&gt; Term s PData -&gt; Term s PScriptContext -&gt; Term s POpaque)
 -&gt; Term s PValidator
 forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><a href="../file:///nix/store/kq3z27pzg8pc38yjr84kzncicvpzhan0-ghc-9.2.1-doc/share/doc/ghc/html/libraries/base-4.16.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679342581"><span class="annot"><span class="annottext">Term s PData
-</span><a href="#local-6989586621679342581"><span class="hs-identifier hs-var">_datum</span></a></span></span><span> </span><span id="local-6989586621679342580"><span class="annot"><span class="annottext">Term s PData
-</span><a href="#local-6989586621679342580"><span class="hs-identifier hs-var">_redeemer</span></a></span></span><span> </span><span id="local-6989586621679342579"><span class="annot"><span class="annottext">Term s PScriptContext
-</span><a href="#local-6989586621679342579"><span class="hs-identifier hs-var">_ctx'</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">P.do</span><span>
-</span><span id="line-62"></span><span>    </span><span class="annot"><span class="annottext">Term s (PUnit @S) -&gt; Term s POpaque
+</span><a href="../file:///nix/store/kq3z27pzg8pc38yjr84kzncicvpzhan0-ghc-9.2.1-doc/share/doc/ghc/html/libraries/base-4.16.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679404636"><span class="annot"><span class="annottext">Term s PData
+</span><a href="#local-6989586621679404636"><span class="hs-identifier hs-var">_datum</span></a></span></span><span> </span><span id="local-6989586621679404635"><span class="annot"><span class="annottext">Term s PData
+</span><a href="#local-6989586621679404635"><span class="hs-identifier hs-var">_redeemer</span></a></span></span><span> </span><span id="local-6989586621679404634"><span class="annot"><span class="annottext">Term s PScriptContext
+</span><a href="#local-6989586621679404634"><span class="hs-identifier hs-var">_ctx'</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">P.do</span><span>
+</span><span id="line-68"></span><span>    </span><span class="annot"><span class="annottext">Term s (PUnit @S) -&gt; Term s POpaque
 forall (s :: S) (a :: PType). Term s a -&gt; Term s POpaque
-</span><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">popaque</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">PLifted (PUnit @S) -&gt; Term s (PUnit @S)
+</span><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">popaque</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">PLifted (PUnit @S) -&gt; Term s (PUnit @S)
 forall (p :: PType) (s :: S). PLift p =&gt; PLifted p -&gt; Term s p
-</span><a href="../file:///nix/store/3c9cva5aggalyxpj19nv8vx2yhr5wlkd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pconstant</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-63"></span></pre></body></html>
+</span><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pconstant</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-69"></span></pre></body></html>

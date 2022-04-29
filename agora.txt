@@ -34,7 +34,7 @@ instance Plutarch.Internal.PlutusType.PlutusType Agora.MultiSig.PMultiSig
 instance Plutarch.DataRepr.Internal.PIsDataRepr Agora.MultiSig.PMultiSig
 instance forall (s :: Plutarch.Internal.S). Generics.SOP.Universe.Generic (Agora.MultiSig.PMultiSig s)
 instance forall (s :: Plutarch.Internal.S). GHC.Generics.Generic (Agora.MultiSig.PMultiSig s)
-instance Plutarch.Lift.PConstant Agora.MultiSig.MultiSig
+instance Plutarch.Lift.PConstantDecl Agora.MultiSig.MultiSig
 instance Plutarch.Lift.PUnsafeLiftDecl Agora.MultiSig.PMultiSig
 instance PlutusTx.IsData.Class.ToData Agora.MultiSig.MultiSig
 instance PlutusTx.IsData.Class.FromData Agora.MultiSig.MultiSig
@@ -45,6 +45,175 @@ instance Generics.SOP.Universe.Generic Agora.MultiSig.MultiSig
 instance GHC.Show.Show Agora.MultiSig.MultiSig
 instance GHC.Classes.Eq Agora.MultiSig.MultiSig
 instance GHC.Generics.Generic Agora.MultiSig.MultiSig
+
+
+-- | <a>PDataRecord</a> helper functions.
+module Agora.Record
+
+-- | Turn a constant <a>RecordMorphism</a> into a fully built
+--   <a>PDataRecord</a>.
+mkRecord :: forall (r :: [PLabeledType]) (s :: S). RecordMorphism s '[] r -> Term s (PDataRecord r)
+
+-- | <a>mkRecord</a> but for known data-types.
+--   
+--   This allows you to dynamically construct a record type constructor.
+--   
+--   <h3>Example:</h3>
+--   
+--   <pre>
+--   <a>mkRecordConstr</a>
+--     <a>PStakeDatum</a>
+--     ( #stakedAmount <a>.=</a> <a>pconstantData</a> (<a>Tagged</a> @GTTag 42)
+--         <a>.&amp;</a> #owner <a>.=</a> <a>pconstantData</a> "aabbcc"
+--         <a>.&amp;</a> #lockedBy <a>.=</a> <a>pdata</a> pnil
+--     )
+--   </pre>
+--   
+--   Is the same as
+--   
+--   <pre>
+--   <a>pconstant</a> (<a>StakeDatum</a> (<a>Tagged</a> 42) "aabbcc" [])
+--   </pre>
+mkRecordConstr :: forall (r :: [PLabeledType]) (s :: S) (pt :: PType). PlutusType pt => (forall s'. Term s' (PDataRecord r) -> pt s') -> RecordMorphism s '[] r -> Term s pt
+
+-- | Cons a labeled type as a <a>RecordMorphism</a>.
+(.=) :: forall (sym :: Symbol) (a :: PType) (as :: [PLabeledType]) (s :: S). FieldName sym -> Term s (PAsData a) -> RecordMorphism s as ((sym := a) : as)
+infix 7 .=
+
+-- | Compose two <a>RecordMorphism</a>s.
+(.&) :: forall (s :: S) (a :: [PLabeledType]) (b :: [PLabeledType]) (c :: [PLabeledType]). RecordMorphism s b c -> RecordMorphism s a b -> RecordMorphism s a c
+infixr 6 .&
+
+-- | A morphism from one <a>PDataRecord</a> to another, representing some
+--   sort of consing of data.
+data RecordMorphism (s :: S) (as :: [PLabeledType]) (bs :: [PLabeledType])
+
+-- | Like <a>Proxy</a> but local to this module.
+data FieldName (sym :: Symbol)
+instance forall (s :: Plutarch.Internal.S). Control.Category.Category @{[Plutarch.DataRepr.Internal.PLabeledType]} (Agora.Record.RecordMorphism s)
+instance forall (sym :: GHC.Types.Symbol) (sym' :: GHC.Types.Symbol). ((sym :: GHC.Types.Symbol) GHC.Types.~ (sym' :: GHC.Types.Symbol)) => GHC.OverloadedLabels.IsLabel sym (Agora.Record.FieldName sym)
+
+
+-- | Time functions for proposal phases.
+module Agora.Proposal.Time
+
+-- | <h2>Establishing timing in Proposal interactions.</h2>
+--   
+--   In Plutus, it's impossible to determine time exactly. It's also
+--   impossible to get a single point in time, yet often we need to check
+--   various constraints on time.
+--   
+--   For the purposes of proposals, there's a single most important
+--   feature: The ability to determine if we can perform an action. In
+--   order to correctly determine if we are able to perform certain
+--   actions, we need to know what time it roughly is, compared to when the
+--   proposal was created.
+--   
+--   <a>ProposalTime</a> represents "the time according to the proposal".
+--   Its representation is opaque, and doesn't matter.
+--   
+--   Various functions work simply on <a>ProposalTime</a> and
+--   <a>ProposalTimingConfig</a>. In particular, <a>currentProposalTime</a>
+--   is useful for extracting the time from the <a>txInfoValidPeriod</a>
+--   field of <a>TxInfo</a>.
+--   
+--   We avoid <a>PPOSIXTimeRange</a> where we can in order to save on
+--   operations.
+data ProposalTime
+ProposalTime :: POSIXTime -> POSIXTime -> ProposalTime
+[lowerBound] :: ProposalTime -> POSIXTime
+[upperBound] :: ProposalTime -> POSIXTime
+
+-- | Configuration of proposal timings.
+--   
+--   See:
+--   <a>https://github.com/Liqwid-Labs/agora/blob/master/docs/tech-design/proposals.md#when-may-interactions-occur</a>
+data ProposalTimingConfig
+ProposalTimingConfig :: POSIXTime -> POSIXTime -> POSIXTime -> POSIXTime -> ProposalTimingConfig
+
+-- | <a>D</a>: the length of the draft period.
+[draftTime] :: ProposalTimingConfig -> POSIXTime
+
+-- | <a>V</a>: the length of the voting period.
+[votingTime] :: ProposalTimingConfig -> POSIXTime
+
+-- | <a>L</a>: the length of the locking period.
+[lockingTime] :: ProposalTimingConfig -> POSIXTime
+
+-- | <a>E</a>: the length of the execution period.
+[executingTime] :: ProposalTimingConfig -> POSIXTime
+
+-- | Represents the starting time of the proposal.
+newtype ProposalStartingTime
+ProposalStartingTime :: POSIXTime -> ProposalStartingTime
+[getProposalStartingTime] :: ProposalStartingTime -> POSIXTime
+
+-- | Plutarch-level version of <a>ProposalTime</a>.
+newtype PProposalTime (s :: S)
+PProposalTime :: Term s (PDataRecord '["lowerBound" := PPOSIXTime, "upperBound" := PPOSIXTime]) -> PProposalTime (s :: S)
+
+-- | Plutarch-level version of <a>ProposalTimingConfig</a>.
+newtype PProposalTimingConfig (s :: S)
+PProposalTimingConfig :: Term s (PDataRecord '["draftTime" := PPOSIXTime, "votingTime" := PPOSIXTime, "lockingTime" := PPOSIXTime, "executingTime" := PPOSIXTime]) -> PProposalTimingConfig (s :: S)
+[getProposalTimingConfig] :: PProposalTimingConfig (s :: S) -> Term s (PDataRecord '["draftTime" := PPOSIXTime, "votingTime" := PPOSIXTime, "lockingTime" := PPOSIXTime, "executingTime" := PPOSIXTime])
+
+-- | Plutarch-level version of <a>ProposalStartingTime</a>.
+newtype PProposalStartingTime (s :: S)
+PProposalStartingTime :: Term s PPOSIXTime -> PProposalStartingTime (s :: S)
+
+-- | Get the current proposal time, from the <a>txInfoValidPeriod</a>
+--   field.
+--   
+--   If it's impossible to get a fully-bounded time, (e.g. either end of
+--   the <a>PPOSIXTimeRange</a> is an infinity) then we error out.
+currentProposalTime :: forall (s :: S). Term s (PPOSIXTimeRange :--> PProposalTime)
+
+-- | True if the <a>PProposalTime</a> is in the draft period.
+isDraftPeriod :: forall (s :: S). Term s (PProposalTimingConfig :--> (PProposalStartingTime :--> (PProposalTime :--> PBool)))
+
+-- | True if the <a>PProposalTime</a> is in the voting period.
+isVotingPeriod :: forall (s :: S). Term s (PProposalTimingConfig :--> (PProposalStartingTime :--> (PProposalTime :--> PBool)))
+
+-- | True if the <a>PProposalTime</a> is in the locking period.
+isLockingPeriod :: forall (s :: S). Term s (PProposalTimingConfig :--> (PProposalStartingTime :--> (PProposalTime :--> PBool)))
+
+-- | True if the <a>PProposalTime</a> is in the execution period.
+isExecutionPeriod :: forall (s :: S). Term s (PProposalTimingConfig :--> (PProposalStartingTime :--> (PProposalTime :--> PBool)))
+instance Plutarch.DataRepr.Internal.Field.PDataFields Agora.Proposal.Time.PProposalTime
+instance Plutarch.Builtin.PIsData Agora.Proposal.Time.PProposalTime
+instance Plutarch.Internal.PlutusType.PlutusType Agora.Proposal.Time.PProposalTime
+instance Plutarch.DataRepr.Internal.PIsDataRepr Agora.Proposal.Time.PProposalTime
+instance forall (s :: Plutarch.Internal.S). Generics.SOP.Universe.Generic (Agora.Proposal.Time.PProposalTime s)
+instance forall (s :: Plutarch.Internal.S). GHC.Generics.Generic (Agora.Proposal.Time.PProposalTime s)
+instance Plutarch.Bool.POrd Agora.Proposal.Time.PProposalStartingTime
+instance Plutarch.Bool.PEq Agora.Proposal.Time.PProposalStartingTime
+instance Plutarch.Builtin.PIsData Agora.Proposal.Time.PProposalStartingTime
+instance Plutarch.Internal.PlutusType.PlutusType Agora.Proposal.Time.PProposalStartingTime
+instance Plutarch.DataRepr.Internal.Field.PDataFields Agora.Proposal.Time.PProposalTimingConfig
+instance Plutarch.Builtin.PIsData Agora.Proposal.Time.PProposalTimingConfig
+instance Plutarch.Internal.PlutusType.PlutusType Agora.Proposal.Time.PProposalTimingConfig
+instance Plutarch.DataRepr.Internal.PIsDataRepr Agora.Proposal.Time.PProposalTimingConfig
+instance forall (s :: Plutarch.Internal.S). Generics.SOP.Universe.Generic (Agora.Proposal.Time.PProposalTimingConfig s)
+instance forall (s :: Plutarch.Internal.S). GHC.Generics.Generic (Agora.Proposal.Time.PProposalTimingConfig s)
+instance PlutusTx.IsData.Class.ToData Agora.Proposal.Time.ProposalTimingConfig
+instance PlutusTx.IsData.Class.FromData Agora.Proposal.Time.ProposalTimingConfig
+instance PlutusTx.IsData.Class.UnsafeFromData Agora.Proposal.Time.ProposalTimingConfig
+instance forall (s :: Plutarch.Internal.S). Plutarch.Numeric.Additive.AdditiveSemigroup (Plutarch.Internal.Term s Plutarch.Api.V1.Time.PPOSIXTime)
+instance GHC.Generics.Generic Agora.Proposal.Time.ProposalStartingTime
+instance GHC.Show.Show Agora.Proposal.Time.ProposalStartingTime
+instance GHC.Classes.Eq Agora.Proposal.Time.ProposalStartingTime
+instance PlutusTx.IsData.Class.UnsafeFromData Agora.Proposal.Time.ProposalStartingTime
+instance PlutusTx.IsData.Class.FromData Agora.Proposal.Time.ProposalStartingTime
+instance PlutusTx.IsData.Class.ToData Agora.Proposal.Time.ProposalStartingTime
+instance GHC.Generics.Generic Agora.Proposal.Time.ProposalTimingConfig
+instance GHC.Show.Show Agora.Proposal.Time.ProposalTimingConfig
+instance GHC.Classes.Eq Agora.Proposal.Time.ProposalTimingConfig
+instance PlutusTx.IsData.Class.ToData Agora.Proposal.Time.ProposalTime
+instance PlutusTx.IsData.Class.FromData Agora.Proposal.Time.ProposalTime
+instance PlutusTx.IsData.Class.UnsafeFromData Agora.Proposal.Time.ProposalTime
+instance GHC.Generics.Generic Agora.Proposal.Time.ProposalTime
+instance GHC.Show.Show Agora.Proposal.Time.ProposalTime
+instance GHC.Classes.Eq Agora.Proposal.Time.ProposalTime
 
 
 -- | Tags and extras for <a>Plutarch.SafeMoney</a>.
@@ -65,11 +234,19 @@ module Agora.Proposal
 
 -- | Parameters that identify the Proposal validator script.
 data Proposal
-Proposal :: Proposal
+Proposal :: AssetClass -> AssetClass -> Integer -> Proposal
+[governorSTAssetClass] :: Proposal -> AssetClass
+[stakeSTAssetClass] :: Proposal -> AssetClass
+
+-- | Arbitrary limit for maximum amount of cosigners on a proposal.
+[maximumCosigners] :: Proposal -> Integer
 
 -- | Haskell-level datum for Proposal scripts.
 data ProposalDatum
-ProposalDatum :: Map ResultTag [(ValidatorHash, DatumHash)] -> ProposalStatus -> [PubKeyHash] -> ProposalThresholds -> ProposalVotes -> ProposalDatum
+ProposalDatum :: ProposalId -> Map ResultTag [(ValidatorHash, DatumHash)] -> ProposalStatus -> [PubKeyHash] -> ProposalThresholds -> ProposalVotes -> ProposalDatum
+
+-- | Identification of the proposal.
+[proposalId] :: ProposalDatum -> ProposalId
 
 -- | Effect lookup table. First by result, then by effect hash.
 [effects] :: ProposalDatum -> Map ResultTag [(ValidatorHash, DatumHash)]
@@ -86,8 +263,66 @@ ProposalDatum :: Map ResultTag [(ValidatorHash, DatumHash)] -> ProposalStatus ->
 -- | Vote tally on the proposal
 [votes] :: ProposalDatum -> ProposalVotes
 
+-- | Haskell-level redeemer for Proposal scripts.
+data ProposalRedeemer
+
+-- | Cast one or more votes towards a particular <a>ResultTag</a>.
+Vote :: ResultTag -> ProposalRedeemer
+
+-- | Add one or more public keys to the cosignature list. Must be signed by
+--   those cosigning.
+--   
+--   This is particularly used in the <a>Draft</a> <a>ProposalStatus</a>,
+--   where matching <a>Stake</a>s can be called to advance the proposal,
+--   provided enough GT is shared among them.
+Cosign :: [PubKeyHash] -> ProposalRedeemer
+
+-- | Allow unlocking one or more stakes with votes towards particular
+--   <a>ResultTag</a>.
+Unlock :: ResultTag -> ProposalRedeemer
+
+-- | Advance the proposal, performing the required checks for whether that
+--   is legal.
+--   
+--   These are roughly the checks for each possible transition:
+--   
+--   <h3><tt><a>Draft</a> -&gt; <a>VotingReady</a></tt>:</h3>
+--   
+--   <ol>
+--   <li>The sum of all of the cosigner's GT is larger than the
+--   <a>startVoting</a> field of <a>ProposalThresholds</a>.</li>
+--   <li>The proposal's current time ensures <tt>isDraftPeriod</tt>.</li>
+--   </ol>
+--   
+--   <h3><tt><a>VotingReady</a> -&gt; <a>Locked</a></tt>:</h3>
+--   
+--   <ol>
+--   <li>The sum of all votes is larger than <a>countVoting</a>.</li>
+--   <li>The winning <a>ResultTag</a> has more votes than all other
+--   <a>ResultTag</a>s.</li>
+--   <li>The proposal's current time ensures <tt>isVotingPeriod</tt>.</li>
+--   </ol>
+--   
+--   <h3><tt><a>Locked</a> -&gt; <a>Finished</a></tt>:</h3>
+--   
+--   <ol>
+--   <li>The proposal's current time ensures
+--   <tt>isExecutionPeriod</tt>.</li>
+--   <li>The transaction mints the GATs to the receiving effects.</li>
+--   </ol>
+--   
+--   <h3><tt>* -&gt; <a>Finished</a></tt>:</h3>
+--   
+--   If the proposal has run out of time for the current
+--   <a>ProposalStatus</a>, it will always be possible to transition into
+--   <a>Finished</a> status, because it has expired (and failed).
+AdvanceProposal :: ProposalRedeemer
+
 -- | The "status" of the proposal. This is only useful for state
---   transitions, as opposed to time-based "phases".
+--   transitions that need to happen as a result of a transaction as
+--   opposed to time-based "periods".
+--   
+--   See the note on wording &amp; the state machine in the tech-design.
 --   
 --   If the proposal is <a>VotingReady</a>, for instance, that doesn't
 --   necessarily mean that voting is possible, as this also requires the
@@ -111,11 +346,21 @@ Draft :: ProposalStatus
 --   able to be voted on.
 VotingReady :: ProposalStatus
 
+-- | The proposal has been voted on, and the votes have been locked
+--   permanently. The proposal now goes into a locking time after the
+--   normal voting time. After this, it's possible to execute the proposal.
+Locked :: ProposalStatus
+
 -- | The proposal has finished.
 --   
 --   This can mean it's been voted on and completed, but it can also mean
 --   the proposal failed due to time constraints or didn't get to
 --   <a>VotingReady</a> first.
+--   
+--   At this stage, the <a>votes</a> field of <a>ProposalDatum</a> is
+--   frozen.
+--   
+--   See <a>AdvanceProposal</a> for documentation on state transitions.
 --   
 --   TODO: The owner of the proposal may choose to reclaim their proposal.
 Finished :: ProposalStatus
@@ -128,14 +373,17 @@ ProposalThresholds :: Tagged GTTag Integer -> Tagged GTTag Integer -> Tagged GTT
 
 -- | How much GT minimum must a particular <a>ResultTag</a> accumulate for
 --   it to pass.
-[execute] :: ProposalThresholds -> Tagged GTTag Integer
+[countVoting] :: ProposalThresholds -> Tagged GTTag Integer
 
 -- | How much GT required to "create" a proposal.
-[draft] :: ProposalThresholds -> Tagged GTTag Integer
+--   
+--   It is recommended this be a high enough amount, in order to prevent
+--   DOS from bad actors.
+[create] :: ProposalThresholds -> Tagged GTTag Integer
 
 -- | How much GT required to allow voting to happen. (i.e. to move into
 --   <a>VotingReady</a>)
-[vote] :: ProposalThresholds -> Tagged GTTag Integer
+[startVoting] :: ProposalThresholds -> Tagged GTTag Integer
 
 -- | Map which encodes the total tally for each result. It's important that
 --   the "shape" is consistent with the shape of <a>effects</a>.
@@ -158,8 +406,8 @@ ProposalVotes :: Map ResultTag Integer -> ProposalVotes
 -- | Identifies a Proposal, issued upon creation of a proposal. In
 --   practice, this number starts at zero, and increments by one for each
 --   proposal. The 100th proposal will be <tt><a>ProposalId</a> 99</tt>.
---   This counter lives in the <tt>Governor</tt>, see
---   <tt>nextProposalId</tt>.
+--   This counter lives in the <a>Governor</a>. See <a>nextProposalId</a>,
+--   and <a>pgetNextProposalId</a>.
 newtype ProposalId
 ProposalId :: Integer -> ProposalId
 [proposalTag] :: ProposalId -> Integer
@@ -175,15 +423,27 @@ newtype ResultTag
 ResultTag :: Integer -> ResultTag
 [getResultTag] :: ResultTag -> Integer
 
+-- | Create a <a>ProposalVotes</a> that has the same shape as the
+--   <a>effects</a> field.
+emptyVotesFor :: forall a. Map ResultTag a -> ProposalVotes
+
 -- | Plutarch-level version of <a>ProposalDatum</a>.
 newtype PProposalDatum (s :: S)
-PProposalDatum :: Term s (PDataRecord '["effects" := PMap PResultTag (PMap PValidatorHash PDatumHash), "status" := PProposalStatus, "cosigners" := PBuiltinList PPubKeyHash, "thresholds" := PProposalThresholds, "votes" := PProposalVotes]) -> PProposalDatum (s :: S)
-[getProposalDatum] :: PProposalDatum (s :: S) -> Term s (PDataRecord '["effects" := PMap PResultTag (PMap PValidatorHash PDatumHash), "status" := PProposalStatus, "cosigners" := PBuiltinList PPubKeyHash, "thresholds" := PProposalThresholds, "votes" := PProposalVotes])
+PProposalDatum :: Term s (PDataRecord '["proposalId" := PProposalId, "effects" := PMap PResultTag (PMap PValidatorHash PDatumHash), "status" := PProposalStatus, "cosigners" := PBuiltinList (PAsData PPubKeyHash), "thresholds" := PProposalThresholds, "votes" := PProposalVotes]) -> PProposalDatum (s :: S)
+[getProposalDatum] :: PProposalDatum (s :: S) -> Term s (PDataRecord '["proposalId" := PProposalId, "effects" := PMap PResultTag (PMap PValidatorHash PDatumHash), "status" := PProposalStatus, "cosigners" := PBuiltinList (PAsData PPubKeyHash), "thresholds" := PProposalThresholds, "votes" := PProposalVotes])
+
+-- | Plutarch-level version of <a>ProposalRedeemer</a>.
+data PProposalRedeemer (s :: S)
+PVote :: Term s (PDataRecord '["resultTag" := PResultTag]) -> PProposalRedeemer (s :: S)
+PCosign :: Term s (PDataRecord '["newCosigners" := PBuiltinList (PAsData PPubKeyHash)]) -> PProposalRedeemer (s :: S)
+PUnlock :: Term s (PDataRecord '["resultTag" := PResultTag]) -> PProposalRedeemer (s :: S)
+PAdvanceProposal :: Term s (PDataRecord '[]) -> PProposalRedeemer (s :: S)
 
 -- | Plutarch-level version of <a>ProposalStatus</a>.
 data PProposalStatus (s :: S)
 PDraft :: Term s (PDataRecord '[]) -> PProposalStatus (s :: S)
 PVotingReady :: Term s (PDataRecord '[]) -> PProposalStatus (s :: S)
+PLocked :: Term s (PDataRecord '[]) -> PProposalStatus (s :: S)
 PFinished :: Term s (PDataRecord '[]) -> PProposalStatus (s :: S)
 
 -- | Plutarch-level version of <a>ProposalThresholds</a>.
@@ -203,17 +463,12 @@ PProposalId :: Term s PInteger -> PProposalId (s :: S)
 newtype PResultTag (s :: S)
 PResultTag :: Term s PInteger -> PResultTag (s :: S)
 
--- | Validator for Proposals.
-proposalValidator :: Proposal -> ClosedTerm PValidator
-
--- | Policy for Proposals.
-proposalPolicy :: Proposal -> ClosedTerm PMintingPolicy
-instance GHC.Generics.Generic Agora.Proposal.ProposalId
-instance GHC.Show.Show Agora.Proposal.ProposalId
-instance GHC.Classes.Eq Agora.Proposal.ProposalId
-instance PlutusTx.IsData.Class.UnsafeFromData Agora.Proposal.ProposalId
-instance PlutusTx.IsData.Class.FromData Agora.Proposal.ProposalId
-instance PlutusTx.IsData.Class.ToData Agora.Proposal.ProposalId
+-- | Check for various invariants a proposal must uphold. This can be used
+--   to check both upon creation and upon any following state transitions
+--   in the proposal.
+proposalDatumValid :: Proposal -> Term s (PProposalDatum :--> PBool)
+instance GHC.Classes.Eq Agora.Proposal.Proposal
+instance GHC.Show.Show Agora.Proposal.Proposal
 instance Plutarch.Bool.POrd Agora.Proposal.PResultTag
 instance Plutarch.Bool.PEq Agora.Proposal.PResultTag
 instance Plutarch.Builtin.PIsData Agora.Proposal.PResultTag
@@ -241,18 +496,35 @@ instance Plutarch.Internal.PlutusType.PlutusType Agora.Proposal.PProposalDatum
 instance Plutarch.DataRepr.Internal.PIsDataRepr Agora.Proposal.PProposalDatum
 instance forall (s :: Plutarch.Internal.S). Generics.SOP.Universe.Generic (Agora.Proposal.PProposalDatum s)
 instance forall (s :: Plutarch.Internal.S). GHC.Generics.Generic (Agora.Proposal.PProposalDatum s)
-instance Plutarch.Lift.PConstant Agora.Proposal.ResultTag
-instance Plutarch.Lift.PConstant Agora.Proposal.ProposalId
-instance Plutarch.Lift.PConstant Agora.Proposal.ProposalStatus
-instance Plutarch.Lift.PConstant Agora.Proposal.ProposalThresholds
-instance Plutarch.Lift.PConstant Agora.Proposal.ProposalVotes
-instance Plutarch.Lift.PConstant Agora.Proposal.ProposalDatum
+instance Plutarch.Builtin.PIsData Agora.Proposal.PProposalRedeemer
+instance Plutarch.Internal.PlutusType.PlutusType Agora.Proposal.PProposalRedeemer
+instance Plutarch.DataRepr.Internal.PIsDataRepr Agora.Proposal.PProposalRedeemer
+instance forall (s :: Plutarch.Internal.S). Generics.SOP.Universe.Generic (Agora.Proposal.PProposalRedeemer s)
+instance forall (s :: Plutarch.Internal.S). GHC.Generics.Generic (Agora.Proposal.PProposalRedeemer s)
+instance Plutarch.Lift.PConstantDecl Agora.Proposal.ResultTag
+instance Plutarch.Lift.PConstantDecl Agora.Proposal.ProposalId
+instance Plutarch.Lift.PConstantDecl Agora.Proposal.ProposalStatus
+instance Plutarch.Lift.PConstantDecl Agora.Proposal.ProposalThresholds
+instance Plutarch.Lift.PConstantDecl Agora.Proposal.ProposalVotes
+instance Plutarch.Lift.PConstantDecl Agora.Proposal.ProposalDatum
+instance Plutarch.Lift.PConstantDecl Agora.Proposal.ProposalRedeemer
+instance Plutarch.TryFrom.PTryFrom Plutarch.Builtin.PData (Plutarch.Builtin.PAsData Agora.Proposal.PProposalRedeemer)
+instance Plutarch.Lift.PUnsafeLiftDecl Agora.Proposal.PProposalRedeemer
+instance Plutarch.TryFrom.PTryFrom Plutarch.Builtin.PData (Plutarch.Builtin.PAsData Agora.Proposal.PProposalDatum)
 instance Plutarch.Lift.PUnsafeLiftDecl Agora.Proposal.PProposalDatum
 instance Plutarch.Lift.PUnsafeLiftDecl Agora.Proposal.PProposalVotes
 instance Plutarch.Lift.PUnsafeLiftDecl Agora.Proposal.PProposalThresholds
 instance Plutarch.Lift.PUnsafeLiftDecl Agora.Proposal.PProposalStatus
+instance Plutarch.TryFrom.PTryFrom Plutarch.Builtin.PData (Plutarch.Builtin.PAsData Agora.Proposal.PProposalId)
 instance Plutarch.Lift.PUnsafeLiftDecl Agora.Proposal.PProposalId
 instance Plutarch.Lift.PUnsafeLiftDecl Agora.Proposal.PResultTag
+instance Plutarch.TryFrom.PTryFrom Plutarch.Builtin.PData (Plutarch.Builtin.PAsData Agora.Proposal.PResultTag)
+instance PlutusTx.IsData.Class.ToData Agora.Proposal.ProposalRedeemer
+instance PlutusTx.IsData.Class.FromData Agora.Proposal.ProposalRedeemer
+instance PlutusTx.IsData.Class.UnsafeFromData Agora.Proposal.ProposalRedeemer
+instance GHC.Generics.Generic Agora.Proposal.ProposalRedeemer
+instance GHC.Show.Show Agora.Proposal.ProposalRedeemer
+instance GHC.Classes.Eq Agora.Proposal.ProposalRedeemer
 instance PlutusTx.IsData.Class.ToData Agora.Proposal.ProposalDatum
 instance PlutusTx.IsData.Class.FromData Agora.Proposal.ProposalDatum
 instance PlutusTx.IsData.Class.UnsafeFromData Agora.Proposal.ProposalDatum
@@ -274,6 +546,12 @@ instance GHC.Classes.Eq Agora.Proposal.ProposalThresholds
 instance PlutusTx.IsData.Class.ToData Agora.Proposal.ProposalStatus
 instance PlutusTx.IsData.Class.FromData Agora.Proposal.ProposalStatus
 instance PlutusTx.IsData.Class.UnsafeFromData Agora.Proposal.ProposalStatus
+instance GHC.Generics.Generic Agora.Proposal.ProposalId
+instance GHC.Show.Show Agora.Proposal.ProposalId
+instance GHC.Classes.Eq Agora.Proposal.ProposalId
+instance PlutusTx.IsData.Class.UnsafeFromData Agora.Proposal.ProposalId
+instance PlutusTx.IsData.Class.FromData Agora.Proposal.ProposalId
+instance PlutusTx.IsData.Class.ToData Agora.Proposal.ProposalId
 instance PlutusTx.IsData.Class.UnsafeFromData Agora.Proposal.ResultTag
 instance PlutusTx.IsData.Class.FromData Agora.Proposal.ResultTag
 instance PlutusTx.IsData.Class.ToData Agora.Proposal.ResultTag
@@ -283,6 +561,317 @@ instance GHC.Classes.Eq Agora.Proposal.ResultTag
 instance GHC.Generics.Generic Agora.Proposal.ProposalStatus
 instance GHC.Show.Show Agora.Proposal.ProposalStatus
 instance GHC.Classes.Eq Agora.Proposal.ProposalStatus
+
+
+-- | Vote-lockable stake UTXOs holding GT.
+module Agora.Stake
+
+-- | Haskell-level datum for Stake scripts.
+data StakeDatum
+StakeDatum :: Tagged GTTag Integer -> PubKeyHash -> [ProposalLock] -> StakeDatum
+
+-- | Tracks the amount of governance token staked in the datum. This also
+--   acts as the voting weight for <a>Proposal</a>s.
+[stakedAmount] :: StakeDatum -> Tagged GTTag Integer
+
+-- | The hash of the public key this stake belongs to.
+--   
+--   TODO Support for MultiSig/Scripts is tracked here:
+--   <a>https://github.com/Liqwid-Labs/agora/issues/45</a>
+[owner] :: StakeDatum -> PubKeyHash
+
+-- | The current proposals locking this stake. This field must be empty for
+--   the stake to be usable for deposits and withdrawals.
+[lockedBy] :: StakeDatum -> [ProposalLock]
+
+-- | Haskell-level redeemer for Stake scripts.
+data StakeRedeemer
+
+-- | Deposit or withdraw a discrete amount of the staked governance token.
+--   Stake must be unlocked.
+DepositWithdraw :: Tagged GTTag Integer -> StakeRedeemer
+
+-- | Destroy a stake, retrieving its LQ, the minimum ADA and any other
+--   assets. Stake must be unlocked.
+Destroy :: StakeRedeemer
+
+-- | Permit a Vote to be added onto a <a>Proposal</a>. This also adds a
+--   lock to the <a>lockedBy</a> field. See <a>ProposalLock</a>. This needs
+--   to be done in sync with casting a vote, otherwise it's possible for a
+--   lock to be permanently placed on the stake, and then the funds are
+--   lost.
+PermitVote :: ProposalLock -> StakeRedeemer
+
+-- | Retract a vote, removing it from the <a>lockedBy</a> field. See
+--   <a>ProposalLock</a>. This action checks for permission of the
+--   <a>Proposal</a>. Finished proposals are always allowed to have votes
+--   retracted and won't affect the Proposal datum, allowing <a>Stake</a>s
+--   to be unlocked.
+RetractVotes :: [ProposalLock] -> StakeRedeemer
+
+-- | The owner can consume stake if nothing is changed about it. If the
+--   proposal token moves, this is equivalent to the owner consuming it.
+WitnessStake :: StakeRedeemer
+
+-- | Parameters for creating Stake scripts.
+data Stake
+Stake :: Tagged GTTag AssetClass -> AssetClass -> Stake
+
+-- | Used when inlining the AssetClass of a <a>PDiscrete</a> in the script
+--   code.
+[gtClassRef] :: Stake -> Tagged GTTag AssetClass
+[proposalSTClass] :: Stake -> AssetClass
+
+-- | A lock placed on a Stake datum in order to prevent depositing and
+--   withdrawing when votes are in place.
+--   
+--   NOTE: Due to retracting votes always being possible, this lock will
+--   only lock with contention on the proposal.
+--   
+--   FIXME: Contention on Proposals could create contention on voting which
+--   in turn creates contention on stakers.
+--   
+--   Vaguely this is the dependency graph for this locking interaction.
+--   Both the stake validator and the proposal validator are only able to
+--   check for one another through the datum belonging to the ST:
+--   
+--   <pre>
+--   ┌─────────────────┐   ┌────────────────────┐
+--   │ Stake Validator ├─┐ │ Proposal Validator │
+--   └────────┬────────┘ │ └──────┬─────┬───────┘
+--            │          │        │     │
+--            │        ┌─┼────────┘     │
+--            ▼        │ │              ▼
+--   ┌──────────────┐  │ │ ┌─────────────────┐
+--   │ Stake Policy │◄─┘ └►│ Proposal Policy │
+--   └──────────────┘      └─────────────────┘
+--   
+--   </pre>
+data ProposalLock
+ProposalLock :: ResultTag -> ProposalId -> ProposalLock
+
+-- | What was voted on. This allows retracting votes to undo their vote.
+[vote] :: ProposalLock -> ResultTag
+
+-- | Identifies the proposal. See <a>ProposalId</a> for further comments on
+--   its significance.
+[proposalId] :: ProposalLock -> ProposalId
+
+-- | Plutarch-level datum for Stake scripts.
+newtype PStakeDatum (s :: S)
+PStakeDatum :: Term s (PDataRecord '["stakedAmount" := PDiscrete GTTag, "owner" := PPubKeyHash, "lockedBy" := PBuiltinList (PAsData PProposalLock)]) -> PStakeDatum (s :: S)
+[getStakeDatum] :: PStakeDatum (s :: S) -> Term s (PDataRecord '["stakedAmount" := PDiscrete GTTag, "owner" := PPubKeyHash, "lockedBy" := PBuiltinList (PAsData PProposalLock)])
+
+-- | Plutarch-level redeemer for Stake scripts.
+data PStakeRedeemer (s :: S)
+
+-- | Deposit or withdraw a discrete amount of the staked governance token.
+PDepositWithdraw :: Term s (PDataRecord '["delta" := PDiscrete GTTag]) -> PStakeRedeemer (s :: S)
+
+-- | Destroy a stake, retrieving its LQ, the minimum ADA and any other
+--   assets.
+PDestroy :: Term s (PDataRecord '[]) -> PStakeRedeemer (s :: S)
+PPermitVote :: Term s (PDataRecord '["lock" := PProposalLock]) -> PStakeRedeemer (s :: S)
+PRetractVotes :: Term s (PDataRecord '["locks" := PBuiltinList (PAsData PProposalLock)]) -> PStakeRedeemer (s :: S)
+PWitnessStake :: Term s (PDataRecord '[]) -> PStakeRedeemer (s :: S)
+
+-- | Plutarch-level version of <a>ProposalLock</a>.
+newtype PProposalLock (s :: S)
+PProposalLock :: Term s (PDataRecord '["vote" := PResultTag, "proposalTag" := PProposalId]) -> PProposalLock (s :: S)
+[getProposalLock] :: PProposalLock (s :: S) -> Term s (PDataRecord '["vote" := PResultTag, "proposalTag" := PProposalId])
+
+-- | Check whether a Stake is locked. If it is locked, various actions are
+--   unavailable.
+stakeLocked :: forall (s :: S). Term s (PStakeDatum :--> PBool)
+
+-- | Find a stake owned by a particular PK.
+findStakeOwnedBy :: Term s (PAssetClass :--> (PPubKeyHash :--> (PBuiltinList (PAsData (PTuple PDatumHash PDatum)) :--> (PBuiltinList (PAsData PTxInInfo) :--> PMaybe (PAsData PStakeDatum)))))
+instance Plutarch.DataRepr.Internal.Field.PDataFields Agora.Stake.PProposalLock
+instance Plutarch.Builtin.PIsData Agora.Stake.PProposalLock
+instance Plutarch.Internal.PlutusType.PlutusType Agora.Stake.PProposalLock
+instance Plutarch.DataRepr.Internal.PIsDataRepr Agora.Stake.PProposalLock
+instance forall (s :: Plutarch.Internal.S). Generics.SOP.Universe.Generic (Agora.Stake.PProposalLock s)
+instance forall (s :: Plutarch.Internal.S). GHC.Generics.Generic (Agora.Stake.PProposalLock s)
+instance Plutarch.Builtin.PIsData Agora.Stake.PStakeRedeemer
+instance Plutarch.Internal.PlutusType.PlutusType Agora.Stake.PStakeRedeemer
+instance Plutarch.DataRepr.Internal.PIsDataRepr Agora.Stake.PStakeRedeemer
+instance forall (s :: Plutarch.Internal.S). Generics.SOP.Universe.Generic (Agora.Stake.PStakeRedeemer s)
+instance forall (s :: Plutarch.Internal.S). GHC.Generics.Generic (Agora.Stake.PStakeRedeemer s)
+instance Plutarch.DataRepr.Internal.Field.PDataFields Agora.Stake.PStakeDatum
+instance Plutarch.Builtin.PIsData Agora.Stake.PStakeDatum
+instance Plutarch.Internal.PlutusType.PlutusType Agora.Stake.PStakeDatum
+instance Plutarch.DataRepr.Internal.PIsDataRepr Agora.Stake.PStakeDatum
+instance forall (s :: Plutarch.Internal.S). Generics.SOP.Universe.Generic (Agora.Stake.PStakeDatum s)
+instance forall (s :: Plutarch.Internal.S). GHC.Generics.Generic (Agora.Stake.PStakeDatum s)
+instance Plutarch.Lift.PConstantDecl Agora.Stake.StakeDatum
+instance Plutarch.TryFrom.PTryFrom Plutarch.Builtin.PData (Plutarch.Builtin.PAsData Agora.Stake.PStakeRedeemer)
+instance Plutarch.Lift.PConstantDecl Agora.Stake.StakeRedeemer
+instance Plutarch.TryFrom.PTryFrom Plutarch.Builtin.PData (Plutarch.Builtin.PAsData Agora.Stake.PProposalLock)
+instance Plutarch.Lift.PConstantDecl Agora.Stake.ProposalLock
+instance Plutarch.TryFrom.PTryFrom Plutarch.Builtin.PData (Plutarch.Builtin.PAsData Agora.Stake.PStakeDatum)
+instance Plutarch.Lift.PUnsafeLiftDecl Agora.Stake.PStakeDatum
+instance Plutarch.Lift.PUnsafeLiftDecl Agora.Stake.PStakeRedeemer
+instance Plutarch.Lift.PUnsafeLiftDecl Agora.Stake.PProposalLock
+instance PlutusTx.IsData.Class.ToData Agora.Stake.StakeDatum
+instance PlutusTx.IsData.Class.FromData Agora.Stake.StakeDatum
+instance PlutusTx.IsData.Class.UnsafeFromData Agora.Stake.StakeDatum
+instance GHC.Generics.Generic Agora.Stake.StakeDatum
+instance GHC.Show.Show Agora.Stake.StakeDatum
+instance PlutusTx.IsData.Class.ToData Agora.Stake.StakeRedeemer
+instance PlutusTx.IsData.Class.FromData Agora.Stake.StakeRedeemer
+instance PlutusTx.IsData.Class.UnsafeFromData Agora.Stake.StakeRedeemer
+instance GHC.Generics.Generic Agora.Stake.StakeRedeemer
+instance GHC.Show.Show Agora.Stake.StakeRedeemer
+instance PlutusTx.IsData.Class.ToData Agora.Stake.ProposalLock
+instance PlutusTx.IsData.Class.FromData Agora.Stake.ProposalLock
+instance PlutusTx.IsData.Class.UnsafeFromData Agora.Stake.ProposalLock
+instance GHC.Generics.Generic Agora.Stake.ProposalLock
+instance GHC.Show.Show Agora.Stake.ProposalLock
+
+
+-- | Plutus Scripts for Stakes.
+module Agora.Stake.Scripts
+
+-- | Policy for Stake state threads.
+--   
+--   <h2>What this Policy does</h2>
+--   
+--   <h3>For minting:</h3>
+--   
+--   <ul>
+--   <li>Check that exactly one state thread is minted.</li>
+--   <li>Check that an output exists with a state thread and a valid
+--   datum.</li>
+--   <li>Check that no state thread is an input.</li>
+--   <li>assert <tt><a>TokenName</a> == <a>ValidatorHash</a></tt> of the
+--   script that we pay to.</li>
+--   </ul>
+--   
+--   <h3>For burning:</h3>
+--   
+--   <ul>
+--   <li>Check that exactly one state thread is burned.</li>
+--   <li>Check that datum at state thread is valid and not locked.</li>
+--   </ul>
+stakePolicy :: Tagged GTTag AssetClass -> ClosedTerm PMintingPolicy
+
+-- | Validator intended for Stake UTXOs to be locked by.
+--   
+--   <h2>What this Validator does:</h2>
+--   
+--   <h3><a>DepositWithdraw</a></h3>
+--   
+--   Deposit or withdraw some GT to the stake.
+--   
+--   <ul>
+--   <li>Tx must be signed by the owner.</li>
+--   <li>The <a>stakedAmount</a> field must be updated.</li>
+--   <li>The stake must not be locked.</li>
+--   <li>The new UTXO must have the previous value plus the difference as
+--   stated by the redeemer.</li>
+--   </ul>
+--   
+--   <h3><a>PermitVote</a></h3>
+--   
+--   Allow a <a>ProposalLock</a> to be put on the stake in order to vote on
+--   a proposal.
+--   
+--   <ul>
+--   <li>A proposal token must be spent alongside the stake.</li>
+--   <li>Its total votes must be correctly updated to include this stake's
+--   contribution.</li>
+--   <li>Tx must be signed by the owner.</li>
+--   </ul>
+--   
+--   <h3><a>RetractVotes</a></h3>
+--   
+--   Remove a <a>ProposalLock</a> set when voting on a proposal.
+--   
+--   <ul>
+--   <li>A proposal token must be spent alongside the stake.</li>
+--   <li>Tx must be signed by the owner.</li>
+--   </ul>
+--   
+--   <h3><a>Destroy</a></h3>
+--   
+--   Destroy the stake in order to reclaim the min ADA.
+--   
+--   <ul>
+--   <li>The stake must not be locked.</li>
+--   <li>Tx must be signed by the owner.</li>
+--   </ul>
+--   
+--   <h3><a>WitnessStake</a></h3>
+--   
+--   Allow this Stake to be included in a transaction without making any
+--   changes to it. In the future, this could use <a>CIP-31</a> instead.
+--   
+--   <ul>
+--   <li>Tx must be signed by the owner <b>or</b> a proposal ST token must
+--   be spent alongside the stake.</li>
+--   <li>The datum and value must remain unchanged.</li>
+--   </ul>
+stakeValidator :: Stake -> ClosedTerm PValidator
+
+
+-- | Plutus Scripts for Proposals.
+module Agora.Proposal.Scripts
+
+-- | The validator for Proposals.
+--   
+--   The documentation for various of the redeemers lives at
+--   <a>ProposalRedeemer</a>.
+--   
+--   <h2>What this validator does</h2>
+--   
+--   <h3>Voting/unlocking</h3>
+--   
+--   When voting and unlocking, the proposal must witness a state
+--   transition occuring in the relevant Stake. This transition must place
+--   a lock on the stake that is tagged with the right <a>ResultTag</a>,
+--   and <a>ProposalId</a>.
+--   
+--   <h3>Periods</h3>
+--   
+--   Most redeemers are time-sensitive.
+--   
+--   A list of all time-sensitive redeemers and their requirements:
+--   
+--   <ul>
+--   <li><a>Vote</a> can only be used when both the status is in
+--   <a>VotingReady</a>, and <a>isVotingPeriod</a> is true.</li>
+--   <li><a>Cosign</a> can only be used when both the status is in
+--   <a>Draft</a>, and <a>isDraftPeriod</a> is true.</li>
+--   <li><a>AdvanceProposal</a> can only be used when the status can be
+--   advanced (see <a>AdvanceProposal</a> docs).</li>
+--   <li><a>Unlock</a> is always valid.</li>
+--   </ul>
+proposalValidator :: Proposal -> ClosedTerm PValidator
+
+-- | Policy for Proposals.
+--   
+--   <h2>What this policy does</h2>
+--   
+--   <h3>For minting:</h3>
+--   
+--   <ul>
+--   <li>Governor is happy with mint.</li>
+--   </ul>
+--   
+--   <ul>
+--   <li>The governor must do most of the checking for the validity of the
+--   transaction. For example, the governor must check that the datum is
+--   correct, and that the ST is correctly paid to the right
+--   validator.</li>
+--   <li>Exactly 1 token is minted.</li>
+--   </ul>
+--   
+--   <h3>For burning:</h3>
+--   
+--   <ul>
+--   <li>This policy cannot be burned.</li>
+--   </ul>
+proposalPolicy :: Proposal -> ClosedTerm PMintingPolicy
 
 
 -- | Governor entity scripts acting as authority of entire system.
@@ -323,164 +912,12 @@ governorPolicy :: Governor -> ClosedTerm PMintingPolicy
 
 -- | Validator for Governors.
 governorValidator :: Governor -> ClosedTerm PValidator
-
-
--- | Vote-lockable stake UTXOs holding GT.
-module Agora.Stake
-
--- | Plutarch-level datum for Stake scripts.
-newtype PStakeDatum (s :: S)
-PStakeDatum :: Term s (PDataRecord '["stakedAmount" := PDiscrete GTTag, "owner" := PPubKeyHash, "lockedBy" := PBuiltinList (PAsData PProposalLock)]) -> PStakeDatum (s :: S)
-[getStakeDatum] :: PStakeDatum (s :: S) -> Term s (PDataRecord '["stakedAmount" := PDiscrete GTTag, "owner" := PPubKeyHash, "lockedBy" := PBuiltinList (PAsData PProposalLock)])
-
--- | Plutarch-level redeemer for Stake scripts.
-data PStakeRedeemer (s :: S)
-
--- | Deposit or withdraw a discrete amount of the staked governance token.
-PDepositWithdraw :: Term s (PDataRecord '["delta" := PDiscrete GTTag]) -> PStakeRedeemer (s :: S)
-
--- | Destroy a stake, retrieving its LQ, the minimum ADA and any other
---   assets.
-PDestroy :: Term s (PDataRecord '[]) -> PStakeRedeemer (s :: S)
-PPermitVote :: Term s (PDataRecord '["lock" := PProposalLock]) -> PStakeRedeemer (s :: S)
-PRetractVotes :: Term s (PDataRecord '["locks" := PBuiltinList PProposalLock]) -> PStakeRedeemer (s :: S)
-
--- | Haskell-level datum for Stake scripts.
-data StakeDatum
-StakeDatum :: Tagged GTTag Integer -> PubKeyHash -> [ProposalLock] -> StakeDatum
-
--- | Tracks the amount of governance token staked in the datum. This also
---   acts as the voting weight for <tt>Proposal</tt>s.
-[stakedAmount] :: StakeDatum -> Tagged GTTag Integer
-
--- | The hash of the public key this stake belongs to.
---   
---   TODO Support for MultiSig/Scripts is tracked here:
---   <a>https://github.com/Liqwid-Labs/agora/issues/45</a>
-[owner] :: StakeDatum -> PubKeyHash
-
--- | The current proposals locking this stake. This field must be empty for
---   the stake to be usable for deposits and withdrawals.
-[lockedBy] :: StakeDatum -> [ProposalLock]
-
--- | Haskell-level redeemer for Stake scripts.
-data StakeRedeemer
-
--- | Deposit or withdraw a discrete amount of the staked governance token.
---   Stake must be unlocked.
-DepositWithdraw :: Tagged GTTag Integer -> StakeRedeemer
-
--- | Destroy a stake, retrieving its LQ, the minimum ADA and any other
---   assets. Stake must be unlocked.
-Destroy :: StakeRedeemer
-
--- | Permit a Vote to be added onto a <tt>Proposal</tt>. This also adds a
---   lock to the <a>lockedBy</a> field. See <a>ProposalLock</a>. This needs
---   to be done in sync with casting a vote, otherwise it's possible for a
---   lock to be permanently placed on the stake, and then the funds are
---   lost.
-PermitVote :: ProposalLock -> StakeRedeemer
-
--- | Retract a vote, removing it from the <a>lockedBy</a> field. See
---   <a>ProposalLock</a>. This action checks for permission of the
---   <tt>Proposal</tt>. Finished proposals are always allowed to have votes
---   retracted and won't affect the Proposal datum, allowing <a>Stake</a>s
---   to be unlocked.
-RetractVotes :: [ProposalLock] -> StakeRedeemer
-
--- | A lock placed on a Stake datum in order to prevent depositing and
---   withdrawing when votes are in place.
---   
---   NOTE: Due to retracting votes always being possible, this lock will
---   only lock with contention on the proposal.
---   
---   FIXME: Contention on Proposals could create contention on voting which
---   in turn creates contention on stakers.
---   
---   Vaguely this is the dependency graph for this locking interaction.
---   Both the stake validator and the proposal validator are only able to
---   check for one another through the datum belonging to the ST:
---   
---   <pre>
---   ┌─────────────────┐   ┌────────────────────┐
---   │ Stake Validator ├─┐ │ Proposal Validator │
---   └────────┬────────┘ │ └──────┬─────┬───────┘
---            │          │        │     │
---            │        ┌─┼────────┘     │
---            ▼        │ │              ▼
---   ┌──────────────┐  │ │ ┌─────────────────┐
---   │ Stake Policy │◄─┘ └►│ Proposal Policy │
---   └──────────────┘      └─────────────────┘
---   
---   </pre>
-data ProposalLock
-ProposalLock :: ResultTag -> ProposalId -> ProposalLock
-
--- | What was voted on. This allows retracting votes to undo their vote.
-[vote] :: ProposalLock -> ResultTag
-
--- | Identifies the proposal. See <a>ProposalId</a> for further comments on
---   its significance.
-[proposalId] :: ProposalLock -> ProposalId
-newtype PProposalLock (s :: S)
-PProposalLock :: Term s (PDataRecord '["vote" := PResultTag, "proposalTag" := PProposalId]) -> PProposalLock (s :: S)
-[getProposalLock] :: PProposalLock (s :: S) -> Term s (PDataRecord '["vote" := PResultTag, "proposalTag" := PProposalId])
-
--- | Parameters for creating Stake scripts.
-newtype Stake
-Stake :: Tagged GTTag AssetClass -> Stake
-
--- | Used when inlining the AssetClass of a <a>PDiscrete</a> in the script
---   code.
-[gtClassRef] :: Stake -> Tagged GTTag AssetClass
-
--- | Policy for Stake state threads.
-stakePolicy :: Stake -> ClosedTerm PMintingPolicy
-
--- | Validator intended for Stake UTXOs to live in.
-stakeValidator :: Stake -> ClosedTerm PValidator
-
--- | Check whether a Stake is locked. If it is locked, various actions are
---   unavailable.
-stakeLocked :: forall (s :: S). Term s (PStakeDatum :--> PBool)
-instance Plutarch.DataRepr.Internal.Field.PDataFields Agora.Stake.PProposalLock
-instance Plutarch.Builtin.PIsData Agora.Stake.PProposalLock
-instance Plutarch.Internal.PlutusType.PlutusType Agora.Stake.PProposalLock
-instance Plutarch.DataRepr.Internal.PIsDataRepr Agora.Stake.PProposalLock
-instance forall (s :: Plutarch.Internal.S). Generics.SOP.Universe.Generic (Agora.Stake.PProposalLock s)
-instance forall (s :: Plutarch.Internal.S). GHC.Generics.Generic (Agora.Stake.PProposalLock s)
-instance Plutarch.Builtin.PIsData Agora.Stake.PStakeRedeemer
-instance Plutarch.Internal.PlutusType.PlutusType Agora.Stake.PStakeRedeemer
-instance Plutarch.DataRepr.Internal.PIsDataRepr Agora.Stake.PStakeRedeemer
-instance forall (s :: Plutarch.Internal.S). Generics.SOP.Universe.Generic (Agora.Stake.PStakeRedeemer s)
-instance forall (s :: Plutarch.Internal.S). GHC.Generics.Generic (Agora.Stake.PStakeRedeemer s)
-instance Plutarch.DataRepr.Internal.Field.PDataFields Agora.Stake.PStakeDatum
-instance Plutarch.Builtin.PIsData Agora.Stake.PStakeDatum
-instance Plutarch.Internal.PlutusType.PlutusType Agora.Stake.PStakeDatum
-instance Plutarch.DataRepr.Internal.PIsDataRepr Agora.Stake.PStakeDatum
-instance forall (s :: Plutarch.Internal.S). Generics.SOP.Universe.Generic (Agora.Stake.PStakeDatum s)
-instance forall (s :: Plutarch.Internal.S). GHC.Generics.Generic (Agora.Stake.PStakeDatum s)
-instance Plutarch.Lift.PConstant Agora.Stake.StakeDatum
-instance Plutarch.Lift.PConstant Agora.Stake.StakeRedeemer
-instance Plutarch.Lift.PConstant Agora.Stake.ProposalLock
-instance Plutarch.Lift.PUnsafeLiftDecl Agora.Stake.PStakeDatum
-instance Plutarch.Lift.PUnsafeLiftDecl Agora.Stake.PStakeRedeemer
-instance Plutarch.Lift.PUnsafeLiftDecl Agora.Stake.PProposalLock
-instance PlutusTx.IsData.Class.ToData Agora.Stake.StakeDatum
-instance PlutusTx.IsData.Class.FromData Agora.Stake.StakeDatum
-instance PlutusTx.IsData.Class.UnsafeFromData Agora.Stake.StakeDatum
-instance GHC.Generics.Generic Agora.Stake.StakeDatum
-instance GHC.Show.Show Agora.Stake.StakeDatum
-instance PlutusTx.IsData.Class.ToData Agora.Stake.StakeRedeemer
-instance PlutusTx.IsData.Class.FromData Agora.Stake.StakeRedeemer
-instance PlutusTx.IsData.Class.UnsafeFromData Agora.Stake.StakeRedeemer
-instance GHC.Generics.Generic Agora.Stake.StakeRedeemer
-instance GHC.Show.Show Agora.Stake.StakeRedeemer
-instance PlutusTx.IsData.Class.ToData Agora.Stake.ProposalLock
-instance PlutusTx.IsData.Class.FromData Agora.Stake.ProposalLock
-instance PlutusTx.IsData.Class.UnsafeFromData Agora.Stake.ProposalLock
-instance GHC.Generics.Generic Agora.Stake.ProposalLock
-instance GHC.Show.Show Agora.Stake.ProposalLock
+instance PlutusTx.IsData.Class.ToData Agora.Governor.GovernorRedeemer
+instance PlutusTx.IsData.Class.FromData Agora.Governor.GovernorRedeemer
+instance PlutusTx.IsData.Class.UnsafeFromData Agora.Governor.GovernorRedeemer
+instance PlutusTx.IsData.Class.ToData Agora.Governor.GovernorDatum
+instance PlutusTx.IsData.Class.FromData Agora.Governor.GovernorDatum
+instance PlutusTx.IsData.Class.UnsafeFromData Agora.Governor.GovernorDatum
 
 
 -- | Tokens acting as redeemable proofs of DAO authority.
@@ -519,36 +956,36 @@ AuthorityToken :: AssetClass -> AuthorityToken
 --   treasury.
 module Agora.Treasury
 
+-- | Redeemer for Treasury actions.
+data TreasuryRedeemer
+
+-- | Allow transaction to pass by delegating to GAT burn.
+SpendTreasuryGAT :: TreasuryRedeemer
+
 -- | Plutarch level type representing valid redeemers of the treasury.
 newtype PTreasuryRedeemer (s :: S)
 
 -- | Alters treasury parameters, subject to the burning of a governance
 --   authority token.
-PAlterTreasuryParams :: Term s (PDataRecord '[]) -> PTreasuryRedeemer (s :: S)
-
--- | Plutarch level type representing datum of the treasury. Contains:
---   
---   <ul>
---   <li><tt>stateThread</tt> representing the asset class of the
---   treasury's state thread token.</li>
---   </ul>
-newtype PTreasuryDatum (s :: S)
-PTreasuryDatum :: Term s (PDataRecord '["stateThread" := PCurrencySymbol]) -> PTreasuryDatum (s :: S)
+PSpendTreasuryGAT :: Term s (PDataRecord '[]) -> PTreasuryRedeemer (s :: S)
 
 -- | Validator ensuring that transactions consuming the treasury do so in a
 --   valid manner.
 treasuryValidator :: CurrencySymbol -> ClosedTerm PValidator
-instance Plutarch.DataRepr.Internal.Field.PDataFields Agora.Treasury.PTreasuryDatum
-instance Plutarch.Builtin.PIsData Agora.Treasury.PTreasuryDatum
-instance Plutarch.Internal.PlutusType.PlutusType Agora.Treasury.PTreasuryDatum
-instance Plutarch.DataRepr.Internal.PIsDataRepr Agora.Treasury.PTreasuryDatum
-instance forall (s :: Plutarch.Internal.S). Generics.SOP.Universe.Generic (Agora.Treasury.PTreasuryDatum s)
-instance forall (s :: Plutarch.Internal.S). GHC.Generics.Generic (Agora.Treasury.PTreasuryDatum s)
 instance Plutarch.Builtin.PIsData Agora.Treasury.PTreasuryRedeemer
 instance Plutarch.Internal.PlutusType.PlutusType Agora.Treasury.PTreasuryRedeemer
 instance Plutarch.DataRepr.Internal.PIsDataRepr Agora.Treasury.PTreasuryRedeemer
 instance forall (s :: Plutarch.Internal.S). Generics.SOP.Universe.Generic (Agora.Treasury.PTreasuryRedeemer s)
 instance forall (s :: Plutarch.Internal.S). GHC.Generics.Generic (Agora.Treasury.PTreasuryRedeemer s)
+instance Plutarch.TryFrom.PTryFrom Plutarch.Builtin.PData (Plutarch.Builtin.PAsData Agora.Treasury.PTreasuryRedeemer)
+instance Plutarch.Lift.PConstantDecl Agora.Treasury.TreasuryRedeemer
+instance Plutarch.Lift.PUnsafeLiftDecl Agora.Treasury.PTreasuryRedeemer
+instance PlutusTx.IsData.Class.ToData Agora.Treasury.TreasuryRedeemer
+instance PlutusTx.IsData.Class.FromData Agora.Treasury.TreasuryRedeemer
+instance PlutusTx.IsData.Class.UnsafeFromData Agora.Treasury.TreasuryRedeemer
+instance GHC.Generics.Generic Agora.Treasury.TreasuryRedeemer
+instance GHC.Show.Show Agora.Treasury.TreasuryRedeemer
+instance GHC.Classes.Eq Agora.Treasury.TreasuryRedeemer
 
 
 -- | Helpers for constructing effects.
@@ -564,10 +1001,22 @@ makeEffect :: forall (datum :: PType). (PIsData datum, PTryFrom PData datum) => 
 
 -- | An Effect that withdraws treasury deposit
 module Agora.Effect.TreasuryWithdrawal
+
+-- | Datum that encodes behavior of Treasury Withdrawal effect.
+--   
+--   Note: This Datum acts like a "predefined redeemer". Which is to say
+--   that it encodes the properties a redeemer would, but is locked
+--   in-place until spend.
 data TreasuryWithdrawalDatum
 TreasuryWithdrawalDatum :: [(Credential, Value)] -> [Credential] -> TreasuryWithdrawalDatum
+
+-- | AssocMap for Value sent to each receiver from the treasury.
 [receivers] :: TreasuryWithdrawalDatum -> [(Credential, Value)]
+
+-- | What Credentials is spending from legal.
 [treasuries] :: TreasuryWithdrawalDatum -> [Credential]
+
+-- | Haskell-level version of <a>TreasuryWithdrawalDatum</a>.
 newtype PTreasuryWithdrawalDatum (s :: S)
 PTreasuryWithdrawalDatum :: Term s (PDataRecord '["receivers" := PBuiltinList (PAsData (PTuple PCredential PValue)), "treasuries" := PBuiltinList (PAsData PCredential)]) -> PTreasuryWithdrawalDatum (s :: S)
 
@@ -579,7 +1028,7 @@ PTreasuryWithdrawalDatum :: Term s (PDataRecord '["receivers" := PBuiltinList (P
 --   provided via encoded Datum.
 --   
 --   Note: It should check... 1. Transaction outputs should contain all of
---   what Datum specified 2. Left over assests should be redirected back to
+--   what Datum specified 2. Left over assets should be redirected back to
 --   Treasury It can be more flexiable over... - The number of outputs
 --   themselves
 treasuryWithdrawalValidator :: forall {s :: S}. CurrencySymbol -> Term s PValidator
@@ -589,7 +1038,7 @@ instance Plutarch.Internal.PlutusType.PlutusType Agora.Effect.TreasuryWithdrawal
 instance Plutarch.DataRepr.Internal.PIsDataRepr Agora.Effect.TreasuryWithdrawal.PTreasuryWithdrawalDatum
 instance forall (s :: Plutarch.Internal.S). Generics.SOP.Universe.Generic (Agora.Effect.TreasuryWithdrawal.PTreasuryWithdrawalDatum s)
 instance forall (s :: Plutarch.Internal.S). GHC.Generics.Generic (Agora.Effect.TreasuryWithdrawal.PTreasuryWithdrawalDatum s)
-instance Plutarch.Lift.PConstant Agora.Effect.TreasuryWithdrawal.TreasuryWithdrawalDatum
+instance Plutarch.Lift.PConstantDecl Agora.Effect.TreasuryWithdrawal.TreasuryWithdrawalDatum
 instance Plutarch.Lift.PUnsafeLiftDecl Agora.Effect.TreasuryWithdrawal.PTreasuryWithdrawalDatum
 instance Plutarch.TryFrom.PTryFrom Plutarch.Builtin.PData Agora.Effect.TreasuryWithdrawal.PTreasuryWithdrawalDatum
 instance PlutusTx.IsData.Class.ToData Agora.Effect.TreasuryWithdrawal.TreasuryWithdrawalDatum
@@ -607,6 +1056,8 @@ module Agora.Effect.NoOp
 
 -- | Dummy effect which can only burn its GAT.
 noOpValidator :: CurrencySymbol -> ClosedTerm PValidator
+
+-- | Dummy datum for NoOp effect.
 data PNoOp (s :: S)
 instance Plutarch.Builtin.PIsData Agora.Effect.NoOp.PNoOp
 instance Plutarch.Internal.PlutusType.PlutusType Agora.Effect.NoOp.PNoOp
