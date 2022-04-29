@@ -702,7 +702,7 @@ proposalSTAssetClassFromGovernor :: Governor -> AssetClass
 proposalSTAssetClassFromGovernor gov = AssetClass (symbol, "")
   where
     gstAC = governorSTAssetClassFromGovernor gov
-    -- JUSTIFICATIONL: the PST policy doesn't care about the following two fields at all.
+    -- JUSTIFICATION: the PST policy doesn't care about the following two fields at all.
     -- FIXME: refactor PST policy, parameterize it only with GST assetclass or something.
     sstAC = AssetClass ("", "")
     mc = -1
