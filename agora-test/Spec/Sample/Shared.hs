@@ -34,6 +34,8 @@ module Spec.Sample.Shared (
 
 import Agora.Governor (
   Governor (Governor),
+ )
+import Agora.Governor.Scripts (
   governorPolicy,
   governorValidator,
  )
@@ -61,6 +63,7 @@ import Plutus.V1.Ledger.Api (
   CurrencySymbol,
   MintingPolicy (..),
   PubKeyHash,
+  TxOutRef (TxOutRef),
  )
 import Plutus.V1.Ledger.Scripts (Validator, ValidatorHash)
 import Plutus.V1.Ledger.Value qualified as Value
@@ -88,7 +91,15 @@ stakeAddress :: Address
 stakeAddress = Address (ScriptCredential stakeValidatorHash) Nothing
 
 governor :: Governor
-governor = Governor
+governor = Governor oref gt mc
+  where
+    oref = TxOutRef "f28cd7145c24e66fd5bcd2796837aeb19a48a2656e7833c88c62a2d0450bd00d" 0
+    gt =
+      Tagged $
+        Value.assetClass
+          "da8c30857834c6ae7203935b89278c532b3995245295456f993e1d24"
+          "LQ"
+    mc = 6
 
 govPolicy :: MintingPolicy
 govPolicy = mkMintingPolicy (governorPolicy governor)
