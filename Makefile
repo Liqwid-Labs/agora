@@ -10,6 +10,7 @@ usage:
 	@echo "  hoogle -- Start local hoogle"
 	@echo "  format -- Format the project"
 	@echo "  haddock -- Generate Haddock docs for project"
+	@echo "  tag -- Generate CTAGS and ETAGS files for project"
 
 hoogle:
 	pkill hoogle || true
@@ -17,10 +18,14 @@ hoogle:
 	hoogle server --local -p 8081 >> /dev/null &
 	hoogle server --local --database=hoo/local.hoo -p 8082 >> /dev/null &
 
-FORMAT_EXTENSIONS := -o -XQuasiQuotes -o -XTemplateHaskell -o -XTypeApplications -o -XImportQualifiedPost -o -XPatternSynonyms -o -XOverloadedRecordDot
-format:
-	find -name '*.hs' -not -path './dist-*/*' | xargs fourmolu $(FORMAT_EXTENSIONS) -m inplace
+format: format_haskell format_nix
+
+format_nix:
 	git ls-tree -r HEAD --full-tree --name-only | grep -E '.*\.nix' | xargs nixpkgs-fmt
+
+FORMAT_EXTENSIONS := -o -XQuasiQuotes -o -XTemplateHaskell -o -XTypeApplications -o -XImportQualifiedPost -o -XPatternSynonyms -o -XOverloadedRecordDot
+format_haskell:
+	find -name '*.hs' -not -path './dist-*/*' | xargs fourmolu $(FORMAT_EXTENSIONS) -m inplace
 	git ls-tree -r HEAD --full-tree --name-only | grep -E '.*\.cabal' | xargs cabal-fmt -i
 
 format_check:
@@ -31,3 +36,7 @@ format_check:
 
 haddock:
 	cabal haddock --haddock-html --haddock-hoogle --builddir=haddock
+
+tag:
+	hasktags -x agora agora-bench agora-test
+

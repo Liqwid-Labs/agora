@@ -4,7 +4,7 @@ This document gives an overview of the technical design of the proposals system 
 
 | Specification | Implementation | Last revision |
 |:-----------:|:-----------:|:-------------:|
-| WIP         |  WIP        | v0.1 2022-04-11    |
+| WIP         |  WIP        | v0.1 2022-04-27    |
 
 ---
 
@@ -35,35 +35,31 @@ Initiating a proposal requires the proposer to have more than a certain amount o
 
 ### Voting stages
 
-The life-cycle of a proposal is neatly represented by a state machine, with the 'draft' phase being the initial state, and 'executed' and 'failed' being the terminating states. Please note that this state-machine representation is purely conceptual and should not be expected to reflect technical implementation.
+The life-cycle of a proposal is neatly represented by a state machine, with the 'draft' state being the initial state, and 'executed' and 'failed' being the terminating states.
+
+Note: this state-machine representation is purely conceptual and should not be expected to reflect technical implementation.
+**Please note that this state-machine representation is purely conceptual and should not be expected to reflect technical implementation.** This is because some transitions in the state machine representation don't need to happen on-chain, as a transaction. A key example of this is a proposal going from the "lock" phase to the "execution" phase. No on-chain transition takes place: it is simply that we have reached the time in the real-world, when the proposal is allowed to be executed.
+
+To make the following diagram clear, we employ the following terminology:
+
+
+> state
+> A 'state' in our conceptual FSM representation above. Useful for thinking about proposals. Does not necessarily reflect a change occurring on-chain.
+
+
+> period
+> A segment of real-world, POSIX time. As we transition from one period to another, a proposal's status (see below) will not be updated.
+
+
+> status
+> The 'status' of a proposal is stored in the proposal's datum and is thus always represented on-chain. Changing this requires a transaction to take place.
+
 
 ![](../diagrams/ProposalStateMachine.svg)
 
-#### When may interactions occur?
-
-Consider the following 'stages' of a proposal:
-
--   `S`: when the proposal was created.
--   `D`: the length of the draft period.
--   `V`: the length of the voting period.
--   `L`: the length of the locking period.
--   `E`: the length of the execution period.
-
-| Action                              | Valid POSIXTimeRange                | Valid _stored_ state(s) |
-|-------------------------------------|-------------------------------------|-------------------------|
-| Witness                             | \[S, ∞)                             | \*                      |
-| Cosign                              | \[S, S + D)                         | Draft                   |
-| AdvanceProposal                     | \[S, S + D)                         | Draft                   |
-| Vote                                | \[S + D, S + D + V)                 | Voting                  |
-| Unlock                              | \[S + D, ∞)                         | \*                      |
-| CountVotes                          | \[S + D + V, S + D + V + L)         | Voting                  |
-| ExecuteProposal (if quorum reached) | \[S + D + V + L, S + D + V + L + E) | Voting                  |
-
-> Jack 2022-02-02: I will consider revising this table further at a later time.
-
 #### Draft phase
 
-During the draft phase, a new UTXO at the proposal script  has been created. At this stage, only votes in favor of co-signing the draft are counted. For the proposal to transition to the voting phase, a threshold of GT will have to be staked backing the proposal. This threshold will be determined on a per-system basis and could itself be a 'governable' parameter. It's important to note that cosignatures are not locking votes. Cosignatures are more like a delegated approval to a proposal. The sum of all cosignatures must tally to the threshold, and all cosigner stake datums must fit into a single transaction to witness their size.
+During the draft phase, a new UTXO at the proposal script  has been created. At this stage, only votes in favor of co-signing the draft are counted. For the proposal to transition to the voting phase, a threshold of GT will have to be staked backing the proposal. This threshold will be determined on a per-system basis and could itself be a 'governable' parameter. It's important to note that cosignatures are not locking votes. Cosignatures are more like a delegated approval to a proposal. The sum of all cosignatures must tally to the threshold, and all cosigner stake datums must fit into a single transaction to witness their size. A limit on the maximum amount of cosigners is placed in order to prevent a situation where the stake datums no longer fit in the transaction. The number doesn't matter and may be expressed in a parameterized way.
 
 #### Voting phase
 

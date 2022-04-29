@@ -2,7 +2,6 @@
 Module     : Agora.AuthorityToken
 Maintainer : emi@haskell.fyi
 Description: Tokens acting as redeemable proofs of DAO authority.
-
 Tokens acting as redeemable proofs of DAO authority.
 -}
 module Agora.AuthorityToken (
@@ -18,30 +17,28 @@ import Plutarch.Api.V1 (
   PCurrencySymbol (..),
   PScriptContext (..),
   PScriptPurpose (..),
-  PTxInInfo (..),
+  PTxInInfo (PTxInInfo),
   PTxInfo (..),
   PTxOut (..),
  )
 import Plutarch.Api.V1.AssocMap (PMap (PMap))
 import Plutarch.Api.V1.Value (PValue (PValue))
 import Plutarch.Builtin (pforgetData)
-import Plutarch.List (pfoldr')
 import Plutarch.Monadic qualified as P
-import Plutus.V1.Ledger.Value (AssetClass)
+import Plutus.V1.Ledger.Value (AssetClass (AssetClass))
 
 import Prelude
 
 --------------------------------------------------------------------------------
 
 import Agora.Utils (
-  allInputs,
   allOutputs,
   passert,
-  passetClassValueOf,
-  passetClassValueOf',
   plookup,
   psymbolValueOf,
+  ptokenSpent,
  )
+import Plutarch.Api.V1.Extra (passetClass, passetClassValueOf)
 
 --------------------------------------------------------------------------------
 
@@ -64,53 +61,35 @@ newtype AuthorityToken = AuthorityToken
      the script address the token resides in matches the TokenName.
      Since the TokenName was tagged upon mint with the Effect script
      it was sent to, this is enough to prove validity.
-
      In other words, check that all assets of a particular currency symbol
      are tagged with a TokenName that matches where they live.
 -}
 authorityTokensValidIn :: Term s (PCurrencySymbol :--> PTxOut :--> PBool)
-authorityTokensValidIn = phoistAcyclic $ -- /Lift/ the `Term`.
+authorityTokensValidIn = phoistAcyclic $
   plam $ \authorityTokenSym txOut'' -> P.do
-    -- Extract the desired fields: address and value, from the
-    -- transaction output info.
     PTxOut txOut' <- pmatch txOut''
     txOut <- pletFields @'["address", "value"] $ txOut'
     PAddress address <- pmatch txOut.address
     PValue value' <- pmatch txOut.value
     PMap value <- pmatch value'
-
-    -- Search the transaction output info's value for the
-    -- provided currency symbol for the authority token.
     pmatch (plookup # pdata authorityTokenSym # value) $ \case
-      -- In the case of `PNothing`, no GATs exist at this output
-      -- and ipso facto they are all valid.
-      PNothing -> pconstant True
-      -- This is the case wherein a TokenName/Integer map /has/
-      -- been found for the given currency symbol.
       PJust (pfromData -> tokenMap') ->
-        -- Now we need to look at the transaction output's
-        -- address.
         pmatch (pfield @"credential" # address) $ \case
-          -- GATs should only be sent to Effect validators,
-          -- therefore we consider this invalid and return False.
-          PPubKeyCredential _ -> pconstant False
-          -- This is a script address. We need to ensure that
-          -- the the `TokenName`s associated with the given
-          -- currency symbol are all equal to this script
-          -- address.
+          PPubKeyCredential _ ->
+            -- GATs should only be sent to Effect validators
+            ptraceIfFalse "authorityTokensValidIn: GAT incorrectly lives at PubKey" $ pconstant False
           PScriptCredential ((pfromData . (pfield @"_0" #)) -> cred) -> P.do
-            -- Unwrap the `TokenName`/`Integer` map.
             PMap tokenMap <- pmatch tokenMap'
-
-            -- Check that the `TokenName` is equal to the validator
-            -- hash for all of the `TokenName` keys in the map.
-            pall
-              # plam
-                ( \tnMap ->
-                    pforgetData (pfstBuiltin # tnMap)
-                      #== pforgetData (pdata cred)
-                )
-              # tokenMap
+            ptraceIfFalse "authorityTokensValidIn: GAT TokenName doesn't match ScriptHash" $
+              pall
+                # plam
+                  ( \pair ->
+                      pforgetData (pfstBuiltin # pair) #== pforgetData (pdata cred)
+                  )
+                # tokenMap
+      PNothing ->
+        -- No GATs exist at this output!
+        pconstant True
 
 -- | Assert that a single authority token has been burned.
 singleAuthorityTokenBurned ::
@@ -123,14 +102,20 @@ singleAuthorityTokenBurned gatCs txInfo mint = P.do
   let gatAmountMinted :: Term _ PInteger
       gatAmountMinted = psymbolValueOf # gatCs # mint
 
+  txInfoF <- pletFields @'["inputs"] $ txInfo
+
   foldr1
     (#&&)
-    [ ptraceIfFalse "GAT not burned." $ gatAmountMinted #== -1
-    , ptraceIfFalse "All inputs only have valid GATs" $
-        allInputs @PUnit # pfromData txInfo #$ plam $ \txOut _value _address _datum ->
-          authorityTokensValidIn
-            # gatCs
-            # txOut
+    [ ptraceIfFalse "singleAuthorityTokenBurned: Must burn exactly 1 GAT" $ gatAmountMinted #== -1
+    , ptraceIfFalse "singleAuthorityTokenBurned: All GAT tokens must be valid at the inputs" $
+        pall
+          # plam
+            ( \txInInfo' -> P.do
+                PTxInInfo txInInfo <- pmatch (pfromData txInInfo')
+                let txOut' = pfield @"resolved" # txInInfo
+                authorityTokensValidIn # gatCs # pfromData txOut'
+            )
+          # txInfoF.inputs
     ]
 
 -- | Policy given 'AuthorityToken' params.
@@ -144,28 +129,21 @@ authorityTokenPolicy params =
       PTxInfo txInfo' <- pmatch $ pfromData ctx.txInfo
       txInfo <- pletFields @'["inputs", "mint"] txInfo'
       let inputs = txInfo.inputs
-      let authorityTokenInputs =
-            pfoldr' @PBuiltinList
-              ( \txInInfo' acc -> P.do
-                  PTxInInfo txInInfo <- pmatch (pfromData txInInfo')
-                  PTxOut txOut' <- pmatch $ pfromData $ pfield @"resolved" # txInInfo
-                  txOut <- pletFields @'["value"] txOut'
-                  let txOutValue = pfromData txOut.value
-                  passetClassValueOf' params.authority # txOutValue + acc
-              )
-              # 0
-              # inputs
-      let mintedValue = pfromData txInfo.mint
-      let tokenMoved = 0 #< authorityTokenInputs
+          mintedValue = pfromData txInfo.mint
+          AssetClass (govCs, govTn) = params.authority
+          govAc = passetClass # pconstant govCs # pconstant govTn
+          govTokenSpent = ptokenSpent # govAc # inputs
+
       PMinting ownSymbol' <- pmatch $ pfromData ctx.purpose
+
       let ownSymbol = pfromData $ pfield @"_0" # ownSymbol'
-      let mintedATs = passetClassValueOf # ownSymbol # pconstant "" # mintedValue
+          mintedATs = passetClassValueOf # mintedValue # (passetClass # ownSymbol # pconstant "")
       pif
         (0 #< mintedATs)
         ( P.do
-            passert "Parent token did not move in minting GATs" tokenMoved
+            passert "Parent token did not move in minting GATs" govTokenSpent
             passert "All outputs only emit valid GATs" $
-              allOutputs @PUnit # pfromData ctx.txInfo #$ plam $ \txOut _value _address _datum ->
+              allOutputs @PData # pfromData ctx.txInfo #$ plam $ \txOut _value _address _datum ->
                 authorityTokensValidIn
                   # ownSymbol
                   # txOut

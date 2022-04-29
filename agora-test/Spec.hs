@@ -10,8 +10,10 @@ import Test.Tasty (defaultMain, testGroup)
 
 --------------------------------------------------------------------------------
 
+import Spec.AuthorityToken qualified as AuthorityToken
+import Spec.Effect.TreasuryWithdrawal qualified as TreasuryWithdrawal
 import Spec.Model.MultiSig qualified as MultiSig
-import Spec.Model.Treasury qualified as Treasury
+import Spec.Proposal qualified as Proposal
 import Spec.Stake qualified as Stake
 
 -- | The Agora test suite.
@@ -21,8 +23,17 @@ main =
     testGroup
       "test suite"
       [ testGroup
+          "Effects"
+          [ testGroup
+              "Treasury Withdrawal Effect"
+              TreasuryWithdrawal.tests
+          ]
+      , testGroup
           "Stake tests"
           Stake.tests
+      , testGroup
+          "Proposal tests"
+          Proposal.tests
       , testGroup
           "Multisig tests"
           [ testGroup
@@ -32,11 +43,6 @@ main =
               ]
           ]
       , testGroup
-          "Treasury tests"
-          [ testGroup
-              "Treasury"
-              [ Treasury.genTests
-              , Treasury.plutarchTests
-              ]
-          ]
+          "AuthorityToken tests"
+          AuthorityToken.tests
       ]

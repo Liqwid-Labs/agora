@@ -7,9 +7,10 @@
   # see https://github.com/NixOS/nix/issues/6013
   inputs.nixpkgs-2111 = { url = "github:NixOS/nixpkgs/nixpkgs-21.11-darwin"; };
 
-  # Rev is this PR https://github.com/peter-mlabs/plutarch/pull/5.
   inputs.plutarch.url =
-    "github:peter-mlabs/plutarch?rev=a7a410da209b9c14c834a41e07b1c197c2a4dcd6";
+    "github:peter-mlabs/plutarch?rev=6ef18aacd02050fc07398e399cff5e8734c1045e";
+  inputs.plutarch.inputs.emanote.follows =
+    "plutarch/haskell-nix/nixpkgs-unstable";
   inputs.plutarch.inputs.nixpkgs.follows =
     "plutarch/haskell-nix/nixpkgs-unstable";
 
@@ -19,7 +20,7 @@
   # inputs to follow a commit on those master branches. For more
   # info, see: https://github.com/mlabs-haskell/apropos-tx/pull/37
   inputs.apropos-tx.url =
-    "github:mlabs-haskell/apropos-tx?rev=dd292b49a29f8a259bdc3e35cf4ab1dbbc73582f";
+    "github:jhodgdev/apropos-tx?rev=4eca3fac23c339caee04ea6176e641a4b3857a25";
   inputs.apropos-tx.inputs.nixpkgs.follows =
     "plutarch/haskell-nix/nixpkgs-unstable";
   inputs.apropos.url =
@@ -117,6 +118,11 @@
         let
           pkgs = nixpkgsFor system;
           pkgs' = nixpkgsFor' system;
+
+          inherit (pkgs.haskell-nix.tools ghcVersion {
+            inherit (plutarch.tools) fourmolu;
+          })
+            fourmolu;
         in
         pkgs.runCommand "format-check"
           {
@@ -125,9 +131,8 @@
               pkgs'.fd
               pkgs'.haskellPackages.cabal-fmt
               pkgs'.nixpkgs-fmt
-              (pkgs.haskell-nix.tools ghcVersion {
-                inherit (plutarch.tools) fourmolu;
-              }).fourmolu
+              fourmolu
+              pkgs'.haskell.packages."${ghcVersion}".hlint
             ];
           } ''
           export LC_CTYPE=C.UTF-8
@@ -135,14 +140,28 @@
           export LANG=C.UTF-8
           cd ${self}
           make format_check || (echo "    Please run 'make format'" ; exit 1)
+          find -name '*.hs' -not -path './dist*/*' -not -path './haddock/*' | xargs hlint
           mkdir $out
         '';
+
     in
     {
       project = perSystem projectFor;
       flake = perSystem (system: (projectFor system).flake { });
 
-      packages = perSystem (system: self.flake.${system}.packages);
+      packages = perSystem (system:
+        self.flake.${system}.packages // {
+          haddock =
+            let
+              agora-doc = self.flake.${system}.packages."agora:lib:agora".doc;
+              pkgs = nixpkgsFor system;
+            in
+            pkgs.runCommand "haddock-merge" { } ''
+              cd ${self}
+              mkdir $out
+              cp -r ${agora-doc}/share/doc/* $out
+            '';
+        });
 
       # Define what we want to test
       checks = perSystem (system:

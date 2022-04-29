@@ -34,30 +34,8 @@ jobs:
           name: mlabs
           authToken: ${{ secrets.CACHIX_KEY }}
 
-      - run: ./.github/format.sh
-        name: Run fourmolu
-
-  run-linter:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2.4.0
-
-      - uses: cachix/install-nix-action@v16
-        name: Set up Nix and IOHK caches
-        with:
-          nix_path: nixpkgs=channel:nixos-unstable
-          extra_nix_config: |
-            trusted-public-keys = hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ= iohk.cachix.org-1:DpRUyj7h7V830dp/i6Nti+NEO2/nhblbov/8MW7Rqoo= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
-            substituters = https://hydra.iohk.io https://iohk.cachix.org https://cache.nixos.org/
-            experimental-features = nix-command flakes
-
-      - uses: cachix/cachix-action@v10
-        with:
-          name: mlabs
-          authToken: ${{ secrets.CACHIX_KEY }}
-
-      - run: nix run nixpkgs#haskell.packages.ghc921.hlint -- $(git ls-tree -r HEAD --full-tree --name-only | grep -E '.*\.hs')
-        name: Run hlint
+      - run: nix build .#checks.x86_64-linux.formatCheck
+        name: Run 'formatCheck' from flake.nix
 
   check-build:
     runs-on: ubuntu-latest
@@ -90,3 +68,36 @@ jobs:
 
       - name: Build the project
         run: nix build .#check.x86_64-linux
+
+
+
+  haddock:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2.4.0
+
+    - uses: cachix/install-nix-action@v16
+      name: Set up Nix and IOHK caches
+      with:
+        nix_path: nixpkgs=channel:nixos-unstable
+        extra_nix_config: |
+          trusted-public-keys = hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ= iohk.cachix.org-1:DpRUyj7h7V830dp/i6Nti+NEO2/nhblbov/8MW7Rqoo= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
+          substituters = https://hydra.iohk.io https://iohk.cachix.org https://cache.nixos.org/
+          experimental-features = nix-command flakes
+
+    - uses: cachix/cachix-action@v10
+      with:
+        name: mlabs
+        authToken: ${{ secrets.CACHIX_KEY }}
+
+    - run: nix build .#packages.x86_64-linux.haddock
+      name: Run 'haddock' from flake.nix
+
+    # This publishes the haddock result to the branch 'gh-pages',
+    # which is set to automatically deploy to https://liqwid-labs.github.io/agora/.
+    - name: Publish Documentation
+      uses: peaceiris/actions-gh-pages@v3
+      if: github.ref == 'refs/heads/master'
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./result/agora/html
