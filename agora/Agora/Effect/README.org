@@ -112,7 +112,36 @@ Utility functions handling ~PTxInfo~ and ~PTxInfo~ is provided in Agora/Util.hs
 #+end_quote
 
 ** Effect Validator Logics
+The most important piece of the validator is still not discussed: the
+validator logic. As explained above validators ensures a transaction
+is correctly built and will only have the wanted "effect". If an
+effect fail to do that, it is a vulnerability to entire goverance
+system.
 
+While most validator logics will have its own rules, there are some
+general checks should be made. Such as
+- All effects should burn GAT.
+- Transaction should never pay to effect.
+- For effects that only changes configuration of goverance system,
+  they should not allow monetary transactions inside of it.
+- For effects involves other transaction should be given datum, with
+  the list of expacted inputs and outputs, and strictly enforce the
+  given datum.
+
+Utility functions given in ~Agora/Util.hs~ will allow to build such
+general checks with ease.
+
+It is difficult to describe all step-by-step rules for writing some of
+more specific logics. However, there are some standards to follow
+- Validators should be specific to prevent possible attacks;
+  generality in validators gives more oppertunities to exploit.
+- Consider what informations can be provided to validators through the
+  datum. More specific and effective data will allow more specific logics.
+- Having simple tests(even a temporary unit test) to check along the
+  way is a good idea.
+
+
+  
 
 
 
