@@ -43,7 +43,6 @@ module Agora.Utils (
   validatorHashToTokenName,
   pvalidatorHashToTokenName,
   getMintingPolicySymbol,
-  hasOnlyOneTokenOfAssetClass',
   hasOnlyOneTokenOfCurrencySymbol,
   mustFindDatum',
   mustBePJust,
@@ -516,11 +515,6 @@ pvalidatorHashToTokenName vh = pcon (PTokenName (pto vh))
 -- | Get the CurrencySymbol of a PMintingPolicy.
 getMintingPolicySymbol :: ClosedTerm PMintingPolicy -> CurrencySymbol
 getMintingPolicySymbol v = mintingPolicySymbol $ mkMintingPolicy v
-
--- | The entire value only contains one token of the specific assetclass.
-hasOnlyOneTokenOfAssetClass' :: AssetClass -> Term s (PValue :--> PBool)
-hasOnlyOneTokenOfAssetClass' ac = phoistAcyclic $
-  plam $ \vs -> passetClassValueOf' ac # vs #== 1
 
 -- | The entire value only contains one token of the given currency symbol.
 hasOnlyOneTokenOfCurrencySymbol :: Term s (PCurrencySymbol :--> PValue :--> PBool)
