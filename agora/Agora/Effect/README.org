@@ -119,7 +119,9 @@ effect fail to do that, it is a vulnerability to entire goverance
 system.
 
 While most validator logics will have its own rules, there are some
-general checks should be made. Such as
+general checks should be made. Utility functions given in
+~Agora/Util.hs~ will allow to build such general checks with
+ease. Such as
 - All effects should burn GAT.
 - Transaction should never pay to effect.
 - For effects that only changes configuration of goverance system,
@@ -127,9 +129,6 @@ general checks should be made. Such as
 - For effects involves other transaction should be given datum, with
   the list of expacted inputs and outputs, and strictly enforce the
   given datum.
-
-Utility functions given in ~Agora/Util.hs~ will allow to build such
-general checks with ease.
 
 It is difficult to describe all step-by-step rules for writing some of
 more specific logics. However, there are some standards to follow
@@ -139,7 +138,6 @@ more specific logics. However, there are some standards to follow
   datum. More specific and effective data will allow more specific logics.
 - Having simple tests(even a temporary unit test) to check along the
   way is a good idea.
-
 
   
 
