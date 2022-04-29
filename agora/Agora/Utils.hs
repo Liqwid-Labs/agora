@@ -10,15 +10,13 @@ module Agora.Utils (
   passert,
   pfind',
   pfindDatum,
-  pfindDatum',
+  ptryFindDatum,
   pvalueSpent,
   ptxSignedBy,
   paddValue,
   plookup,
   pfromMaybe,
   psymbolValueOf,
-  passetClassValueOf,
-  passetClassValueOf',
   pgeqByClass,
   pgeqBySymbol,
   pgeqByClass',
@@ -27,6 +25,10 @@ module Agora.Utils (
   pfindMap,
   pnotNull,
   pisJust,
+  ptokenSpent,
+  pkeysEqual,
+  pnub,
+  pisUniq,
 
   -- * Functions which should (probably) not be upstreamed
   anyOutput,
@@ -36,6 +38,8 @@ module Agora.Utils (
   scriptHashFromAddress,
   findOutputsToAddress,
   findTxOutDatum,
+  validatorHashToTokenName,
+  getMintingPolicySymbol,
 ) where
 
 --------------------------------------------------------------------------------
@@ -52,21 +56,27 @@ import Plutarch.Api.V1 (
   PDatumHash,
   PMap,
   PMaybeData (PDJust),
+  PMintingPolicy,
   PPubKeyHash,
-  PTokenName,
+  PTokenName (PTokenName),
   PTuple,
   PTxInInfo (PTxInInfo),
-  PTxInfo (PTxInfo),
+  PTxInfo,
   PTxOut (PTxOut),
   PTxOutRef,
   PValidatorHash,
   PValue,
+  mintingPolicySymbol,
+  mkMintingPolicy,
  )
 import Plutarch.Api.V1.AssocMap (PMap (PMap))
+import Plutarch.Api.V1.Extra (PAssetClass, passetClassValueOf, pvalueOf)
 import Plutarch.Api.V1.Value (PValue (PValue))
 import Plutarch.Builtin (ppairDataBuiltin)
-import Plutarch.Internal (punsafeCoerce)
+import Plutarch.Map.Extra (pkeys)
 import Plutarch.Monadic qualified as P
+import Plutarch.TryFrom (PTryFrom, ptryFrom)
+import Plutus.V1.Ledger.Api (CurrencySymbol)
 
 --------------------------------------------------------------------------------
 -- Validator-level utility functions
@@ -76,24 +86,24 @@ passert :: Term s PString -> Term s PBool -> Term s k -> Term s k
 passert errorMessage check k = pif check k (ptraceError errorMessage)
 
 -- | Find a datum with the given hash.
-pfindDatum :: Term s (PDatumHash :--> PTxInfo :--> PMaybe PDatum)
+pfindDatum :: Term s (PDatumHash :--> PBuiltinList (PAsData (PTuple PDatumHash PDatum)) :--> PMaybe PDatum)
 pfindDatum = phoistAcyclic $
-  plam $ \datumHash txInfo'' -> P.do
-    PTxInfo txInfo' <- pmatch txInfo''
-    plookupTuple # datumHash #$ pfield @"data" # txInfo'
+  plam $ \datumHash datums -> plookupTuple # datumHash # datums
 
-{- | Find a datum with the given hash.
-NOTE: this is unsafe in the sense that, if the data layout is wrong, this is UB.
--}
-pfindDatum' :: PIsData a => Term s (PDatumHash :--> PTxInfo :--> PMaybe (PAsData a))
-pfindDatum' = phoistAcyclic $ plam $ \dh x -> punsafeCoerce $ pfindDatum # dh # x
+-- | Find a datum with the given hash, and `ptryFrom` it.
+ptryFindDatum :: forall (a :: PType) (s :: S). PTryFrom PData a => Term s (PDatumHash :--> PBuiltinList (PAsData (PTuple PDatumHash PDatum)) :--> PMaybe a)
+ptryFindDatum = phoistAcyclic $
+  plam $ \datumHash inputs ->
+    pmatch (pfindDatum # datumHash # inputs) $ \case
+      PNothing -> pcon PNothing
+      PJust datum -> P.do
+        (datum', _) <- ptryFrom (pto datum)
+        pcon (PJust datum')
 
 -- | Check if a PubKeyHash signs this transaction.
-ptxSignedBy :: Term s (PTxInfo :--> PAsData PPubKeyHash :--> PBool)
+ptxSignedBy :: Term s (PBuiltinList (PAsData PPubKeyHash) :--> PAsData PPubKeyHash :--> PBool)
 ptxSignedBy = phoistAcyclic $
-  plam $ \txInfo' pkh -> P.do
-    txInfo <- pletFields @'["signatories"] txInfo'
-    pelem @PBuiltinList # pkh # txInfo.signatories
+  plam $ \sigs sig -> pelem # sig # sigs
 
 -- | Get the first element that matches a predicate or return Nothing.
 pfind' ::
@@ -183,30 +193,17 @@ psymbolValueOf =
       PMap m <- pmatch (pfromData m')
       pfoldr # plam (\x v -> pfromData (psndBuiltin # x) + v) # 0 # m
 
--- | Extract amount from PValue belonging to a Plutarch-level asset class.
-passetClassValueOf ::
-  Term s (PCurrencySymbol :--> PTokenName :--> PValue :--> PInteger)
-passetClassValueOf =
-  phoistAcyclic $
-    plam $ \sym token value'' -> P.do
-      PValue value' <- pmatch value''
-      PMap value <- pmatch value'
-      m' <- pexpectJust 0 (plookup # pdata sym # value)
-      PMap m <- pmatch (pfromData m')
-      v <- pexpectJust 0 (plookup # pdata token # m)
-      pfromData v
-
 -- | Extract amount from PValue belonging to a Haskell-level AssetClass.
 passetClassValueOf' :: AssetClass -> Term s (PValue :--> PInteger)
 passetClassValueOf' (AssetClass (sym, token)) =
-  passetClassValueOf # pconstant sym # pconstant token
+  phoistAcyclic $ plam $ \value -> pvalueOf # value # pconstant sym # pconstant token
 
 -- | Return '>=' on two values comparing by only a particular AssetClass.
 pgeqByClass :: Term s (PCurrencySymbol :--> PTokenName :--> PValue :--> PValue :--> PBool)
 pgeqByClass =
   phoistAcyclic $
     plam $ \cs tn a b ->
-      passetClassValueOf # cs # tn # b #<= passetClassValueOf # cs # tn # a
+      pvalueOf # b # cs # tn #<= pvalueOf # a # cs # tn
 
 -- | Return '>=' on two values comparing by only a particular CurrencySymbol.
 pgeqBySymbol :: Term s (PCurrencySymbol :--> PValue :--> PValue :--> PBool)
@@ -262,45 +259,99 @@ paddValue = phoistAcyclic $
       )
 
 -- | Sum of all value at input.
-pvalueSpent :: Term s (PTxInfo :--> PValue)
+pvalueSpent :: Term s (PBuiltinList (PAsData PTxInInfo) :--> PValue)
 pvalueSpent = phoistAcyclic $
-  plam $ \txInfo' ->
-    pmatch txInfo' $ \(PTxInfo txInfo) ->
-      pfoldr
-        # plam
-          ( \txInInfo' v ->
-              pmatch
-                (pfromData txInInfo')
-                $ \(PTxInInfo txInInfo) ->
-                  paddValue
-                    # pmatch
-                      (pfield @"resolved" # txInInfo)
-                      (\(PTxOut o) -> pfromData $ pfield @"value" # o)
-                    # v
-          )
-        # pconstant mempty
-        # (pfield @"inputs" # txInfo)
+  plam $ \inputs ->
+    pfoldr
+      # plam
+        ( \txInInfo' v ->
+            pmatch
+              (pfromData txInInfo')
+              $ \(PTxInInfo txInInfo) ->
+                paddValue
+                  # pmatch
+                    (pfield @"resolved" # txInInfo)
+                    (\(PTxOut o) -> pfromData $ pfield @"value" # o)
+                  # v
+        )
+      # pconstant mempty
+      # inputs
 
 -- | Find the TxInInfo by a TxOutRef.
-pfindTxInByTxOutRef :: Term s (PTxOutRef :--> PTxInfo :--> PMaybe PTxInInfo)
+pfindTxInByTxOutRef :: Term s (PTxOutRef :--> PBuiltinList (PAsData PTxInInfo) :--> PMaybe PTxInInfo)
 pfindTxInByTxOutRef = phoistAcyclic $
-  plam $ \txOutRef txInfo' ->
-    pmatch txInfo' $ \(PTxInfo txInfo) ->
-      pfindMap
-        # plam
-          ( \txInInfo' ->
-              plet (pfromData txInInfo') $ \r ->
-                pmatch r $ \(PTxInInfo txInInfo) ->
-                  pif
-                    (pdata txOutRef #== pfield @"outRef" # txInInfo)
-                    (pcon (PJust r))
-                    (pcon PNothing)
-          )
-        #$ (pfield @"inputs" # txInfo)
+  plam $ \txOutRef inputs ->
+    pfindMap
+      # plam
+        ( \txInInfo' ->
+            plet (pfromData txInInfo') $ \r ->
+              pmatch r $ \(PTxInInfo txInInfo) ->
+                pif
+                  (pdata txOutRef #== pfield @"outRef" # txInInfo)
+                  (pcon (PJust r))
+                  (pcon PNothing)
+        )
+      #$ inputs
 
 -- | True if a list is not empty.
 pnotNull :: forall list a. PIsListLike list a => Term _ (list a :--> PBool)
 pnotNull = phoistAcyclic $ plam $ pelimList (\_ _ -> pcon PTrue) (pcon PFalse)
+
+{- | Check if a particular asset class has been spent in the input list.
+
+     When using this as an authority check, you __MUST__ ensure the authority
+     knows how to ensure its end of the contract.
+-}
+ptokenSpent :: forall {s :: S}. Term s (PAssetClass :--> PBuiltinList (PAsData PTxInInfo) :--> PBool)
+ptokenSpent =
+  plam $ \tokenClass inputs ->
+    0
+      #< pfoldr @PBuiltinList
+        # plam
+          ( \txInInfo' acc -> P.do
+              PTxInInfo txInInfo <- pmatch (pfromData txInInfo')
+              PTxOut txOut' <- pmatch $ pfromData $ pfield @"resolved" # txInInfo
+              txOut <- pletFields @'["value"] txOut'
+              let txOutValue = pfromData txOut.value
+              acc + passetClassValueOf # txOutValue # tokenClass
+          )
+        # 0
+        # inputs
+
+{- | True if both maps have exactly the same keys.
+     Using @'#=='@ is not sufficient, because keys returned are not ordered.
+-}
+pkeysEqual :: forall (s :: S) k a b. Term s (PMap k a :--> PMap k b :--> PBool)
+pkeysEqual = phoistAcyclic $
+  plam $ \p q -> P.do
+    pks <- plet $ pkeys # p
+    qks <- plet $ pkeys # q
+    pall # plam (\pk -> pelem # pk # qks) # pks
+      #&& pall # plam (\qk -> pelem # qk # pks) # qks
+
+-- | / O(n^2) /. Clear out duplicates in a list. The order is not preserved.
+pnub :: forall list a (s :: S). (PEq a, PIsListLike list a) => Term s (list a :--> list a)
+pnub =
+  phoistAcyclic $
+    precList
+      ( \self x xs ->
+          pif
+            (pnot #$ pelem # x # xs)
+            (pcons # x # (self # xs))
+            (self # xs)
+      )
+      (const pnil)
+
+-- | / O(n^2) /. Check if a list contains no duplicates.
+pisUniq :: forall list a (s :: S). (PEq a, PIsListLike list a) => Term s (list a :--> PBool)
+pisUniq =
+  phoistAcyclic $
+    precList
+      ( \self x xs ->
+          (pnot #$ pelem # x # xs)
+            #&& (self # xs)
+      )
+      (const $ pcon PTrue)
 
 --------------------------------------------------------------------------------
 {- Functions which should (probably) not be upstreamed
@@ -311,18 +362,19 @@ pnotNull = phoistAcyclic $ plam $ pelimList (\_ _ -> pcon PTrue) (pcon PFalse)
 anyOutput ::
   forall (datum :: PType) s.
   ( PIsData datum
+  , PTryFrom PData (PAsData datum)
   ) =>
   Term s (PTxInfo :--> (PValue :--> PAddress :--> datum :--> PBool) :--> PBool)
 anyOutput = phoistAcyclic $
   plam $ \txInfo' predicate -> P.do
-    txInfo <- pletFields @'["outputs"] txInfo'
+    txInfo <- pletFields @'["outputs", "datums"] txInfo'
     pany
       # plam
         ( \txOut'' -> P.do
             PTxOut txOut' <- pmatch (pfromData txOut'')
             txOut <- pletFields @'["value", "datumHash", "address"] txOut'
             PDJust dh <- pmatch txOut.datumHash
-            pmatch (pfindDatum' @datum # (pfield @"_0" # dh) # txInfo') $ \case
+            pmatch (ptryFindDatum @(PAsData datum) # (pfield @"_0" # dh) # txInfo.datums) $ \case
               PJust datum -> P.do
                 predicate # txOut.value # txOut.address # pfromData datum
               PNothing -> pcon PFalse
@@ -333,18 +385,19 @@ anyOutput = phoistAcyclic $
 allOutputs ::
   forall (datum :: PType) s.
   ( PIsData datum
+  , PTryFrom PData (PAsData datum)
   ) =>
   Term s (PTxInfo :--> (PTxOut :--> PValue :--> PAddress :--> datum :--> PBool) :--> PBool)
 allOutputs = phoistAcyclic $
   plam $ \txInfo' predicate -> P.do
-    txInfo <- pletFields @'["outputs"] txInfo'
+    txInfo <- pletFields @'["outputs", "datums"] txInfo'
     pall
       # plam
         ( \txOut'' -> P.do
             PTxOut txOut' <- pmatch (pfromData txOut'')
             txOut <- pletFields @'["value", "datumHash", "address"] txOut'
             PDJust dh <- pmatch txOut.datumHash
-            pmatch (pfindDatum' @datum # (pfield @"_0" # dh) # txInfo') $ \case
+            pmatch (ptryFindDatum @(PAsData datum) # (pfield @"_0" # dh) # txInfo.datums) $ \case
               PJust datum -> P.do
                 predicate # pfromData txOut'' # txOut.value # txOut.address # pfromData datum
               PNothing -> pcon PFalse
@@ -355,11 +408,12 @@ allOutputs = phoistAcyclic $
 anyInput ::
   forall (datum :: PType) s.
   ( PIsData datum
+  , PTryFrom PData (PAsData datum)
   ) =>
   Term s (PTxInfo :--> (PValue :--> PAddress :--> datum :--> PBool) :--> PBool)
 anyInput = phoistAcyclic $
   plam $ \txInfo' predicate -> P.do
-    txInfo <- pletFields @'["inputs"] txInfo'
+    txInfo <- pletFields @'["inputs", "datums"] txInfo'
     pany
       # plam
         ( \txInInfo'' -> P.do
@@ -368,7 +422,7 @@ anyInput = phoistAcyclic $
             PTxOut txOut' <- pmatch (pfromData txOut'')
             txOut <- pletFields @'["value", "datumHash", "address"] txOut'
             PDJust dh <- pmatch txOut.datumHash
-            pmatch (pfindDatum' @datum # (pfield @"_0" # dh) # txInfo') $ \case
+            pmatch (ptryFindDatum @(PAsData datum) # (pfield @"_0" # dh) # txInfo.datums) $ \case
               PJust datum -> P.do
                 predicate # txOut.value # txOut.address # pfromData datum
               PNothing -> pcon PFalse
@@ -385,10 +439,10 @@ psingletonValue = phoistAcyclic $
      in res
 
 -- | Finds the TxOut of an effect from TxInfo and TxOutRef
-findTxOutByTxOutRef :: Term s (PTxOutRef :--> PTxInfo :--> PMaybe PTxOut)
+findTxOutByTxOutRef :: Term s (PTxOutRef :--> PBuiltinList (PAsData PTxInInfo) :--> PMaybe PTxOut)
 findTxOutByTxOutRef = phoistAcyclic $
-  plam $ \txOutRef txInfo ->
-    pmatch (pfindTxInByTxOutRef # txOutRef # txInfo) $ \case
+  plam $ \txOutRef inputs ->
+    pmatch (pfindTxInByTxOutRef # txOutRef # inputs) $ \case
       PJust ((pfield @"resolved" #) -> txOut) -> pcon $ PJust txOut
       PNothing -> pcon PNothing
 
@@ -401,23 +455,28 @@ scriptHashFromAddress = phoistAcyclic $
       _ -> pcon PNothing
 
 -- | Find all TxOuts sent to an Address
-findOutputsToAddress :: Term s (PTxInfo :--> PAddress :--> PBuiltinList (PAsData PTxOut))
+findOutputsToAddress :: Term s (PBuiltinList (PAsData PTxOut) :--> PAddress :--> PBuiltinList (PAsData PTxOut))
 findOutputsToAddress = phoistAcyclic $
-  plam $ \info address' -> P.do
+  plam $ \outputs address' -> P.do
     address <- plet $ pdata address'
-    let outputs = pfromData $ pfield @"outputs" # info
-        filteredOutputs =
-          pfilter
-            # plam
-              (\(pfromData -> txOut) -> pfield @"address" # txOut #== address)
-            # outputs
-    filteredOutputs
+    pfilter # plam (\(pfromData -> txOut) -> pfield @"address" # txOut #== address)
+      # outputs
 
 -- | Find the data corresponding to a TxOut, if there is one
-findTxOutDatum :: Term s (PTxInfo :--> PTxOut :--> PMaybe PDatum)
+findTxOutDatum :: Term s (PBuiltinList (PAsData (PTuple PDatumHash PDatum)) :--> PTxOut :--> PMaybe PDatum)
 findTxOutDatum = phoistAcyclic $
-  plam $ \info out -> P.do
+  plam $ \datums out -> P.do
     datumHash' <- pmatch $ pfromData $ pfield @"datumHash" # out
     case datumHash' of
-      PDJust ((pfield @"_0" #) -> datumHash) -> pfindDatum # datumHash # info
+      PDJust ((pfield @"_0" #) -> datumHash) -> pfindDatum # datumHash # datums
       _ -> pcon PNothing
+
+{- | Safely convert a 'PValidatorHash' into a 'PTokenName'. This can be useful for tagging
+     tokens for extra safety.
+-}
+validatorHashToTokenName :: forall (s :: S). Term s PValidatorHash -> Term s PTokenName
+validatorHashToTokenName vh = pcon (PTokenName (pto vh))
+
+-- | Get the CurrencySymbol of a PMintingPolicy.
+getMintingPolicySymbol :: ClosedTerm PMintingPolicy -> CurrencySymbol
+getMintingPolicySymbol v = mintingPolicySymbol $ mkMintingPolicy v

@@ -19,7 +19,6 @@ import Generics.SOP (Generic, I (I))
 
 import Agora.Effect (makeEffect)
 import Agora.Utils (findTxOutByTxOutRef, paddValue, passert)
-import Plutarch (popaque)
 import Plutarch.Api.V1 (
   PCredential (..),
   PTuple,
@@ -34,23 +33,32 @@ import Plutarch.DataRepr (
   PDataFields,
   PIsDataReprInstances (..),
  )
-import Plutarch.Lift (PUnsafeLiftDecl (..))
+import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (..))
 import Plutarch.Monadic qualified as P
 import Plutarch.TryFrom (PTryFrom (..))
 import Plutus.V1.Ledger.Credential (Credential)
 import Plutus.V1.Ledger.Value (CurrencySymbol, Value)
 import PlutusTx qualified
 
+{- | Datum that encodes behavior of Treasury Withdrawal effect.
+
+Note: This Datum acts like a "predefined redeemer". Which is to say that
+it encodes the properties a redeemer would, but is locked in-place until
+spend.
+-}
 data TreasuryWithdrawalDatum = TreasuryWithdrawalDatum
   { receivers :: [(Credential, Value)]
+  -- ^ AssocMap for Value sent to each receiver from the treasury.
   , treasuries :: [Credential]
+  -- ^ What Credentials is spending from legal.
   }
   deriving stock (Show, GHC.Generic)
   deriving anyclass (Generic)
 
 PlutusTx.makeLift ''TreasuryWithdrawalDatum
-PlutusTx.unstableMakeIsData ''TreasuryWithdrawalDatum
+PlutusTx.makeIsDataIndexed ''TreasuryWithdrawalDatum [('TreasuryWithdrawalDatum, 0)]
 
+-- | Haskell-level version of 'TreasuryWithdrawalDatum'.
 newtype PTreasuryWithdrawalDatum (s :: S)
   = PTreasuryWithdrawalDatum
       ( Term
@@ -69,15 +77,17 @@ newtype PTreasuryWithdrawalDatum (s :: S)
 
 instance PUnsafeLiftDecl PTreasuryWithdrawalDatum where
   type PLifted PTreasuryWithdrawalDatum = TreasuryWithdrawalDatum
+
 deriving via
   (DerivePConstantViaData TreasuryWithdrawalDatum PTreasuryWithdrawalDatum)
   instance
-    (PConstant TreasuryWithdrawalDatum)
+    (PConstantDecl TreasuryWithdrawalDatum)
 
 instance PTryFrom PData PTreasuryWithdrawalDatum where
   type PTryFromExcess PData PTreasuryWithdrawalDatum = Const ()
   ptryFrom' opq cont =
-    -- this will need to not use punsafeCoerce...
+    -- TODO: This should not use 'punsafeCoerce'.
+    -- Blocked by 'PCredential', and 'PTuple'.
     cont (punsafeCoerce opq, ())
 
 {- | Withdraws given list of values to specific target addresses.
@@ -90,7 +100,7 @@ instance PTryFrom PData PTreasuryWithdrawalDatum where
      Note:
      It should check...
      1. Transaction outputs should contain all of what Datum specified
-     2. Left over assests should be redirected back to Treasury
+     2. Left over assets should be redirected back to Treasury
      It can be more flexiable over...
      - The number of outputs themselves
 -}
@@ -99,7 +109,7 @@ treasuryWithdrawalValidator currSymbol = makeEffect currSymbol $
   \_cs (datum' :: Term _ PTreasuryWithdrawalDatum) txOutRef' txInfo' -> P.do
     datum <- pletFields @'["receivers", "treasuries"] datum'
     txInfo <- pletFields @'["outputs", "inputs"] txInfo'
-    PJust txOut <- pmatch $ findTxOutByTxOutRef # txOutRef' # pfromData txInfo'
+    PJust txOut <- pmatch $ findTxOutByTxOutRef # txOutRef' # pfromData txInfo.inputs
     effInput <- pletFields @'["address", "value"] $ txOut
     outputValues <-
       plet $

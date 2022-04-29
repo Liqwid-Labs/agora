@@ -10,6 +10,7 @@ usage:
 	@echo "  hoogle -- Start local hoogle"
 	@echo "  format -- Format the project"
 	@echo "  haddock -- Generate Haddock docs for project"
+	@echo "  tag -- Generate CTAGS and ETAGS files for project"
 
 hoogle:
 	pkill hoogle || true
@@ -35,3 +36,7 @@ format_check:
 
 haddock:
 	cabal haddock --haddock-html --haddock-hoogle --builddir=haddock
+
+tag:
+	hasktags -x agora agora-bench agora-test
+

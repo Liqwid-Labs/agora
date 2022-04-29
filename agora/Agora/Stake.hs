@@ -8,16 +8,20 @@ Description: Vote-lockable stake UTXOs holding GT.
 Vote-lockable stake UTXOs holding GT.
 -}
 module Agora.Stake (
-  PStakeDatum (..),
-  PStakeRedeemer (..),
+  -- * Haskell-land
   StakeDatum (..),
   StakeRedeemer (..),
-  ProposalLock (..),
-  PProposalLock (..),
   Stake (..),
-  stakePolicy,
-  stakeValidator,
+  ProposalLock (..),
+
+  -- * Plutarch-land
+  PStakeDatum (..),
+  PStakeRedeemer (..),
+  PProposalLock (..),
+
+  -- * Utility functions
   stakeLocked,
+  findStakeOwnedBy,
 ) where
 
 --------------------------------------------------------------------------------
@@ -33,16 +37,14 @@ import PlutusTx qualified
 
 --------------------------------------------------------------------------------
 
-import Plutarch (popaque)
 import Plutarch.Api.V1 (
-  PCredential (PPubKeyCredential, PScriptCredential),
-  PMintingPolicy,
+  PDatum,
+  PDatumHash,
+  PMaybeData (PDJust, PDNothing),
   PPubKeyHash,
-  PScriptPurpose (PMinting, PSpending),
-  PTokenName,
-  PValidator,
-  mintingPolicySymbol,
-  mkMintingPolicy,
+  PTuple,
+  PTxInInfo (PTxInInfo),
+  PTxOut (PTxOut),
  )
 import Plutarch.DataRepr (
   DerivePConstantViaData (..),
@@ -50,43 +52,34 @@ import Plutarch.DataRepr (
   PIsDataReprInstances (PIsDataReprInstances),
  )
 import Plutarch.Internal (punsafeCoerce)
-import Plutarch.Lift (PUnsafeLiftDecl (..))
+import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (..))
 import Plutarch.Monadic qualified as P
-import Plutus.V1.Ledger.Value (AssetClass (AssetClass))
+import Plutus.V1.Ledger.Value (AssetClass)
 
 --------------------------------------------------------------------------------
 
 import Agora.Proposal (PProposalId, PResultTag, ProposalId (..), ResultTag (..))
 import Agora.SafeMoney (GTTag)
 import Agora.Utils (
-  anyInput,
-  anyOutput,
-  paddValue,
-  passert,
-  pfindTxInByTxOutRef,
-  pgeqByClass,
-  pgeqByClass',
-  pgeqBySymbol,
   pnotNull,
-  psingletonValue,
-  psymbolValueOf,
-  ptxSignedBy,
-  pvalueSpent,
+  ptryFindDatum,
  )
-import Plutarch.Numeric
+import Control.Applicative (Const)
+import Plutarch.Api.V1.Extra (PAssetClass, passetClassValueOf)
+import Plutarch.Numeric ()
 import Plutarch.SafeMoney (
   PDiscrete,
   Tagged (..),
-  pdiscreteValue,
-  untag,
  )
+import Plutarch.TryFrom (PTryFrom (PTryFromExcess, ptryFrom'))
 
 --------------------------------------------------------------------------------
 
 -- | Parameters for creating Stake scripts.
-newtype Stake = Stake
+data Stake = Stake
   { gtClassRef :: Tagged GTTag AssetClass
   -- ^ Used when inlining the AssetClass of a 'PDiscrete' in the script code.
+  , proposalSTClass :: AssetClass
   }
 
 {- | A lock placed on a Stake datum in order to prevent
@@ -135,17 +128,20 @@ data StakeRedeemer
   | -- | Destroy a stake, retrieving its LQ, the minimum ADA and any other assets.
     --   Stake must be unlocked.
     Destroy
-  | -- | Permit a Vote to be added onto a 'Proposal'.
+  | -- | Permit a Vote to be added onto a 'Agora.Proposal.Proposal'.
     --   This also adds a lock to the 'lockedBy' field. See 'ProposalLock'.
     --   This needs to be done in sync with casting a vote, otherwise
     --   it's possible for a lock to be permanently placed on the stake,
     --   and then the funds are lost.
     PermitVote ProposalLock
   | -- | Retract a vote, removing it from the 'lockedBy' field. See 'ProposalLock'.
-    --   This action checks for permission of the 'Proposal'. Finished proposals are
+    --   This action checks for permission of the 'Agora.Proposal.Proposal'. Finished proposals are
     --   always allowed to have votes retracted and won't affect the Proposal datum,
     --   allowing 'Stake's to be unlocked.
     RetractVotes [ProposalLock]
+  | -- | The owner can consume stake if nothing is changed about it.
+    --   If the proposal token moves, this is equivalent to the owner consuming it.
+    WitnessStake
   deriving stock (Show, GHC.Generic)
 
 PlutusTx.makeIsDataIndexed
@@ -154,13 +150,14 @@ PlutusTx.makeIsDataIndexed
   , ('Destroy, 1)
   , ('PermitVote, 2)
   , ('RetractVotes, 3)
+  , ('WitnessStake, 4)
   ]
 
 -- | Haskell-level datum for Stake scripts.
 data StakeDatum = StakeDatum
   { stakedAmount :: Tagged GTTag Integer
   -- ^ Tracks the amount of governance token staked in the datum.
-  -- This also acts as the voting weight for 'Proposal's.
+  -- This also acts as the voting weight for 'Agora.Proposal.Proposal's.
   , owner :: PubKeyHash
   -- ^ The hash of the public key this stake belongs to.
   --
@@ -195,8 +192,13 @@ newtype PStakeDatum (s :: S) = PStakeDatum
     (PlutusType, PIsData, PDataFields)
     via (PIsDataReprInstances PStakeDatum)
 
+instance PTryFrom PData (PAsData PStakeDatum) where
+  type PTryFromExcess PData (PAsData PStakeDatum) = Const ()
+  ptryFrom' d k =
+    k (punsafeCoerce d, ())
+
 instance PUnsafeLiftDecl PStakeDatum where type PLifted PStakeDatum = StakeDatum
-deriving via (DerivePConstantViaData StakeDatum PStakeDatum) instance (PConstant StakeDatum)
+deriving via (DerivePConstantViaData StakeDatum PStakeDatum) instance (PConstantDecl StakeDatum)
 
 -- | Plutarch-level redeemer for Stake scripts.
 data PStakeRedeemer (s :: S)
@@ -205,7 +207,8 @@ data PStakeRedeemer (s :: S)
   | -- | Destroy a stake, retrieving its LQ, the minimum ADA and any other assets.
     PDestroy (Term s (PDataRecord '[]))
   | PPermitVote (Term s (PDataRecord '["lock" ':= PProposalLock]))
-  | PRetractVotes (Term s (PDataRecord '["locks" ':= PBuiltinList PProposalLock]))
+  | PRetractVotes (Term s (PDataRecord '["locks" ':= PBuiltinList (PAsData PProposalLock)]))
+  | PWitnessStake (Term s (PDataRecord '[]))
   deriving stock (GHC.Generic)
   deriving anyclass (Generic)
   deriving anyclass (PIsDataRepr)
@@ -213,9 +216,15 @@ data PStakeRedeemer (s :: S)
     (PlutusType, PIsData)
     via PIsDataReprInstances PStakeRedeemer
 
-instance PUnsafeLiftDecl PStakeRedeemer where type PLifted PStakeRedeemer = StakeRedeemer
-deriving via (DerivePConstantViaData StakeRedeemer PStakeRedeemer) instance (PConstant StakeRedeemer)
+deriving via
+  PAsData (PIsDataReprInstances PStakeRedeemer)
+  instance
+    PTryFrom PData (PAsData PStakeRedeemer)
 
+instance PUnsafeLiftDecl PStakeRedeemer where type PLifted PStakeRedeemer = StakeRedeemer
+deriving via (DerivePConstantViaData StakeRedeemer PStakeRedeemer) instance (PConstantDecl StakeRedeemer)
+
+-- | Plutarch-level version of 'ProposalLock'.
 newtype PProposalLock (s :: S) = PProposalLock
   { getProposalLock ::
     Term
@@ -233,224 +242,13 @@ newtype PProposalLock (s :: S) = PProposalLock
     (PlutusType, PIsData, PDataFields)
     via (PIsDataReprInstances PProposalLock)
 
+deriving via
+  PAsData (PIsDataReprInstances PProposalLock)
+  instance
+    PTryFrom PData (PAsData PProposalLock)
+
 instance PUnsafeLiftDecl PProposalLock where type PLifted PProposalLock = ProposalLock
-deriving via (DerivePConstantViaData ProposalLock PProposalLock) instance (PConstant ProposalLock)
-
---------------------------------------------------------------------------------
-{- What this Policy does
-
-   For minting:
-     Check that exactly one state thread is minted
-     Check that an output exists with a state thread and a valid datum
-     Check that no state thread is an input
-     assert TokenName == ValidatorHash of the script that we pay to
-
-   For burning:
-     Check that exactly one state thread is burned
-     Check that datum at state thread is valid and not locked
--}
---------------------------------------------------------------------------------
-
--- | Policy for Stake state threads.
-stakePolicy :: Stake -> ClosedTerm PMintingPolicy
-stakePolicy stake =
-  plam $ \_redeemer ctx' -> P.do
-    ctx <- pletFields @'["txInfo", "purpose"] ctx'
-    txInfo' <- plet ctx.txInfo
-    txInfo <- pletFields @'["mint", "inputs", "outputs"] txInfo'
-
-    PMinting ownSymbol' <- pmatch $ pfromData ctx.purpose
-    ownSymbol <- plet $ pfield @"_0" # ownSymbol'
-    spentST <- plet $ psymbolValueOf # ownSymbol #$ pvalueSpent # pfromData txInfo'
-    mintedST <- plet $ psymbolValueOf # ownSymbol # txInfo.mint
-
-    let burning = P.do
-          passert "ST at inputs must be 1" $
-            spentST #== 1
-
-          passert "ST burned" $
-            mintedST #== -1
-
-          passert "An unlocked input existed containing an ST" $
-            anyInput @PStakeDatum # pfromData txInfo'
-              #$ plam
-              $ \value _ stakeDatum' -> P.do
-                let hasST = psymbolValueOf # ownSymbol # value #== 1
-                let unlocked = pnot # (stakeLocked # stakeDatum')
-                hasST #&& unlocked
-
-          popaque (pconstant ())
-
-    let minting = P.do
-          passert "ST at inputs must be 0" $
-            spentST #== 0
-
-          passert "Minted ST must be exactly 1" $
-            mintedST #== 1
-
-          passert "A UTXO must exist with the correct output" $
-            anyOutput @PStakeDatum # pfromData txInfo'
-              #$ plam
-              $ \value address stakeDatum' -> P.do
-                let cred = pfield @"credential" # address
-                pmatch cred $ \case
-                  -- Should pay to a script address
-                  PPubKeyCredential _ -> pcon PFalse
-                  PScriptCredential validatorHash' -> P.do
-                    validatorHash <- pletFields @'["_0"] validatorHash'
-                    stakeDatum <- pletFields @'["owner", "stakedAmount"] stakeDatum'
-
-                    -- TODO: figure out why this is required :/ (specifically, why `validatorHash._0` is `PData`)
-                    tn <- plet (pfromData (punsafeCoerce validatorHash._0 :: Term _ (PAsData PTokenName)))
-
-                    let stValue =
-                          psingletonValue
-                            # ownSymbol
-                            -- This coerce is safe because the structure
-                            -- of PValidatorHash is the same as PTokenName.
-                            # tn
-                            # 1
-                    let expectedValue =
-                          paddValue
-                            # (pdiscreteValue stake.gtClassRef # stakeDatum.stakedAmount)
-                            # stValue
-                    let ownerSignsTransaction =
-                          ptxSignedBy
-                            # ctx.txInfo
-                            # stakeDatum.owner
-
-                    -- TODO: This is quite inefficient now, as it does two lookups
-                    -- instead of a more efficient single pass,
-                    -- but it doesn't really matter for this. At least it's correct.
-                    let valueCorrect =
-                          foldr1
-                            (#&&)
-                            [ pgeqByClass' (AssetClass ("", "")) # value # expectedValue
-                            , pgeqByClass' (untag stake.gtClassRef)
-                                # value
-                                # expectedValue
-                            , pgeqByClass
-                                # ownSymbol
-                                # tn
-                                # value
-                                # expectedValue
-                            ]
-
-                    ownerSignsTransaction
-                      #&& valueCorrect
-          popaque (pconstant ())
-
-    pif (0 #< mintedST) minting burning
-
---------------------------------------------------------------------------------
-
--- | Validator intended for Stake UTXOs to live in.
-stakeValidator :: Stake -> ClosedTerm PValidator
-stakeValidator stake =
-  plam $ \datum redeemer ctx' -> P.do
-    ctx <- pletFields @'["txInfo", "purpose"] ctx'
-    txInfo' <- plet ctx.txInfo
-    txInfo <- pletFields @'["mint", "inputs", "outputs"] txInfo'
-
-    -- TODO: Use PTryFrom
-    let stakeRedeemer :: Term _ PStakeRedeemer
-        stakeRedeemer = pfromData $ punsafeCoerce redeemer
-        stakeDatum' :: Term _ PStakeDatum
-        stakeDatum' = pfromData $ punsafeCoerce datum
-    stakeDatum <- pletFields @'["owner", "stakedAmount"] stakeDatum'
-
-    PSpending txOutRef <- pmatch $ pfromData ctx.purpose
-
-    PJust txInInfo <- pmatch $ pfindTxInByTxOutRef # (pfield @"_0" # txOutRef) # txInfo'
-    ownAddress <- plet $ pfield @"address" #$ pfield @"resolved" # txInInfo
-    let continuingValue = pfield @"value" #$ pfield @"resolved" # txInInfo
-
-    -- Whether the owner signs this transaction or not.
-    ownerSignsTransaction <- plet $ ptxSignedBy # ctx.txInfo # stakeDatum.owner
-
-    stCurrencySymbol <- plet $ pconstant $ mintingPolicySymbol $ mkMintingPolicy (stakePolicy stake)
-    mintedST <- plet $ psymbolValueOf # stCurrencySymbol # txInfo.mint
-    spentST <- plet $ psymbolValueOf # stCurrencySymbol #$ pvalueSpent # txInfo'
-
-    -- Is the stake currently locked?
-    stakeIsLocked <- plet $ stakeLocked # stakeDatum'
-
-    pmatch stakeRedeemer $ \case
-      PDestroy _ -> P.do
-        passert "ST at inputs must be 1" $
-          spentST #== 1
-        passert "Should burn ST" $
-          mintedST #== -1
-        passert "Stake unlocked" $ pnot # stakeIsLocked
-        passert
-          "Owner signs this transaction"
-          ownerSignsTransaction
-        popaque (pconstant ())
-      --------------------------------------------------------------------------
-      PRetractVotes _ -> P.do
-        passert
-          "Owner signs this transaction"
-          ownerSignsTransaction
-        -- TODO: check proposal constraints
-        popaque (pconstant ())
-      --------------------------------------------------------------------------
-      PPermitVote _ -> P.do
-        passert
-          "Owner signs this transaction"
-          ownerSignsTransaction
-        -- TODO: check proposal constraints
-        popaque (pconstant ())
-      --------------------------------------------------------------------------
-      PDepositWithdraw r -> P.do
-        passert "ST at inputs must be 1" $
-          spentST #== 1
-        passert "Stake unlocked" $
-          pnot #$ stakeIsLocked
-        passert
-          "Owner signs this transaction"
-          ownerSignsTransaction
-        passert "A UTXO must exist with the correct output" $
-          anyOutput @PStakeDatum # txInfo'
-            #$ plam
-            $ \value address newStakeDatum' -> P.do
-              newStakeDatum <- pletFields @'["owner", "stakedAmount"] newStakeDatum'
-              delta <- plet $ pfield @"delta" # r
-              let isScriptAddress = pdata address #== ownAddress
-              let correctOutputDatum =
-                    foldr1
-                      (#&&)
-                      [ stakeDatum.owner #== newStakeDatum.owner
-                      , (stakeDatum.stakedAmount + delta) #== newStakeDatum.stakedAmount
-                      , -- We can't magically conjure GT anyway (no input to spend!)
-                        -- do we need to check this, really?
-                        zero #<= pfromData newStakeDatum.stakedAmount
-                      ]
-              let expectedValue = paddValue # continuingValue # (pdiscreteValue stake.gtClassRef # delta)
-
-              -- TODO: Same as above. This is quite inefficient now, as it does two lookups
-              -- instead of a more efficient single pass,
-              -- but it doesn't really matter for this. At least it's correct.
-              let valueCorrect =
-                    foldr1
-                      (#&&)
-                      [ pgeqByClass' (AssetClass ("", "")) # value # expectedValue
-                      , pgeqByClass' (untag stake.gtClassRef)
-                          # value
-                          # expectedValue
-                      , pgeqBySymbol
-                          # stCurrencySymbol
-                          # value
-                          # expectedValue
-                      ]
-
-              foldr1
-                (#&&)
-                [ ptraceIfFalse "isScriptAddress" isScriptAddress
-                , ptraceIfFalse "correctOutputDatum" correctOutputDatum
-                , ptraceIfFalse "valueCorrect" valueCorrect
-                ]
-
-        popaque (pconstant ())
+deriving via (DerivePConstantViaData ProposalLock PProposalLock) instance (PConstantDecl ProposalLock)
 
 --------------------------------------------------------------------------------
 
@@ -461,3 +259,58 @@ stakeLocked = phoistAcyclic $
     let locks :: Term _ (PBuiltinList (PAsData PProposalLock))
         locks = pfield @"lockedBy" # stakeDatum
      in pnotNull # locks
+
+-- | Find a stake owned by a particular PK.
+findStakeOwnedBy ::
+  Term
+    s
+    ( PAssetClass
+        :--> PPubKeyHash
+        :--> PBuiltinList (PAsData (PTuple PDatumHash PDatum))
+        :--> PBuiltinList (PAsData PTxInInfo)
+        :--> PMaybe (PAsData PStakeDatum)
+    )
+findStakeOwnedBy = phoistAcyclic $
+  plam $ \ac pk datums inputs ->
+    pmatch (pfind # (isInputStakeOwnedBy # ac # pk # datums) # inputs) $ \case
+      PNothing -> pcon PNothing
+      PJust (pfromData -> v) -> P.do
+        let txOut = pfield @"resolved" # pto v
+        txOutF <- pletFields @'["datumHash"] $ txOut
+        pmatch txOutF.datumHash $ \case
+          PDNothing _ -> pcon PNothing
+          PDJust ((pfield @"_0" #) -> dh) -> P.do
+            ptryFindDatum @(PAsData PStakeDatum) # dh # datums
+
+stakeDatumOwnedBy :: Term _ (PPubKeyHash :--> PStakeDatum :--> PBool)
+stakeDatumOwnedBy =
+  phoistAcyclic $
+    plam $ \pk stakeDatum -> P.do
+      stakeDatumF <- pletFields @'["owner"] $ pto stakeDatum
+      stakeDatumF.owner #== pdata pk
+
+-- Does the input have a `Stake` owned by a particular PK?
+isInputStakeOwnedBy ::
+  Term
+    _
+    ( PAssetClass :--> PPubKeyHash
+        :--> PBuiltinList (PAsData (PTuple PDatumHash PDatum))
+        :--> PAsData PTxInInfo
+        :--> PBool
+    )
+isInputStakeOwnedBy =
+  plam $ \ac ss datums txInInfo' -> P.do
+    PTxInInfo ((pfield @"resolved" #) -> txOut) <- pmatch $ pfromData txInInfo'
+    PTxOut txOut' <- pmatch txOut
+    txOutF <- pletFields @'["value", "datumHash"] txOut'
+    outStakeST <- plet $ passetClassValueOf # txOutF.value # ac
+    pmatch txOutF.datumHash $ \case
+      PDNothing _ -> pcon PFalse
+      PDJust ((pfield @"_0" #) -> datumHash) ->
+        pif
+          (outStakeST #== 1)
+          ( pmatch (ptryFindDatum @(PAsData PStakeDatum) # datumHash # datums) $ \case
+              PNothing -> pcon PFalse
+              PJust v -> stakeDatumOwnedBy # ss # pfromData (punsafeCoerce v)
+          )
+          (pcon PFalse)

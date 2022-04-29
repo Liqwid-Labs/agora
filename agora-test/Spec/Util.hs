@@ -100,10 +100,10 @@ validatorSucceedsWith ::
   PLifted redeemer ->
   ScriptContext ->
   TestTree
-validatorSucceedsWith tag policy datum redeemer scriptContext =
+validatorSucceedsWith tag validator datum redeemer scriptContext =
   scriptSucceeds tag $
     compile
-      ( policy
+      ( validator
           # pforgetData (pconstantData datum)
           # pforgetData (pconstantData redeemer)
           # pconstant scriptContext
@@ -122,10 +122,10 @@ validatorFailsWith ::
   PLifted redeemer ->
   ScriptContext ->
   TestTree
-validatorFailsWith tag policy datum redeemer scriptContext =
+validatorFailsWith tag validator datum redeemer scriptContext =
   scriptFails tag $
     compile
-      ( policy
+      ( validator
           # pforgetData (pconstantData datum)
           # pforgetData (pconstantData redeemer)
           # pconstant scriptContext

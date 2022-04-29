@@ -60,6 +60,7 @@ common lang
     NamedFieldPuns
     NamedWildCards
     NumericUnderscores
+    OverloadedLabels
     OverloadedStrings
     PartialTypeSignatures
     PatternGuards
@@ -128,8 +129,12 @@ library
     Agora.Governor
     Agora.MultiSig
     Agora.Proposal
+    Agora.Proposal.Scripts
+    Agora.Proposal.Time
+    Agora.Record
     Agora.SafeMoney
     Agora.Stake
+    Agora.Stake.Scripts
     Agora.Treasury
 
   other-modules:
@@ -156,7 +161,10 @@ test-suite agora-test
     Spec.AuthorityToken
     Spec.Effect.TreasuryWithdrawal
     Spec.Model.MultiSig
+    Spec.Proposal
     Spec.Sample.Effect.TreasuryWithdrawal
+    Spec.Sample.Proposal
+    Spec.Sample.Shared
     Spec.Sample.Stake
     Spec.Stake
     Spec.Util

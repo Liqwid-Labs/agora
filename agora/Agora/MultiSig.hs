@@ -24,6 +24,7 @@ import Plutarch.DataRepr (
   PIsDataReprInstances (PIsDataReprInstances),
  )
 import Plutarch.Lift (
+  PConstantDecl,
   PLifted,
   PUnsafeLiftDecl,
  )
@@ -73,7 +74,7 @@ newtype PMultiSig (s :: S) = PMultiSig
     via (PIsDataReprInstances PMultiSig)
 
 instance PUnsafeLiftDecl PMultiSig where type PLifted PMultiSig = MultiSig
-deriving via (DerivePConstantViaData MultiSig PMultiSig) instance (PConstant MultiSig)
+deriving via (DerivePConstantViaData MultiSig PMultiSig) instance (PConstantDecl MultiSig)
 
 --------------------------------------------------------------------------------
 
