@@ -56,6 +56,7 @@ import Agora.Proposal.Scripts (
   proposalPolicy,
   proposalValidator,
  )
+import Agora.Record
 import Agora.SafeMoney (GTTag)
 import Agora.Stake (
   PProposalLock (..),
@@ -312,11 +313,11 @@ governorValidator gov =
       PCreateProposal _ -> P.do
         let expectedNextProposalId = pgetNextProposalId # oldParams.nextProposalId
             expectedNewDatum =
-              pcon $
-                PGovernorDatum $
-                  pdcons @"proposalThresholds" # oldParams.proposalThresholds
-                    #$ pdcons @"nextProposalId" # pdata expectedNextProposalId # pdnil
-
+              mkRecordConstr
+                PGovernorDatum
+                ( #proposalThresholds .= oldParams.proposalThresholds
+                    .& #nextProposalId .= pdata expectedNextProposalId
+                )
         passert "Unexpected governor state datum" $
           newDatumData #== pforgetData (pdata expectedNewDatum)
 
@@ -455,10 +456,11 @@ governorValidator gov =
               phoistAcyclic $
                 plam
                   ( \pid rt' ->
-                      let fields =
-                            pdcons @"vote" # rt'
-                              #$ pdcons @"proposalTag" # pdata pid # pdnil
-                       in pdata $ pcon $ PProposalLock fields
+                      pdata $
+                        mkRecordConstr
+                          PProposalLock
+                          ( #vote .= rt' .& #proposalTag .= pdata pid
+                          )
                   )
 
             expectedProposalLocks =
@@ -468,11 +470,12 @@ governorValidator gov =
             expectedOutputDatum =
               pforgetData $
                 pdata $
-                  pcon $
-                    PStakeDatum $
-                      pdcons @"stakedAmount" # pdata stakeInputDatum.stakedAmount
-                        #$ pdcons @"owner" # pdata stakeInputDatum.owner
-                        #$ pdcons @"lockedBy" # pdata expectedProposalLocks # pdnil
+                  mkRecordConstr
+                    PStakeDatum
+                    ( #stakedAmount .= stakeInputDatum.stakedAmount
+                        .& #owner .= stakeInputDatum.owner
+                        .& #lockedBy .= pdata expectedProposalLocks
+                    )
 
         passert "Unexpected stake output datum" $ expectedOutputDatum #== stakeOutputDatum
 
@@ -537,14 +540,15 @@ governorValidator gov =
         let expectedOutputProposalDatum =
               pforgetData $
                 pdata $
-                  pcon $
-                    PProposalDatum $
-                      pdcons @"proposalId" # inputProposalDatum.proposalId
-                        #$ pdcons @"effects" # inputProposalDatum.effects
-                        #$ pdcons @"status" # pdata (pcon $ PFinished pdnil)
-                        #$ pdcons @"cosigners" # inputProposalDatum.cosigners
-                        #$ pdcons @"thresholds" # inputProposalDatum.thresholds
-                        #$ pdcons @"votes" # inputProposalDatum.votes # pdnil
+                  mkRecordConstr
+                    PProposalDatum
+                    ( #proposalId .= inputProposalDatum.proposalId
+                        .& #effects .= inputProposalDatum.effects
+                        .& #status .= pdata (pcon $ PFinished pdnil)
+                        .& #cosigners .= inputProposalDatum.cosigners
+                        .& #thresholds .= inputProposalDatum.thresholds
+                        .& #votes .= inputProposalDatum.votes
+                    )
 
         passert "Unexpected output proposal datum" $
           pforgetData (pdata outputProposalDatum') #== expectedOutputProposalDatum
