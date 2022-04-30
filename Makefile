@@ -11,6 +11,9 @@ usage:
 	@echo "  format -- Format the project"
 	@echo "  haddock -- Generate Haddock docs for project"
 	@echo "  tag -- Generate CTAGS and ETAGS files for project"
+	@echo "  format_haskell -- Format haskell stuff, including source code and cabal files"
+	@echo "  format_nix -- Format *.nix files only"
+	@echo "  format_check -- Check if all haskell stuff have been formatted correctly"
 
 hoogle:
 	pkill hoogle || true
