@@ -24,11 +24,8 @@ module Agora.Governor.Scripts (
   proposalFromGovernor,
   proposalValidatorHashFromGovernor,
   proposalSTSymbolFromGovernor,
+  stakeSTAssetClassFromGovernor,
 ) where
-
---------------------------------------------------------------------------------
-
-import Data.Coerce (coerce)
 
 --------------------------------------------------------------------------------
 
@@ -716,6 +713,15 @@ stakeSTSymbolFromGovernor gov = mintingPolicySymbol policy
   where
     policy = mkMintingPolicy $ stakePolicy gov.gtClassRef
 
+stakeSTAssetClassFromGovernor :: Governor -> AssetClass
+stakeSTAssetClassFromGovernor gov = AssetClass (symbol, tokenName)
+  where
+    symbol = stakeSTSymbolFromGovernor gov
+
+    -- Tag with the address where the token is being sent to.
+    ValidatorHash hash = stakeValidatorHashFromGovernor gov
+    tokenName = TokenName hash
+
 stakeFromGovernor :: Governor -> Stake
 stakeFromGovernor gov =
   Stake gov.gtClassRef $
@@ -732,12 +738,7 @@ proposalFromGovernor gov = Proposal gstAC sstAC mc
   where
     gstAC = governorSTAssetClassFromGovernor gov
     mc = gov.maximumCosigners
-
-    sstS = stakeSTSymbolFromGovernor gov
-    -- The stake state token is tagged with the address which it's sent to.
-    sstTN :: TokenName
-    sstTN = coerce $ stakeValidatorHashFromGovernor gov
-    sstAC = AssetClass (sstS, sstTN)
+    sstAC = stakeSTAssetClassFromGovernor gov
 
 proposalValidatorHashFromGovernor :: Governor -> ValidatorHash
 proposalValidatorHashFromGovernor gov = validatorHash validator
