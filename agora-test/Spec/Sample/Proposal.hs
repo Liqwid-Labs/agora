@@ -193,7 +193,7 @@ cosignProposal newSigners =
                       mconcat
                         [ Value.singleton "" "" 10_000_000
                         , Value.assetClassValue (untag stake.gtClassRef) 50_000_000
-                        , Value.singleton stakeSymbol "" 1
+                        , Value.assetClassValue stakeAssetClass 1
                         ]
                   , txOutDatumHash = Just (toDatumHash stakeDatum)
                   }
@@ -214,7 +214,7 @@ cosignProposal newSigners =
                     mconcat
                       [ Value.singleton "" "" 10_000_000
                       , Value.assetClassValue (untag stake.gtClassRef) 50_000_000
-                      , Value.singleton stakeSymbol "" 1
+                      , Value.assetClassValue stakeAssetClass 1
                       ]
                 , txOutDatumHash = Just (toDatumHash stakeDatum)
                 }

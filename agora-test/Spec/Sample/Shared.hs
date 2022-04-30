@@ -14,9 +14,10 @@ module Spec.Sample.Shared (
 
   -- ** Stake
   stake,
-  stakeSymbol,
+  stakeAssetClass,
   stakeValidatorHash,
   stakeAddress,
+  stakeSymbol,
 
   -- ** Governor
   governor,
@@ -42,6 +43,7 @@ import Agora.Governor.Scripts (
   proposalSTSymbolFromGovernor,
   proposalValidatorHashFromGovernor,
   stakeFromGovernor,
+  stakeSTAssetClassFromGovernor,
   stakeSTSymbolFromGovernor,
   stakeValidatorHashFromGovernor,
  )
@@ -66,6 +68,7 @@ import Plutus.V1.Ledger.Api (
   TxOutRef (TxOutRef),
  )
 import Plutus.V1.Ledger.Scripts (Validator, ValidatorHash)
+import Plutus.V1.Ledger.Value (AssetClass)
 import Plutus.V1.Ledger.Value qualified as Value
 
 --------------------------------------------------------------------------------
@@ -76,6 +79,9 @@ stake = stakeFromGovernor governor
 stakeSymbol :: CurrencySymbol
 stakeSymbol = stakeSTSymbolFromGovernor governor
 
+stakeAssetClass :: AssetClass
+stakeAssetClass = stakeSTAssetClassFromGovernor governor
+
 stakeValidatorHash :: ValidatorHash
 stakeValidatorHash = stakeValidatorHashFromGovernor governor
 
@@ -85,7 +91,8 @@ stakeAddress = Address (ScriptCredential stakeValidatorHash) Nothing
 governor :: Governor
 governor = Governor oref gt mc
   where
-    oref = TxOutRef "f28cd7145c24e66fd5bcd2796837aeb19a48a2656e7833c88c62a2d0450bd00d" 0
+    oref =
+      TxOutRef "f28cd7145c24e66fd5bcd2796837aeb19a48a2656e7833c88c62a2d0450bd00d" 0
     gt =
       Tagged $
         Value.assetClass
