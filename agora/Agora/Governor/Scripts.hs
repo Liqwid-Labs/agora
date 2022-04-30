@@ -23,6 +23,7 @@ module Agora.Governor.Scripts (
   stakeValidatorHashFromGovernor,
   proposalFromGovernor,
   proposalValidatorHashFromGovernor,
+  proposalSTSymbolFromGovernor,
 ) where
 
 --------------------------------------------------------------------------------
@@ -698,18 +699,17 @@ atSymbolFromGovernor gov = mintingPolicySymbol policy
     at = AuthorityToken $ governorSTAssetClassFromGovernor gov
     policy = mkMintingPolicy $ authorityTokenPolicy at
 
+proposalSTSymbolFromGovernor :: Governor -> CurrencySymbol
+proposalSTSymbolFromGovernor gov = symbol
+  where
+    gstAC = governorSTAssetClassFromGovernor gov
+    policy = mkMintingPolicy $ proposalPolicy gstAC
+    symbol = mintingPolicySymbol policy
+
 proposalSTAssetClassFromGovernor :: Governor -> AssetClass
 proposalSTAssetClassFromGovernor gov = AssetClass (symbol, "")
   where
-    gstAC = governorSTAssetClassFromGovernor gov
-    -- JUSTIFICATION: the PST policy doesn't care about the following two fields at all.
-    -- FIXME: refactor PST policy, parameterize it only with GST assetclass or something.
-    sstAC = AssetClass ("", "")
-    mc = -1
-    params = Proposal gstAC sstAC mc
-
-    policy = mkMintingPolicy $ proposalPolicy params
-    symbol = mintingPolicySymbol policy
+    symbol = proposalSTSymbolFromGovernor gov
 
 stakeSTSymbolFromGovernor :: Governor -> CurrencySymbol
 stakeSTSymbolFromGovernor gov = mintingPolicySymbol policy

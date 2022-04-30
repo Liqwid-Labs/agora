@@ -119,7 +119,7 @@ proposal =
     }
 
 proposalPolicySymbol :: CurrencySymbol
-proposalPolicySymbol = mintingPolicySymbol $ mkMintingPolicy (proposalPolicy proposal)
+proposalPolicySymbol = mintingPolicySymbol $ mkMintingPolicy (proposalPolicy proposal.governorSTAssetClass)
 
 -- | A sample 'PubKeyHash'.
 signer :: PubKeyHash

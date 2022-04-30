@@ -58,8 +58,11 @@ import Plutus.V1.Ledger.Value (AssetClass (AssetClass))
 
    - This policy cannot be burned.
 -}
-proposalPolicy :: Proposal -> ClosedTerm PMintingPolicy
-proposalPolicy proposal =
+proposalPolicy ::
+  -- | The assetclass of GST, see 'Agora.Governor.Scripts.governorPolicy'.
+  AssetClass ->
+  ClosedTerm PMintingPolicy
+proposalPolicy (AssetClass (govCs, govTn)) =
   plam $ \_redeemer ctx' -> P.do
     PScriptContext ctx' <- pmatch ctx'
     ctx <- pletFields @'["txInfo", "purpose"] ctx'
@@ -69,7 +72,6 @@ proposalPolicy proposal =
 
     let inputs = txInfo.inputs
         mintedValue = pfromData txInfo.mint
-        AssetClass (govCs, govTn) = proposal.governorSTAssetClass
 
     PMinting ownSymbol' <- pmatch $ pfromData ctx.purpose
     let mintedProposalST =
@@ -145,7 +147,7 @@ proposalValidator proposal =
     ownAddress <- plet $ txOutF.address
 
     let stCurrencySymbol =
-          pconstant $ getMintingPolicySymbol (proposalPolicy proposal)
+          pconstant $ getMintingPolicySymbol (proposalPolicy proposal.governorSTAssetClass)
     valueSpent <- plet $ pvalueSpent # txInfoF.inputs
     spentST <- plet $ psymbolValueOf # stCurrencySymbol #$ valueSpent
     let AssetClass (stakeSym, stakeTn) = proposal.stakeSTAssetClass
