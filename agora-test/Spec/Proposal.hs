@@ -12,6 +12,7 @@ module Spec.Proposal (tests) where
 --------------------------------------------------------------------------------
 
 import Agora.Proposal (
+  Proposal (..),
   ProposalDatum (ProposalDatum),
   ProposalId (ProposalId),
   ProposalRedeemer (Cosign),
@@ -49,7 +50,7 @@ tests =
       "policy"
       [ policySucceedsWith
           "proposalCreation"
-          (proposalPolicy Shared.proposal)
+          (proposalPolicy Shared.proposal.governorSTAssetClass)
           ()
           Proposal.proposalCreation
       ]

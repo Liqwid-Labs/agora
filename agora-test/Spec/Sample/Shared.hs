@@ -38,22 +38,22 @@ import Agora.Governor (
 import Agora.Governor.Scripts (
   governorPolicy,
   governorValidator,
+  proposalFromGovernor,
+  proposalSTSymbolFromGovernor,
+  proposalValidatorHashFromGovernor,
+  stakeFromGovernor,
+  stakeSTSymbolFromGovernor,
+  stakeValidatorHashFromGovernor,
  )
 import Agora.Proposal (
   Proposal (..),
   ProposalThresholds (..),
  )
-import Agora.Proposal.Scripts (
-  proposalPolicy,
-  proposalValidator,
- )
 import Agora.Stake (Stake (..))
-import Agora.Stake.Scripts (stakePolicy, stakeValidator)
 import Plutarch.Api.V1 (
   mintingPolicySymbol,
   mkMintingPolicy,
   mkValidator,
-  validatorHash,
  )
 import Plutarch.SafeMoney
 import Plutus.V1.Ledger.Address (scriptHashAddress)
@@ -71,21 +71,13 @@ import Plutus.V1.Ledger.Value qualified as Value
 --------------------------------------------------------------------------------
 
 stake :: Stake
-stake =
-  Stake
-    { gtClassRef =
-        Tagged $
-          Value.assetClass
-            "da8c30857834c6ae7203935b89278c532b3995245295456f993e1d24"
-            "LQ"
-    , proposalSTClass = Value.assetClass proposalPolicySymbol ""
-    }
+stake = stakeFromGovernor governor
 
 stakeSymbol :: CurrencySymbol
-stakeSymbol = mintingPolicySymbol $ mkMintingPolicy $ stakePolicy stake.gtClassRef
+stakeSymbol = stakeSTSymbolFromGovernor governor
 
 stakeValidatorHash :: ValidatorHash
-stakeValidatorHash = validatorHash $ mkValidator (stakeValidator stake)
+stakeValidatorHash = stakeValidatorHashFromGovernor governor
 
 stakeAddress :: Address
 stakeAddress = Address (ScriptCredential stakeValidatorHash) Nothing
@@ -111,15 +103,10 @@ govSymbol :: CurrencySymbol
 govSymbol = mintingPolicySymbol govPolicy
 
 proposal :: Proposal
-proposal =
-  Proposal
-    { governorSTAssetClass = Value.assetClass govSymbol ""
-    , stakeSTAssetClass = Value.assetClass stakeSymbol ""
-    , maximumCosigners = 6
-    }
+proposal = proposalFromGovernor governor
 
 proposalPolicySymbol :: CurrencySymbol
-proposalPolicySymbol = mintingPolicySymbol $ mkMintingPolicy (proposalPolicy proposal.governorSTAssetClass)
+proposalPolicySymbol = proposalSTSymbolFromGovernor governor
 
 -- | A sample 'PubKeyHash'.
 signer :: PubKeyHash
@@ -130,7 +117,7 @@ signer2 :: PubKeyHash
 signer2 = "8a30896c4fd5e79843e4ca1bd2cdbaa36f8c0bc3be74012141420192"
 
 proposalValidatorHash :: ValidatorHash
-proposalValidatorHash = validatorHash (mkValidator $ proposalValidator proposal)
+proposalValidatorHash = proposalValidatorHashFromGovernor governor
 
 proposalValidatorAddress :: Address
 proposalValidatorAddress = scriptHashAddress proposalValidatorHash
