@@ -161,9 +161,11 @@ test-suite agora-test
   other-modules:
     Spec.AuthorityToken
     Spec.Effect.TreasuryWithdrawal
+    Spec.Governor
     Spec.Model.MultiSig
     Spec.Proposal
     Spec.Sample.Effect.TreasuryWithdrawal
+    Spec.Sample.Governor
     Spec.Sample.Proposal
     Spec.Sample.Shared
     Spec.Sample.Stake
