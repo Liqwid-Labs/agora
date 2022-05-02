@@ -271,8 +271,6 @@ governorValidator gov =
     txInfo' <- plet $ pfromData $ ctx.txInfo
     txInfo <- pletFields @'["mint", "inputs", "outputs", "datums", "signatories"] txInfo'
 
-    valueSpent <- plet $ pvalueSpent # txInfo.inputs
-
     PSpending ((pfield @"_0" #) -> txOutRef') <- pmatch $ pfromData ctx.purpose
     let txOutRef = pfromData txOutRef'
 
@@ -340,22 +338,21 @@ governorValidator gov =
         passert "Exactly one input from the stake validator" $
           plength # inputsFromStakeValidatorWithStateToken #== 1
 
-        stakeInputDatumHash <-
-          plet $
-            pfield @"datumHash"
-              #$ pfield @"resolved"
+        stakeInput <-
+          pletFields @'["datumHash", "value"] $
+            pfield @"resolved"
               #$ phead # inputsFromStakeValidatorWithStateToken
 
         passert "Stake input must have datum" $
-          pisDJust # stakeInputDatumHash
+          pisDJust # stakeInput.datumHash
 
-        let stakeInputDatum' = mustFindDatum' @PStakeDatum # stakeInputDatumHash # txInfo.datums
+        let stakeInputDatum' = mustFindDatum' @PStakeDatum # stakeInput.datumHash # txInfo.datums
 
         stakeInputDatum <-
           pletFields @["stakedAmount", "owner", "lockedBy"] stakeInputDatum'
 
-        passert "Required amount of stake GT should be spent" $
-          stakeInputDatum.stakedAmount #< (pgtValueOf # valueSpent)
+        passert "Required amount of stake GT should be presented" $
+          stakeInputDatum.stakedAmount #== (pgtValueOf # stakeInput.value)
 
         passert "Tx should be signed by the stake owner" $
           ptxSignedBy # txInfo.signatories # stakeInputDatum.owner
@@ -435,12 +432,15 @@ governorValidator gov =
         passert "Exactly one UTXO with stake state token should be sent to the stake validator" $
           plength # outputToStakeValidatorWithStateToken #== 1
 
-        let stakeOutputDatumHash' =
-              pfield @"datumHash"
-                #$ pfromData
-                $ phead # outputToStakeValidatorWithStateToken
+        stakeOutput <-
+          pletFields @'["datumHash", "value"] $
+            pfromData $
+              phead # outputToStakeValidatorWithStateToken
 
-            stakeOutputDatumHash = mustBePDJust # "Stake output should have datum" # stakeOutputDatumHash'
+        passert "Staked GTs should be sent back to stake validator" $
+          stakeInputDatum.stakedAmount #== (pgtValueOf # stakeOutput.value)
+
+        let stakeOutputDatumHash = mustBePDJust # "Stake output should have datum" # stakeOutput.datumHash
 
             stakeOutputDatum =
               pforgetData $
