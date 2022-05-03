@@ -132,7 +132,7 @@ ease. Such as
 
 It is difficult to describe all step-by-step rules for writing some of
 more specific logics. However, there are some standards to follow
-- Validators should be specific to prevent possible attacks;
+- Validators should be specific enought to prevent possible attacks;
   generality in validators gives more oppertunities to exploit.
 - Consider what informations can be provided to validators through the
   datum. More specific and effective data will allow more specific logics.
