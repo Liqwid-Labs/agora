@@ -75,6 +75,12 @@ deriving via
   instance
     (PConstant TreasuryWithdrawalDatum)
 
+{-
+TODO:
+Try using unTermCont; use raw data, check over raw data, construct PTreasuryWithdrawalDataum with pdcons
+
+More specific checks needed. Check what's inside of each keys
+-}
 instance PTryFrom PData PTreasuryWithdrawalDatum where
   type PTryFromExcess PData PTreasuryWithdrawalDatum = Const ()
   ptryFrom' tData = runTermCont $ do
