@@ -166,6 +166,7 @@ test-suite agora-test
     Spec.Sample.Proposal
     Spec.Sample.Shared
     Spec.Sample.Stake
+    Spec.Sample.Sample
     Spec.Stake
     Spec.Util
 
