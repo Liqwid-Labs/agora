@@ -38,14 +38,17 @@ module Spec.Sample.Shared (
   proposalValidatorAddress,
 
   -- ** Authority
-  authorityToken ,
+  authorityToken,
   authorityTokenSymbol,
 ) where
 
+import Agora.AuthorityToken
 import Agora.Governor (
   Governor (Governor),
  )
 import Agora.Governor.Scripts (
+  authorityTokenFromGovernor,
+  authorityTokenSymbolFromGovernor,
   governorPolicy,
   governorSTAssetClassFromGovernor,
   governorValidator,
@@ -56,9 +59,7 @@ import Agora.Governor.Scripts (
   stakeFromGovernor,
   stakeSTAssetClassFromGovernor,
   stakeSTSymbolFromGovernor,
-  stakeValidatorHashFromGovernor, 
-  authorityTokenFromGovernor,
-  authorityTokenSymbolFromGovernor,
+  stakeValidatorHashFromGovernor,
  )
 import Agora.Proposal (
   Proposal (..),
@@ -84,7 +85,6 @@ import Plutus.V1.Ledger.Api (
 import Plutus.V1.Ledger.Scripts (Validator, ValidatorHash)
 import Plutus.V1.Ledger.Value (AssetClass)
 import Plutus.V1.Ledger.Value qualified as Value
-import Agora.AuthorityToken
 
 --------------------------------------------------------------------------------
 
@@ -170,5 +170,5 @@ withMinAda v = v <> minAda
 authorityToken :: AuthorityToken
 authorityToken = authorityTokenFromGovernor governor
 
-authorityTokenSymbol :: CurrencySymbol 
+authorityTokenSymbol :: CurrencySymbol
 authorityTokenSymbol = authorityTokenSymbolFromGovernor governor

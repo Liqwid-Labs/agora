@@ -158,7 +158,7 @@ proposalCreation =
 
       ---
       ownInputRef :: TxOutRef
-      ownInputRef = (TxOutRef "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865" 1)
+      ownInputRef = TxOutRef "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865" 1
    in ScriptContext
         { scriptContextTxInfo =
             TxInfo
@@ -306,7 +306,7 @@ mintGAT =
       --
 
       ownInputRef :: TxOutRef
-      ownInputRef = (TxOutRef "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865" 1)
+      ownInputRef = TxOutRef "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865" 1
    in ScriptContext
         { scriptContextTxInfo =
             TxInfo
@@ -421,7 +421,7 @@ mutateState =
       --
 
       ownInputRef :: TxOutRef
-      ownInputRef = (TxOutRef "f867238a04597c99a0b9858746557d305025cca3b9f78ea14d5c88c4cfcf58ff" 1)
+      ownInputRef = TxOutRef "f867238a04597c99a0b9858746557d305025cca3b9f78ea14d5c88c4cfcf58ff" 1
    in ScriptContext
         { scriptContextTxInfo =
             TxInfo
