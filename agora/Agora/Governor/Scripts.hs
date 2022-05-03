@@ -42,6 +42,7 @@ import Agora.Governor (
   Governor (gstOutRef, gtClassRef, maximumCosigners),
   PGovernorDatum (PGovernorDatum),
   PGovernorRedeemer (PCreateProposal, PMintGATs, PMutateGovernor),
+  governorDatumValid,
   pgetNextProposalId,
  )
 import Agora.Proposal (
@@ -157,6 +158,7 @@ import Plutus.V1.Ledger.Value (
     - The UTXO referenced in the parameter is spent in the transaction.
     - Exactly one GST is minted.
     - Ensure the token name is empty.
+    - Said UTXO should carry a valid 'Agora.Governor.GovernorDatum'.
 
   NOTE: It's user's responsibility to make sure the token is sent to the corresponding governor validator.
         We /can't/ really check this in the policy, otherwise we create a cyclic reference issue.
@@ -170,7 +172,7 @@ governorPolicy gov =
     let ownAssetClass = passetClass # ownSymbol # pconstant ""
         txInfo = pfromData $ pfield @"txInfo" # ctx'
 
-    txInfoF <- pletFields @'["mint", "inputs"] txInfo
+    txInfoF <- pletFields @'["mint", "inputs", "outputs", "datums"] txInfo
 
     passert "Referenced utxo should be spent" $
       pisUTXOSpent # oref # txInfoF.inputs
@@ -179,7 +181,21 @@ governorPolicy gov =
       psymbolValueOf # ownSymbol # txInfoF.mint #== 1
         #&& passetClassValueOf # txInfoF.mint # ownAssetClass #== 1
 
-    popaque (pconstant ())
+    govOutput <-
+      plet $
+        mustBePJust
+          # "Governor output not found"
+            #$ pfind
+          # plam
+            ( \((pfield @"value" #) . pfromData -> value) ->
+                psymbolValueOf # ownSymbol # value #== 1
+            )
+          # pfromData txInfoF.outputs
+
+    let datumHash = pfield @"datumHash" # pfromData govOutput
+        datum = mustFindDatum' @PGovernorDatum # datumHash # txInfoF.datums
+
+    popaque $ governorDatumValid # datum
 
 {- | Validator for Governors.
 

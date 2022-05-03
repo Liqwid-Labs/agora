@@ -20,6 +20,7 @@ module Agora.Governor (
   -- * Utilities
   pgetNextProposalId,
   getNextProposalId,
+  governorDatumValid,
 ) where
 
 --------------------------------------------------------------------------------
@@ -32,7 +33,7 @@ import Generics.SOP (Generic, I (I))
 
 import Agora.Proposal (
   PProposalId (..),
-  PProposalThresholds,
+  PProposalThresholds (..),
   ProposalId (ProposalId),
   ProposalThresholds,
  )
@@ -46,7 +47,8 @@ import Plutarch.DataRepr (
   PIsDataReprInstances (PIsDataReprInstances),
  )
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (..))
-import Plutarch.SafeMoney (Tagged (..))
+import Plutarch.Monadic qualified as P
+import Plutarch.SafeMoney (Tagged (..), puntag)
 import Plutarch.TryFrom (PTryFrom (..))
 import Plutarch.Unsafe (punsafeCoerce)
 
@@ -161,3 +163,25 @@ pgetNextProposalId = phoistAcyclic $ plam $ \(pto -> pid) -> pcon $ PProposalId 
 -- | Get next proposal id.
 getNextProposalId :: ProposalId -> ProposalId
 getNextProposalId (ProposalId pid) = ProposalId $ pid + 1
+
+--------------------------------------------------------------------------------
+
+governorDatumValid :: Term s (PGovernorDatum :--> PBool)
+governorDatumValid = phoistAcyclic $
+  plam $ \datum -> P.do
+    thresholds <-
+      pletFields @'["execute", "draft", "vote"] $
+        pfield @"proposalThresholds" # datum
+
+    execute <- plet $ puntag thresholds.execute
+    draft <- plet $ puntag thresholds.draft
+    vote <- plet $ puntag thresholds.vote
+
+    foldr1
+      (#&&)
+      [ ptraceIfFalse "Execute threshold larger than 0" $ 0 #<= execute
+      , ptraceIfFalse "Draft threshold larger than 0" $ 0 #<= draft
+      , ptraceIfFalse "Vote threshold larger than 0" $ 0 #<= vote
+      , ptraceIfFalse "Draft threshold larger than vote threshold" $ draft #<= vote
+      , ptraceIfFalse "Execute threshold larger than vote threshold" $ vote #< execute
+      ]
