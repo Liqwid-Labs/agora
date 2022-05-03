@@ -9,6 +9,8 @@ module Spec.Sample.Shared (
   -- * Misc
   signer,
   signer2,
+  minAda,
+  withMinAda,
 
   -- * Components
 
@@ -24,6 +26,9 @@ module Spec.Sample.Shared (
   govPolicy,
   govValidator,
   govSymbol,
+  govAssetClass,
+  govValidatorAddress,
+  govValidatorHash,
 
   -- ** Proposal
   defaultProposalThresholds,
@@ -31,6 +36,10 @@ module Spec.Sample.Shared (
   proposalPolicySymbol,
   proposalValidatorHash,
   proposalValidatorAddress,
+
+  -- ** Authority
+  authorityToken ,
+  authorityTokenSymbol,
 ) where
 
 import Agora.Governor (
@@ -38,14 +47,18 @@ import Agora.Governor (
  )
 import Agora.Governor.Scripts (
   governorPolicy,
+  governorSTAssetClassFromGovernor,
   governorValidator,
+  governorValidatorHash,
   proposalFromGovernor,
   proposalSTSymbolFromGovernor,
   proposalValidatorHashFromGovernor,
   stakeFromGovernor,
   stakeSTAssetClassFromGovernor,
   stakeSTSymbolFromGovernor,
-  stakeValidatorHashFromGovernor,
+  stakeValidatorHashFromGovernor, 
+  authorityTokenFromGovernor,
+  authorityTokenSymbolFromGovernor,
  )
 import Agora.Proposal (
   Proposal (..),
@@ -66,10 +79,12 @@ import Plutus.V1.Ledger.Api (
   MintingPolicy (..),
   PubKeyHash,
   TxOutRef (TxOutRef),
+  Value,
  )
 import Plutus.V1.Ledger.Scripts (Validator, ValidatorHash)
 import Plutus.V1.Ledger.Value (AssetClass)
 import Plutus.V1.Ledger.Value qualified as Value
+import Agora.AuthorityToken
 
 --------------------------------------------------------------------------------
 
@@ -109,6 +124,15 @@ govValidator = mkValidator (governorValidator governor)
 govSymbol :: CurrencySymbol
 govSymbol = mintingPolicySymbol govPolicy
 
+govAssetClass :: AssetClass
+govAssetClass = governorSTAssetClassFromGovernor governor
+
+govValidatorHash :: ValidatorHash
+govValidatorHash = governorValidatorHash governor
+
+govValidatorAddress :: Address
+govValidatorAddress = scriptHashAddress govValidatorHash
+
 proposal :: Proposal
 proposal = proposalFromGovernor governor
 
@@ -136,3 +160,15 @@ defaultProposalThresholds =
     , create = Tagged 1
     , startVoting = Tagged 10
     }
+
+minAda :: Value
+minAda = Value.singleton "" "" 10_000_000
+
+withMinAda :: Value -> Value
+withMinAda v = v <> minAda
+
+authorityToken :: AuthorityToken
+authorityToken = authorityTokenFromGovernor governor
+
+authorityTokenSymbol :: CurrencySymbol 
+authorityTokenSymbol = authorityTokenSymbolFromGovernor governor

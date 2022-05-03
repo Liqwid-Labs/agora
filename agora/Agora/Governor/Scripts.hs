@@ -25,6 +25,9 @@ module Agora.Governor.Scripts (
   proposalValidatorHashFromGovernor,
   proposalSTSymbolFromGovernor,
   stakeSTAssetClassFromGovernor,
+  governorValidatorHash,
+  authorityTokenFromGovernor,
+  authorityTokenSymbolFromGovernor,
 ) where
 
 --------------------------------------------------------------------------------
@@ -745,3 +748,17 @@ proposalValidatorHashFromGovernor gov = validatorHash validator
   where
     params = proposalFromGovernor gov
     validator = mkValidator $ proposalValidator params
+
+governorValidatorHash :: Governor -> ValidatorHash
+governorValidatorHash gov = validatorHash validator
+  where
+    validator = mkValidator $ governorValidator gov
+
+authorityTokenFromGovernor :: Governor -> AuthorityToken
+authorityTokenFromGovernor gov = AuthorityToken $ governorSTAssetClassFromGovernor gov
+
+authorityTokenSymbolFromGovernor :: Governor -> CurrencySymbol
+authorityTokenSymbolFromGovernor gov = mintingPolicySymbol policy
+  where
+    policy = mkMintingPolicy $ authorityTokenPolicy params
+    params = authorityTokenFromGovernor gov

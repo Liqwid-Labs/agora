@@ -17,8 +17,9 @@ module Agora.Governor (
   PGovernorDatum (..),
   PGovernorRedeemer (..),
 
-  -- * Plutus Utilities
+  -- * Utilities
   pgetNextProposalId,
+  getNextProposalId,
 ) where
 
 --------------------------------------------------------------------------------
@@ -32,7 +33,7 @@ import Generics.SOP (Generic, I (I))
 import Agora.Proposal (
   PProposalId (..),
   PProposalThresholds,
-  ProposalId,
+  ProposalId (ProposalId),
   ProposalThresholds,
  )
 import Agora.SafeMoney (GTTag)
@@ -153,6 +154,10 @@ deriving via PAsData (PIsDataReprInstances PGovernorRedeemer) instance PTryFrom 
 
 --------------------------------------------------------------------------------
 
--- | Get next proposal id.
+-- | Plutrach version of 'getNextProposalId'.
 pgetNextProposalId :: Term s (PProposalId :--> PProposalId)
 pgetNextProposalId = phoistAcyclic $ plam $ \(pto -> pid) -> pcon $ PProposalId $ pid + 1
+
+-- | Get next proposal id.
+getNextProposalId :: ProposalId -> ProposalId
+getNextProposalId (ProposalId pid) = ProposalId $ pid + 1

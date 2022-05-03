@@ -7,7 +7,7 @@ Tests for Governor policy and validator
 -}
 module Spec.Governor (tests) where
 
-import Test.Tasty (TestTree, testGroup)
+import Test.Tasty (TestTree)
 
 --------------------------------------------------------------------------------
 
