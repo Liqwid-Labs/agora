@@ -6,7 +6,7 @@ Description: Sample based testing for Governor utxos
 This module tests primarily the happy path for Governor interactions
 -}
 module Spec.Sample.Governor (
-  proposalCreation,
+  createProposal,
   mutateState,
   mintGAT,
   mintGST,
@@ -130,8 +130,8 @@ mintGST =
         }
 
 -- | This script context should be a valid transaction.
-proposalCreation :: ScriptContext
-proposalCreation =
+createProposal :: ScriptContext
+createProposal =
   let pst = Value.singleton proposalPolicySymbol "" 1
       gst = Value.assetClassValue govAssetClass 1
       sst = Value.assetClassValue stakeAssetClass 1
