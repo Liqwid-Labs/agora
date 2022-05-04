@@ -5,7 +5,12 @@ Description: Sample based testing for Governor utxos
 
 This module tests primarily the happy path for Governor interactions
 -}
-module Spec.Sample.Governor (proposalCreation, mutateState, mintGAT) where
+module Spec.Sample.Governor (
+  proposalCreation,
+  mutateState,
+  mintGAT,
+  mintGST,
+) where
 
 --------------------------------------------------------------------------------
 
@@ -16,10 +21,12 @@ import Plutarch.SafeMoney.Tagged
 
 import Plutus.V1.Ledger.Address (scriptHashAddress)
 import Plutus.V1.Ledger.Api (
-  Address,
+  Address (..),
+  Credential (PubKeyCredential),
   Datum (..),
+  PubKeyHash,
   ScriptContext (..),
-  ScriptPurpose (Spending),
+  ScriptPurpose (Minting, Spending),
   ToData (toBuiltinData),
   TokenName (..),
   TxInInfo (TxInInfo),
@@ -53,6 +60,76 @@ import Spec.Util (datumPair, toDatumHash)
 --------------------------------------------------------------------------------
 
 -- | This script context should be a valid transaction.
+mintGST :: ScriptContext
+mintGST =
+  let gst = Value.assetClassValue govAssetClass 1
+
+      ---
+
+      governorOutputDatum' :: GovernorDatum
+      governorOutputDatum' =
+        GovernorDatum
+          { proposalThresholds = defaultProposalThresholds
+          , nextProposalId = ProposalId 0
+          }
+      governorOutputDatum :: Datum
+      governorOutputDatum = Datum $ toBuiltinData governorOutputDatum'
+      governorOutput :: TxOut
+      governorOutput =
+        TxOut
+          { txOutAddress = govValidatorAddress
+          , txOutValue = withMinAda gst
+          , txOutDatumHash = Just $ toDatumHash governorOutputDatum
+          }
+
+      ---
+
+      witness :: PubKeyHash
+      witness = "a926a9a72a0963f428e3252caa8354e655603996fb8892d6b8323fd072345924"
+      witnessAddress :: Address
+      witnessAddress = Address (PubKeyCredential witness) Nothing
+
+      ---
+
+      witnessInput :: TxOut
+      witnessInput =
+        TxOut
+          { txOutAddress = witnessAddress
+          , txOutValue = mempty
+          , txOutDatumHash = Nothing
+          }
+      witnessUTXO :: TxInInfo
+      witnessUTXO = TxInInfo gstUTXORef witnessInput
+
+      ---
+
+      witnessOutput :: TxOut
+      witnessOutput =
+        TxOut
+          { txOutAddress = witnessAddress
+          , txOutValue = minAda
+          , txOutDatumHash = Nothing
+          }
+   in ScriptContext
+        { scriptContextTxInfo =
+            TxInfo
+              { txInfoInputs =
+                  [ witnessUTXO
+                  ]
+              , txInfoOutputs = [governorOutput, witnessOutput]
+              , txInfoFee = Value.singleton "" "" 2
+              , txInfoMint = gst
+              , txInfoDCert = []
+              , txInfoWdrl = []
+              , txInfoValidRange = Interval.always
+              , txInfoSignatories = [witness]
+              , txInfoData = [datumPair governorOutputDatum]
+              , txInfoId = "90906d3e6b4d6dec2e747dcdd9617940ea8358164c7244694cfa39dec18bd9d4"
+              }
+        , scriptContextPurpose = Minting govSymbol
+        }
+
+-- | This script context should be a valid transaction.
 proposalCreation :: ScriptContext
 proposalCreation =
   let pst = Value.singleton proposalPolicySymbol "" 1
@@ -76,7 +153,7 @@ proposalCreation =
         TxOut
           { txOutAddress = govValidatorAddress
           , txOutValue = gst
-          , txOutDatumHash = Just (toDatumHash governorInputDatum)
+          , txOutDatumHash = Just $ toDatumHash governorInputDatum
           }
 
       ---

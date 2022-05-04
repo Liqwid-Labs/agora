@@ -29,6 +29,7 @@ module Spec.Sample.Shared (
   govAssetClass,
   govValidatorAddress,
   govValidatorHash,
+  gstUTXORef,
 
   -- ** Proposal
   defaultProposalThresholds,
@@ -103,11 +104,13 @@ stakeValidatorHash = stakeValidatorHashFromGovernor governor
 stakeAddress :: Address
 stakeAddress = Address (ScriptCredential stakeValidatorHash) Nothing
 
+gstUTXORef :: TxOutRef
+gstUTXORef = TxOutRef "f28cd7145c24e66fd5bcd2796837aeb19a48a2656e7833c88c62a2d0450bd00d" 0
+
 governor :: Governor
 governor = Governor oref gt mc
   where
-    oref =
-      TxOutRef "f28cd7145c24e66fd5bcd2796837aeb19a48a2656e7833c88c62a2d0450bd00d" 0
+    oref = gstUTXORef
     gt =
       Tagged $
         Value.assetClass
