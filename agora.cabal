@@ -118,6 +118,7 @@ common test-deps
     , tasty
     , tasty-hedgehog
     , tasty-hunit
+    , tasty-quickcheck
 
 library
   import:          lang, deps

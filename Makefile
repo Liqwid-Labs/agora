@@ -35,7 +35,7 @@ format_check:
 	  | xargs fourmolu $(FORMAT_EXTENSIONS) -m check
 
 haddock:
-	cabal haddock --haddock-html --haddock-hoogle --builddir=haddock
+	cabal haddock --haddock-html --haddock-hoogle --haddock-test --builddir=haddock 
 
 tag:
 	hasktags -x agora agora-bench agora-test

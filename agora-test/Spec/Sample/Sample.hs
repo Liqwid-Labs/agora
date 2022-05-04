@@ -1,14 +1,27 @@
+{- |
+Module     : Spec.Sample.Sample
+Maintainer : seungheon.ooh@gmail.com
+Description: Useful components for constructing property tests
+
+Basic components for constructing case-specific property tests. 
+-}
+
 module Spec.Sample.Sample
   ( -- * Credentials
     -- $credentials
     genUserCredential
   , genScriptCredential
   , genCredential
+  , genAddress
     -- * Values
     -- $values
   , genValue
   , genAssetClass
   , genAnyValue
+    -- * Tx info
+    -- $txinfo
+  , genTxOut
+  , genTxInInfo
   ) where
 
 import Test.QuickCheck 
@@ -20,19 +33,32 @@ import Control.Applicative
 import Data.ByteString.Char8 qualified as C
 import Data.ByteString.Hash (sha2)
 
+{- | Generate a random Hash
+Hashs cannot be shrunken; functions utilizing this function,
+therefore, cannot be shrunken as well.
+-}
 genHashByteString :: Gen C.ByteString
 genHashByteString = sha2 . C.pack . show <$> (chooseAny :: Gen Integer)
 
 -- TODO: How do I need to ensure uniqueness?
+-- | Random user credential.
 genUserCredential :: Gen Credential
 genUserCredential = PubKeyCredential . PubKeyHash . toBuiltin <$> genHashByteString
 
+-- | Random script credential.
 genScriptCredential :: Gen Credential
 genScriptCredential = ScriptCredential . ValidatorHash . toBuiltin <$> genHashByteString
 
+-- | Random credential: combination of user and script credential generators.
 genCredential :: Gen Credential
 genCredential = oneof [genUserCredential, genScriptCredential]
 
+genAddress :: Gen Address
+genAddress = flip Address Nothing <$> genCredential
+
+{- | Random Value of given AssetClass
+`genAnyValue` will create a random value with a random assetclass.
+-}
 genValue :: AssetClass -> Gen Value
 genValue ac = assetClassValue ac . abs <$> (chooseAny :: Gen Integer)
 
@@ -42,9 +68,18 @@ genAssetClass = liftA2 assetClass (currencySymbol <$> genHashByteString) (tokenN
 genAnyValue :: Gen Value
 genAnyValue = genAssetClass >>= genValue
 
-txInInfoGen :: Gen TxInInfo
-txInInfoGen = do
-  undefined
+genTxOut :: Gen TxOut
+genTxOut = do
+  addr <- genAddress
+  val <- listOf genAnyValue
+  pure TxOut
+    { txOutAddress = addr
+    , txOutValue = foldr (<>) mempty val
+    , txOutDatumHash = Just (DatumHash "")
+    }
+    
+genTxInInfo :: Gen TxInInfo
+genTxInInfo = TxInInfo (TxOutRef "" 1) <$> genTxOut
 
 {- | $credentials
 Generators for Plutus Credentials. These will generate
