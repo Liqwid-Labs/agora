@@ -10,7 +10,7 @@ module Spec.Governor (tests) where
 import Agora.Governor (GovernorDatum (..), GovernorRedeemer (..))
 import Agora.Governor.Scripts (governorPolicy, governorValidator)
 import Agora.Proposal (ProposalId (..))
-import Spec.Sample.Governor (mintGST, createProposal)
+import Spec.Sample.Governor (createProposal, mintGST)
 import Spec.Sample.Shared qualified as Shared
 import Spec.Util (policySucceedsWith, validatorSucceedsWith)
 import Test.Tasty (TestTree, testGroup)
@@ -33,7 +33,7 @@ tests =
           "proposal creation"
           (governorValidator Shared.governor)
           (GovernorDatum Shared.defaultProposalThresholds (ProposalId 0))
-          (CreateProposal)
+          CreateProposal
           createProposal
       ]
   ]
