@@ -169,7 +169,7 @@ proposalValidator proposal =
         newSigs <- plet $ pfield @"newCosigners" # r
 
         passert "Cosigners are unique" $
-          pisUniq # newSigs
+          pisUniq # phoistAcyclic (plam $ \(pfromData -> x) (pfromData -> y) -> x #< y) # newSigs
 
         passert "Signed by all new cosigners" $
           pall # signedBy # newSigs

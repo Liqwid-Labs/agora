@@ -29,8 +29,11 @@ module Agora.Utils (
   pkeysEqual,
   pnub,
   pisUniq,
+  pisUniqOrd,
   pisDJust,
   pisUTXOSpent,
+  pmsort,
+  pmsortOrd,
 
   -- * Functions which should (probably) not be upstreamed
   anyOutput,
@@ -335,37 +338,52 @@ ptokenSpent =
 {- | True if both maps have exactly the same keys.
      Using @'#=='@ is not sufficient, because keys returned are not ordered.
 -}
-pkeysEqual :: forall (s :: S) k a b. Term s (PMap k a :--> PMap k b :--> PBool)
+pkeysEqual :: (POrd k, PIsData k) => forall (s :: S) a b. Term s (PMap k a :--> PMap k b :--> PBool)
 pkeysEqual = phoistAcyclic $
   plam $ \p q -> P.do
     pks <- plet $ pkeys # p
     qks <- plet $ pkeys # q
-    pall # plam (\pk -> pelem # pk # qks) # pks
-      #&& pall # plam (\qk -> pelem # qk # pks) # qks
 
--- | / O(n^2) /. Clear out duplicates in a list. The order is not preserved.
-pnub :: forall list a (s :: S). (PEq a, PIsListLike list a) => Term s (list a :--> list a)
-pnub =
-  phoistAcyclic $
-    precList
-      ( \self x xs ->
+    pif
+      (plength # pks #== plength # qks)
+      ( P.do
+          let comp = phoistAcyclic $ plam $ \(pfromData -> x) (pfromData -> y) -> x #< y
+              spks = pmsort # comp # pks
+              sqks = pmsort # comp # qks
+
+          plistEquals # spks # sqks
+      )
+      (pcon PFalse)
+
+-- | / O(nlogn) /. Clear out duplicates in a list. The order is not preserved.
+pnub :: forall list a (s :: S). (PEq a, PIsListLike list a) => Term s ((a :--> a :--> PBool) :--> list a :--> list a)
+pnub = phoistAcyclic $
+  plam $ \comp xs -> P.do
+    sorted <- plet $ pmsort # comp # xs
+    pnubOrd # comp # sorted
+  where
+    pnubOrd = phoistAcyclic $ pfix #$ plam pnubOrd'
+    pnubOrd' self comp xs =
+      pif (pnull # xs) pnil $ P.do
+        xh <- plet $ phead # xs
+        xt <- plet $ ptail # xs
+
+        pif (pnull # xt) xs $ P.do
+          xh' <- plet $ phead # xt
           pif
-            (pnot #$ pelem # x # xs)
-            (pcons # x # (self # xs))
-            (self # xs)
-      )
-      (const pnil)
+            (xh #== xh')
+            (self # comp # xt)
+            (pcons # xh #$ self # comp # xt)
 
--- | / O(n^2) /. Check if a list contains no duplicates.
-pisUniq :: forall list a (s :: S). (PEq a, PIsListLike list a) => Term s (list a :--> PBool)
-pisUniq =
-  phoistAcyclic $
-    precList
-      ( \self x xs ->
-          (pnot #$ pelem # x # xs)
-            #&& (self # xs)
-      )
-      (const $ pcon PTrue)
+-- | / O(nlogn) /. Check if a list contains no duplicates.
+pisUniq :: forall list a (s :: S). (PEq a, PIsListLike list a) => Term s ((a :--> a :--> PBool) :--> list a :--> PBool)
+pisUniq = phoistAcyclic $
+  plam $ \comp xs ->
+    let nubbed = pnub # comp # xs in plength # xs #== plength # nubbed
+
+-- | List elements should have 'POrd' instance.
+pisUniqOrd :: forall list a (s :: S). (POrd a, PIsListLike list a) => Term s (list a :--> PBool)
+pisUniqOrd = phoistAcyclic $ pisUniq # plam (#<)
 
 -- | Yield True if a given PMaybeData is of form PDJust _.
 pisDJust :: Term s (PMaybeData a :--> PBool)
@@ -385,6 +403,61 @@ pisUTXOSpent :: Term s (PTxOutRef :--> PBuiltinList (PAsData PTxInInfo) :--> PBo
 pisUTXOSpent = phoistAcyclic $
   plam $ \oref inputs -> P.do
     pisJust #$ pfindTxInByTxOutRef # oref # inputs
+
+-- | Merge two ordered lists together.
+pmerge :: (PIsListLike l a) => Term s ((a :--> a :--> PBool) :--> l a :--> l a :--> l a)
+pmerge = phoistAcyclic $ pfix #$ plam pmerge'
+  where
+    pmerge' self comp a b =
+      pif (pnull # a) b $
+        pif (pnull # b) a $ P.do
+          ah <- plet $ phead # a
+          at <- plet $ ptail # a
+          bh <- plet $ phead # b
+          bt <- plet $ ptail # b
+
+          pif
+            (comp # ah # bh)
+            (pcons # ah #$ self # comp # at # b)
+            (pcons # bh #$ self # comp # at # bt)
+
+-- | / O(nlogn) /. Merge sort, bottom-up version.
+pmsort :: (PIsListLike l a) => Term s ((a :--> a :--> PBool) :--> l a :--> l a)
+pmsort = phoistAcyclic $ pfix #$ plam pmsort'
+  where
+    pmsort' self comp xs = pif (pnull # xs) pnil $
+      pif (pnull #$ ptail # xs) xs $
+        pmatch (phalve # xs) $ \(PPair fh sh) ->
+          let sfh = self # comp # fh
+              ssh = self # comp # sh
+           in pmerge # comp # sfh # ssh
+
+-- | Required list elements have 'POrd' instance.
+pmsortOrd :: (POrd a, PIsListLike l a) => Term s (l a :--> l a)
+pmsortOrd = phoistAcyclic $ pmsort # comp
+  where
+    comp = phoistAcyclic $ plam (#<)
+
+-- | Split a list in half.
+phalve :: (PIsListLike l a) => Term s (l a :--> PPair (l a) (l a))
+phalve = phoistAcyclic $ plam $ \l -> go # l # l
+  where
+    go = phoistAcyclic $ pfix #$ plam go'
+    go' self xs ys =
+      pif
+        (pnull # ys)
+        (pcon $ PPair pnil xs)
+        ( P.do
+            yt <- plet $ ptail # ys
+
+            xh <- plet $ phead # xs
+            xt <- plet $ ptail # xs
+
+            pif (pnull # yt) (pcon $ PPair (psingleton # xh) xt) $ P.do
+              yt' <- plet $ ptail # yt
+              pmatch (self # xt # yt') $ \(PPair first last) ->
+                pcon $ PPair (pcons # xh # first) last
+        )
 
 --------------------------------------------------------------------------------
 {- Functions which should (probably) not be upstreamed
