@@ -419,9 +419,6 @@ governorValidator gov =
         passert "Invalid thresholds in proposal datum" $
           outputProposalDatum.thresholds #== oldParams.proposalThresholds
 
-        passert "Initial proposal votes should be empty" $
-          pnull #$ pto $ pto $ pfromData outputProposalDatum.votes
-
         passert "Proposal state should be draft" $
           outputProposalDatum.status #== pconstantData Draft
 
