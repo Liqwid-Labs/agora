@@ -175,7 +175,7 @@ walletIn =
     }
 
 -- | Unsupported treasury redeemer.
-data BadTreasuryRedeemer
+newtype BadTreasuryRedeemer
   = -- | Unsupported treasury redeemer.
     NukeTheSystem Integer
   deriving stock (Eq, Show, GHC.Generic)
@@ -186,7 +186,7 @@ PlutusTx.makeIsDataIndexed
   ]
 
 -- | Plutarch implementation of `BadTreasuryRedeemer`.
-data PBadTreasuryRedeemer (s :: S)
+newtype PBadTreasuryRedeemer (s :: S)
   = PNukeTheSystem (Term s (PDataRecord '["_0" ':= PInteger]))
   deriving stock (GHC.Generic)
   deriving anyclass (Generic)

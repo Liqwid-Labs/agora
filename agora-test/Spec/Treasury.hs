@@ -46,7 +46,7 @@ import Plutus.V1.Ledger.Scripts (
  )
 import Plutus.V1.Ledger.Value qualified as Value
 import Spec.Sample.Treasury (
-  BadTreasuryRedeemer (NukeTheSystem),
+  -- BadTreasuryRedeemer (NukeTheSystem),
   gatCs,
   gatTn,
   trCredential,
@@ -151,7 +151,7 @@ tests =
                       { scriptContextTxInfo =
                           txInfo
                             { txInfoInputs =
-                                [ inputs !! 0
+                                [ head inputs
                                 , invalidEff
                                 ]
                             }
@@ -165,7 +165,7 @@ tests =
               ( let txInfo = validCtx.scriptContextTxInfo
                     inputs = txInfo.txInfoInputs
                     newInputs =
-                      [ inputs !! 0
+                      [ head inputs
                       , walletIn
                       ]
                  in validCtx
