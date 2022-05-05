@@ -1,5 +1,4 @@
 {-# LANGUAGE TemplateHaskell #-}
-{-# OPTIONS_GHC -Wwarn #-}
 
 {- |
 Module: Spec.Sample.Treasury
@@ -15,10 +14,14 @@ module Spec.Sample.Treasury (
   validCtx,
   treasuryRef,
   gatTn,
+  walletIn,
+  trCredential,
 ) where
 
 import Agora.Effect.NoOp (noOpValidator)
-import Agora.Treasury (TreasuryRedeemer (SpendTreasuryGAT), treasuryValidator)
+import Agora.Treasury (
+  treasuryValidator,
+ )
 import GHC.Generics qualified as GHC
 import Generics.SOP (Generic, I (I))
 import Plutarch.Api.V1 (mkValidator, validatorHash)
@@ -28,7 +31,11 @@ import Plutarch.DataRepr (
  )
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (PLifted))
 import Plutus.V1.Ledger.Address (Address (..))
-import Plutus.V1.Ledger.Api (BuiltinByteString)
+import Plutus.V1.Ledger.Api (
+  BuiltinByteString,
+  Credential (PubKeyCredential),
+  PubKeyHash (PubKeyHash),
+ )
 import Plutus.V1.Ledger.Contexts (
   ScriptContext (..),
   ScriptPurpose (Minting),
@@ -39,8 +46,14 @@ import Plutus.V1.Ledger.Contexts (
  )
 import Plutus.V1.Ledger.Credential (Credential (ScriptCredential))
 import Plutus.V1.Ledger.Interval qualified as Interval
-import Plutus.V1.Ledger.Scripts (Validator, ValidatorHash (ValidatorHash))
-import Plutus.V1.Ledger.Value (CurrencySymbol, TokenName (TokenName))
+import Plutus.V1.Ledger.Scripts (
+  Validator,
+  ValidatorHash (ValidatorHash),
+ )
+import Plutus.V1.Ledger.Value (
+  CurrencySymbol,
+  TokenName (TokenName),
+ )
 import Plutus.V1.Ledger.Value qualified as Value
 import PlutusTx qualified
 import Spec.Sample.Shared (signer)
@@ -107,34 +120,64 @@ validCtx =
         }
     treasuryOut :: TxOut =
       TxOut
-        { txOutAddress =
-            Address
-              (ScriptCredential $ validatorHash trValidator)
-              Nothing
+        { txOutAddress = Address trCredential Nothing
         , txOutValue = Value.singleton "" "" 0
         , txOutDatumHash = Just (toDatumHash ())
         }
 
+-- | Reference to treasury output.
 treasuryRef :: TxOutRef
-treasuryRef = TxOutRef "73475cb40a568e8da8a045ced110137e159f890ac4da883b6b17dc651b3a8049" 1
+treasuryRef =
+  TxOutRef
+    "73475cb40a568e8da8a045ced110137e159f890ac4da883b6b17dc651b3a8049"
+    1
 
+-- | Reference to dummy effect output.
 effectRef :: TxOutRef
-effectRef = TxOutRef "52b67b60260da3937510ad545c7f46f8d9915bd27e1082e76947fb309f913bd3" 0
+effectRef =
+  TxOutRef
+    "52b67b60260da3937510ad545c7f46f8d9915bd27e1082e76947fb309f913bd3"
+    0
 
+-- | `ScriptCredential` used for the dummy treasury validator.
+trCredential :: Credential
+trCredential = ScriptCredential $ validatorHash trValidator
+
+-- | Mock effect script, used for testing.
 mockEffect :: Validator
 mockEffect = mkValidator $ noOpValidator gatCs
 
+-- | The hash of the mock effect script.
 addressBs :: BuiltinByteString
 (ValidatorHash addressBs) = validatorHash mockEffect
 
+-- | `TokenName` for GAT generated from address of `mockEffect`.
 gatTn :: TokenName
 gatTn = TokenName addressBs
 
-------------------------------------------------------------------
+-- | Input representing a user wallet with a valid GAT.
+walletIn :: TxInInfo
+walletIn =
+  TxInInfo
+    { txInInfoOutRef =
+        TxOutRef
+          "cf4a8b33dd8e4493187e3339ecc3802d0cc000c947fb5559b7614153947d4e83"
+          0
+    , txInInfoResolved =
+        TxOut
+          { txOutDatumHash = Nothing
+          , txOutValue = Value.singleton gatCs gatTn 1
+          , txOutAddress =
+              Address
+                (PubKeyCredential $ PubKeyHash addressBs)
+                Nothing
+          }
+    }
 
--- Invalid treasury redeemer.
-
-data BadTreasuryRedeemer = NukeTheSystem
+-- | Unsupported treasury redeemer.
+data BadTreasuryRedeemer
+  = -- | Unsupported treasury redeemer.
+    NukeTheSystem Integer
   deriving stock (Eq, Show, GHC.Generic)
 
 PlutusTx.makeIsDataIndexed
@@ -142,8 +185,9 @@ PlutusTx.makeIsDataIndexed
   [ ('NukeTheSystem, 0)
   ]
 
+-- | Plutarch implementation of `BadTreasuryRedeemer`.
 data PBadTreasuryRedeemer (s :: S)
-  = PNukeTheSystem (Term s (PDataRecord '[]))
+  = PNukeTheSystem (Term s (PDataRecord '["_0" ':= PInteger]))
   deriving stock (GHC.Generic)
   deriving anyclass (Generic)
   deriving anyclass (PIsDataRepr)
@@ -160,5 +204,3 @@ deriving via
   )
   instance
     (PConstantDecl BadTreasuryRedeemer)
-
-------------------------------------------------------------------

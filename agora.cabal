@@ -113,6 +113,7 @@ common test-deps
   build-depends:
     , apropos
     , apropos-tx
+    , lens
     , QuickCheck
     , quickcheck-instances
     , tasty

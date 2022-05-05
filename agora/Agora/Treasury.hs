@@ -60,8 +60,12 @@ deriving via
   instance
     PTryFrom PData (PAsData PTreasuryRedeemer)
 
-instance PUnsafeLiftDecl PTreasuryRedeemer where type PLifted PTreasuryRedeemer = TreasuryRedeemer
-deriving via (DerivePConstantViaData TreasuryRedeemer PTreasuryRedeemer) instance (PConstantDecl TreasuryRedeemer)
+instance PUnsafeLiftDecl PTreasuryRedeemer where
+  type PLifted PTreasuryRedeemer = TreasuryRedeemer
+deriving via
+  (DerivePConstantViaData TreasuryRedeemer PTreasuryRedeemer)
+  instance
+    (PConstantDecl TreasuryRedeemer)
 
 --------------------------------------------------------------------------------
 
