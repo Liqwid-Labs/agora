@@ -10,7 +10,7 @@ module Spec.Governor (tests) where
 import Agora.Governor (GovernorDatum (..), GovernorRedeemer (..))
 import Agora.Governor.Scripts (governorPolicy, governorValidator)
 import Agora.Proposal (ProposalId (..))
-import Spec.Sample.Governor (createProposal, mintGST)
+import Spec.Sample.Governor (createProposal, mintGATs, mintGST, mutateState)
 import Spec.Sample.Shared qualified as Shared
 import Spec.Util (policySucceedsWith, validatorSucceedsWith)
 import Test.Tasty (TestTree, testGroup)
@@ -35,5 +35,17 @@ tests =
           (GovernorDatum Shared.defaultProposalThresholds (ProposalId 0))
           CreateProposal
           createProposal
+      , validatorSucceedsWith
+          "GATs minting"
+          (governorValidator Shared.governor)
+          (GovernorDatum Shared.defaultProposalThresholds (ProposalId 5))
+          MintGATs
+          mintGATs
+      , validatorSucceedsWith
+          "mutate governor state"
+          (governorValidator Shared.governor)
+          (GovernorDatum Shared.defaultProposalThresholds (ProposalId 5))
+          MutateGovernor
+          mutateState
       ]
   ]

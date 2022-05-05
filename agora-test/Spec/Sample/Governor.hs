@@ -8,7 +8,7 @@ This module tests primarily the happy path for Governor interactions
 module Spec.Sample.Governor (
   createProposal,
   mutateState,
-  mintGAT,
+  mintGATs,
   mintGST,
 ) where
 
@@ -268,8 +268,8 @@ createProposal =
         }
 
 -- | This script context should be a valid transaction.
-mintGAT :: ScriptContext
-mintGAT =
+mintGATs :: ScriptContext
+mintGATs =
   let pst = Value.singleton proposalPolicySymbol "" 1
       gst = Value.assetClassValue govAssetClass 1
       gat = Value.assetClassValue atAssetClass 1
