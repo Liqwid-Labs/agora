@@ -603,7 +603,7 @@ governorValidator gov =
         gatCount <- plet $ plength #$ pto $ pto effectGroup
 
         passert "Required amount of GATs should be minted" $
-          psymbolValueOf # ppstSymbol # txInfo.mint #== gatCount
+          psymbolValueOf # patSymbol # txInfo.mint #== gatCount
 
         outputsWithGAT <-
           plet $
