@@ -60,10 +60,18 @@ genAddress = flip Address Nothing <$> genCredential
 `genAnyValue` will create a random value with a random assetclass.
 -}
 genValue :: AssetClass -> Gen Value
-genValue ac = assetClassValue ac . abs <$> (chooseAny :: Gen Integer)
+genValue ac = assetClassValue ac . abs <$> (arbitrary :: Gen Integer)
+
+genPrettyByteString :: Gen C.ByteString
+genPrettyByteString = C.pack <$> (listOf1 $ elements ['a' .. 'z'])
 
 genAssetClass :: Gen AssetClass
-genAssetClass = liftA2 assetClass (currencySymbol <$> genHashByteString) (tokenName <$> genHashByteString)
+genAssetClass =
+  AssetClass
+  <$> liftA2
+      (,)
+      (currencySymbol <$> genHashByteString)
+      (tokenName <$> genPrettyByteString)
 
 genAnyValue :: Gen Value
 genAnyValue = genAssetClass >>= genValue

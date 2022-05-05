@@ -119,6 +119,8 @@ common test-deps
     , tasty-hedgehog
     , tasty-hunit
     , tasty-quickcheck
+    , tagged
+    , universe
 
 library
   import:          lang, deps

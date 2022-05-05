@@ -12,6 +12,7 @@ import Agora.Effect.TreasuryWithdrawal (
   treasuryWithdrawalValidator,
  )
 import Plutus.V1.Ledger.Value qualified as Value
+import Plutus.V1.Ledger.Api
 import Spec.Sample.Effect.TreasuryWithdrawal (
   buildReceiversOutputFromDatum,
   buildScriptContext,
@@ -31,20 +32,69 @@ import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.QuickCheck (testProperty)
 import Test.QuickCheck
 
+import Data.Tagged
+import Data.Universe
+
 prop :: Property
 prop = forAll (arbitrary :: Gen Integer) (\a -> (a + 1) > (abs a))
 
-genTreasuryWithdrawalEffectDatum :: Gen TreasuryWithdrawalDatum
-genTreasuryWithdrawalEffectDatum = do
-  ac <- genAssetClass
-  users <- listOf genUserCredential
-  values <- listOf $ genValue ac
-  let _test = zipWith (,) users values
-  pure $ TreasuryWithdrawalDatum _test []
+type TWETestInput = (TreasuryWithdrawalDatum, ScriptContext)
+data TWETestCases = PaysToEffect
+                  | OutputsDoNotMatchReceivers
+                  | InputsHaveOtherScriptInput
+                  | RemaindersDoNotReturnToTreasuries
+                  deriving stock (Eq)
+
+instance Show TWETestCases where
+  show = \case
+    PaysToEffect                      -> "Transaction pays to effect"
+    OutputsDoNotMatchReceivers        -> "Transaction outputs do not match receivers"
+    InputsHaveOtherScriptInput        -> "Remainding Values do not return to input treasuries" 
+    RemaindersDoNotReturnToTreasuries -> "Transaction has script input that is not specified in datum"
+
+instance Universe TWETestCases where
+  universe = [ PaysToEffect
+             , OutputsDoNotMatchReceivers
+             , InputsHaveOtherScriptInput
+             , RemaindersDoNotReturnToTreasuries
+             ]
+
+instance Finite TWETestCases where
+  universeF = universe
+  cardinality = Tagged 4
+    
+genTWEDatum :: Gen TreasuryWithdrawalDatum
+genTWEDatum = do
+  -- Make several random assetclasses to choose from
+  ac <- listOf1 genAssetClass
+
+  -- Make several random users
+  users <- listOf1 genUserCredential
+
+  -- Make several random treasuries
+  treas <- listOf1 genScriptCredential 
+
+  -- Make random amounts of values that transaction will have
+  values <- listOf1 $ elements ac >>= genValue
+  
+  let receiverList = zipWith (,) users values
+  pure $ TreasuryWithdrawalDatum receiverList treas
+
+genTWETestInput :: Gen TWETestInput
+genTWETestInput = do
+  a <- genTWEDatum
+  b <- pure $ buildScriptContext [] []
+  pure $ (a, b)
+
+_asdf :: IO ()
+_asdf = undefined
+  where
+    _a = genTWETestInput
+    _b = genTWEDatum
 
 tests :: [TestTree]
 tests =
-  [ testProperty "test" prop
+  [ testProperty "test" prop -- will fail
   , testGroup
       "effect"
       [ effectSucceedsWith
