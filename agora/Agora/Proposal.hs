@@ -48,7 +48,6 @@ import Agora.SafeMoney (GTTag)
 import Agora.Utils (pkeysEqual, pnotNull)
 import Control.Applicative (Const)
 import Control.Arrow (first)
-import Plutarch.Builtin (PBuiltinMap)
 import Plutarch.DataRepr (DerivePConstantViaData (..), PDataFields, PIsDataReprInstances (..))
 import Plutarch.Lift (
   DerivePConstantViaNewtype (..),
@@ -415,17 +414,16 @@ proposalDatumValid proposal =
     plam $ \datum' -> P.do
       datum <- pletFields @'["effects", "cosigners", "votes"] $ datum'
 
-      let effects :: Term _ (PBuiltinMap Agora.Proposal.PResultTag (PBuiltinMap Plutarch.Api.V1.PValidatorHash Plutarch.Api.V1.PDatumHash))
-          effects =
-            -- JUSTIFICATION:
-            -- @datum.effects : PMap PResultTag (PMap PValidatorHash PDatumHash)@
-            -- @PMap PResultTag (PMap PValidatorHash PDatumHash)@ is equivalent to
-            -- @PBuiltinMap PResultTag (PBuiltinMap Plutarch.Api.V1.PValidatorHash Plutarch.Api.V1.PDatumHash)@
-            punsafeCoerce datum.effects
-
-          atLeastOneNegativeResult :: Term _ PBool
-          atLeastOneNegativeResult =
-            pany # plam (\pair -> pnull #$ pfromData $ psndBuiltin # pair) # effects
+      let atLeastOneNegativeResult =
+            pany
+              # phoistAcyclic
+                ( plam $ \m ->
+                    let l :: Term _ (PBuiltinList _)
+                        l = pto $ pfromData $ psndBuiltin # m
+                     in pnull # l
+                )
+              #$ pto
+              $ pfromData datum.effects
 
       foldr1
         (#&&)
