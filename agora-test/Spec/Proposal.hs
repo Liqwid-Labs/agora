@@ -65,8 +65,8 @@ tests =
                   { proposalId = ProposalId 0
                   , effects =
                       AssocMap.fromList
-                        [ (ResultTag 0, [])
-                        , (ResultTag 1, [])
+                        [ (ResultTag 0, AssocMap.empty)
+                        , (ResultTag 1, AssocMap.empty)
                         ]
                   , status = Draft
                   , cosigners = [signer]
@@ -74,8 +74,8 @@ tests =
                   , votes =
                       emptyVotesFor $
                         AssocMap.fromList
-                          [ (ResultTag 0, [])
-                          , (ResultTag 1, [])
+                          [ (ResultTag 0, AssocMap.empty)
+                          , (ResultTag 1, AssocMap.empty)
                           ]
                   }
               )

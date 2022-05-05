@@ -160,8 +160,8 @@ createProposal =
 
       effects =
         AssocMap.fromList
-          [ (ResultTag 0, [])
-          , (ResultTag 1, [])
+          [ (ResultTag 0, AssocMap.empty)
+          , (ResultTag 1, AssocMap.empty)
           ]
       proposalDatum :: Datum
       proposalDatum =
@@ -313,8 +313,8 @@ mintGATs =
 
       effects =
         AssocMap.fromList
-          [ (ResultTag 0, [])
-          , (ResultTag 1, [(mockEffectHash, toDatumHash mockEffectOutputDatum)])
+          [ (ResultTag 0, AssocMap.empty)
+          , (ResultTag 1, AssocMap.singleton mockEffectHash $ toDatumHash mockEffectOutputDatum)
           ]
       proposalVotes :: ProposalVotes
       proposalVotes =

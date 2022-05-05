@@ -60,8 +60,8 @@ proposalCreation =
   let st = Value.singleton proposalPolicySymbol "" 1 -- Proposal ST
       effects =
         AssocMap.fromList
-          [ (ResultTag 0, [])
-          , (ResultTag 1, [])
+          [ (ResultTag 0, AssocMap.empty)
+          , (ResultTag 1, AssocMap.empty)
           ]
       proposalDatum :: Datum
       proposalDatum =
@@ -155,8 +155,8 @@ cosignProposal newSigners =
   let st = Value.singleton proposalPolicySymbol "" 1 -- Proposal ST
       effects =
         AssocMap.fromList
-          [ (ResultTag 0, [])
-          , (ResultTag 1, [])
+          [ (ResultTag 0, AssocMap.empty)
+          , (ResultTag 1, AssocMap.empty)
           ]
       proposalBefore :: ProposalDatum
       proposalBefore =
