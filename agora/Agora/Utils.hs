@@ -45,7 +45,11 @@ module Agora.Utils (
 
 --------------------------------------------------------------------------------
 
-import Plutus.V1.Ledger.Api (TokenName (..), ValidatorHash (..))
+import Plutus.V1.Ledger.Api (
+  CurrencySymbol,
+  TokenName (..),
+  ValidatorHash (..),
+ )
 import Plutus.V1.Ledger.Value (AssetClass (..))
 
 --------------------------------------------------------------------------------
@@ -78,7 +82,6 @@ import Plutarch.Builtin (ppairDataBuiltin)
 import Plutarch.Map.Extra (pkeys)
 import Plutarch.Monadic qualified as P
 import Plutarch.TryFrom (PTryFrom, ptryFrom)
-import Plutus.V1.Ledger.Api (CurrencySymbol)
 
 --------------------------------------------------------------------------------
 -- Validator-level utility functions
