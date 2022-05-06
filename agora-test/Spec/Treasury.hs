@@ -45,9 +45,6 @@ import Plutus.V1.Ledger.Scripts (
   ValidatorHash (ValidatorHash),
  )
 import Plutus.V1.Ledger.Value qualified as Value
-
--- BadTreasuryRedeemer (NukeTheSystem),
-
 import Spec.Sample.Shared (
   trCredential,
  )
