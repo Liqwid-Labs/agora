@@ -56,11 +56,11 @@ module Agora.Utils (
 --------------------------------------------------------------------------------
 
 import Plutus.V1.Ledger.Api (
+  Address (..),
+  Credential (..),
   CurrencySymbol,
   TokenName (..),
   ValidatorHash (..),
-  Credential(..),
-  Address(..),
  )
 import Plutus.V1.Ledger.Value (AssetClass (..))
 
