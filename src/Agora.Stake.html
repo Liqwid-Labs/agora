@@ -110,7 +110,7 @@ Vote-lockable stake UTXOs holding GT.
      &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;      &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;
      @
 -}</span><span>
-</span><span id="line-111"></span><span id="local-6989586621679401545"><span id="local-6989586621679401546"></span></span><span class="hs-keyword">data</span><span> </span><span id="ProposalLock"><span class="annot"><a href="Agora.Stake.html#ProposalLock"><span class="hs-identifier hs-var">ProposalLock</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="ProposalLock"><span class="annot"><a href="Agora.Stake.html#ProposalLock"><span class="hs-identifier hs-var">ProposalLock</span></a></span></span><span>
+</span><span id="line-111"></span><span id="local-6989586621679401614"><span id="local-6989586621679401615"></span></span><span class="hs-keyword">data</span><span> </span><span id="ProposalLock"><span class="annot"><a href="Agora.Stake.html#ProposalLock"><span class="hs-identifier hs-var">ProposalLock</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="ProposalLock"><span class="annot"><a href="Agora.Stake.html#ProposalLock"><span class="hs-identifier hs-var">ProposalLock</span></a></span></span><span>
 </span><span id="line-112"></span><span>  </span><span class="hs-special">{</span><span> </span><span id="vote"><span class="annot"><span class="annottext">ProposalLock -&gt; ResultTag
 </span><a href="Agora.Stake.html#vote"><span class="hs-identifier hs-var hs-var">vote</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Agora.Proposal.html#ResultTag"><span class="hs-identifier hs-type">ResultTag</span></a></span><span>
 </span><span id="line-113"></span><span>  </span><span class="hs-comment">-- ^ What was voted on. This allows retracting votes to</span><span>
@@ -120,7 +120,7 @@ Vote-lockable stake UTXOs holding GT.
 </span><span id="line-116"></span><span>  </span><span class="hs-comment">-- ^ Identifies the proposal. See 'ProposalId' for further</span><span>
 </span><span id="line-117"></span><span>  </span><span class="hs-comment">-- comments on its significance.</span><span>
 </span><span id="line-118"></span><span>  </span><span class="hs-special">}</span><span>
-</span><span id="line-119"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">stock</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679401530"><span id="local-6989586621679401532"><span id="local-6989586621679401540"><span class="annot"><span class="annottext">Int -&gt; ProposalLock -&gt; ShowS
+</span><span id="line-119"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">stock</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679401599"><span id="local-6989586621679401601"><span id="local-6989586621679401609"><span class="annot"><span class="annottext">Int -&gt; ProposalLock -&gt; ShowS
 [ProposalLock] -&gt; ShowS
 ProposalLock -&gt; String
 (Int -&gt; ProposalLock -&gt; ShowS)
@@ -146,10 +146,10 @@ $cto :: forall x. Rep ProposalLock x -&gt; ProposalLock
 $cfrom :: forall x. ProposalLock -&gt; Rep ProposalLock x
 </span><a href="../file:///nix/store/kq3z27pzg8pc38yjr84kzncicvpzhan0-ghc-9.2.1-doc/share/doc/ghc/html/libraries/base-4.16.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">GHC.Generic</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-120"></span><span>
-</span><span id="line-121"></span><span id="local-6989586621679401515"><span id="local-6989586621679401517"><span id="local-6989586621679401523"><span class="hs-identifier">PlutusTx.makeIsDataIndexed</span><span> </span><span class="hs-special">''</span><span class="hs-identifier">ProposalLock</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="hs-special">'</span><span class="hs-identifier">ProposalLock</span><span class="hs-special">,</span><span> </span><span class="hs-number">0</span><span class="hs-special">)</span><span class="hs-special">]</span></span></span></span><span>
+</span><span id="line-121"></span><span id="local-6989586621679401584"><span id="local-6989586621679401586"><span id="local-6989586621679401592"><span class="hs-identifier">PlutusTx.makeIsDataIndexed</span><span> </span><span class="hs-special">''</span><span class="hs-identifier">ProposalLock</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="hs-special">'</span><span class="hs-identifier">ProposalLock</span><span class="hs-special">,</span><span> </span><span class="hs-number">0</span><span class="hs-special">)</span><span class="hs-special">]</span></span></span></span><span>
 </span><span id="line-122"></span><span>
 </span><span id="line-123"></span><span class="hs-comment">-- | Haskell-level redeemer for Stake scripts.</span><span>
-</span><span id="line-124"></span><span id="local-6989586621679401451"><span id="local-6989586621679401452"></span></span><span class="hs-keyword">data</span><span> </span><span id="StakeRedeemer"><span class="annot"><a href="Agora.Stake.html#StakeRedeemer"><span class="hs-identifier hs-var">StakeRedeemer</span></a></span></span><span>
+</span><span id="line-124"></span><span id="local-6989586621679401520"><span id="local-6989586621679401521"></span></span><span class="hs-keyword">data</span><span> </span><span id="StakeRedeemer"><span class="annot"><a href="Agora.Stake.html#StakeRedeemer"><span class="hs-identifier hs-var">StakeRedeemer</span></a></span></span><span>
 </span><span id="line-125"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="hs-comment">-- | Deposit or withdraw a discrete amount of the staked governance token.</span><span>
 </span><span id="line-126"></span><span>    </span><span class="hs-comment">--   Stake must be unlocked.</span><span>
 </span><span id="line-127"></span><span>    </span><span id="DepositWithdraw"><span class="annot"><a href="Agora.Stake.html#DepositWithdraw"><span class="hs-identifier hs-var">DepositWithdraw</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/iqp2mk1230bp262xmfj079ra0nwfbsc4-tagged-lib-tagged-0.8.6.1-haddock-doc/share/doc/tagged/html/src"><span class="hs-identifier hs-type">Tagged</span></a></span><span> </span><span class="annot"><a href="Agora.SafeMoney.html#GTTag"><span class="hs-identifier hs-type">GTTag</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/kq3z27pzg8pc38yjr84kzncicvpzhan0-ghc-9.2.1-doc/share/doc/ghc/html/libraries/ghc-bignum-1.2/src"><span class="hs-identifier hs-type">Integer</span></a></span><span class="hs-special">)</span><span>
@@ -170,7 +170,7 @@ $cfrom :: forall x. ProposalLock -&gt; Rep ProposalLock x
 </span><span id="line-142"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="hs-comment">-- | The owner can consume stake if nothing is changed about it.</span><span>
 </span><span id="line-143"></span><span>    </span><span class="hs-comment">--   If the proposal token moves, this is equivalent to the owner consuming it.</span><span>
 </span><span id="line-144"></span><span>    </span><span id="WitnessStake"><span class="annot"><a href="Agora.Stake.html#WitnessStake"><span class="hs-identifier hs-var">WitnessStake</span></a></span></span><span>
-</span><span id="line-145"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">stock</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679401431"><span id="local-6989586621679401433"><span id="local-6989586621679401444"><span class="annot"><span class="annottext">Int -&gt; StakeRedeemer -&gt; ShowS
+</span><span id="line-145"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">stock</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679401500"><span id="local-6989586621679401502"><span id="local-6989586621679401513"><span class="annot"><span class="annottext">Int -&gt; StakeRedeemer -&gt; ShowS
 [StakeRedeemer] -&gt; ShowS
 StakeRedeemer -&gt; String
 (Int -&gt; StakeRedeemer -&gt; ShowS)
@@ -196,7 +196,7 @@ $cto :: forall x. Rep StakeRedeemer x -&gt; StakeRedeemer
 $cfrom :: forall x. StakeRedeemer -&gt; Rep StakeRedeemer x
 </span><a href="../file:///nix/store/kq3z27pzg8pc38yjr84kzncicvpzhan0-ghc-9.2.1-doc/share/doc/ghc/html/libraries/base-4.16.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">GHC.Generic</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-146"></span><span>
-</span><span id="line-147"></span><span id="local-6989586621679401415"><span id="local-6989586621679401417"><span id="local-6989586621679401425"><span class="hs-identifier">PlutusTx.makeIsDataIndexed</span><span>
+</span><span id="line-147"></span><span id="local-6989586621679401484"><span id="local-6989586621679401486"><span id="local-6989586621679401494"><span class="hs-identifier">PlutusTx.makeIsDataIndexed</span><span>
 </span><span id="line-148"></span><span>  </span><span class="hs-special">''</span><span class="hs-identifier">StakeRedeemer</span><span>
 </span><span id="line-149"></span><span>  </span><span class="hs-special">[</span><span> </span><span class="hs-special">(</span><span class="hs-special">'</span><span class="hs-identifier">DepositWithdraw</span><span class="hs-special">,</span><span> </span><span class="hs-number">0</span><span class="hs-special">)</span><span>
 </span><span id="line-150"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="hs-special">'</span><span class="hs-identifier">Destroy</span><span class="hs-special">,</span><span> </span><span class="hs-number">1</span><span class="hs-special">)</span><span>
@@ -206,7 +206,7 @@ $cfrom :: forall x. StakeRedeemer -&gt; Rep StakeRedeemer x
 </span><span id="line-154"></span><span>  </span><span class="hs-special">]</span></span></span></span><span>
 </span><span id="line-155"></span><span>
 </span><span id="line-156"></span><span class="hs-comment">-- | Haskell-level datum for Stake scripts.</span><span>
-</span><span id="line-157"></span><span id="local-6989586621679401341"><span id="local-6989586621679401342"></span></span><span class="hs-keyword">data</span><span> </span><span id="StakeDatum"><span class="annot"><a href="Agora.Stake.html#StakeDatum"><span class="hs-identifier hs-var">StakeDatum</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="StakeDatum"><span class="annot"><a href="Agora.Stake.html#StakeDatum"><span class="hs-identifier hs-var">StakeDatum</span></a></span></span><span>
+</span><span id="line-157"></span><span id="local-6989586621679401410"><span id="local-6989586621679401411"></span></span><span class="hs-keyword">data</span><span> </span><span id="StakeDatum"><span class="annot"><a href="Agora.Stake.html#StakeDatum"><span class="hs-identifier hs-var">StakeDatum</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="StakeDatum"><span class="annot"><a href="Agora.Stake.html#StakeDatum"><span class="hs-identifier hs-var">StakeDatum</span></a></span></span><span>
 </span><span id="line-158"></span><span>  </span><span class="hs-special">{</span><span> </span><span id="stakedAmount"><span class="annot"><span class="annottext">StakeDatum -&gt; Tagged @Type GTTag BuiltinInteger
 </span><a href="Agora.Stake.html#stakedAmount"><span class="hs-identifier hs-var hs-var">stakedAmount</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/iqp2mk1230bp262xmfj079ra0nwfbsc4-tagged-lib-tagged-0.8.6.1-haddock-doc/share/doc/tagged/html/src"><span class="hs-identifier hs-type">Tagged</span></a></span><span> </span><span class="annot"><a href="Agora.SafeMoney.html#GTTag"><span class="hs-identifier hs-type">GTTag</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/kq3z27pzg8pc38yjr84kzncicvpzhan0-ghc-9.2.1-doc/share/doc/ghc/html/libraries/ghc-bignum-1.2/src"><span class="hs-identifier hs-type">Integer</span></a></span><span>
 </span><span id="line-159"></span><span>  </span><span class="hs-comment">-- ^ Tracks the amount of governance token staked in the datum.</span><span>
@@ -222,7 +222,7 @@ $cfrom :: forall x. StakeRedeemer -&gt; Rep StakeRedeemer x
 </span><span id="line-167"></span><span>  </span><span class="hs-comment">-- ^ The current proposals locking this stake. This field must be empty</span><span>
 </span><span id="line-168"></span><span>  </span><span class="hs-comment">-- for the stake to be usable for deposits and withdrawals.</span><span>
 </span><span id="line-169"></span><span>  </span><span class="hs-special">}</span><span>
-</span><span id="line-170"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">stock</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679401324"><span id="local-6989586621679401326"><span id="local-6989586621679401335"><span class="annot"><span class="annottext">Int -&gt; StakeDatum -&gt; ShowS
+</span><span id="line-170"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">stock</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679401393"><span id="local-6989586621679401395"><span id="local-6989586621679401404"><span class="annot"><span class="annottext">Int -&gt; StakeDatum -&gt; ShowS
 [StakeDatum] -&gt; ShowS
 StakeDatum -&gt; String
 (Int -&gt; StakeDatum -&gt; ShowS)
@@ -247,12 +247,12 @@ $cto :: forall x. Rep StakeDatum x -&gt; StakeDatum
 $cfrom :: forall x. StakeDatum -&gt; Rep StakeDatum x
 </span><a href="../file:///nix/store/kq3z27pzg8pc38yjr84kzncicvpzhan0-ghc-9.2.1-doc/share/doc/ghc/html/libraries/base-4.16.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">GHC.Generic</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-171"></span><span>
-</span><span id="line-172"></span><span id="local-6989586621679401309"><span id="local-6989586621679401311"><span id="local-6989586621679401319"><span class="hs-identifier">PlutusTx.makeIsDataIndexed</span><span> </span><span class="hs-special">''</span><span class="hs-identifier">StakeDatum</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="hs-special">'</span><span class="hs-identifier">StakeDatum</span><span class="hs-special">,</span><span> </span><span class="hs-number">0</span><span class="hs-special">)</span><span class="hs-special">]</span></span></span></span><span>
+</span><span id="line-172"></span><span id="local-6989586621679401378"><span id="local-6989586621679401380"><span id="local-6989586621679401388"><span class="hs-identifier">PlutusTx.makeIsDataIndexed</span><span> </span><span class="hs-special">''</span><span class="hs-identifier">StakeDatum</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="hs-special">'</span><span class="hs-identifier">StakeDatum</span><span class="hs-special">,</span><span> </span><span class="hs-number">0</span><span class="hs-special">)</span><span class="hs-special">]</span></span></span></span><span>
 </span><span id="line-173"></span><span>
 </span><span id="line-174"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
 </span><span id="line-175"></span><span>
 </span><span id="line-176"></span><span class="hs-comment">-- | Plutarch-level datum for Stake scripts.</span><span>
-</span><span id="line-177"></span><span id="local-6989586621679401259"><span id="local-6989586621679401260"></span></span><span class="hs-keyword">newtype</span><span> </span><span id="PStakeDatum"><span class="annot"><a href="Agora.Stake.html#PStakeDatum"><span class="hs-identifier hs-var">PStakeDatum</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679402781"><span class="annot"><a href="#local-6989586621679402781"><span class="hs-identifier hs-type">s</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">S</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span id="PStakeDatum"><span class="annot"><a href="Agora.Stake.html#PStakeDatum"><span class="hs-identifier hs-var">PStakeDatum</span></a></span></span><span>
+</span><span id="line-177"></span><span id="local-6989586621679401328"><span id="local-6989586621679401329"></span></span><span class="hs-keyword">newtype</span><span> </span><span id="PStakeDatum"><span class="annot"><a href="Agora.Stake.html#PStakeDatum"><span class="hs-identifier hs-var">PStakeDatum</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679402850"><span class="annot"><a href="#local-6989586621679402850"><span class="hs-identifier hs-type">s</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">S</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span id="PStakeDatum"><span class="annot"><a href="Agora.Stake.html#PStakeDatum"><span class="hs-identifier hs-var">PStakeDatum</span></a></span></span><span>
 </span><span id="line-178"></span><span>  </span><span class="hs-special">{</span><span> </span><span id="getStakeDatum"><span class="annot"><span class="annottext">forall (s :: S).
 PStakeDatum s
 -&gt; Term
@@ -270,7 +270,7 @@ PStakeDatum s
                  ('[] @PLabeledType)))))
 </span><a href="Agora.Stake.html#getStakeDatum"><span class="hs-identifier hs-var hs-var">getStakeDatum</span></a></span></span><span> </span><span class="hs-glyph">::</span><span>
 </span><span id="line-179"></span><span>    </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span>
-</span><span id="line-180"></span><span>      </span><span class="annot"><a href="#local-6989586621679402781"><span class="hs-identifier hs-type">s</span></a></span><span>
+</span><span id="line-180"></span><span>      </span><span class="annot"><a href="#local-6989586621679402850"><span class="hs-identifier hs-type">s</span></a></span><span>
 </span><span id="line-181"></span><span>      </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PDataRecord</span></a></span><span>
 </span><span id="line-182"></span><span>          </span><span class="hs-special">'</span><span class="hs-special">[</span><span> </span><span class="annot"><span class="hs-string">&quot;stakedAmount&quot;</span></span><span> </span><span class="hs-special">'</span><span class="hs-operator">:=</span><span> </span><span class="annot"><a href="../file:///nix/store/130wvszlv78yczx7xfmmzay0f2fjr4dx-plutarch-safemoney-lib-plutarch-safemoney-0.3-haddock-doc/share/doc/plutarch-safemoney/html/src"><span class="hs-identifier hs-type">PDiscrete</span></a></span><span> </span><span class="annot"><a href="Agora.SafeMoney.html#GTTag"><span class="hs-identifier hs-type">GTTag</span></a></span><span>
 </span><span id="line-183"></span><span>           </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-string">&quot;owner&quot;</span></span><span> </span><span class="hs-special">'</span><span class="hs-operator">:=</span><span> </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PPubKeyHash</span></a></span><span>
@@ -290,7 +290,7 @@ forall (s :: S) x. PStakeDatum s -&gt; Rep (PStakeDatum s) x
 $cto :: forall (s :: S) x. Rep (PStakeDatum s) x -&gt; PStakeDatum s
 $cfrom :: forall (s :: S) x. PStakeDatum s -&gt; Rep (PStakeDatum s) x
 </span><a href="../file:///nix/store/kq3z27pzg8pc38yjr84kzncicvpzhan0-ghc-9.2.1-doc/share/doc/ghc/html/libraries/base-4.16.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">GHC.Generic</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-189"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">anyclass</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679401248"><span id="local-6989586621679401250"><span class="annot"><span class="annottext">All @[Type] (SListI @Type) (Code (PStakeDatum s))
+</span><span id="line-189"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">anyclass</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679401317"><span id="local-6989586621679401319"><span class="annot"><span class="annottext">All @[Type] (SListI @Type) (Code (PStakeDatum s))
 All @[Type] (SListI @Type) (Code (PStakeDatum s))
 -&gt; (PStakeDatum s -&gt; Rep (PStakeDatum s))
 -&gt; (Rep (PStakeDatum s) -&gt; PStakeDatum s)
@@ -308,7 +308,7 @@ $cto :: forall (s :: S). Rep (PStakeDatum s) -&gt; PStakeDatum s
 from :: PStakeDatum s -&gt; Rep (PStakeDatum s)
 $cfrom :: forall (s :: S). PStakeDatum s -&gt; Rep (PStakeDatum s)
 </span><a href="../file:///nix/store/fxmwn63cg4f77hbry2aqbwicmxmzc52i-generics-sop-lib-generics-sop-0.5.1.2-haddock-doc/share/doc/generics-sop/html/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></a></span></span></span><span class="hs-special">)</span><span>
-</span><span id="line-190"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">anyclass</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679401233"><span id="local-6989586621679401235"><span class="annot"><span class="annottext">PIsData PStakeDatum
+</span><span id="line-190"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">anyclass</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679401302"><span id="local-6989586621679401304"><span class="annot"><span class="annottext">PIsData PStakeDatum
 PlutusType PStakeDatum
 PlutusType PStakeDatum
 -&gt; PIsData PStakeDatum
@@ -343,7 +343,7 @@ $cpconRepr :: forall (s :: S).
 PStakeDatum s -&gt; Term s (PDataSum (PIsDataReprRepr PStakeDatum))
 </span><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">PIsDataRepr</span></a></span></span></span><span class="hs-special">)</span><span>
 </span><span id="line-191"></span><span>  </span><span class="hs-keyword">deriving</span><span>
-</span><span id="line-192"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621679401215"><span id="local-6989586621679401222"><span class="annot"><span class="annottext">PCon PStakeDatum
+</span><span id="line-192"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621679401284"><span id="local-6989586621679401291"><span class="annot"><span class="annottext">PCon PStakeDatum
 PMatch PStakeDatum
 PCon PStakeDatum
 -&gt; PMatch PStakeDatum
@@ -375,7 +375,7 @@ pcon' :: forall (s :: S) (b :: PType).
 PStakeDatum s -&gt; Term s (PInner PStakeDatum b)
 $cpcon' :: forall (s :: S) (b :: PType).
 PStakeDatum s -&gt; Term s (PInner PStakeDatum b)
-</span><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">PlutusType</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679401202"><span id="local-6989586621679401208"><span class="annot"><span class="annottext">(forall (s :: S).
+</span><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">PlutusType</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679401271"><span id="local-6989586621679401277"><span class="annot"><span class="annottext">(forall (s :: S).
  Term s (PAsData PStakeDatum) -&gt; Term s PStakeDatum)
 -&gt; (forall (s :: S).
     Term s PStakeDatum -&gt; Term s (PAsData PStakeDatum))
@@ -389,7 +389,7 @@ pdata :: forall (s :: S). Term s PStakeDatum -&gt; Term s (PAsData PStakeDatum)
 $cpdata :: forall (s :: S). Term s PStakeDatum -&gt; Term s (PAsData PStakeDatum)
 pfromData :: forall (s :: S). Term s (PAsData PStakeDatum) -&gt; Term s PStakeDatum
 $cpfromData :: forall (s :: S). Term s (PAsData PStakeDatum) -&gt; Term s PStakeDatum
-</span><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">PIsData</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679401196"><span class="annot"><span class="annottext">(forall (s :: S).
+</span><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">PIsData</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679401265"><span class="annot"><span class="annottext">(forall (s :: S).
  Term s PStakeDatum -&gt; Term s (PDataRecord (PFields PStakeDatum)))
 -&gt; PDataFields PStakeDatum
 forall (s :: S).
@@ -406,37 +406,37 @@ Term s PStakeDatum -&gt; Term s (PDataRecord (PFields PStakeDatum))
 </span><span id="line-194"></span><span>
 </span><span id="line-195"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PTryFrom</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PData</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PAsData</span></a></span><span> </span><span class="annot"><a href="Agora.Stake.html#PStakeDatum"><span class="hs-identifier hs-type">PStakeDatum</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
 </span><span id="line-196"></span><span>  </span><span class="hs-keyword">type</span><span> </span><span id="PTryFromExcess"><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">PTryFromExcess</span></a></span></span><span> </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PData</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PAsData</span></a></span><span> </span><span class="annot"><a href="Agora.Stake.html#PStakeDatum"><span class="hs-identifier hs-type">PStakeDatum</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="../file:///nix/store/kq3z27pzg8pc38yjr84kzncicvpzhan0-ghc-9.2.1-doc/share/doc/ghc/html/libraries/base-4.16.0.0/src"><span class="hs-identifier hs-type">Const</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
-</span><span id="line-197"></span><span>  </span><span id="local-6989586621679401181"><span class="annot"><span class="annottext">ptryFrom' :: forall (s :: S) (r :: PType).
+</span><span id="line-197"></span><span>  </span><span id="local-6989586621679401250"><span class="annot"><span class="annottext">ptryFrom' :: forall (s :: S) (r :: PType).
 Term s PData
 -&gt; ((Term s (PAsData PStakeDatum),
      Reduce @Type (PTryFromExcess PData (PAsData PStakeDatum) s))
     -&gt; Term s r)
 -&gt; Term s r
-</span><a href="#local-6989586621679401181"><span class="hs-identifier hs-var hs-var hs-var hs-var">ptryFrom'</span></a></span></span><span> </span><span id="local-6989586621679401180"><span class="annot"><span class="annottext">Term s PData
-</span><a href="#local-6989586621679401180"><span class="hs-identifier hs-var">d</span></a></span></span><span> </span><span id="local-6989586621679401179"><span class="annot"><span class="annottext">(Term s (PAsData PStakeDatum),
+</span><a href="#local-6989586621679401250"><span class="hs-identifier hs-var hs-var hs-var hs-var">ptryFrom'</span></a></span></span><span> </span><span id="local-6989586621679401249"><span class="annot"><span class="annottext">Term s PData
+</span><a href="#local-6989586621679401249"><span class="hs-identifier hs-var">d</span></a></span></span><span> </span><span id="local-6989586621679401248"><span class="annot"><span class="annottext">(Term s (PAsData PStakeDatum),
  Reduce @Type (PTryFromExcess PData (PAsData PStakeDatum) s))
 -&gt; Term s r
-</span><a href="#local-6989586621679401179"><span class="hs-identifier hs-var">k</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="#local-6989586621679401248"><span class="hs-identifier hs-var">k</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-198"></span><span>    </span><span class="annot"><span class="annottext">(Term s (PAsData PStakeDatum),
  Reduce @Type (PTryFromExcess PData (PAsData PStakeDatum) s))
 -&gt; Term s r
-</span><a href="#local-6989586621679401179"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Term s PData -&gt; Term s (PAsData PStakeDatum)
+</span><a href="#local-6989586621679401248"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Term s PData -&gt; Term s (PAsData PStakeDatum)
 forall (s :: S) (a :: PType) (b :: PType). Term s a -&gt; Term s b
 </span><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">punsafeCoerce</span></a></span><span> </span><span class="annot"><span class="annottext">Term s PData
-</span><a href="#local-6989586621679401180"><span class="hs-identifier hs-var">d</span></a></span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679401249"><span class="hs-identifier hs-var">d</span></a></span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
 </span><span id="line-199"></span><span>
 </span><span id="line-200"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PUnsafeLiftDecl</span></a></span><span> </span><span class="annot"><a href="Agora.Stake.html#PStakeDatum"><span class="hs-identifier hs-type">PStakeDatum</span></a></span><span> </span><span class="hs-keyword">where</span><span> </span><span class="hs-keyword">type</span><span> </span><span id="PLifted"><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">PLifted</span></a></span></span><span> </span><span class="annot"><a href="Agora.Stake.html#PStakeDatum"><span class="hs-identifier hs-type">PStakeDatum</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Agora.Stake.html#StakeDatum"><span class="hs-identifier hs-type">StakeDatum</span></a></span><span>
-</span><span id="line-201"></span><span id="local-6989586621679401152"><span id="local-6989586621679401162"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">via</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">DerivePConstantViaData</span></a></span><span> </span><span class="annot"><a href="Agora.Stake.html#StakeDatum"><span class="hs-identifier hs-type">StakeDatum</span></a></span><span> </span><span class="annot"><a href="Agora.Stake.html#PStakeDatum"><span class="hs-identifier hs-type">PStakeDatum</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PConstantDecl</span></a></span><span> </span><span class="annot"><a href="Agora.Stake.html#StakeDatum"><span class="hs-identifier hs-type">StakeDatum</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-201"></span><span id="local-6989586621679401221"><span id="local-6989586621679401231"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">via</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">DerivePConstantViaData</span></a></span><span> </span><span class="annot"><a href="Agora.Stake.html#StakeDatum"><span class="hs-identifier hs-type">StakeDatum</span></a></span><span> </span><span class="annot"><a href="Agora.Stake.html#PStakeDatum"><span class="hs-identifier hs-type">PStakeDatum</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PConstantDecl</span></a></span><span> </span><span class="annot"><a href="Agora.Stake.html#StakeDatum"><span class="hs-identifier hs-type">StakeDatum</span></a></span><span class="hs-special">)</span></span></span><span>
 </span><span id="line-202"></span><span>
 </span><span id="line-203"></span><span class="hs-comment">-- | Plutarch-level redeemer for Stake scripts.</span><span>
-</span><span id="line-204"></span><span id="local-6989586621679401139"><span id="local-6989586621679401140"></span></span><span class="hs-keyword">data</span><span> </span><span id="PStakeRedeemer"><span class="annot"><a href="Agora.Stake.html#PStakeRedeemer"><span class="hs-identifier hs-var">PStakeRedeemer</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679402701"><span class="annot"><a href="#local-6989586621679402701"><span class="hs-identifier hs-type">s</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">S</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-204"></span><span id="local-6989586621679401208"><span id="local-6989586621679401209"></span></span><span class="hs-keyword">data</span><span> </span><span id="PStakeRedeemer"><span class="annot"><a href="Agora.Stake.html#PStakeRedeemer"><span class="hs-identifier hs-var">PStakeRedeemer</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679402770"><span class="annot"><a href="#local-6989586621679402770"><span class="hs-identifier hs-type">s</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">S</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-205"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="hs-comment">-- | Deposit or withdraw a discrete amount of the staked governance token.</span><span>
-</span><span id="line-206"></span><span>    </span><span id="PDepositWithdraw"><span class="annot"><a href="Agora.Stake.html#PDepositWithdraw"><span class="hs-identifier hs-var">PDepositWithdraw</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679402701"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PDataRecord</span></a></span><span> </span><span class="hs-special">'</span><span class="hs-special">[</span><span class="annot"><span class="hs-string">&quot;delta&quot;</span></span><span> </span><span class="hs-special">'</span><span class="hs-operator">:=</span><span> </span><span class="annot"><a href="../file:///nix/store/130wvszlv78yczx7xfmmzay0f2fjr4dx-plutarch-safemoney-lib-plutarch-safemoney-0.3-haddock-doc/share/doc/plutarch-safemoney/html/src"><span class="hs-identifier hs-type">PDiscrete</span></a></span><span> </span><span class="annot"><a href="Agora.SafeMoney.html#GTTag"><span class="hs-identifier hs-type">GTTag</span></a></span><span class="hs-special">]</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-206"></span><span>    </span><span id="PDepositWithdraw"><span class="annot"><a href="Agora.Stake.html#PDepositWithdraw"><span class="hs-identifier hs-var">PDepositWithdraw</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679402770"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PDataRecord</span></a></span><span> </span><span class="hs-special">'</span><span class="hs-special">[</span><span class="annot"><span class="hs-string">&quot;delta&quot;</span></span><span> </span><span class="hs-special">'</span><span class="hs-operator">:=</span><span> </span><span class="annot"><a href="../file:///nix/store/130wvszlv78yczx7xfmmzay0f2fjr4dx-plutarch-safemoney-lib-plutarch-safemoney-0.3-haddock-doc/share/doc/plutarch-safemoney/html/src"><span class="hs-identifier hs-type">PDiscrete</span></a></span><span> </span><span class="annot"><a href="Agora.SafeMoney.html#GTTag"><span class="hs-identifier hs-type">GTTag</span></a></span><span class="hs-special">]</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
 </span><span id="line-207"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="hs-comment">-- | Destroy a stake, retrieving its LQ, the minimum ADA and any other assets.</span><span>
-</span><span id="line-208"></span><span>    </span><span id="PDestroy"><span class="annot"><a href="Agora.Stake.html#PDestroy"><span class="hs-identifier hs-var">PDestroy</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679402701"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PDataRecord</span></a></span><span> </span><span class="hs-special">'</span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-209"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="PPermitVote"><span class="annot"><a href="Agora.Stake.html#PPermitVote"><span class="hs-identifier hs-var">PPermitVote</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679402701"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PDataRecord</span></a></span><span> </span><span class="hs-special">'</span><span class="hs-special">[</span><span class="annot"><span class="hs-string">&quot;lock&quot;</span></span><span> </span><span class="hs-special">'</span><span class="hs-operator">:=</span><span> </span><span class="annot"><a href="Agora.Stake.html#PProposalLock"><span class="hs-identifier hs-type">PProposalLock</span></a></span><span class="hs-special">]</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-210"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="PRetractVotes"><span class="annot"><a href="Agora.Stake.html#PRetractVotes"><span class="hs-identifier hs-var">PRetractVotes</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679402701"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PDataRecord</span></a></span><span> </span><span class="hs-special">'</span><span class="hs-special">[</span><span class="annot"><span class="hs-string">&quot;locks&quot;</span></span><span> </span><span class="hs-special">'</span><span class="hs-operator">:=</span><span> </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PBuiltinList</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PAsData</span></a></span><span> </span><span class="annot"><a href="Agora.Stake.html#PProposalLock"><span class="hs-identifier hs-type">PProposalLock</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-211"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="PWitnessStake"><span class="annot"><a href="Agora.Stake.html#PWitnessStake"><span class="hs-identifier hs-var">PWitnessStake</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679402701"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PDataRecord</span></a></span><span> </span><span class="hs-special">'</span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-208"></span><span>    </span><span id="PDestroy"><span class="annot"><a href="Agora.Stake.html#PDestroy"><span class="hs-identifier hs-var">PDestroy</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679402770"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PDataRecord</span></a></span><span> </span><span class="hs-special">'</span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-209"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="PPermitVote"><span class="annot"><a href="Agora.Stake.html#PPermitVote"><span class="hs-identifier hs-var">PPermitVote</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679402770"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PDataRecord</span></a></span><span> </span><span class="hs-special">'</span><span class="hs-special">[</span><span class="annot"><span class="hs-string">&quot;lock&quot;</span></span><span> </span><span class="hs-special">'</span><span class="hs-operator">:=</span><span> </span><span class="annot"><a href="Agora.Stake.html#PProposalLock"><span class="hs-identifier hs-type">PProposalLock</span></a></span><span class="hs-special">]</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-210"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="PRetractVotes"><span class="annot"><a href="Agora.Stake.html#PRetractVotes"><span class="hs-identifier hs-var">PRetractVotes</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679402770"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PDataRecord</span></a></span><span> </span><span class="hs-special">'</span><span class="hs-special">[</span><span class="annot"><span class="hs-string">&quot;locks&quot;</span></span><span> </span><span class="hs-special">'</span><span class="hs-operator">:=</span><span> </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PBuiltinList</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PAsData</span></a></span><span> </span><span class="annot"><a href="Agora.Stake.html#PProposalLock"><span class="hs-identifier hs-type">PProposalLock</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-211"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="PWitnessStake"><span class="annot"><a href="Agora.Stake.html#PWitnessStake"><span class="hs-identifier hs-var">PWitnessStake</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679402770"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PDataRecord</span></a></span><span> </span><span class="hs-special">'</span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
 </span><span id="line-212"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">stock</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(forall x. PStakeRedeemer s -&gt; Rep (PStakeRedeemer s) x)
 -&gt; (forall x. Rep (PStakeRedeemer s) x -&gt; PStakeRedeemer s)
 -&gt; Generic (PStakeRedeemer s)
@@ -449,7 +449,7 @@ forall (s :: S) x. PStakeRedeemer s -&gt; Rep (PStakeRedeemer s) x
 $cto :: forall (s :: S) x. Rep (PStakeRedeemer s) x -&gt; PStakeRedeemer s
 $cfrom :: forall (s :: S) x. PStakeRedeemer s -&gt; Rep (PStakeRedeemer s) x
 </span><a href="../file:///nix/store/kq3z27pzg8pc38yjr84kzncicvpzhan0-ghc-9.2.1-doc/share/doc/ghc/html/libraries/base-4.16.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">GHC.Generic</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-213"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">anyclass</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679401125"><span id="local-6989586621679401127"><span class="annot"><span class="annottext">All @[Type] (SListI @Type) (Code (PStakeRedeemer s))
+</span><span id="line-213"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">anyclass</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679401194"><span id="local-6989586621679401196"><span class="annot"><span class="annottext">All @[Type] (SListI @Type) (Code (PStakeRedeemer s))
 All @[Type] (SListI @Type) (Code (PStakeRedeemer s))
 -&gt; (PStakeRedeemer s -&gt; Rep (PStakeRedeemer s))
 -&gt; (Rep (PStakeRedeemer s) -&gt; PStakeRedeemer s)
@@ -467,8 +467,8 @@ to :: Rep (PStakeRedeemer s) -&gt; PStakeRedeemer s
 $cto :: forall (s :: S). Rep (PStakeRedeemer s) -&gt; PStakeRedeemer s
 from :: PStakeRedeemer s -&gt; Rep (PStakeRedeemer s)
 $cfrom :: forall (s :: S). PStakeRedeemer s -&gt; Rep (PStakeRedeemer s)
-</span><a href="#local-6989586621679401125"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></a></span></span></span><span class="hs-special">)</span><span>
-</span><span id="line-214"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">anyclass</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679401101"><span id="local-6989586621679401103"><span class="annot"><span class="annottext">PIsData PStakeRedeemer
+</span><a href="#local-6989586621679401194"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></a></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-214"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">anyclass</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679401170"><span id="local-6989586621679401172"><span class="annot"><span class="annottext">PIsData PStakeRedeemer
 PlutusType PStakeRedeemer
 PlutusType PStakeRedeemer
 -&gt; PIsData PStakeRedeemer
@@ -505,9 +505,9 @@ PStakeRedeemer s
 $cpconRepr :: forall (s :: S).
 PStakeRedeemer s
 -&gt; Term s (PDataSum (PIsDataReprRepr PStakeRedeemer))
-</span><a href="#local-6989586621679401101"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">PIsDataRepr</span></a></span></span></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679401170"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">PIsDataRepr</span></a></span></span></span><span class="hs-special">)</span><span>
 </span><span id="line-215"></span><span>  </span><span class="hs-keyword">deriving</span><span>
-</span><span id="line-216"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621679401087"><span id="local-6989586621679401093"><span class="annot"><span class="annottext">PCon PStakeRedeemer
+</span><span id="line-216"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621679401156"><span id="local-6989586621679401162"><span class="annot"><span class="annottext">PCon PStakeRedeemer
 PMatch PStakeRedeemer
 PCon PStakeRedeemer
 -&gt; PMatch PStakeRedeemer
@@ -539,7 +539,7 @@ pcon' :: forall (s :: S) (b :: PType).
 PStakeRedeemer s -&gt; Term s (PInner PStakeRedeemer b)
 $cpcon' :: forall (s :: S) (b :: PType).
 PStakeRedeemer s -&gt; Term s (PInner PStakeRedeemer b)
-</span><a href="#local-6989586621679401087"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">PlutusType</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679401076"><span id="local-6989586621679401081"><span class="annot"><span class="annottext">(forall (s :: S).
+</span><a href="#local-6989586621679401156"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">PlutusType</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679401145"><span id="local-6989586621679401150"><span class="annot"><span class="annottext">(forall (s :: S).
  Term s (PAsData PStakeRedeemer) -&gt; Term s PStakeRedeemer)
 -&gt; (forall (s :: S).
     Term s PStakeRedeemer -&gt; Term s (PAsData PStakeRedeemer))
@@ -559,19 +559,19 @@ pfromData :: forall (s :: S).
 Term s (PAsData PStakeRedeemer) -&gt; Term s PStakeRedeemer
 $cpfromData :: forall (s :: S).
 Term s (PAsData PStakeRedeemer) -&gt; Term s PStakeRedeemer
-</span><a href="#local-6989586621679401076"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">PIsData</span></a></span></span></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679401145"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">PIsData</span></a></span></span></span><span class="hs-special">)</span><span>
 </span><span id="line-217"></span><span>    </span><span class="hs-keyword">via</span><span> </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PIsDataReprInstances</span></a></span><span> </span><span class="annot"><a href="Agora.Stake.html#PStakeRedeemer"><span class="hs-identifier hs-type">PStakeRedeemer</span></a></span><span>
 </span><span id="line-218"></span><span>
-</span><span id="line-219"></span><span id="local-6989586621679401071"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">via</span><span>
+</span><span id="line-219"></span><span id="local-6989586621679401140"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">via</span><span>
 </span><span id="line-220"></span><span>  </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PAsData</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PIsDataReprInstances</span></a></span><span> </span><span class="annot"><a href="Agora.Stake.html#PStakeRedeemer"><span class="hs-identifier hs-type">PStakeRedeemer</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-221"></span><span>  </span><span class="hs-keyword">instance</span><span>
 </span><span id="line-222"></span><span>    </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PTryFrom</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PData</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PAsData</span></a></span><span> </span><span class="annot"><a href="Agora.Stake.html#PStakeRedeemer"><span class="hs-identifier hs-type">PStakeRedeemer</span></a></span><span class="hs-special">)</span></span><span>
 </span><span id="line-223"></span><span>
 </span><span id="line-224"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PUnsafeLiftDecl</span></a></span><span> </span><span class="annot"><a href="Agora.Stake.html#PStakeRedeemer"><span class="hs-identifier hs-type">PStakeRedeemer</span></a></span><span> </span><span class="hs-keyword">where</span><span> </span><span class="hs-keyword">type</span><span> </span><span id="PLifted"><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">PLifted</span></a></span></span><span> </span><span class="annot"><a href="Agora.Stake.html#PStakeRedeemer"><span class="hs-identifier hs-type">PStakeRedeemer</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Agora.Stake.html#StakeRedeemer"><span class="hs-identifier hs-type">StakeRedeemer</span></a></span><span>
-</span><span id="line-225"></span><span id="local-6989586621679400997"><span id="local-6989586621679401006"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">via</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">DerivePConstantViaData</span></a></span><span> </span><span class="annot"><a href="Agora.Stake.html#StakeRedeemer"><span class="hs-identifier hs-type">StakeRedeemer</span></a></span><span> </span><span class="annot"><a href="Agora.Stake.html#PStakeRedeemer"><span class="hs-identifier hs-type">PStakeRedeemer</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PConstantDecl</span></a></span><span> </span><span class="annot"><a href="Agora.Stake.html#StakeRedeemer"><span class="hs-identifier hs-type">StakeRedeemer</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-225"></span><span id="local-6989586621679401066"><span id="local-6989586621679401075"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">via</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">DerivePConstantViaData</span></a></span><span> </span><span class="annot"><a href="Agora.Stake.html#StakeRedeemer"><span class="hs-identifier hs-type">StakeRedeemer</span></a></span><span> </span><span class="annot"><a href="Agora.Stake.html#PStakeRedeemer"><span class="hs-identifier hs-type">PStakeRedeemer</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PConstantDecl</span></a></span><span> </span><span class="annot"><a href="Agora.Stake.html#StakeRedeemer"><span class="hs-identifier hs-type">StakeRedeemer</span></a></span><span class="hs-special">)</span></span></span><span>
 </span><span id="line-226"></span><span>
 </span><span id="line-227"></span><span class="hs-comment">-- | Plutarch-level version of 'ProposalLock'.</span><span>
-</span><span id="line-228"></span><span id="local-6989586621679400987"><span id="local-6989586621679400988"></span></span><span class="hs-keyword">newtype</span><span> </span><span id="PProposalLock"><span class="annot"><a href="Agora.Stake.html#PProposalLock"><span class="hs-identifier hs-var">PProposalLock</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679402673"><span class="annot"><a href="#local-6989586621679402673"><span class="hs-identifier hs-type">s</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">S</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span id="PProposalLock"><span class="annot"><a href="Agora.Stake.html#PProposalLock"><span class="hs-identifier hs-var">PProposalLock</span></a></span></span><span>
+</span><span id="line-228"></span><span id="local-6989586621679401056"><span id="local-6989586621679401057"></span></span><span class="hs-keyword">newtype</span><span> </span><span id="PProposalLock"><span class="annot"><a href="Agora.Stake.html#PProposalLock"><span class="hs-identifier hs-var">PProposalLock</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679402742"><span class="annot"><a href="#local-6989586621679402742"><span class="hs-identifier hs-type">s</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">S</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span id="PProposalLock"><span class="annot"><a href="Agora.Stake.html#PProposalLock"><span class="hs-identifier hs-var">PProposalLock</span></a></span></span><span>
 </span><span id="line-229"></span><span>  </span><span class="hs-special">{</span><span> </span><span id="getProposalLock"><span class="annot"><span class="annottext">forall (s :: S).
 PProposalLock s
 -&gt; Term
@@ -586,7 +586,7 @@ PProposalLock s
               ('[] @PLabeledType))))
 </span><a href="Agora.Stake.html#getProposalLock"><span class="hs-identifier hs-var hs-var">getProposalLock</span></a></span></span><span> </span><span class="hs-glyph">::</span><span>
 </span><span id="line-230"></span><span>    </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span>
-</span><span id="line-231"></span><span>      </span><span class="annot"><a href="#local-6989586621679402673"><span class="hs-identifier hs-type">s</span></a></span><span>
+</span><span id="line-231"></span><span>      </span><span class="annot"><a href="#local-6989586621679402742"><span class="hs-identifier hs-type">s</span></a></span><span>
 </span><span id="line-232"></span><span>      </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PDataRecord</span></a></span><span>
 </span><span id="line-233"></span><span>          </span><span class="hs-special">'</span><span class="hs-special">[</span><span> </span><span class="annot"><span class="hs-string">&quot;vote&quot;</span></span><span> </span><span class="hs-special">'</span><span class="hs-operator">:=</span><span> </span><span class="annot"><a href="Agora.Proposal.html#PResultTag"><span class="hs-identifier hs-type">PResultTag</span></a></span><span>
 </span><span id="line-234"></span><span>           </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-string">&quot;proposalTag&quot;</span></span><span> </span><span class="hs-special">'</span><span class="hs-operator">:=</span><span> </span><span class="annot"><a href="Agora.Proposal.html#PProposalId"><span class="hs-identifier hs-type">PProposalId</span></a></span><span>
@@ -605,7 +605,7 @@ forall (s :: S) x. PProposalLock s -&gt; Rep (PProposalLock s) x
 $cto :: forall (s :: S) x. Rep (PProposalLock s) x -&gt; PProposalLock s
 $cfrom :: forall (s :: S) x. PProposalLock s -&gt; Rep (PProposalLock s) x
 </span><a href="../file:///nix/store/kq3z27pzg8pc38yjr84kzncicvpzhan0-ghc-9.2.1-doc/share/doc/ghc/html/libraries/base-4.16.0.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">GHC.Generic</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-239"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">anyclass</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679400976"><span id="local-6989586621679400978"><span class="annot"><span class="annottext">All @[Type] (SListI @Type) (Code (PProposalLock s))
+</span><span id="line-239"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">anyclass</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679401045"><span id="local-6989586621679401047"><span class="annot"><span class="annottext">All @[Type] (SListI @Type) (Code (PProposalLock s))
 All @[Type] (SListI @Type) (Code (PProposalLock s))
 -&gt; (PProposalLock s -&gt; Rep (PProposalLock s))
 -&gt; (Rep (PProposalLock s) -&gt; PProposalLock s)
@@ -623,8 +623,8 @@ to :: Rep (PProposalLock s) -&gt; PProposalLock s
 $cto :: forall (s :: S). Rep (PProposalLock s) -&gt; PProposalLock s
 from :: PProposalLock s -&gt; Rep (PProposalLock s)
 $cfrom :: forall (s :: S). PProposalLock s -&gt; Rep (PProposalLock s)
-</span><a href="#local-6989586621679400976"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></a></span></span></span><span class="hs-special">)</span><span>
-</span><span id="line-240"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">anyclass</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679400963"><span id="local-6989586621679400965"><span class="annot"><span class="annottext">PIsData PProposalLock
+</span><a href="#local-6989586621679401045"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></a></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-240"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">anyclass</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679401032"><span id="local-6989586621679401034"><span class="annot"><span class="annottext">PIsData PProposalLock
 PlutusType PProposalLock
 PlutusType PProposalLock
 -&gt; PIsData PProposalLock
@@ -661,9 +661,9 @@ PProposalLock s
 $cpconRepr :: forall (s :: S).
 PProposalLock s
 -&gt; Term s (PDataSum (PIsDataReprRepr PProposalLock))
-</span><a href="#local-6989586621679400963"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">PIsDataRepr</span></a></span></span></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679401032"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">PIsDataRepr</span></a></span></span></span><span class="hs-special">)</span><span>
 </span><span id="line-241"></span><span>  </span><span class="hs-keyword">deriving</span><span>
-</span><span id="line-242"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621679400949"><span id="local-6989586621679400955"><span class="annot"><span class="annottext">PCon PProposalLock
+</span><span id="line-242"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621679401018"><span id="local-6989586621679401024"><span class="annot"><span class="annottext">PCon PProposalLock
 PMatch PProposalLock
 PCon PProposalLock
 -&gt; PMatch PProposalLock
@@ -695,7 +695,7 @@ pcon' :: forall (s :: S) (b :: PType).
 PProposalLock s -&gt; Term s (PInner PProposalLock b)
 $cpcon' :: forall (s :: S) (b :: PType).
 PProposalLock s -&gt; Term s (PInner PProposalLock b)
-</span><a href="#local-6989586621679400949"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">PlutusType</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679400938"><span id="local-6989586621679400943"><span class="annot"><span class="annottext">(forall (s :: S).
+</span><a href="#local-6989586621679401018"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">PlutusType</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679401007"><span id="local-6989586621679401012"><span class="annot"><span class="annottext">(forall (s :: S).
  Term s (PAsData PProposalLock) -&gt; Term s PProposalLock)
 -&gt; (forall (s :: S).
     Term s PProposalLock -&gt; Term s (PAsData PProposalLock))
@@ -715,7 +715,7 @@ pfromData :: forall (s :: S).
 Term s (PAsData PProposalLock) -&gt; Term s PProposalLock
 $cpfromData :: forall (s :: S).
 Term s (PAsData PProposalLock) -&gt; Term s PProposalLock
-</span><a href="#local-6989586621679400938"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">PIsData</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679400933"><span class="annot"><span class="annottext">(forall (s :: S).
+</span><a href="#local-6989586621679401007"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">PIsData</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679401002"><span class="annot"><span class="annottext">(forall (s :: S).
  Term s PProposalLock
  -&gt; Term s (PDataRecord (PFields PProposalLock)))
 -&gt; PDataFields PProposalLock
@@ -731,21 +731,21 @@ Term s PProposalLock
 $cptoFields :: forall (s :: S).
 Term s PProposalLock
 -&gt; Term s (PDataRecord (PFields PProposalLock))
-</span><a href="#local-6989586621679400933"><span class="hs-identifier hs-var hs-var hs-var hs-var">PDataFields</span></a></span></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679401002"><span class="hs-identifier hs-var hs-var hs-var hs-var">PDataFields</span></a></span></span><span class="hs-special">)</span><span>
 </span><span id="line-243"></span><span>    </span><span class="hs-keyword">via</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PIsDataReprInstances</span></a></span><span> </span><span class="annot"><a href="Agora.Stake.html#PProposalLock"><span class="hs-identifier hs-type">PProposalLock</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-244"></span><span>
-</span><span id="line-245"></span><span id="local-6989586621679400922"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">via</span><span>
+</span><span id="line-245"></span><span id="local-6989586621679400991"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">via</span><span>
 </span><span id="line-246"></span><span>  </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PAsData</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PIsDataReprInstances</span></a></span><span> </span><span class="annot"><a href="Agora.Stake.html#PProposalLock"><span class="hs-identifier hs-type">PProposalLock</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-247"></span><span>  </span><span class="hs-keyword">instance</span><span>
 </span><span id="line-248"></span><span>    </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PTryFrom</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PData</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PAsData</span></a></span><span> </span><span class="annot"><a href="Agora.Stake.html#PProposalLock"><span class="hs-identifier hs-type">PProposalLock</span></a></span><span class="hs-special">)</span></span><span>
 </span><span id="line-249"></span><span>
 </span><span id="line-250"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PUnsafeLiftDecl</span></a></span><span> </span><span class="annot"><a href="Agora.Stake.html#PProposalLock"><span class="hs-identifier hs-type">PProposalLock</span></a></span><span> </span><span class="hs-keyword">where</span><span> </span><span class="hs-keyword">type</span><span> </span><span id="PLifted"><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">PLifted</span></a></span></span><span> </span><span class="annot"><a href="Agora.Stake.html#PProposalLock"><span class="hs-identifier hs-type">PProposalLock</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Agora.Stake.html#ProposalLock"><span class="hs-identifier hs-type">ProposalLock</span></a></span><span>
-</span><span id="line-251"></span><span id="local-6989586621679400875"><span id="local-6989586621679400884"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">via</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">DerivePConstantViaData</span></a></span><span> </span><span class="annot"><a href="Agora.Stake.html#ProposalLock"><span class="hs-identifier hs-type">ProposalLock</span></a></span><span> </span><span class="annot"><a href="Agora.Stake.html#PProposalLock"><span class="hs-identifier hs-type">PProposalLock</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PConstantDecl</span></a></span><span> </span><span class="annot"><a href="Agora.Stake.html#ProposalLock"><span class="hs-identifier hs-type">ProposalLock</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-251"></span><span id="local-6989586621679400944"><span id="local-6989586621679400953"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">via</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">DerivePConstantViaData</span></a></span><span> </span><span class="annot"><a href="Agora.Stake.html#ProposalLock"><span class="hs-identifier hs-type">ProposalLock</span></a></span><span> </span><span class="annot"><a href="Agora.Stake.html#PProposalLock"><span class="hs-identifier hs-type">PProposalLock</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PConstantDecl</span></a></span><span> </span><span class="annot"><a href="Agora.Stake.html#ProposalLock"><span class="hs-identifier hs-type">ProposalLock</span></a></span><span class="hs-special">)</span></span></span><span>
 </span><span id="line-252"></span><span>
 </span><span id="line-253"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
 </span><span id="line-254"></span><span>
 </span><span id="line-255"></span><span class="hs-comment">-- | Check whether a Stake is locked. If it is locked, various actions are unavailable.</span><span>
-</span><span id="line-256"></span><span class="annot"><a href="Agora.Stake.html#stakeLocked"><span class="hs-identifier hs-type">stakeLocked</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679402661"><span class="annot"><a href="#local-6989586621679402661"><span class="hs-identifier hs-type">s</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">S</span></a></span><span class="hs-special">)</span><span class="hs-operator">.</span><span> </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679402661"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Agora.Stake.html#PStakeDatum"><span class="hs-identifier hs-type">PStakeDatum</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-type">:--&gt;</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PBool</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-256"></span><span class="annot"><a href="Agora.Stake.html#stakeLocked"><span class="hs-identifier hs-type">stakeLocked</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679402730"><span class="annot"><a href="#local-6989586621679402730"><span class="hs-identifier hs-type">s</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">S</span></a></span><span class="hs-special">)</span><span class="hs-operator">.</span><span> </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679402730"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Agora.Stake.html#PStakeDatum"><span class="hs-identifier hs-type">PStakeDatum</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-type">:--&gt;</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PBool</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-257"></span><span id="stakeLocked"><span class="annot"><span class="annottext">stakeLocked :: forall (s :: S). Term s (PStakeDatum :--&gt; PBool)
 </span><a href="Agora.Stake.html#stakeLocked"><span class="hs-identifier hs-var hs-var">stakeLocked</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(forall (s :: S). Term s (PStakeDatum :--&gt; PBool))
 -&gt; Term s (PStakeDatum :--&gt; PBool)
@@ -768,11 +768,11 @@ PLamN a b s =&gt;
 -&gt; (Term s PStakeDatum -&gt; Term s PBool)
 -&gt; Term s (PStakeDatum :--&gt; PBool)
 forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><a href="../file:///nix/store/kq3z27pzg8pc38yjr84kzncicvpzhan0-ghc-9.2.1-doc/share/doc/ghc/html/libraries/base-4.16.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679400853"><span class="annot"><span class="annottext">Term s PStakeDatum
-</span><a href="#local-6989586621679400853"><span class="hs-identifier hs-var">stakeDatum</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
-</span><span id="line-259"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span class="annot"><a href="#local-6989586621679400852"><span class="hs-identifier hs-type">locks</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span> </span><span class="annot"><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PBuiltinList</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PAsData</span></a></span><span> </span><span class="annot"><a href="Agora.Stake.html#PProposalLock"><span class="hs-identifier hs-type">PProposalLock</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-260"></span><span>        </span><span id="local-6989586621679400852"><span class="annot"><span class="annottext">locks :: Term s (PBuiltinList (PAsData PProposalLock))
-</span><a href="#local-6989586621679400852"><span class="hs-identifier hs-var hs-var">locks</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">forall (name :: Symbol) (p :: PType) (s :: S) (a :: PType)
+</span><a href="../file:///nix/store/kq3z27pzg8pc38yjr84kzncicvpzhan0-ghc-9.2.1-doc/share/doc/ghc/html/libraries/base-4.16.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679400922"><span class="annot"><span class="annottext">Term s PStakeDatum
+</span><a href="#local-6989586621679400922"><span class="hs-identifier hs-var">stakeDatum</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-259"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span class="annot"><a href="#local-6989586621679400921"><span class="hs-identifier hs-type">locks</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span> </span><span class="annot"><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PBuiltinList</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PAsData</span></a></span><span> </span><span class="annot"><a href="Agora.Stake.html#PProposalLock"><span class="hs-identifier hs-type">PProposalLock</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-260"></span><span>        </span><span id="local-6989586621679400921"><span class="annot"><span class="annottext">locks :: Term s (PBuiltinList (PAsData PProposalLock))
+</span><a href="#local-6989586621679400921"><span class="hs-identifier hs-var hs-var">locks</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">forall (name :: Symbol) (p :: PType) (s :: S) (a :: PType)
        (as :: [PLabeledType]) (n :: Nat) (b :: PType).
 (PDataFields p,
  (as :: [PLabeledType]) ~ (PFields p :: [PLabeledType]),
@@ -786,7 +786,7 @@ Term s (p :--&gt; b)
 forall (s :: S) (a :: PType) (b :: PType).
 Term s (a :--&gt; b) -&gt; Term s a -&gt; Term s b
 </span><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-var">#</span></a></span><span> </span><span class="annot"><span class="annottext">Term s PStakeDatum
-</span><a href="#local-6989586621679400853"><span class="hs-identifier hs-var">stakeDatum</span></a></span><span>
+</span><a href="#local-6989586621679400922"><span class="hs-identifier hs-var">stakeDatum</span></a></span><span>
 </span><span id="line-261"></span><span>     </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">Term s (PBuiltinList (PAsData PProposalLock) :--&gt; PBool)
 forall (list :: PType -&gt; PType) (a :: PType) {w :: S}.
 PIsListLike list a =&gt;
@@ -796,12 +796,12 @@ Term w (list a :--&gt; PBool)
 forall (s :: S) (a :: PType) (b :: PType).
 Term s (a :--&gt; b) -&gt; Term s a -&gt; Term s b
 </span><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-var">#</span></a></span><span> </span><span class="annot"><span class="annottext">Term s (PBuiltinList (PAsData PProposalLock))
-</span><a href="#local-6989586621679400852"><span class="hs-identifier hs-var">locks</span></a></span><span>
+</span><a href="#local-6989586621679400921"><span class="hs-identifier hs-var">locks</span></a></span><span>
 </span><span id="line-262"></span><span>
 </span><span id="line-263"></span><span class="hs-comment">-- | Find a stake owned by a particular PK.</span><span>
-</span><span id="line-264"></span><span id="local-6989586621679402619"><span class="annot"><a href="Agora.Stake.html#findStakeOwnedBy"><span class="hs-identifier hs-type">findStakeOwnedBy</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-264"></span><span id="local-6989586621679402688"><span class="annot"><a href="Agora.Stake.html#findStakeOwnedBy"><span class="hs-identifier hs-type">findStakeOwnedBy</span></a></span><span> </span><span class="hs-glyph">::</span><span>
 </span><span id="line-265"></span><span>  </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span>
-</span><span id="line-266"></span><span>    </span><span class="annot"><a href="#local-6989586621679402619"><span class="hs-identifier hs-type">s</span></a></span><span>
+</span><span id="line-266"></span><span>    </span><span class="annot"><a href="#local-6989586621679402688"><span class="hs-identifier hs-type">s</span></a></span><span>
 </span><span id="line-267"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="../file:///nix/store/kxxfwnpph41xygd3dgzpdwmkayp02bf2-plutarch-extra-lib-plutarch-extra-1.1.0-haddock-doc/share/doc/plutarch-extra/html/src"><span class="hs-identifier hs-type">PAssetClass</span></a></span><span>
 </span><span id="line-268"></span><span>        </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-type">:--&gt;</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PPubKeyHash</span></a></span><span>
 </span><span id="line-269"></span><span>        </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-type">:--&gt;</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PBuiltinList</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PAsData</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PTuple</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PDatumHash</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PDatum</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
@@ -906,11 +906,11 @@ PLamN a b s =&gt;
                   :--&gt; (PBuiltinList (PAsData PTxInInfo)
                         :--&gt; PMaybe (PAsData PStakeDatum)))))
 forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><a href="../file:///nix/store/kq3z27pzg8pc38yjr84kzncicvpzhan0-ghc-9.2.1-doc/share/doc/ghc/html/libraries/base-4.16.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679400760"><span class="annot"><span class="annottext">Term s PAssetClass
-</span><a href="#local-6989586621679400760"><span class="hs-identifier hs-var">ac</span></a></span></span><span> </span><span id="local-6989586621679400759"><span class="annot"><span class="annottext">Term s PPubKeyHash
-</span><a href="#local-6989586621679400759"><span class="hs-identifier hs-var">pk</span></a></span></span><span> </span><span id="local-6989586621679400758"><span class="annot"><span class="annottext">Term s (PBuiltinList (PAsData (PTuple PDatumHash PDatum)))
-</span><a href="#local-6989586621679400758"><span class="hs-identifier hs-var">datums</span></a></span></span><span> </span><span id="local-6989586621679400757"><span class="annot"><span class="annottext">Term s (PBuiltinList (PAsData PTxInInfo))
-</span><a href="#local-6989586621679400757"><span class="hs-identifier hs-var">inputs</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><a href="../file:///nix/store/kq3z27pzg8pc38yjr84kzncicvpzhan0-ghc-9.2.1-doc/share/doc/ghc/html/libraries/base-4.16.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679400829"><span class="annot"><span class="annottext">Term s PAssetClass
+</span><a href="#local-6989586621679400829"><span class="hs-identifier hs-var">ac</span></a></span></span><span> </span><span id="local-6989586621679400828"><span class="annot"><span class="annottext">Term s PPubKeyHash
+</span><a href="#local-6989586621679400828"><span class="hs-identifier hs-var">pk</span></a></span></span><span> </span><span id="local-6989586621679400827"><span class="annot"><span class="annottext">Term s (PBuiltinList (PAsData (PTuple PDatumHash PDatum)))
+</span><a href="#local-6989586621679400827"><span class="hs-identifier hs-var">datums</span></a></span></span><span> </span><span id="local-6989586621679400826"><span class="annot"><span class="annottext">Term s (PBuiltinList (PAsData PTxInInfo))
+</span><a href="#local-6989586621679400826"><span class="hs-identifier hs-var">inputs</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
 </span><span id="line-275"></span><span>    </span><span class="annot"><span class="annottext">Term s (PMaybe (PAsData PTxInInfo))
 -&gt; (PMaybe (PAsData PTxInInfo) s
     -&gt; Term s (PMaybe (PAsData PStakeDatum)))
@@ -965,7 +965,7 @@ Term
 forall (s :: S) (a :: PType) (b :: PType).
 Term s (a :--&gt; b) -&gt; Term s a -&gt; Term s b
 </span><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-var">#</span></a></span><span> </span><span class="annot"><span class="annottext">Term s PAssetClass
-</span><a href="#local-6989586621679400760"><span class="hs-identifier hs-var">ac</span></a></span><span> </span><span class="annot"><span class="annottext">Term
+</span><a href="#local-6989586621679400829"><span class="hs-identifier hs-var">ac</span></a></span><span> </span><span class="annot"><span class="annottext">Term
   s
   (PPubKeyHash
    :--&gt; (PBuiltinList (PAsData (PTuple PDatumHash PDatum))
@@ -978,7 +978,7 @@ Term s (a :--&gt; b) -&gt; Term s a -&gt; Term s b
 forall (s :: S) (a :: PType) (b :: PType).
 Term s (a :--&gt; b) -&gt; Term s a -&gt; Term s b
 </span><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-var">#</span></a></span><span> </span><span class="annot"><span class="annottext">Term s PPubKeyHash
-</span><a href="#local-6989586621679400759"><span class="hs-identifier hs-var">pk</span></a></span><span> </span><span class="annot"><span class="annottext">Term
+</span><a href="#local-6989586621679400828"><span class="hs-identifier hs-var">pk</span></a></span><span> </span><span class="annot"><span class="annottext">Term
   s
   (PBuiltinList (PAsData (PTuple PDatumHash PDatum))
    :--&gt; (PAsData PTxInInfo :--&gt; PBool))
@@ -987,7 +987,7 @@ Term s (a :--&gt; b) -&gt; Term s a -&gt; Term s b
 forall (s :: S) (a :: PType) (b :: PType).
 Term s (a :--&gt; b) -&gt; Term s a -&gt; Term s b
 </span><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-var">#</span></a></span><span> </span><span class="annot"><span class="annottext">Term s (PBuiltinList (PAsData (PTuple PDatumHash PDatum)))
-</span><a href="#local-6989586621679400758"><span class="hs-identifier hs-var">datums</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Term
+</span><a href="#local-6989586621679400827"><span class="hs-identifier hs-var">datums</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Term
   s
   (PBuiltinList (PAsData PTxInInfo) :--&gt; PMaybe (PAsData PTxInInfo))
 -&gt; Term s (PBuiltinList (PAsData PTxInInfo))
@@ -995,7 +995,7 @@ Term s (a :--&gt; b) -&gt; Term s a -&gt; Term s b
 forall (s :: S) (a :: PType) (b :: PType).
 Term s (a :--&gt; b) -&gt; Term s a -&gt; Term s b
 </span><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-var">#</span></a></span><span> </span><span class="annot"><span class="annottext">Term s (PBuiltinList (PAsData PTxInInfo))
-</span><a href="#local-6989586621679400757"><span class="hs-identifier hs-var">inputs</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">((PMaybe (PAsData PTxInInfo) s
+</span><a href="#local-6989586621679400826"><span class="hs-identifier hs-var">inputs</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">((PMaybe (PAsData PTxInInfo) s
   -&gt; Term s (PMaybe (PAsData PStakeDatum)))
  -&gt; Term s (PMaybe (PAsData PStakeDatum)))
 -&gt; (PMaybe (PAsData PTxInInfo) s
@@ -1014,10 +1014,10 @@ forall (a :: PType) (s :: S). PMaybe a s
 forall (a :: PType) (s :: S).
 PIsData a =&gt;
 Term s (PAsData a) -&gt; Term s a
-</span><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pfromData</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span id="local-6989586621679400749"><span class="annot"><span class="annottext">Term s PTxInInfo
-</span><a href="#local-6989586621679400749"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">P.do</span><span>
-</span><span id="line-278"></span><span>        </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679400748"><span class="annot"><span class="annottext">txOut :: Term s (PAsData PTxOut)
-</span><a href="#local-6989586621679400748"><span class="hs-identifier hs-var hs-var">txOut</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">forall (name :: Symbol) (p :: PType) (s :: S) (a :: PType)
+</span><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pfromData</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span id="local-6989586621679400818"><span class="annot"><span class="annottext">Term s PTxInInfo
+</span><a href="#local-6989586621679400818"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">P.do</span><span>
+</span><span id="line-278"></span><span>        </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679400817"><span class="annot"><span class="annottext">txOut :: Term s (PAsData PTxOut)
+</span><a href="#local-6989586621679400817"><span class="hs-identifier hs-var hs-var">txOut</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">forall (name :: Symbol) (p :: PType) (s :: S) (a :: PType)
        (as :: [PLabeledType]) (n :: Nat) (b :: PType).
 (PDataFields p,
  (as :: [PLabeledType]) ~ (PFields p :: [PLabeledType]),
@@ -1054,15 +1054,15 @@ Term s (a :--&gt; b) -&gt; Term s a -&gt; Term s b
 forall (s :: S) (a :: PType).
 Term s a -&gt; forall (b :: PType). Term s (PInner a b)
 </span><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pto</span></a></span><span> </span><span class="annot"><span class="annottext">Term s PTxInInfo
-</span><a href="#local-6989586621679400749"><span class="hs-identifier hs-var">v</span></a></span><span>
-</span><span id="line-279"></span><span>        </span><span id="local-6989586621679400746"><span class="annot"><span class="annottext">HRec
+</span><a href="#local-6989586621679400818"><span class="hs-identifier hs-var">v</span></a></span><span>
+</span><span id="line-279"></span><span>        </span><span id="local-6989586621679400815"><span class="annot"><span class="annottext">HRec
   (BoundTerms
      (PFields (PAsData PTxOut))
      (Bindings
         (PFields (PAsData PTxOut))
         ((':) @Symbol &quot;datumHash&quot; ('[] @Symbol)))
      s)
-</span><a href="#local-6989586621679400746"><span class="hs-identifier hs-var">txOutF</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">forall (fs :: [Symbol]) (a :: PType) (s :: S) (b :: PType)
+</span><a href="#local-6989586621679400815"><span class="hs-identifier hs-var">txOutF</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">forall (fs :: [Symbol]) (a :: PType) (s :: S) (b :: PType)
        (ps :: [PLabeledType]) (bs :: [ToBind]).
 (PDataFields a,
  (ps :: [PLabeledType]) ~ (PFields a :: [PLabeledType]),
@@ -1091,7 +1091,7 @@ Term s a -&gt; (HRec (BoundTerms ps bs s) -&gt; Term s b) -&gt; Term s b
 -&gt; Term s (PMaybe (PAsData PStakeDatum))
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><a href="../file:///nix/store/kq3z27pzg8pc38yjr84kzncicvpzhan0-ghc-9.2.1-doc/share/doc/ghc/html/libraries/base-4.16.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Term s (PAsData PTxOut)
-</span><a href="#local-6989586621679400748"><span class="hs-identifier hs-var">txOut</span></a></span><span>
+</span><a href="#local-6989586621679400817"><span class="hs-identifier hs-var">txOut</span></a></span><span>
 </span><span id="line-280"></span><span>        </span><span class="annot"><span class="annottext">Term s (PMaybeData PDatumHash)
 -&gt; (PMaybeData PDatumHash s
     -&gt; Term s (PMaybe (PAsData PStakeDatum)))
@@ -1106,7 +1106,7 @@ Term s a -&gt; (a s -&gt; Term s b) -&gt; Term s b
         (PFields (PAsData PTxOut))
         ((':) @Symbol &quot;datumHash&quot; ('[] @Symbol)))
      s)
-</span><a href="#local-6989586621679400746"><span class="hs-identifier hs-var">txOutF</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">datumHash</span><span> </span><span class="annot"><span class="annottext">((PMaybeData PDatumHash s -&gt; Term s (PMaybe (PAsData PStakeDatum)))
+</span><a href="#local-6989586621679400815"><span class="hs-identifier hs-var">txOutF</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">datumHash</span><span> </span><span class="annot"><span class="annottext">((PMaybeData PDatumHash s -&gt; Term s (PMaybe (PAsData PStakeDatum)))
  -&gt; Term s (PMaybe (PAsData PStakeDatum)))
 -&gt; (PMaybeData PDatumHash s
     -&gt; Term s (PMaybe (PAsData PStakeDatum)))
@@ -1128,8 +1128,8 @@ forall (a :: PType) (s :: S). PMaybe a s
  (a :: PType) ~ (PUnLabel (IndexList @PLabeledType n as) :: PType),
  PFromDataable a b) =&gt;
 Term s (p :--&gt; b)
-</span><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pfield</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-string">&quot;_0&quot;</span></span><span> </span><span class="hs-operator">#</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span id="local-6989586621679400744"><span class="annot"><span class="annottext">Term s PDatumHash
-</span><a href="#local-6989586621679400744"><span class="hs-identifier hs-var">dh</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">P.do</span><span>
+</span><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pfield</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-string">&quot;_0&quot;</span></span><span> </span><span class="hs-operator">#</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span id="local-6989586621679400813"><span class="annot"><span class="annottext">Term s PDatumHash
+</span><a href="#local-6989586621679400813"><span class="hs-identifier hs-var">dh</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">P.do</span><span>
 </span><span id="line-283"></span><span>            </span><span class="annot"><span class="annottext">forall (a :: PType) (s :: S).
 PTryFrom PData a =&gt;
 Term
@@ -1150,7 +1150,7 @@ Term
 forall (s :: S) (a :: PType) (b :: PType).
 Term s (a :--&gt; b) -&gt; Term s a -&gt; Term s b
 </span><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-var">#</span></a></span><span> </span><span class="annot"><span class="annottext">Term s PDatumHash
-</span><a href="#local-6989586621679400744"><span class="hs-identifier hs-var">dh</span></a></span><span> </span><span class="annot"><span class="annottext">Term
+</span><a href="#local-6989586621679400813"><span class="hs-identifier hs-var">dh</span></a></span><span> </span><span class="annot"><span class="annottext">Term
   s
   (PBuiltinList (PAsData (PTuple PDatumHash PDatum))
    :--&gt; PMaybe (PAsData PStakeDatum))
@@ -1159,7 +1159,7 @@ Term s (a :--&gt; b) -&gt; Term s a -&gt; Term s b
 forall (s :: S) (a :: PType) (b :: PType).
 Term s (a :--&gt; b) -&gt; Term s a -&gt; Term s b
 </span><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-var">#</span></a></span><span> </span><span class="annot"><span class="annottext">Term s (PBuiltinList (PAsData (PTuple PDatumHash PDatum)))
-</span><a href="#local-6989586621679400758"><span class="hs-identifier hs-var">datums</span></a></span><span>
+</span><a href="#local-6989586621679400827"><span class="hs-identifier hs-var">datums</span></a></span><span>
 </span><span id="line-284"></span><span>
 </span><span id="line-285"></span><span class="annot"><a href="Agora.Stake.html#stakeDatumOwnedBy"><span class="hs-identifier hs-type">stakeDatumOwnedBy</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span> </span><span class="annot"><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PPubKeyHash</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-type">:--&gt;</span></a></span><span> </span><span class="annot"><a href="Agora.Stake.html#PStakeDatum"><span class="hs-identifier hs-type">PStakeDatum</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-type">:--&gt;</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PBool</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-286"></span><span id="stakeDatumOwnedBy"><span class="annot"><span class="annottext">stakeDatumOwnedBy :: Term w (PPubKeyHash :--&gt; (PStakeDatum :--&gt; PBool))
@@ -1185,17 +1185,17 @@ PLamN a b s =&gt;
 -&gt; (Term s PPubKeyHash -&gt; Term s PStakeDatum -&gt; Term s PBool)
 -&gt; Term s (PPubKeyHash :--&gt; (PStakeDatum :--&gt; PBool))
 forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><a href="../file:///nix/store/kq3z27pzg8pc38yjr84kzncicvpzhan0-ghc-9.2.1-doc/share/doc/ghc/html/libraries/base-4.16.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679400717"><span class="annot"><span class="annottext">Term s PPubKeyHash
-</span><a href="#local-6989586621679400717"><span class="hs-identifier hs-var">pk</span></a></span></span><span> </span><span id="local-6989586621679400716"><span class="annot"><span class="annottext">Term s PStakeDatum
-</span><a href="#local-6989586621679400716"><span class="hs-identifier hs-var">stakeDatum</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">P.do</span><span>
-</span><span id="line-289"></span><span>      </span><span id="local-6989586621679400715"><span class="annot"><span class="annottext">HRec
+</span><a href="../file:///nix/store/kq3z27pzg8pc38yjr84kzncicvpzhan0-ghc-9.2.1-doc/share/doc/ghc/html/libraries/base-4.16.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679400786"><span class="annot"><span class="annottext">Term s PPubKeyHash
+</span><a href="#local-6989586621679400786"><span class="hs-identifier hs-var">pk</span></a></span></span><span> </span><span id="local-6989586621679400785"><span class="annot"><span class="annottext">Term s PStakeDatum
+</span><a href="#local-6989586621679400785"><span class="hs-identifier hs-var">stakeDatum</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">P.do</span><span>
+</span><span id="line-289"></span><span>      </span><span id="local-6989586621679400784"><span class="annot"><span class="annottext">HRec
   (BoundTerms
      (PFields (PInner PStakeDatum (Any @PType)))
      (Bindings
         (PFields (PInner PStakeDatum (Any @PType)))
         ((':) @Symbol &quot;owner&quot; ('[] @Symbol)))
      s)
-</span><a href="#local-6989586621679400715"><span class="hs-identifier hs-var">stakeDatumF</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">forall (fs :: [Symbol]) (a :: PType) (s :: S) (b :: PType)
+</span><a href="#local-6989586621679400784"><span class="hs-identifier hs-var">stakeDatumF</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">forall (fs :: [Symbol]) (a :: PType) (s :: S) (b :: PType)
        (ps :: [PLabeledType]) (bs :: [ToBind]).
 (PDataFields a,
  (ps :: [PLabeledType]) ~ (PFields a :: [PLabeledType]),
@@ -1228,7 +1228,7 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 forall (s :: S) (a :: PType).
 Term s a -&gt; forall (b :: PType). Term s (PInner a b)
 </span><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pto</span></a></span><span> </span><span class="annot"><span class="annottext">Term s PStakeDatum
-</span><a href="#local-6989586621679400716"><span class="hs-identifier hs-var">stakeDatum</span></a></span><span>
+</span><a href="#local-6989586621679400785"><span class="hs-identifier hs-var">stakeDatum</span></a></span><span>
 </span><span id="line-290"></span><span>      </span><span class="annot"><span class="annottext">HRec
   (BoundTerms
      (PFields (PInner PStakeDatum (Any @PType)))
@@ -1236,7 +1236,7 @@ Term s a -&gt; forall (b :: PType). Term s (PInner a b)
         (PFields (PInner PStakeDatum (Any @PType)))
         ((':) @Symbol &quot;owner&quot; ('[] @Symbol)))
      s)
-</span><a href="#local-6989586621679400715"><span class="hs-identifier hs-var">stakeDatumF</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">owner</span><span> </span><span class="annot"><span class="annottext">Term s (PAsData PPubKeyHash)
+</span><a href="#local-6989586621679400784"><span class="hs-identifier hs-var">stakeDatumF</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">owner</span><span> </span><span class="annot"><span class="annottext">Term s (PAsData PPubKeyHash)
 -&gt; Term s (PAsData PPubKeyHash) -&gt; Term s PBool
 forall (t :: PType) (s :: S).
 PEq t =&gt;
@@ -1246,7 +1246,7 @@ forall (a :: PType) (s :: S).
 PIsData a =&gt;
 Term s a -&gt; Term s (PAsData a)
 </span><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pdata</span></a></span><span> </span><span class="annot"><span class="annottext">Term s PPubKeyHash
-</span><a href="#local-6989586621679400717"><span class="hs-identifier hs-var">pk</span></a></span><span>
+</span><a href="#local-6989586621679400786"><span class="hs-identifier hs-var">pk</span></a></span><span>
 </span><span id="line-291"></span><span>
 </span><span id="line-292"></span><span class="hs-comment">-- Does the input have a `Stake` owned by a particular PK?</span><span>
 </span><span id="line-293"></span><span class="annot"><a href="Agora.Stake.html#isInputStakeOwnedBy"><span class="hs-identifier hs-type">isInputStakeOwnedBy</span></a></span><span> </span><span class="hs-glyph">::</span><span>
@@ -1301,11 +1301,11 @@ PLamN a b s =&gt;
             :--&gt; (PBuiltinList (PAsData (PTuple PDatumHash PDatum))
                   :--&gt; (PAsData PTxInInfo :--&gt; PBool))))
 forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><a href="../file:///nix/store/kq3z27pzg8pc38yjr84kzncicvpzhan0-ghc-9.2.1-doc/share/doc/ghc/html/libraries/base-4.16.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679400630"><span class="annot"><span class="annottext">Term s PAssetClass
-</span><a href="#local-6989586621679400630"><span class="hs-identifier hs-var">ac</span></a></span></span><span> </span><span id="local-6989586621679400629"><span class="annot"><span class="annottext">Term s PPubKeyHash
-</span><a href="#local-6989586621679400629"><span class="hs-identifier hs-var">ss</span></a></span></span><span> </span><span id="local-6989586621679400628"><span class="annot"><span class="annottext">Term s (PBuiltinList (PAsData (PTuple PDatumHash PDatum)))
-</span><a href="#local-6989586621679400628"><span class="hs-identifier hs-var">datums</span></a></span></span><span> </span><span id="local-6989586621679400627"><span class="annot"><span class="annottext">Term s (PAsData PTxInInfo)
-</span><a href="#local-6989586621679400627"><span class="hs-identifier hs-var">txInInfo'</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">P.do</span><span>
+</span><a href="../file:///nix/store/kq3z27pzg8pc38yjr84kzncicvpzhan0-ghc-9.2.1-doc/share/doc/ghc/html/libraries/base-4.16.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679400699"><span class="annot"><span class="annottext">Term s PAssetClass
+</span><a href="#local-6989586621679400699"><span class="hs-identifier hs-var">ac</span></a></span></span><span> </span><span id="local-6989586621679400698"><span class="annot"><span class="annottext">Term s PPubKeyHash
+</span><a href="#local-6989586621679400698"><span class="hs-identifier hs-var">ss</span></a></span></span><span> </span><span id="local-6989586621679400697"><span class="annot"><span class="annottext">Term s (PBuiltinList (PAsData (PTuple PDatumHash PDatum)))
+</span><a href="#local-6989586621679400697"><span class="hs-identifier hs-var">datums</span></a></span></span><span> </span><span id="local-6989586621679400696"><span class="annot"><span class="annottext">Term s (PAsData PTxInInfo)
+</span><a href="#local-6989586621679400696"><span class="hs-identifier hs-var">txInInfo'</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">P.do</span><span>
 </span><span id="line-303"></span><span>    </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PTxInInfo</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall (name :: Symbol) (p :: PType) (s :: S) (a :: PType)
        (as :: [PLabeledType]) (n :: Nat) (b :: PType).
 (PDataFields p,
@@ -1314,8 +1314,8 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
  (a :: PType) ~ (PUnLabel (IndexList @PLabeledType n as) :: PType),
  PFromDataable a b) =&gt;
 Term s (p :--&gt; b)
-</span><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pfield</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-string">&quot;resolved&quot;</span></span><span> </span><span class="hs-operator">#</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span id="local-6989586621679400626"><span class="annot"><span class="annottext">Term s PTxOut
-</span><a href="#local-6989586621679400626"><span class="hs-identifier hs-var">txOut</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Term s PTxInInfo -&gt; (PTxInInfo s -&gt; Term s PBool) -&gt; Term s PBool
+</span><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pfield</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-string">&quot;resolved&quot;</span></span><span> </span><span class="hs-operator">#</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span id="local-6989586621679400695"><span class="annot"><span class="annottext">Term s PTxOut
+</span><a href="#local-6989586621679400695"><span class="hs-identifier hs-var">txOut</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Term s PTxInInfo -&gt; (PTxInInfo s -&gt; Term s PBool) -&gt; Term s PBool
 forall (a :: PType) (s :: S) (b :: PType).
 PMatch a =&gt;
 Term s a -&gt; (a s -&gt; Term s b) -&gt; Term s b
@@ -1329,8 +1329,8 @@ forall (a :: PType) (s :: S).
 PIsData a =&gt;
 Term s (PAsData a) -&gt; Term s a
 </span><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pfromData</span></a></span><span> </span><span class="annot"><span class="annottext">Term s (PAsData PTxInInfo)
-</span><a href="#local-6989586621679400627"><span class="hs-identifier hs-var">txInInfo'</span></a></span><span>
-</span><span id="line-304"></span><span>    </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PTxOut</span></a></span><span> </span><span id="local-6989586621679400625"><span class="annot"><span class="annottext">Term
+</span><a href="#local-6989586621679400696"><span class="hs-identifier hs-var">txInInfo'</span></a></span><span>
+</span><span id="line-304"></span><span>    </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PTxOut</span></a></span><span> </span><span id="local-6989586621679400694"><span class="annot"><span class="annottext">Term
   s
   (PDataRecord
      ((':)
@@ -1343,13 +1343,13 @@ Term s (PAsData a) -&gt; Term s a
               @PLabeledType
               (&quot;datumHash&quot; ':= PMaybeData PDatumHash)
               ('[] @PLabeledType)))))
-</span><a href="#local-6989586621679400625"><span class="hs-identifier hs-var">txOut'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Term s PTxOut -&gt; (PTxOut s -&gt; Term s PBool) -&gt; Term s PBool
+</span><a href="#local-6989586621679400694"><span class="hs-identifier hs-var">txOut'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Term s PTxOut -&gt; (PTxOut s -&gt; Term s PBool) -&gt; Term s PBool
 forall (a :: PType) (s :: S) (b :: PType).
 PMatch a =&gt;
 Term s a -&gt; (a s -&gt; Term s b) -&gt; Term s b
 </span><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pmatch</span></a></span><span> </span><span class="annot"><span class="annottext">Term s PTxOut
-</span><a href="#local-6989586621679400626"><span class="hs-identifier hs-var">txOut</span></a></span><span>
-</span><span id="line-305"></span><span>    </span><span id="local-6989586621679400624"><span class="annot"><span class="annottext">HRec
+</span><a href="#local-6989586621679400695"><span class="hs-identifier hs-var">txOut</span></a></span><span>
+</span><span id="line-305"></span><span>    </span><span id="local-6989586621679400693"><span class="annot"><span class="annottext">HRec
   ((':)
      @(Symbol, Type)
      '(&quot;value&quot;, Term s (PAsData PValue))
@@ -1357,7 +1357,7 @@ Term s a -&gt; (a s -&gt; Term s b) -&gt; Term s b
         @(Symbol, Type)
         '(&quot;datumHash&quot;, Term s (PAsData (PMaybeData PDatumHash)))
         ('[] @(Symbol, Type))))
-</span><a href="#local-6989586621679400624"><span class="hs-identifier hs-var">txOutF</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">forall (fs :: [Symbol]) (a :: PType) (s :: S) (b :: PType)
+</span><a href="#local-6989586621679400693"><span class="hs-identifier hs-var">txOutF</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">forall (fs :: [Symbol]) (a :: PType) (s :: S) (b :: PType)
        (ps :: [PLabeledType]) (bs :: [ToBind]).
 (PDataFields a,
  (ps :: [PLabeledType]) ~ (PFields a :: [PLabeledType]),
@@ -1377,9 +1377,9 @@ Term s a -&gt; (HRec (BoundTerms ps bs s) -&gt; Term s b) -&gt; Term s b
               @PLabeledType
               (&quot;datumHash&quot; ':= PMaybeData PDatumHash)
               ('[] @PLabeledType)))))
-</span><a href="#local-6989586621679400625"><span class="hs-identifier hs-var">txOut'</span></a></span><span>
-</span><span id="line-306"></span><span>    </span><span id="local-6989586621679400623"><span class="annot"><span class="annottext">Term s (PInteger @S)
-</span><a href="#local-6989586621679400623"><span class="hs-identifier hs-var">outStakeST</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Term s (PInteger @S)
+</span><a href="#local-6989586621679400694"><span class="hs-identifier hs-var">txOut'</span></a></span><span>
+</span><span id="line-306"></span><span>    </span><span id="local-6989586621679400692"><span class="annot"><span class="annottext">Term s (PInteger @S)
+</span><a href="#local-6989586621679400692"><span class="hs-identifier hs-var">outStakeST</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Term s (PInteger @S)
 -&gt; (Term s (PInteger @S) -&gt; Term s PBool) -&gt; Term s PBool
 forall (s :: S) (a :: PType) (b :: PType).
 Term s a -&gt; (Term s a -&gt; Term s b) -&gt; Term s b
@@ -1407,12 +1407,12 @@ Term s (a :--&gt; b) -&gt; Term s a -&gt; Term s b
         @(Symbol, Type)
         '(&quot;datumHash&quot;, Term s (PAsData (PMaybeData PDatumHash)))
         ('[] @(Symbol, Type))))
-</span><a href="#local-6989586621679400624"><span class="hs-identifier hs-var">txOutF</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">value</span><span> </span><span class="annot"><span class="annottext">Term s (PAssetClass :--&gt; PInteger @S)
+</span><a href="#local-6989586621679400693"><span class="hs-identifier hs-var">txOutF</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">value</span><span> </span><span class="annot"><span class="annottext">Term s (PAssetClass :--&gt; PInteger @S)
 -&gt; Term s PAssetClass -&gt; Term s (PInteger @S)
 forall (s :: S) (a :: PType) (b :: PType).
 Term s (a :--&gt; b) -&gt; Term s a -&gt; Term s b
 </span><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-var">#</span></a></span><span> </span><span class="annot"><span class="annottext">Term s PAssetClass
-</span><a href="#local-6989586621679400630"><span class="hs-identifier hs-var">ac</span></a></span><span>
+</span><a href="#local-6989586621679400699"><span class="hs-identifier hs-var">ac</span></a></span><span>
 </span><span id="line-307"></span><span>    </span><span class="annot"><span class="annottext">Term s (PMaybeData PDatumHash)
 -&gt; (PMaybeData PDatumHash s -&gt; Term s PBool) -&gt; Term s PBool
 forall (a :: PType) (s :: S) (b :: PType).
@@ -1426,7 +1426,7 @@ Term s a -&gt; (a s -&gt; Term s b) -&gt; Term s b
         @(Symbol, Type)
         '(&quot;datumHash&quot;, Term s (PAsData (PMaybeData PDatumHash)))
         ('[] @(Symbol, Type))))
-</span><a href="#local-6989586621679400624"><span class="hs-identifier hs-var">txOutF</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">datumHash</span><span> </span><span class="annot"><span class="annottext">((PMaybeData PDatumHash s -&gt; Term s PBool) -&gt; Term s PBool)
+</span><a href="#local-6989586621679400693"><span class="hs-identifier hs-var">txOutF</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">datumHash</span><span> </span><span class="annot"><span class="annottext">((PMaybeData PDatumHash s -&gt; Term s PBool) -&gt; Term s PBool)
 -&gt; (PMaybeData PDatumHash s -&gt; Term s PBool) -&gt; Term s PBool
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><a href="../file:///nix/store/kq3z27pzg8pc38yjr84kzncicvpzhan0-ghc-9.2.1-doc/share/doc/ghc/html/libraries/base-4.16.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
@@ -1444,14 +1444,14 @@ forall (s :: S). PBool s
  (a :: PType) ~ (PUnLabel (IndexList @PLabeledType n as) :: PType),
  PFromDataable a b) =&gt;
 Term s (p :--&gt; b)
-</span><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pfield</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-string">&quot;_0&quot;</span></span><span> </span><span class="hs-operator">#</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span id="local-6989586621679400620"><span class="annot"><span class="annottext">Term s PDatumHash
-</span><a href="#local-6989586621679400620"><span class="hs-identifier hs-var">datumHash</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pfield</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-string">&quot;_0&quot;</span></span><span> </span><span class="hs-operator">#</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span id="local-6989586621679400689"><span class="annot"><span class="annottext">Term s PDatumHash
+</span><a href="#local-6989586621679400689"><span class="hs-identifier hs-var">datumHash</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
 </span><span id="line-310"></span><span>        </span><span class="annot"><span class="annottext">Term s PBool -&gt; Term s PBool -&gt; Term s PBool -&gt; Term s PBool
 forall (s :: S) (a :: PType).
 Term s PBool -&gt; Term s a -&gt; Term s a -&gt; Term s a
 </span><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pif</span></a></span><span>
 </span><span id="line-311"></span><span>          </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Term s (PInteger @S)
-</span><a href="#local-6989586621679400623"><span class="hs-identifier hs-var">outStakeST</span></a></span><span> </span><span class="annot"><span class="annottext">Term s (PInteger @S) -&gt; Term s (PInteger @S) -&gt; Term s PBool
+</span><a href="#local-6989586621679400692"><span class="hs-identifier hs-var">outStakeST</span></a></span><span> </span><span class="annot"><span class="annottext">Term s (PInteger @S) -&gt; Term s (PInteger @S) -&gt; Term s PBool
 forall (t :: PType) (s :: S).
 PEq t =&gt;
 Term s t -&gt; Term s t -&gt; Term s PBool
@@ -1482,7 +1482,7 @@ Term
 forall (s :: S) (a :: PType) (b :: PType).
 Term s (a :--&gt; b) -&gt; Term s a -&gt; Term s b
 </span><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-var">#</span></a></span><span> </span><span class="annot"><span class="annottext">Term s PDatumHash
-</span><a href="#local-6989586621679400620"><span class="hs-identifier hs-var">datumHash</span></a></span><span> </span><span class="annot"><span class="annottext">Term
+</span><a href="#local-6989586621679400689"><span class="hs-identifier hs-var">datumHash</span></a></span><span> </span><span class="annot"><span class="annottext">Term
   s
   (PBuiltinList (PAsData (PTuple PDatumHash PDatum))
    :--&gt; PMaybe (PAsData PStakeDatum))
@@ -1491,7 +1491,7 @@ Term s (a :--&gt; b) -&gt; Term s a -&gt; Term s b
 forall (s :: S) (a :: PType) (b :: PType).
 Term s (a :--&gt; b) -&gt; Term s a -&gt; Term s b
 </span><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-var">#</span></a></span><span> </span><span class="annot"><span class="annottext">Term s (PBuiltinList (PAsData (PTuple PDatumHash PDatum)))
-</span><a href="#local-6989586621679400628"><span class="hs-identifier hs-var">datums</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">((PMaybe (PAsData PStakeDatum) s -&gt; Term s PBool) -&gt; Term s PBool)
+</span><a href="#local-6989586621679400697"><span class="hs-identifier hs-var">datums</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">((PMaybe (PAsData PStakeDatum) s -&gt; Term s PBool) -&gt; Term s PBool)
 -&gt; (PMaybe (PAsData PStakeDatum) s -&gt; Term s PBool) -&gt; Term s PBool
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><a href="../file:///nix/store/kq3z27pzg8pc38yjr84kzncicvpzhan0-ghc-9.2.1-doc/share/doc/ghc/html/libraries/base-4.16.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
@@ -1501,15 +1501,15 @@ forall (a :: PType) (s :: S). PCon a =&gt; a s -&gt; Term s a
 </span><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pcon</span></a></span><span> </span><span class="annot"><span class="annottext">PBool s
 forall (s :: S). PBool s
 </span><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">PFalse</span></a></span><span>
-</span><span id="line-314"></span><span>              </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PJust</span></a></span><span> </span><span id="local-6989586621679400618"><span class="annot"><span class="annottext">Term s (PAsData PStakeDatum)
-</span><a href="#local-6989586621679400618"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Term s (PPubKeyHash :--&gt; (PStakeDatum :--&gt; PBool))
+</span><span id="line-314"></span><span>              </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PJust</span></a></span><span> </span><span id="local-6989586621679400687"><span class="annot"><span class="annottext">Term s (PAsData PStakeDatum)
+</span><a href="#local-6989586621679400687"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Term s (PPubKeyHash :--&gt; (PStakeDatum :--&gt; PBool))
 ClosedTerm (PPubKeyHash :--&gt; (PStakeDatum :--&gt; PBool))
 </span><a href="Agora.Stake.html#stakeDatumOwnedBy"><span class="hs-identifier hs-var">stakeDatumOwnedBy</span></a></span><span> </span><span class="annot"><span class="annottext">Term s (PPubKeyHash :--&gt; (PStakeDatum :--&gt; PBool))
 -&gt; Term s PPubKeyHash -&gt; Term s (PStakeDatum :--&gt; PBool)
 forall (s :: S) (a :: PType) (b :: PType).
 Term s (a :--&gt; b) -&gt; Term s a -&gt; Term s b
 </span><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-var">#</span></a></span><span> </span><span class="annot"><span class="annottext">Term s PPubKeyHash
-</span><a href="#local-6989586621679400629"><span class="hs-identifier hs-var">ss</span></a></span><span> </span><span class="annot"><span class="annottext">Term s (PStakeDatum :--&gt; PBool)
+</span><a href="#local-6989586621679400698"><span class="hs-identifier hs-var">ss</span></a></span><span> </span><span class="annot"><span class="annottext">Term s (PStakeDatum :--&gt; PBool)
 -&gt; Term s PStakeDatum -&gt; Term s PBool
 forall (s :: S) (a :: PType) (b :: PType).
 Term s (a :--&gt; b) -&gt; Term s a -&gt; Term s b
@@ -1520,7 +1520,7 @@ Term s (PAsData a) -&gt; Term s a
 </span><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pfromData</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Term s (PAsData PStakeDatum) -&gt; Term s (PAsData PStakeDatum)
 forall (s :: S) (a :: PType) (b :: PType). Term s a -&gt; Term s b
 </span><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">punsafeCoerce</span></a></span><span> </span><span class="annot"><span class="annottext">Term s (PAsData PStakeDatum)
-</span><a href="#local-6989586621679400618"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679400687"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-315"></span><span>          </span><span class="hs-special">)</span><span>
 </span><span id="line-316"></span><span>          </span><span class="hs-special">(</span><span class="annot"><span class="annottext">PBool s -&gt; Term s PBool
 forall (a :: PType) (s :: S). PCon a =&gt; a s -&gt; Term s a
