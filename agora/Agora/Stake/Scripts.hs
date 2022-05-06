@@ -22,8 +22,8 @@ import Agora.Utils (
   psymbolValueOf,
   ptokenSpent,
   ptxSignedBy,
+  pvalidatorHashToTokenName,
   pvalueSpent,
-  validatorHashToTokenName,
  )
 import Plutarch.Api.V1 (
   PCredential (PPubKeyCredential, PScriptCredential),
@@ -117,7 +117,7 @@ stakePolicy gtClassRef =
                   PScriptCredential validatorHash -> P.do
                     stakeDatum <- pletFields @'["owner", "stakedAmount"] stakeDatum'
 
-                    tn :: Term _ PTokenName <- plet (validatorHashToTokenName $ pfromData $ pfield @"_0" # validatorHash)
+                    tn :: Term _ PTokenName <- plet (pvalidatorHashToTokenName $ pfromData $ pfield @"_0" # validatorHash)
 
                     let stValue =
                           psingletonValue

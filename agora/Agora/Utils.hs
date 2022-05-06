@@ -39,11 +39,13 @@ module Agora.Utils (
   findOutputsToAddress,
   findTxOutDatum,
   validatorHashToTokenName,
+  pvalidatorHashToTokenName,
   getMintingPolicySymbol,
 ) where
 
 --------------------------------------------------------------------------------
 
+import Plutus.V1.Ledger.Api (TokenName (..), ValidatorHash (..))
 import Plutus.V1.Ledger.Value (AssetClass (..))
 
 --------------------------------------------------------------------------------
@@ -474,8 +476,12 @@ findTxOutDatum = phoistAcyclic $
 {- | Safely convert a 'PValidatorHash' into a 'PTokenName'. This can be useful for tagging
      tokens for extra safety.
 -}
-validatorHashToTokenName :: forall (s :: S). Term s PValidatorHash -> Term s PTokenName
-validatorHashToTokenName vh = pcon (PTokenName (pto vh))
+validatorHashToTokenName :: ValidatorHash -> TokenName
+validatorHashToTokenName (ValidatorHash hash) = TokenName hash
+
+-- | Plutarch level 'validatorHashToTokenName'.
+pvalidatorHashToTokenName :: forall (s :: S). Term s PValidatorHash -> Term s PTokenName
+pvalidatorHashToTokenName vh = pcon (PTokenName (pto vh))
 
 -- | Get the CurrencySymbol of a PMintingPolicy.
 getMintingPolicySymbol :: ClosedTerm PMintingPolicy -> CurrencySymbol
