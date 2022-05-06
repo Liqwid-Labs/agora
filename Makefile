@@ -1,7 +1,7 @@
 # This really ought to be `/usr/bin/env bash`, but nix flakes don't like that.
 SHELL := /bin/sh
 
-.PHONY: hoogle format haddock usage
+.PHONY: hoogle format haddock usage lint
 
 usage:
 	@echo "usage: make <command> [OPTIONS]"
@@ -40,3 +40,5 @@ haddock:
 tag:
 	hasktags -x agora agora-bench agora-test
 
+lint:
+	hlint agora agora-bench agora-test
