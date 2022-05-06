@@ -6,18 +6,18 @@ guidance for constructing such effects.
 
 # Making an Effect
 
-All effects are used once, and all required data will be sent via Datum,
-not Redeemer. So, at first, one must setup a datum for an effect. It is
-recommanded to have both Haskell-level(Plutus style) and plutarch-level
-definition of the datum. These two can be bridge with Plutarch\'s
-[PConstant and
+Effects will only be run once and all of the data they require must be
+kept in their datums, and not their redeemers. Therefore, it makes
+sense for us to start this discussion with datums. It is recommanded
+to have your effect datums at the Haskell and Plutarch levels. These
+levels can be bridge with Plutarch\'s [PConstant and
 PLift](https://github.com/Plutonomicon/plutarch/blob/master/docs/Typeclasses/PConstant%20and%20PLift.md).
-Also `PTryFrom` instance is also required to parse raw \`PData\` from
+A `PTryFrom` instance is also required to parse raw \`PData\` from
 validator into the specified datum of effect Validator.
 
 ## Effect Datum
 
-First, the Haskell-level definition of Datum--Plutus style.
+First, the Haskell-level definition of Datum.
 
 ``` haskell
 data TreasuryWithdrawalDatum = TreasuryWithdrawalDatum
@@ -63,8 +63,7 @@ deriving via
     (PConstant TreasuryWithdrawalDatum)
 ```
 
-Finally, `PTryFrom PData (Desired Datum type)` is required.
-~~`punsafeCoerce` might not be the best~~
+Finally, `PTryFrom PData (Desired Datum type)`:
 
 ``` haskell
 instance PTryFrom PData PTreasuryWithdrawalDatum where
@@ -78,9 +77,9 @@ instance PTryFrom PData PTreasuryWithdrawalDatum where
 > [Plutonomicon/plutarch](https://github.com/Plutonomicon/plutarch/tree/master/docs)
 > repository. Well, except `PTryFrom`...
 
-## Effect Validator Boilderplate
+## Effect Validator Boilerplate
 
-In Agora, Effects can be built with given `makeEffect` function. This
+In Agora, Effects can be built with the given `makeEffect` function. This
 function is a simple boilderplate that checks for correct handling of
 GAT, leaving effect creator only with the effect logic itself.
 
@@ -118,9 +117,9 @@ fact, It is very useful for
 > Utility functions handling `PTxInfo` and `PTxInfo` is provided in
 > Agora/Util.hs
 
-## Effect Validator Logics
+## Effect Validator Logic
 
-The most important piece of the validator is still not discussed: the
+The most important piece of the validator has still not been discussed: the
 validator logic. As explained above validators ensures a transaction is
 correctly built and will only have the wanted \"effect\". If an effect
 fail to do that, it is a vulnerability to entire goverance system.

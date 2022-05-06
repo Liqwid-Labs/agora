@@ -1,12 +1,12 @@
 This folder is the test suite for Agora governance system.
 
--   `/Spec`{.verbatim} contains different tests for different elements
+-   `/Spec` contains different tests for different elements
     of Agora.
--   `/Spec/Model`{.verbatim} contain `apropos-tx`{.verbatim} model for
+-   `/Spec/Model` contain `apropos-tx` model for
     logical suite generation and tests.
--   `/Spec/Sample`{.verbatim} contains primitive hand-made example
+-   `/Spec/Sample` contains primitive hand-made example
     values.
--   `Util.hs`{.verbatim} contains helper functions
+-   `Util.hs` contains helper functions
 
-Currently, planning to introduce `plutarch-test`{.verbatim} for unit
+Currently, planning to introduce `plutarch-test` for unit
 tests, benchmarks, and golden tests.
