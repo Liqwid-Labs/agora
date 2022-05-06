@@ -111,6 +111,7 @@ common deps
 
 common test-deps
   build-depends:
+    , agora
     , apropos
     , apropos-tx
     , lens
@@ -137,11 +138,10 @@ library
     Agora.Stake
     Agora.Stake.Scripts
     Agora.Treasury
-
-  other-modules:
     Agora.Utils
     Agora.Utils.Value
 
+  other-modules:
   hs-source-dirs:  agora
 
 library pprelude

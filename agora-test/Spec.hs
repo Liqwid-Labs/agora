@@ -1,14 +1,3 @@
-{- |
-Module: Main
-Description: Agora test suite.
-Maintainer: emi@haskell.fyi
-
-This module is the root of Agora's test suite.
--}
-module Main (main) where
-
---------------------------------------------------------------------------------
-
 import Prelude
 
 --------------------------------------------------------------------------------
@@ -43,6 +32,12 @@ main =
           "Proposal tests"
           Proposal.tests
       , testGroup
+          "AuthorityToken tests"
+          AuthorityToken.tests
+      , testGroup
+          "Treasury tests"
+          Treasury.tests
+      , testGroup
           "Multisig tests"
           [ testGroup
               "MultiSig"
@@ -50,10 +45,4 @@ main =
               , MultiSig.genTests
               ]
           ]
-      , testGroup
-          "AuthorityToken tests"
-          AuthorityToken.tests
-      , testGroup
-          "Treasury tests"
-          Treasury.tests
       ]

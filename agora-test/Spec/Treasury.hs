@@ -45,11 +45,15 @@ import Plutus.V1.Ledger.Scripts (
   ValidatorHash (ValidatorHash),
  )
 import Plutus.V1.Ledger.Value qualified as Value
+
+-- BadTreasuryRedeemer (NukeTheSystem),
+
+import Spec.Sample.Shared (
+  trCredential,
+ )
 import Spec.Sample.Treasury (
-  -- BadTreasuryRedeemer (NukeTheSystem),
   gatCs,
   gatTn,
-  trCredential,
   treasuryRef,
   validCtx,
   walletIn,
@@ -104,14 +108,7 @@ tests =
                             StakingHash trCredential
                     }
               ]
-          , -- , validatorFailsWith -- TODO: Check.
-            --     "Fails with invalid redeemer"
-            --     (treasuryValidator gatCs)
-            --     ()
-            --     (NukeTheSystem 72)
-            --     validCtx
-
-            validatorFailsWith -- TODO: Use QuickCheck.
+          , validatorFailsWith -- TODO: Use QuickCheck.
               "Fails when multiple GATs burned"
               (treasuryValidator gatCs)
               ()
