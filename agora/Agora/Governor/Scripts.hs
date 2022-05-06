@@ -86,6 +86,7 @@ import Agora.Utils (
   pvalueSpent,
   scriptHashFromAddress,
   validatorHashToAddress,
+  validatorHashToTokenName,
  )
 
 --------------------------------------------------------------------------------
@@ -129,7 +130,6 @@ import Plutarch.TryFrom (ptryFrom)
 import Plutus.V1.Ledger.Api (
   CurrencySymbol (..),
   MintingPolicy,
-  TokenName (..),
  )
 import Plutus.V1.Ledger.Scripts (ValidatorHash (..))
 import Plutus.V1.Ledger.Value (
@@ -735,8 +735,7 @@ stakeSTAssetClassFromGovernor gov = AssetClass (symbol, tokenName)
     symbol = stakeSTSymbolFromGovernor gov
 
     -- Tag with the address where the token is being sent to.
-    ValidatorHash hash = stakeValidatorHashFromGovernor gov
-    tokenName = TokenName hash
+    tokenName = validatorHashToTokenName $ stakeValidatorHashFromGovernor gov
 
 stakeFromGovernor :: Governor -> Stake
 stakeFromGovernor gov =
