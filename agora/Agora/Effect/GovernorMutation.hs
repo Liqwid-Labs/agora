@@ -27,13 +27,11 @@ import Generics.SOP (Generic, I (I))
 --------------------------------------------------------------------------------
 
 import Plutarch.Api.V1 (
-  PMaybeData (PDJust),
   PTxOutRef,
   PValidator,
   PValue,
  )
 import Plutarch.Api.V1.Extra (pvalueOf)
-import Plutarch.Builtin (pforgetData)
 import Plutarch.DataRepr (
   DerivePConstantViaData (..),
   PDataFields,
@@ -57,6 +55,7 @@ import Agora.Governor (
   Governor,
   GovernorDatum,
   PGovernorDatum,
+  governorDatumValid,
  )
 import Agora.Governor.Scripts (
   authorityTokenSymbolFromGovernor,
@@ -64,8 +63,11 @@ import Agora.Governor.Scripts (
  )
 import Agora.Utils (
   findOutputsToAddress,
+  findTxOutByTxOutRef,
+  mustBePDJust,
+  mustBePJust,
   passert,
-  pfindDatum,
+  ptryFindDatum,
  )
 
 --------------------------------------------------------------------------------
@@ -99,7 +101,7 @@ newtype PMutateGovernorDatum (s :: S)
   deriving anyclass (Generic)
   deriving anyclass (PIsDataRepr)
   deriving
-    (PlutusType, PIsData, PDataFields)
+    (PlutusType, PIsData, PDataFields, PEq)
     via (PIsDataReprInstances PMutateGovernorDatum)
 
 instance PUnsafeLiftDecl PMutateGovernorDatum where type PLifted PMutateGovernorDatum = MutateGovernorDatum
@@ -130,11 +132,18 @@ instance PTryFrom PData (PAsData PMutateGovernorDatum) where
 -}
 mutateGovernorValidator :: Governor -> ClosedTerm PValidator
 mutateGovernorValidator gov = makeEffect (authorityTokenSymbolFromGovernor gov) $
-  \_gatCs (datum :: Term _ PMutateGovernorDatum) _txOutRef txInfo' -> P.do
-    let newDatum = pforgetData $ pfield @"newDatum" # datum
-        pinnedGovernor = pfield @"governorRef" # datum
+  \_gatCs (datum' :: Term _ PMutateGovernorDatum) txOutRef txInfo' -> P.do
+    datum <- pletFields @'["newDatum", "governorRef"] datum'
 
     txInfo <- pletFields @'["mint", "inputs", "outputs", "datums"] txInfo'
+
+    let selfAddress =
+          pfield @"address"
+            #$ mustBePJust # "Self governorInput not found"
+            #$ findTxOutByTxOutRef # txOutRef # txInfo.inputs
+
+    passert "No output to the effect validator" $
+      pnull #$ findOutputsToAddress # txInfo.outputs # selfAddress
 
     let mint :: Term _ (PBuiltinList _)
         mint = pto $ pto $ pto $ pfromData txInfo.mint
@@ -155,39 +164,39 @@ mutateGovernorValidator gov = makeEffect (authorityTokenSymbolFromGovernor gov) 
     passert "Governor's state token must be moved" $
       plength # filteredInputs #== 1
 
-    input <- plet $ phead # filteredInputs
+    governorInput <- plet $ phead # filteredInputs
 
     passert "Can only modify the pinned governor" $
-      pfield @"outRef" # input #== pinnedGovernor
+      pfield @"outRef" # governorInput #== datum.governorRef
 
     let govAddress =
           pfield @"address"
             #$ pfield @"resolved"
-            #$ pfromData input
+            #$ pfromData governorInput
 
     filteredOutputs <- plet $ findOutputsToAddress # pfromData txInfo.outputs # govAddress
 
     passert "Exactly one output to the governor" $
       plength # filteredOutputs #== 1
 
-    outputToGovernor <- plet $ phead # filteredOutputs
+    governorOutput <- plet $ phead # filteredOutputs
 
     passert "Governor's state token must stay at governor's address" $
-      (gstValueOf #$ pfield @"value" # outputToGovernor) #== 1
+      (gstValueOf #$ pfield @"value" # governorOutput) #== 1
 
-    outputDatumHash' <- pmatch $ pfromData $ pfield @"datumHash" # outputToGovernor
+    let governorOutputDatumHash =
+          mustBePDJust # "Governor output doesn't have datum"
+            #$ pfromData
+            $ pfield @"datumHash" # governorOutput
+        governorOutputDatum =
+          pfromData @PGovernorDatum $
+            mustBePJust # "Governor output datum not found"
+              #$ ptryFindDatum # governorOutputDatumHash # txInfo.datums
 
-    case outputDatumHash' of
-      PDJust (pfromData . (pfield @"_0" #) -> outputDatumHash) -> P.do
-        datum' <- pmatch $ pfindDatum # outputDatumHash # pfromData txInfo.datums
-        case datum' of
-          PJust datum -> P.do
-            passert "Unexpected output datum" $
-              pto datum #== newDatum
+    passert "Unexpected governor datum" $ datum.newDatum #== governorOutputDatum
+    passert "New governor datum should be valid" $ governorDatumValid # governorOutputDatum
 
-            popaque $ pconstant ()
-          _ -> ptraceError "Output datum not found"
-      _ -> ptraceError "Ouput to governor should have datum"
+    popaque $ pconstant ()
   where
     gstValueOf :: Term s (PValue :--> PInteger)
     gstValueOf = phoistAcyclic $ plam $ \v -> pvalueOf # v # pconstant cs # pconstant tn
