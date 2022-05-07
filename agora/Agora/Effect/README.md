@@ -1,8 +1,8 @@
-Effects describe a modification in the goverance system. Its job is to
-overlook transaction and to validate that transaction is doing a correct
-job. Thus, if an effect is compromised, the governance system will be
-exposed to fraudulent transactions. Agora and this guide will provides
-guidance for constructing such effects.
+Effects are changes to a protocol bundled in a proposal, which will be
+enacted if said proposal is passed by the DAO. The method by which we
+empower effects to make changes to the system, means that effects are
+very powerful and could cause harm, if misused. This guide will
+provide guidance for constructing these effects.
 
 # Making an Effect
 
@@ -10,7 +10,7 @@ Effects will only be run once and all of the data they require must be
 kept in their datums, and not their redeemers. Therefore, it makes
 sense for us to start this discussion with datums. It is recommanded
 to have your effect datums at the Haskell and Plutarch levels. These
-levels can be bridge with Plutarch\'s [PConstant and
+levels can be bridged with Plutarch\'s [PConstant and
 PLift](https://github.com/Plutonomicon/plutarch/blob/master/docs/Typeclasses/PConstant%20and%20PLift.md).
 A `PTryFrom` instance is also required to parse raw \`PData\` from
 validator into the specified datum of effect Validator.
@@ -28,9 +28,7 @@ data TreasuryWithdrawalDatum = TreasuryWithdrawalDatum
   deriving anyclass (Generic)
 ```
 
-Plutarch-level definition follows. Plutarch provides deriving strategy
-of for `PlutusType` and `PIsData` that conveniently defines bridge
-between `PData` and `PTreasurywithdrawaldatum`.
+Plutarch-level definition follows:
 
 ``` haskell
 newtype PTreasuryWithdrawalDatum (s :: S)
@@ -48,19 +46,13 @@ newtype PTreasuryWithdrawalDatum (s :: S)
   deriving
     (PlutusType, PIsData, PDataFields)
     via PIsDataReprInstances PTreasuryWithdrawalDatum
-```
-
-Following is used to create `PConstant` and `PLift`: a bridge between
-Haskell-level `TreasuryWithdrawalDatum` and Plutarch-level
-`TreasuryWithdrawalDatum`
-
-``` haskell
+	
 instance PUnsafeLiftDecl PTreasuryWithdrawalDatum where
   type PLifted PTreasuryWithdrawalDatum = TreasuryWithdrawalDatum
 deriving via
   (DerivePConstantViaData TreasuryWithdrawalDatum PTreasuryWithdrawalDatum)
   instance
-    (PConstant TreasuryWithdrawalDatum)
+    (PConstant TreasuryWithdrawalDatum)	
 ```
 
 Finally, `PTryFrom PData (Desired Datum type)`:
@@ -79,22 +71,23 @@ instance PTryFrom PData PTreasuryWithdrawalDatum where
 
 ## Effect Validator Boilerplate
 
-In Agora, Effects can be built with the given `makeEffect` function. This
-function is a simple boilderplate that checks for correct handling of
-GAT, leaving effect creator only with the effect logic itself.
+In Agora, Effects can be built with the given `makeEffect`
+function. This function is a simple boilderplate that checks the GAT
+is handled correctly. This means that the creator of the effect needs
+to only consider the implementation of their effect logic.
 
 ``` haskell
 makeEffect ::
   forall (datum :: PType).
   (PIsData datum, PTryFrom PData datum) =>
-  CurrencySymbol ->
+  CurrencySymbol ->  
+  -- ^ The Currency Symbol of DAO system
   (forall (s :: S). Term s PCurrencySymbol -> Term s datum -> Term s PTxOutRef -> Term s (PAsData PTxInfo) -> Term s POpaque) ->
+  -- ^ Validator logic
   ClosedTerm PValidator
 ```
 
-Above is the type signiture. currency symbol of governance system and a
-function containing effect logic should be given as arguments. For
-example
+Example effect validator would be:
 
 ``` haskell
 effectValidator :: forall {s :: S}. CurrencySymbol -> Term s PValidator
@@ -119,31 +112,41 @@ fact, It is very useful for
 
 ## Effect Validator Logic
 
-The most important piece of the validator has still not been discussed: the
-validator logic. As explained above validators ensures a transaction is
-correctly built and will only have the wanted \"effect\". If an effect
-fail to do that, it is a vulnerability to entire goverance system.
+The most important piece of the validator has still not been
+discussed: the validator logic. As explained above, validators ensure
+transactions are built correctly and behave as desired. An ill-formed
+effect could represent a vulnerability to the entire protocol.
 
-While most validator logics will have its own rules, there are some
-general checks should be made. Utility functions given in
-`Agora/Util.hs` will allow to build such general checks with ease. Such
-as
+Whilst the logic of most validators will be specific to those
+validators, there are some general points which should be considered
+in the construction of every effect. Utility functions in `Agora.Util`
+will assist a developer in ensuring that their effect abide by these
+considerations. These include:
 
--   All effects should burn GAT.
--   Transaction should never pay to effect.
--   For effects that only changes configuration of goverance system,
-    they should not allow monetary transactions inside of it.
--   For effects involves other transaction should be given datum, with
-    the list of expacted inputs and outputs, and strictly enforce the
-    given datum.
+-   All effect transactions should burn *exactly one* GAT.
+-   No transactions should result in funds being paid to an effect.
+-   Effects concerning configuration of the governance system should
+    not permit funds to be transferred between outputs.
+-   Needed informations for effect should be explicitly provided by
+    the effect datum.
 
-It is difficult to describe all step-by-step rules for writing some of
-more specific logics. However, there are some standards to follow
+It'd be impossible to describe step-by-step procedures for writing all
+possible effects, however these are some guidelines that you may find
+useful:
 
--   Validators should be specific enought to prevent possible attacks;
-    generality in validators gives more oppertunities to exploit.
--   Consider what informations can be provided to validators through the
-    datum. More specific and effective data will allow more specific
-    logics.
--   Having simple tests(even a temporary unit test) to check along the
-    way is a good idea.
+-   Validators should be specific enough to prevent unwanted
+    behaviour; generality in validators leaves more room for accidents
+    and exploitation.
+-   Consider what data could be provided to validators through the
+    datum. More and better information may prove helpful in writing
+    more powerful effects.
+-   Testing is vital. Consider testing with small unit tests
+    throughout development.
+
+> TODO:
+> Add "Testing Strategies" section when property testing or
+> Apropos get successfully integrated to Agora.
+> 
+> Add "Benchmarking Strategies" section when benchmarking system get
+> implemented.
+
