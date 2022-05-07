@@ -111,7 +111,7 @@ validContext =
       governorOutput :: TxOut
       governorOutput =
         TxOut
-          { txOutAddress = effectValidatorAddress
+          { txOutAddress = govValidatorAddress
           , txOutValue = withMinAda gst
           , txOutDatumHash = Just $ toDatumHash governorOutputDatum
           }

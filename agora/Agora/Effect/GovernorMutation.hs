@@ -147,7 +147,7 @@ mutateGovernorValidator gov = makeEffect (authorityTokenSymbolFromGovernor gov) 
 
     let selfAddress =
           pfield @"address"
-            #$ mustBePJust # "Self governorInput not found"
+            #$ mustBePJust # "Self input not found"
             #$ findTxOutByTxOutRef # txOutRef # txInfo.inputs
 
     passert "No output to the effect validator" $
