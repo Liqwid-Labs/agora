@@ -212,7 +212,7 @@ pfromMaybe = phoistAcyclic $
       PJust a' -> a'
       PNothing -> e
 
--- | Yield True if a given PMaybe is of form PJust _.
+-- | Yield True if a given PMaybe is of form @'PJust' _@.
 pisJust :: forall a s. Term s (PMaybe a :--> PBool)
 pisJust = phoistAcyclic $
   plam $ \v' ->
