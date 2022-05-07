@@ -82,8 +82,8 @@ deriving via
   instance
     (PConstantDecl TreasuryWithdrawalDatum)
 
-instance PTryFrom PData PTreasuryWithdrawalDatum where
-  type PTryFromExcess PData PTreasuryWithdrawalDatum = Const ()
+instance PTryFrom PData (PAsData PTreasuryWithdrawalDatum) where
+  type PTryFromExcess PData (PAsData PTreasuryWithdrawalDatum) = Const ()
   ptryFrom' opq cont =
     -- TODO: This should not use 'punsafeCoerce'.
     -- Blocked by 'PCredential', and 'PTuple'.

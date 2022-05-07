@@ -106,8 +106,8 @@ instance PUnsafeLiftDecl PMutateGovernorDatum where type PLifted PMutateGovernor
 deriving via (DerivePConstantViaData MutateGovernorDatum PMutateGovernorDatum) instance (PConstantDecl MutateGovernorDatum)
 
 -- TODO: Derive this.
-instance PTryFrom PData PMutateGovernorDatum where
-  type PTryFromExcess PData PMutateGovernorDatum = Const ()
+instance PTryFrom PData (PAsData PMutateGovernorDatum) where
+  type PTryFromExcess PData (PAsData PMutateGovernorDatum) = Const ()
   ptryFrom' d k =
     k (punsafeCoerce d, ())
 

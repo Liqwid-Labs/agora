@@ -18,13 +18,13 @@ import Plutus.V1.Ledger.Value (CurrencySymbol)
 newtype PNoOp (s :: S) = PNoOp (Term s PUnit)
   deriving (PlutusType, PIsData) via (DerivePNewtype PNoOp PUnit)
 
-instance PTryFrom PData PNoOp where
-  type PTryFromExcess PData PNoOp = Const ()
+instance PTryFrom PData (PAsData PNoOp) where
+  type PTryFromExcess PData (PAsData PNoOp) = Const ()
   ptryFrom' _ cont =
     -- JUSTIFICATION:
     -- We don't care anything about data.
     -- It should always be reduced to Unit.
-    cont (pcon $ PNoOp (pconstant ()), ())
+    cont (pdata $ pcon $ PNoOp (pconstant ()), ())
 
 -- | Dummy effect which can only burn its GAT.
 noOpValidator :: CurrencySymbol -> ClosedTerm PValidator
