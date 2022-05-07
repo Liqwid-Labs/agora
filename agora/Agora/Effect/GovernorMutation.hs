@@ -1,19 +1,19 @@
 {-# LANGUAGE TemplateHaskell #-}
 
 {- |
-Module     : Agora.Effects.GovernorMutation
+Module     : Agora.Effect.GovernorMutation
 Maintainer : chfanghr@gmail.com
 Description: An effect that mutates governor settings
 
 An effect for mutating governor settings
 -}
-module Agora.Effects.GovernorMutation (
+module Agora.Effect.GovernorMutation (
   -- * Haskell-land
   MutateGovernorDatum (..),
 
   -- * Plutarch-land
   PMutateGovernorDatum (..),
-  
+
   -- * Scripts
   mutateGovernorValidator,
 ) where
@@ -68,10 +68,10 @@ import Agora.Utils (
 
 -- | Haskell-level datum for the governor mutation effect script.
 data MutateGovernorDatum = MutateGovernorDatum
-  { governorRef :: TxOutRef 
-    -- ^ Referenced governor state UTXO should be updated by the effect.
+  { governorRef :: TxOutRef
+  -- ^ Referenced governor state UTXO should be updated by the effect.
   , newDatum :: GovernorDatum
-    -- ^ The new settings for the governor.
+  -- ^ The new settings for the governor.
   }
   deriving stock (Show, GHC.Generic)
   deriving anyclass (Generic)
@@ -103,9 +103,9 @@ deriving via (DerivePConstantViaData MutateGovernorDatum PMutateGovernorDatum) i
 
 --------------------------------------------------------------------------------
 
-{- | Validator for the governor mutation effect. 
+{- | Validator for the governor mutation effect.
 
-   This effect is implemented using the 'Agora.Effect.makeEffect' wrapper, 
+   This effect is implemented using the 'Agora.Effect.makeEffect' wrapper,
     meaning that the burning of GAT is checked in the said wrapper.
 
    In order to locate the governor, the validator is parametrized with a 'Agora.Governor.Governor'.
