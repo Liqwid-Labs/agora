@@ -167,6 +167,7 @@ library agora-sample
   import:          lang, deps, test-deps
   build-depends:   agora-testlib
   exposed-modules:
+    Sample.Effect.GovernorMutation
     Sample.Effect.TreasuryWithdrawal
     Sample.Governor
     Sample.Proposal
@@ -183,6 +184,7 @@ test-suite agora-test
   hs-source-dirs: agora-test
   other-modules:
     Spec.AuthorityToken
+    Spec.Effect.GovernorMutation
     Spec.Effect.TreasuryWithdrawal
     Spec.Governor
     Spec.Model.MultiSig
