@@ -2,7 +2,7 @@
 
 {- |
 Module     : Agora.Effect.GovernorMutation
-Maintainer : chfanghr@gmail.com
+Maintainer : connor@mlabs.city
 Description: An effect that mutates governor settings
 
 An effect for mutating governor settings
