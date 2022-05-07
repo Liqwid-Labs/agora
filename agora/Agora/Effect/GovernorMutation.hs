@@ -3,9 +3,9 @@
 {- |
 Module     : Agora.Effect.GovernorMutation
 Maintainer : connor@mlabs.city
-Description: An effect that mutates governor settings
+Description: An effect that mutates governor settings.
 
-An effect for mutating governor settings
+An effect for mutating governor settings.
 -}
 module Agora.Effect.GovernorMutation (
   -- * Haskell-land
@@ -117,18 +117,26 @@ instance PTryFrom PData (PAsData PMutateGovernorDatum) where
 
 {- | Validator for the governor mutation effect.
 
-   This effect is implemented using the 'Agora.Effect.makeEffect' wrapper,
-    meaning that the burning of GAT is checked in the said wrapper.
+  This effect is implemented using the 'Agora.Effect.makeEffect' wrapper,
+   meaning that the burning of GAT is checked in the said wrapper.
 
-   In order to locate the governor, the validator is parametrized with a 'Agora.Governor.Governor'.
+  In order to locate the governor, the validator is parametrized with a 'Agora.Governor.Governor'.
 
-   All the information it need to validate the effect is encoded in the 'MutateGovernorDatum',
-    so regardless what redeemer it's given, it will check:
+  All the information it needs to validate the effect is encoded in the 'MutateGovernorDatum',
+   so regardless what redeemer it's given, it will check:
 
-   - No token is minted/burnt other than GAT.
-   - The reference UTXO in the datum should be spent.
-   - Said UTXO carries the GST.
-   - A new UTXO, containing the GST and the new governor state datum, is paid to the governor.
+  - No token is minted/burnt other than GAT.
+  - Nothing is being paid to the the effect validator.
+  - The governor's state UTXO must be spent:
+
+      * It carries exactly one GST.
+      * It's referenced by 'governorRef' in the effect's datum.
+
+  - A new state UTXO is paid to the governor:
+
+      * It contains the GST.
+      * It has valid governor state datum.
+      * The datum is exactly the same as the 'newDatum'.
 -}
 mutateGovernorValidator :: Governor -> ClosedTerm PValidator
 mutateGovernorValidator gov = makeEffect (authorityTokenSymbolFromGovernor gov) $
