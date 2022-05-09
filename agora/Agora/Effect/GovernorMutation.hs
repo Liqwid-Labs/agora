@@ -62,8 +62,6 @@ import Agora.Governor.Scripts (
   governorSTAssetClassFromGovernor,
  )
 import Agora.Utils (
-  findOutputsToAddress,
-  findTxOutByTxOutRef,
   mustBePDJust,
   mustBePJust,
   passert,
@@ -140,18 +138,9 @@ instance PTryFrom PData (PAsData PMutateGovernorDatum) where
 -}
 mutateGovernorValidator :: Governor -> ClosedTerm PValidator
 mutateGovernorValidator gov = makeEffect (authorityTokenSymbolFromGovernor gov) $
-  \_gatCs (datum' :: Term _ PMutateGovernorDatum) txOutRef txInfo' -> P.do
+  \_gatCs (datum' :: Term _ PMutateGovernorDatum) _ txInfo' -> P.do
     datum <- pletFields @'["newDatum", "governorRef"] datum'
-
     txInfo <- pletFields @'["mint", "inputs", "outputs", "datums"] txInfo'
-
-    let selfAddress =
-          pfield @"address"
-            #$ mustBePJust # "Self input not found"
-            #$ findTxOutByTxOutRef # txOutRef # txInfo.inputs
-
-    passert "No output to the effect validator" $
-      pnull #$ findOutputsToAddress # txInfo.outputs # selfAddress
 
     let mint :: Term _ (PBuiltinList _)
         mint = pto $ pto $ pto $ pfromData txInfo.mint
@@ -159,43 +148,39 @@ mutateGovernorValidator gov = makeEffect (authorityTokenSymbolFromGovernor gov) 
     passert "Nothing should be minted/burnt other than GAT" $
       plength # mint #== 1
 
-    filteredInputs <-
-      plet $
-        pfilter
-          # plam
-            ( \inInfo ->
-                let value = pfield @"value" #$ pfield @"resolved" # inInfo
-                 in gstValueOf # value #== 1
-            )
-          # pfromData txInfo.inputs
+    passert "Only self and governor inputs are allowed" $
+      plength # pfromData txInfo.inputs #== 2
 
-    passert "Governor's state token must be moved" $
-      plength # filteredInputs #== 1
+    let inputWithGST =
+          mustBePJust # "Governor input not found" #$ pfind
+            # phoistAcyclic
+              ( plam $ \inInfo ->
+                  let value = pfield @"value" #$ pfield @"resolved" # inInfo
+                   in gstValueOf # value #== 1
+              )
+            # pfromData txInfo.inputs
 
-    governorInput <- plet $ phead # filteredInputs
+    govInInfo <- pletFields @'["outRef", "resolved"] $ inputWithGST
 
     passert "Can only modify the pinned governor" $
-      pfield @"outRef" # governorInput #== datum.governorRef
+      govInInfo.outRef #== datum.governorRef
 
-    let govAddress =
-          pfield @"address"
-            #$ pfield @"resolved"
-            #$ pfromData governorInput
+    passert "Only governor ouput is allowed" $
+      plength # pfromData txInfo.outputs #== 1
 
-    filteredOutputs <- plet $ findOutputsToAddress # pfromData txInfo.outputs # govAddress
+    let govAddress = pfield @"address" #$ govInInfo.resolved
+        govOutput' = pfromData $ phead # pfromData txInfo.outputs
 
-    passert "Exactly one output to the governor" $
-      plength # filteredOutputs #== 1
+    govOutput <- pletFields @'["address", "value", "datumHash"] govOutput'
 
-    governorOutput <- plet $ phead # filteredOutputs
+    passert "No output to the governor" $
+      govOutput.address #== govAddress
 
-    passert "Governor's state token must stay at governor's address" $
-      (gstValueOf #$ pfield @"value" # governorOutput) #== 1
+    passert "Governor output doesn't carry the GST" $
+      gstValueOf # govOutput.value #== 1
 
     let governorOutputDatumHash =
-          mustBePDJust # "Governor output doesn't have datum"
-            #$ pfromData
-            $ pfield @"datumHash" # governorOutput
+          mustBePDJust # "Governor output doesn't have datum" # govOutput.datumHash
         governorOutputDatum =
           pfromData @PGovernorDatum $
             mustBePJust # "Governor output datum not found"
