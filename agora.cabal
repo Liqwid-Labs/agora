@@ -113,13 +113,14 @@ common test-deps
   build-depends:
     , apropos
     , apropos-tx
+    , plutarch-quickcheck
     , QuickCheck
     , quickcheck-instances
+    , tagged
     , tasty
     , tasty-hedgehog
     , tasty-hunit
     , tasty-quickcheck
-    , tagged
     , universe
 
 library
@@ -167,9 +168,9 @@ test-suite agora-test
     Spec.Proposal
     Spec.Sample.Effect.TreasuryWithdrawal
     Spec.Sample.Proposal
+    Spec.Sample.Sample
     Spec.Sample.Shared
     Spec.Sample.Stake
-    Spec.Sample.Sample
     Spec.Stake
     Spec.Util
 

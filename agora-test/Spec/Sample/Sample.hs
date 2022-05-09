@@ -3,30 +3,31 @@ Module     : Spec.Sample.Sample
 Maintainer : seungheon.ooh@gmail.com
 Description: Useful components for constructing property tests
 
-Basic components for constructing case-specific property tests. 
+Basic components for constructing case-specific property tests.
 -}
+module Spec.Sample.Sample (
+  -- * Credentials
+  -- $credentials
+  genUserCredential,
+  genScriptCredential,
+  genCredential,
+  genAddress,
 
-module Spec.Sample.Sample
-  ( -- * Credentials
-    -- $credentials
-    genUserCredential
-  , genScriptCredential
-  , genCredential
-  , genAddress
-    -- * Values
-    -- $values
-  , genValue
-  , genAssetClass
-  , genAnyValue
-    -- * Tx info
-    -- $txinfo
-  , genTxOut
-  , genTxInInfo
-  ) where
+  -- * Values
+  -- $values
+  genValue,
+  genAssetClass,
+  genAnyValue,
 
-import Test.QuickCheck 
+  -- * Tx info
+  -- $txinfo
+  genTxOut,
+  genTxInInfo,
+) where
+
 import Plutus.V1.Ledger.Api
 import Plutus.V1.Ledger.Value
+import Test.QuickCheck
 
 import Control.Applicative
 
@@ -41,6 +42,7 @@ genHashByteString :: Gen C.ByteString
 genHashByteString = sha2 . C.pack . show <$> (chooseAny :: Gen Integer)
 
 -- TODO: How do I need to ensure uniqueness?
+
 -- | Random user credential.
 genUserCredential :: Gen Credential
 genUserCredential = PubKeyCredential . PubKeyHash . toBuiltin <$> genHashByteString
@@ -68,7 +70,7 @@ genPrettyByteString = C.pack <$> (listOf1 $ elements ['a' .. 'z'])
 genAssetClass :: Gen AssetClass
 genAssetClass =
   AssetClass
-  <$> liftA2
+    <$> liftA2
       (,)
       (currencySymbol <$> genHashByteString)
       (tokenName <$> genPrettyByteString)
@@ -80,12 +82,13 @@ genTxOut :: Gen TxOut
 genTxOut = do
   addr <- genAddress
   val <- listOf genAnyValue
-  pure TxOut
-    { txOutAddress = addr
-    , txOutValue = foldr (<>) mempty val
-    , txOutDatumHash = Just (DatumHash "")
-    }
-    
+  pure
+    TxOut
+      { txOutAddress = addr
+      , txOutValue = foldr (<>) mempty val
+      , txOutDatumHash = Just (DatumHash "")
+      }
+
 genTxInInfo :: Gen TxInInfo
 genTxInInfo = TxInInfo (TxOutRef "" 1) <$> genTxOut
 

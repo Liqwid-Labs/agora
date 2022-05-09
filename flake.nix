@@ -28,6 +28,11 @@
   inputs.apropos.inputs.nixpkgs.follows =
     "plutarch/haskell-nix/nixpkgs-unstable";
 
+  inputs.plutarch-quickcheck.url =
+    "github:Liqwid-Labs/plutarch-quickcheck?rev=e945cbaea76c21283bb129cc5ea9dcef060f0b5a";
+  inputs.plutarch-quickcheck.inputs.nixpkgs.follows =
+    "plutarch/haskell-nix/nixpkgs-unstable";
+
   outputs = inputs@{ self, nixpkgs, haskell-nix, plutarch, ... }:
     let
       supportedSystems = with nixpkgs.lib.systems.supported;
@@ -77,6 +82,10 @@
               src = inputs.apropos;
               subdirs = [ "." ];
             }
+            {
+              src = inputs.plutarch-quickcheck;
+              subdirs = [ "." ];
+            }
           ];
           modules = [ (plutarch.haskellModule system) ];
           shell = {
@@ -110,6 +119,7 @@
               ps.plutarch-safemoney
               ps.plutarch-test
               ps.apropos
+              ps.plutarch-quickcheck
             ];
           };
         };

@@ -11,8 +11,8 @@ import Agora.Effect.TreasuryWithdrawal (
   TreasuryWithdrawalDatum (TreasuryWithdrawalDatum),
   treasuryWithdrawalValidator,
  )
-import Plutus.V1.Ledger.Value qualified as Value
 import Plutus.V1.Ledger.Api
+import Plutus.V1.Ledger.Value qualified as Value
 import Spec.Sample.Effect.TreasuryWithdrawal (
   buildReceiversOutputFromDatum,
   buildScriptContext,
@@ -26,11 +26,11 @@ import Spec.Sample.Effect.TreasuryWithdrawal (
   treasuries,
   users,
  )
-import Spec.Util (effectFailsWith, effectSucceedsWith)
 import Spec.Sample.Sample
+import Spec.Util (effectFailsWith, effectSucceedsWith)
+import Test.QuickCheck
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.QuickCheck (testProperty)
-import Test.QuickCheck
 
 import Data.Tagged
 import Data.Universe
@@ -39,30 +39,32 @@ prop :: Property
 prop = forAll (arbitrary :: Gen Integer) (\a -> (a + 1) > (abs a))
 
 type TWETestInput = (TreasuryWithdrawalDatum, ScriptContext)
-data TWETestCases = PaysToEffect
-                  | OutputsDoNotMatchReceivers
-                  | InputsHaveOtherScriptInput
-                  | RemaindersDoNotReturnToTreasuries
-                  deriving stock (Eq)
+data TWETestCases
+  = PaysToEffect
+  | OutputsDoNotMatchReceivers
+  | InputsHaveOtherScriptInput
+  | RemaindersDoNotReturnToTreasuries
+  deriving stock (Eq)
 
 instance Show TWETestCases where
   show = \case
-    PaysToEffect                      -> "Transaction pays to effect"
-    OutputsDoNotMatchReceivers        -> "Transaction outputs do not match receivers"
-    InputsHaveOtherScriptInput        -> "Remainding Values do not return to input treasuries" 
+    PaysToEffect -> "Transaction pays to effect"
+    OutputsDoNotMatchReceivers -> "Transaction outputs do not match receivers"
+    InputsHaveOtherScriptInput -> "Remainding Values do not return to input treasuries"
     RemaindersDoNotReturnToTreasuries -> "Transaction has script input that is not specified in datum"
 
 instance Universe TWETestCases where
-  universe = [ PaysToEffect
-             , OutputsDoNotMatchReceivers
-             , InputsHaveOtherScriptInput
-             , RemaindersDoNotReturnToTreasuries
-             ]
+  universe =
+    [ PaysToEffect
+    , OutputsDoNotMatchReceivers
+    , InputsHaveOtherScriptInput
+    , RemaindersDoNotReturnToTreasuries
+    ]
 
 instance Finite TWETestCases where
   universeF = universe
   cardinality = Tagged 4
-    
+
 genTWEDatum :: Gen TreasuryWithdrawalDatum
 genTWEDatum = do
   -- Make several random assetclasses to choose from
@@ -72,11 +74,11 @@ genTWEDatum = do
   users <- listOf1 genUserCredential
 
   -- Make several random treasuries
-  treas <- listOf1 genScriptCredential 
+  treas <- listOf1 genScriptCredential
 
   -- Make random amounts of values that transaction will have
   values <- listOf1 $ elements ac >>= genValue
-  
+
   let receiverList = zipWith (,) users values
   pure $ TreasuryWithdrawalDatum receiverList treas
 
