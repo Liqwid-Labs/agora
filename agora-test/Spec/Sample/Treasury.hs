@@ -14,6 +14,7 @@ module Spec.Sample.Treasury (
   treasuryRef,
   gatTn,
   walletIn,
+  trCtxGATNameNotAddress,
 ) where
 
 import Plutarch.Api.V1 (validatorHash)
@@ -44,6 +45,7 @@ import Spec.Sample.Shared (
   signer,
   treasuryOut,
   withMinAda,
+  wrongEffHash,
  )
 import Spec.Util (datumPair)
 
@@ -133,3 +135,25 @@ walletIn =
 
 addressBs :: BuiltinByteString
 (ValidatorHash addressBs) = validatorHash mockTrEffect
+
+trCtxGATNameNotAddress :: ScriptContext
+trCtxGATNameNotAddress =
+  let txInfo = validCtx.scriptContextTxInfo
+      inputs = txInfo.txInfoInputs
+      effectIn = inputs !! 1
+      invalidEff =
+        effectIn
+          { txInInfoResolved =
+              effectIn.txInInfoResolved
+                { txOutAddress = Address (ScriptCredential wrongEffHash) Nothing
+                }
+          }
+   in validCtx
+        { scriptContextTxInfo =
+            txInfo
+              { txInfoInputs =
+                  [ head inputs
+                  , invalidEff
+                  ]
+              }
+        }

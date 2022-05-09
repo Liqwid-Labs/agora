@@ -25,24 +25,16 @@ import Agora.Treasury (
   TreasuryRedeemer (SpendTreasuryGAT),
   treasuryValidator,
  )
-import Plutus.V1.Ledger.Address (Address (Address))
 import Plutus.V1.Ledger.Api (
-  BuiltinByteString,
   DCert (DCertDelegRegKey),
  )
 import Plutus.V1.Ledger.Contexts (
   ScriptContext (scriptContextPurpose, scriptContextTxInfo),
   ScriptPurpose (Certifying, Rewarding, Spending),
   TxInfo (txInfoInputs, txInfoMint),
-  txInInfoResolved,
-  txOutAddress,
  )
 import Plutus.V1.Ledger.Credential (
-  Credential (ScriptCredential),
   StakingCredential (StakingHash),
- )
-import Plutus.V1.Ledger.Scripts (
-  ValidatorHash (ValidatorHash),
  )
 import Plutus.V1.Ledger.Value qualified as Value
 import Spec.Sample.Shared (
@@ -51,6 +43,7 @@ import Spec.Sample.Shared (
 import Spec.Sample.Treasury (
   gatCs,
   gatTn,
+  trCtxGATNameNotAddress,
   treasuryRef,
   validCtx,
   walletIn,
@@ -125,32 +118,7 @@ tests =
               (treasuryValidator gatCs)
               ()
               SpendTreasuryGAT
-              ( let txInfo = validCtx.scriptContextTxInfo
-                    inputs = txInfo.txInfoInputs
-                    effectIn = inputs !! 1
-                    invalidEff =
-                      effectIn
-                        { txInInfoResolved =
-                            effectIn.txInInfoResolved
-                              { txOutAddress =
-                                  Address
-                                    ( ScriptCredential $
-                                        ValidatorHash
-                                          wrongHash
-                                    )
-                                    Nothing
-                              }
-                        }
-                 in validCtx
-                      { scriptContextTxInfo =
-                          txInfo
-                            { txInfoInputs =
-                                [ head inputs
-                                , invalidEff
-                                ]
-                            }
-                      }
-              )
+              trCtxGATNameNotAddress
           , validatorFailsWith
               "Fails with wallet as input"
               (treasuryValidator gatCs)
@@ -172,9 +140,3 @@ tests =
           ]
       ]
   ]
-
-{- | A SHA-256 hash which (in all certainty) should not match the
-     hash of the dummy effect script.
--}
-wrongHash :: BuiltinByteString
-wrongHash = "a21bc4a1d95600f9fa0a00b97ed0fa49a152a72de76253cb706f90b4b40f837b"

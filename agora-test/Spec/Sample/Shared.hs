@@ -39,6 +39,7 @@ module Spec.Sample.Shared (
   gatCs,
   mockTrEffect,
   trCredential,
+  wrongEffHash,
 ) where
 
 import Agora.Effect.NoOp (noOpValidator)
@@ -77,7 +78,7 @@ import Plutus.V1.Ledger.Api (
 import Plutus.V1.Ledger.Contexts (
   TxOut (..),
  )
-import Plutus.V1.Ledger.Scripts (Validator, ValidatorHash)
+import Plutus.V1.Ledger.Scripts (Validator, ValidatorHash (..))
 import Plutus.V1.Ledger.Value (TokenName, Value)
 import Plutus.V1.Ledger.Value qualified as Value
 
@@ -178,6 +179,14 @@ gatTn = validatorHashToTokenName $ validatorHash mockTrEffect
 -- | Mock treasury effect script, used for testing.
 mockTrEffect :: Validator
 mockTrEffect = mkValidator $ noOpValidator gatCs
+
+{- | A SHA-256 hash which (in all certainty) should not match the
+     hash of the dummy effect script.
+-}
+wrongEffHash :: ValidatorHash
+wrongEffHash =
+  ValidatorHash
+    "a21bc4a1d95600f9fa0a00b97ed0fa49a152a72de76253cb706f90b4b40f837b"
 
 ------------------------------------------------------------------
 
