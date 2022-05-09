@@ -8,7 +8,7 @@ provide guidance for constructing these effects.
 
 Effects will only be run once and all of the data they require must be
 kept in their datums, and not their redeemers. Therefore, it makes
-sense for us to start this discussion with datums. It is recommanded
+sense for us to start this discussion with datums. It is recommended
 to have your effect datums at the Haskell and Plutarch levels. These
 levels can be bridged with Plutarch\'s [PConstant and
 PLift](https://github.com/Plutonomicon/plutarch/blob/master/docs/Typeclasses/PConstant%20and%20PLift.md).
@@ -16,6 +16,12 @@ A `PTryFrom` instance is also required to parse raw \`PData\` from
 validator into the specified datum of effect Validator.
 
 ## Effect Datum
+
+This section explains basic structure of effect datum with `Treasury
+Withdrawal Effect`. Remeber that datums are specific to each effect;
+new datum needs to be redesigned and constructed specifically for
+other effects.
+
 
 First, the Haskell-level definition of Datum.
 
@@ -65,14 +71,14 @@ instance PTryFrom PData PTreasuryWithdrawalDatum where
     cont (punsafeCoerce opq, ())
 ```
 
-> All informations above is ~~well~~ documented in
+> All informations above is **well** documented in
 > [Plutonomicon/plutarch](https://github.com/Plutonomicon/plutarch/tree/master/docs)
 > repository. Well, except `PTryFrom`...
 
 ## Effect Validator Boilerplate
 
 In Agora, Effects can be built with the given `makeEffect`
-function. This function is a simple boilderplate that checks the GAT
+function. This function is a simple boilerplate that checks the GAT
 is handled correctly. This means that the creator of the effect needs
 to only consider the implementation of their effect logic.
 
@@ -87,7 +93,7 @@ makeEffect ::
   ClosedTerm PValidator
 ```
 
-Example effect validator would be:
+An example effect validator would be:
 
 ``` haskell
 effectValidator :: forall {s :: S}. CurrencySymbol -> Term s PValidator
@@ -114,8 +120,12 @@ fact, It is very useful for
 
 The most important piece of the validator has still not been
 discussed: the validator logic. As explained above, validators ensure
-transactions are built correctly and behave as desired. An ill-formed
-effect could represent a vulnerability to the entire protocol.
+transactions are built correctly and behave as desired.
+
+Normal onchain scripts target to be less strict in order to be useful
+in various cases. That is not the case for effects. Effects need to be
+specific to correctly filter out all ill-formed transactions. Being
+less strict could easily impose vulnerability to entire system.
 
 Whilst the logic of most validators will be specific to those
 validators, there are some general points which should be considered
@@ -128,7 +138,8 @@ considerations. These include:
 -   Effects concerning configuration of the governance system should
     not permit funds to be transferred between outputs.
 -   Needed informations for effect should be explicitly provided by
-    the effect datum.
+    the effect datum. In other words, the redeemer should be
+    discarded, or explicitly checked to carry no data.
 
 It'd be impossible to describe step-by-step procedures for writing all
 possible effects, however these are some guidelines that you may find

@@ -2,7 +2,7 @@ This folder is the test suite for Agora governance system.
 
 -   `/Spec` contains different tests for different elements
     of Agora.
--   `/Spec/Model` contain `apropos-tx` model for
+-   `/Spec/Model` contains `apropos-tx` model for
     logical suite generation and tests.
 -   `/Spec/Sample` contains primitive hand-made example
     values.
