@@ -41,10 +41,10 @@ import Plutus.V1.Ledger.Value qualified as Value
 import Spec.Sample.Shared (
   gatCs,
   gatTn,
+  minAda,
   mockTrEffect,
   signer,
   treasuryOut,
-  withMinAda,
   wrongEffHash,
  )
 import Spec.Util (datumPair)
@@ -95,7 +95,11 @@ validCtx =
             TxOut
               { txOutAddress =
                   Address (ScriptCredential $ validatorHash mockTrEffect) Nothing
-              , txOutValue = withMinAda $ Value.singleton gatCs gatTn 1
+              , txOutValue =
+                  mconcat
+                    [ Value.singleton gatCs gatTn 1
+                    , minAda
+                    ]
               , txOutDatumHash = Nothing
               }
         }

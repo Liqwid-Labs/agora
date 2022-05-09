@@ -10,7 +10,6 @@ module Spec.Sample.Shared (
   signer,
   signer2,
   minAda,
-  withMinAda,
 
   -- * Components
 
@@ -192,6 +191,3 @@ wrongEffHash =
 
 minAda :: Value
 minAda = Value.singleton "" "" 10_000_000
-
-withMinAda :: Value -> Value
-withMinAda v = v <> minAda
