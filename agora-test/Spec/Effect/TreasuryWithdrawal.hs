@@ -10,9 +10,11 @@ module Spec.Effect.TreasuryWithdrawal (tests) where
 import Agora.Effect.TreasuryWithdrawal (
   TreasuryWithdrawalDatum (TreasuryWithdrawalDatum),
   treasuryWithdrawalValidator,
+  PTreasuryWithdrawalDatum
  )
 import Plutus.V1.Ledger.Api
 import Plutus.V1.Ledger.Value qualified as Value
+import Plutarch.Api.V1
 import Spec.Sample.Effect.TreasuryWithdrawal (
   buildReceiversOutputFromDatum,
   buildScriptContext,
@@ -31,6 +33,7 @@ import Spec.Util (effectFailsWith, effectSucceedsWith)
 import Test.QuickCheck
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.QuickCheck (testProperty)
+import Test.Tasty.Plutarch.Property (classifiedProperty)
 
 import Data.Tagged
 import Data.Universe
@@ -65,6 +68,24 @@ instance Finite TWETestCases where
   universeF = universe
   cardinality = Tagged 4
 
+genTWECases :: TWETestCases -> Gen TWETestInput
+genTWECases = undefined
+
+classifyTWE :: TWETestInput -> TWETestCases
+classifyTWE = undefined
+
+shrinkTWE :: TWETestInput -> [TWETestInput]
+shrinkTWE = undefined
+
+expectedTWE :: Term s (PBuiltinPair PTreasuryWithdrawalDatum PScriptContext :--> PMaybe PBool)
+expectedTWE = undefined
+
+definitionTWE :: Term s (PBuiltinPair PTreasuryWithdrawalDatum PScriptContext :--> PBool)
+definitionTWE = undefined
+
+propertyTWE :: Property
+propertyTWE = classifiedProperty genTWECases shrinkTWE expectedTWE classifyTWE definitionTWE
+
 genTWEDatum :: Gen TreasuryWithdrawalDatum
 genTWEDatum = do
   -- Make several random assetclasses to choose from
@@ -97,6 +118,7 @@ _asdf = undefined
 tests :: [TestTree]
 tests =
   [ testProperty "test" prop -- will fail
+  , testProperty "effect" propertyTWE
   , testGroup
       "effect"
       [ effectSucceedsWith
