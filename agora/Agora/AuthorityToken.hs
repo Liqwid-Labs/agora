@@ -2,7 +2,6 @@
 Module     : Agora.AuthorityToken
 Maintainer : emi@haskell.fyi
 Description: Tokens acting as redeemable proofs of DAO authority.
-
 Tokens acting as redeemable proofs of DAO authority.
 -}
 module Agora.AuthorityToken (
@@ -62,7 +61,6 @@ newtype AuthorityToken = AuthorityToken
      the script address the token resides in matches the TokenName.
      Since the TokenName was tagged upon mint with the Effect script
      it was sent to, this is enough to prove validity.
-
      In other words, check that all assets of a particular currency symbol
      are tagged with a TokenName that matches where they live.
 -}

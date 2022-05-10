@@ -1,5 +1,3 @@
---------------------------------------------------------------------------------
-
 import Prelude
 
 --------------------------------------------------------------------------------
@@ -13,6 +11,7 @@ import Spec.Effect.TreasuryWithdrawal qualified as TreasuryWithdrawal
 import Spec.Model.MultiSig qualified as MultiSig
 import Spec.Proposal qualified as Proposal
 import Spec.Stake qualified as Stake
+import Spec.Treasury qualified as Treasury
 
 -- | The Agora test suite.
 main :: IO ()
@@ -33,6 +32,12 @@ main =
           "Proposal tests"
           Proposal.tests
       , testGroup
+          "AuthorityToken tests"
+          AuthorityToken.tests
+      , testGroup
+          "Treasury tests"
+          Treasury.tests
+      , testGroup
           "Multisig tests"
           [ testGroup
               "MultiSig"
@@ -40,7 +45,4 @@ main =
               , MultiSig.genTests
               ]
           ]
-      , testGroup
-          "AuthorityToken tests"
-          AuthorityToken.tests
       ]

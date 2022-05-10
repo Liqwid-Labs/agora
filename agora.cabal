@@ -111,6 +111,7 @@ common deps
 
 common test-deps
   build-depends:
+    , agora
     , apropos
     , apropos-tx
     , QuickCheck
@@ -136,11 +137,10 @@ library
     Agora.Stake
     Agora.Stake.Scripts
     Agora.Treasury
-
-  other-modules:
     Agora.Utils
     Agora.Utils.Value
 
+  other-modules:
   hs-source-dirs:  agora
 
 library pprelude
@@ -166,7 +166,9 @@ test-suite agora-test
     Spec.Sample.Proposal
     Spec.Sample.Shared
     Spec.Sample.Stake
+    Spec.Sample.Treasury
     Spec.Stake
+    Spec.Treasury
     Spec.Util
 
   build-depends:  agora
