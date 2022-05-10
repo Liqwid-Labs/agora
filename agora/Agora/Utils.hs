@@ -59,6 +59,7 @@ module Agora.Utils (
   validatorHashToAddress,
   pmergeBy,
   phalve,
+  isScriptAddress
 ) where
 
 --------------------------------------------------------------------------------
@@ -618,6 +619,12 @@ scriptHashFromAddress = phoistAcyclic $
     pmatch (pfromData $ pfield @"credential" # addr) $ \case
       PScriptCredential ((pfield @"_0" #) -> h) -> pcon $ PJust h
       _ -> pcon PNothing
+
+isScriptAddress :: Term s (PAddress :--> PBool)
+isScriptAddress = phoistAcyclic $ plam $ \addr ->
+  pmatch (pfromData $ pfield @"credential" # addr) $ \case
+      PScriptCredential _ -> pconstant True
+      _ -> pconstant False
 
 -- | Find all TxOuts sent to an Address
 findOutputsToAddress :: Term s (PBuiltinList (PAsData PTxOut) :--> PAddress :--> PBuiltinList (PAsData PTxOut))

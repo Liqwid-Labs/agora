@@ -62,6 +62,7 @@ import Agora.Governor.Scripts (
   governorSTAssetClassFromGovernor,
  )
 import Agora.Utils (
+  isScriptAddress,
   mustBePDJust,
   mustBePJust,
   passert,
@@ -148,8 +149,19 @@ mutateGovernorValidator gov = makeEffect (authorityTokenSymbolFromGovernor gov) 
     passert "Nothing should be minted/burnt other than GAT" $
       plength # mint #== 1
 
-    passert "Only self and governor inputs are allowed" $
-      plength # pfromData txInfo.inputs #== 2
+    passert "Only self and governor script inputs are allowed" $
+      pfoldr
+        # phoistAcyclic
+          ( plam $ \inInfo count ->
+              let address = pfield @"address" #$ pfield @"resolved" # inInfo
+               in pif
+                    (isScriptAddress # address)
+                    (count + 1)
+                    count
+          )
+        # (0 :: Term _ PInteger)
+        # pfromData txInfo.inputs
+        #== 2
 
     let inputWithGST =
           mustBePJust # "Governor input not found" #$ pfind
