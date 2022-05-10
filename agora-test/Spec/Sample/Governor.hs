@@ -46,15 +46,42 @@ import PlutusTx.AssocMap qualified as AssocMap
 
 --------------------------------------------------------------------------------
 
-import Agora.Effect.NoOp
-import Agora.Governor
-import Agora.Proposal
+import Agora.Effect.NoOp (noOpValidator)
+import Agora.Governor (GovernorDatum (..), getNextProposalId)
+import Agora.Proposal (
+  ProposalDatum (..),
+  ProposalId (..),
+  ProposalStatus (..),
+  ProposalVotes (..),
+  ResultTag (..),
+  emptyVotesFor,
+ )
 import Agora.Proposal qualified as P
-import Agora.Stake
+import Agora.Stake (
+  ProposalLock (..),
+  Stake (..),
+  StakeDatum (..),
+ )
 
 --------------------------------------------------------------------------------
 
-import Spec.Sample.Shared
+import Spec.Sample.Shared (
+  authorityTokenSymbol,
+  defaultProposalThresholds,
+  govAssetClass,
+  govSymbol,
+  govValidatorAddress,
+  gstUTXORef,
+  minAda,
+  proposalPolicySymbol,
+  proposalValidatorAddress,
+  signer,
+  signer2,
+  stake,
+  stakeAddress,
+  stakeAssetClass,
+  withMinAda,
+ )
 import Spec.Util (datumPair, toDatumHash)
 
 --------------------------------------------------------------------------------
