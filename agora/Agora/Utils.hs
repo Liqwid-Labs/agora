@@ -385,7 +385,7 @@ pisUniq = phoistAcyclic $
 pisUniqOrd :: forall list a (s :: S). (POrd a, PIsListLike list a) => Term s (list a :--> PBool)
 pisUniqOrd = phoistAcyclic $ pisUniq # plam (#<)
 
--- | Yield True if a given PMaybeData is of form PDJust _.
+-- | Yield True if a given PMaybeData is of form @'PDJust' _@.
 pisDJust :: Term s (PMaybeData a :--> PBool)
 pisDJust = phoistAcyclic $
   plam $ \x ->

@@ -60,7 +60,7 @@ import PlutusTx qualified
 
 --------------------------------------------------------------------------------
 
--- | State datum for the Governor script.
+-- | Datum for the Governor script.
 data GovernorDatum = GovernorDatum
   { proposalThresholds :: ProposalThresholds
   -- ^ Gets copied over upon creation of a 'Agora.Proposal.ProposalDatum'.
@@ -124,7 +124,7 @@ newtype PGovernorDatum (s :: S) = PGovernorDatum
   deriving anyclass (Generic)
   deriving anyclass (PIsDataRepr)
   deriving
-    (PlutusType, PIsData, PDataFields)
+    (PlutusType, PIsData, PDataFields, PEq)
     via PIsDataReprInstances PGovernorDatum
 
 instance PUnsafeLiftDecl PGovernorDatum where type PLifted PGovernorDatum = GovernorDatum
@@ -179,9 +179,9 @@ governorDatumValid = phoistAcyclic $
 
     foldr1
       (#&&)
-      [ ptraceIfFalse "Execute threshold larger than 0" $ 0 #<= execute
-      , ptraceIfFalse "Draft threshold larger than 0" $ 0 #<= draft
-      , ptraceIfFalse "Vote threshold larger than 0" $ 0 #<= vote
-      , ptraceIfFalse "Draft threshold larger than vote threshold" $ draft #<= vote
-      , ptraceIfFalse "Execute threshold larger than vote threshold" $ vote #< execute
+      [ ptraceIfFalse "Execute threshold is less than or equal to" $ 0 #<= execute
+      , ptraceIfFalse "Draft threshold is less than or equal to " $ 0 #<= draft
+      , ptraceIfFalse "Vote threshold is less than or equal to " $ 0 #<= vote
+      , ptraceIfFalse "Draft threshold is less than vote threshold" $ draft #<= vote
+      , ptraceIfFalse "Execute threshold is less than vote threshold" $ vote #< execute
       ]
