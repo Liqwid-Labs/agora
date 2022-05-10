@@ -13,7 +13,7 @@ to have your effect datums at the Haskell and Plutarch levels. These
 levels can be bridged with Plutarch\'s [PConstant and
 PLift](https://github.com/Plutonomicon/plutarch/blob/master/docs/Typeclasses/PConstant%20and%20PLift.md).
 A `PTryFrom` instance is also required to parse raw \`PData\` from
-validator into the specified datum of effect Validator.
+validator into the specified datum of effect validator.
 
 ## Effect Datum
 
@@ -106,8 +106,10 @@ The `makeEffect` boilerplate strips complex `PScriptContext` into
 `PTxOutRef` and `PTxInfo`. `PTxInfo` will provide all information
 about the transaction: inputs, outputs, minted tokens, fees, and
 more. `PTxOutRef` is the output reference for the effect signer, the
-one who starts the effect by burning the GAT. It is easy to overlook
-it as useless, but, in fact, It is very useful for
+one who starts the effect by burning the GAT. 
+
+`PTxOutRef` is easy to overlook as useless, but, in fact, It is very
+useful for
 
 -   finding the address of effect script
 -   checking who started the effect
@@ -137,7 +139,7 @@ considerations. These include:
 -   No transactions should result in funds being paid to an effect.
 -   Effects concerning configuration of the governance system should
     not permit funds to be transferred between outputs.
--   Needed informations for effect should be explicitly provided by
+-   Needed information for effect should be explicitly provided by
     the effect datum. In other words, the redeemer should be
     discarded, or explicitly checked to carry no data.
 
@@ -146,7 +148,7 @@ possible effects, however these are some guidelines that you may find
 useful:
 
 -   Validators should be specific enough to prevent unwanted
-    behaviour; generality in validators leaves more room for accidents
+    behavior; generality in validators leaves more room for accidents
     and exploitation.
 -   Consider what data could be provided to validators through the
     datum. More and better information may prove helpful in writing
@@ -158,6 +160,6 @@ useful:
 > Add "Testing Strategies" section when property testing or
 > Apropos get successfully integrated to Agora.
 > 
-> Add "Benchmarking Strategies" section when benchmarking system get
+> Add "Bench-marking Strategies" section when bench-marking system get
 > implemented.
 
