@@ -215,18 +215,22 @@ Term s (PAsData PTreasuryRedeemer) -&gt; Term s PTreasuryRedeemer
 </span><span id="line-60"></span><span>  </span><span class="hs-keyword">instance</span><span>
 </span><span id="line-61"></span><span>    </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PTryFrom</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PData</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PAsData</span></a></span><span> </span><span class="annot"><a href="Agora.Treasury.html#PTreasuryRedeemer"><span class="hs-identifier hs-type">PTreasuryRedeemer</span></a></span><span class="hs-special">)</span></span><span>
 </span><span id="line-62"></span><span>
-</span><span id="line-63"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PUnsafeLiftDecl</span></a></span><span> </span><span class="annot"><a href="Agora.Treasury.html#PTreasuryRedeemer"><span class="hs-identifier hs-type">PTreasuryRedeemer</span></a></span><span> </span><span class="hs-keyword">where</span><span> </span><span class="hs-keyword">type</span><span> </span><span id="PLifted"><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">PLifted</span></a></span></span><span> </span><span class="annot"><a href="Agora.Treasury.html#PTreasuryRedeemer"><span class="hs-identifier hs-type">PTreasuryRedeemer</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Agora.Treasury.html#TreasuryRedeemer"><span class="hs-identifier hs-type">TreasuryRedeemer</span></a></span><span>
-</span><span id="line-64"></span><span id="local-6989586621679405582"><span id="local-6989586621679405592"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">via</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">DerivePConstantViaData</span></a></span><span> </span><span class="annot"><a href="Agora.Treasury.html#TreasuryRedeemer"><span class="hs-identifier hs-type">TreasuryRedeemer</span></a></span><span> </span><span class="annot"><a href="Agora.Treasury.html#PTreasuryRedeemer"><span class="hs-identifier hs-type">PTreasuryRedeemer</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PConstantDecl</span></a></span><span> </span><span class="annot"><a href="Agora.Treasury.html#TreasuryRedeemer"><span class="hs-identifier hs-type">TreasuryRedeemer</span></a></span><span class="hs-special">)</span></span></span><span>
-</span><span id="line-65"></span><span>
-</span><span id="line-66"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
-</span><span id="line-67"></span><span>
-</span><span id="line-68"></span><span class="hs-comment">{- | Validator ensuring that transactions consuming the treasury
+</span><span id="line-63"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PUnsafeLiftDecl</span></a></span><span> </span><span class="annot"><a href="Agora.Treasury.html#PTreasuryRedeemer"><span class="hs-identifier hs-type">PTreasuryRedeemer</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-64"></span><span>  </span><span class="hs-keyword">type</span><span> </span><span id="PLifted"><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">PLifted</span></a></span></span><span> </span><span class="annot"><a href="Agora.Treasury.html#PTreasuryRedeemer"><span class="hs-identifier hs-type">PTreasuryRedeemer</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Agora.Treasury.html#TreasuryRedeemer"><span class="hs-identifier hs-type">TreasuryRedeemer</span></a></span><span>
+</span><span id="line-65"></span><span id="local-6989586621679405582"><span id="local-6989586621679405592"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">via</span><span>
+</span><span id="line-66"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">DerivePConstantViaData</span></a></span><span> </span><span class="annot"><a href="Agora.Treasury.html#TreasuryRedeemer"><span class="hs-identifier hs-type">TreasuryRedeemer</span></a></span><span> </span><span class="annot"><a href="Agora.Treasury.html#PTreasuryRedeemer"><span class="hs-identifier hs-type">PTreasuryRedeemer</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-67"></span><span>  </span><span class="hs-keyword">instance</span><span>
+</span><span id="line-68"></span><span>    </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PConstantDecl</span></a></span><span> </span><span class="annot"><a href="Agora.Treasury.html#TreasuryRedeemer"><span class="hs-identifier hs-type">TreasuryRedeemer</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-69"></span><span>
+</span><span id="line-70"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-71"></span><span>
+</span><span id="line-72"></span><span class="hs-comment">{- | Validator ensuring that transactions consuming the treasury
      do so in a valid manner.
 -}</span><span>
-</span><span id="line-71"></span><span class="annot"><a href="Agora.Treasury.html#treasuryValidator"><span class="hs-identifier hs-type">treasuryValidator</span></a></span><span> </span><span class="hs-glyph">::</span><span>
-</span><span id="line-72"></span><span>  </span><span class="annot"><a href="../file:///nix/store/jq1snvvlmgg1bd2wl23baclk24qwx1i3-plutus-ledger-api-lib-plutus-ledger-api-0.1.0.0-haddock-doc/share/doc/plutus-ledger-api/html/src"><span class="hs-identifier hs-type">CurrencySymbol</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
-</span><span id="line-73"></span><span>  </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">ClosedTerm</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PValidator</span></a></span><span>
-</span><span id="line-74"></span><span id="treasuryValidator"><span class="annot"><span class="annottext">treasuryValidator :: CurrencySymbol -&gt; ClosedTerm PValidator
+</span><span id="line-75"></span><span class="annot"><a href="Agora.Treasury.html#treasuryValidator"><span class="hs-identifier hs-type">treasuryValidator</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-76"></span><span>  </span><span class="annot"><a href="../file:///nix/store/jq1snvvlmgg1bd2wl23baclk24qwx1i3-plutus-ledger-api-lib-plutus-ledger-api-0.1.0.0-haddock-doc/share/doc/plutus-ledger-api/html/src"><span class="hs-identifier hs-type">CurrencySymbol</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-77"></span><span>  </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">ClosedTerm</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PValidator</span></a></span><span>
+</span><span id="line-78"></span><span id="treasuryValidator"><span class="annot"><span class="annottext">treasuryValidator :: CurrencySymbol -&gt; ClosedTerm PValidator
 </span><a href="Agora.Treasury.html#treasuryValidator"><span class="hs-identifier hs-var hs-var">treasuryValidator</span></a></span></span><span> </span><span id="local-6989586621679405498"><span class="annot"><span class="annottext">CurrencySymbol
 </span><a href="#local-6989586621679405498"><span class="hs-identifier hs-var">gatCs'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Term s PData
  -&gt; Term s PData -&gt; Term s PScriptContext -&gt; Term s POpaque)
@@ -245,7 +249,7 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><a href="#local-6989586621679405496"><span class="hs-identifier hs-var">_datum</span></a></span></span><span> </span><span id="local-6989586621679405495"><span class="annot"><span class="annottext">Term s PData
 </span><a href="#local-6989586621679405495"><span class="hs-identifier hs-var">redeemer</span></a></span></span><span> </span><span id="local-6989586621679405494"><span class="annot"><span class="annottext">Term s PScriptContext
 </span><a href="#local-6989586621679405494"><span class="hs-identifier hs-var">ctx'</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">P.do</span><span>
-</span><span id="line-75"></span><span>  </span><span class="hs-special">(</span><span id="local-6989586621679405493"><span class="annot"><span class="annottext">Term s (PAsData PTreasuryRedeemer)
+</span><span id="line-79"></span><span>  </span><span class="hs-special">(</span><span id="local-6989586621679405493"><span class="annot"><span class="annottext">Term s (PAsData PTreasuryRedeemer)
 </span><a href="#local-6989586621679405493"><span class="hs-identifier hs-var">treasuryRedeemer</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Reduce @Type (PTryFromExcess PData (PAsData PTreasuryRedeemer) s)
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Term s PData
 -&gt; ((Term s (PAsData PTreasuryRedeemer),
@@ -259,9 +263,9 @@ Term s a
 -&gt; Term s r
 </span><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">ptryFrom</span></a></span><span> </span><span class="annot"><span class="annottext">Term s PData
 </span><a href="#local-6989586621679405495"><span class="hs-identifier hs-var">redeemer</span></a></span><span>
-</span><span id="line-76"></span><span>
-</span><span id="line-77"></span><span>  </span><span class="hs-comment">-- plet required fields from script context.</span><span>
-</span><span id="line-78"></span><span>  </span><span id="local-6989586621679405492"><span class="annot"><span class="annottext">HRec
+</span><span id="line-80"></span><span>
+</span><span id="line-81"></span><span>  </span><span class="hs-comment">-- plet required fields from script context.</span><span>
+</span><span id="line-82"></span><span>  </span><span id="local-6989586621679405492"><span class="annot"><span class="annottext">HRec
   (BoundTerms
      (PFields PScriptContext)
      (Bindings
@@ -277,9 +281,9 @@ Term s a
 Term s a -&gt; (HRec (BoundTerms ps bs s) -&gt; Term s b) -&gt; Term s b
 </span><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pletFields</span></a></span><span> </span><span class="hs-glyph">@</span><span class="hs-special">[</span><span class="annot"><span class="hs-string">&quot;txInfo&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-string">&quot;purpose&quot;</span></span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">Term s PScriptContext
 </span><a href="#local-6989586621679405494"><span class="hs-identifier hs-var">ctx'</span></a></span><span>
-</span><span id="line-79"></span><span>
-</span><span id="line-80"></span><span>  </span><span class="hs-comment">-- Ensure that script is for burning i.e. minting a negative amount.</span><span>
-</span><span id="line-81"></span><span>  </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PMinting</span></a></span><span> </span><span class="annot"><span class="annottext">Term
+</span><span id="line-83"></span><span>
+</span><span id="line-84"></span><span>  </span><span class="hs-comment">-- Ensure that script is for burning i.e. minting a negative amount.</span><span>
+</span><span id="line-85"></span><span>  </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PMinting</span></a></span><span> </span><span class="annot"><span class="annottext">Term
   s
   (PDataRecord
      ((':)
@@ -297,9 +301,9 @@ Term s a -&gt; (a s -&gt; Term s b) -&gt; Term s b
         ((':) @Symbol &quot;txInfo&quot; ((':) @Symbol &quot;purpose&quot; ('[] @Symbol))))
      s)
 </span><a href="#local-6989586621679405492"><span class="hs-identifier hs-var">ctx</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">purpose</span><span>
-</span><span id="line-82"></span><span>
-</span><span id="line-83"></span><span>  </span><span class="hs-comment">-- Ensure redeemer type is valid.</span><span>
-</span><span id="line-84"></span><span>  </span><span class="annot"><a href="Agora.Treasury.html#PSpendTreasuryGAT"><span class="hs-identifier hs-type">PSpendTreasuryGAT</span></a></span><span> </span><span class="annot"><span class="annottext">Term s (PDataRecord ('[] @PLabeledType))
+</span><span id="line-86"></span><span>
+</span><span id="line-87"></span><span>  </span><span class="hs-comment">-- Ensure redeemer type is valid.</span><span>
+</span><span id="line-88"></span><span>  </span><span class="annot"><a href="Agora.Treasury.html#PSpendTreasuryGAT"><span class="hs-identifier hs-type">PSpendTreasuryGAT</span></a></span><span> </span><span class="annot"><span class="annottext">Term s (PDataRecord ('[] @PLabeledType))
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Term s PTreasuryRedeemer
 -&gt; (PTreasuryRedeemer s -&gt; Term s POpaque) -&gt; Term s POpaque
 forall (a :: PType) (s :: S) (b :: PType).
@@ -317,9 +321,9 @@ PIsData a =&gt;
 Term s (PAsData a) -&gt; Term s a
 </span><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pfromData</span></a></span><span> </span><span class="annot"><span class="annottext">Term s (PAsData PTreasuryRedeemer)
 </span><a href="#local-6989586621679405493"><span class="hs-identifier hs-var">treasuryRedeemer</span></a></span><span>
-</span><span id="line-85"></span><span>
-</span><span id="line-86"></span><span>  </span><span class="hs-comment">-- Get the minted value from txInfo.</span><span>
-</span><span id="line-87"></span><span>  </span><span id="local-6989586621679405488"><span class="annot"><span class="annottext">Term s (PAsData PTxInfo)
+</span><span id="line-89"></span><span>
+</span><span id="line-90"></span><span>  </span><span class="hs-comment">-- Get the minted value from txInfo.</span><span>
+</span><span id="line-91"></span><span>  </span><span id="local-6989586621679405488"><span class="annot"><span class="annottext">Term s (PAsData PTxInfo)
 </span><a href="#local-6989586621679405488"><span class="hs-identifier hs-var">txInfo'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Term s (PAsData PTxInfo)
 -&gt; (Term s (PAsData PTxInfo) -&gt; Term s POpaque) -&gt; Term s POpaque
 forall (s :: S) (a :: PType) (b :: PType).
@@ -332,7 +336,7 @@ Term s a -&gt; (Term s a -&gt; Term s b) -&gt; Term s b
         ((':) @Symbol &quot;txInfo&quot; ((':) @Symbol &quot;purpose&quot; ('[] @Symbol))))
      s)
 </span><a href="#local-6989586621679405492"><span class="hs-identifier hs-var">ctx</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">txInfo</span><span>
-</span><span id="line-88"></span><span>  </span><span id="local-6989586621679405486"><span class="annot"><span class="annottext">HRec
+</span><span id="line-92"></span><span>  </span><span id="local-6989586621679405486"><span class="annot"><span class="annottext">HRec
   ((':)
      @(Symbol, Type)
      '(&quot;mint&quot;, Term s (PAsData PValue))
@@ -346,16 +350,16 @@ Term s a -&gt; (Term s a -&gt; Term s b) -&gt; Term s b
 Term s a -&gt; (HRec (BoundTerms ps bs s) -&gt; Term s b) -&gt; Term s b
 </span><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pletFields</span></a></span><span> </span><span class="hs-glyph">@</span><span class="hs-special">'</span><span class="hs-special">[</span><span class="annot"><span class="hs-string">&quot;mint&quot;</span></span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">Term s (PAsData PTxInfo)
 </span><a href="#local-6989586621679405488"><span class="hs-identifier hs-var">txInfo'</span></a></span><span>
-</span><span id="line-89"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span class="annot"><a href="#local-6989586621679405485"><span class="hs-identifier hs-type">mint</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span> </span><span class="annot"><span class="hs-identifier">_</span></span><span> </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PValue</span></a></span><span>
-</span><span id="line-90"></span><span>      </span><span id="local-6989586621679405485"><span class="annot"><span class="annottext">mint :: Term s PValue
+</span><span id="line-93"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span class="annot"><a href="#local-6989586621679405485"><span class="hs-identifier hs-type">mint</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span> </span><span class="annot"><span class="hs-identifier">_</span></span><span> </span><span class="annot"><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PValue</span></a></span><span>
+</span><span id="line-94"></span><span>      </span><span id="local-6989586621679405485"><span class="annot"><span class="annottext">mint :: Term s PValue
 </span><a href="#local-6989586621679405485"><span class="hs-identifier hs-var hs-var">mint</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">HRec
   ((':)
      @(Symbol, Type)
      '(&quot;mint&quot;, Term s (PAsData PValue))
      ('[] @(Symbol, Type)))
 </span><a href="#local-6989586621679405486"><span class="hs-identifier hs-var">txInfo</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">mint</span><span>
-</span><span id="line-91"></span><span>
-</span><span id="line-92"></span><span>  </span><span id="local-6989586621679405475"><span class="annot"><span class="annottext">Term s PCurrencySymbol
+</span><span id="line-95"></span><span>
+</span><span id="line-96"></span><span>  </span><span id="local-6989586621679405475"><span class="annot"><span class="annottext">Term s PCurrencySymbol
 </span><a href="#local-6989586621679405475"><span class="hs-identifier hs-var">gatCs</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Term s PCurrencySymbol
 -&gt; (Term s PCurrencySymbol -&gt; Term s POpaque) -&gt; Term s POpaque
 forall (s :: S) (a :: PType) (b :: PType).
@@ -371,8 +375,8 @@ forall (p :: PType) (s :: S). PLift p =&gt; PLifted p -&gt; Term s p
 </span><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pconstant</span></a></span><span> </span><span class="annot"><span class="annottext">PLifted PCurrencySymbol
 CurrencySymbol
 </span><a href="#local-6989586621679405498"><span class="hs-identifier hs-var">gatCs'</span></a></span><span>
-</span><span id="line-93"></span><span>
-</span><span id="line-94"></span><span>  </span><span class="annot"><span class="annottext">Term s (PString @S)
+</span><span id="line-97"></span><span>
+</span><span id="line-98"></span><span>  </span><span class="annot"><span class="annottext">Term s (PString @S)
 -&gt; Term s PBool -&gt; Term s POpaque -&gt; Term s POpaque
 forall (s :: S) (k :: PType).
 Term s (PString @S) -&gt; Term s PBool -&gt; Term s k -&gt; Term s k
@@ -380,7 +384,8 @@ Term s (PString @S) -&gt; Term s PBool -&gt; Term s k -&gt; Term s k
 </span><span class="hs-string">&quot;A single authority token has been burned&quot;</span></span><span> </span><span class="annot"><span class="annottext">(Term s PBool -&gt; Term s POpaque -&gt; Term s POpaque)
 -&gt; Term s PBool -&gt; Term s POpaque -&gt; Term s POpaque
 forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><a href="../file:///nix/store/kq3z27pzg8pc38yjr84kzncicvpzhan0-ghc-9.2.1-doc/share/doc/ghc/html/libraries/base-4.16.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Term s PCurrencySymbol
+</span><a href="../file:///nix/store/kq3z27pzg8pc38yjr84kzncicvpzhan0-ghc-9.2.1-doc/share/doc/ghc/html/libraries/base-4.16.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span>
+</span><span id="line-99"></span><span>    </span><span class="annot"><span class="annottext">Term s PCurrencySymbol
 -&gt; Term s (PAsData PTxInfo) -&gt; Term s PValue -&gt; Term s PBool
 forall (s :: S).
 Term s PCurrencySymbol
@@ -389,8 +394,8 @@ Term s PCurrencySymbol
 </span><a href="#local-6989586621679405475"><span class="hs-identifier hs-var">gatCs</span></a></span><span> </span><span class="annot"><span class="annottext">Term s (PAsData PTxInfo)
 </span><a href="#local-6989586621679405488"><span class="hs-identifier hs-var">txInfo'</span></a></span><span> </span><span class="annot"><span class="annottext">Term s PValue
 </span><a href="#local-6989586621679405485"><span class="hs-identifier hs-var">mint</span></a></span><span>
-</span><span id="line-95"></span><span>
-</span><span id="line-96"></span><span>  </span><span class="annot"><span class="annottext">Term s (PUnit @S) -&gt; Term s POpaque
+</span><span id="line-100"></span><span>
+</span><span id="line-101"></span><span>  </span><span class="annot"><span class="annottext">Term s (PUnit @S) -&gt; Term s POpaque
 forall (s :: S) (a :: PType). Term s a -&gt; Term s POpaque
 </span><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">popaque</span></a></span><span> </span><span class="annot"><span class="annottext">(Term s (PUnit @S) -&gt; Term s POpaque)
 -&gt; Term s (PUnit @S) -&gt; Term s POpaque
@@ -398,4 +403,4 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><a href="../file:///nix/store/kq3z27pzg8pc38yjr84kzncicvpzhan0-ghc-9.2.1-doc/share/doc/ghc/html/libraries/base-4.16.0.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">PLifted (PUnit @S) -&gt; Term s (PUnit @S)
 forall (p :: PType) (s :: S). PLift p =&gt; PLifted p -&gt; Term s p
 </span><a href="../file:///nix/store/1v7fbvqpp06pvnwc34lj43v8axg7yqwd-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pconstant</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
-</span><span id="line-97"></span></pre></body></html>
+</span><span id="line-102"></span></pre></body></html>
