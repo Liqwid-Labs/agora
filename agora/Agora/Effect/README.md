@@ -18,7 +18,7 @@ validator into the specified datum of effect Validator.
 ## Effect Datum
 
 This section explains basic structure of effect datum with `Treasury
-Withdrawal Effect`. Remeber that datums are specific to each effect;
+Withdrawal Effect`. Remember that datums are specific to each effect;
 new datum needs to be redesigned and constructed specifically for
 other effects.
 
@@ -102,16 +102,16 @@ effectValidator currSymbol = makeEffect currSymbol $
     opaque (pconstant ())
 ```
 
-Again, conveniently, Script Context is already stripped into `PTxOutRef`
-and `PTxInfo`. `PTxInfo` will provide all informations about the
-transaction: inputs, outputs, minted tokens, fees, and more. `PTxOutRef`
-is the output reference for the effect signer, the one who starts the
-effect by burning the GAT. It is easy to overlook it as useless, but, in
-fact, It is very useful for
+The `makeEffect` boilerplate strips complex `PScriptContext` into
+`PTxOutRef` and `PTxInfo`. `PTxInfo` will provide all information
+about the transaction: inputs, outputs, minted tokens, fees, and
+more. `PTxOutRef` is the output reference for the effect signer, the
+one who starts the effect by burning the GAT. It is easy to overlook
+it as useless, but, in fact, It is very useful for
 
 -   finding the address of effect script
 -   checking who started the effect
--   accessing other informations
+-   accessing other information
 
 > Utility functions handling `PTxInfo` and `PTxInfo` is provided in
 > Agora/Util.hs
@@ -122,7 +122,7 @@ The most important piece of the validator has still not been
 discussed: the validator logic. As explained above, validators ensure
 transactions are built correctly and behave as desired.
 
-Normal onchain scripts target to be less strict in order to be useful
+Normal on-chain scripts aim to be less strict in order to be useful
 in various cases. That is not the case for effects. Effects need to be
 specific to correctly filter out all ill-formed transactions. Being
 less strict could easily impose vulnerability to entire system.
