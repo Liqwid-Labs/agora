@@ -50,8 +50,8 @@ module Spec.Sample.Shared (
   wrongEffHash,
 ) where
 
-import Agora.Effect.NoOp (noOpValidator)
 import Agora.AuthorityToken
+import Agora.Effect.NoOp (noOpValidator)
 import Agora.Governor (
   Governor (Governor),
  )
@@ -81,7 +81,7 @@ import Plutarch.Api.V1 (
   mintingPolicySymbol,
   mkMintingPolicy,
   mkValidator,
-  validatorHash
+  validatorHash,
  )
 import Plutarch.SafeMoney
 import Plutus.V1.Ledger.Address (scriptHashAddress)
@@ -98,7 +98,7 @@ import Plutus.V1.Ledger.Contexts (
   TxOut (..),
  )
 import Plutus.V1.Ledger.Scripts (Validator, ValidatorHash (..))
-import Plutus.V1.Ledger.Value (TokenName, AssetClass)
+import Plutus.V1.Ledger.Value (AssetClass, TokenName)
 import Plutus.V1.Ledger.Value qualified as Value
 
 --------------------------------------------------------------------------------
