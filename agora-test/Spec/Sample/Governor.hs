@@ -80,7 +80,6 @@ import Spec.Sample.Shared (
   stake,
   stakeAddress,
   stakeAssetClass,
-  withMinAda,
  )
 import Spec.Util (datumPair, toDatumHash)
 
@@ -105,7 +104,7 @@ mintGST =
       governorOutput =
         TxOut
           { txOutAddress = govValidatorAddress
-          , txOutValue = withMinAda gst
+          , txOutValue = gst <> minAda
           , txOutDatumHash = Just $ toDatumHash governorOutputDatum
           }
 
@@ -207,7 +206,7 @@ createProposal =
       proposalOutput =
         TxOut
           { txOutAddress = proposalValidatorAddress
-          , txOutValue = withMinAda pst
+          , txOutValue = pst <> minAda
           , txOutDatumHash = Just (toDatumHash proposalDatum)
           }
 
@@ -239,7 +238,7 @@ createProposal =
       governorOutput =
         governorInput
           { txOutDatumHash = Just $ toDatumHash governorOutputDatum
-          , txOutValue = withMinAda gst
+          , txOutValue = gst <> minAda
           }
 
       ---
@@ -257,7 +256,7 @@ createProposal =
       stakeOutput =
         stakeInput
           { txOutDatumHash = Just $ toDatumHash stakeOutputDatum
-          , txOutValue = withMinAda sst <> Value.assetClassValue (untag stake.gtClassRef) stackedGTs
+          , txOutValue = sst <> Value.assetClassValue (untag stake.gtClassRef) stackedGTs <> minAda
           }
 
       ---
@@ -381,7 +380,7 @@ mintGATs =
       governorOutput =
         governorInput
           { txOutDatumHash = Just $ toDatumHash governorOutputDatum
-          , txOutValue = withMinAda gst
+          , txOutValue = gst <> minAda
           }
 
       ---
@@ -394,7 +393,7 @@ mintGATs =
       proposalOutput =
         proposalInput
           { txOutDatumHash = Just $ toDatumHash proposalOutputDatum
-          , txOutValue = withMinAda pst
+          , txOutValue = pst <> minAda
           }
 
       --
@@ -404,7 +403,7 @@ mintGATs =
         TxOut
           { txOutAddress = mockEffectAddress
           , txOutDatumHash = Just $ toDatumHash mockEffectOutputDatum
-          , txOutValue = withMinAda gat
+          , txOutValue = gat <> minAda
           }
 
       --
@@ -519,7 +518,7 @@ mutateState =
       governorOutput =
         governorInput
           { txOutDatumHash = Just $ toDatumHash governorOutputDatum
-          , txOutValue = withMinAda gst
+          , txOutValue = gst <> minAda
           }
 
       --
