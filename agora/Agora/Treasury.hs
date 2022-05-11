@@ -60,8 +60,12 @@ deriving via
   instance
     PTryFrom PData (PAsData PTreasuryRedeemer)
 
-instance PUnsafeLiftDecl PTreasuryRedeemer where type PLifted PTreasuryRedeemer = TreasuryRedeemer
-deriving via (DerivePConstantViaData TreasuryRedeemer PTreasuryRedeemer) instance (PConstantDecl TreasuryRedeemer)
+instance PUnsafeLiftDecl PTreasuryRedeemer where
+  type PLifted PTreasuryRedeemer = TreasuryRedeemer
+deriving via
+  (DerivePConstantViaData TreasuryRedeemer PTreasuryRedeemer)
+  instance
+    (PConstantDecl TreasuryRedeemer)
 
 --------------------------------------------------------------------------------
 
@@ -91,6 +95,7 @@ treasuryValidator gatCs' = plam $ \_datum redeemer ctx' -> P.do
 
   gatCs <- plet $ pconstant gatCs'
 
-  passert "A single authority token has been burned" $ singleAuthorityTokenBurned gatCs txInfo' mint
+  passert "A single authority token has been burned" $
+    singleAuthorityTokenBurned gatCs txInfo' mint
 
   popaque $ pconstant ()

@@ -1,7 +1,7 @@
 # This really ought to be `/usr/bin/env bash`, but nix flakes don't like that.
 SHELL := /bin/sh
 
-.PHONY: hoogle format haddock usage format_nix format_haskell format_check
+.PHONY: hoogle format haddock usage format_nix format_haskell format_check lint
 
 usage:
 	@echo "usage: make <command> [OPTIONS]"
@@ -14,6 +14,7 @@ usage:
 	@echo "  format_haskell -- Format haskell stuff, including source code and cabal files"
 	@echo "  format_nix -- Format *.nix files only"
 	@echo "  format_check -- Check if all haskell stuff have been formatted correctly"
+	@echo "  lint -- Get hlint suggestions for project"
 
 hoogle:
 	pkill hoogle || true
@@ -43,3 +44,5 @@ haddock:
 tag:
 	hasktags -x agora agora-bench agora-test
 
+lint:
+	hlint agora agora-bench agora-test

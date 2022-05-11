@@ -1,5 +1,3 @@
---------------------------------------------------------------------------------
-
 import Prelude
 
 --------------------------------------------------------------------------------
@@ -14,6 +12,7 @@ import Spec.Governor qualified as Governor
 import Spec.Model.MultiSig qualified as MultiSig
 import Spec.Proposal qualified as Proposal
 import Spec.Stake qualified as Stake
+import Spec.Treasury qualified as Treasury
 
 -- | The Agora test suite.
 main :: IO ()
@@ -34,6 +33,18 @@ main =
           "Proposal tests"
           Proposal.tests
       , testGroup
+          "AuthorityToken tests"
+          AuthorityToken.tests
+      , testGroup
+          "Treasury tests"
+          Treasury.tests
+      , testGroup
+          "AuthorityToken tests"
+          AuthorityToken.tests
+      , testGroup
+          "Governor tests"
+          Governor.tests
+      , testGroup
           "Multisig tests"
           [ testGroup
               "MultiSig"
@@ -41,10 +52,4 @@ main =
               , MultiSig.genTests
               ]
           ]
-      , testGroup
-          "AuthorityToken tests"
-          AuthorityToken.tests
-      , testGroup
-          "Governor tests"
-          Governor.tests
       ]

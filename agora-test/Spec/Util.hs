@@ -3,7 +3,24 @@ Module     : Spec.Util
 Maintainer : emi@haskell.fyi
 Description: Utility functions for testing Plutarch scripts with ScriptContext
 
-Utility functions for testing Plutarch scripts with ScriptContext
+Utility functions for testing Plutarch scripts with ScriptContext:
+
+  - 'policySucceedsWith': checks that a minting policy succeeds.
+
+  - 'policyFailsWith': checks that a minting policy fails.
+
+  - 'validatorSucceedsWith': checks that validator succeeds.
+
+  - 'validatorFailsWith': checks that validator fails.
+
+  - 'effectSucceedsWith': checks that effect succeeds.
+
+  - 'effectFailsWith': checks that effect fails.
+
+  - 'scriptSucceeds': checks that an arbitrary script does not
+    `perror`.
+
+  - 'scriptFails': checks that an arbitrary script `perror`s out.
 -}
 module Spec.Util (
   -- * Testing utils
@@ -131,7 +148,9 @@ validatorFailsWith tag validator datum redeemer scriptContext =
           # pconstant scriptContext
       )
 
--- | Check that a validator script succeeds, given a name and arguments.
+{- | Check that a validator script succeeds, given a name and arguments.
+     TODO: Change docstring.
+-}
 effectSucceedsWith ::
   ( PLift datum
   , PlutusTx.ToData (PLifted datum)
@@ -143,7 +162,11 @@ effectSucceedsWith ::
   TestTree
 effectSucceedsWith tag eff datum = validatorSucceedsWith tag eff datum ()
 
--- | Check that a validator script fails, given a name and arguments.
+-- TODO: Change docstring.
+
+{- | Check that a validator script fails, given a name and arguments.
+     TODO: Change docstring.
+-}
 effectFailsWith ::
   ( PLift datum
   , PlutusTx.ToData (PLifted datum)
