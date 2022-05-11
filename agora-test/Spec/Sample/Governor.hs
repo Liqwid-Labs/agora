@@ -85,7 +85,23 @@ import Spec.Util (datumPair, toDatumHash)
 
 --------------------------------------------------------------------------------
 
--- | This script context should be a valid transaction.
+{- | A valid 'ScriptContext' for minting GST.
+
+    - Only the minting policy will be ran in the transaction.
+    - An arbitrary UTXO is spent to create the token.
+
+        - We call this the "witness" UTXO.
+        - This UTXO is referenced in the 'Agora.Governor.Governor' parameter
+        - The minting policy should only be ran once its life time,
+          cause the GST cannot be minted twice or burnt.
+
+    - The output UTXO must carry a valid 'GovernorDatum'.
+    - It's worth noticing that the transaction should send the GST to the governor validator,
+        but unfortunately we can't check it in the policy. The GST will stay at the address of
+        the governor validator forever once the token is under control of the said validator.
+
+    TODO: tag the output UTXO with the target address.
+-}
 mintGST :: ScriptContext
 mintGST =
   let gst = Value.assetClassValue govAssetClass 1
@@ -110,6 +126,7 @@ mintGST =
 
       ---
 
+      -- TODO: Can the witness be a script?
       witness :: PubKeyHash
       witness = "a926a9a72a0963f428e3252caa8354e655603996fb8892d6b8323fd072345924"
       witnessAddress :: Address
@@ -117,6 +134,7 @@ mintGST =
 
       ---
 
+      -- The witness UTXO must be consumed.
       witnessInput :: TxOut
       witnessInput =
         TxOut
@@ -126,25 +144,17 @@ mintGST =
           }
       witnessUTXO :: TxInInfo
       witnessUTXO = TxInInfo gstUTXORef witnessInput
-
-      ---
-
-      witnessOutput :: TxOut
-      witnessOutput =
-        TxOut
-          { txOutAddress = witnessAddress
-          , txOutValue = minAda
-          , txOutDatumHash = Nothing
-          }
    in ScriptContext
         { scriptContextTxInfo =
             TxInfo
               { txInfoInputs =
                   [ witnessUTXO
                   ]
-              , txInfoOutputs = [governorOutput, witnessOutput]
-              , txInfoFee = Value.singleton "" "" 2
-              , txInfoMint = gst
+              , txInfoOutputs = [governorOutput]
+              , -- Some ada to cover the transaction fee
+                txInfoFee = Value.singleton "" "" 2
+              , -- Exactly one GST is minted
+                txInfoMint = gst
               , txInfoDCert = []
               , txInfoWdrl = []
               , txInfoValidRange = Interval.always
@@ -155,7 +165,33 @@ mintGST =
         , scriptContextPurpose = Minting govSymbol
         }
 
--- | This script context should be a valid transaction.
+{- | A valid script context to create a proposal.
+
+    Three component will run in the transaction:
+    TODO: mention redeemers
+
+    - Governor validator
+    - Stake validator
+    - Proposal policy
+
+    The components will ensure:
+
+    - The governor state UTXO is spent
+
+        - A new UTXO is paid back to governor validator, which carries the GST.
+        - The proposal id in the state datum is advanced.
+
+    - A new UTXO is sent to the proposal validator
+
+        - The UTXO contains a newly minted proposal state token.
+        - It also carries a legal proposal state datum, whose status is set to 'Agora.Proposal.Draft'.
+
+    - A stake is spent to create a proposal
+
+        - The stake owner must sign the transaction.
+        - The output stake must paid back to the stake validator.
+        - The output stake is locked by the newly created proposal.
+-}
 createProposal :: ScriptContext
 createProposal =
   let pst = Value.singleton proposalPolicySymbol "" 1
@@ -293,7 +329,23 @@ createProposal =
         , scriptContextPurpose = Spending ownInputRef
         }
 
--- | This script context should be a valid transaction.
+{- This script context should be a valid transaction for minting authority for the effect scrips.
+
+    The following components will run:
+
+    - Governor validator
+    - Authority policy
+    - Proposal validator
+
+    There should be only one proposal the transaction.
+    The validity of the proposal will be checked:
+
+    - It's in 'Agora.Proposal.Locked' state.
+    - It has a 'winner' effect group, meaning that the votes meet the requirements.
+
+    The system will ensure that for every effect scrips in said effect group,
+    a newly minted GAT is sent to the corresponding effect, and properly tagged.
+-}
 mintGATs :: ScriptContext
 mintGATs =
   let pst = Value.singleton proposalPolicySymbol "" 1
@@ -443,7 +495,20 @@ mintGATs =
         , scriptContextPurpose = Spending ownInputRef
         }
 
--- | This script context should be a valid transaction.
+{- | A valid script context for changing the state datum of the governor.
+
+    In this case, the following components will run:
+
+    * Governor validator
+    * Effect script
+
+    The effect script should carry an valid tagged authority token,
+      and said token will be burnt in the transaction. We use 'noOpValidator'
+      here as a mock effect, so no actual change is done to the governor state.
+    TODO: use 'mutateGovernorEffect' as the mock effect in the future.
+
+    The governor will ensure the new governor state is valid.
+-}
 mutateState :: ScriptContext
 mutateState =
   let gst = Value.assetClassValue govAssetClass 1
