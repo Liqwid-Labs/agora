@@ -7,6 +7,7 @@ This module provides smaples for Treasury Withdrawal Effect tests.
 -}
 module Spec.Sample.Effect.TreasuryWithdrawal (
   signer,
+  validator,
   validatorHashTN,
   inputTreasury,
   inputUser,

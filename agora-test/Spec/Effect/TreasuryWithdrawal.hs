@@ -102,7 +102,7 @@ _scriptContextFromTWEDatum datum@(TreasuryWithdrawalDatum r t) =
       , txInfoValidRange = Interval.always
       , txInfoSignatories = [signer]
       , txInfoData = []
-      , txInfoId = "TODO: what should I put here?"
+      , txInfoId = "0b123412341234"
       }
     outputs = _expectedTxOutFromTWEDatum datum
     inputs = _expectedTxInInfoFromTWEDatum datum
@@ -118,11 +118,29 @@ _expectedTxOutFromTWEDatum (TreasuryWithdrawalDatum r _) =
       , txOutDatumHash = Nothing
       }
 
+{- | Generates expected inputs from given Datum
+-}
 _expectedTxInInfoFromTWEDatum :: TreasuryWithdrawalDatum -> [TxInInfo]
 _expectedTxInInfoFromTWEDatum (TreasuryWithdrawalDatum r t) =
-  undefined -- TODO: What should I do here?
+  (\addr -> TxInInfo
+    (TxOutRef "0b2086cbf8b6900f8cb65e012de4516cb66b5cb08a9aaba12a8b88be" 1)
+    TxOut
+    { txOutAddress = Address addr Nothing
+    , txOutValue = treasuryInputValue
+    , txOutDatumHash = Nothing
+    })
+  <$> t
   where
     totalValues = mconcat $ snd <$> r
+    treasuryInputValue = _distributeValue (length t) totalValues
+
+_distributeValue :: Int -> Value -> Value
+_distributeValue n v = mconcat $ (\(cs, tn, (toInteger -> val)) -> Value.singleton cs tn val) <$> vals
+  where
+     vals = (\(cs, tn, (fromInteger -> val)) -> (cs, tn, val `divRound` n)) <$> Value.flattenValue v
+     divRound x y = case divMod x y of
+                      (x, 0) -> x
+                      (x, _) -> x + 1
 
 genTWEDatum :: Gen TreasuryWithdrawalDatum
 genTWEDatum = do
