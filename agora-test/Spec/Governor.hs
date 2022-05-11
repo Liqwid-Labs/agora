@@ -1,9 +1,15 @@
 {- |
 Module     : Spec.Governor
 Maintainer : connor@mlabs.city
-Description: Tests for Governor policy and validator
+Description: Tests for Agora governor.
 
-Tests for Governor policy and validator
+Thie module exports `tests`, a list of `TestTree`s, which ensure
+that Agora's governor component workds as intended.
+
+Tests should pass when the validator or policy is given one of the
+valid script contexts, which are defined in 'Agora.Sample.Governor'.
+
+TODO: add negative test cases.
 -}
 module Spec.Governor (tests) where
 
