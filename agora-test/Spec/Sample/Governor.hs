@@ -543,7 +543,7 @@ mutateState =
               , txInfoDCert = []
               , txInfoWdrl = []
               , txInfoValidRange = Interval.always
-              , txInfoSignatories = [signer, signer2]
+              , txInfoSignatories = [signer]
               , txInfoData =
                   datumPair
                     <$> [ governorInputDatum
