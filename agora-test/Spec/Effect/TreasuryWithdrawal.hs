@@ -27,9 +27,6 @@ import Test.Tasty.Plutarch.Property (classifiedProperty)
 import Data.Tagged
 import Data.Universe
 
-prop :: Property
-prop = forAll (arbitrary :: Gen Integer) (\a -> (a + 1) > (abs a))
-
 type TWETestInput = (TreasuryWithdrawalDatum, ScriptContext)
 data TWETestCases
   = PaysToEffect
@@ -158,8 +155,7 @@ _asdf = undefined
 
 tests :: [TestTree]
 tests =
-  [ testProperty "test" prop -- will fail
-  , testProperty "effect" propertyTWE
+  [ testProperty "effect" propertyTWE
   , testGroup
       "effect"
       [ effectSucceedsWith
