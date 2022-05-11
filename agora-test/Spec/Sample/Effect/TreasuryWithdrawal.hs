@@ -6,6 +6,8 @@ Description: Sample based testing for Treasury Withdrawal Effect
 This module provides smaples for Treasury Withdrawal Effect tests.
 -}
 module Spec.Sample.Effect.TreasuryWithdrawal (
+  signer,
+  validatorHashTN,
   inputTreasury,
   inputUser,
   inputGAT,

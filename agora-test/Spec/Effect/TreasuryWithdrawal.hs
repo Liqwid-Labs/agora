@@ -14,20 +14,9 @@ import Agora.Effect.TreasuryWithdrawal (
  )
 import Plutus.V1.Ledger.Api
 import Plutus.V1.Ledger.Value qualified as Value
+import Plutus.V1.Ledger.Interval qualified as Interval
 import Plutarch.Api.V1
-import Spec.Sample.Effect.TreasuryWithdrawal (
-  buildReceiversOutputFromDatum,
-  buildScriptContext,
-  currSymbol,
-  inputCollateral,
-  inputGAT,
-  inputTreasury,
-  inputUser,
-  outputTreasury,
-  outputUser,
-  treasuries,
-  users,
- )
+import Spec.Sample.Effect.TreasuryWithdrawal
 import Spec.Sample.Sample
 import Spec.Util (effectFailsWith, effectSucceedsWith)
 import Test.QuickCheck
@@ -47,6 +36,7 @@ data TWETestCases
   | OutputsDoNotMatchReceivers
   | InputsHaveOtherScriptInput
   | RemaindersDoNotReturnToTreasuries
+  | EffectShouldPass
   deriving stock (Eq)
 
 instance Show TWETestCases where
@@ -55,6 +45,7 @@ instance Show TWETestCases where
     OutputsDoNotMatchReceivers -> "Transaction outputs do not match receivers"
     InputsHaveOtherScriptInput -> "Remainding Values do not return to input treasuries"
     RemaindersDoNotReturnToTreasuries -> "Transaction has script input that is not specified in datum"
+    EffectShouldPass -> "Effect should pass"
 
 instance Universe TWETestCases where
   universe =
@@ -62,14 +53,19 @@ instance Universe TWETestCases where
     , OutputsDoNotMatchReceivers
     , InputsHaveOtherScriptInput
     , RemaindersDoNotReturnToTreasuries
+    , EffectShouldPass
     ]
 
 instance Finite TWETestCases where
   universeF = universe
-  cardinality = Tagged 4
+  cardinality = Tagged 5
 
 genTWECases :: TWETestCases -> Gen TWETestInput
-genTWECases = undefined
+genTWECases PaysToEffect                      = undefined
+genTWECases OutputsDoNotMatchReceivers        = undefined
+genTWECases InputsHaveOtherScriptInput        = undefined
+genTWECases RemaindersDoNotReturnToTreasuries = undefined
+genTWECases EffectShouldPass                  = undefined
 
 classifyTWE :: TWETestInput -> TWETestCases
 classifyTWE = undefined
@@ -85,6 +81,51 @@ definitionTWE = undefined
 
 propertyTWE :: Property
 propertyTWE = classifiedProperty genTWECases shrinkTWE expectedTWE classifyTWE definitionTWE
+
+{- | Generates "lawful" ScriptContext from given TreasuryWithdrawalDatum.
+Other cases can use this ScriptContext to derive from and develop
+a case specific contexts with generators.
+
+TODO: will this work okay with generators adding and removing
+parts? I don't see particular reason it will not to, but will
+that be a "good" generator?
+-}
+_scriptContextFromTWEDatum :: TreasuryWithdrawalDatum -> ScriptContext
+_scriptContextFromTWEDatum datum@(TreasuryWithdrawalDatum r t) =
+  ScriptContext txinfo sp
+  where
+    txinfo =
+      TxInfo
+      { txInfoInputs = inputs
+      , txInfoOutputs = outputs
+      , txInfoFee = Value.singleton "" "" 2
+      , txInfoMint = Value.singleton currSymbol validatorHashTN (-1)
+      , txInfoDCert = []
+      , txInfoWdrl = []
+      , txInfoValidRange = Interval.always
+      , txInfoSignatories = [signer]
+      , txInfoData = []
+      , txInfoId = "TODO: what should I put here?"
+      }
+    outputs = _expectedTxOutFromTWEDatum datum
+    inputs = _expectedTxInInfoFromTWEDatum datum
+    sp = Spending (TxOutRef "0b2086cbf8b6900f8cb65e012de4516cb66b5cb08a9aaba12a8b88be" 1)
+
+_expectedTxOutFromTWEDatum :: TreasuryWithdrawalDatum -> [TxOut]
+_expectedTxOutFromTWEDatum (TreasuryWithdrawalDatum r _) =
+  f <$> r -- add outputs to treasuries, returning excess STs.
+  where 
+    f (addr, val) = TxOut
+      { txOutAddress = Address addr Nothing
+      , txOutValue = val
+      , txOutDatumHash = Nothing
+      }
+
+_expectedTxInInfoFromTWEDatum :: TreasuryWithdrawalDatum -> [TxInInfo]
+_expectedTxInInfoFromTWEDatum (TreasuryWithdrawalDatum r t) =
+  undefined -- TODO: What should I do here?
+  where
+    totalValues = mconcat $ snd <$> r
 
 genTWEDatum :: Gen TreasuryWithdrawalDatum
 genTWEDatum = do
