@@ -152,6 +152,26 @@ library pprelude
   hs-source-dirs:   agora
   default-language: Haskell2010
 
+library agora-testlib
+  import:          lang, deps, test-deps
+  exposed-modules: Test.Util
+  hs-source-dirs:  agora-testlib
+
+library agora-sample
+  import:          lang, deps, test-deps
+  build-depends:
+    , agora
+    , agora-testlib
+
+  exposed-modules:
+    Sample.Effect.TreasuryWithdrawal
+    Sample.Proposal
+    Sample.Shared
+    Sample.Stake
+    Sample.Treasury
+
+  hs-source-dirs:  agora-sample
+
 test-suite agora-test
   import:         lang, deps, test-deps
   type:           exitcode-stdio-1.0
@@ -162,16 +182,13 @@ test-suite agora-test
     Spec.Effect.TreasuryWithdrawal
     Spec.Model.MultiSig
     Spec.Proposal
-    Spec.Sample.Effect.TreasuryWithdrawal
-    Spec.Sample.Proposal
-    Spec.Sample.Shared
-    Spec.Sample.Stake
-    Spec.Sample.Treasury
     Spec.Stake
     Spec.Treasury
-    Spec.Util
 
-  build-depends:  agora
+  build-depends:
+    , agora
+    , agora-sample
+    , agora-testlib
 
 benchmark agora-bench
   import:         lang, deps

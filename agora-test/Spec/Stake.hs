@@ -24,9 +24,9 @@ import Agora.Stake.Scripts (stakePolicy, stakeValidator)
 
 --------------------------------------------------------------------------------
 
-import Spec.Sample.Stake (DepositWithdrawExample (DepositWithdrawExample, delta, startAmount), signer)
-import Spec.Sample.Stake qualified as Stake
-import Spec.Util (policyFailsWith, policySucceedsWith, toDatum, validatorFailsWith, validatorSucceedsWith)
+import Sample.Stake (DepositWithdrawExample (DepositWithdrawExample, delta, startAmount), signer)
+import Sample.Stake qualified as Stake
+import Test.Util (policyFailsWith, policySucceedsWith, toDatum, validatorFailsWith, validatorSucceedsWith)
 
 --------------------------------------------------------------------------------
 
