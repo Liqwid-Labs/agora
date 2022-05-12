@@ -94,6 +94,139 @@ instance forall (s :: Plutarch.Internal.S). Control.Category.Category @{[Plutarc
 instance forall (sym :: GHC.Types.Symbol) (sym' :: GHC.Types.Symbol). ((sym :: GHC.Types.Symbol) GHC.Types.~ (sym' :: GHC.Types.Symbol)) => GHC.OverloadedLabels.IsLabel sym (Agora.Record.FieldName sym)
 
 
+-- | Tags and extras for <a>Plutarch.SafeMoney</a>.
+module Agora.SafeMoney
+
+-- | ADA.
+data ADATag
+
+-- | Governance token.
+data GTTag
+
+-- | Resolves ada tags.
+adaRef :: Tagged ADATag AssetClass
+
+
+-- | Plutarch utility functions that should be upstreamed or don't belong
+--   anywhere else.
+module Agora.Utils
+
+-- | Assert a particular <a>PBool</a>, trace if false.
+tcassert :: forall r (s :: S). Term s PString -> Term s PBool -> TermCont @r s ()
+
+-- | <a>plet</a> but for use in <a>TermCont</a>.
+tclet :: forall r (s :: S) (a :: PType). Term s a -> TermCont @r s (Term s a)
+
+-- | <a>pmatch</a> but for use in <a>TermCont</a>.
+tcmatch :: forall (a :: PType) (s :: S). PlutusType a => Term s a -> TermCont s (a s)
+
+-- | <a>ptryFrom</a> but for use in <a>TermCont</a>.
+tctryFrom :: forall b a s r. PTryFrom a b => Term s a -> TermCont @r s (Term s b, Reduce (PTryFromExcess a b s))
+
+-- | Get the first element that matches a predicate or return Nothing.
+pfind' :: PIsListLike list a => (Term s a -> Term s PBool) -> Term s (list a :--> PMaybe a)
+
+-- | Find a datum with the given hash.
+pfindDatum :: Term s (PDatumHash :--> (PBuiltinList (PAsData (PTuple PDatumHash PDatum)) :--> PMaybe PDatum))
+
+-- | Find a datum with the given hash, and <a>ptryFrom</a> it.
+ptryFindDatum :: forall (a :: PType) (s :: S). PTryFrom PData a => Term s (PDatumHash :--> (PBuiltinList (PAsData (PTuple PDatumHash PDatum)) :--> PMaybe a))
+
+-- | Sum of all value at input.
+pvalueSpent :: Term s (PBuiltinList (PAsData PTxInInfo) :--> PValue)
+
+-- | Check if a PubKeyHash signs this transaction.
+ptxSignedBy :: Term s (PBuiltinList (PAsData PPubKeyHash) :--> (PAsData PPubKeyHash :--> PBool))
+
+-- | Add two <a>PValue</a>s together.
+paddValue :: forall s. Term s (PValue :--> (PValue :--> PValue))
+
+-- | Find the value for a given key in an associative list.
+plookup :: (PEq a, PIsListLike list (PBuiltinPair a b)) => Term s (a :--> (list (PBuiltinPair a b) :--> PMaybe b))
+
+-- | Extract a Maybe by providing a default value in case of Just.
+pfromMaybe :: forall a s. Term s (a :--> (PMaybe a :--> a))
+
+-- | Get the sum of all values belonging to a particular CurrencySymbol.
+psymbolValueOf :: Term s (PCurrencySymbol :--> (PValue :--> PInteger))
+
+-- | Return <a>&gt;=</a> on two values comparing by only a particular
+--   AssetClass.
+pgeqByClass :: Term s (PCurrencySymbol :--> (PTokenName :--> (PValue :--> (PValue :--> PBool))))
+
+-- | Return <a>&gt;=</a> on two values comparing by only a particular
+--   CurrencySymbol.
+pgeqBySymbol :: Term s (PCurrencySymbol :--> (PValue :--> (PValue :--> PBool)))
+
+-- | Return <a>&gt;=</a> on two values comparing by only a particular
+--   Haskell-level AssetClass.
+pgeqByClass' :: AssetClass -> Term s (PValue :--> (PValue :--> PBool))
+
+-- | Find the TxInInfo by a TxOutRef.
+pfindTxInByTxOutRef :: Term s (PTxOutRef :--> (PBuiltinList (PAsData PTxInInfo) :--> PMaybe PTxInInfo))
+
+-- | Create a value with a single asset class.
+psingletonValue :: forall s. Term s (PCurrencySymbol :--> (PTokenName :--> (PInteger :--> PValue)))
+
+-- | Get the first element that maps to a PJust in a list.
+pfindMap :: PIsListLike list a => Term s ((a :--> PMaybe b) :--> (list a :--> PMaybe b))
+
+-- | True if a list is not empty.
+pnotNull :: forall list a. PIsListLike list a => Term _ (list a :--> PBool)
+
+-- | Yield True if a given PMaybe is of form PJust _.
+pisJust :: forall a s. Term s (PMaybe a :--> PBool)
+
+-- | Check if a particular asset class has been spent in the input list.
+--   
+--   When using this as an authority check, you <b>MUST</b> ensure the
+--   authority knows how to ensure its end of the contract.
+ptokenSpent :: forall {s :: S}. Term s (PAssetClass :--> (PBuiltinList (PAsData PTxInInfo) :--> PBool))
+
+-- | True if both maps have exactly the same keys. Using
+--   <tt><a>#==</a></tt> is not sufficient, because keys returned are not
+--   ordered.
+pkeysEqual :: forall (s :: S) k a b. Term s (PMap k a :--> (PMap k b :--> PBool))
+
+-- | <i> O(n^2) </i>. Clear out duplicates in a list. The order is not
+--   preserved.
+pnub :: forall list a (s :: S). (PEq a, PIsListLike list a) => Term s (list a :--> list a)
+
+-- | <i> O(n^2) </i>. Check if a list contains no duplicates.
+pisUniq :: forall list a (s :: S). (PEq a, PIsListLike list a) => Term s (list a :--> PBool)
+
+-- | Check if any output matches the predicate.
+anyOutput :: forall (datum :: PType) s. (PIsData datum, PTryFrom PData (PAsData datum)) => Term s (PTxInfo :--> ((PValue :--> (PAddress :--> (datum :--> PBool))) :--> PBool))
+
+-- | Check if all outputs match the predicate.
+allOutputs :: forall (datum :: PType) s. (PIsData datum, PTryFrom PData (PAsData datum)) => Term s (PTxInfo :--> ((PTxOut :--> (PValue :--> (PAddress :--> (datum :--> PBool)))) :--> PBool))
+
+-- | Check if any (resolved) input matches the predicate.
+anyInput :: forall (datum :: PType) s. (PIsData datum, PTryFrom PData (PAsData datum)) => Term s (PTxInfo :--> ((PValue :--> (PAddress :--> (datum :--> PBool))) :--> PBool))
+
+-- | Finds the TxOut of an effect from TxInfo and TxOutRef
+findTxOutByTxOutRef :: Term s (PTxOutRef :--> (PBuiltinList (PAsData PTxInInfo) :--> PMaybe PTxOut))
+
+-- | Get script hash from an Address.
+scriptHashFromAddress :: Term s (PAddress :--> PMaybe PValidatorHash)
+
+-- | Find all TxOuts sent to an Address
+findOutputsToAddress :: Term s (PBuiltinList (PAsData PTxOut) :--> (PAddress :--> PBuiltinList (PAsData PTxOut)))
+
+-- | Find the data corresponding to a TxOut, if there is one
+findTxOutDatum :: Term s (PBuiltinList (PAsData (PTuple PDatumHash PDatum)) :--> (PTxOut :--> PMaybe PDatum))
+
+-- | Safely convert a <a>PValidatorHash</a> into a <a>PTokenName</a>. This
+--   can be useful for tagging tokens for extra safety.
+validatorHashToTokenName :: ValidatorHash -> TokenName
+
+-- | Plutarch level <a>validatorHashToTokenName</a>.
+pvalidatorHashToTokenName :: forall (s :: S). Term s PValidatorHash -> Term s PTokenName
+
+-- | Get the CurrencySymbol of a PMintingPolicy.
+getMintingPolicySymbol :: ClosedTerm PMintingPolicy -> CurrencySymbol
+
+
 -- | Time functions for proposal phases.
 module Agora.Proposal.Time
 
@@ -214,131 +347,6 @@ instance PlutusTx.IsData.Class.UnsafeFromData Agora.Proposal.Time.ProposalTime
 instance GHC.Generics.Generic Agora.Proposal.Time.ProposalTime
 instance GHC.Show.Show Agora.Proposal.Time.ProposalTime
 instance GHC.Classes.Eq Agora.Proposal.Time.ProposalTime
-
-
--- | Tags and extras for <a>Plutarch.SafeMoney</a>.
-module Agora.SafeMoney
-
--- | ADA.
-data ADATag
-
--- | Governance token.
-data GTTag
-
--- | Resolves ada tags.
-adaRef :: Tagged ADATag AssetClass
-
-
--- | Plutarch utility functions that should be upstreamed or don't belong
---   anywhere else.
-module Agora.Utils
-
--- | Assert a particular <a>PBool</a>, trace if false. Use in monadic
---   context.
-passert :: Term s PString -> Term s PBool -> Term s k -> Term s k
-
--- | Get the first element that matches a predicate or return Nothing.
-pfind' :: PIsListLike list a => (Term s a -> Term s PBool) -> Term s (list a :--> PMaybe a)
-
--- | Find a datum with the given hash.
-pfindDatum :: Term s (PDatumHash :--> (PBuiltinList (PAsData (PTuple PDatumHash PDatum)) :--> PMaybe PDatum))
-
--- | Find a datum with the given hash, and <a>ptryFrom</a> it.
-ptryFindDatum :: forall (a :: PType) (s :: S). PTryFrom PData a => Term s (PDatumHash :--> (PBuiltinList (PAsData (PTuple PDatumHash PDatum)) :--> PMaybe a))
-
--- | Sum of all value at input.
-pvalueSpent :: Term s (PBuiltinList (PAsData PTxInInfo) :--> PValue)
-
--- | Check if a PubKeyHash signs this transaction.
-ptxSignedBy :: Term s (PBuiltinList (PAsData PPubKeyHash) :--> (PAsData PPubKeyHash :--> PBool))
-
--- | Add two <a>PValue</a>s together.
-paddValue :: forall s. Term s (PValue :--> (PValue :--> PValue))
-
--- | Find the value for a given key in an associative list.
-plookup :: (PEq a, PIsListLike list (PBuiltinPair a b)) => Term s (a :--> (list (PBuiltinPair a b) :--> PMaybe b))
-
--- | Extract a Maybe by providing a default value in case of Just.
-pfromMaybe :: forall a s. Term s (a :--> (PMaybe a :--> a))
-
--- | Get the sum of all values belonging to a particular CurrencySymbol.
-psymbolValueOf :: Term s (PCurrencySymbol :--> (PValue :--> PInteger))
-
--- | Return <a>&gt;=</a> on two values comparing by only a particular
---   AssetClass.
-pgeqByClass :: Term s (PCurrencySymbol :--> (PTokenName :--> (PValue :--> (PValue :--> PBool))))
-
--- | Return <a>&gt;=</a> on two values comparing by only a particular
---   CurrencySymbol.
-pgeqBySymbol :: Term s (PCurrencySymbol :--> (PValue :--> (PValue :--> PBool)))
-
--- | Return <a>&gt;=</a> on two values comparing by only a particular
---   Haskell-level AssetClass.
-pgeqByClass' :: AssetClass -> Term s (PValue :--> (PValue :--> PBool))
-
--- | Find the TxInInfo by a TxOutRef.
-pfindTxInByTxOutRef :: Term s (PTxOutRef :--> (PBuiltinList (PAsData PTxInInfo) :--> PMaybe PTxInInfo))
-
--- | Create a value with a single asset class.
-psingletonValue :: forall s. Term s (PCurrencySymbol :--> (PTokenName :--> (PInteger :--> PValue)))
-
--- | Get the first element that maps to a PJust in a list.
-pfindMap :: PIsListLike list a => Term s ((a :--> PMaybe b) :--> (list a :--> PMaybe b))
-
--- | True if a list is not empty.
-pnotNull :: forall list a. PIsListLike list a => Term _ (list a :--> PBool)
-
--- | Yield True if a given PMaybe is of form PJust _.
-pisJust :: forall a s. Term s (PMaybe a :--> PBool)
-
--- | Check if a particular asset class has been spent in the input list.
---   
---   When using this as an authority check, you <b>MUST</b> ensure the
---   authority knows how to ensure its end of the contract.
-ptokenSpent :: forall {s :: S}. Term s (PAssetClass :--> (PBuiltinList (PAsData PTxInInfo) :--> PBool))
-
--- | True if both maps have exactly the same keys. Using
---   <tt><a>#==</a></tt> is not sufficient, because keys returned are not
---   ordered.
-pkeysEqual :: forall (s :: S) k a b. Term s (PMap k a :--> (PMap k b :--> PBool))
-
--- | <i> O(n^2) </i>. Clear out duplicates in a list. The order is not
---   preserved.
-pnub :: forall list a (s :: S). (PEq a, PIsListLike list a) => Term s (list a :--> list a)
-
--- | <i> O(n^2) </i>. Check if a list contains no duplicates.
-pisUniq :: forall list a (s :: S). (PEq a, PIsListLike list a) => Term s (list a :--> PBool)
-
--- | Check if any output matches the predicate.
-anyOutput :: forall (datum :: PType) s. (PIsData datum, PTryFrom PData (PAsData datum)) => Term s (PTxInfo :--> ((PValue :--> (PAddress :--> (datum :--> PBool))) :--> PBool))
-
--- | Check if all outputs match the predicate.
-allOutputs :: forall (datum :: PType) s. (PIsData datum, PTryFrom PData (PAsData datum)) => Term s (PTxInfo :--> ((PTxOut :--> (PValue :--> (PAddress :--> (datum :--> PBool)))) :--> PBool))
-
--- | Check if any (resolved) input matches the predicate.
-anyInput :: forall (datum :: PType) s. (PIsData datum, PTryFrom PData (PAsData datum)) => Term s (PTxInfo :--> ((PValue :--> (PAddress :--> (datum :--> PBool))) :--> PBool))
-
--- | Finds the TxOut of an effect from TxInfo and TxOutRef
-findTxOutByTxOutRef :: Term s (PTxOutRef :--> (PBuiltinList (PAsData PTxInInfo) :--> PMaybe PTxOut))
-
--- | Get script hash from an Address.
-scriptHashFromAddress :: Term s (PAddress :--> PMaybe PValidatorHash)
-
--- | Find all TxOuts sent to an Address
-findOutputsToAddress :: Term s (PBuiltinList (PAsData PTxOut) :--> (PAddress :--> PBuiltinList (PAsData PTxOut)))
-
--- | Find the data corresponding to a TxOut, if there is one
-findTxOutDatum :: Term s (PBuiltinList (PAsData (PTuple PDatumHash PDatum)) :--> (PTxOut :--> PMaybe PDatum))
-
--- | Safely convert a <a>PValidatorHash</a> into a <a>PTokenName</a>. This
---   can be useful for tagging tokens for extra safety.
-validatorHashToTokenName :: ValidatorHash -> TokenName
-
--- | Plutarch level <a>validatorHashToTokenName</a>.
-pvalidatorHashToTokenName :: forall (s :: S). Term s PValidatorHash -> Term s PTokenName
-
--- | Get the CurrencySymbol of a PMintingPolicy.
-getMintingPolicySymbol :: ClosedTerm PMintingPolicy -> CurrencySymbol
 
 
 -- | Proposal scripts encoding effects that operate on the system.
