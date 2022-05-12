@@ -27,7 +27,7 @@ import Test.Tasty.Plutarch.Property (classifiedProperty)
 import Data.Tagged
 import Data.Universe
 
-type TWETestInput = (TreasuryWithdrawalDatum, ScriptContext)
+type TWETestInput = (TreasuryWithdrawalDatum, TxInfo)
 data TWETestCases
   = PaysToEffect
   | OutputsDoNotMatchReceivers
@@ -58,11 +58,17 @@ instance Finite TWETestCases where
   cardinality = Tagged 5
 
 genTWECases :: TWETestCases -> Gen TWETestInput
-genTWECases PaysToEffect                      = undefined
+genTWECases PaysToEffect                      = do
+  (datum, txinfo) <- genTWECases EffectShouldPass
+  -- TODO: I need a good way to update txInfo.
+  -- I don't wanna write seperate function for all cases.
+  return (datum, txinfo)
 genTWECases OutputsDoNotMatchReceivers        = undefined
 genTWECases InputsHaveOtherScriptInput        = undefined
 genTWECases RemaindersDoNotReturnToTreasuries = undefined
-genTWECases EffectShouldPass                  = undefined
+genTWECases EffectShouldPass                  = do
+  datum <- genTWEDatum
+  return (datum, _txInfoFromTWEDatum datum)
 
 classifyTWE :: TWETestInput -> TWETestCases
 classifyTWE = undefined
@@ -70,10 +76,10 @@ classifyTWE = undefined
 shrinkTWE :: TWETestInput -> [TWETestInput]
 shrinkTWE = undefined
 
-expectedTWE :: Term s (PBuiltinPair PTreasuryWithdrawalDatum PScriptContext :--> PMaybe PBool)
+expectedTWE :: Term s (PBuiltinPair PTreasuryWithdrawalDatum PTxInfo :--> PMaybe PBool)
 expectedTWE = undefined
 
-definitionTWE :: Term s (PBuiltinPair PTreasuryWithdrawalDatum PScriptContext :--> PBool)
+definitionTWE :: Term s (PBuiltinPair PTreasuryWithdrawalDatum PTxInfo :--> PBool)
 definitionTWE = undefined
 
 propertyTWE :: Property
@@ -87,9 +93,8 @@ TODO: will this work okay with generators adding and removing
 parts? I don't see particular reason it will not to, but will
 that be a "good" generator?
 -}
-_scriptContextFromTWEDatum :: TreasuryWithdrawalDatum -> ScriptContext
-_scriptContextFromTWEDatum datum =
-  ScriptContext txinfo sp
+_txInfoFromTWEDatum :: TreasuryWithdrawalDatum -> TxInfo
+_txInfoFromTWEDatum datum = txinfo
   where
     txinfo =
       TxInfo
@@ -106,7 +111,6 @@ _scriptContextFromTWEDatum datum =
       }
     (inputs, excessOutputs)  = _expectedTxInInfoFromTWEDatum datum
     outputs = _expectedTxOutFromTWEDatum datum <> excessOutputs
-    sp = Spending (TxOutRef "0b2086cbf8b6900f8cb65e012de4516cb66b5cb08a9aaba12a8b88be" 1)
 
 _expectedTxOutFromTWEDatum :: TreasuryWithdrawalDatum -> [TxOut]
 _expectedTxOutFromTWEDatum (TreasuryWithdrawalDatum r _) =
