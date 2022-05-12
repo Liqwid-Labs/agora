@@ -20,6 +20,8 @@ import Spec.Sample.Effect.TreasuryWithdrawal
 import Spec.Sample.Sample
 import Spec.Util (effectFailsWith, effectSucceedsWith)
 import Test.QuickCheck
+import Test.QuickCheck.Monadic
+
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.QuickCheck (testProperty)
 import Test.Tasty.Plutarch.Property (classifiedProperty)
@@ -42,8 +44,8 @@ instance Show TWETestCases where
   show = \case
     PaysToEffect -> "Transaction pays to effect"
     OutputsDoNotMatchReceivers -> "Transaction outputs do not match receivers"
-    InputsHaveOtherScriptInput -> "Remainding Values do not return to input treasuries"
-    RemaindersDoNotReturnToTreasuries -> "Transaction has script input that is not specified in datum"
+    InputsHaveOtherScriptInput -> "Transaction has script input that is not specified in datum"
+    RemaindersDoNotReturnToTreasuries -> "Remainding Values do not return to input treasuries"
     EffectShouldPass -> "Effect should pass"
 
 instance Universe TWETestCases where
@@ -58,6 +60,7 @@ instance Universe TWETestCases where
 instance Finite TWETestCases where
   universeF = universe
   cardinality = Tagged 5
+  
 -- TODO: Some unideal repeated patterns here
 genTWECases :: TWETestCases -> Gen TWETestInput
 genTWECases PaysToEffect                      = do
@@ -76,7 +79,9 @@ genTWECases PaysToEffect                      = do
 genTWECases OutputsDoNotMatchReceivers        = do
   datum <- genTWEDatum
   let modify (i, o) = do
-        output <- sublistOf o
+        -- unfortunately `sublistOf` sometimes returns same array.
+        -- So tail is used to make sure there is aleast one thing missing
+        output <- sublistOf $ tail o
         return (i, output)
   txinfo <- _txInfoFromTWEDatum modify datum
   return (datum, txinfo)
@@ -115,8 +120,23 @@ genTWECases EffectShouldPass                  = do
   return (datum, txinfo)
 
 classifyTWE :: TWETestInput -> TWETestCases
-classifyTWE = undefined
-
+classifyTWE ((TreasuryWithdrawalDatum r t), info)
+  | paysToEffect = PaysToEffect
+  | outputsDoNotMatchReceivers = OutputsDoNotMatchReceivers
+  | inputsHaveOtherScriptInput = InputsHaveOtherScriptInput
+  | remaindersDoNotReturnToTreasuries = RemaindersDoNotReturnToTreasuries
+  | otherwise = EffectShouldPass
+  where
+    extractCredVal txout = (addressCredential (txOutAddress txout), txOutValue txout)
+    credentialValuePairs = extractCredVal <$> txInfoOutputs info
+    paysToEffect = elem (ScriptCredential $ validatorHash validator) $ fst . extractCredVal <$> (txInfoOutputs info)
+    outputsDoNotMatchReceivers = not $ and $ fmap (\x -> elem x credentialValuePairs) r
+    inputsHaveOtherScriptInput = or $ (\(fst . extractCredVal . txInInfoResolved -> x) ->
+                                         (not $ elem x t) &&
+                                         x /= (ScriptCredential $ validatorHash validator)
+                                      ) <$> txInfoInputs info
+    remaindersDoNotReturnToTreasuries = undefined
+    
 shrinkTWE :: TWETestInput -> [TWETestInput]
 shrinkTWE = const [] -- currently this should work... 
 
@@ -214,9 +234,16 @@ genTWEDatum = do
   let receiverList = zipWith (,) users values
   pure $ TreasuryWithdrawalDatum receiverList treas
 
+
+prop :: PropertyM IO Bool
+prop = forAllM (elements (universe :: [TWETestCases])) (\c -> run $ generate (genTWECases c) >>= (\gen -> do
+                                                                                                     putStrLn $ show c <> show (classifyTWE gen)
+                                                                                                     return $ c == classifyTWE gen))
+
 tests :: [TestTree]
 tests =
-  [ testProperty "effect" propertyTWE
+  [ testProperty "hey" (monadicIO prop)
+  , testProperty "effect" propertyTWE
   , testGroup
       "effect"
       [ effectSucceedsWith
