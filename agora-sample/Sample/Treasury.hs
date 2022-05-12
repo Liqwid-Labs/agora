@@ -1,14 +1,14 @@
 {-# LANGUAGE TemplateHaskell #-}
 
 {- |
-Module: Spec.Sample.Treasury
+Module: Sample.Treasury
 Description: Sample data for `Spec.Treasury`.
 Maintainer: jack@mlabs.city
 
 This module contains sample data, used in the tests written in
 `Spec.Treasury`.
 -}
-module Spec.Sample.Treasury (
+module Sample.Treasury (
   gatCs,
   validCtx,
   treasuryRef,
@@ -38,7 +38,7 @@ import Plutus.V1.Ledger.Scripts (
   ValidatorHash (ValidatorHash),
  )
 import Plutus.V1.Ledger.Value qualified as Value
-import Spec.Sample.Shared (
+import Sample.Shared (
   gatCs,
   gatTn,
   minAda,
@@ -47,7 +47,7 @@ import Spec.Sample.Shared (
   treasuryOut,
   wrongEffHash,
  )
-import Spec.Util (datumPair)
+import Test.Util (datumPair)
 
 {- | A `ScriptContext` that should be compatible with treasury
      transactions.

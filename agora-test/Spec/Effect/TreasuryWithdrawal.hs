@@ -12,7 +12,7 @@ import Agora.Effect.TreasuryWithdrawal (
   treasuryWithdrawalValidator,
  )
 import Plutus.V1.Ledger.Value qualified as Value
-import Spec.Sample.Effect.TreasuryWithdrawal (
+import Sample.Effect.TreasuryWithdrawal (
   buildReceiversOutputFromDatum,
   buildScriptContext,
   currSymbol,
@@ -25,8 +25,8 @@ import Spec.Sample.Effect.TreasuryWithdrawal (
   treasuries,
   users,
  )
-import Spec.Util (effectFailsWith, effectSucceedsWith)
 import Test.Tasty (TestTree, testGroup)
+import Test.Util (effectFailsWith, effectSucceedsWith)
 
 tests :: [TestTree]
 tests =

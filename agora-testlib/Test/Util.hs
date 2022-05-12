@@ -1,5 +1,5 @@
 {- |
-Module     : Spec.Util
+Module     : Test.Util
 Maintainer : emi@haskell.fyi
 Description: Utility functions for testing Plutarch scripts with ScriptContext
 
@@ -22,7 +22,7 @@ Utility functions for testing Plutarch scripts with ScriptContext:
 
   - 'scriptFails': checks that an arbitrary script `perror`s out.
 -}
-module Spec.Util (
+module Test.Util (
   -- * Testing utils
   scriptSucceeds,
   scriptFails,
