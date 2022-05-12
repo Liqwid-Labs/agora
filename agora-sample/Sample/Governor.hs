@@ -5,7 +5,7 @@ Description: Sample based testing for Governor utxos
 
 This module tests primarily the happy path for Governor interactions
 -}
-module Spec.Sample.Governor (
+module Sample.Governor (
   createProposal,
   mutateState,
   mintGATs,
@@ -65,7 +65,7 @@ import Agora.Stake (
 
 --------------------------------------------------------------------------------
 
-import Spec.Sample.Shared (
+import Sample.Shared (
   authorityTokenSymbol,
   defaultProposalThresholds,
   govAssetClass,
@@ -81,7 +81,7 @@ import Spec.Sample.Shared (
   stakeAddress,
   stakeAssetClass,
  )
-import Spec.Util (datumPair, toDatumHash)
+import Test.Util (datumPair, toDatumHash)
 
 --------------------------------------------------------------------------------
 

@@ -33,7 +33,7 @@ import Plutus.V1.Ledger.Api (
 import Plutus.V1.Ledger.Interval qualified as Interval
 import Plutus.V1.Ledger.Value qualified as Value
 import PlutusTx.AssocMap qualified as AssocMap
-import Spec.Util (scriptFails, scriptSucceeds)
+import Test.Util (scriptFails, scriptSucceeds)
 
 currencySymbol :: CurrencySymbol
 currencySymbol = "deadbeef"

@@ -1,11 +1,11 @@
 {- |
-Module     : Spec.Sample.Shared
+Module     : Sample.Shared
 Maintainer : emi@haskell.fyi
 Description: Shared useful values for creating Samples for testing.
 
 Shared useful values for creating Samples for testing.
 -}
-module Spec.Sample.Shared (
+module Sample.Shared (
   -- * Misc
   signer,
   signer2,

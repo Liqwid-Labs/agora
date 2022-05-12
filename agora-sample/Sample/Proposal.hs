@@ -1,11 +1,11 @@
 {- |
-Module     : Spec.Sample.Proposal
+Module     : Sample.Proposal
 Maintainer : emi@haskell.fyi
 Description: Sample based testing for Proposal utxos
 
 This module tests primarily the happy path for Proposal interactions
 -}
-module Spec.Sample.Proposal (
+module Sample.Proposal (
   -- * Script contexts
   proposalCreation,
   cosignProposal,
@@ -49,8 +49,8 @@ import Agora.Proposal (
 import Agora.Stake (Stake (..), StakeDatum (StakeDatum))
 import Plutarch.SafeMoney (Tagged (Tagged), untag)
 import PlutusTx.AssocMap qualified as AssocMap
-import Spec.Sample.Shared
-import Spec.Util (datumPair, toDatumHash)
+import Sample.Shared
+import Test.Util (datumPair, toDatumHash)
 
 --------------------------------------------------------------------------------
 

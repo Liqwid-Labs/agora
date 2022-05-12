@@ -37,10 +37,10 @@ import Plutus.V1.Ledger.Credential (
   StakingCredential (StakingHash),
  )
 import Plutus.V1.Ledger.Value qualified as Value
-import Spec.Sample.Shared (
+import Sample.Shared (
   trCredential,
  )
-import Spec.Sample.Treasury (
+import Sample.Treasury (
   gatCs,
   gatTn,
   trCtxGATNameNotAddress,
@@ -48,8 +48,8 @@ import Spec.Sample.Treasury (
   validCtx,
   walletIn,
  )
-import Spec.Util (validatorFailsWith, validatorSucceedsWith)
 import Test.Tasty (TestTree, testGroup)
+import Test.Util (validatorFailsWith, validatorSucceedsWith)
 
 tests :: [TestTree]
 tests =

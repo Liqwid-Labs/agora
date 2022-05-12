@@ -16,10 +16,10 @@ module Spec.Governor (tests) where
 import Agora.Governor (GovernorDatum (..), GovernorRedeemer (..))
 import Agora.Governor.Scripts (governorPolicy, governorValidator)
 import Agora.Proposal (ProposalId (..))
-import Spec.Sample.Governor (createProposal, mintGATs, mintGST, mutateState)
-import Spec.Sample.Shared qualified as Shared
-import Spec.Util (policySucceedsWith, validatorSucceedsWith)
+import Sample.Governor (createProposal, mintGATs, mintGST, mutateState)
+import Sample.Shared qualified as Shared
 import Test.Tasty (TestTree, testGroup)
+import Test.Util (policySucceedsWith, validatorSucceedsWith)
 
 --------------------------------------------------------------------------------
 

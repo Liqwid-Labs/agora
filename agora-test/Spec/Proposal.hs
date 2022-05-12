@@ -35,11 +35,11 @@ import Agora.Stake.Scripts (stakeValidator)
 import Plutarch.SafeMoney (Tagged (Tagged))
 import Plutus.V1.Ledger.Api (ScriptContext (..), ScriptPurpose (..))
 import PlutusTx.AssocMap qualified as AssocMap
-import Spec.Sample.Proposal qualified as Proposal
-import Spec.Sample.Shared (signer, signer2)
-import Spec.Sample.Shared qualified as Shared
-import Spec.Util (policySucceedsWith, validatorSucceedsWith)
+import Sample.Proposal qualified as Proposal
+import Sample.Shared (signer, signer2)
+import Sample.Shared qualified as Shared
 import Test.Tasty (TestTree, testGroup)
+import Test.Util (policySucceedsWith, validatorSucceedsWith)
 
 --------------------------------------------------------------------------------
 

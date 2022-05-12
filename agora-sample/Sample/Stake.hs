@@ -1,11 +1,11 @@
 {- |
-Module     : Spec.Sample.Stake
+Module     : Sample.Stake
 Maintainer : emi@haskell.fyi
 Description: Sample based testing for Stake utxos
 
 This module tests primarily the happy path for Stake creation
 -}
-module Spec.Sample.Stake (
+module Sample.Stake (
   stake,
   stakeAssetClass,
   stakeSymbol,
@@ -49,8 +49,8 @@ import Agora.SafeMoney (GTTag)
 import Agora.Stake
 import Agora.Stake.Scripts (stakeValidator)
 import Plutarch.SafeMoney
-import Spec.Sample.Shared
-import Spec.Util (datumPair, toDatumHash)
+import Sample.Shared
+import Test.Util (datumPair, toDatumHash)
 
 --------------------------------------------------------------------------------
 
