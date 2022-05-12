@@ -3,6 +3,7 @@
 
 module Agora.Utils.Value (pgeq, pleq, pgt, plt) where
 
+import Agora.Utils (tcmatch)
 import Plutarch.Api.V1.AssocMap (PMap (PMap))
 import Plutarch.Api.V1.These (PTheseData (..))
 import Plutarch.Api.V1.Tuple (ptupleFromBuiltin)
@@ -26,15 +27,15 @@ punionVal = undefined
 pmapAll ::
   (PUnsafeLiftDecl v, PIsData v) =>
   Term s ((v :--> PBool) :--> PMap k v :--> PBool)
-pmapAll = plam $ \f m -> P.do
-  PMap builtinMap <- pmatch m
+pmapAll = plam $ \f m -> unTermCont $ do
+  PMap builtinMap <- tcmatch m
 
-  let getV = plam $ \bip -> P.do
+  let getV = plam $ \bip ->
         let tuple = pfromData $ ptupleFromBuiltin (pdata bip)
-        pfromData $ pfield @"_1" # tuple
+         in pfromData $ pfield @"_1" # tuple
 
   let vs = pmap # getV # builtinMap
-  pall # f # vs
+  pure $ pall # f # vs
 
 pcheckPred ::
   forall {s :: S}.
@@ -45,8 +46,7 @@ pcheckPred ::
         :--> PValue
         :--> PBool
     )
-pcheckPred = plam $ \_f _l _r -> P.do
-  undefined
+pcheckPred = plam $ \_f _l _r -> undefined
 
 --  let inner :: Term s (PMap PTokenName (PTheseData PInteger PInteger) :--> PBool)
 --      inner = pmapAll # f
@@ -61,14 +61,14 @@ pcheckBinRel ::
         :--> PValue
         :--> PBool
     )
-pcheckBinRel = plam $ \f l r -> P.do
+pcheckBinRel = plam $ \f l r ->
   let unThese :: Term s (PTheseData PInteger PInteger :--> PBool)
       unThese = plam $ \k' ->
         pmatch k' $ \case
           PDThis r -> f # (pfield @"_0" # r) # 0
           PDThat r -> f # 0 # (pfield @"_0" # r)
           PDThese r -> f # (pfield @"_0" # r) # (pfield @"_1" # r)
-  pcheckPred # unThese # l # r
+   in pcheckPred # unThese # l # r
 
 -- | Establishes if a value is less than or equal to another.
 pleq :: Term s (PValue :--> PValue :--> PBool)
