@@ -184,6 +184,7 @@ test-suite agora-test
     Spec.Proposal
     Spec.Stake
     Spec.Treasury
+    Spec.Utils
 
   build-depends:
     , agora
