@@ -59,16 +59,22 @@ instance Finite TWETestCases where
 
 genTWECases :: TWETestCases -> Gen TWETestInput
 genTWECases PaysToEffect                      = do
-  (datum, txinfo) <- genTWECases EffectShouldPass
-  -- TODO: I need a good way to update txInfo.
-  -- I don't wanna write seperate function for all cases.
-  return (datum, txinfo)
+  datum <- genTWEDatum
+  val <- genAnyValue
+  -- Would be nice to randomize number of outputs to effect
+  let toEffect =
+        TxOut
+        { txOutAddress = Address (ScriptCredential $ validatorHash validator) Nothing
+        , txOutValue = val
+        , txOutDatumHash = Nothing
+        }
+  return (datum, _txInfoFromTWEDatum (mempty, [toEffect]) datum)
 genTWECases OutputsDoNotMatchReceivers        = undefined
 genTWECases InputsHaveOtherScriptInput        = undefined
 genTWECases RemaindersDoNotReturnToTreasuries = undefined
 genTWECases EffectShouldPass                  = do
   datum <- genTWEDatum
-  return (datum, _txInfoFromTWEDatum datum)
+  return (datum, _txInfoFromTWEDatum mempty datum)
 
 classifyTWE :: TWETestInput -> TWETestCases
 classifyTWE = undefined
@@ -93,13 +99,13 @@ TODO: will this work okay with generators adding and removing
 parts? I don't see particular reason it will not to, but will
 that be a "good" generator?
 -}
-_txInfoFromTWEDatum :: TreasuryWithdrawalDatum -> TxInfo
-_txInfoFromTWEDatum datum = txinfo
+_txInfoFromTWEDatum :: ([TxInInfo], [TxOut]) -> TreasuryWithdrawalDatum -> TxInfo
+_txInfoFromTWEDatum (extraIn, extraOut) datum = txinfo
   where
     txinfo =
       TxInfo
-      { txInfoInputs = inputs
-      , txInfoOutputs = outputs
+      { txInfoInputs = inputs <> extraIn
+      , txInfoOutputs = outputs <> extraOut
       , txInfoFee = Value.singleton "" "" 2
       , txInfoMint = Value.singleton currSymbol validatorHashTN (-1)
       , txInfoDCert = []
@@ -126,14 +132,14 @@ _expectedTxOutFromTWEDatum (TreasuryWithdrawalDatum r _) =
 -}
 _expectedTxInInfoFromTWEDatum :: TreasuryWithdrawalDatum -> ([TxInInfo], [TxOut])
 _expectedTxInInfoFromTWEDatum (TreasuryWithdrawalDatum r t) =
-  ((\addr -> TxInInfo
+  (inputGAT:((\addr -> TxInInfo
     (TxOutRef "0b2086cbf8b6900f8cb65e012de4516cb66b5cb08a9aaba12a8b88be" 1)
     TxOut
     { txOutAddress = Address addr Nothing
     , txOutValue = treasuryInputValue
     , txOutDatumHash = Nothing
     })
-  <$> t
+  <$> t)
   , [TxOut
     { txOutAddress = Address (head t) Nothing
     , txOutValue = extras
@@ -168,18 +174,6 @@ genTWEDatum = do
 
   let receiverList = zipWith (,) users values
   pure $ TreasuryWithdrawalDatum receiverList treas
-
-genTWETestInput :: Gen TWETestInput
-genTWETestInput = do
-  a <- genTWEDatum
-  b <- pure $ buildScriptContext [] []
-  pure $ (a, b)
-
-_asdf :: IO ()
-_asdf = undefined
-  where
-    _a = genTWETestInput
-    _b = genTWEDatum
 
 tests :: [TestTree]
 tests =
