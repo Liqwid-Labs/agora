@@ -88,7 +88,7 @@ parts? I don't see particular reason it will not to, but will
 that be a "good" generator?
 -}
 _scriptContextFromTWEDatum :: TreasuryWithdrawalDatum -> ScriptContext
-_scriptContextFromTWEDatum datum@(TreasuryWithdrawalDatum r t) =
+_scriptContextFromTWEDatum datum =
   ScriptContext txinfo sp
   where
     txinfo =
@@ -104,8 +104,8 @@ _scriptContextFromTWEDatum datum@(TreasuryWithdrawalDatum r t) =
       , txInfoData = []
       , txInfoId = "0b123412341234"
       }
-    outputs = _expectedTxOutFromTWEDatum datum
-    inputs = _expectedTxInInfoFromTWEDatum datum
+    (inputs, excessOutputs)  = _expectedTxInInfoFromTWEDatum datum
+    outputs = _expectedTxOutFromTWEDatum datum <> excessOutputs
     sp = Spending (TxOutRef "0b2086cbf8b6900f8cb65e012de4516cb66b5cb08a9aaba12a8b88be" 1)
 
 _expectedTxOutFromTWEDatum :: TreasuryWithdrawalDatum -> [TxOut]
@@ -120,9 +120,9 @@ _expectedTxOutFromTWEDatum (TreasuryWithdrawalDatum r _) =
 
 {- | Generates expected inputs from given Datum
 -}
-_expectedTxInInfoFromTWEDatum :: TreasuryWithdrawalDatum -> [TxInInfo]
+_expectedTxInInfoFromTWEDatum :: TreasuryWithdrawalDatum -> ([TxInInfo], [TxOut])
 _expectedTxInInfoFromTWEDatum (TreasuryWithdrawalDatum r t) =
-  (\addr -> TxInInfo
+  ((\addr -> TxInInfo
     (TxOutRef "0b2086cbf8b6900f8cb65e012de4516cb66b5cb08a9aaba12a8b88be" 1)
     TxOut
     { txOutAddress = Address addr Nothing
@@ -130,9 +130,15 @@ _expectedTxInInfoFromTWEDatum (TreasuryWithdrawalDatum r t) =
     , txOutDatumHash = Nothing
     })
   <$> t
+  , [TxOut
+    { txOutAddress = Address (head t) Nothing
+    , txOutValue = extras
+    , txOutDatumHash = Nothing
+    }])
   where
     totalValues = mconcat $ snd <$> r
     treasuryInputValue = _distributeValue (length t) totalValues
+    extras = Value.unionWith (-) (mconcat (replicate (length t) treasuryInputValue)) $ totalValues
 
 _distributeValue :: Int -> Value -> Value
 _distributeValue n v = mconcat $ (\(cs, tn, (toInteger -> val)) -> Value.singleton cs tn val) <$> vals
