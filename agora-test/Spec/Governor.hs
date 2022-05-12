@@ -9,7 +9,7 @@ that Agora's governor component workds as intended.
 Tests should pass when the validator or policy is given one of the
 valid script contexts, which are defined in 'Agora.Sample.Governor'.
 
-TODO: add negative test cases.
+TODO: Add negative test cases, see [#76](https://github.com/Liqwid-Labs/agora/issues/76).
 -}
 module Spec.Governor (tests) where
 
