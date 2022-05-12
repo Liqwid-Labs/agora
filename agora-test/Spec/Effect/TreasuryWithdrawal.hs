@@ -27,6 +27,8 @@ import Test.Tasty.Plutarch.Property (classifiedProperty)
 import Data.Tagged
 import Data.Universe
 
+import Control.Applicative
+
 type TWETestInput = (TreasuryWithdrawalDatum, TxInfo)
 data TWETestCases
   = PaysToEffect
@@ -56,31 +58,67 @@ instance Universe TWETestCases where
 instance Finite TWETestCases where
   universeF = universe
   cardinality = Tagged 5
-
+-- TODO: Some unideal repeated patterns here
 genTWECases :: TWETestCases -> Gen TWETestInput
 genTWECases PaysToEffect                      = do
   datum <- genTWEDatum
-  val <- genAnyValue
   -- Would be nice to randomize number of outputs to effect
+  vals <- listOf1 genAnyValue
   let toEffect =
-        TxOut
+        (\val -> TxOut
         { txOutAddress = Address (ScriptCredential $ validatorHash validator) Nothing
         , txOutValue = val
         , txOutDatumHash = Nothing
-        }
-  return (datum, _txInfoFromTWEDatum (mempty, [toEffect]) datum)
-genTWECases OutputsDoNotMatchReceivers        = undefined
-genTWECases InputsHaveOtherScriptInput        = undefined
-genTWECases RemaindersDoNotReturnToTreasuries = undefined
+        }) <$> vals
+      modify (i, o) = return (i, o <> toEffect)
+  txinfo <- _txInfoFromTWEDatum modify datum
+  return (datum, txinfo)
+genTWECases OutputsDoNotMatchReceivers        = do
+  datum <- genTWEDatum
+  let modify (i, o) = do
+        output <- sublistOf o
+        return (i, output)
+  txinfo <- _txInfoFromTWEDatum modify datum
+  return (datum, txinfo)
+genTWECases InputsHaveOtherScriptInput        = do
+  datum <- genTWEDatum
+  let modify (i, o) = do
+        d <- listOf1 $ liftA2 (,) genScriptCredential genAnyValue 
+        
+        let unauthorizedScriptInputs =
+              (\(addr, val) ->
+                  TxInInfo
+                  (TxOutRef "0b2086cbf8b6900f8cb65e012de4516cb66b5cb08a9aaba12a8b88be" 1)
+                  TxOut
+                  { txOutAddress = Address addr Nothing
+                  , txOutValue = val
+                  , txOutDatumHash = Nothing
+                  }) <$> d
+        return (i <> unauthorizedScriptInputs, o)
+  txinfo <- _txInfoFromTWEDatum modify datum
+  return (datum, txinfo)
+genTWECases RemaindersDoNotReturnToTreasuries = do
+  datum <- genTWEDatum
+  let modify (i, o) = do
+        -- We'll drop all outputs directed to ScriptCredential
+        let treasuryDroppedOutput =
+              filter (\(addressCredential . txOutAddress -> x) -> case x of
+                         PubKeyCredential _ -> True
+                         ScriptCredential _ -> False
+                        ) o
+        return (i, treasuryDroppedOutput)
+  txinfo <- _txInfoFromTWEDatum modify datum
+  return (datum, txinfo)
 genTWECases EffectShouldPass                  = do
   datum <- genTWEDatum
-  return (datum, _txInfoFromTWEDatum mempty datum)
+  txinfo <- _txInfoFromTWEDatum return datum
+  return (datum, txinfo)
 
 classifyTWE :: TWETestInput -> TWETestCases
 classifyTWE = undefined
 
 shrinkTWE :: TWETestInput -> [TWETestInput]
-shrinkTWE = undefined
+shrinkTWE = const [] -- currently this should work... 
 
 expectedTWE :: Term s (PBuiltinPair PTreasuryWithdrawalDatum PTxInfo :--> PMaybe PBool)
 expectedTWE = undefined
@@ -99,13 +137,13 @@ TODO: will this work okay with generators adding and removing
 parts? I don't see particular reason it will not to, but will
 that be a "good" generator?
 -}
-_txInfoFromTWEDatum :: ([TxInInfo], [TxOut]) -> TreasuryWithdrawalDatum -> TxInfo
-_txInfoFromTWEDatum (extraIn, extraOut) datum = txinfo
-  where
-    txinfo =
+_txInfoFromTWEDatum :: (([TxInInfo], [TxOut]) -> Gen ([TxInInfo], [TxOut])) -> TreasuryWithdrawalDatum -> Gen TxInfo
+_txInfoFromTWEDatum cb datum = do
+  (input, output) <- cb (expectedInput, expectedOutput)
+  return $
       TxInfo
-      { txInfoInputs = inputs <> extraIn
-      , txInfoOutputs = outputs <> extraOut
+      { txInfoInputs = input
+      , txInfoOutputs = output
       , txInfoFee = Value.singleton "" "" 2
       , txInfoMint = Value.singleton currSymbol validatorHashTN (-1)
       , txInfoDCert = []
@@ -115,8 +153,9 @@ _txInfoFromTWEDatum (extraIn, extraOut) datum = txinfo
       , txInfoData = []
       , txInfoId = "0b123412341234"
       }
-    (inputs, excessOutputs)  = _expectedTxInInfoFromTWEDatum datum
-    outputs = _expectedTxOutFromTWEDatum datum <> excessOutputs
+  where
+    (expectedInput, excessOutputs)  = _expectedTxInInfoFromTWEDatum datum
+    expectedOutput = _expectedTxOutFromTWEDatum datum <> excessOutputs
 
 _expectedTxOutFromTWEDatum :: TreasuryWithdrawalDatum -> [TxOut]
 _expectedTxOutFromTWEDatum (TreasuryWithdrawalDatum r _) =
