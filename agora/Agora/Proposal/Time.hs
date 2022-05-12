@@ -28,6 +28,7 @@ module Agora.Proposal.Time (
 ) where
 
 import Agora.Record (mkRecordConstr, (.&), (.=))
+import Agora.Utils (tcmatch)
 import GHC.Generics qualified as GHC
 import Generics.SOP (Generic, I (I))
 import Plutarch.Api.V1 (
@@ -39,7 +40,6 @@ import Plutarch.Api.V1 (
   PUpperBound (PUpperBound),
  )
 import Plutarch.DataRepr (PDataFields, PIsDataReprInstances (..))
-import Plutarch.Monadic qualified as P
 import Plutarch.Numeric (AdditiveSemigroup ((+)))
 import Plutarch.Unsafe (punsafeCoerce)
 import Plutus.V1.Ledger.Time (POSIXTime)
@@ -159,28 +159,29 @@ instance AdditiveSemigroup (Term s PPOSIXTime) where
 -}
 currentProposalTime :: forall (s :: S). Term s (PPOSIXTimeRange :--> PProposalTime)
 currentProposalTime = phoistAcyclic $
-  plam $ \iv -> P.do
-    PInterval iv' <- pmatch iv
-    ivf <- pletFields @'["from", "to"] iv'
-    PLowerBound lb <- pmatch ivf.from
-    PUpperBound ub <- pmatch ivf.to
-    lbf <- pletFields @'["_0", "_1"] lb
-    ubf <- pletFields @'["_0", "_1"] ub
-    mkRecordConstr PProposalTime $
-      #lowerBound
-        .= pmatch
-          lbf._0
-          ( \case
-              PFinite ((pfield @"_0" #) -> d) -> d
-              _ -> ptraceError "currentProposalTime: Can't get fully-bounded proposal time."
-          )
-        .& #upperBound
-        .= pmatch
-          ubf._0
-          ( \case
-              PFinite ((pfield @"_0" #) -> d) -> d
-              _ -> ptraceError "currentProposalTime: Can't get fully-bounded proposal time."
-          )
+  plam $ \iv -> unTermCont $ do
+    PInterval iv' <- tcmatch iv
+    ivf <- tcont $ pletFields @'["from", "to"] iv'
+    PLowerBound lb <- tcmatch ivf.from
+    PUpperBound ub <- tcmatch ivf.to
+    lbf <- tcont $ pletFields @'["_0", "_1"] lb
+    ubf <- tcont $ pletFields @'["_0", "_1"] ub
+    pure $
+      mkRecordConstr PProposalTime $
+        #lowerBound
+          .= pmatch
+            lbf._0
+            ( \case
+                PFinite ((pfield @"_0" #) -> d) -> d
+                _ -> ptraceError "currentProposalTime: Can't get fully-bounded proposal time."
+            )
+          .& #upperBound
+          .= pmatch
+            ubf._0
+            ( \case
+                PFinite ((pfield @"_0" #) -> d) -> d
+                _ -> ptraceError "currentProposalTime: Can't get fully-bounded proposal time."
+            )
 
 -- | Check if 'PProposalTime' is within two 'PPOSIXTime'. Inclusive.
 proposalTimeWithin ::
@@ -192,14 +193,15 @@ proposalTimeWithin ::
         :--> PBool
     )
 proposalTimeWithin = phoistAcyclic $
-  plam $ \l h proposalTime' -> P.do
-    PProposalTime proposalTime <- pmatch proposalTime'
-    ptf <- pletFields @'["lowerBound", "upperBound"] proposalTime
-    foldr1
-      (#&&)
-      [ l #<= pfromData ptf.lowerBound
-      , pfromData ptf.upperBound #<= h
-      ]
+  plam $ \l h proposalTime' -> unTermCont $ do
+    PProposalTime proposalTime <- tcmatch proposalTime'
+    ptf <- tcont $ pletFields @'["lowerBound", "upperBound"] proposalTime
+    pure $
+      foldr1
+        (#&&)
+        [ l #<= pfromData ptf.lowerBound
+        , pfromData ptf.upperBound #<= h
+        ]
 
 -- | True if the 'PProposalTime' is in the draft period.
 isDraftPeriod ::

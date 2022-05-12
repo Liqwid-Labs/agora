@@ -53,7 +53,6 @@ import Plutarch.DataRepr (
  )
 import Plutarch.Internal (punsafeCoerce)
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (..))
-import Plutarch.Monadic qualified as P
 import Plutus.V1.Ledger.Value (AssetClass)
 
 --------------------------------------------------------------------------------
@@ -63,6 +62,8 @@ import Agora.SafeMoney (GTTag)
 import Agora.Utils (
   pnotNull,
   ptryFindDatum,
+  tclet,
+  tcmatch,
  )
 import Control.Applicative (Const)
 import Plutarch.Api.V1.Extra (PAssetClass, passetClassValueOf)
@@ -274,20 +275,21 @@ findStakeOwnedBy = phoistAcyclic $
   plam $ \ac pk datums inputs ->
     pmatch (pfind # (isInputStakeOwnedBy # ac # pk # datums) # inputs) $ \case
       PNothing -> pcon PNothing
-      PJust (pfromData -> v) -> P.do
+      PJust (pfromData -> v) -> unTermCont $ do
         let txOut = pfield @"resolved" # pto v
-        txOutF <- pletFields @'["datumHash"] $ txOut
-        pmatch txOutF.datumHash $ \case
-          PDNothing _ -> pcon PNothing
-          PDJust ((pfield @"_0" #) -> dh) -> P.do
-            ptryFindDatum @(PAsData PStakeDatum) # dh # datums
+        txOutF <- tcont $ pletFields @'["datumHash"] $ txOut
+        pure $
+          pmatch txOutF.datumHash $ \case
+            PDNothing _ -> pcon PNothing
+            PDJust ((pfield @"_0" #) -> dh) ->
+              ptryFindDatum @(PAsData PStakeDatum) # dh # datums
 
 stakeDatumOwnedBy :: Term _ (PPubKeyHash :--> PStakeDatum :--> PBool)
 stakeDatumOwnedBy =
   phoistAcyclic $
-    plam $ \pk stakeDatum -> P.do
-      stakeDatumF <- pletFields @'["owner"] $ pto stakeDatum
-      stakeDatumF.owner #== pdata pk
+    plam $ \pk stakeDatum ->
+      pletFields @'["owner"] (pto stakeDatum) $ \stakeDatumF ->
+        stakeDatumF.owner #== pdata pk
 
 -- Does the input have a `Stake` owned by a particular PK?
 isInputStakeOwnedBy ::
@@ -299,18 +301,19 @@ isInputStakeOwnedBy ::
         :--> PBool
     )
 isInputStakeOwnedBy =
-  plam $ \ac ss datums txInInfo' -> P.do
-    PTxInInfo ((pfield @"resolved" #) -> txOut) <- pmatch $ pfromData txInInfo'
-    PTxOut txOut' <- pmatch txOut
-    txOutF <- pletFields @'["value", "datumHash"] txOut'
-    outStakeST <- plet $ passetClassValueOf # txOutF.value # ac
-    pmatch txOutF.datumHash $ \case
-      PDNothing _ -> pcon PFalse
-      PDJust ((pfield @"_0" #) -> datumHash) ->
-        pif
-          (outStakeST #== 1)
-          ( pmatch (ptryFindDatum @(PAsData PStakeDatum) # datumHash # datums) $ \case
-              PNothing -> pcon PFalse
-              PJust v -> stakeDatumOwnedBy # ss # pfromData (punsafeCoerce v)
-          )
-          (pcon PFalse)
+  plam $ \ac ss datums txInInfo' -> unTermCont $ do
+    PTxInInfo ((pfield @"resolved" #) -> txOut) <- tcmatch $ pfromData txInInfo'
+    PTxOut txOut' <- tcmatch txOut
+    txOutF <- tcont $ pletFields @'["value", "datumHash"] txOut'
+    outStakeST <- tclet $ passetClassValueOf # txOutF.value # ac
+    pure $
+      pmatch txOutF.datumHash $ \case
+        PDNothing _ -> pcon PFalse
+        PDJust ((pfield @"_0" #) -> datumHash) ->
+          pif
+            (outStakeST #== 1)
+            ( pmatch (ptryFindDatum @(PAsData PStakeDatum) # datumHash # datums) $ \case
+                PNothing -> pcon PFalse
+                PJust v -> stakeDatumOwnedBy # ss # pfromData (punsafeCoerce v)
+            )
+            (pcon PFalse)

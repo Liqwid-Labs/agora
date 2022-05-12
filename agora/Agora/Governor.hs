@@ -38,6 +38,7 @@ import Agora.Proposal (
   ProposalThresholds,
  )
 import Agora.SafeMoney (GTTag)
+import Agora.Utils (tclet)
 
 --------------------------------------------------------------------------------
 
@@ -47,7 +48,6 @@ import Plutarch.DataRepr (
   PIsDataReprInstances (PIsDataReprInstances),
  )
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (..))
-import Plutarch.Monadic qualified as P
 import Plutarch.SafeMoney (Tagged (..), puntag)
 import Plutarch.TryFrom (PTryFrom (..))
 import Plutarch.Unsafe (punsafeCoerce)
@@ -168,20 +168,22 @@ getNextProposalId (ProposalId pid) = ProposalId $ pid + 1
 
 governorDatumValid :: Term s (PGovernorDatum :--> PBool)
 governorDatumValid = phoistAcyclic $
-  plam $ \datum -> P.do
+  plam $ \datum -> unTermCont $ do
     thresholds <-
-      pletFields @'["execute", "draft", "vote"] $
-        pfield @"proposalThresholds" # datum
+      tcont $
+        pletFields @'["execute", "draft", "vote"] $
+          pfield @"proposalThresholds" # datum
 
-    execute <- plet $ puntag thresholds.execute
-    draft <- plet $ puntag thresholds.draft
-    vote <- plet $ puntag thresholds.vote
+    execute <- tclet $ puntag thresholds.execute
+    draft <- tclet $ puntag thresholds.draft
+    vote <- tclet $ puntag thresholds.vote
 
-    foldr1
-      (#&&)
-      [ ptraceIfFalse "Execute threshold is less than or equal to" $ 0 #<= execute
-      , ptraceIfFalse "Draft threshold is less than or equal to " $ 0 #<= draft
-      , ptraceIfFalse "Vote threshold is less than or equal to " $ 0 #<= vote
-      , ptraceIfFalse "Draft threshold is less than vote threshold" $ draft #<= vote
-      , ptraceIfFalse "Execute threshold is less than vote threshold" $ vote #< execute
-      ]
+    pure $
+      foldr1
+        (#&&)
+        [ ptraceIfFalse "Execute threshold is less than or equal to" $ 0 #<= execute
+        , ptraceIfFalse "Draft threshold is less than or equal to " $ 0 #<= draft
+        , ptraceIfFalse "Vote threshold is less than or equal to " $ 0 #<= vote
+        , ptraceIfFalse "Draft threshold is less than vote threshold" $ draft #<= vote
+        , ptraceIfFalse "Execute threshold is less than vote threshold" $ vote #< execute
+        ]

@@ -6,8 +6,13 @@ Description: Plutarch utility functions that should be upstreamed or don't belon
 Plutarch utility functions that should be upstreamed or don't belong anywhere else.
 -}
 module Agora.Utils (
+  -- * TermCont-based combinators. Some of these will live in plutarch eventually.
+  tcassert,
+  tclet,
+  tcmatch,
+  tctryFrom,
+
   -- * Validator-level utility functions
-  passert,
   pfind',
   pfindDatum,
   ptryFindDatum,
@@ -92,15 +97,41 @@ import Plutarch.Api.V1.Extra (PAssetClass, passetClassValueOf, pvalueOf)
 import Plutarch.Api.V1.Value (PValue (PValue))
 import Plutarch.Builtin (pforgetData, ppairDataBuiltin)
 import Plutarch.Map.Extra (pkeys)
-import Plutarch.Monadic qualified as P
-import Plutarch.TryFrom (PTryFrom, ptryFrom)
+import Plutarch.Reducible (Reducible (Reduce))
+import Plutarch.TryFrom (PTryFrom (PTryFromExcess), ptryFrom)
+
+--------------------------------------------------------------------------------
+-- TermCont-based combinators. Some of these will live in plutarch eventually.
+
+-- | Assert a particular 'PBool', trace if false.
+tcassert :: forall r (s :: S). Term s PString -> Term s PBool -> TermCont @r s ()
+tcassert errorMessage check = tcont $ \k -> pif check (k ()) (ptraceError errorMessage)
+
+-- | 'plet' but for use in 'TermCont'.
+tclet :: forall r (s :: S) (a :: PType). Term s a -> TermCont @r s (Term s a)
+tclet = tcont . plet
+
+-- | 'pmatch' but for use in 'TermCont'.
+tcmatch :: forall (a :: PType) (s :: S). PlutusType a => Term s a -> TermCont s (a s)
+tcmatch = tcont . pmatch
+
+-- | 'ptryFrom' but for use in 'TermCont'.
+tctryFrom :: forall b a s r. PTryFrom a b => Term s a -> TermCont @r s (Term s b, Reduce (PTryFromExcess a b s))
+tctryFrom = tcont . ptryFrom
+
+-- | Escape with a particular value on expecting 'Just'. For use in monadic context.
+tcexpectJust ::
+  forall r (a :: PType) (s :: S).
+  Term s r ->
+  Term s (PMaybe a) ->
+  TermCont @r s (Term s a)
+tcexpectJust escape ma = tcont $ \f ->
+  pmatch ma $ \case
+    PJust v -> f v
+    PNothing -> escape
 
 --------------------------------------------------------------------------------
 -- Validator-level utility functions
-
--- | Assert a particular 'PBool', trace if false. Use in monadic context.
-passert :: Term s PString -> Term s PBool -> Term s k -> Term s k
-passert errorMessage check k = pif check k (ptraceError errorMessage)
 
 -- | Find a datum with the given hash.
 pfindDatum :: Term s (PDatumHash :--> PBuiltinList (PAsData (PTuple PDatumHash PDatum)) :--> PMaybe PDatum)
@@ -113,9 +144,9 @@ ptryFindDatum = phoistAcyclic $
   plam $ \datumHash inputs ->
     pmatch (pfindDatum # datumHash # inputs) $ \case
       PNothing -> pcon PNothing
-      PJust datum -> P.do
-        (datum', _) <- ptryFrom (pto datum)
-        pcon (PJust datum')
+      PJust datum -> unTermCont $ do
+        (datum', _) <- tctryFrom (pto datum)
+        pure $ pcon (PJust datum')
 
 -- | Check if a PubKeyHash signs this transaction.
 ptxSignedBy :: Term s (PBuiltinList (PAsData PPubKeyHash) :--> PAsData PPubKeyHash :--> PBool)
@@ -181,34 +212,21 @@ pfromMaybe = phoistAcyclic $
 -- | Yield True if a given PMaybe is of form PJust _.
 pisJust :: forall a s. Term s (PMaybe a :--> PBool)
 pisJust = phoistAcyclic $
-  plam $ \v' -> P.do
-    v <- pmatch v'
-    case v of
+  plam $ \v' ->
+    pmatch v' $ \case
       PJust _ -> pconstant True
       PNothing -> pconstant False
-
--- | Escape with a particular value on expecting 'Just'. For use in monadic context.
-pexpectJust ::
-  forall r a s.
-  Term s r ->
-  Term s (PMaybe a) ->
-  (Term s a -> Term s r) ->
-  Term s r
-pexpectJust escape ma f =
-  pmatch ma $ \case
-    PJust v -> f v
-    PNothing -> escape
 
 -- | Get the sum of all values belonging to a particular CurrencySymbol.
 psymbolValueOf :: Term s (PCurrencySymbol :--> PValue :--> PInteger)
 psymbolValueOf =
   phoistAcyclic $
-    plam $ \sym value'' -> P.do
-      PValue value' <- pmatch value''
-      PMap value <- pmatch value'
-      m' <- pexpectJust 0 (plookup # pdata sym # value)
-      PMap m <- pmatch (pfromData m')
-      pfoldr # plam (\x v -> pfromData (psndBuiltin # x) + v) # 0 # m
+    plam $ \sym value'' -> unTermCont $ do
+      PValue value' <- tcmatch value''
+      PMap value <- tcmatch value'
+      m' <- tcexpectJust 0 (plookup # pdata sym # value)
+      PMap m <- tcmatch (pfromData m')
+      pure $ pfoldr # plam (\x v -> pfromData (psndBuiltin # x) + v) # 0 # m
 
 -- | Extract amount from PValue belonging to a Haskell-level AssetClass.
 passetClassValueOf' :: AssetClass -> Term s (PValue :--> PInteger)
@@ -240,19 +258,20 @@ pgeqByClass' ac =
 pmapUnionWith :: forall k v s. PIsData v => Term s ((v :--> v :--> v) :--> PMap k v :--> PMap k v :--> PMap k v)
 pmapUnionWith = phoistAcyclic $
   -- TODO: this function is kinda suspect. I feel like a lot of optimizations could be done here
-  plam $ \f xs' ys' -> P.do
-    PMap xs <- pmatch xs'
-    PMap ys <- pmatch ys'
+  plam $ \f xs' ys' -> unTermCont $ do
+    PMap xs <- tcmatch xs'
+    PMap ys <- tcmatch ys'
     let ls =
           pmap
             # plam
-              ( \p -> P.do
-                  pf <- plet $ pfstBuiltin # p
-                  pmatch (plookup # pf # ys) $ \case
-                    PJust v ->
-                      -- Data conversions here are silly, aren't they?
-                      ppairDataBuiltin # pf # pdata (f # pfromData (psndBuiltin # p) # pfromData v)
-                    PNothing -> p
+              ( \p -> unTermCont $ do
+                  pf <- tclet $ pfstBuiltin # p
+                  pure $
+                    pmatch (plookup # pf # ys) $ \case
+                      PJust v ->
+                        -- Data conversions here are silly, aren't they?
+                        ppairDataBuiltin # pf # pdata (f # pfromData (psndBuiltin # p) # pfromData v)
+                      PNothing -> p
               )
             # xs
         rs =
@@ -262,18 +281,19 @@ pmapUnionWith = phoistAcyclic $
                   pnot #$ pany # plam (\p' -> pfstBuiltin # p' #== pfstBuiltin # p) # xs
               )
             # ys
-    pcon (PMap $ pconcat # ls # rs)
+    pure $ pcon (PMap $ pconcat # ls # rs)
 
 -- | Add two 'PValue's together.
 paddValue :: forall s. Term s (PValue :--> PValue :--> PValue)
 paddValue = phoistAcyclic $
-  plam $ \a' b' -> P.do
-    PValue a <- pmatch a'
-    PValue b <- pmatch b'
-    pcon
-      ( PValue $
-          pmapUnionWith # plam (\a' b' -> pmapUnionWith # plam (+) # a' # b') # a # b
-      )
+  plam $ \a' b' -> unTermCont $ do
+    PValue a <- tcmatch a'
+    PValue b <- tcmatch b'
+    pure $
+      pcon
+        ( PValue $
+            pmapUnionWith # plam (\a' b' -> pmapUnionWith # plam (+) # a' # b') # a # b
+        )
 
 -- | Sum of all value at input.
 pvalueSpent :: Term s (PBuiltinList (PAsData PTxInInfo) :--> PValue)
@@ -325,12 +345,12 @@ ptokenSpent =
     0
       #< pfoldr @PBuiltinList
         # plam
-          ( \txInInfo' acc -> P.do
-              PTxInInfo txInInfo <- pmatch (pfromData txInInfo')
-              PTxOut txOut' <- pmatch $ pfromData $ pfield @"resolved" # txInInfo
-              txOut <- pletFields @'["value"] txOut'
+          ( \txInInfo' acc -> unTermCont $ do
+              PTxInInfo txInInfo <- tcmatch (pfromData txInInfo')
+              PTxOut txOut' <- tcmatch $ pfromData $ pfield @"resolved" # txInInfo
+              txOut <- tcont $ pletFields @'["value"] txOut'
               let txOutValue = pfromData txOut.value
-              acc + passetClassValueOf # txOutValue # tokenClass
+              pure $ acc + passetClassValueOf # txOutValue # tokenClass
           )
         # 0
         # inputs
@@ -340,40 +360,45 @@ ptokenSpent =
 -}
 pkeysEqual :: (POrd k, PIsData k) => forall (s :: S) a b. Term s (PMap k a :--> PMap k b :--> PBool)
 pkeysEqual = phoistAcyclic $
-  plam $ \p q -> P.do
-    pks <- plet $ pkeys # p
-    qks <- plet $ pkeys # q
+  plam $ \p q -> unTermCont $ do
+    pks <- tclet $ pkeys # p
+    qks <- tclet $ pkeys # q
 
-    pif
-      (plength # pks #== plength # qks)
-      ( P.do
-          let comp = phoistAcyclic $ plam $ \(pfromData -> x) (pfromData -> y) -> x #< y
-              spks = pmsort # comp # pks
-              sqks = pmsort # comp # qks
+    pure $
+      pif
+        (plength # pks #== plength # qks)
+        ( unTermCont $ do
+            let comp = phoistAcyclic $ plam $ \(pfromData -> x) (pfromData -> y) -> x #< y
+                spks = pmsort # comp # pks
+                sqks = pmsort # comp # qks
 
-          plistEquals # spks # sqks
-      )
-      (pcon PFalse)
+            pure $ plistEquals # spks # sqks
+        )
+        (pcon PFalse)
 
 -- | / O(nlogn) /. Clear out duplicates in a list. The order is not preserved.
 pnub :: forall list a (s :: S). (PEq a, PIsListLike list a) => Term s ((a :--> a :--> PBool) :--> list a :--> list a)
 pnub = phoistAcyclic $
-  plam $ \comp xs -> P.do
-    sorted <- plet $ pmsort # comp # xs
-    pnubOrd # comp # sorted
+  plam $ \comp xs -> unTermCont $ do
+    sorted <- tclet $ pmsort # comp # xs
+    pure $ pnubOrd # comp # sorted
   where
     pnubOrd = phoistAcyclic $ pfix #$ plam pnubOrd'
     pnubOrd' self comp xs =
-      pif (pnull # xs) pnil $ P.do
-        xh <- plet $ phead # xs
-        xt <- plet $ ptail # xs
+      pif (pnull # xs) pnil $
+        unTermCont $ do
+          xh <- tclet $ phead # xs
+          xt <- tclet $ ptail # xs
 
-        pif (pnull # xt) xs $ P.do
-          xh' <- plet $ phead # xt
-          pif
-            (xh #== xh')
-            (self # comp # xt)
-            (pcons # xh #$ self # comp # xt)
+          pure $
+            pif (pnull # xt) xs $
+              unTermCont $ do
+                xh' <- tclet $ phead # xt
+                pure $
+                  pif
+                    (xh #== xh')
+                    (self # comp # xt)
+                    (pcons # xh #$ self # comp # xt)
 
 -- | / O(nlogn) /. Check if a list contains no duplicates.
 pisUniq :: forall list a (s :: S). (PEq a, PIsListLike list a) => Term s ((a :--> a :--> PBool) :--> list a :--> PBool)
@@ -410,16 +435,18 @@ pmerge = phoistAcyclic $ pfix #$ plam pmerge'
   where
     pmerge' self comp a b =
       pif (pnull # a) b $
-        pif (pnull # b) a $ P.do
-          ah <- plet $ phead # a
-          at <- plet $ ptail # a
-          bh <- plet $ phead # b
-          bt <- plet $ ptail # b
+        pif (pnull # b) a $
+          unTermCont $ do
+            ah <- tclet $ phead # a
+            at <- tclet $ ptail # a
+            bh <- tclet $ phead # b
+            bt <- tclet $ ptail # b
 
-          pif
-            (comp # ah # bh)
-            (pcons # ah #$ self # comp # at # b)
-            (pcons # bh #$ self # comp # at # bt)
+            pure $
+              pif
+                (comp # ah # bh)
+                (pcons # ah #$ self # comp # at # b)
+                (pcons # bh #$ self # comp # at # bt)
 
 -- | / O(nlogn) /. Merge sort, bottom-up version.
 pmsort :: (PIsListLike l a) => Term s ((a :--> a :--> PBool) :--> l a :--> l a)
@@ -447,16 +474,19 @@ phalve = phoistAcyclic $ plam $ \l -> go # l # l
       pif
         (pnull # ys)
         (pcon $ PPair pnil xs)
-        ( P.do
-            yt <- plet $ ptail # ys
+        ( unTermCont $ do
+            yt <- tclet $ ptail # ys
 
-            xh <- plet $ phead # xs
-            xt <- plet $ ptail # xs
+            xh <- tclet $ phead # xs
+            xt <- tclet $ ptail # xs
 
-            pif (pnull # yt) (pcon $ PPair (psingleton # xh) xt) $ P.do
-              yt' <- plet $ ptail # yt
-              pmatch (self # xt # yt') $ \(PPair first last) ->
-                pcon $ PPair (pcons # xh # first) last
+            pure $
+              pif (pnull # yt) (pcon $ PPair (psingleton # xh) xt) $
+                unTermCont $ do
+                  yt' <- tclet $ ptail # yt
+                  pure $
+                    pmatch (self # xt # yt') $ \(PPair first last) ->
+                      pcon $ PPair (pcons # xh # first) last
         )
 
 --------------------------------------------------------------------------------
@@ -472,20 +502,21 @@ anyOutput ::
   ) =>
   Term s (PTxInfo :--> (PValue :--> PAddress :--> datum :--> PBool) :--> PBool)
 anyOutput = phoistAcyclic $
-  plam $ \txInfo' predicate -> P.do
-    txInfo <- pletFields @'["outputs", "datums"] txInfo'
-    pany
-      # plam
-        ( \txOut'' -> P.do
-            PTxOut txOut' <- pmatch (pfromData txOut'')
-            txOut <- pletFields @'["value", "datumHash", "address"] txOut'
-            PDJust dh <- pmatch txOut.datumHash
-            pmatch (ptryFindDatum @(PAsData datum) # (pfield @"_0" # dh) # txInfo.datums) $ \case
-              PJust datum -> P.do
-                predicate # txOut.value # txOut.address # pfromData datum
-              PNothing -> pcon PFalse
-        )
-      # pfromData txInfo.outputs
+  plam $ \txInfo' predicate -> unTermCont $ do
+    txInfo <- tcont $ pletFields @'["outputs", "datums"] txInfo'
+    pure $
+      pany
+        # plam
+          ( \txOut'' -> unTermCont $ do
+              PTxOut txOut' <- tcmatch (pfromData txOut'')
+              txOut <- tcont $ pletFields @'["value", "datumHash", "address"] txOut'
+              PDJust dh <- tcmatch txOut.datumHash
+              pure $
+                pmatch (ptryFindDatum @(PAsData datum) # (pfield @"_0" # dh) # txInfo.datums) $ \case
+                  PJust datum -> predicate # txOut.value # txOut.address # pfromData datum
+                  PNothing -> pcon PFalse
+          )
+        # pfromData txInfo.outputs
 
 -- | Check if all outputs match the predicate.
 allOutputs ::
@@ -495,20 +526,21 @@ allOutputs ::
   ) =>
   Term s (PTxInfo :--> (PTxOut :--> PValue :--> PAddress :--> datum :--> PBool) :--> PBool)
 allOutputs = phoistAcyclic $
-  plam $ \txInfo' predicate -> P.do
-    txInfo <- pletFields @'["outputs", "datums"] txInfo'
-    pall
-      # plam
-        ( \txOut'' -> P.do
-            PTxOut txOut' <- pmatch (pfromData txOut'')
-            txOut <- pletFields @'["value", "datumHash", "address"] txOut'
-            PDJust dh <- pmatch txOut.datumHash
-            pmatch (ptryFindDatum @(PAsData datum) # (pfield @"_0" # dh) # txInfo.datums) $ \case
-              PJust datum -> P.do
-                predicate # pfromData txOut'' # txOut.value # txOut.address # pfromData datum
-              PNothing -> pcon PFalse
-        )
-      # pfromData txInfo.outputs
+  plam $ \txInfo' predicate -> unTermCont $ do
+    txInfo <- tcont $ pletFields @'["outputs", "datums"] txInfo'
+    pure $
+      pall
+        # plam
+          ( \txOut'' -> unTermCont $ do
+              PTxOut txOut' <- tcmatch (pfromData txOut'')
+              txOut <- tcont $ pletFields @'["value", "datumHash", "address"] txOut'
+              PDJust dh <- tcmatch txOut.datumHash
+              pure $
+                pmatch (ptryFindDatum @(PAsData datum) # (pfield @"_0" # dh) # txInfo.datums) $ \case
+                  PJust datum -> predicate # pfromData txOut'' # txOut.value # txOut.address # pfromData datum
+                  PNothing -> pcon PFalse
+          )
+        # pfromData txInfo.outputs
 
 -- | Check if any (resolved) input matches the predicate.
 anyInput ::
@@ -518,22 +550,23 @@ anyInput ::
   ) =>
   Term s (PTxInfo :--> (PValue :--> PAddress :--> datum :--> PBool) :--> PBool)
 anyInput = phoistAcyclic $
-  plam $ \txInfo' predicate -> P.do
-    txInfo <- pletFields @'["inputs", "datums"] txInfo'
-    pany
-      # plam
-        ( \txInInfo'' -> P.do
-            PTxInInfo txInInfo' <- pmatch (pfromData txInInfo'')
-            let txOut'' = pfield @"resolved" # txInInfo'
-            PTxOut txOut' <- pmatch (pfromData txOut'')
-            txOut <- pletFields @'["value", "datumHash", "address"] txOut'
-            PDJust dh <- pmatch txOut.datumHash
-            pmatch (ptryFindDatum @(PAsData datum) # (pfield @"_0" # dh) # txInfo.datums) $ \case
-              PJust datum -> P.do
-                predicate # txOut.value # txOut.address # pfromData datum
-              PNothing -> pcon PFalse
-        )
-      # pfromData txInfo.inputs
+  plam $ \txInfo' predicate -> unTermCont $ do
+    txInfo <- tcont $ pletFields @'["inputs", "datums"] txInfo'
+    pure $
+      pany
+        # plam
+          ( \txInInfo'' -> unTermCont $ do
+              PTxInInfo txInInfo' <- tcmatch (pfromData txInInfo'')
+              let txOut'' = pfield @"resolved" # txInInfo'
+              PTxOut txOut' <- tcmatch (pfromData txOut'')
+              txOut <- tcont $ pletFields @'["value", "datumHash", "address"] txOut'
+              PDJust dh <- tcmatch txOut.datumHash
+              pure $
+                pmatch (ptryFindDatum @(PAsData datum) # (pfield @"_0" # dh) # txInfo.datums) $ \case
+                  PJust datum -> predicate # txOut.value # txOut.address # pfromData datum
+                  PNothing -> pcon PFalse
+          )
+        # pfromData txInfo.inputs
 
 -- | Create a value with a single asset class.
 psingletonValue :: forall s. Term s (PCurrencySymbol :--> PTokenName :--> PInteger :--> PValue)
@@ -563,17 +596,18 @@ scriptHashFromAddress = phoistAcyclic $
 -- | Find all TxOuts sent to an Address
 findOutputsToAddress :: Term s (PBuiltinList (PAsData PTxOut) :--> PAddress :--> PBuiltinList (PAsData PTxOut))
 findOutputsToAddress = phoistAcyclic $
-  plam $ \outputs address' -> P.do
-    address <- plet $ pdata address'
-    pfilter # plam (\(pfromData -> txOut) -> pfield @"address" # txOut #== address)
-      # outputs
+  plam $ \outputs address' -> unTermCont $ do
+    address <- tclet $ pdata address'
+    pure $
+      pfilter # plam (\(pfromData -> txOut) -> pfield @"address" # txOut #== address)
+        # outputs
 
 -- | Find the data corresponding to a TxOut, if there is one
 findTxOutDatum :: Term s (PBuiltinList (PAsData (PTuple PDatumHash PDatum)) :--> PTxOut :--> PMaybe PDatum)
 findTxOutDatum = phoistAcyclic $
-  plam $ \datums out -> P.do
-    datumHash' <- pmatch $ pfromData $ pfield @"datumHash" # out
-    case datumHash' of
+  plam $ \datums out -> unTermCont $ do
+    datumHash' <- tcmatch $ pfromData $ pfield @"datumHash" # out
+    pure $ case datumHash' of
       PDJust ((pfield @"_0" #) -> datumHash) -> pfindDatum # datumHash # datums
       _ -> pcon PNothing
 
@@ -610,11 +644,11 @@ mustFindDatum' ::
         :--> datum
     )
 mustFindDatum' = phoistAcyclic $
-  plam $ \mdh datums -> P.do
+  plam $ \mdh datums -> unTermCont $ do
     let dh = mustBePDJust # "Given TxOut dones't have a datum" # mdh
         dt = mustBePJust # "Datum not found in the transaction" #$ plookupTuple # dh # datums
-    (d, _) <- ptryFrom $ pforgetData $ pdata dt
-    pfromData d
+    (d, _) <- tcont $ ptryFrom $ pforgetData $ pdata dt
+    pure $ pfromData d
 
 {- | Extract the value stored in a PMaybe container.
      If there's no value, throw an error with the given message.

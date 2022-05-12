@@ -74,7 +74,6 @@ import Agora.Utils (
   mustBePDJust,
   mustBePJust,
   mustFindDatum',
-  passert,
   pfindTxInByTxOutRef,
   pisDJust,
   pisJust,
@@ -84,6 +83,9 @@ import Agora.Utils (
   ptxSignedBy,
   pvalueSpent,
   scriptHashFromAddress,
+  tcassert,
+  tclet,
+  tcmatch,
   validatorHashToAddress,
   validatorHashToTokenName,
  )
@@ -115,7 +117,6 @@ import Plutarch.Map.Extra (
   plookup,
   plookup',
  )
-import Plutarch.Monadic qualified as P
 import Plutarch.SafeMoney (
   PDiscrete,
   puntag,
@@ -163,24 +164,24 @@ import Plutus.V1.Ledger.Value (
 -}
 governorPolicy :: Governor -> ClosedTerm PMintingPolicy
 governorPolicy gov =
-  plam $ \_ ctx' -> P.do
+  plam $ \_ ctx' -> unTermCont $ do
     let oref = pconstant gov.gstOutRef
 
-    PMinting ((pfield @"_0" #) -> ownSymbol) <- pmatch (pfromData $ pfield @"purpose" # ctx')
+    PMinting ((pfield @"_0" #) -> ownSymbol) <- tcmatch (pfromData $ pfield @"purpose" # ctx')
     let ownAssetClass = passetClass # ownSymbol # pconstant ""
         txInfo = pfromData $ pfield @"txInfo" # ctx'
 
-    txInfoF <- pletFields @'["mint", "inputs", "outputs", "datums"] txInfo
+    txInfoF <- tcont $ pletFields @'["mint", "inputs", "outputs", "datums"] txInfo
 
-    passert "Referenced utxo should be spent" $
+    tcassert "Referenced utxo should be spent" $
       pisUTXOSpent # oref # txInfoF.inputs
 
-    passert "Exactly one token should be minted" $
+    tcassert "Exactly one token should be minted" $
       psymbolValueOf # ownSymbol # txInfoF.mint #== 1
         #&& passetClassValueOf # txInfoF.mint # ownAssetClass #== 1
 
     govOutput <-
-      plet $
+      tclet $
         mustBePJust
           # "Governor output not found"
             #$ pfind
@@ -193,7 +194,7 @@ governorPolicy gov =
     let datumHash = pfield @"datumHash" # pfromData govOutput
         datum = mustFindDatum' @PGovernorDatum # datumHash # txInfoF.datums
 
-    popaque $ governorDatumValid # datum
+    pure $ popaque $ governorDatumValid # datum
 
 {- | Validator for Governors.
 
@@ -281,394 +282,406 @@ governorPolicy gov =
 -}
 governorValidator :: Governor -> ClosedTerm PValidator
 governorValidator gov =
-  plam $ \datum' redeemer' ctx' -> P.do
-    (pfromData -> redeemer, _) <- ptryFrom redeemer'
-    ctxF <- pletFields @'["txInfo", "purpose"] ctx'
+  plam $ \datum' redeemer' ctx' -> unTermCont $ do
+    (pfromData -> redeemer, _) <- tcont $ ptryFrom redeemer'
+    ctxF <- tcont $ pletFields @'["txInfo", "purpose"] ctx'
 
-    txInfo' <- plet $ pfromData $ ctxF.txInfo
-    txInfoF <- pletFields @'["mint", "inputs", "outputs", "datums", "signatories"] txInfo'
+    txInfo' <- tclet $ pfromData $ ctxF.txInfo
+    txInfoF <- tcont $ pletFields @'["mint", "inputs", "outputs", "datums", "signatories"] txInfo'
 
-    PSpending (pfromData . (pfield @"_0" #) -> ownInputRef) <- pmatch $ pfromData ctxF.purpose
+    PSpending (pfromData . (pfield @"_0" #) -> ownInputRef) <- tcmatch $ pfromData ctxF.purpose
 
     ((pfield @"resolved" #) -> ownInput) <-
-      plet $
+      tclet $
         mustBePJust # "Own input not found"
           #$ pfindTxInByTxOutRef # ownInputRef # txInfoF.inputs
-    ownInputF <- pletFields @'["address", "value"] ownInput
+    ownInputF <- tcont $ pletFields @'["address", "value"] ownInput
     let ownAddress = pfromData $ ownInputF.address
 
-    (pfromData -> (oldGovernorDatum :: Term _ PGovernorDatum), _) <- ptryFrom datum'
-    oldGovernorDatumF <- pletFields @'["proposalThresholds", "nextProposalId"] oldGovernorDatum
+    (pfromData -> (oldGovernorDatum :: Term _ PGovernorDatum), _) <- tcont $ ptryFrom datum'
+    oldGovernorDatumF <- tcont $ pletFields @'["proposalThresholds", "nextProposalId"] oldGovernorDatum
 
     -- Check that GST will be returned to the governor.
     let ownInputGSTAmount = psymbolValueOf # pgstSymbol # ownInputF.value
-    passert "Own input should have exactly one state token" $
+    tcassert "Own input should have exactly one state token" $
       ownInputGSTAmount #== 1
 
-    ownOutputs <- plet $ findOutputsToAddress # txInfoF.outputs # ownAddress
-    passert "Exactly one utxo should be sent to the governor" $
+    ownOutputs <- tclet $ findOutputsToAddress # txInfoF.outputs # ownAddress
+    tcassert "Exactly one utxo should be sent to the governor" $
       plength # ownOutputs #== 1
 
-    ownOutput <- pletFields @'["value", "datumHash"] $ phead # ownOutputs
+    ownOutput <- tcont $ pletFields @'["value", "datumHash"] $ phead # ownOutputs
     let ownOuputGSTAmount = psymbolValueOf # pgstSymbol # ownOutput.value
-    passert "State token should stay at governor's address" $
+    tcassert "State token should stay at governor's address" $
       ownOuputGSTAmount #== 1
 
     -- Check that own output have datum of type 'GovernorDatum'.
     let outputGovernorStateDatumHash =
           mustBePDJust # "Governor output doesn't have datum" # ownOutput.datumHash
     newGovernorDatum <-
-      plet $
+      tclet $
         pfromData $
           mustBePJust # "Ouput governor state datum not found"
             #$ ptryFindDatum # outputGovernorStateDatumHash # txInfoF.datums
-    passert "New datum is not valid" $ governorDatumValid # newGovernorDatum
+    tcassert "New datum is not valid" $ governorDatumValid # newGovernorDatum
 
-    pmatch redeemer $ \case
-      PCreateProposal _ -> P.do
-        -- Check that the transaction advances proposal id.
+    pure $
+      pmatch redeemer $ \case
+        PCreateProposal _ -> unTermCont $ do
+          -- Check that the transaction advances proposal id.
 
-        let expectedNextProposalId = pgetNextProposalId # oldGovernorDatumF.nextProposalId
-            expectedNewDatum =
-              mkRecordConstr
-                PGovernorDatum
-                ( #proposalThresholds .= oldGovernorDatumF.proposalThresholds
-                    .& #nextProposalId .= pdata expectedNextProposalId
-                )
-        passert "Unexpected governor state datum" $
-          newGovernorDatum #== expectedNewDatum
-
-        -- Check that exactly one proposal token is being minted.
-
-        passert "Exactly one proposal token must be minted" $
-          hasOnlyOneTokenOfCurrencySymbol # ppstSymbol # txInfoF.mint
-
-        -- Check that a stake is spent to create the propsal,
-        --   and the value it contains meets the requirement.
-
-        stakeInput <-
-          plet $
-            mustBePJust # "Stake input not found" #$ pfind
-              # phoistAcyclic
-                ( plam $
-                    \((pfield @"resolved" #) -> txOut') -> P.do
-                      txOut <- pletFields @'["address", "value"] txOut'
-
-                      txOut.address #== pdata pstakeValidatorAddress
-                        #&& psymbolValueOf # psstSymbol # txOut.value #== 1
-                )
-              # pfromData txInfoF.inputs
-
-        stakeInputF <- pletFields @'["datumHash", "value"] $ pfield @"resolved" # stakeInput
-
-        passert "Stake input doesn't have datum" $
-          pisDJust # stakeInputF.datumHash
-
-        let stakeInputDatum = mustFindDatum' @PStakeDatum # stakeInputF.datumHash # txInfoF.datums
-
-        stakeInputDatumF <-
-          pletFields @["stakedAmount", "owner", "lockedBy"] stakeInputDatum
-
-        passert "Required amount of stake GTs should be presented" $
-          stakeInputDatumF.stakedAmount #== (pgtValueOf # stakeInputF.value)
-
-        -- TODO: Is this required?
-        passert "Tx should be signed by the stake owner" $
-          ptxSignedBy # txInfoF.signatories # stakeInputDatumF.owner
-
-        -- Check that the newly minted PST is sent to the proposal validator,
-        --   and the datum it carries is legal.
-
-        outputsToProposalValidatorWithStateToken <-
-          plet $
-            pfilter
-              # phoistAcyclic
-                ( plam $
-                    \txOut' -> P.do
-                      txOut <- pletFields @'["address", "value"] txOut'
-
-                      txOut.address #== pdata pproposalValidatorAddress
-                        #&& psymbolValueOf # ppstSymbol # txOut.value #== 1
-                )
-              # pfromData txInfoF.outputs
-
-        passert "Exactly one UTXO with proposal state token should be sent to the proposal validator" $
-          plength # outputsToProposalValidatorWithStateToken #== 1
-
-        outputDatumHash <- plet $ pfield @"datumHash" #$ phead # outputsToProposalValidatorWithStateToken
-
-        passert "The utxo paid to the proposal validator must have datum" $
-          pisDJust # outputDatumHash
-
-        proposalOutputDatum' <-
-          plet $
-            mustFindDatum' @PProposalDatum
-              # outputDatumHash
-              # txInfoF.datums
-
-        passert "Proposal datum must be valid" $
-          proposalDatumValid' # proposalOutputDatum'
-
-        proposalOutputDatum <-
-          pletFields
-            @'["proposalId", "status", "cosigners", "thresholds", "votes"]
-            proposalOutputDatum'
-
-        -- Id and thresholds should be copied from the old governor state datum.
-        passert "Invalid proposal id in proposal datum" $
-          proposalOutputDatum.proposalId #== oldGovernorDatumF.nextProposalId
-
-        passert "Invalid thresholds in proposal datum" $
-          proposalOutputDatum.thresholds #== oldGovernorDatumF.proposalThresholds
-
-        -- The proposal at this point should be in draft state.
-        passert "Proposal state should be draft" $
-          proposalOutputDatum.status #== pconstantData Draft
-
-        passert "Proposal should have only one cosigner" $
-          plength # pfromData proposalOutputDatum.cosigners #== 1
-
-        let cosigner = phead # pfromData proposalOutputDatum.cosigners
-
-        passert "Cosigner should be the stake owner" $
-          pdata stakeInputDatumF.owner #== cosigner
-
-        -- Check the output stake has been proposly updated.
-
-        stakeOutput <-
-          plet $
-            mustBePJust
-              # "Stake output not found"
-                #$ pfind
-              # phoistAcyclic
-                ( plam $
-                    \txOut' -> P.do
-                      txOut <- pletFields @'["address", "value"] txOut'
-
-                      txOut.address #== pdata pstakeValidatorAddress
-                        #&& psymbolValueOf # psstSymbol # txOut.value #== 1
-                )
-              # pfromData txInfoF.outputs
-
-        stakeOutputF <- pletFields @'["datumHash", "value"] $ stakeOutput
-
-        passert "Staked GTs should be sent back to stake validator" $
-          stakeInputDatumF.stakedAmount #== (pgtValueOf # stakeOutputF.value)
-
-        let stakeOutputDatumHash = mustBePDJust # "Stake output should have datum" # stakeOutputF.datumHash
-
-            stakeOutputDatum =
-              mustBePJust # "Stake output not found" #$ ptryFindDatum # stakeOutputDatumHash # txInfoF.datums
-
-        -- The stake should be locked by the newly created proposal.
-
-        let possibleVoteResults = pkeys #$ pto $ pfromData proposalOutputDatum.votes
-
-            mkProposalLock :: Term _ (PProposalId :--> PAsData PResultTag :--> PAsData PProposalLock)
-            mkProposalLock =
-              phoistAcyclic $
-                plam
-                  ( \pid rt' ->
-                      pdata $
-                        mkRecordConstr
-                          PProposalLock
-                          ( #vote .= rt' .& #proposalTag .= pdata pid
-                          )
-                  )
-
-            -- Append new locks to existing locks
-            expectedProposalLocks =
-              pconcat # stakeInputDatumF.lockedBy
-                #$ pmap # (mkProposalLock # proposalOutputDatum.proposalId) # possibleVoteResults
-
-            expectedStakeOutputDatum =
-              pdata $
+          let expectedNextProposalId = pgetNextProposalId # oldGovernorDatumF.nextProposalId
+              expectedNewDatum =
                 mkRecordConstr
-                  PStakeDatum
-                  ( #stakedAmount .= stakeInputDatumF.stakedAmount
-                      .& #owner .= stakeInputDatumF.owner
-                      .& #lockedBy .= pdata expectedProposalLocks
+                  PGovernorDatum
+                  ( #proposalThresholds .= oldGovernorDatumF.proposalThresholds
+                      .& #nextProposalId .= pdata expectedNextProposalId
                   )
+          tcassert "Unexpected governor state datum" $
+            newGovernorDatum #== expectedNewDatum
 
-        passert "Unexpected stake output datum" $ expectedStakeOutputDatum #== stakeOutputDatum
+          -- Check that exactly one proposal token is being minted.
 
-        popaque $ pconstant ()
+          tcassert "Exactly one proposal token must be minted" $
+            hasOnlyOneTokenOfCurrencySymbol # ppstSymbol # txInfoF.mint
 
-      --------------------------------------------------------------------------
+          -- Check that a stake is spent to create the propsal,
+          --   and the value it contains meets the requirement.
 
-      PMintGATs _ -> P.do
-        passert "Governor state should not be changed" $ newGovernorDatum #== oldGovernorDatum
+          stakeInput <-
+            tclet $
+              mustBePJust # "Stake input not found" #$ pfind
+                # phoistAcyclic
+                  ( plam $
+                      \((pfield @"resolved" #) -> txOut') -> unTermCont $ do
+                        txOut <- tcont $ pletFields @'["address", "value"] txOut'
 
-        -- Filter out proposal inputs and ouputs using PST and the address of proposal validator.
-
-        passert "The governor can only process one proposal at a time" $
-          (psymbolValueOf # ppstSymbol #$ pvalueSpent # txInfoF.inputs) #== 1
-
-        proposalInputF <-
-          pletFields @'["datumHash"] $
-            pfield @"resolved"
-              #$ pfromData
-              $ mustBePJust
-                # "Proposal input not found"
-                  #$ pfind
-                # plam
-                  ( \((pfield @"resolved" #) -> txOut) -> P.do
-                      txOutF <- pletFields @'["address", "value"] txOut
-
-                      psymbolValueOf # ppstSymbol # txOutF.value #== 1
-                        #&& txOutF.address #== pdata pproposalValidatorAddress
+                        pure $
+                          txOut.address #== pdata pstakeValidatorAddress
+                            #&& psymbolValueOf # psstSymbol # txOut.value #== 1
                   )
                 # pfromData txInfoF.inputs
 
-        proposalOutputF <-
-          pletFields @'["datumHash"] $
-            mustBePJust # "Proposal output not found"
-              #$ pfind
-                # plam
-                  ( \txOut -> P.do
-                      txOutF <- pletFields @'["address", "value"] txOut
-                      psymbolValueOf # ppstSymbol # txOutF.value #== 1
-                        #&& txOutF.address #== pdata pproposalValidatorAddress
+          stakeInputF <- tcont $ pletFields @'["datumHash", "value"] $ pfield @"resolved" # stakeInput
+
+          tcassert "Stake input doesn't have datum" $
+            pisDJust # stakeInputF.datumHash
+
+          let stakeInputDatum = mustFindDatum' @PStakeDatum # stakeInputF.datumHash # txInfoF.datums
+
+          stakeInputDatumF <-
+            tcont $ pletFields @["stakedAmount", "owner", "lockedBy"] stakeInputDatum
+
+          tcassert "Required amount of stake GTs should be presented" $
+            stakeInputDatumF.stakedAmount #== (pgtValueOf # stakeInputF.value)
+
+          -- TODO: Is this required?
+          tcassert "Tx should be signed by the stake owner" $
+            ptxSignedBy # txInfoF.signatories # stakeInputDatumF.owner
+
+          -- Check that the newly minted PST is sent to the proposal validator,
+          --   and the datum it carries is legal.
+
+          outputsToProposalValidatorWithStateToken <-
+            tclet $
+              pfilter
+                # phoistAcyclic
+                  ( plam $
+                      \txOut' -> unTermCont $ do
+                        txOut <- tcont $ pletFields @'["address", "value"] txOut'
+
+                        pure $
+                          txOut.address #== pdata pproposalValidatorAddress
+                            #&& psymbolValueOf # ppstSymbol # txOut.value #== 1
                   )
                 # pfromData txInfoF.outputs
 
-        proposalInputDatum <-
-          plet $
-            mustFindDatum' @PProposalDatum
-              # proposalInputF.datumHash
-              # txInfoF.datums
-        proposalOutputDatum <-
-          plet $
-            mustFindDatum' @PProposalDatum
-              # proposalOutputF.datumHash
-              # txInfoF.datums
+          tcassert "Exactly one UTXO with proposal state token should be sent to the proposal validator" $
+            plength # outputsToProposalValidatorWithStateToken #== 1
 
-        passert "Proposal datum must be valid" $
-          proposalDatumValid' # proposalInputDatum
-            #&& proposalDatumValid' # proposalOutputDatum
+          outputDatumHash <- tclet $ pfield @"datumHash" #$ phead # outputsToProposalValidatorWithStateToken
 
-        proposalInputDatumF <-
-          pletFields @'["proposalId", "effects", "status", "cosigners", "thresholds", "votes"]
-            proposalInputDatum
+          tcassert "The utxo paid to the proposal validator must have datum" $
+            pisDJust # outputDatumHash
 
-        -- Check that the proposal state is advanced so that a proposal cannot be executed twice.
+          proposalOutputDatum' <-
+            tclet $
+              mustFindDatum' @PProposalDatum
+                # outputDatumHash
+                # txInfoF.datums
 
-        passert "Proposal must be in locked(executable) state in order to execute effects" $
-          proposalInputDatumF.status #== pconstantData Locked
+          tcassert "Proposal datum must be valid" $
+            proposalDatumValid' # proposalOutputDatum'
 
-        let expectedOutputProposalDatum =
-              mkRecordConstr
-                PProposalDatum
-                ( #proposalId .= proposalInputDatumF.proposalId
-                    .& #effects .= proposalInputDatumF.effects
-                    .& #status .= pdata (pcon $ PFinished pdnil)
-                    .& #cosigners .= proposalInputDatumF.cosigners
-                    .& #thresholds .= proposalInputDatumF.thresholds
-                    .& #votes .= proposalInputDatumF.votes
-                )
+          proposalOutputDatum <-
+            tcont $
+              pletFields
+                @'["proposalId", "status", "cosigners", "thresholds", "votes"]
+                proposalOutputDatum'
 
-        passert "Unexpected output proposal datum" $
-          pdata proposalOutputDatum #== pdata expectedOutputProposalDatum
+          -- Id and thresholds should be copied from the old governor state datum.
+          tcassert "Invalid proposal id in proposal datum" $
+            proposalOutputDatum.proposalId #== oldGovernorDatumF.nextProposalId
 
-        -- TODO: anything else to check here?
+          tcassert "Invalid thresholds in proposal datum" $
+            proposalOutputDatum.thresholds #== oldGovernorDatumF.proposalThresholds
 
-        -- Find the highest votes and the corresponding tag.
-        let highestVoteFolder =
-              phoistAcyclic $
-                plam
-                  ( \pair last' ->
-                      pif
-                        (pisJust # last')
-                        ( P.do
-                            PJust last <- pmatch last'
-                            let lastHighestVote = pfromData $ psndBuiltin # last
-                                thisVote = pfromData $ psndBuiltin # pair
-                            pif (lastHighestVote #< thisVote) (pcon $ PJust pair) last'
-                        )
-                        (pcon $ PJust pair)
+          -- The proposal at this point should be in draft state.
+          tcassert "Proposal state should be draft" $
+            proposalOutputDatum.status #== pconstantData Draft
+
+          tcassert "Proposal should have only one cosigner" $
+            plength # pfromData proposalOutputDatum.cosigners #== 1
+
+          let cosigner = phead # pfromData proposalOutputDatum.cosigners
+
+          tcassert "Cosigner should be the stake owner" $
+            pdata stakeInputDatumF.owner #== cosigner
+
+          -- Check the output stake has been proposly updated.
+
+          stakeOutput <-
+            tclet $
+              mustBePJust
+                # "Stake output not found"
+                  #$ pfind
+                # phoistAcyclic
+                  ( plam $
+                      \txOut' -> unTermCont $ do
+                        txOut <- tcont $ pletFields @'["address", "value"] txOut'
+
+                        pure $
+                          txOut.address #== pdata pstakeValidatorAddress
+                            #&& psymbolValueOf # psstSymbol # txOut.value #== 1
                   )
+                # pfromData txInfoF.outputs
 
-            votesList = pto $ pto $ pfromData proposalInputDatumF.votes
+          stakeOutputF <- tcont $ pletFields @'["datumHash", "value"] $ stakeOutput
 
-            maybeWinner =
-              pfoldr # highestVoteFolder # pcon PNothing # votesList
+          tcassert "Staked GTs should be sent back to stake validator" $
+            stakeInputDatumF.stakedAmount #== (pgtValueOf # stakeOutputF.value)
 
-        winner <- plet $ mustBePJust # "No winning outcome" # maybeWinner
+          let stakeOutputDatumHash = mustBePDJust # "Stake output should have datum" # stakeOutputF.datumHash
 
-        let highestVote = pfromData $ psndBuiltin # winner
-            minimumVotes = puntag $ pfromData $ pfield @"execute" # proposalInputDatumF.thresholds
+              stakeOutputDatum =
+                mustBePJust # "Stake output not found" #$ ptryFindDatum # stakeOutputDatumHash # txInfoF.datums
 
-        passert "Higgest vote doesn't meet the minimum requirement" $ minimumVotes #<= highestVote
+          -- The stake should be locked by the newly created proposal.
 
-        let finalResultTag = pfromData $ pfstBuiltin # winner
+          let possibleVoteResults = pkeys #$ pto $ pfromData proposalOutputDatum.votes
 
-        -- The effects of the winner outcome.
-        effectGroup <- plet $ plookup' # finalResultTag #$ proposalInputDatumF.effects
-
-        gatCount <- plet $ plength #$ pto $ pto effectGroup
-
-        passert "Required amount of GATs should be minted" $
-          psymbolValueOf # patSymbol # txInfoF.mint #== gatCount
-
-        -- Ensure that every GAT goes to one of the effects in the winner effect group.
-        outputsWithGAT <-
-          plet $
-            pfilter
-              # phoistAcyclic
-                ( plam
-                    ( \((pfield @"value" #) -> value) ->
-                        0 #< psymbolValueOf # patSymbol # value
+              mkProposalLock :: Term _ (PProposalId :--> PAsData PResultTag :--> PAsData PProposalLock)
+              mkProposalLock =
+                phoistAcyclic $
+                  plam
+                    ( \pid rt' ->
+                        pdata $
+                          mkRecordConstr
+                            PProposalLock
+                            ( #vote .= rt' .& #proposalTag .= pdata pid
+                            )
                     )
-                )
-              # pfromData txInfoF.outputs
 
-        passert "Output GATs is more than minted GATs" $
-          plength # outputsWithGAT #== gatCount
+              -- Append new locks to existing locks
+              expectedProposalLocks =
+                pconcat # stakeInputDatumF.lockedBy
+                  #$ pmap # (mkProposalLock # proposalOutputDatum.proposalId) # possibleVoteResults
 
-        let gatOutputValidator' :: Term s (PMap PValidatorHash PDatumHash :--> PAsData PTxOut :--> PBool)
-            gatOutputValidator' =
-              phoistAcyclic $
-                plam
-                  ( \effects (pfromData -> output') -> P.do
-                      output <- pletFields @'["address", "datumHash"] $ output'
+              expectedStakeOutputDatum =
+                pdata $
+                  mkRecordConstr
+                    PStakeDatum
+                    ( #stakedAmount .= stakeInputDatumF.stakedAmount
+                        .& #owner .= stakeInputDatumF.owner
+                        .& #lockedBy .= pdata expectedProposalLocks
+                    )
 
-                      let scriptHash =
-                            mustBePJust # "GAT receiver is not a script"
-                              #$ scriptHashFromAddress # output.address
-                          datumHash =
-                            mustBePDJust # "Output to effect should have datum"
-                              #$ output.datumHash
+          tcassert "Unexpected stake output datum" $ expectedStakeOutputDatum #== stakeOutputDatum
 
-                          expectedDatumHash =
-                            mustBePJust # "Receiver is not in the effect list"
-                              #$ plookup # scriptHash # effects
+          pure $ popaque $ pconstant ()
 
-                      foldr1
-                        (#&&)
-                        [ ptraceIfFalse "GAT must be tagged by the effect hash" $ authorityTokensValidIn # patSymbol # output'
-                        , ptraceIfFalse "Unexpected datum" $ datumHash #== expectedDatumHash
-                        ]
+        --------------------------------------------------------------------------
+
+        PMintGATs _ -> unTermCont $ do
+          tcassert "Governor state should not be changed" $ newGovernorDatum #== oldGovernorDatum
+
+          -- Filter out proposal inputs and ouputs using PST and the address of proposal validator.
+
+          tcassert "The governor can only process one proposal at a time" $
+            (psymbolValueOf # ppstSymbol #$ pvalueSpent # txInfoF.inputs) #== 1
+
+          proposalInputF <-
+            tcont $
+              pletFields @'["datumHash"] $
+                pfield @"resolved"
+                  #$ pfromData
+                  $ mustBePJust
+                    # "Proposal input not found"
+                      #$ pfind
+                    # plam
+                      ( \((pfield @"resolved" #) -> txOut) -> unTermCont $ do
+                          txOutF <- tcont $ pletFields @'["address", "value"] txOut
+
+                          pure $
+                            psymbolValueOf # ppstSymbol # txOutF.value #== 1
+                              #&& txOutF.address #== pdata pproposalValidatorAddress
+                      )
+                    # pfromData txInfoF.inputs
+
+          proposalOutputF <-
+            tcont $
+              pletFields @'["datumHash"] $
+                mustBePJust # "Proposal output not found"
+                  #$ pfind
+                    # plam
+                      ( \txOut -> unTermCont $ do
+                          txOutF <- tcont $ pletFields @'["address", "value"] txOut
+                          pure $
+                            psymbolValueOf # ppstSymbol # txOutF.value #== 1
+                              #&& txOutF.address #== pdata pproposalValidatorAddress
+                      )
+                    # pfromData txInfoF.outputs
+
+          proposalInputDatum <-
+            tclet $
+              mustFindDatum' @PProposalDatum
+                # proposalInputF.datumHash
+                # txInfoF.datums
+          proposalOutputDatum <-
+            tclet $
+              mustFindDatum' @PProposalDatum
+                # proposalOutputF.datumHash
+                # txInfoF.datums
+
+          tcassert "Proposal datum must be valid" $
+            proposalDatumValid' # proposalInputDatum
+              #&& proposalDatumValid' # proposalOutputDatum
+
+          proposalInputDatumF <-
+            tcont $
+              pletFields @'["proposalId", "effects", "status", "cosigners", "thresholds", "votes"]
+                proposalInputDatum
+
+          -- Check that the proposal state is advanced so that a proposal cannot be executed twice.
+
+          tcassert "Proposal must be in locked(executable) state in order to execute effects" $
+            proposalInputDatumF.status #== pconstantData Locked
+
+          let expectedOutputProposalDatum =
+                mkRecordConstr
+                  PProposalDatum
+                  ( #proposalId .= proposalInputDatumF.proposalId
+                      .& #effects .= proposalInputDatumF.effects
+                      .& #status .= pdata (pcon $ PFinished pdnil)
+                      .& #cosigners .= proposalInputDatumF.cosigners
+                      .& #thresholds .= proposalInputDatumF.thresholds
+                      .& #votes .= proposalInputDatumF.votes
                   )
 
-            gatOutputValidator = gatOutputValidator' # effectGroup
+          tcassert "Unexpected output proposal datum" $
+            pdata proposalOutputDatum #== pdata expectedOutputProposalDatum
 
-        popaque $
-          pfoldr
-            # plam
-              ( \txOut r ->
-                  let value = pfield @"value" # txOut
-                      atValue = psymbolValueOf # patSymbol # value
-                   in pif (atValue #== 0) r $
-                        pif (atValue #== 1) (r #&& gatOutputValidator # txOut) $ pconstant False
-              )
-            # pconstant True
-            # pfromData txInfoF.outputs
+          -- TODO: anything else to check here?
 
-      --------------------------------------------------------------------------
+          -- Find the highest votes and the corresponding tag.
+          let highestVoteFolder =
+                phoistAcyclic $
+                  plam
+                    ( \pair last' ->
+                        pif
+                          (pisJust # last')
+                          ( unTermCont $ do
+                              PJust last <- tcmatch last'
+                              let lastHighestVote = pfromData $ psndBuiltin # last
+                                  thisVote = pfromData $ psndBuiltin # pair
+                              pure $ pif (lastHighestVote #< thisVote) (pcon $ PJust pair) last'
+                          )
+                          (pcon $ PJust pair)
+                    )
 
-      PMutateGovernor _ -> P.do
-        -- Check that a GAT is burnt.
-        popaque $ singleAuthorityTokenBurned patSymbol ctxF.txInfo txInfoF.mint
+              votesList = pto $ pto $ pfromData proposalInputDatumF.votes
+
+              maybeWinner =
+                pfoldr # highestVoteFolder # pcon PNothing # votesList
+
+          winner <- tclet $ mustBePJust # "No winning outcome" # maybeWinner
+
+          let highestVote = pfromData $ psndBuiltin # winner
+              minimumVotes = puntag $ pfromData $ pfield @"execute" # proposalInputDatumF.thresholds
+
+          tcassert "Higgest vote doesn't meet the minimum requirement" $ minimumVotes #<= highestVote
+
+          let finalResultTag = pfromData $ pfstBuiltin # winner
+
+          -- The effects of the winner outcome.
+          effectGroup <- tclet $ plookup' # finalResultTag #$ proposalInputDatumF.effects
+
+          gatCount <- tclet $ plength #$ pto $ pto effectGroup
+
+          tcassert "Required amount of GATs should be minted" $
+            psymbolValueOf # patSymbol # txInfoF.mint #== gatCount
+
+          -- Ensure that every GAT goes to one of the effects in the winner effect group.
+          outputsWithGAT <-
+            tclet $
+              pfilter
+                # phoistAcyclic
+                  ( plam
+                      ( \((pfield @"value" #) -> value) ->
+                          0 #< psymbolValueOf # patSymbol # value
+                      )
+                  )
+                # pfromData txInfoF.outputs
+
+          tcassert "Output GATs is more than minted GATs" $
+            plength # outputsWithGAT #== gatCount
+
+          let gatOutputValidator' :: Term s (PMap PValidatorHash PDatumHash :--> PAsData PTxOut :--> PBool)
+              gatOutputValidator' =
+                phoistAcyclic $
+                  plam
+                    ( \effects (pfromData -> output') -> unTermCont $ do
+                        output <- tcont $ pletFields @'["address", "datumHash"] $ output'
+
+                        let scriptHash =
+                              mustBePJust # "GAT receiver is not a script"
+                                #$ scriptHashFromAddress # output.address
+                            datumHash =
+                              mustBePDJust # "Output to effect should have datum"
+                                #$ output.datumHash
+
+                            expectedDatumHash =
+                              mustBePJust # "Receiver is not in the effect list"
+                                #$ plookup # scriptHash # effects
+
+                        pure $
+                          foldr1
+                            (#&&)
+                            [ ptraceIfFalse "GAT must be tagged by the effect hash" $ authorityTokensValidIn # patSymbol # output'
+                            , ptraceIfFalse "Unexpected datum" $ datumHash #== expectedDatumHash
+                            ]
+                    )
+
+              gatOutputValidator = gatOutputValidator' # effectGroup
+
+          pure $
+            popaque $
+              pfoldr
+                # plam
+                  ( \txOut r ->
+                      let value = pfield @"value" # txOut
+                          atValue = psymbolValueOf # patSymbol # value
+                       in pif (atValue #== 0) r $
+                            pif (atValue #== 1) (r #&& gatOutputValidator # txOut) $ pconstant False
+                  )
+                # pconstant True
+                # pfromData txInfoF.outputs
+
+        --------------------------------------------------------------------------
+
+        PMutateGovernor _ -> unTermCont $ do
+          -- Check that a GAT is burnt.
+          pure $ popaque $ singleAuthorityTokenBurned patSymbol ctxF.txInfo txInfoF.mint
   where
     -- Get th amount of governance tokens in a value.
     pgtValueOf :: Term s (PValue :--> PDiscrete GTTag)

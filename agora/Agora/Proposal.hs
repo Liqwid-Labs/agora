@@ -54,7 +54,6 @@ import Plutarch.Lift (
   PConstantDecl,
   PUnsafeLiftDecl (..),
  )
-import Plutarch.Monadic qualified as P
 import Plutarch.SafeMoney (PDiscrete, Tagged)
 import Plutarch.TryFrom (PTryFrom (PTryFromExcess, ptryFrom'))
 import Plutarch.Unsafe (punsafeCoerce)
@@ -411,8 +410,8 @@ deriving via (DerivePConstantViaData ProposalRedeemer PProposalRedeemer) instanc
 proposalDatumValid :: Proposal -> Term s (Agora.Proposal.PProposalDatum :--> PBool)
 proposalDatumValid proposal =
   phoistAcyclic $
-    plam $ \datum' -> P.do
-      datum <- pletFields @'["effects", "cosigners", "votes"] $ datum'
+    plam $ \datum' -> unTermCont $ do
+      datum <- tcont $ pletFields @'["effects", "cosigners", "votes"] $ datum'
 
       let atLeastOneNegativeResult =
             pany
@@ -425,10 +424,11 @@ proposalDatumValid proposal =
               #$ pto
               $ pfromData datum.effects
 
-      foldr1
-        (#&&)
-        [ ptraceIfFalse "Proposal has at least one ResultTag has no effects" atLeastOneNegativeResult
-        , ptraceIfFalse "Proposal has at least one cosigner" $ pnotNull # pfromData datum.cosigners
-        , ptraceIfFalse "Proposal has fewer cosigners than the limit" $ plength # (pfromData datum.cosigners) #<= pconstant proposal.maximumCosigners
-        , ptraceIfFalse "Proposal votes and effects are compatible with each other" $ pkeysEqual # datum.effects # pto (pfromData datum.votes)
-        ]
+      pure $
+        foldr1
+          (#&&)
+          [ ptraceIfFalse "Proposal has at least one ResultTag has no effects" atLeastOneNegativeResult
+          , ptraceIfFalse "Proposal has at least one cosigner" $ pnotNull # pfromData datum.cosigners
+          , ptraceIfFalse "Proposal has fewer cosigners than the limit" $ plength # (pfromData datum.cosigners) #<= pconstant proposal.maximumCosigners
+          , ptraceIfFalse "Proposal votes and effects are compatible with each other" $ pkeysEqual # datum.effects # pto (pfromData datum.votes)
+          ]
