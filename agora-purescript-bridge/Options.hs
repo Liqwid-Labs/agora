@@ -46,6 +46,6 @@ parseOptions = Opt.execParser p
 srcFilePath :: FilePath -> FilePath
 srcFilePath path = fromRelDir $
   fromJust $ do
-    dir <- parseRelDir $ path
+    dir <- parseRelDir path
     srcSubDir <- parseRelDir "src"
     return $ dir </> srcSubDir
