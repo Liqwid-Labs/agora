@@ -28,7 +28,8 @@
   inputs.apropos.inputs.nixpkgs.follows =
     "plutarch/haskell-nix/nixpkgs-unstable";
 
-  inputs.purescript-bridge.url = "github:mlabs-haskell/purescript-bridge";
+  inputs.purescript-bridge.url =
+    "github:mlabs-haskell/purescript-bridge?rev=8e6251e8b1f489748f5bbd9ca6384bcf8cefbbef";
 
   outputs = inputs@{ self, nixpkgs, haskell-nix, plutarch, purescript-bridge, ... }:
     let
