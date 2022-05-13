@@ -81,7 +81,7 @@ data Stake = Stake
   { gtClassRef :: Tagged GTTag AssetClass
   -- ^ Used when inlining the AssetClass of a 'PDiscrete' in the script code.
   , proposalSTClass :: AssetClass
-  }
+  } deriving stock (GHC.Generic)
 
 {- | A lock placed on a Stake datum in order to prevent
      depositing and withdrawing when votes are in place.

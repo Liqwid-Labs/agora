@@ -207,6 +207,10 @@ executable agora-purescript-bridge
   build-depends:
     , agora
     , optparse-applicative
+    , path
     , purescript-bridge
 
   hs-source-dirs: agora-purescript-bridge
+  other-modules:
+    AgoraTypes
+    Options

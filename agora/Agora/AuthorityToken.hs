@@ -11,6 +11,8 @@ module Agora.AuthorityToken (
   AuthorityToken (..),
 ) where
 
+--------------------------------------------------------------------------------
+
 import Plutarch.Api.V1 (
   PAddress (..),
   PCredential (..),
@@ -25,8 +27,11 @@ import Plutarch.Api.V1.AssocMap (PMap (PMap))
 import Plutarch.Api.V1.Value (PValue (PValue))
 import Plutarch.Builtin (pforgetData)
 import Plutus.V1.Ledger.Value (AssetClass (AssetClass))
+import Plutarch.Api.V1.Extra (passetClass, passetClassValueOf)
 
-import Prelude
+--------------------------------------------------------------------------------
+
+import GHC.Generics qualified as GHC
 
 --------------------------------------------------------------------------------
 
@@ -38,7 +43,6 @@ import Agora.Utils (
   tcassert,
   tcmatch,
  )
-import Plutarch.Api.V1.Extra (passetClass, passetClassValueOf)
 
 --------------------------------------------------------------------------------
 
@@ -51,7 +55,7 @@ import Plutarch.Api.V1.Extra (passetClass, passetClassValueOf)
 newtype AuthorityToken = AuthorityToken
   { authority :: AssetClass
   -- ^ Token that must move in order for minting this to be valid.
-  }
+  } deriving stock (GHC.Generic)
 
 --------------------------------------------------------------------------------
 

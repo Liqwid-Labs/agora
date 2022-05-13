@@ -21,6 +21,7 @@ module Agora.Governor (
 ) where
 
 import Agora.Proposal (ProposalId, ProposalThresholds)
+import GHC.Generics qualified as GHC
 import Plutarch.Api.V1 (PMintingPolicy, PValidator)
 import PlutusTx qualified
 
@@ -31,6 +32,7 @@ data GovernorDatum = GovernorDatum
   , nextProposalId :: ProposalId
   -- ^ What tag the next proposal will get upon creating.
   }
+  deriving stock (GHC.Generic)
 
 PlutusTx.makeIsDataIndexed ''GovernorDatum [('GovernorDatum, 0)]
 
@@ -46,12 +48,14 @@ data GovernorRedeemer
   | -- | Checks that a SINGLE proposal finished correctly,
     --   and allows minting GATs for each effect script.
     MintGATs
+  deriving stock (GHC.Generic)
 
 PlutusTx.makeIsDataIndexed ''GovernorRedeemer [('CreateProposal, 0), ('MintGATs, 1)]
 
 -- | Parameters for creating Governor scripts.
 data Governor
   = Governor
+  deriving stock (GHC.Generic)
 
 --------------------------------------------------------------------------------
 
