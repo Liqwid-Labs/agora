@@ -14,13 +14,13 @@ data Options = Options
 outputOpt :: Opt.Parser FilePath
 outputOpt =
   srcFilePath
-    <$> ( Opt.strOption $
-            Opt.long "output-path"
-              <> Opt.short 'o'
-              <> Opt.metavar "OUTPUT_PATH"
-              <> Opt.value "./"
-              <> Opt.help "Output purescripts will be in OUTPUT_PATH/src"
-        )
+    <$> Opt.strOption
+      ( Opt.long "output-path"
+          <> Opt.short 'o'
+          <> Opt.metavar "OUTPUT_PATH"
+          <> Opt.value "./"
+          <> Opt.help "Output purescripts will be in OUTPUT_PATH/src"
+      )
 
 quietOpt :: Opt.Parser Bool
 quietOpt =
