@@ -1,7 +1,7 @@
 # This really ought to be `/usr/bin/env bash`, but nix flakes don't like that.
 SHELL := /bin/sh
 
-.PHONY: hoogle format haddock usage format_nix format_haskell format_check lint
+.PHONY: hoogle format haddock usage tag format_nix format_haskell format_check lint
 
 usage:
 	@echo "usage: make <command> [OPTIONS]"
