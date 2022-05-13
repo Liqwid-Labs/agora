@@ -429,7 +429,7 @@ proposalDatumValid proposal =
       pure $
         foldr1
           (#&&)
-          [ ptraceIfFalse "Proposal has at least one ResultTag has no effects" atLeastOneNegativeResult
+          [ ptraceIfFalse "Proposal has at least one ResultTag that has no effects" atLeastOneNegativeResult
           , ptraceIfFalse "Proposal has at least one cosigner" $ pnotNull # pfromData datum.cosigners
           , ptraceIfFalse "Proposal has fewer cosigners than the limit" $ plength # (pfromData datum.cosigners) #<= pconstant proposal.maximumCosigners
           , ptraceIfFalse "Proposal votes and effects are compatible with each other" $ pkeysEqual # datum.effects # pto (pfromData datum.votes)

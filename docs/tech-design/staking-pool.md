@@ -76,7 +76,7 @@ data Stake = Stake
   }
 ```
 
-When voting on a proposal, a user can check which stakes have delegated to them off-chain and include them in the voting transaction. _This will lock the delegator's stake_, however they will be themselves be able to unlock it as usual. It should be noted that delegation of stakes only extends to voting on proposals and not, for example, withdrawing GT from a stake.
+When voting on a proposal, a user can check which stakes have delegated to them off-chain and include them in the voting transaction. _This will lock the delegator's stake_, however they will themselves be able to unlock it as usual. It should be noted that delegation of stakes only extends to voting on proposals and not, for example, withdrawing GT from a stake.
 
 ## Destroying stake
 
