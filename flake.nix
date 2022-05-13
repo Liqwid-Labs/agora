@@ -28,7 +28,9 @@
   inputs.apropos.inputs.nixpkgs.follows =
     "plutarch/haskell-nix/nixpkgs-unstable";
 
-  outputs = inputs@{ self, nixpkgs, haskell-nix, plutarch, ... }:
+  inputs.purescript-bridge.url = "github:mlabs-haskell/purescript-bridge";
+
+  outputs = inputs@{ self, nixpkgs, haskell-nix, plutarch, purescript-bridge, ... }:
     let
       supportedSystems = with nixpkgs.lib.systems.supported;
         tier1 ++ tier2 ++ tier3;
@@ -77,6 +79,12 @@
               src = inputs.apropos;
               subdirs = [ "." ];
             }
+            {
+              src = inputs.purescript-bridge;
+              subdirs = [
+                "."
+              ];
+            }
           ];
           modules = [ (plutarch.haskellModule system) ];
           shell = {
@@ -110,6 +118,7 @@
               ps.plutarch-safemoney
               ps.plutarch-test
               ps.apropos
+              ps.purescript-bridge
             ];
           };
         };
