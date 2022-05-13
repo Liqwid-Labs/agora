@@ -23,7 +23,7 @@ import Test.QuickCheck
 import Test.QuickCheck.Monadic
 
 import Test.Tasty (TestTree, testGroup)
-import Test.Tasty.QuickCheck (testProperty)
+import Test.Tasty.QuickCheck 
 import Test.Tasty.Plutarch.Property (classifiedProperty)
 
 import Data.Tagged
@@ -74,7 +74,7 @@ genTWECases PaysToEffect                      = do
         , txOutDatumHash = Nothing
         }) <$> vals
       modify (i, o) = return (i, o <> toEffect)
-  txinfo <- _txInfoFromTWEDatum modify datum
+  txinfo <- txInfoFromTWEDatum modify datum
   return (datum, txinfo)
 genTWECases OutputsDoNotMatchReceivers        = do
   datum <- genTWEDatum
@@ -83,7 +83,7 @@ genTWECases OutputsDoNotMatchReceivers        = do
         -- So tail is used to make sure there is aleast one thing missing
         output <- sublistOf $ tail o
         return (i, output)
-  txinfo <- _txInfoFromTWEDatum modify datum
+  txinfo <- txInfoFromTWEDatum modify datum
   return (datum, txinfo)
 genTWECases InputsHaveOtherScriptInput        = do
   datum <- genTWEDatum
@@ -100,10 +100,18 @@ genTWECases InputsHaveOtherScriptInput        = do
                   , txOutDatumHash = Nothing
                   }) <$> d
         return (i <> unauthorizedScriptInputs, o)
-  txinfo <- _txInfoFromTWEDatum modify datum
+  txinfo <- txInfoFromTWEDatum modify datum
   return (datum, txinfo)
 genTWECases RemaindersDoNotReturnToTreasuries = do
-  datum <- genTWEDatum
+  -- suchThat here might be unideal, but it's what we've got...
+  -- Possible Fix, use random input amount for treasury inputs
+  -- so that it always have excess
+  datum <- genTWEDatum `suchThat` (\(TreasuryWithdrawalDatum r t) ->
+                                     let totalExpected = mconcat $ snd <$> r
+                                         ts = length t
+                                         in
+                                     totalExpected /= mconcat (replicate ts $ distributeValue ts totalExpected)
+                                     )
   let modify (i, o) = do
         -- We'll drop all outputs directed to ScriptCredential
         let treasuryDroppedOutput =
@@ -112,11 +120,11 @@ genTWECases RemaindersDoNotReturnToTreasuries = do
                          ScriptCredential _ -> False
                         ) o
         return (i, treasuryDroppedOutput)
-  txinfo <- _txInfoFromTWEDatum modify datum
+  txinfo <- txInfoFromTWEDatum modify datum
   return (datum, txinfo)
 genTWECases EffectShouldPass                  = do
   datum <- genTWEDatum
-  txinfo <- _txInfoFromTWEDatum return datum
+  txinfo <- txInfoFromTWEDatum return datum
   return (datum, txinfo)
 
 classifyTWE :: TWETestInput -> TWETestCases
@@ -135,7 +143,12 @@ classifyTWE ((TreasuryWithdrawalDatum r t), info)
                                          (not $ elem x t) &&
                                          x /= (ScriptCredential $ validatorHash validator)
                                       ) <$> txInfoInputs info
-    remaindersDoNotReturnToTreasuries = undefined
+
+    sumValueOfTreasury x = mconcat $ snd <$> (filter (\(c,_) -> elem c t) $ x)
+    treasuryInputSum = sumValueOfTreasury $ extractCredVal . txInInfoResolved <$> txInfoInputs info
+    treasuryOutputSum = sumValueOfTreasury credentialValuePairs
+    expected = Value.unionWith (-) treasuryInputSum (mconcat $ snd <$> r)
+    remaindersDoNotReturnToTreasuries = treasuryOutputSum /= expected
     
 shrinkTWE :: TWETestInput -> [TWETestInput]
 shrinkTWE = const [] -- currently this should work... 
@@ -157,8 +170,8 @@ TODO: will this work okay with generators adding and removing
 parts? I don't see particular reason it will not to, but will
 that be a "good" generator?
 -}
-_txInfoFromTWEDatum :: (([TxInInfo], [TxOut]) -> Gen ([TxInInfo], [TxOut])) -> TreasuryWithdrawalDatum -> Gen TxInfo
-_txInfoFromTWEDatum cb datum = do
+txInfoFromTWEDatum :: (([TxInInfo], [TxOut]) -> Gen ([TxInInfo], [TxOut])) -> TreasuryWithdrawalDatum -> Gen TxInfo
+txInfoFromTWEDatum cb datum = do
   (input, output) <- cb (expectedInput, expectedOutput)
   return $
       TxInfo
@@ -174,11 +187,11 @@ _txInfoFromTWEDatum cb datum = do
       , txInfoId = "0b123412341234"
       }
   where
-    (expectedInput, excessOutputs)  = _expectedTxInInfoFromTWEDatum datum
-    expectedOutput = _expectedTxOutFromTWEDatum datum <> excessOutputs
+    (expectedInput, excessOutputs)  = expectedTxInInfoFromTWEDatum datum
+    expectedOutput = expectedTxOutFromTWEDatum datum <> excessOutputs
 
-_expectedTxOutFromTWEDatum :: TreasuryWithdrawalDatum -> [TxOut]
-_expectedTxOutFromTWEDatum (TreasuryWithdrawalDatum r _) =
+expectedTxOutFromTWEDatum :: TreasuryWithdrawalDatum -> [TxOut]
+expectedTxOutFromTWEDatum (TreasuryWithdrawalDatum r _) =
   f <$> r -- add outputs to treasuries, returning excess STs.
   where 
     f (addr, val) = TxOut
@@ -189,8 +202,8 @@ _expectedTxOutFromTWEDatum (TreasuryWithdrawalDatum r _) =
 
 {- | Generates expected inputs from given Datum
 -}
-_expectedTxInInfoFromTWEDatum :: TreasuryWithdrawalDatum -> ([TxInInfo], [TxOut])
-_expectedTxInInfoFromTWEDatum (TreasuryWithdrawalDatum r t) =
+expectedTxInInfoFromTWEDatum :: TreasuryWithdrawalDatum -> ([TxInInfo], [TxOut])
+expectedTxInInfoFromTWEDatum (TreasuryWithdrawalDatum r t) =
   (inputGAT:((\addr -> TxInInfo
     (TxOutRef "0b2086cbf8b6900f8cb65e012de4516cb66b5cb08a9aaba12a8b88be" 1)
     TxOut
@@ -206,11 +219,11 @@ _expectedTxInInfoFromTWEDatum (TreasuryWithdrawalDatum r t) =
     }])
   where
     totalValues = mconcat $ snd <$> r
-    treasuryInputValue = _distributeValue (length t) totalValues
+    treasuryInputValue = distributeValue (length t) totalValues
     extras = Value.unionWith (-) (mconcat (replicate (length t) treasuryInputValue)) $ totalValues
 
-_distributeValue :: Int -> Value -> Value
-_distributeValue n v = mconcat $ (\(cs, tn, (toInteger -> val)) -> Value.singleton cs tn val) <$> vals
+distributeValue :: Int -> Value -> Value
+distributeValue n v = mconcat $ (\(cs, tn, (toInteger -> val)) -> Value.singleton cs tn val) <$> vals
   where
      vals = (\(cs, tn, (fromInteger -> val)) -> (cs, tn, val `divRound` n)) <$> Value.flattenValue v
      divRound x y = case divMod x y of
@@ -234,15 +247,12 @@ genTWEDatum = do
   let receiverList = zipWith (,) users values
   pure $ TreasuryWithdrawalDatum receiverList treas
 
-
 prop :: PropertyM IO Bool
-prop = forAllM (elements (universe :: [TWETestCases])) (\c -> run $ generate (genTWECases c) >>= (\gen -> do
-                                                                                                     putStrLn $ show c <> show (classifyTWE gen)
-                                                                                                     return $ c == classifyTWE gen))
+prop = forAllM (elements (universe :: [TWETestCases])) (\c -> run $ generate (genTWECases c) >>= (\gen -> return $ c == classifyTWE gen))
 
 tests :: [TestTree]
 tests =
-  [ testProperty "hey" (monadicIO prop)
+  [ testProperty "Generator <-> Classifier" (monadicIO prop)
   , testProperty "effect" propertyTWE
   , testGroup
       "effect"
