@@ -29,5 +29,4 @@ instance PTryFrom PData PNoOp where
 -- | Dummy effect which can only burn its GAT.
 noOpValidator :: CurrencySymbol -> ClosedTerm PValidator
 noOpValidator curr = makeEffect curr $
-  \_ (_datum :: Term s PNoOp) _ _ -> P.do
-    popaque (pconstant ())
+  \_ (_datum :: Term s PNoOp) _ _ -> popaque (pconstant ())

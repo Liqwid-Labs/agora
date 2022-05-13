@@ -58,11 +58,9 @@ data Governor
 -- | Policy for Governors.
 governorPolicy :: Governor -> ClosedTerm PMintingPolicy
 governorPolicy _ =
-  plam $ \_redeemer _ctx' -> P.do
-    popaque (pconstant ())
+  plam $ \_redeemer _ctx' -> popaque (pconstant ())
 
 -- | Validator for Governors.
 governorValidator :: Governor -> ClosedTerm PValidator
 governorValidator _ =
-  plam $ \_datum _redeemer _ctx' -> P.do
-    popaque (pconstant ())
+  plam $ \_datum _redeemer _ctx' -> popaque (pconstant ())

@@ -21,12 +21,15 @@ import Agora.Utils (
   anyOutput,
   findTxOutByTxOutRef,
   getMintingPolicySymbol,
-  passert,
   pisUniq,
   psymbolValueOf,
   ptokenSpent,
   ptxSignedBy,
   pvalueSpent,
+  tcassert,
+  tclet,
+  tcmatch,
+  tctryFrom,
  )
 import Plutarch.Api.V1 (
   PMintingPolicy,
@@ -36,8 +39,6 @@ import Plutarch.Api.V1 (
   PValidator,
  )
 import Plutarch.Api.V1.Extra (passetClass, passetClassValueOf)
-import Plutarch.Monadic qualified as P
-import Plutarch.TryFrom (ptryFrom)
 import Plutus.V1.Ledger.Value (AssetClass (AssetClass))
 
 {- | Policy for Proposals.
@@ -60,32 +61,32 @@ import Plutus.V1.Ledger.Value (AssetClass (AssetClass))
 -}
 proposalPolicy :: Proposal -> ClosedTerm PMintingPolicy
 proposalPolicy proposal =
-  plam $ \_redeemer ctx' -> P.do
-    PScriptContext ctx' <- pmatch ctx'
-    ctx <- pletFields @'["txInfo", "purpose"] ctx'
-    PTxInfo txInfo' <- pmatch $ pfromData ctx.txInfo
-    txInfo <- pletFields @'["inputs", "mint"] txInfo'
-    PMinting _ownSymbol <- pmatch $ pfromData ctx.purpose
+  plam $ \_redeemer ctx' -> unTermCont $ do
+    PScriptContext ctx' <- tcmatch ctx'
+    ctx <- tcont $ pletFields @'["txInfo", "purpose"] ctx'
+    PTxInfo txInfo' <- tcmatch $ pfromData ctx.txInfo
+    txInfo <- tcont $ pletFields @'["inputs", "mint"] txInfo'
+    PMinting _ownSymbol <- tcmatch $ pfromData ctx.purpose
 
     let inputs = txInfo.inputs
         mintedValue = pfromData txInfo.mint
         AssetClass (govCs, govTn) = proposal.governorSTAssetClass
 
-    PMinting ownSymbol' <- pmatch $ pfromData ctx.purpose
+    PMinting ownSymbol' <- tcmatch $ pfromData ctx.purpose
     let mintedProposalST =
           passetClassValueOf
             # mintedValue
             # (passetClass # (pfield @"_0" # ownSymbol') # pconstant "")
 
-    passert "Governance state-thread token must move" $
+    tcassert "Governance state-thread token must move" $
       ptokenSpent
         # (passetClass # pconstant govCs # pconstant govTn)
         # inputs
 
-    passert "Minted exactly one proposal ST" $
+    tcassert "Minted exactly one proposal ST" $
       mintedProposalST #== 1
 
-    popaque (pconstant ())
+    pure $ popaque (pconstant ())
 
 {- | The validator for Proposals.
 
@@ -115,114 +116,113 @@ A list of all time-sensitive redeemers and their requirements:
 -}
 proposalValidator :: Proposal -> ClosedTerm PValidator
 proposalValidator proposal =
-  plam $ \datum redeemer ctx' -> P.do
-    PScriptContext ctx' <- pmatch ctx'
-    ctx <- pletFields @'["txInfo", "purpose"] ctx'
-    txInfo <- plet $ pfromData ctx.txInfo
-    PTxInfo txInfo' <- pmatch txInfo
-    txInfoF <- pletFields @'["inputs", "mint", "datums", "signatories"] txInfo'
-    PSpending ((pfield @"_0" #) -> txOutRef) <- pmatch $ pfromData ctx.purpose
+  plam $ \datum redeemer ctx' -> unTermCont $ do
+    PScriptContext ctx' <- tcmatch ctx'
+    ctx <- tcont $ pletFields @'["txInfo", "purpose"] ctx'
+    txInfo <- tclet $ pfromData ctx.txInfo
+    PTxInfo txInfo' <- tcmatch txInfo
+    txInfoF <- tcont $ pletFields @'["inputs", "mint", "datums", "signatories"] txInfo'
+    PSpending ((pfield @"_0" #) -> txOutRef) <- tcmatch $ pfromData ctx.purpose
 
-    PJust txOut <- pmatch $ findTxOutByTxOutRef # txOutRef # txInfoF.inputs
-    txOutF <- pletFields @'["address", "value"] $ txOut
+    PJust txOut <- tcmatch $ findTxOutByTxOutRef # txOutRef # txInfoF.inputs
+    txOutF <- tcont $ pletFields @'["address", "value"] $ txOut
 
     (pfromData -> proposalDatum, _) <-
-      ptryFrom @(PAsData PProposalDatum) datum
+      tctryFrom @(PAsData PProposalDatum) datum
     (pfromData -> proposalRedeemer, _) <-
-      ptryFrom @(PAsData PProposalRedeemer) redeemer
+      tctryFrom @(PAsData PProposalRedeemer) redeemer
 
     proposalF <-
-      pletFields
-        @'[ "proposalId"
-          , "effects"
-          , "status"
-          , "cosigners"
-          , "thresholds"
-          , "votes"
-          ]
-        proposalDatum
+      tcont $
+        pletFields
+          @'[ "proposalId"
+            , "effects"
+            , "status"
+            , "cosigners"
+            , "thresholds"
+            , "votes"
+            ]
+          proposalDatum
 
-    ownAddress <- plet $ txOutF.address
+    ownAddress <- tclet $ txOutF.address
 
     let stCurrencySymbol =
           pconstant $ getMintingPolicySymbol (proposalPolicy proposal)
-    valueSpent <- plet $ pvalueSpent # txInfoF.inputs
-    spentST <- plet $ psymbolValueOf # stCurrencySymbol #$ valueSpent
+    valueSpent <- tclet $ pvalueSpent # txInfoF.inputs
+    spentST <- tclet $ psymbolValueOf # stCurrencySymbol #$ valueSpent
     let AssetClass (stakeSym, stakeTn) = proposal.stakeSTAssetClass
     stakeSTAssetClass <-
-      plet $ passetClass # pconstant stakeSym # pconstant stakeTn
+      tclet $ passetClass # pconstant stakeSym # pconstant stakeTn
     spentStakeST <-
-      plet $ passetClassValueOf # valueSpent # stakeSTAssetClass
+      tclet $ passetClassValueOf # valueSpent # stakeSTAssetClass
 
-    signedBy <- plet $ ptxSignedBy # txInfoF.signatories
+    signedBy <- tclet $ ptxSignedBy # txInfoF.signatories
 
-    passert "ST at inputs must be 1" $
-      spentST #== 1
+    tcassert "ST at inputs must be 1" (spentST #== 1)
 
-    pmatch proposalRedeemer $ \case
-      PVote _r -> P.do
-        popaque (pconstant ())
-      --------------------------------------------------------------------------
-      PCosign r -> P.do
-        newSigs <- plet $ pfield @"newCosigners" # r
+    pure $
+      pmatch proposalRedeemer $ \case
+        PVote _r -> popaque (pconstant ())
+        --------------------------------------------------------------------------
+        PCosign r -> unTermCont $ do
+          newSigs <- tclet $ pfield @"newCosigners" # r
 
-        passert "Cosigners are unique" $
-          pisUniq # newSigs
+          tcassert "Cosigners are unique" $
+            pisUniq # newSigs
 
-        passert "Signed by all new cosigners" $
-          pall # signedBy # newSigs
+          tcassert "Signed by all new cosigners" $
+            pall # signedBy # newSigs
 
-        passert "As many new cosigners as Stake datums" $
-          spentStakeST #== plength # newSigs
+          tcassert "As many new cosigners as Stake datums" $
+            spentStakeST #== plength # newSigs
 
-        passert "All new cosigners are witnessed by their Stake datums" $
-          pall
-            # plam
-              ( \sig ->
-                  pmatch
-                    ( findStakeOwnedBy # stakeSTAssetClass
-                        # pfromData sig
-                        # txInfoF.datums
-                        # txInfoF.inputs
-                    )
-                    $ \case
-                      PNothing -> pcon PFalse
-                      PJust _ -> pcon PTrue
-              )
-            # newSigs
+          tcassert "All new cosigners are witnessed by their Stake datums" $
+            pall
+              # plam
+                ( \sig ->
+                    pmatch
+                      ( findStakeOwnedBy # stakeSTAssetClass
+                          # pfromData sig
+                          # txInfoF.datums
+                          # txInfoF.inputs
+                      )
+                      $ \case
+                        PNothing -> pcon PFalse
+                        PJust _ -> pcon PTrue
+                )
+              # newSigs
 
-        passert "Signatures are correctly added to cosignature list" $
-          anyOutput @PProposalDatum # ctx.txInfo
-            #$ plam
-            $ \newValue address newProposalDatum -> P.do
-              let updatedSigs = pconcat # newSigs # proposalF.cosigners
-                  correctDatum =
-                    pdata newProposalDatum
-                      #== pdata
-                        ( mkRecordConstr
-                            PProposalDatum
-                            ( #proposalId .= proposalF.proposalId
-                                .& #effects .= proposalF.effects
-                                .& #status .= proposalF.status
-                                .& #cosigners .= pdata updatedSigs
-                                .& #thresholds .= proposalF.thresholds
-                                .& #votes .= proposalF.votes
-                            )
-                        )
+          tcassert "Signatures are correctly added to cosignature list" $
+            anyOutput @PProposalDatum # ctx.txInfo
+              #$ plam
+              $ \newValue address newProposalDatum ->
+                let updatedSigs = pconcat # newSigs # proposalF.cosigners
+                    correctDatum =
+                      pdata newProposalDatum
+                        #== pdata
+                          ( mkRecordConstr
+                              PProposalDatum
+                              ( #proposalId .= proposalF.proposalId
+                                  .& #effects .= proposalF.effects
+                                  .& #status .= proposalF.status
+                                  .& #cosigners .= pdata updatedSigs
+                                  .& #thresholds .= proposalF.thresholds
+                                  .& #votes .= proposalF.votes
+                              )
+                          )
+                 in foldr1
+                      (#&&)
+                      [ ptraceIfFalse "Datum must be correct" correctDatum
+                      , ptraceIfFalse "Value should be correct" $
+                          pdata txOutF.value #== pdata newValue
+                      , ptraceIfFalse "Must be sent to Proposal's address" $
+                          ownAddress #== pdata address
+                      ]
 
-              foldr1
-                (#&&)
-                [ ptraceIfFalse "Datum must be correct" correctDatum
-                , ptraceIfFalse "Value should be correct" $
-                    pdata txOutF.value #== pdata newValue
-                , ptraceIfFalse "Must be sent to Proposal's address" $
-                    ownAddress #== pdata address
-                ]
-
-        popaque (pconstant ())
-      --------------------------------------------------------------------------
-      PUnlock _r -> P.do
-        popaque (pconstant ())
-      --------------------------------------------------------------------------
-      PAdvanceProposal _r -> P.do
-        popaque (pconstant ())
+          pure $ popaque (pconstant ())
+        --------------------------------------------------------------------------
+        PUnlock _r ->
+          popaque (pconstant ())
+        --------------------------------------------------------------------------
+        PAdvanceProposal _r ->
+          popaque (pconstant ())

@@ -13,7 +13,6 @@ import Agora.Utils (
   anyInput,
   anyOutput,
   paddValue,
-  passert,
   pfindTxInByTxOutRef,
   pgeqByClass,
   pgeqByClass',
@@ -22,8 +21,12 @@ import Agora.Utils (
   psymbolValueOf,
   ptokenSpent,
   ptxSignedBy,
+  pvalidatorHashToTokenName,
   pvalueSpent,
-  validatorHashToTokenName,
+  tcassert,
+  tclet,
+  tcmatch,
+  tctryFrom,
  )
 import Plutarch.Api.V1 (
   PCredential (PPubKeyCredential, PScriptCredential),
@@ -37,14 +40,12 @@ import Plutarch.Api.V1 (
  )
 import Plutarch.Api.V1.Extra (passetClass, passetClassValueOf)
 import Plutarch.Internal (punsafeCoerce)
-import Plutarch.Monadic qualified as P
 import Plutarch.Numeric
 import Plutarch.SafeMoney (
   Tagged (..),
   pdiscreteValue',
   untag,
  )
-import Plutarch.TryFrom (ptryFrom)
 import Plutus.V1.Ledger.Value (AssetClass (AssetClass))
 import Prelude hiding (Num (..))
 
@@ -70,93 +71,92 @@ stakePolicy ::
   Tagged GTTag AssetClass ->
   ClosedTerm PMintingPolicy
 stakePolicy gtClassRef =
-  plam $ \_redeemer ctx' -> P.do
-    ctx <- pletFields @'["txInfo", "purpose"] ctx'
-    txInfo <- plet $ ctx.txInfo
+  plam $ \_redeemer ctx' -> unTermCont $ do
+    ctx <- tcont $ pletFields @'["txInfo", "purpose"] ctx'
+    txInfo <- tclet $ ctx.txInfo
     let _a :: Term _ PTxInfo
         _a = txInfo
-    txInfoF <- pletFields @'["mint", "inputs", "outputs", "signatories"] txInfo
+    txInfoF <- tcont $ pletFields @'["mint", "inputs", "outputs", "signatories"] txInfo
 
-    PMinting ownSymbol' <- pmatch $ pfromData ctx.purpose
-    ownSymbol <- plet $ pfield @"_0" # ownSymbol'
-    spentST <- plet $ psymbolValueOf # ownSymbol #$ pvalueSpent # txInfoF.inputs
-    mintedST <- plet $ psymbolValueOf # ownSymbol # txInfoF.mint
+    PMinting ownSymbol' <- tcmatch $ pfromData ctx.purpose
+    ownSymbol <- tclet $ pfield @"_0" # ownSymbol'
+    spentST <- tclet $ psymbolValueOf # ownSymbol #$ pvalueSpent # txInfoF.inputs
+    mintedST <- tclet $ psymbolValueOf # ownSymbol # txInfoF.mint
 
-    let burning = P.do
-          passert "ST at inputs must be 1" $
+    let burning = unTermCont $ do
+          tcassert "ST at inputs must be 1" $
             spentST #== 1
 
-          passert "ST burned" $
+          tcassert "ST burned" $
             mintedST #== -1
 
-          passert "An unlocked input existed containing an ST" $
+          tcassert "An unlocked input existed containing an ST" $
             anyInput @PStakeDatum # txInfo
               #$ plam
-              $ \value _ stakeDatum' -> P.do
+              $ \value _ stakeDatum' ->
                 let hasST = psymbolValueOf # ownSymbol # value #== 1
-                let unlocked = pnot # (stakeLocked # stakeDatum')
-                hasST #&& unlocked
+                    unlocked = pnot # (stakeLocked # stakeDatum')
+                 in hasST #&& unlocked
 
-          popaque (pconstant ())
+          pure $ popaque (pconstant ())
 
-    let minting = P.do
-          passert "ST at inputs must be 0" $
+    let minting = unTermCont $ do
+          tcassert "ST at inputs must be 0" $
             spentST #== 0
 
-          passert "Minted ST must be exactly 1" $
+          tcassert "Minted ST must be exactly 1" $
             mintedST #== 1
 
-          passert "A UTXO must exist with the correct output" $
+          tcassert "A UTXO must exist with the correct output" $
             anyOutput @PStakeDatum # txInfo
               #$ plam
-              $ \value address stakeDatum' -> P.do
+              $ \value address stakeDatum' ->
                 let cred = pfield @"credential" # address
-                pmatch cred $ \case
-                  -- Should pay to a script address
-                  PPubKeyCredential _ -> pcon PFalse
-                  PScriptCredential validatorHash -> P.do
-                    stakeDatum <- pletFields @'["owner", "stakedAmount"] stakeDatum'
+                 in pmatch cred $ \case
+                      -- Should pay to a script address
+                      PPubKeyCredential _ -> pcon PFalse
+                      PScriptCredential validatorHash -> unTermCont $ do
+                        stakeDatum <- tcont $ pletFields @'["owner", "stakedAmount"] stakeDatum'
 
-                    tn :: Term _ PTokenName <- plet (validatorHashToTokenName $ pfromData $ pfield @"_0" # validatorHash)
+                        tn :: Term _ PTokenName <- tclet (pvalidatorHashToTokenName $ pfromData $ pfield @"_0" # validatorHash)
 
-                    let stValue =
-                          psingletonValue
-                            # ownSymbol
-                            -- This coerce is safe because the structure
-                            -- of PValidatorHash is the same as PTokenName.
-                            # tn
-                            # 1
-                    let expectedValue =
-                          paddValue
-                            # (pdiscreteValue' gtClassRef # stakeDatum.stakedAmount)
-                            # stValue
-                    let ownerSignsTransaction =
-                          ptxSignedBy
-                            # txInfoF.signatories
-                            # stakeDatum.owner
-
-                    -- TODO: This is quite inefficient now, as it does two lookups
-                    -- instead of a more efficient single pass,
-                    -- but it doesn't really matter for this. At least it's correct.
-                    let valueCorrect =
-                          foldr1
-                            (#&&)
-                            [ pgeqByClass' (AssetClass ("", "")) # value # expectedValue
-                            , pgeqByClass' (untag gtClassRef)
-                                # value
-                                # expectedValue
-                            , pgeqByClass
+                        let stValue =
+                              psingletonValue
                                 # ownSymbol
+                                -- This coerce is safe because the structure
+                                -- of PValidatorHash is the same as PTokenName.
                                 # tn
-                                # value
-                                # expectedValue
-                            ]
+                                # 1
+                        let expectedValue =
+                              paddValue
+                                # (pdiscreteValue' gtClassRef # stakeDatum.stakedAmount)
+                                # stValue
+                        let ownerSignsTransaction =
+                              ptxSignedBy
+                                # txInfoF.signatories
+                                # stakeDatum.owner
 
-                    ownerSignsTransaction
-                      #&& valueCorrect
-          popaque (pconstant ())
+                        -- TODO: This is quite inefficient now, as it does two lookups
+                        -- instead of a more efficient single pass,
+                        -- but it doesn't really matter for this. At least it's correct.
+                        let valueCorrect =
+                              foldr1
+                                (#&&)
+                                [ pgeqByClass' (AssetClass ("", "")) # value # expectedValue
+                                , pgeqByClass' (untag gtClassRef)
+                                    # value
+                                    # expectedValue
+                                , pgeqByClass
+                                    # ownSymbol
+                                    # tn
+                                    # value
+                                    # expectedValue
+                                ]
 
-    pif (0 #< mintedST) minting burning
+                        pure $ ownerSignsTransaction #&& valueCorrect
+          pure $ popaque (pconstant ())
+
+    pure $ pif (0 #< mintedST) minting burning
 
 --------------------------------------------------------------------------------
 
@@ -212,194 +212,196 @@ this could use [CIP-31](https://cips.cardano.org/cips/cip31/) instead.
 -}
 stakeValidator :: Stake -> ClosedTerm PValidator
 stakeValidator stake =
-  plam $ \datum redeemer ctx' -> P.do
-    ctx <- pletFields @'["txInfo", "purpose"] ctx'
-    txInfo <- plet $ pfromData ctx.txInfo
-    txInfoF <- pletFields @'["mint", "inputs", "outputs", "signatories"] txInfo
+  plam $ \datum redeemer ctx' -> unTermCont $ do
+    ctx <- tcont $ pletFields @'["txInfo", "purpose"] ctx'
+    txInfo <- tclet $ pfromData ctx.txInfo
+    txInfoF <- tcont $ pletFields @'["mint", "inputs", "outputs", "signatories"] txInfo
 
-    (pfromData -> stakeRedeemer, _) <- ptryFrom redeemer
+    (pfromData -> stakeRedeemer, _) <- tctryFrom redeemer
 
     -- TODO: Use PTryFrom
     let stakeDatum' :: Term _ PStakeDatum
         stakeDatum' = pfromData $ punsafeCoerce datum
-    stakeDatum <- pletFields @'["owner", "stakedAmount"] stakeDatum'
+    stakeDatum <- tcont $ pletFields @'["owner", "stakedAmount"] stakeDatum'
 
-    PSpending txOutRef <- pmatch $ pfromData ctx.purpose
+    PSpending txOutRef <- tcmatch $ pfromData ctx.purpose
 
-    PJust txInInfo <- pmatch $ pfindTxInByTxOutRef # (pfield @"_0" # txOutRef) # txInfoF.inputs
-    ownAddress <- plet $ pfield @"address" #$ pfield @"resolved" # txInInfo
+    PJust txInInfo <- tcmatch $ pfindTxInByTxOutRef # (pfield @"_0" # txOutRef) # txInfoF.inputs
+    ownAddress <- tclet $ pfield @"address" #$ pfield @"resolved" # txInInfo
     let continuingValue = pfield @"value" #$ pfield @"resolved" # txInInfo
 
     -- Whether the owner signs this transaction or not.
-    ownerSignsTransaction <- plet $ ptxSignedBy # txInfoF.signatories # stakeDatum.owner
+    ownerSignsTransaction <- tclet $ ptxSignedBy # txInfoF.signatories # stakeDatum.owner
 
-    stCurrencySymbol <- plet $ pconstant $ mintingPolicySymbol $ mkMintingPolicy (stakePolicy stake.gtClassRef)
-    mintedST <- plet $ psymbolValueOf # stCurrencySymbol # txInfoF.mint
-    valueSpent <- plet $ pvalueSpent # txInfoF.inputs
-    spentST <- plet $ psymbolValueOf # stCurrencySymbol #$ valueSpent
+    stCurrencySymbol <- tclet $ pconstant $ mintingPolicySymbol $ mkMintingPolicy (stakePolicy stake.gtClassRef)
+    mintedST <- tclet $ psymbolValueOf # stCurrencySymbol # txInfoF.mint
+    valueSpent <- tclet $ pvalueSpent # txInfoF.inputs
+    spentST <- tclet $ psymbolValueOf # stCurrencySymbol #$ valueSpent
 
     let AssetClass (propCs, propTn) = stake.proposalSTClass
         proposalSTClass = passetClass # pconstant propCs # pconstant propTn
-    spentProposalST <- plet $ passetClassValueOf # valueSpent # proposalSTClass
+    spentProposalST <- tclet $ passetClassValueOf # valueSpent # proposalSTClass
 
     -- Is the stake currently locked?
-    stakeIsLocked <- plet $ stakeLocked # stakeDatum'
+    stakeIsLocked <- tclet $ stakeLocked # stakeDatum'
 
-    pmatch stakeRedeemer $ \case
-      PDestroy _ -> P.do
-        passert "ST at inputs must be 1" $
-          spentST #== 1
+    pure $
+      pmatch stakeRedeemer $ \case
+        PDestroy _ -> unTermCont $ do
+          tcassert "ST at inputs must be 1" $
+            spentST #== 1
 
-        passert "Should burn ST" $
-          mintedST #== -1
+          tcassert "Should burn ST" $
+            mintedST #== -1
 
-        passert "Stake unlocked" $ pnot # stakeIsLocked
+          tcassert "Stake unlocked" $ pnot # stakeIsLocked
 
-        passert "Owner signs this transaction" ownerSignsTransaction
+          tcassert "Owner signs this transaction" ownerSignsTransaction
 
-        popaque (pconstant ())
-      --------------------------------------------------------------------------
-      PRetractVotes _ -> P.do
-        passert
-          "Owner signs this transaction"
-          ownerSignsTransaction
+          pure $ popaque (pconstant ())
+        --------------------------------------------------------------------------
+        PRetractVotes _ -> unTermCont $ do
+          tcassert
+            "Owner signs this transaction"
+            ownerSignsTransaction
 
-        passert "ST at inputs must be 1" $
-          spentST #== 1
+          tcassert "ST at inputs must be 1" $
+            spentST #== 1
 
-        -- This puts trust into the Proposal. The Proposal must necessarily check
-        -- that this is not abused.
-        passert "Proposal ST spent" $
-          spentProposalST #== 1
+          -- This puts trust into the Proposal. The Proposal must necessarily check
+          -- that this is not abused.
+          tcassert "Proposal ST spent" $
+            spentProposalST #== 1
 
-        passert "A UTXO must exist with the correct output" $
-          anyOutput @PStakeDatum # txInfo
-            #$ plam
-            $ \value address newStakeDatum' -> P.do
-              let isScriptAddress = pdata address #== ownAddress
-              let _correctOutputDatum = pdata newStakeDatum' #== pdata stakeDatum'
-              let valueCorrect = pdata continuingValue #== pdata value
-              pif
-                isScriptAddress
-                ( foldl1
+          tcassert "A UTXO must exist with the correct output" $
+            anyOutput @PStakeDatum # txInfo
+              #$ plam
+              $ \value address newStakeDatum' ->
+                let isScriptAddress = pdata address #== ownAddress
+                    _correctOutputDatum = pdata newStakeDatum' #== pdata stakeDatum'
+                    valueCorrect = pdata continuingValue #== pdata value
+                 in pif
+                      isScriptAddress
+                      ( foldl1
+                          (#&&)
+                          [ ptraceIfFalse "valueCorrect" valueCorrect
+                          ]
+                      )
+                      (pcon PFalse)
+
+          pure $ popaque (pconstant ())
+        --------------------------------------------------------------------------
+        PPermitVote _ -> unTermCont $ do
+          tcassert
+            "Owner signs this transaction"
+            ownerSignsTransaction
+
+          -- This puts trust into the Proposal. The Proposal must necessarily check
+          -- that this is not abused.
+          tcassert "Proposal ST spent" $
+            spentProposalST #== 1
+
+          tcassert "A UTXO must exist with the correct output" $
+            anyOutput @PStakeDatum # txInfo
+              #$ plam
+              $ \value address newStakeDatum' ->
+                let isScriptAddress = pdata address #== ownAddress
+                    _correctOutputDatum = pdata newStakeDatum' #== pdata stakeDatum'
+                    valueCorrect = pdata continuingValue #== pdata value
+                 in pif
+                      isScriptAddress
+                      ( foldl1
+                          (#&&)
+                          [ ptraceIfFalse "valueCorrect" valueCorrect
+                          ]
+                      )
+                      (pcon PFalse)
+
+          pure $ popaque (pconstant ())
+        --------------------------------------------------------------------------
+        PWitnessStake _ -> unTermCont $ do
+          tcassert "ST at inputs must be 1" $
+            spentST #== 1
+
+          let AssetClass (propCs, propTn) = stake.proposalSTClass
+              propAssetClass = passetClass # pconstant propCs # pconstant propTn
+              proposalTokenMoved =
+                ptokenSpent
+                  # propAssetClass
+                  # txInfoF.inputs
+
+          -- In order for cosignature to be witnessed, it must be possible for a
+          -- proposal to allow this transaction to happen. This puts trust into the Proposal.
+          -- The Proposal must necessarily check that this is not abused.
+          tcassert
+            "Owner signs this transaction OR proposal token is spent"
+            (ownerSignsTransaction #|| proposalTokenMoved)
+
+          tcassert "A UTXO must exist with the correct output" $
+            anyOutput @PStakeDatum # txInfo
+              #$ plam
+              $ \value address newStakeDatum' ->
+                let isScriptAddress = pdata address #== ownAddress
+                    correctOutputDatum = pdata newStakeDatum' #== pdata stakeDatum'
+                    valueCorrect = pdata continuingValue #== pdata value
+                 in pif
+                      isScriptAddress
+                      ( foldl1
+                          (#&&)
+                          [ ptraceIfFalse "valueCorrect" valueCorrect
+                          , ptraceIfFalse "correctOutputDatum" correctOutputDatum
+                          ]
+                      )
+                      (pcon PFalse)
+          pure $ popaque (pconstant ())
+        PDepositWithdraw r -> unTermCont $ do
+          tcassert "ST at inputs must be 1" $
+            spentST #== 1
+          tcassert "Stake unlocked" $
+            pnot #$ stakeIsLocked
+          tcassert
+            "Owner signs this transaction"
+            ownerSignsTransaction
+          tcassert "A UTXO must exist with the correct output" $
+            anyOutput @PStakeDatum # txInfo
+              #$ plam
+              $ \value address newStakeDatum' -> unTermCont $ do
+                newStakeDatum <- tcont $ pletFields @'["owner", "stakedAmount"] newStakeDatum'
+                delta <- tclet $ pfield @"delta" # r
+                let isScriptAddress = pdata address #== ownAddress
+                let correctOutputDatum =
+                      foldr1
+                        (#&&)
+                        [ stakeDatum.owner #== newStakeDatum.owner
+                        , (stakeDatum.stakedAmount + delta) #== newStakeDatum.stakedAmount
+                        , -- We can't magically conjure GT anyway (no input to spend!)
+                          -- do we need to check this, really?
+                          zero #<= pfromData newStakeDatum.stakedAmount
+                        ]
+                let expectedValue = paddValue # continuingValue # (pdiscreteValue' stake.gtClassRef # delta)
+
+                -- TODO: Same as above. This is quite inefficient now, as it does two lookups
+                -- instead of a more efficient single pass,
+                -- but it doesn't really matter for this. At least it's correct.
+                let valueCorrect =
+                      foldr1
+                        (#&&)
+                        [ pgeqByClass' (AssetClass ("", "")) # value # expectedValue
+                        , pgeqByClass' (untag stake.gtClassRef)
+                            # value
+                            # expectedValue
+                        , pgeqBySymbol
+                            # stCurrencySymbol
+                            # value
+                            # expectedValue
+                        ]
+
+                pure $
+                  foldr1
                     (#&&)
-                    [ ptraceIfFalse "valueCorrect" valueCorrect
-                    ]
-                )
-                (pcon PFalse)
-
-        popaque (pconstant ())
-      --------------------------------------------------------------------------
-      PPermitVote _ -> P.do
-        passert
-          "Owner signs this transaction"
-          ownerSignsTransaction
-
-        -- This puts trust into the Proposal. The Proposal must necessarily check
-        -- that this is not abused.
-        passert "Proposal ST spent" $
-          spentProposalST #== 1
-
-        passert "A UTXO must exist with the correct output" $
-          anyOutput @PStakeDatum # txInfo
-            #$ plam
-            $ \value address newStakeDatum' -> P.do
-              let isScriptAddress = pdata address #== ownAddress
-              let _correctOutputDatum = pdata newStakeDatum' #== pdata stakeDatum'
-              let valueCorrect = pdata continuingValue #== pdata value
-              pif
-                isScriptAddress
-                ( foldl1
-                    (#&&)
-                    [ ptraceIfFalse "valueCorrect" valueCorrect
-                    ]
-                )
-                (pcon PFalse)
-
-        popaque (pconstant ())
-      --------------------------------------------------------------------------
-      PWitnessStake _ -> P.do
-        passert "ST at inputs must be 1" $
-          spentST #== 1
-
-        let AssetClass (propCs, propTn) = stake.proposalSTClass
-            propAssetClass = passetClass # pconstant propCs # pconstant propTn
-            proposalTokenMoved =
-              ptokenSpent
-                # propAssetClass
-                # txInfoF.inputs
-
-        -- In order for cosignature to be witnessed, it must be possible for a
-        -- proposal to allow this transaction to happen. This puts trust into the Proposal.
-        -- The Proposal must necessarily check that this is not abused.
-        passert
-          "Owner signs this transaction OR proposal token is spent"
-          (ownerSignsTransaction #|| proposalTokenMoved)
-
-        passert "A UTXO must exist with the correct output" $
-          anyOutput @PStakeDatum # txInfo
-            #$ plam
-            $ \value address newStakeDatum' -> P.do
-              let isScriptAddress = pdata address #== ownAddress
-              let correctOutputDatum = pdata newStakeDatum' #== pdata stakeDatum'
-              let valueCorrect = pdata continuingValue #== pdata value
-              pif
-                isScriptAddress
-                ( foldl1
-                    (#&&)
-                    [ ptraceIfFalse "valueCorrect" valueCorrect
+                    [ ptraceIfFalse "isScriptAddress" isScriptAddress
                     , ptraceIfFalse "correctOutputDatum" correctOutputDatum
+                    , ptraceIfFalse "valueCorrect" valueCorrect
                     ]
-                )
-                (pcon PFalse)
-        popaque (pconstant ())
-      PDepositWithdraw r -> P.do
-        passert "ST at inputs must be 1" $
-          spentST #== 1
-        passert "Stake unlocked" $
-          pnot #$ stakeIsLocked
-        passert
-          "Owner signs this transaction"
-          ownerSignsTransaction
-        passert "A UTXO must exist with the correct output" $
-          anyOutput @PStakeDatum # txInfo
-            #$ plam
-            $ \value address newStakeDatum' -> P.do
-              newStakeDatum <- pletFields @'["owner", "stakedAmount"] newStakeDatum'
-              delta <- plet $ pfield @"delta" # r
-              let isScriptAddress = pdata address #== ownAddress
-              let correctOutputDatum =
-                    foldr1
-                      (#&&)
-                      [ stakeDatum.owner #== newStakeDatum.owner
-                      , (stakeDatum.stakedAmount + delta) #== newStakeDatum.stakedAmount
-                      , -- We can't magically conjure GT anyway (no input to spend!)
-                        -- do we need to check this, really?
-                        zero #<= pfromData newStakeDatum.stakedAmount
-                      ]
-              let expectedValue = paddValue # continuingValue # (pdiscreteValue' stake.gtClassRef # delta)
 
-              -- TODO: Same as above. This is quite inefficient now, as it does two lookups
-              -- instead of a more efficient single pass,
-              -- but it doesn't really matter for this. At least it's correct.
-              let valueCorrect =
-                    foldr1
-                      (#&&)
-                      [ pgeqByClass' (AssetClass ("", "")) # value # expectedValue
-                      , pgeqByClass' (untag stake.gtClassRef)
-                          # value
-                          # expectedValue
-                      , pgeqBySymbol
-                          # stCurrencySymbol
-                          # value
-                          # expectedValue
-                      ]
-
-              foldr1
-                (#&&)
-                [ ptraceIfFalse "isScriptAddress" isScriptAddress
-                , ptraceIfFalse "correctOutputDatum" correctOutputDatum
-                , ptraceIfFalse "valueCorrect" valueCorrect
-                ]
-
-        popaque (pconstant ())
+          pure $ popaque (pconstant ())

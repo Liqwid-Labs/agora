@@ -1,11 +1,11 @@
 {- |
-Module     : Spec.Sample.Effect.TreasuryWithdrawalEffect
+Module     : Sample.Effect.TreasuryWithdrawalEffect
 Maintainer : seungheon.ooh@gmail.com
 Description: Sample based testing for Treasury Withdrawal Effect
 
-This module provides smaples for Treasury Withdrawal Effect tests.
+This module provides samples for Treasury Withdrawal Effect tests.
 -}
-module Spec.Sample.Effect.TreasuryWithdrawal (
+module Sample.Effect.TreasuryWithdrawal (
   signer,
   validator,
   validatorHashTN,

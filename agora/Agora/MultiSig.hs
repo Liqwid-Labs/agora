@@ -28,7 +28,6 @@ import Plutarch.Lift (
   PLifted,
   PUnsafeLiftDecl,
  )
-import Plutarch.Monadic qualified as P
 
 import Plutus.V1.Ledger.Crypto (PubKeyHash)
 import PlutusTx qualified
@@ -88,14 +87,15 @@ validatedByMultisig params =
 pvalidatedByMultisig :: Term s (PMultiSig :--> PTxInfo :--> PBool)
 pvalidatedByMultisig =
   phoistAcyclic $
-    plam $ \multi' txInfo -> P.do
-      multi <- pletFields @'["keys", "minSigs"] multi'
+    plam $ \multi' txInfo -> unTermCont $ do
+      multi <- tcont $ pletFields @'["keys", "minSigs"] multi'
       let signatories = pfield @"signatories" # txInfo
-      pfromData multi.minSigs
-        #<= ( plength #$ pfilter
-                # plam
-                  ( \a ->
-                      pelem # a # pfromData signatories
-                  )
-                # multi.keys
-            )
+      pure $
+        pfromData multi.minSigs
+          #<= ( plength #$ pfilter
+                  # plam
+                    ( \a ->
+                        pelem # a # pfromData signatories
+                    )
+                  # multi.keys
+              )

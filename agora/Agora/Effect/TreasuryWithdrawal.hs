@@ -18,7 +18,7 @@ import GHC.Generics qualified as GHC
 import Generics.SOP (Generic, I (I))
 
 import Agora.Effect (makeEffect)
-import Agora.Utils (findTxOutByTxOutRef, paddValue, passert)
+import Agora.Utils (findTxOutByTxOutRef, paddValue, tcassert, tclet, tcmatch)
 import Plutarch.Api.V1 (
   PCredential (..),
   PTuple,
@@ -34,7 +34,6 @@ import Plutarch.DataRepr (
   PIsDataReprInstances (..),
  )
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (..))
-import Plutarch.Monadic qualified as P
 import Plutarch.TryFrom (PTryFrom (..))
 import Plutus.V1.Ledger.Credential (Credential)
 import Plutus.V1.Ledger.Value (CurrencySymbol, Value)
@@ -106,29 +105,29 @@ instance PTryFrom PData PTreasuryWithdrawalDatum where
 -}
 treasuryWithdrawalValidator :: forall {s :: S}. CurrencySymbol -> Term s PValidator
 treasuryWithdrawalValidator currSymbol = makeEffect currSymbol $
-  \_cs (datum' :: Term _ PTreasuryWithdrawalDatum) txOutRef' txInfo' -> P.do
-    datum <- pletFields @'["receivers", "treasuries"] datum'
-    txInfo <- pletFields @'["outputs", "inputs"] txInfo'
-    PJust txOut <- pmatch $ findTxOutByTxOutRef # txOutRef' # pfromData txInfo.inputs
-    effInput <- pletFields @'["address", "value"] $ txOut
+  \_cs (datum' :: Term _ PTreasuryWithdrawalDatum) txOutRef' txInfo' -> unTermCont $ do
+    datum <- tcont $ pletFields @'["receivers", "treasuries"] datum'
+    txInfo <- tcont $ pletFields @'["outputs", "inputs"] txInfo'
+    PJust txOut <- tcmatch $ findTxOutByTxOutRef # txOutRef' # pfromData txInfo.inputs
+    effInput <- tcont $ pletFields @'["address", "value"] $ txOut
     outputValues <-
-      plet $
+      tclet $
         pmap
           # plam
-            ( \(pfromData -> txOut') -> P.do
-                txOut <- pletFields @'["address", "value"] $ txOut'
+            ( \(pfromData -> txOut') -> unTermCont $ do
+                txOut <- tcont $ pletFields @'["address", "value"] $ txOut'
                 let cred = pfield @"credential" # pfromData txOut.address
-                pdata $ ptuple # cred # txOut.value
+                pure . pdata $ ptuple # cred # txOut.value
             )
           # txInfo.outputs
     inputValues <-
-      plet $
+      tclet $
         pmap
           # plam
-            ( \((pfield @"resolved" #) . pfromData -> txOut') -> P.do
-                txOut <- pletFields @'["address", "value"] $ txOut'
+            ( \((pfield @"resolved" #) . pfromData -> txOut') -> unTermCont $ do
+                txOut <- tcont $ pletFields @'["address", "value"] $ txOut'
                 let cred = pfield @"credential" # pfromData txOut.address
-                pdata $ ptuple # cred # txOut.value
+                pure . pdata $ ptuple # cred # txOut.value
             )
           # txInfo.inputs
     let ofTreasury =
@@ -141,10 +140,11 @@ treasuryWithdrawalValidator currSymbol = makeEffect currSymbol $
         treasuryInputValuesSum = sumValues #$ ofTreasury # inputValues
         treasuryOutputValuesSum = sumValues #$ ofTreasury # outputValues
         receiverValuesSum = sumValues # datum.receivers
-        isPubkey = plam $ \cred -> P.do
-          pmatch cred $ \case
-            PPubKeyCredential _ -> pcon PTrue
-            PScriptCredential _ -> pcon PFalse
+        isPubkey = plam $ \cred ->
+          pmatch cred $
+            \case
+              PPubKeyCredential _ -> pcon PTrue
+              PScriptCredential _ -> pcon PFalse
 
         -- Constraints
         outputContentMatchesRecivers =
@@ -169,8 +169,8 @@ treasuryWithdrawalValidator currSymbol = makeEffect currSymbol $
               )
             # inputValues
 
-    passert "Transaction should not pay to effects" shouldNotPayToEffect
-    passert "Transaction output does not match receivers" outputContentMatchesRecivers
-    passert "Remainders should be returned to the treasury" excessShouldBePaidToInputs
-    passert "Transaction should only have treasuries specified in the datum as input" inputsAreOnlyTreasuriesOrCollateral
-    popaque $ pconstant ()
+    tcassert "Transaction should not pay to effects" shouldNotPayToEffect
+    tcassert "Transaction output does not match receivers" outputContentMatchesRecivers
+    tcassert "Remainders should be returned to the treasury" excessShouldBePaidToInputs
+    tcassert "Transaction should only have treasuries specified in the datum as input" inputsAreOnlyTreasuriesOrCollateral
+    pure . popaque $ pconstant ()

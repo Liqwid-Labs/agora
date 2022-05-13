@@ -16,9 +16,9 @@ import Plutus.V1.Ledger.Api
 import Plutus.V1.Ledger.Value qualified as Value
 import Plutus.V1.Ledger.Interval qualified as Interval
 import Plutarch.Api.V1
-import Spec.Sample.Effect.TreasuryWithdrawal
-import Spec.Sample.Sample
-import Spec.Util (effectFailsWith, effectSucceedsWith)
+import Sample.Effect.TreasuryWithdrawal
+import Sample.Sample
+import Test.Util (effectFailsWith, effectSucceedsWith)
 import Test.QuickCheck
 import Test.QuickCheck.Monadic
 

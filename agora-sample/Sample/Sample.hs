@@ -1,11 +1,11 @@
 {- |
-Module     : Spec.Sample.Sample
+Module     : Sample.Sample
 Maintainer : seungheon.ooh@gmail.com
 Description: Useful components for constructing property tests
 
 Basic components for constructing case-specific property tests.
 -}
-module Spec.Sample.Sample (
+module Sample.Sample (
   -- * Credentials
   -- $credentials
   genUserCredential,
