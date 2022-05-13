@@ -587,6 +587,7 @@ PResultTag :: Term s PInteger -> PResultTag (s :: S)
 --   to check both upon creation and upon any following state transitions
 --   in the proposal.
 proposalDatumValid :: Proposal -> Term s (PProposalDatum :--> PBool)
+instance GHC.Generics.Generic Agora.Proposal.Proposal
 instance GHC.Classes.Eq Agora.Proposal.Proposal
 instance GHC.Show.Show Agora.Proposal.Proposal
 instance Plutarch.Bool.POrd Agora.Proposal.PResultTag
@@ -675,6 +676,7 @@ instance PlutusTx.IsData.Class.ToData Agora.Proposal.ProposalId
 instance PlutusTx.IsData.Class.UnsafeFromData Agora.Proposal.ResultTag
 instance PlutusTx.IsData.Class.FromData Agora.Proposal.ResultTag
 instance PlutusTx.IsData.Class.ToData Agora.Proposal.ResultTag
+instance GHC.Generics.Generic Agora.Proposal.ResultTag
 instance GHC.Classes.Ord Agora.Proposal.ResultTag
 instance GHC.Show.Show Agora.Proposal.ResultTag
 instance GHC.Classes.Eq Agora.Proposal.ResultTag
@@ -845,6 +847,7 @@ instance GHC.Show.Show Agora.Stake.StakeRedeemer
 instance PlutusTx.IsData.Class.ToData Agora.Stake.ProposalLock
 instance PlutusTx.IsData.Class.FromData Agora.Stake.ProposalLock
 instance PlutusTx.IsData.Class.UnsafeFromData Agora.Stake.ProposalLock
+instance GHC.Generics.Generic Agora.Stake.Stake
 instance GHC.Generics.Generic Agora.Stake.ProposalLock
 instance GHC.Show.Show Agora.Stake.ProposalLock
 
@@ -1032,12 +1035,15 @@ governorPolicy :: Governor -> ClosedTerm PMintingPolicy
 
 -- | Validator for Governors.
 governorValidator :: Governor -> ClosedTerm PValidator
+instance GHC.Generics.Generic Agora.Governor.Governor
 instance PlutusTx.IsData.Class.ToData Agora.Governor.GovernorRedeemer
 instance PlutusTx.IsData.Class.FromData Agora.Governor.GovernorRedeemer
 instance PlutusTx.IsData.Class.UnsafeFromData Agora.Governor.GovernorRedeemer
+instance GHC.Generics.Generic Agora.Governor.GovernorRedeemer
 instance PlutusTx.IsData.Class.ToData Agora.Governor.GovernorDatum
 instance PlutusTx.IsData.Class.FromData Agora.Governor.GovernorDatum
 instance PlutusTx.IsData.Class.UnsafeFromData Agora.Governor.GovernorDatum
+instance GHC.Generics.Generic Agora.Governor.GovernorDatum
 
 
 -- | Tokens acting as redeemable proofs of DAO authority.
@@ -1069,6 +1075,7 @@ AuthorityToken :: AssetClass -> AuthorityToken
 
 -- | Token that must move in order for minting this to be valid.
 [authority] :: AuthorityToken -> AssetClass
+instance GHC.Generics.Generic Agora.AuthorityToken.AuthorityToken
 
 
 -- | Contains the datum, redeemer and validator for a template DAO
