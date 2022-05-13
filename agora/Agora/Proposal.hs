@@ -81,7 +81,7 @@ newtype ProposalId = ProposalId {proposalTag :: Integer}
 @
 -}
 newtype ResultTag = ResultTag {getResultTag :: Integer}
-  deriving stock (Eq, Show, Ord)
+  deriving stock (Eq, Show, Ord, GHC.Generic)
   deriving newtype (PlutusTx.ToData, PlutusTx.FromData, PlutusTx.UnsafeFromData)
 
 {- | The "status" of the proposal. This is only useful for state transitions that
@@ -246,7 +246,7 @@ data Proposal = Proposal
   , maximumCosigners :: Integer
   -- ^ Arbitrary limit for maximum amount of cosigners on a proposal.
   }
-  deriving stock (Show, Eq)
+  deriving stock (Show, Eq, GHC.Generic)
 
 --------------------------------------------------------------------------------
 -- Plutarch-land

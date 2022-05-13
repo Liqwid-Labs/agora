@@ -1,7 +1,7 @@
 # This really ought to be `/usr/bin/env bash`, but nix flakes don't like that.
 SHELL := /bin/sh
 
-.PHONY: hoogle format haddock usage tag format_nix format_haskell format_check lint
+.PHONY: hoogle format haddock usage tag format_nix format_haskell format_check lint ps_bridge
 
 usage:
 	@echo "usage: make <command> [OPTIONS]"
@@ -15,6 +15,7 @@ usage:
 	@echo "  format_nix -- Format *.nix files only"
 	@echo "  format_check -- Check if all haskell stuff have been formatted correctly"
 	@echo "  lint -- Get hlint suggestions for project"
+	@echo "  ps_bridge -- Generate purescript bridge files"
 
 hoogle:
 	pkill hoogle || true
@@ -42,7 +43,11 @@ haddock:
 	cabal haddock --haddock-html --haddock-hoogle --builddir=haddock
 
 tag:
-	hasktags -x agora agora-bench agora-test
+	hasktags -x agora agora-bench agora-test agora-testlib agora-sample agora-purescript-bridge
 
 lint:
-	hlint agora agora-bench agora-test
+	hlint agora agora-bench agora-test agora-testlib agora-sample agora-purescript-bridge
+
+PS_BRIDGE_OUTPUT_DIR := agora-purescript-bridge/
+ps_bridge:
+	cabal run exe:agora-purescript-bridge -- -o $(PS_BRIDGE_OUTPUT_DIR)

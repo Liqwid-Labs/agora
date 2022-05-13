@@ -106,6 +106,7 @@ data Governor = Governor
   -- ^ Arbitrary limit for maximum amount of cosigners on a proposal.
   -- See `Agora.Proposal.proposalDatumValid`.
   }
+  deriving stock (GHC.Generic)
 
 --------------------------------------------------------------------------------
 
