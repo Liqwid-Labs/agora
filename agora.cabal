@@ -163,10 +163,7 @@ library agora-testlib
 
 library agora-sample
   import:          lang, deps, test-deps
-  build-depends:
-    , agora
-    , agora-testlib
-
+  build-depends:   agora-testlib
   exposed-modules:
     Sample.Effect.TreasuryWithdrawal
     Sample.Governor
@@ -193,7 +190,6 @@ test-suite agora-test
     Spec.Utils
 
   build-depends:
-    , agora
     , agora-sample
     , agora-testlib
 
