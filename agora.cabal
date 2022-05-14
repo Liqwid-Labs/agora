@@ -119,6 +119,7 @@ common test-deps
     , tasty
     , tasty-hedgehog
     , tasty-hunit
+    , tasty-quickcheck
 
 common exe-opts
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -O0

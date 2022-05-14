@@ -56,6 +56,8 @@ module Agora.Utils (
   mustBePJust,
   mustBePDJust,
   validatorHashToAddress,
+  pmerge,
+  phalve,
 ) where
 
 --------------------------------------------------------------------------------
@@ -446,7 +448,7 @@ pmerge = phoistAcyclic $ pfix #$ plam pmerge'
               pif
                 (comp # ah # bh)
                 (pcons # ah #$ self # comp # at # b)
-                (pcons # bh #$ self # comp # at # bt)
+                (pcons # bh #$ self # comp # a # bt)
 
 -- | / O(nlogn) /. Merge sort, bottom-up version.
 pmsort :: (PIsListLike l a) => Term s ((a :--> a :--> PBool) :--> l a :--> l a)
