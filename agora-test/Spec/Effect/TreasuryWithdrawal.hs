@@ -153,12 +153,15 @@ classifyTWE ((TreasuryWithdrawalDatum r t), info)
     remaindersDoNotReturnToTreasuries = treasuryOutputSum /= expected
     
 shrinkTWE :: TWETestInput -> [TWETestInput]
-shrinkTWE = const [] -- currently this should work... 
+shrinkTWE = const [] -- currently this should work...
 
 expectedTWE :: Term s (PBuiltinPair PTreasuryWithdrawalDatum PTxInfo :--> PMaybe PUnit)
 expectedTWE = plam $ \_input -> unTermCont $ do
   -- Test cases are all expected to fail
   return $ pcon $ PNothing
+
+opaqueToUnit :: Term s (POpaque :--> PUnit)
+opaqueToUnit = plam $ \_ -> pconstant ()
 
 definitionTWE :: Term s (PBuiltinPair PTreasuryWithdrawalDatum PTxInfo :--> PUnit)
 definitionTWE = plam $ \input -> unTermCont $ do
@@ -171,11 +174,11 @@ definitionTWE = plam $ \input -> unTermCont $ do
           #$ pdcons @"purpose" # pdata (pconstant $ Spending (TxOutRef "0b2086cbf8b6900f8cb65e012de4516cb66b5cb08a9aaba12a8b88be" 1))
           # pdnil
 
-  pure $ treasuryWithdrawalValidator currSymbol
+  pure $ opaqueToUnit #$ treasuryWithdrawalValidator currSymbol
     # pforgetData (pdata datum)
     # pforgetData (pdata (pconstant ()))
     # scriptContext
-  return $ pconstant ()
+--  pure $ pconstant ()
 
 propertyTWE :: Property
 propertyTWE = classifiedProperty genTWECases shrinkTWE expectedTWE classifyTWE definitionTWE
