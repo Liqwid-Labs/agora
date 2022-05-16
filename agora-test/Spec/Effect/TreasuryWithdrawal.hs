@@ -56,12 +56,11 @@ instance Universe TWETestCases where
     , OutputsDoNotMatchReceivers
     , InputsHaveOtherScriptInput
     , RemaindersDoNotReturnToTreasuries
---    , EffectShouldPass
     ]
 
 instance Finite TWETestCases where
   universeF = universe
-  cardinality = Tagged 5
+  cardinality = Tagged 4
   
 -- TODO: Some unideal repeated patterns here
 genTWECases :: TWETestCases -> Gen TWETestInput
@@ -153,12 +152,10 @@ classifyTWE ((TreasuryWithdrawalDatum r t), info)
     remaindersDoNotReturnToTreasuries = treasuryOutputSum /= expected
     
 shrinkTWE :: TWETestInput -> [TWETestInput]
-shrinkTWE = const [] -- currently this should work...
+shrinkTWE = const []
 
 expectedTWE :: Term s (PBuiltinPair PTreasuryWithdrawalDatum PTxInfo :--> PMaybe PUnit)
-expectedTWE = plam $ \_input -> unTermCont $ do
-  -- Test cases are all expected to fail
-  return $ pcon $ PNothing
+expectedTWE = plam $ \_input -> pcon $ PNothing
 
 opaqueToUnit :: Term s (POpaque :--> PUnit)
 opaqueToUnit = plam $ \_ -> pconstant ()
@@ -178,7 +175,6 @@ definitionTWE = plam $ \input -> unTermCont $ do
     # pforgetData (pdata datum)
     # pforgetData (pdata (pconstant ()))
     # scriptContext
---  pure $ pconstant ()
 
 propertyTWE :: Property
 propertyTWE = classifiedProperty genTWECases shrinkTWE expectedTWE classifyTWE definitionTWE
@@ -273,22 +269,13 @@ prop = forAllM (elements (universe :: [TWETestCases])) (\c -> run $ generate (ge
 
 tests :: [TestTree]
 tests =
-  [ testProperty "Generator <-> Classifier" (monadicIO prop)
-  , testProperty "effect" propertyTWE
-  , effectSucceedsWith
-          "test"
-          (treasuryWithdrawalValidator currSymbol)
-          datum1
-          ( buildScriptContext
-              [ inputGAT
-              , inputCollateral 10
-              , inputTreasury 1 (asset1 10)
-              ]
-              $ outputTreasury 1 (asset1 7) :
-              buildReceiversOutputFromDatum datum1
-          )
+  [ testGroup
+      "Property"
+      [ testProperty "Generator <-> Classifier" (monadicIO prop)
+      , testProperty "effect" propertyTWE
+      ]
   , testGroup
-      "effect"
+      "Unit"
       [ effectSucceedsWith
           "Simple"
           (treasuryWithdrawalValidator currSymbol)
