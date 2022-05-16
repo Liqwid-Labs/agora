@@ -7,58 +7,66 @@ Tests for utility functions in 'Agora.Utils'.
 -}
 module Spec.Utils (tests) where
 
-import Agora.Utils (phalve, pmerge, pmsortOrd, tcmatch)
+import Agora.Utils (phalve, pmergeBy, pmsort)
 import Data.List (sort)
 import Test.Tasty (TestTree)
 import Test.Tasty.QuickCheck (testProperty)
 
 tests :: [TestTree]
 tests =
-  [ testProperty "Merge sort sorts a list properly" prop_msort_sorted
-  , testProperty "Two sorted lists are merged into one sorted list" prop_pmerge_sorted
-  , testProperty "Split a list in half as expected" prop_halve_properly
+  [ testProperty "Merge sort sorts a list properly" prop_msortSorted
+  , testProperty "Two sorted lists are merged into one sorted list" prop_pmergeSorted
+  , testProperty "Split a list in half as expected" prop_halveProperly
   ]
 
 --------------------------------------------------------------------------------
 
-prop_msort_sorted :: [Integer] -> Bool
-prop_msort_sorted arr = sort arr == sorted
+prop_msortSorted :: [Integer] -> Bool
+prop_msortSorted arr = sorted == expected
   where
-    parr :: Term _ (PBuiltinList PInteger)
-    parr = pconstant arr
+    -- Expected sorted list, using 'Data.List.sort'.
+    expected :: [Integer]
+    expected = sort arr
+
+    --
 
     psorted :: Term _ (PBuiltinList PInteger)
-    psorted = pmsortOrd # parr
+    psorted = pmsort # pconstant arr
 
     sorted :: [Integer]
     sorted = plift psorted
 
-prop_pmerge_sorted :: ([Integer], [Integer]) -> Bool
-prop_pmerge_sorted (a, b) = merge sa sb == merged
+prop_pmergeSorted :: [Integer] -> [Integer] -> Bool
+prop_pmergeSorted a b = merged == expected
   where
+    -- Sorted list a and b
     sa = sort a
     sb = sort b
 
+    -- Merge two lists which are assumed to be ordered.
+    merge :: [Integer] -> [Integer] -> [Integer]
     merge xs [] = xs
     merge [] ys = ys
     merge sx@(x : xs) sy@(y : ys)
       | x <= y = x : merge xs sy
       | otherwise = y : merge sx ys
 
-    psa :: Term _ (PBuiltinList PInteger)
-    psa = pconstant @(PBuiltinList PInteger) sa
-    psb :: Term _ (PBuiltinList PInteger)
-    psb = pconstant @(PBuiltinList PInteger) sb
+    expected :: [Integer]
+    expected = merge sa sb
+
+    --
 
     pmerged :: Term _ (PBuiltinList PInteger)
-    pmerged = pmerge # plam (#<) # psa # psb
+    pmerged = pmergeBy # plam (#<) # pconstant sa # pconstant sb
 
     merged :: [Integer]
     merged = plift pmerged
 
-prop_halve_properly :: [Integer] -> Bool
-prop_halve_properly arr = halve arr == halved
+prop_halveProperly :: [Integer] -> Bool
+prop_halveProperly arr = halved == expected
   where
+    -- Halve a list.
+    halve :: [Integer] -> ([Integer], [Integer])
     halve xs = go xs xs
       where
         go xs [] = ([], xs)
@@ -69,26 +77,16 @@ prop_halve_properly arr = halve arr == halved
            in (x : first, last)
         go [] _ = ([], [])
 
-    parr :: Term _ (PBuiltinList PInteger)
-    parr = pconstant arr
+    expected :: ([Integer], [Integer])
+    expected = halve arr
 
-    ppairFst :: Term _ (PPair a b :--> a)
-    ppairFst = phoistAcyclic $
-      plam $ \p -> unTermCont $ do
-        PPair x _ <- tcmatch p
-        return x
-
-    ppairSnd :: Term _ (PPair a b :--> b)
-    ppairSnd = phoistAcyclic $
-      plam $ \p -> unTermCont $ do
-        PPair _ y <- tcmatch p
-        return y
+    --
 
     phalved :: Term _ (PPair (PBuiltinList PInteger) (PBuiltinList PInteger))
-    phalved = phalve # parr
+    phalved = phalve # pconstant arr
 
     halved :: ([Integer], [Integer])
     halved =
-      let f = plift $ ppairFst # phalved
-          s = plift $ ppairSnd # phalved
+      let f = plift $ pmatch phalved $ \(PPair x _) -> x
+          s = plift $ pmatch phalved $ \(PPair _ x) -> x
        in (f, s)

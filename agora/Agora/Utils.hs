@@ -32,13 +32,14 @@ module Agora.Utils (
   pisJust,
   ptokenSpent,
   pkeysEqual,
-  pnub,
+  pnubSortBy,
   pisUniq,
-  pisUniqOrd,
+  pisUniqBy,
   pisDJust,
   pisUTXOSpent,
+  pmsortBy,
   pmsort,
-  pmsortOrd,
+  pnubSort,
 
   -- * Functions which should (probably) not be upstreamed
   anyOutput,
@@ -56,7 +57,7 @@ module Agora.Utils (
   mustBePJust,
   mustBePDJust,
   validatorHashToAddress,
-  pmerge,
+  pmergeBy,
   phalve,
 ) where
 
@@ -371,46 +372,67 @@ pkeysEqual = phoistAcyclic $
         (plength # pks #== plength # qks)
         ( unTermCont $ do
             let comp = phoistAcyclic $ plam $ \(pfromData -> x) (pfromData -> y) -> x #< y
-                spks = pmsort # comp # pks
-                sqks = pmsort # comp # qks
+                spks = pmsortBy # comp # pks
+                sqks = pmsortBy # comp # qks
 
             pure $ plistEquals # spks # sqks
         )
         (pcon PFalse)
 
--- | / O(nlogn) /. Clear out duplicates in a list. The order is not preserved.
-pnub :: forall list a (s :: S). (PEq a, PIsListLike list a) => Term s ((a :--> a :--> PBool) :--> list a :--> list a)
-pnub = phoistAcyclic $
-  plam $ \comp xs -> unTermCont $ do
-    sorted <- tclet $ pmsort # comp # xs
-    pure $ pnubOrd # comp # sorted
-  where
-    pnubOrd = phoistAcyclic $ pfix #$ plam pnubOrd'
-    pnubOrd' self comp xs =
-      pif (pnull # xs) pnil $
-        unTermCont $ do
-          xh <- tclet $ phead # xs
-          xt <- tclet $ ptail # xs
+-- | / O(nlogn) /. Sort and remove dupicate elements in a list.
+pnubSortBy ::
+  forall list a (s :: S).
+  (PIsListLike list a) =>
+  Term s ((a :--> a :--> PBool) :--> (a :--> a :--> PBool) :--> list a :--> list a)
+pnubSortBy = phoistAcyclic $
+  plam $ \eq comp l -> pif (pnull # l) l $
+    unTermCont $ do
+      sl <- tclet $ pmsortBy # comp # l
 
-          pure $
-            pif (pnull # xt) xs $
-              unTermCont $ do
-                xh' <- tclet $ phead # xt
-                pure $
-                  pif
-                    (xh #== xh')
-                    (self # comp # xt)
-                    (pcons # xh #$ self # comp # xt)
+      let x = phead # sl
+          xs = ptail # sl
+
+      return $ pgo # eq # x # xs
+  where
+    pgo = phoistAcyclic pfix #$ plam pgo'
+    pgo' self eq seen l =
+      pif (pnull # l) (psingleton # seen) $
+        unTermCont $ do
+          x <- tclet $ phead # l
+          xs <- tclet $ ptail # l
+
+          return $
+            pif
+              (eq # x # seen)
+              (self # eq # seen # xs)
+              (pcons # seen #$ self # eq # x # xs)
+
+-- | Special version of 'pnubSortBy', which requires elements have 'POrd'.
+pnubSort ::
+  forall list a (s :: S).
+  (PIsListLike list a, POrd a) =>
+  Term s (list a :--> list a)
+pnubSort = phoistAcyclic $ pnubSortBy # eq # comp
+  where
+    eq = phoistAcyclic $ plam (#==)
+    comp = phoistAcyclic $ plam (#<)
 
 -- | / O(nlogn) /. Check if a list contains no duplicates.
-pisUniq :: forall list a (s :: S). (PEq a, PIsListLike list a) => Term s ((a :--> a :--> PBool) :--> list a :--> PBool)
-pisUniq = phoistAcyclic $
-  plam $ \comp xs ->
-    let nubbed = pnub # comp # xs in plength # xs #== plength # nubbed
+pisUniqBy ::
+  forall list a (s :: S).
+  (PIsListLike list a) =>
+  Term s ((a :--> a :--> PBool) :--> (a :--> a :--> PBool) :--> list a :--> PBool)
+pisUniqBy = phoistAcyclic $
+  plam $ \eq comp xs ->
+    let nubbed = pnubSortBy # eq # comp # xs
+     in plength # xs #== plength # nubbed
 
--- | List elements should have 'POrd' instance.
-pisUniqOrd :: forall list a (s :: S). (POrd a, PIsListLike list a) => Term s (list a :--> PBool)
-pisUniqOrd = phoistAcyclic $ pisUniq # plam (#<)
+-- | A special case of 'pisUniqBy' which requires elements have 'POrd' instance.
+pisUniq :: forall list a (s :: S). (POrd a, PIsListLike list a) => Term s (list a :--> PBool)
+pisUniq = phoistAcyclic $ pisUniqBy # eq # comp
+  where
+    eq = phoistAcyclic $ plam (#==)
+    comp = phoistAcyclic $ plam (#<)
 
 -- | Yield True if a given PMaybeData is of form @'PDJust' _@.
 pisDJust :: Term s (PMaybeData a :--> PBool)
@@ -423,19 +445,17 @@ pisDJust = phoistAcyclic $
           _ -> pconstant False
       )
 
-{- | Determines if a given UTXO is spent.
- TODO: no need to pass the whole TxInfo here.
--}
+-- | Determines if a given UTXO is spent.
 pisUTXOSpent :: Term s (PTxOutRef :--> PBuiltinList (PAsData PTxInInfo) :--> PBool)
 pisUTXOSpent = phoistAcyclic $
   plam $ \oref inputs -> P.do
     pisJust #$ pfindTxInByTxOutRef # oref # inputs
 
--- | Merge two ordered lists together.
-pmerge :: (PIsListLike l a) => Term s ((a :--> a :--> PBool) :--> l a :--> l a :--> l a)
-pmerge = phoistAcyclic $ pfix #$ plam pmerge'
+-- | / O(n) /. Merge two lists which are assumed to be ordered, given a custom comparator.
+pmergeBy :: (PIsListLike l a) => Term s ((a :--> a :--> PBool) :--> l a :--> l a :--> l a)
+pmergeBy = phoistAcyclic $ pfix #$ plam pmergeBy'
   where
-    pmerge' self comp a b =
+    pmergeBy' self comp a b =
       pif (pnull # a) b $
         pif (pnull # b) a $
           unTermCont $ do
@@ -450,20 +470,24 @@ pmerge = phoistAcyclic $ pfix #$ plam pmerge'
                 (pcons # ah #$ self # comp # at # b)
                 (pcons # bh #$ self # comp # a # bt)
 
--- | / O(nlogn) /. Merge sort, bottom-up version.
-pmsort :: (PIsListLike l a) => Term s ((a :--> a :--> PBool) :--> l a :--> l a)
-pmsort = phoistAcyclic $ pfix #$ plam pmsort'
+{- | / O(nlogn) /. Merge sort, bottom-up version, given a custom comparator.
+
+   Elements are arranged from lowest to highest,
+   keeping duplicates in the order they appeared in the input.
+-}
+pmsortBy :: (PIsListLike l a) => Term s ((a :--> a :--> PBool) :--> l a :--> l a)
+pmsortBy = phoistAcyclic $ pfix #$ plam pmsortBy'
   where
-    pmsort' self comp xs = pif (pnull # xs) pnil $
+    pmsortBy' self comp xs = pif (pnull # xs) pnil $
       pif (pnull #$ ptail # xs) xs $
         pmatch (phalve # xs) $ \(PPair fh sh) ->
           let sfh = self # comp # fh
               ssh = self # comp # sh
-           in pmerge # comp # sfh # ssh
+           in pmergeBy # comp # sfh # ssh
 
--- | Required list elements have 'POrd' instance.
-pmsortOrd :: (POrd a, PIsListLike l a) => Term s (l a :--> l a)
-pmsortOrd = phoistAcyclic $ pmsort # comp
+-- | A special case of 'pmsortBy' which requires elements have 'POrd' instance.
+pmsort :: (POrd a, PIsListLike l a) => Term s (l a :--> l a)
+pmsort = phoistAcyclic $ pmsortBy # comp
   where
     comp = phoistAcyclic $ plam (#<)
 

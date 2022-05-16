@@ -21,7 +21,7 @@ import Agora.Utils (
   anyOutput,
   findTxOutByTxOutRef,
   getMintingPolicySymbol,
-  pisUniq,
+  pisUniqBy,
   psymbolValueOf,
   ptokenSpent,
   ptxSignedBy,
@@ -171,7 +171,10 @@ proposalValidator proposal =
           newSigs <- tclet $ pfield @"newCosigners" # r
 
           tcassert "Cosigners are unique" $
-            pisUniq # phoistAcyclic (plam $ \(pfromData -> x) (pfromData -> y) -> x #< y) # newSigs
+            pisUniqBy
+              # phoistAcyclic (plam (#==))
+              # phoistAcyclic (plam $ \(pfromData -> x) (pfromData -> y) -> x #< y)
+              # newSigs
 
           tcassert "Signed by all new cosigners" $
             pall # signedBy # newSigs
