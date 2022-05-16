@@ -416,11 +416,7 @@ proposalDatumValid proposal =
       let atLeastOneNegativeResult =
             pany
               # phoistAcyclic
-                ( plam $ \m ->
-                    let l :: Term _ (PBuiltinList _)
-                        l = pto $ pfromData $ psndBuiltin # m
-                     in pnull # l
-                )
+                (plam $ \m -> pnull #$ pto $ pfromData $ psndBuiltin # m)
               #$ pto
               $ pfromData datum.effects
 

@@ -22,9 +22,8 @@ import Plutarch.SafeMoney.Tagged
 import Plutus.V1.Ledger.Address (scriptHashAddress)
 import Plutus.V1.Ledger.Api (
   Address (..),
-  Credential (PubKeyCredential),
+  Credential (ScriptCredential),
   Datum (..),
-  PubKeyHash,
   ScriptContext (..),
   ScriptPurpose (Minting, Spending),
   ToData (toBuiltinData),
@@ -126,11 +125,10 @@ mintGST =
 
       ---
 
-      -- TODO: Can the witness be a script?
-      witness :: PubKeyHash
+      witness :: ValidatorHash
       witness = "a926a9a72a0963f428e3252caa8354e655603996fb8892d6b8323fd072345924"
       witnessAddress :: Address
-      witnessAddress = Address (PubKeyCredential witness) Nothing
+      witnessAddress = Address (ScriptCredential witness) Nothing
 
       ---
 
@@ -142,13 +140,13 @@ mintGST =
           , txOutValue = mempty
           , txOutDatumHash = Nothing
           }
-      witnessUTXO :: TxInInfo
-      witnessUTXO = TxInInfo gstUTXORef witnessInput
+      initialSpend :: TxInInfo
+      initialSpend = TxInInfo gstUTXORef witnessInput
    in ScriptContext
         { scriptContextTxInfo =
             TxInfo
               { txInfoInputs =
-                  [ witnessUTXO
+                  [ initialSpend
                   ]
               , txInfoOutputs = [governorOutput]
               , -- Some ada to cover the transaction fee
@@ -158,7 +156,7 @@ mintGST =
               , txInfoDCert = []
               , txInfoWdrl = []
               , txInfoValidRange = Interval.always
-              , txInfoSignatories = [witness]
+              , txInfoSignatories = [signer]
               , txInfoData = [datumPair governorOutputDatum]
               , txInfoId = "90906d3e6b4d6dec2e747dcdd9617940ea8358164c7244694cfa39dec18bd9d4"
               }
@@ -407,8 +405,7 @@ mintGATs =
           { P.proposalId = ProposalId 0
           , effects = effects
           , status = Locked
-          , -- TODO: Any need to check minimun amount of cosigners here?
-            cosigners = [signer, signer2]
+          , cosigners = [signer, signer2]
           , thresholds = defaultProposalThresholds
           , votes = proposalVotes
           }
