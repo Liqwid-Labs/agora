@@ -46,7 +46,7 @@ main =
           "Governor tests"
           Governor.tests
       , testGroup
-          "Utility functions tests"
+          "Utility tests"
           Utils.tests
       , testGroup
           "Multisig tests"
