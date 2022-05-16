@@ -13,12 +13,14 @@ import Agora.Effect.TreasuryWithdrawal (
   PTreasuryWithdrawalDatum
  )
 import Plutus.V1.Ledger.Api
+import Plutarch.Builtin
 import Plutus.V1.Ledger.Value qualified as Value
 import Plutus.V1.Ledger.Interval qualified as Interval
 import Plutarch.Api.V1
 import Sample.Effect.TreasuryWithdrawal
 import Sample.Sample
 import Test.Util (effectFailsWith, effectSucceedsWith)
+import Agora.Utils
 import Test.QuickCheck
 import Test.QuickCheck.Monadic
 
@@ -54,7 +56,7 @@ instance Universe TWETestCases where
     , OutputsDoNotMatchReceivers
     , InputsHaveOtherScriptInput
     , RemaindersDoNotReturnToTreasuries
-    , EffectShouldPass
+--    , EffectShouldPass
     ]
 
 instance Finite TWETestCases where
@@ -153,11 +155,27 @@ classifyTWE ((TreasuryWithdrawalDatum r t), info)
 shrinkTWE :: TWETestInput -> [TWETestInput]
 shrinkTWE = const [] -- currently this should work... 
 
-expectedTWE :: Term s (PBuiltinPair PTreasuryWithdrawalDatum PTxInfo :--> PMaybe PBool)
-expectedTWE = undefined
+expectedTWE :: Term s (PBuiltinPair PTreasuryWithdrawalDatum PTxInfo :--> PMaybe PUnit)
+expectedTWE = plam $ \_input -> unTermCont $ do
+  -- Test cases are all expected to fail
+  return $ pcon $ PNothing
 
-definitionTWE :: Term s (PBuiltinPair PTreasuryWithdrawalDatum PTxInfo :--> PBool)
-definitionTWE = undefined
+definitionTWE :: Term s (PBuiltinPair PTreasuryWithdrawalDatum PTxInfo :--> PUnit)
+definitionTWE = plam $ \input -> unTermCont $ do
+  datum <- tclet $ pfstBuiltin # input
+  txinfo <- tclet $ psndBuiltin # input
+
+  let scriptContext =
+        pcon $ PScriptContext $
+          pdcons @"txInfo" # pdata txinfo
+          #$ pdcons @"purpose" # pdata (pconstant $ Spending (TxOutRef "0b2086cbf8b6900f8cb65e012de4516cb66b5cb08a9aaba12a8b88be" 1))
+          # pdnil
+
+  pure $ treasuryWithdrawalValidator currSymbol
+    # pforgetData (pdata datum)
+    # pforgetData (pdata (pconstant ()))
+    # scriptContext
+  return $ pconstant ()
 
 propertyTWE :: Property
 propertyTWE = classifiedProperty genTWECases shrinkTWE expectedTWE classifyTWE definitionTWE
@@ -254,6 +272,18 @@ tests :: [TestTree]
 tests =
   [ testProperty "Generator <-> Classifier" (monadicIO prop)
   , testProperty "effect" propertyTWE
+  , effectSucceedsWith
+          "test"
+          (treasuryWithdrawalValidator currSymbol)
+          datum1
+          ( buildScriptContext
+              [ inputGAT
+              , inputCollateral 10
+              , inputTreasury 1 (asset1 10)
+              ]
+              $ outputTreasury 1 (asset1 7) :
+              buildReceiversOutputFromDatum datum1
+          )
   , testGroup
       "effect"
       [ effectSucceedsWith

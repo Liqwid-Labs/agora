@@ -39,6 +39,8 @@ import Plutus.V1.Ledger.Credential (Credential)
 import Plutus.V1.Ledger.Value (CurrencySymbol, Value)
 import PlutusTx qualified
 
+import Debug.Trace
+
 {- | Datum that encodes behavior of Treasury Withdrawal effect.
 
 Note: This Datum acts like a "predefined redeemer". Which is to say that
@@ -104,7 +106,7 @@ instance PTryFrom PData PTreasuryWithdrawalDatum where
      - The number of outputs themselves
 -}
 treasuryWithdrawalValidator :: forall {s :: S}. CurrencySymbol -> Term s PValidator
-treasuryWithdrawalValidator currSymbol = makeEffect currSymbol $
+treasuryWithdrawalValidator currSymbol = trace "TWEValidator" $ makeEffect currSymbol $
   \_cs (datum' :: Term _ PTreasuryWithdrawalDatum) txOutRef' txInfo' -> unTermCont $ do
     datum <- tcont $ pletFields @'["receivers", "treasuries"] datum'
     txInfo <- tcont $ pletFields @'["outputs", "inputs"] txInfo'
