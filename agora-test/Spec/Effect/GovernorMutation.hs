@@ -4,10 +4,10 @@ import Agora.Effect.GovernorMutation (MutateGovernorDatum (..), mutateGovernorVa
 import Agora.Governor (GovernorDatum (..))
 import Agora.Proposal (ProposalId (..))
 import Plutus.V1.Ledger.Api (TxOutRef (..))
-import Spec.Sample.Effect.GovernorMutation
-import Spec.Sample.Shared
-import Spec.Util (effectSucceedsWith)
+import Sample.Effect.GovernorMutation (validContext)
+import Sample.Shared (defaultProposalThresholds, governor)
 import Test.Tasty (TestTree, testGroup)
+import Test.Util (effectSucceedsWith)
 
 tests :: [TestTree]
 tests =

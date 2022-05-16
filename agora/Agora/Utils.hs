@@ -59,7 +59,7 @@ module Agora.Utils (
   validatorHashToAddress,
   pmergeBy,
   phalve,
-  isScriptAddress
+  isScriptAddress,
 ) where
 
 --------------------------------------------------------------------------------
@@ -621,8 +621,9 @@ scriptHashFromAddress = phoistAcyclic $
       _ -> pcon PNothing
 
 isScriptAddress :: Term s (PAddress :--> PBool)
-isScriptAddress = phoistAcyclic $ plam $ \addr ->
-  pmatch (pfromData $ pfield @"credential" # addr) $ \case
+isScriptAddress = phoistAcyclic $
+  plam $ \addr ->
+    pmatch (pfromData $ pfield @"credential" # addr) $ \case
       PScriptCredential _ -> pconstant True
       _ -> pconstant False
 

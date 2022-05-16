@@ -31,7 +31,15 @@ import Plutus.V1.Ledger.Api (
 import Plutus.V1.Ledger.Api qualified as Interval
 import Plutus.V1.Ledger.Value (AssetClass, assetClass)
 import Plutus.V1.Ledger.Value qualified as Value
-import Sample.Shared
+import Sample.Shared (
+  authorityTokenSymbol,
+  defaultProposalThresholds,
+  govAssetClass,
+  govValidatorAddress,
+  governor,
+  minAda,
+  signer,
+ )
 import Test.Util (datumPair, toDatumHash)
 
 effectValidator :: Validator
@@ -112,7 +120,7 @@ validContext =
       governorOutput =
         TxOut
           { txOutAddress = govValidatorAddress
-          , txOutValue = withMinAda gst
+          , txOutValue = mconcat [gst, minAda]
           , txOutDatumHash = Just $ toDatumHash governorOutputDatum
           }
 
