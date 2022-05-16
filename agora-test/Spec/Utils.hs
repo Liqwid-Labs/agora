@@ -34,6 +34,7 @@ tests =
 
 --------------------------------------------------------------------------------
 
+-- | Yield true if 'Agora.Utils.pmsort' sorts a given list correctly.
 prop_msortSorted :: [Integer] -> Bool
 prop_msortSorted l = sorted == expected
   where
@@ -49,6 +50,7 @@ prop_msortSorted l = sorted == expected
     sorted :: [Integer]
     sorted = plift psorted
 
+-- | Yield true if 'Agora.Utils.pmerge' merges two list into a ordered list correctly.
 prop_mergeSorted :: [Integer] -> [Integer] -> Bool
 prop_mergeSorted a b = merged == expected
   where
@@ -75,6 +77,9 @@ prop_mergeSorted a b = merged == expected
     merged :: [Integer]
     merged = plift pmerged
 
+{- | Yield true if plutarch level 'Agora.Utils.phalve' splits a given list
+   as its haskell level counterpart does.
+-}
 prop_halveProperly :: [Integer] -> Bool
 prop_halveProperly l = halved == expected
   where
@@ -104,6 +109,9 @@ prop_halveProperly l = halved == expected
           s = plift $ pmatch phalved $ \(PPair _ x) -> x
        in (f, s)
 
+{- | Yield true if 'Agora.Utils.pnubSort' sorts and removes
+   duplicate elements from a given list.
+-}
 prop_nubSortProperly :: [Integer] -> Bool
 prop_nubSortProperly l = nubbed == expected
   where
@@ -119,6 +127,9 @@ prop_nubSortProperly l = nubbed == expected
     nubbed :: [Integer]
     nubbed = plift pnubbed
 
+{- | Yield true if 'Agora.Utils.isUnique' can correctly determine
+   whether a given list only contains unique elements or not.
+-}
 prop_uniqueList :: [Integer] -> Bool
 prop_uniqueList l = isUnique == expected
   where
