@@ -48,7 +48,6 @@ import Agora.SafeMoney (GTTag)
 import Agora.Utils (pkeysEqual, pnotNull)
 import Control.Applicative (Const)
 import Control.Arrow (first)
-import Plutarch.Builtin (PBuiltinMap)
 import Plutarch.DataRepr (DerivePConstantViaData (..), PDataFields, PIsDataReprInstances (..))
 import Plutarch.Lift (
   DerivePConstantViaNewtype (..),
@@ -174,10 +173,10 @@ emptyVotesFor = ProposalVotes . AssocMap.mapWithKey (const . const 0)
 data ProposalDatum = ProposalDatum
   { proposalId :: ProposalId
   -- ^ Identification of the proposal.
-  , -- TODO: could we encode this more efficiently?
+  -- TODO: could we encode this more efficiently?
   -- This is shaped this way for future proofing.
   -- See https://github.com/Liqwid-Labs/agora/issues/39
-  effects :: AssocMap.Map ResultTag [(ValidatorHash, DatumHash)]
+  , effects :: AssocMap.Map ResultTag (AssocMap.Map ValidatorHash DatumHash)
   -- ^ Effect lookup table. First by result, then by effect hash.
   , status :: ProposalStatus
   -- ^ The status the proposal is in.
@@ -414,17 +413,12 @@ proposalDatumValid proposal =
     plam $ \datum' -> unTermCont $ do
       datum <- tcont $ pletFields @'["effects", "cosigners", "votes"] $ datum'
 
-      let effects :: Term _ (PBuiltinMap Agora.Proposal.PResultTag (PBuiltinMap Plutarch.Api.V1.PValidatorHash Plutarch.Api.V1.PDatumHash))
-          effects =
-            -- JUSTIFICATION:
-            -- @datum.effects : PMap PResultTag (PMap PValidatorHash PDatumHash)@
-            -- @PMap PResultTag (PMap PValidatorHash PDatumHash)@ is equivalent to
-            -- @PBuiltinMap PResultTag (PBuiltinMap Plutarch.Api.V1.PValidatorHash Plutarch.Api.V1.PDatumHash)@
-            punsafeCoerce datum.effects
-
-          atLeastOneNegativeResult :: Term _ PBool
-          atLeastOneNegativeResult =
-            pany # plam (\pair -> pnull #$ pfromData $ psndBuiltin # pair) # effects
+      let atLeastOneNegativeResult =
+            pany
+              # phoistAcyclic
+                (plam $ \m -> pnull #$ pto $ pfromData $ psndBuiltin # m)
+              #$ pto
+              $ pfromData datum.effects
 
       pure $
         foldr1

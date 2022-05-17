@@ -14,7 +14,6 @@ import Data.Lens.Record (prop)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype)
 import Data.Tagged (Tagged)
-import Data.Tuple (Tuple)
 import GHC.Num.Integer (Integer)
 import Plutus.V1.Ledger.Crypto (PubKeyHash)
 import Plutus.V1.Ledger.Scripts (DatumHash, ValidatorHash)
@@ -120,7 +119,7 @@ _ProposalVotes = _Newtype
 
 newtype ProposalDatum = ProposalDatum
   { proposalId :: ProposalId
-  , effects :: Map ResultTag (Array (Tuple ValidatorHash DatumHash))
+  , effects :: Map ResultTag (Map ValidatorHash DatumHash)
   , status :: ProposalStatus
   , cosigners :: Array PubKeyHash
   , thresholds :: ProposalThresholds
@@ -133,7 +132,7 @@ derive instance Newtype ProposalDatum _
 
 --------------------------------------------------------------------------------
 
-_ProposalDatum :: Iso' ProposalDatum {proposalId :: ProposalId, effects :: Map ResultTag (Array (Tuple ValidatorHash DatumHash)), status :: ProposalStatus, cosigners :: Array PubKeyHash, thresholds :: ProposalThresholds, votes :: ProposalVotes}
+_ProposalDatum :: Iso' ProposalDatum {proposalId :: ProposalId, effects :: Map ResultTag (Map ValidatorHash DatumHash), status :: ProposalStatus, cosigners :: Array PubKeyHash, thresholds :: ProposalThresholds, votes :: ProposalVotes}
 _ProposalDatum = _Newtype
 
 --------------------------------------------------------------------------------

@@ -15,15 +15,20 @@ module Sample.Shared (
 
   -- ** Stake
   stake,
-  stakeSymbol,
+  stakeAssetClass,
   stakeValidatorHash,
   stakeAddress,
+  stakeSymbol,
 
   -- ** Governor
   governor,
   govPolicy,
   govValidator,
   govSymbol,
+  govAssetClass,
+  govValidatorAddress,
+  govValidatorHash,
+  gstUTXORef,
 
   -- ** Proposal
   defaultProposalThresholds,
@@ -31,6 +36,10 @@ module Sample.Shared (
   proposalPolicySymbol,
   proposalValidatorHash,
   proposalValidatorAddress,
+
+  -- ** Authority
+  authorityToken,
+  authorityTokenSymbol,
 
   -- ** Treasury
   treasuryOut,
@@ -41,22 +50,31 @@ module Sample.Shared (
   wrongEffHash,
 ) where
 
+import Agora.AuthorityToken
 import Agora.Effect.NoOp (noOpValidator)
 import Agora.Governor (
   Governor (Governor),
+ )
+import Agora.Governor.Scripts (
+  authorityTokenFromGovernor,
+  authorityTokenSymbolFromGovernor,
   governorPolicy,
+  governorSTAssetClassFromGovernor,
   governorValidator,
+  governorValidatorHash,
+  proposalFromGovernor,
+  proposalSTSymbolFromGovernor,
+  proposalValidatorHashFromGovernor,
+  stakeFromGovernor,
+  stakeSTAssetClassFromGovernor,
+  stakeSTSymbolFromGovernor,
+  stakeValidatorHashFromGovernor,
  )
 import Agora.Proposal (
   Proposal (..),
   ProposalThresholds (..),
  )
-import Agora.Proposal.Scripts (
-  proposalPolicy,
-  proposalValidator,
- )
 import Agora.Stake (Stake (..))
-import Agora.Stake.Scripts (stakePolicy, stakeValidator)
 import Agora.Treasury (treasuryValidator)
 import Agora.Utils (validatorHashToTokenName)
 import Plutarch.Api.V1 (
@@ -73,38 +91,46 @@ import Plutus.V1.Ledger.Api (
   CurrencySymbol,
   MintingPolicy (..),
   PubKeyHash,
+  TxOutRef (TxOutRef),
+  Value,
  )
 import Plutus.V1.Ledger.Contexts (
   TxOut (..),
  )
 import Plutus.V1.Ledger.Scripts (Validator, ValidatorHash (..))
-import Plutus.V1.Ledger.Value (TokenName, Value)
+import Plutus.V1.Ledger.Value (AssetClass, TokenName)
 import Plutus.V1.Ledger.Value qualified as Value
 
 --------------------------------------------------------------------------------
 
 stake :: Stake
-stake =
-  Stake
-    { gtClassRef =
-        Tagged $
-          Value.assetClass
-            "da8c30857834c6ae7203935b89278c532b3995245295456f993e1d24"
-            "LQ"
-    , proposalSTClass = Value.assetClass proposalPolicySymbol ""
-    }
+stake = stakeFromGovernor governor
 
 stakeSymbol :: CurrencySymbol
-stakeSymbol = mintingPolicySymbol $ mkMintingPolicy $ stakePolicy stake.gtClassRef
+stakeSymbol = stakeSTSymbolFromGovernor governor
+
+stakeAssetClass :: AssetClass
+stakeAssetClass = stakeSTAssetClassFromGovernor governor
 
 stakeValidatorHash :: ValidatorHash
-stakeValidatorHash = validatorHash $ mkValidator (stakeValidator stake)
+stakeValidatorHash = stakeValidatorHashFromGovernor governor
 
 stakeAddress :: Address
 stakeAddress = Address (ScriptCredential stakeValidatorHash) Nothing
 
+gstUTXORef :: TxOutRef
+gstUTXORef = TxOutRef "f28cd7145c24e66fd5bcd2796837aeb19a48a2656e7833c88c62a2d0450bd00d" 0
+
 governor :: Governor
-governor = Governor
+governor = Governor oref gt mc
+  where
+    oref = gstUTXORef
+    gt =
+      Tagged $
+        Value.assetClass
+          "da8c30857834c6ae7203935b89278c532b3995245295456f993e1d24"
+          "LQ"
+    mc = 6
 
 govPolicy :: MintingPolicy
 govPolicy = mkMintingPolicy (governorPolicy governor)
@@ -115,16 +141,20 @@ govValidator = mkValidator (governorValidator governor)
 govSymbol :: CurrencySymbol
 govSymbol = mintingPolicySymbol govPolicy
 
+govAssetClass :: AssetClass
+govAssetClass = governorSTAssetClassFromGovernor governor
+
+govValidatorHash :: ValidatorHash
+govValidatorHash = governorValidatorHash governor
+
+govValidatorAddress :: Address
+govValidatorAddress = scriptHashAddress govValidatorHash
+
 proposal :: Proposal
-proposal =
-  Proposal
-    { governorSTAssetClass = Value.assetClass govSymbol ""
-    , stakeSTAssetClass = Value.assetClass stakeSymbol ""
-    , maximumCosigners = 6
-    }
+proposal = proposalFromGovernor governor
 
 proposalPolicySymbol :: CurrencySymbol
-proposalPolicySymbol = mintingPolicySymbol $ mkMintingPolicy (proposalPolicy proposal)
+proposalPolicySymbol = proposalSTSymbolFromGovernor governor
 
 -- | A sample 'PubKeyHash'.
 signer :: PubKeyHash
@@ -135,7 +165,7 @@ signer2 :: PubKeyHash
 signer2 = "8a30896c4fd5e79843e4ca1bd2cdbaa36f8c0bc3be74012141420192"
 
 proposalValidatorHash :: ValidatorHash
-proposalValidatorHash = validatorHash (mkValidator $ proposalValidator proposal)
+proposalValidatorHash = proposalValidatorHashFromGovernor governor
 
 proposalValidatorAddress :: Address
 proposalValidatorAddress = scriptHashAddress proposalValidatorHash
@@ -147,6 +177,12 @@ defaultProposalThresholds =
     , create = Tagged 1
     , startVoting = Tagged 10
     }
+
+authorityToken :: AuthorityToken
+authorityToken = authorityTokenFromGovernor governor
+
+authorityTokenSymbol :: CurrencySymbol
+authorityTokenSymbol = authorityTokenSymbolFromGovernor governor
 
 ------------------------------------------------------------------
 

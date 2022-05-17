@@ -7,6 +7,7 @@ This module tests primarily the happy path for Stake creation
 -}
 module Sample.Stake (
   stake,
+  stakeAssetClass,
   stakeSymbol,
   validatorHashTN,
   signer,
@@ -60,7 +61,7 @@ validatorHashTN = let ValidatorHash vh = validatorHash (mkValidator $ stakeValid
 -- | This script context should be a valid transaction.
 stakeCreation :: ScriptContext
 stakeCreation =
-  let st = Value.singleton stakeSymbol validatorHashTN 1 -- Stake ST
+  let st = Value.assetClassValue stakeAssetClass 1 -- Stake ST
       datum :: Datum
       datum = Datum (toBuiltinData $ StakeDatum 424242424242 signer [])
    in ScriptContext
@@ -120,7 +121,7 @@ data DepositWithdrawExample = DepositWithdrawExample
 -- | Create a ScriptContext that deposits or withdraws, given the config for it.
 stakeDepositWithdraw :: DepositWithdrawExample -> ScriptContext
 stakeDepositWithdraw config =
-  let st = Value.singleton stakeSymbol validatorHashTN 1 -- Stake ST
+  let st = Value.assetClassValue stakeAssetClass 1 -- Stake ST
       stakeBefore :: StakeDatum
       stakeBefore = StakeDatum config.startAmount signer []
 

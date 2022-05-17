@@ -8,6 +8,7 @@ import Test.Tasty (defaultMain, testGroup)
 
 import Spec.AuthorityToken qualified as AuthorityToken
 import Spec.Effect.TreasuryWithdrawal qualified as TreasuryWithdrawal
+import Spec.Governor qualified as Governor
 import Spec.Model.MultiSig qualified as MultiSig
 import Spec.Proposal qualified as Proposal
 import Spec.Stake qualified as Stake
@@ -42,7 +43,10 @@ main =
           "AuthorityToken tests"
           AuthorityToken.tests
       , testGroup
-          "Utility functions tests"
+          "Governor tests"
+          Governor.tests
+      , testGroup
+          "Utility tests"
           Utils.tests
       , testGroup
           "Multisig tests"

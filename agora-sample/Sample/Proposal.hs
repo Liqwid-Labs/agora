@@ -60,8 +60,8 @@ proposalCreation =
   let st = Value.singleton proposalPolicySymbol "" 1 -- Proposal ST
       effects =
         AssocMap.fromList
-          [ (ResultTag 0, [])
-          , (ResultTag 1, [])
+          [ (ResultTag 0, AssocMap.empty)
+          , (ResultTag 1, AssocMap.empty)
           ]
       proposalDatum :: Datum
       proposalDatum =
@@ -155,8 +155,8 @@ cosignProposal newSigners =
   let st = Value.singleton proposalPolicySymbol "" 1 -- Proposal ST
       effects =
         AssocMap.fromList
-          [ (ResultTag 0, [])
-          , (ResultTag 1, [])
+          [ (ResultTag 0, AssocMap.empty)
+          , (ResultTag 1, AssocMap.empty)
           ]
       proposalBefore :: ProposalDatum
       proposalBefore =
@@ -193,7 +193,7 @@ cosignProposal newSigners =
                       mconcat
                         [ Value.singleton "" "" 10_000_000
                         , Value.assetClassValue (untag stake.gtClassRef) 50_000_000
-                        , Value.singleton stakeSymbol "" 1
+                        , Value.assetClassValue stakeAssetClass 1
                         ]
                   , txOutDatumHash = Just (toDatumHash stakeDatum)
                   }
@@ -214,7 +214,7 @@ cosignProposal newSigners =
                     mconcat
                       [ Value.singleton "" "" 10_000_000
                       , Value.assetClassValue (untag stake.gtClassRef) 50_000_000
-                      , Value.singleton stakeSymbol "" 1
+                      , Value.assetClassValue stakeAssetClass 1
                       ]
                 , txOutDatumHash = Just (toDatumHash stakeDatum)
                 }

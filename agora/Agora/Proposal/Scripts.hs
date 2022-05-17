@@ -21,7 +21,7 @@ import Agora.Utils (
   anyOutput,
   findTxOutByTxOutRef,
   getMintingPolicySymbol,
-  pisUniq,
+  pisUniqBy,
   psymbolValueOf,
   ptokenSpent,
   ptxSignedBy,
@@ -59,8 +59,11 @@ import Plutus.V1.Ledger.Value (AssetClass (AssetClass))
 
    - This policy cannot be burned.
 -}
-proposalPolicy :: Proposal -> ClosedTerm PMintingPolicy
-proposalPolicy proposal =
+proposalPolicy ::
+  -- | The assetclass of GST, see 'Agora.Governor.Scripts.governorPolicy'.
+  AssetClass ->
+  ClosedTerm PMintingPolicy
+proposalPolicy (AssetClass (govCs, govTn)) =
   plam $ \_redeemer ctx' -> unTermCont $ do
     PScriptContext ctx' <- tcmatch ctx'
     ctx <- tcont $ pletFields @'["txInfo", "purpose"] ctx'
@@ -70,7 +73,6 @@ proposalPolicy proposal =
 
     let inputs = txInfo.inputs
         mintedValue = pfromData txInfo.mint
-        AssetClass (govCs, govTn) = proposal.governorSTAssetClass
 
     PMinting ownSymbol' <- tcmatch $ pfromData ctx.purpose
     let mintedProposalST =
@@ -147,9 +149,10 @@ proposalValidator proposal =
     ownAddress <- tclet $ txOutF.address
 
     let stCurrencySymbol =
-          pconstant $ getMintingPolicySymbol (proposalPolicy proposal)
+          pconstant $ getMintingPolicySymbol (proposalPolicy proposal.governorSTAssetClass)
     valueSpent <- tclet $ pvalueSpent # txInfoF.inputs
     spentST <- tclet $ psymbolValueOf # stCurrencySymbol #$ valueSpent
+
     let AssetClass (stakeSym, stakeTn) = proposal.stakeSTAssetClass
     stakeSTAssetClass <-
       tclet $ passetClass # pconstant stakeSym # pconstant stakeTn
@@ -168,7 +171,10 @@ proposalValidator proposal =
           newSigs <- tclet $ pfield @"newCosigners" # r
 
           tcassert "Cosigners are unique" $
-            pisUniq # newSigs
+            pisUniqBy
+              # phoistAcyclic (plam (#==))
+              # phoistAcyclic (plam $ \(pfromData -> x) (pfromData -> y) -> x #< y)
+              # newSigs
 
           tcassert "Signed by all new cosigners" $
             pall # signedBy # newSigs

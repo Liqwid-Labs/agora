@@ -32,8 +32,14 @@ module Agora.Utils (
   pisJust,
   ptokenSpent,
   pkeysEqual,
-  pnub,
+  pnubSortBy,
   pisUniq,
+  pisUniqBy,
+  pisDJust,
+  pisUTXOSpent,
+  pmsortBy,
+  pmsort,
+  pnubSort,
 
   -- * Functions which should (probably) not be upstreamed
   anyOutput,
@@ -46,11 +52,20 @@ module Agora.Utils (
   validatorHashToTokenName,
   pvalidatorHashToTokenName,
   getMintingPolicySymbol,
+  hasOnlyOneTokenOfCurrencySymbol,
+  mustFindDatum',
+  mustBePJust,
+  mustBePDJust,
+  validatorHashToAddress,
+  pmergeBy,
+  phalve,
 ) where
 
 --------------------------------------------------------------------------------
 
 import Plutus.V1.Ledger.Api (
+  Address (..),
+  Credential (..),
   CurrencySymbol,
   TokenName (..),
   ValidatorHash (..),
@@ -83,7 +98,7 @@ import Plutarch.Api.V1 (
 import Plutarch.Api.V1.AssocMap (PMap (PMap))
 import Plutarch.Api.V1.Extra (PAssetClass, passetClassValueOf, pvalueOf)
 import Plutarch.Api.V1.Value (PValue (PValue))
-import Plutarch.Builtin (ppairDataBuiltin)
+import Plutarch.Builtin (pforgetData, ppairDataBuiltin)
 import Plutarch.Map.Extra (pkeys)
 import Plutarch.Reducible (Reducible (Reduce))
 import Plutarch.TryFrom (PTryFrom (PTryFromExcess), ptryFrom)
@@ -346,38 +361,159 @@ ptokenSpent =
 {- | True if both maps have exactly the same keys.
      Using @'#=='@ is not sufficient, because keys returned are not ordered.
 -}
-pkeysEqual :: forall (s :: S) k a b. Term s (PMap k a :--> PMap k b :--> PBool)
+pkeysEqual :: (POrd k, PIsData k) => forall (s :: S) a b. Term s (PMap k a :--> PMap k b :--> PBool)
 pkeysEqual = phoistAcyclic $
   plam $ \p q -> unTermCont $ do
     pks <- tclet $ pkeys # p
     qks <- tclet $ pkeys # q
+
     pure $
-      pall # plam (\pk -> pelem # pk # qks) # pks
-        #&& pall # plam (\qk -> pelem # qk # pks) # qks
+      pif
+        (plength # pks #== plength # qks)
+        ( unTermCont $ do
+            let comp = phoistAcyclic $ plam $ \(pfromData -> x) (pfromData -> y) -> x #< y
+                spks = pmsortBy # comp # pks
+                sqks = pmsortBy # comp # qks
 
--- | / O(n^2) /. Clear out duplicates in a list. The order is not preserved.
-pnub :: forall list a (s :: S). (PEq a, PIsListLike list a) => Term s (list a :--> list a)
-pnub =
-  phoistAcyclic $
-    precList
-      ( \self x xs ->
-          pif
-            (pnot #$ pelem # x # xs)
-            (pcons # x # (self # xs))
-            (self # xs)
-      )
-      (const pnil)
+            pure $ plistEquals # spks # sqks
+        )
+        (pcon PFalse)
 
--- | / O(n^2) /. Check if a list contains no duplicates.
-pisUniq :: forall list a (s :: S). (PEq a, PIsListLike list a) => Term s (list a :--> PBool)
-pisUniq =
-  phoistAcyclic $
-    precList
-      ( \self x xs ->
-          (pnot #$ pelem # x # xs)
-            #&& (self # xs)
+-- | / O(nlogn) /. Sort and remove dupicate elements in a list.
+pnubSortBy ::
+  forall list a (s :: S).
+  (PIsListLike list a) =>
+  Term s ((a :--> a :--> PBool) :--> (a :--> a :--> PBool) :--> list a :--> list a)
+pnubSortBy = phoistAcyclic $
+  plam $ \eq comp l -> pif (pnull # l) l $
+    unTermCont $ do
+      sl <- tclet $ pmsortBy # comp # l
+
+      let x = phead # sl
+          xs = ptail # sl
+
+      return $ pgo # eq # x # xs
+  where
+    pgo = phoistAcyclic pfix #$ plam pgo'
+    pgo' self eq seen l =
+      pif (pnull # l) (psingleton # seen) $
+        unTermCont $ do
+          x <- tclet $ phead # l
+          xs <- tclet $ ptail # l
+
+          return $
+            pif
+              (eq # x # seen)
+              (self # eq # seen # xs)
+              (pcons # seen #$ self # eq # x # xs)
+
+-- | Special version of 'pnubSortBy', which requires elements have 'POrd'.
+pnubSort ::
+  forall list a (s :: S).
+  (PIsListLike list a, POrd a) =>
+  Term s (list a :--> list a)
+pnubSort = phoistAcyclic $ pnubSortBy # eq # comp
+  where
+    eq = phoistAcyclic $ plam (#==)
+    comp = phoistAcyclic $ plam (#<)
+
+-- | / O(nlogn) /. Check if a list contains no duplicates.
+pisUniqBy ::
+  forall list a (s :: S).
+  (PIsListLike list a) =>
+  Term s ((a :--> a :--> PBool) :--> (a :--> a :--> PBool) :--> list a :--> PBool)
+pisUniqBy = phoistAcyclic $
+  plam $ \eq comp xs ->
+    let nubbed = pnubSortBy # eq # comp # xs
+     in plength # xs #== plength # nubbed
+
+-- | A special case of 'pisUniqBy' which requires elements have 'POrd' instance.
+pisUniq :: forall list a (s :: S). (POrd a, PIsListLike list a) => Term s (list a :--> PBool)
+pisUniq = phoistAcyclic $ pisUniqBy # eq # comp
+  where
+    eq = phoistAcyclic $ plam (#==)
+    comp = phoistAcyclic $ plam (#<)
+
+-- | Yield True if a given PMaybeData is of form @'PDJust' _@.
+pisDJust :: Term s (PMaybeData a :--> PBool)
+pisDJust = phoistAcyclic $
+  plam $ \x ->
+    pmatch
+      x
+      ( \case
+          PDJust _ -> pconstant True
+          _ -> pconstant False
       )
-      (const $ pcon PTrue)
+
+-- | Determines if a given UTXO is spent.
+pisUTXOSpent :: Term s (PTxOutRef :--> PBuiltinList (PAsData PTxInInfo) :--> PBool)
+pisUTXOSpent = phoistAcyclic $
+  plam $ \oref inputs -> P.do
+    pisJust #$ pfindTxInByTxOutRef # oref # inputs
+
+-- | / O(n) /. Merge two lists which are assumed to be ordered, given a custom comparator.
+pmergeBy :: (PIsListLike l a) => Term s ((a :--> a :--> PBool) :--> l a :--> l a :--> l a)
+pmergeBy = phoistAcyclic $ pfix #$ plam pmergeBy'
+  where
+    pmergeBy' self comp a b =
+      pif (pnull # a) b $
+        pif (pnull # b) a $
+          unTermCont $ do
+            ah <- tclet $ phead # a
+            at <- tclet $ ptail # a
+            bh <- tclet $ phead # b
+            bt <- tclet $ ptail # b
+
+            pure $
+              pif
+                (comp # ah # bh)
+                (pcons # ah #$ self # comp # at # b)
+                (pcons # bh #$ self # comp # a # bt)
+
+{- | / O(nlogn) /. Merge sort, bottom-up version, given a custom comparator.
+
+   Elements are arranged from lowest to highest,
+   keeping duplicates in the order they appeared in the input.
+-}
+pmsortBy :: (PIsListLike l a) => Term s ((a :--> a :--> PBool) :--> l a :--> l a)
+pmsortBy = phoistAcyclic $ pfix #$ plam pmsortBy'
+  where
+    pmsortBy' self comp xs = pif (pnull # xs) pnil $
+      pif (pnull #$ ptail # xs) xs $
+        pmatch (phalve # xs) $ \(PPair fh sh) ->
+          let sfh = self # comp # fh
+              ssh = self # comp # sh
+           in pmergeBy # comp # sfh # ssh
+
+-- | A special case of 'pmsortBy' which requires elements have 'POrd' instance.
+pmsort :: (POrd a, PIsListLike l a) => Term s (l a :--> l a)
+pmsort = phoistAcyclic $ pmsortBy # comp
+  where
+    comp = phoistAcyclic $ plam (#<)
+
+-- | Split a list in half.
+phalve :: (PIsListLike l a) => Term s (l a :--> PPair (l a) (l a))
+phalve = phoistAcyclic $ plam $ \l -> go # l # l
+  where
+    go = phoistAcyclic $ pfix #$ plam go'
+    go' self xs ys =
+      pif
+        (pnull # ys)
+        (pcon $ PPair pnil xs)
+        ( unTermCont $ do
+            yt <- tclet $ ptail # ys
+
+            xh <- tclet $ phead # xs
+            xt <- tclet $ ptail # xs
+
+            pure $
+              pif (pnull # yt) (pcon $ PPair (psingleton # xh) xt) $
+                unTermCont $ do
+                  yt' <- tclet $ ptail # yt
+                  pure $
+                    pmatch (self # xt # yt') $ \(PPair first last) ->
+                      pcon $ PPair (pcons # xh # first) last
+        )
 
 --------------------------------------------------------------------------------
 {- Functions which should (probably) not be upstreamed
@@ -514,3 +650,49 @@ pvalidatorHashToTokenName vh = pcon (PTokenName (pto vh))
 -- | Get the CurrencySymbol of a PMintingPolicy.
 getMintingPolicySymbol :: ClosedTerm PMintingPolicy -> CurrencySymbol
 getMintingPolicySymbol v = mintingPolicySymbol $ mkMintingPolicy v
+
+-- | The entire value only contains one token of the given currency symbol.
+hasOnlyOneTokenOfCurrencySymbol :: Term s (PCurrencySymbol :--> PValue :--> PBool)
+hasOnlyOneTokenOfCurrencySymbol = phoistAcyclic $
+  plam $ \cs vs -> P.do
+    psymbolValueOf # cs # vs #== 1
+      #&& (plength #$ pto $ pto $ pto vs) #== 1
+
+-- | Find datum given a maybe datum hash
+mustFindDatum' ::
+  forall (datum :: PType).
+  (PIsData datum, PTryFrom PData (PAsData datum)) =>
+  forall s.
+  Term
+    s
+    ( PMaybeData PDatumHash
+        :--> PBuiltinList (PAsData (PTuple PDatumHash PDatum))
+        :--> datum
+    )
+mustFindDatum' = phoistAcyclic $
+  plam $ \mdh datums -> unTermCont $ do
+    let dh = mustBePDJust # "Given TxOut dones't have a datum" # mdh
+        dt = mustBePJust # "Datum not found in the transaction" #$ plookupTuple # dh # datums
+    (d, _) <- tcont $ ptryFrom $ pforgetData $ pdata dt
+    pure $ pfromData d
+
+{- | Extract the value stored in a PMaybe container.
+     If there's no value, throw an error with the given message.
+-}
+mustBePJust :: forall a s. Term s (PString :--> PMaybe a :--> a)
+mustBePJust = phoistAcyclic $
+  plam $ \emsg mv' -> pmatch mv' $ \case
+    PJust v -> v
+    _ -> ptraceError emsg
+
+{- | Extract the value stored in a PMaybeData container.
+     If there's no value, throw an error with the given message.
+-}
+mustBePDJust :: forall a s. (PIsData a) => Term s (PString :--> PMaybeData a :--> a)
+mustBePDJust = phoistAcyclic $
+  plam $ \emsg mv' -> pmatch mv' $ \case
+    PDJust ((pfield @"_0" #) -> v) -> v
+    _ -> ptraceError emsg
+
+validatorHashToAddress :: ValidatorHash -> Address
+validatorHashToAddress vh = Address (ScriptCredential vh) Nothing

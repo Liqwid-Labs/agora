@@ -4,6 +4,7 @@ module Agora.Governor where
 import Prelude
 
 import Agora.Proposal (ProposalId, ProposalThresholds)
+import Agora.SafeMoney (GTTag)
 import Data.Bounded.Generic (genericBottom, genericTop)
 import Data.Enum (class Enum)
 import Data.Enum.Generic (genericPred, genericSucc)
@@ -13,6 +14,10 @@ import Data.Lens.Iso.Newtype (_Newtype)
 import Data.Lens.Record (prop)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype)
+import Data.Tagged (Tagged)
+import GHC.Num.Integer (Integer)
+import Plutus.V1.Ledger.Tx (TxOutRef)
+import Plutus.V1.Ledger.Value (AssetClass)
 import Type.Proxy (Proxy(Proxy))
 
 newtype GovernorDatum = GovernorDatum
@@ -34,6 +39,7 @@ _GovernorDatum = _Newtype
 data GovernorRedeemer
   = CreateProposal
   | MintGATs
+  | MutateGovernor
 
 derive instance Generic GovernorRedeemer _
 
@@ -57,21 +63,24 @@ _MintGATs = prism' (const MintGATs) case _ of
   MintGATs -> Just unit
   _ -> Nothing
 
+_MutateGovernor :: Prism' GovernorRedeemer Unit
+_MutateGovernor = prism' (const MutateGovernor) case _ of
+  MutateGovernor -> Just unit
+  _ -> Nothing
+
 --------------------------------------------------------------------------------
 
-data Governor = Governor
+newtype Governor = Governor
+  { gstOutRef :: TxOutRef
+  , gtClassRef :: Tagged GTTag AssetClass
+  , maximumCosigners :: Integer
+  }
 
 derive instance Generic Governor _
 
-instance Enum Governor where
-  succ = genericSucc
-  pred = genericPred
-
-instance Bounded Governor where
-  bottom = genericBottom
-  top = genericTop
+derive instance Newtype Governor _
 
 --------------------------------------------------------------------------------
 
-_Governor :: Iso' Governor Unit
-_Governor = iso (const unit) (const Governor)
+_Governor :: Iso' Governor {gstOutRef :: TxOutRef, gtClassRef :: Tagged GTTag AssetClass, maximumCosigners :: Integer}
+_Governor = _Newtype

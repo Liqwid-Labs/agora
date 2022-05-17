@@ -12,6 +12,7 @@ module Spec.Proposal (tests) where
 --------------------------------------------------------------------------------
 
 import Agora.Proposal (
+  Proposal (..),
   ProposalDatum (ProposalDatum),
   ProposalId (ProposalId),
   ProposalRedeemer (Cosign),
@@ -49,7 +50,7 @@ tests =
       "policy"
       [ policySucceedsWith
           "proposalCreation"
-          (proposalPolicy Shared.proposal)
+          (proposalPolicy Shared.proposal.governorSTAssetClass)
           ()
           Proposal.proposalCreation
       ]
@@ -64,8 +65,8 @@ tests =
                   { proposalId = ProposalId 0
                   , effects =
                       AssocMap.fromList
-                        [ (ResultTag 0, [])
-                        , (ResultTag 1, [])
+                        [ (ResultTag 0, AssocMap.empty)
+                        , (ResultTag 1, AssocMap.empty)
                         ]
                   , status = Draft
                   , cosigners = [signer]
@@ -73,8 +74,8 @@ tests =
                   , votes =
                       emptyVotesFor $
                         AssocMap.fromList
-                          [ (ResultTag 0, [])
-                          , (ResultTag 1, [])
+                          [ (ResultTag 0, AssocMap.empty)
+                          , (ResultTag 1, AssocMap.empty)
                           ]
                   }
               )

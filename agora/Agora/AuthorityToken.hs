@@ -17,6 +17,7 @@ import Plutarch.Api.V1 (
   PAddress (..),
   PCredential (..),
   PCurrencySymbol (..),
+  PMintingPolicy,
   PScriptContext (..),
   PScriptPurpose (..),
   PTxInInfo (PTxInInfo),
@@ -127,9 +128,7 @@ singleAuthorityTokenBurned gatCs txInfo mint = unTermCont $ do
       ]
 
 -- | Policy given 'AuthorityToken' params.
-authorityTokenPolicy ::
-  AuthorityToken ->
-  Term s (PData :--> PScriptContext :--> PUnit)
+authorityTokenPolicy :: AuthorityToken -> ClosedTerm PMintingPolicy
 authorityTokenPolicy params =
   plam $ \_redeemer ctx' ->
     pmatch ctx' $ \(PScriptContext ctx') -> unTermCont $ do
@@ -156,7 +155,6 @@ authorityTokenPolicy params =
                   authorityTokensValidIn
                     # ownSymbol
                     # txOut
-
-              pure $ pconstant ()
+              pure $ popaque $ pconstant ()
           )
-          (pconstant ())
+          (popaque $ pconstant ())
