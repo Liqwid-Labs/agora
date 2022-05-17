@@ -40,6 +40,8 @@ module Agora.Utils (
   pmsortBy,
   pmsort,
   pnubSort,
+  pupdate,
+  pmapMaybe,
 
   -- * Functions which should (probably) not be upstreamed
   anyOutput,
@@ -285,6 +287,42 @@ pmapUnionWith = phoistAcyclic $
               )
             # ys
     pure $ pcon (PMap $ pconcat # ls # rs)
+
+-- A special version of `pmap` which allows list elements to be thrown out.
+pmapMaybe :: forall s a list. (PIsListLike list a) => Term s ((a :--> PMaybe a) :--> list a :--> list a)
+pmapMaybe = phoistAcyclic $
+  pfix #$ plam $ \self f l -> pif (pnull # l) pnil $
+    unTermCont $ do
+      x <- tclet $ phead # l
+      xs <- tclet $ ptail # l
+
+      pure $
+        pmatch (f # x) $ \case
+          PJust ux -> pcons # ux #$ self # f # xs
+          _ -> self # f # xs
+
+-- / O(n) /. Update the value at a given key in a `PMap`, have the same functionalities as `Data.Map.update`.
+pupdate :: forall s k v. (PIsData k, PIsData v) => Term s ((v :--> PMaybe v) :--> k :--> PMap k v :--> PMap k v)
+pupdate = phoistAcyclic $
+  plam $ \f (pdata -> tk) (pto -> (ps :: Term _ (PBuiltinList _))) ->
+    pcon $
+      PMap $
+        pmapMaybe
+          # plam
+            ( \kv ->
+                let k = pfstBuiltin # kv
+                    v = pfromData $ psndBuiltin # kv
+                 in pif
+                      (k #== tk)
+                      -- 'PBuiltinPair' doesn't have 'PFunctor', so:
+                      ( pmatch (f # v) $
+                          \case
+                            PJust uv -> pcon $ PJust $ ppairDataBuiltin # k # pdata uv
+                            _ -> pcon $ PNothing
+                      )
+                      (pcon $ PJust kv)
+            )
+          # ps
 
 -- | Add two 'PValue's together.
 paddValue :: forall s. Term s (PValue :--> PValue :--> PValue)
