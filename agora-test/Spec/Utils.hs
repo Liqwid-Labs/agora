@@ -25,9 +25,9 @@ import Test.Tasty.QuickCheck (testProperty)
 
 tests :: [TestTree]
 tests =
-  [ testProperty "'pmsort' sorts a list properly" prop_msortSorted
-  , testProperty "'pmerge' merges two sorted lists into one sorted list" prop_mergeSorted
-  , testProperty "'phalve' splits a list in half as expected" prop_halveProperly
+  [ testProperty "'pmsort' sorts a list properly" prop_msortCorrect
+  , testProperty "'pmerge' merges two sorted lists into one sorted list" prop_mergeCorrect
+  , testProperty "'phalve' splits a list in half as expected" prop_halveCorrect
   , testProperty "'pnubSort' sorts a list and remove duplicate elements" prop_nubSortProperly
   , testProperty "'pisUniq' can tell whether all elements in a list are unique" prop_uniqueList
   ]
@@ -35,8 +35,8 @@ tests =
 --------------------------------------------------------------------------------
 
 -- | Yield true if 'Agora.Utils.pmsort' sorts a given list correctly.
-prop_msortSorted :: [Integer] -> Bool
-prop_msortSorted l = sorted == expected
+prop_msortCorrect :: [Integer] -> Bool
+prop_msortCorrect l = sorted == expected
   where
     -- Expected sorted list, using 'Data.List.sort'.
     expected :: [Integer]
@@ -51,8 +51,8 @@ prop_msortSorted l = sorted == expected
     sorted = plift psorted
 
 -- | Yield true if 'Agora.Utils.pmerge' merges two list into a ordered list correctly.
-prop_mergeSorted :: [Integer] -> [Integer] -> Bool
-prop_mergeSorted a b = merged == expected
+prop_mergeCorrect :: [Integer] -> [Integer] -> Bool
+prop_mergeCorrect a b = merged == expected
   where
     -- Sorted list a and b
     sa = sort a
@@ -77,11 +77,11 @@ prop_mergeSorted a b = merged == expected
     merged :: [Integer]
     merged = plift pmerged
 
-{- | Yield true if plutarch level 'Agora.Utils.phalve' splits a given list
-   as its haskell level counterpart does.
+{- | Yield true if Plutarch level 'Agora.Utils.phalve' splits a given list
+   as its Haskell level counterpart does.
 -}
-prop_halveProperly :: [Integer] -> Bool
-prop_halveProperly l = halved == expected
+prop_halveCorrect :: [Integer] -> Bool
+prop_halveCorrect l = halved == expected
   where
     -- Halve a list.
     halve :: [Integer] -> ([Integer], [Integer])
