@@ -18,15 +18,15 @@
 
 [Jack Hodgkinson]: https://github.com/jhodgdev
 
-**Current status:** Initial draft in need of editing and review from [Jack Hodgkinson].
+**Current status:** Early revision of the document with low technical specification due to feature being further in the timeline. Has been reviewed by [Jack Hodgkinson].
 
 ---
 
-In order for Agora’s StakingPool to act as a *SafetyPool,* it needs to be able to support a workflow for slashing staked governance tokens to act as a safety mechanism. This document outlines the changes that Agora needs to receive in order to support this.
+In order for Agora’s staking pool to act as a *safety pool*, it needs to be able to support a workflow for slashing staked governance tokens (GT) to act as a safety mechanism. (Note: we use "slashing" to mean taking away some token from a particular user.) This document outlines the changes that need to be made to Agora in order to support this.
 
 ### Motivation
 
-In the event of a protocol suffering loss of funds through a [shortfall event](https://docs.aave.com/aavenomics/safety-module#shortfall-events), slashing a percentage of locked GT can be used to attempt recovery. Ultimately, doing this is beneficial for the stakeholders because it allows the protocol to recover and eventually benefits them as well (even though they bear the initial cost). Striking a balance (in the form of the right % slashed) is important in order for the stakeholders to be willing to partake in their sacrifice.
+In the event of a protocol suffering loss of funds through a [shortfall event](https://docs.aave.com/aavenomics/safety-module#shortfall-events), slashing a percentage of locked GT can be used to attempt a recovery. Ultimately, doing this is beneficial for the stakeholders because it allows the protocol to recover and eventually benefits them as well (even though they bear the initial cost). Striking a balance (in the form of the right percentage slashed) is important in order for stakeholders to want to vote in favour of a proposal that results in such a slashing.
 
 ## Slashing functionality
 
@@ -36,7 +36,7 @@ In order to allow an admin to withdraw a set percentage of the amount staked, we
 
 - Mint a `SlashToken` and send it to a validator ("the `Slash` validator") with a datum encoding the details of the slashing.
 
-  The `SlashDatum` may look like this:
+  The `SlashDatum` could look like this:
 
   ```haskell
   data SlashDatum = SlashDatum
@@ -44,13 +44,12 @@ In order to allow an admin to withdraw a set percentage of the amount staked, we
       slashId :: Integer
     , -- | Represents how much is to be slashed (as a ratio of the full staked amount).
       slashPercentage :: Rational
-    , -- | During what time is using this datum for Stakes.
+    , -- | The time range that must contain `txInfoValidRange` in order to slash.
       slashTimeRange :: POSIXTimeRange
     }
   ```
 
-- This information must be encoded in the datum the effect is given to, so ultimately encoded in the proposal.
-  The datum that is passed to the effect ought to contain this `SlashDatum` in some way.
+- `SlashDatum` must, in some way, be present in the datum that is passed to the `SlashEffect` validator. This means that the `ProposalDatum` also indirectly contains `SlashDatum`.
 
 ### The `SlashToken` policy:
 
@@ -71,11 +70,11 @@ Finally, we need to change `StakeDatum` to encode a list of slash IDs in order t
 
 ## Preventing opting out of slashing
 
-If this is where we call it quits, then users will each be able to just opt-out of this slashing event. GT holders are individually incentivized to do so, because it means they don’t forfeit their assets. Obviously, then, in order to make the safety pool work at all, we need to prevent this.
+If this is where we call it quits, then users will each be able to just opt-out of this slashing event. GT holders are individually incentivized to do so, because it means they don’t forfeit their own assets. Obviously, then, in order to make the safety pool work at all, we need to prevent this.
 
 ### Time-locking stakes
 
-A simple solution is time-locking stake withdrawal upon any interaction with it for a set amount of days. This ought to be long enough for a full proposal to go through, but not too long for it to become annoying for users of the staking pool. This presents a big drawback in general for all stakeholders as their assets are actually locked even though no slashing necessarily will ever happen. However, this is also a very simple solution for solving the opt-out problem. It should be something we can enable/disable after the fact, as well as in initial configuration.
+A simple solution is time-locking stake withdrawal upon any interaction with it for a set amount of days. This ought to be long enough for a full proposal to go through, but not too long for it to become annoying for users of the staking pool. This presents a big drawback in general for all stakeholders as their assets are actually locked even though no slashing necessarily will ever happen. However, this is also a very simple solution for solving the opt-out problem. It should be something we can enable or disable after the fact, as well as in initial configuration.
 
 ### CIP-31 dependent central lock
 
