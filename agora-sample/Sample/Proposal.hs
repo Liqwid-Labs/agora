@@ -75,6 +75,7 @@ proposalCreation =
                 , thresholds = defaultProposalThresholds
                 , votes = emptyVotesFor effects
                 , timingConfig = proposalTimingConfig
+                , startingTime = tmpProposalStartingTime
                 }
           )
 
@@ -169,6 +170,7 @@ cosignProposal newSigners =
           , thresholds = defaultProposalThresholds
           , votes = emptyVotesFor effects
           , timingConfig = proposalTimingConfig
+          , startingTime = tmpProposalStartingTime
           }
       stakeDatum :: StakeDatum
       stakeDatum = StakeDatum (Tagged 50_000_000) signer2 []

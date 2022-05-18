@@ -126,7 +126,7 @@ import Plutarch.TryFrom (ptryFrom)
 
 --------------------------------------------------------------------------------
 
-import Agora.Proposal.Time (ProposalTimingConfig (..))
+import Agora.Proposal.Time (ProposalStartingTime (..), ProposalTimingConfig (..))
 import Plutus.V1.Ledger.Api (
   CurrencySymbol (..),
   MintingPolicy,
@@ -579,6 +579,8 @@ governorValidator gov =
                       .& #votes .= proposalInputDatumF.votes
                       -- FIXME: copy from the governor datum
                       .& #timingConfig .= pdata (pconstant tmpTimingConfig)
+                      -- FIXME: calculate from 'txInfoValidRange'
+                      .& #startingTime .= pdata (pconstant tmpProposalStartingTime)
                   )
 
           tcassert "Unexpected output proposal datum" $
@@ -739,6 +741,10 @@ governorValidator gov =
         , lockingTime = 2000
         , executingTime = 3000
         }
+
+    -- TODO: remove this.
+    tmpProposalStartingTime :: ProposalStartingTime
+    tmpProposalStartingTime = ProposalStartingTime 0
 
 --------------------------------------------------------------------------------
 

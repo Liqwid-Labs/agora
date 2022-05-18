@@ -80,6 +80,7 @@ import Sample.Shared (
   stake,
   stakeAddress,
   stakeAssetClass,
+  tmpProposalStartingTime,
  )
 import Test.Util (datumPair, toDatumHash)
 
@@ -236,6 +237,7 @@ createProposal =
                 , thresholds = defaultProposalThresholds
                 , votes = emptyVotesFor effects
                 , timingConfig = proposalTimingConfig
+                , startingTime = tmpProposalStartingTime
                 }
           )
       proposalOutput :: TxOut
@@ -411,6 +413,7 @@ mintGATs =
           , thresholds = defaultProposalThresholds
           , votes = proposalVotes
           , timingConfig = proposalTimingConfig
+          , startingTime = tmpProposalStartingTime
           }
       proposalInputDatum :: Datum
       proposalInputDatum = Datum $ toBuiltinData proposalInputDatum'

@@ -152,6 +152,7 @@ proposalValidator proposal =
             , "thresholds"
             , "votes"
             , "timingConfig"
+            , "startingTime"
             ]
           proposalDatum
 
@@ -255,6 +256,7 @@ proposalValidator proposal =
                       .& #thresholds .= proposalF.thresholds
                       .& #votes .= pdata expectedNewVotes
                       .& #timingConfig .= proposalF.timingConfig
+                      .& #startingTime .= proposalF.startingTime
                   )
 
           tcassert "Invalid output proposal" $ proposalOut #== expectedProposalOut
@@ -345,6 +347,7 @@ proposalValidator proposal =
                                   .& #thresholds .= proposalF.thresholds
                                   .& #votes .= proposalF.votes
                                   .& #timingConfig .= proposalF.timingConfig
+                                  .& #startingTime .= proposalF.startingTime
                               )
                           )
                  in foldr1

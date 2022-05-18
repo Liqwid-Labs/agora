@@ -78,6 +78,7 @@ tests =
                           , (ResultTag 1, AssocMap.empty)
                           ]
                   , timingConfig = Shared.proposalTimingConfig
+                  , startingTime = Shared.tmpProposalStartingTime
                   }
               )
               (Cosign [signer2])

@@ -37,6 +37,7 @@ module Sample.Shared (
   proposalValidatorHash,
   proposalValidatorAddress,
   proposalTimingConfig,
+  tmpProposalStartingTime,
 
   -- ** Authority
   authorityToken,
@@ -76,6 +77,7 @@ import Agora.Proposal (
   ProposalThresholds (..),
  )
 import Agora.Proposal.Time (
+  ProposalStartingTime (..),
   ProposalTimingConfig (..),
  )
 import Agora.Stake (Stake (..))
@@ -196,6 +198,10 @@ proposalTimingConfig =
     , lockingTime = 2000
     , executingTime = 3000
     }
+
+-- FIXME: should be removed.
+tmpProposalStartingTime :: ProposalStartingTime
+tmpProposalStartingTime = ProposalStartingTime 0
 
 ------------------------------------------------------------------
 
