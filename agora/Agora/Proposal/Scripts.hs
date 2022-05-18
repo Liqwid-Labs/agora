@@ -13,18 +13,24 @@ module Agora.Proposal.Scripts (
 import Agora.Proposal (
   PProposalDatum (PProposalDatum),
   PProposalRedeemer (..),
+  PProposalVotes (PProposalVotes),
   Proposal (governorSTAssetClass, stakeSTAssetClass),
+  ProposalStatus (VotingReady),
  )
 import Agora.Record (mkRecordConstr, (.&), (.=))
-import Agora.Stake (findStakeOwnedBy)
+import Agora.Stake (PProposalLock (..), PStakeDatum (..), findStakeOwnedBy)
 import Agora.Utils (
   anyOutput,
   findTxOutByTxOutRef,
   getMintingPolicySymbol,
+  mustBePJust,
+  mustFindDatum',
+  pisJust,
   pisUniqBy,
   psymbolValueOf,
   ptokenSpent,
   ptxSignedBy,
+  pupdate,
   pvalueSpent,
   tcassert,
   tclet,
@@ -39,6 +45,8 @@ import Plutarch.Api.V1 (
   PValidator,
  )
 import Plutarch.Api.V1.Extra (passetClass, passetClassValueOf)
+import Plutarch.Map.Extra (plookup)
+import Plutarch.SafeMoney (puntag)
 import Plutus.V1.Ledger.Value (AssetClass (AssetClass))
 
 {- | Policy for Proposals.
@@ -123,7 +131,7 @@ proposalValidator proposal =
     ctx <- tcont $ pletFields @'["txInfo", "purpose"] ctx'
     txInfo <- tclet $ pfromData ctx.txInfo
     PTxInfo txInfo' <- tcmatch txInfo
-    txInfoF <- tcont $ pletFields @'["inputs", "mint", "datums", "signatories"] txInfo'
+    txInfoF <- tcont $ pletFields @'["inputs", "outputs", "mint", "datums", "signatories"] txInfo'
     PSpending ((pfield @"_0" #) -> txOutRef) <- tcmatch $ pfromData ctx.purpose
 
     PJust txOut <- tcmatch $ findTxOutByTxOutRef # txOutRef # txInfoF.inputs
@@ -165,7 +173,127 @@ proposalValidator proposal =
 
     pure $
       pmatch proposalRedeemer $ \case
-        PVote _r -> popaque (pconstant ())
+        PVote r -> unTermCont $ do
+          -- TODO: do we have to check the timing here?
+          tcassert "Input proposal must be in VotingReady state" $
+            proposalF.status #== pconstant VotingReady
+
+          -- Ensure the transaction is voting to a valid 'ResultTag'(outcome).
+          PProposalVotes voteMap <- tcmatch proposalF.votes
+          voteFor <- tclet $ pfromData $ pfield @"resultTag" # r
+
+          tcassert "Invalid vote option" $
+            pisJust #$ plookup # voteFor # voteMap
+
+          -- Find the input stake, the amount of new votes should be the 'stakedAmount'.
+          let stakeInput =
+                pfield @"resolved"
+                  #$ mustBePJust
+                  # "Stake input not found"
+                    #$ pfind
+                  # plam
+                    ( \(pfromData . (pfield @"value" #) . (pfield @"resolved" #) -> value) ->
+                        passetClassValueOf # value # stakeSTAssetClass #== 1
+                    )
+                  # pfromData txInfoF.inputs
+
+              stakeIn :: Term _ PStakeDatum
+              stakeIn = mustFindDatum' # (pfield @"datumHash" # stakeInput) # txInfoF.datums
+
+          stakeInF <- tcont $ pletFields @'["stakedAmount", "lockedBy", "owner"] stakeIn
+
+          -- Ensure that no lock with the current proposal id has been put on the stake.
+          tcassert "Cannot vote on the a proposal using the same stake twice" $
+            pnot #$ pany
+              # plam
+                ( \((pfield @"proposalTag" #) . pfromData -> pid) ->
+                    pid #== proposalF.proposalId
+                )
+              # pfromData stakeInF.lockedBy
+
+          -- TODO: maybe we can move this outside of the pmatch block.
+          -- Filter out own output with own address and PST.
+          ownOutput <-
+            tclet $
+              mustBePJust # "Own output not found" #$ pfind
+                # plam
+                  ( \input -> unTermCont $ do
+                      inputF <- tcont $ pletFields @'["address", "value"] input
+                      pure $
+                        inputF.address #== ownAddress
+                          #&& psymbolValueOf # stCurrencySymbol # inputF.value #== 1
+                  )
+                # pfromData txInfoF.outputs
+
+          ownOutputF <- tcont $ pletFields @'["datumHash", "value"] ownOutput
+
+          -- TODO: is this really necessary?
+          tcassert "Own output value should be correct" $ ownOutputF.value #== pdata txOutF.value
+
+          let proposalOut :: Term _ PProposalDatum
+              proposalOut = mustFindDatum' # (pfield @"datumHash" # ownOutput) # txInfoF.datums
+
+          let -- Update the vote counter of the proposal, and leave other stuff as is.
+              expectedNewVotes = pmatch (pfromData proposalF.votes) $ \(PProposalVotes m) ->
+                pcon $
+                  PProposalVotes $
+                    pupdate
+                      # plam
+                        ( \votes ->
+                            pcon $ PJust $ votes + (puntag stakeInF.stakedAmount)
+                        )
+                      # voteFor
+                      # m
+              expectedProposalOut =
+                mkRecordConstr
+                  PProposalDatum
+                  ( #proposalId .= proposalF.proposalId
+                      .& #effects .= proposalF.effects
+                      .& #status .= proposalF.status
+                      .& #cosigners .= proposalF.cosigners
+                      .& #thresholds .= proposalF.thresholds
+                      .& #votes .= pdata expectedNewVotes
+                  )
+
+          tcassert "Invalid output proposal" $ proposalOut #== expectedProposalOut
+
+          -- We validate the output stake datum here as well: We need the vote option
+          --   to create a proper 'ProposalLock'. However the vote option is encoded
+          --   in the proposal redeemer, which is invisible for the stake validator.
+
+          let stakeOutput =
+                mustBePJust # "Stake output not found"
+                  #$ pfind
+                  # plam
+                    ( \(pfromData . (pfield @"value" #) -> value) ->
+                        passetClassValueOf # value # stakeSTAssetClass #== 1
+                    )
+                  # pfromData txInfoF.outputs
+
+              stakeOut :: Term _ PStakeDatum
+              stakeOut = mustFindDatum' # (pfield @"datumHash" # stakeOutput) # txInfoF.datums
+
+          let newProposalLock =
+                mkRecordConstr
+                  PProposalLock
+                  ( #vote .= pdata voteFor
+                      .& #proposalTag .= proposalF.proposalId
+                  )
+              expectedProposalLocks =
+                pcons
+                  # pdata newProposalLock
+                  # pfromData stakeInF.lockedBy
+              expectedStakeOut =
+                mkRecordConstr
+                  PStakeDatum
+                  ( #stakedAmount .= stakeInF.stakedAmount
+                      .& #owner .= stakeInF.owner
+                      .& #lockedBy .= pdata expectedProposalLocks
+                  )
+
+          tcassert "Output stake should be locked by the proposal" $ expectedStakeOut #== stakeOut
+
+          pure $ popaque (pconstant ())
         --------------------------------------------------------------------------
         PCosign r -> unTermCont $ do
           newSigs <- tclet $ pfield @"newCosigners" # r
