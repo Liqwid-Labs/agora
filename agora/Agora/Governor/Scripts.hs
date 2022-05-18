@@ -126,6 +126,7 @@ import Plutarch.TryFrom (ptryFrom)
 
 --------------------------------------------------------------------------------
 
+import Agora.Proposal.Time (ProposalTimingConfig (..))
 import Plutus.V1.Ledger.Api (
   CurrencySymbol (..),
   MintingPolicy,
@@ -576,6 +577,8 @@ governorValidator gov =
                       .& #cosigners .= proposalInputDatumF.cosigners
                       .& #thresholds .= proposalInputDatumF.thresholds
                       .& #votes .= proposalInputDatumF.votes
+                      -- FIXME: copy from the governor datum
+                      .& #timingConfig .= pdata (pconstant tmpTimingConfig)
                   )
 
           tcassert "Unexpected output proposal datum" $
@@ -726,6 +729,16 @@ governorValidator gov =
     pgstSymbol =
       let sym = governorSTSymbolFromGovernor gov
        in phoistAcyclic $ pconstant sym
+
+    -- TODO: remove this. This is temperary.
+    tmpTimingConfig :: ProposalTimingConfig
+    tmpTimingConfig =
+      ProposalTimingConfig
+        { draftTime = 0
+        , votingTime = 1000
+        , lockingTime = 2000
+        , executingTime = 3000
+        }
 
 --------------------------------------------------------------------------------
 

@@ -36,6 +36,7 @@ module Sample.Shared (
   proposalPolicySymbol,
   proposalValidatorHash,
   proposalValidatorAddress,
+  proposalTimingConfig,
 
   -- ** Authority
   authorityToken,
@@ -73,6 +74,9 @@ import Agora.Governor.Scripts (
 import Agora.Proposal (
   Proposal (..),
   ProposalThresholds (..),
+ )
+import Agora.Proposal.Time (
+  ProposalTimingConfig (..),
  )
 import Agora.Stake (Stake (..))
 import Agora.Treasury (treasuryValidator)
@@ -183,6 +187,15 @@ authorityToken = authorityTokenFromGovernor governor
 
 authorityTokenSymbol :: CurrencySymbol
 authorityTokenSymbol = authorityTokenSymbolFromGovernor governor
+
+proposalTimingConfig :: ProposalTimingConfig
+proposalTimingConfig =
+  ProposalTimingConfig
+    { draftTime = 0
+    , votingTime = 1000
+    , lockingTime = 2000
+    , executingTime = 3000
+    }
 
 ------------------------------------------------------------------
 

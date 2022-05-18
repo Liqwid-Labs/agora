@@ -151,6 +151,7 @@ proposalValidator proposal =
             , "cosigners"
             , "thresholds"
             , "votes"
+            , "timingConfig"
             ]
           proposalDatum
 
@@ -253,6 +254,7 @@ proposalValidator proposal =
                       .& #cosigners .= proposalF.cosigners
                       .& #thresholds .= proposalF.thresholds
                       .& #votes .= pdata expectedNewVotes
+                      .& #timingConfig .= proposalF.timingConfig
                   )
 
           tcassert "Invalid output proposal" $ proposalOut #== expectedProposalOut
@@ -342,6 +344,7 @@ proposalValidator proposal =
                                   .& #cosigners .= pdata updatedSigs
                                   .& #thresholds .= proposalF.thresholds
                                   .& #votes .= proposalF.votes
+                                  .& #timingConfig .= proposalF.timingConfig
                               )
                           )
                  in foldr1

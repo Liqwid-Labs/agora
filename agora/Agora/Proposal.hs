@@ -44,6 +44,8 @@ import PlutusTx qualified
 import PlutusTx.AssocMap qualified as AssocMap
 
 --------------------------------------------------------------------------------
+
+import Agora.Proposal.Time (PProposalTimingConfig, ProposalTimingConfig)
 import Agora.SafeMoney (GTTag)
 import Agora.Utils (pkeysEqual, pnotNull)
 import Control.Applicative (Const)
@@ -186,6 +188,8 @@ data ProposalDatum = ProposalDatum
   -- ^ Thresholds copied over on initialization.
   , votes :: ProposalVotes
   -- ^ Vote tally on the proposal
+  , timingConfig :: ProposalTimingConfig
+  -- ^ Timing configuration copied over on initialization.
   }
   deriving stock (Eq, Show, GHC.Generic)
 
@@ -354,6 +358,7 @@ newtype PProposalDatum (s :: S) = PProposalDatum
            , "cosigners" ':= PBuiltinList (PAsData PPubKeyHash)
            , "thresholds" ':= PProposalThresholds
            , "votes" ':= PProposalVotes
+           , "timingConfig" ':= PProposalTimingConfig
            ]
       )
   }

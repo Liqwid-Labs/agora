@@ -13,7 +13,7 @@ module Spec.Proposal (tests) where
 
 import Agora.Proposal (
   Proposal (..),
-  ProposalDatum (ProposalDatum),
+  ProposalDatum (..),
   ProposalId (ProposalId),
   ProposalRedeemer (Cosign),
   ProposalStatus (Draft),
@@ -77,6 +77,7 @@ tests =
                           [ (ResultTag 0, AssocMap.empty)
                           , (ResultTag 1, AssocMap.empty)
                           ]
+                  , timingConfig = Shared.proposalTimingConfig
                   }
               )
               (Cosign [signer2])

@@ -73,6 +73,7 @@ import Sample.Shared (
   gstUTXORef,
   minAda,
   proposalPolicySymbol,
+  proposalTimingConfig,
   proposalValidatorAddress,
   signer,
   signer2,
@@ -234,6 +235,7 @@ createProposal =
                 , cosigners = [signer]
                 , thresholds = defaultProposalThresholds
                 , votes = emptyVotesFor effects
+                , timingConfig = proposalTimingConfig
                 }
           )
       proposalOutput :: TxOut
@@ -408,6 +410,7 @@ mintGATs =
           , cosigners = [signer, signer2]
           , thresholds = defaultProposalThresholds
           , votes = proposalVotes
+          , timingConfig = proposalTimingConfig
           }
       proposalInputDatum :: Datum
       proposalInputDatum = Datum $ toBuiltinData proposalInputDatum'
