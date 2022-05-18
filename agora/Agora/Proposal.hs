@@ -303,7 +303,7 @@ data PProposalStatus (s :: S)
   deriving anyclass (Generic)
   deriving anyclass (PIsDataRepr)
   deriving
-    (PlutusType, PIsData)
+    (PlutusType, PIsData, PEq)
     via PIsDataReprInstances PProposalStatus
 
 instance PUnsafeLiftDecl PProposalStatus where type PLifted PProposalStatus = ProposalStatus
@@ -361,7 +361,7 @@ newtype PProposalDatum (s :: S) = PProposalDatum
   deriving anyclass (Generic)
   deriving anyclass (PIsDataRepr)
   deriving
-    (PlutusType, PIsData, PDataFields)
+    (PlutusType, PIsData, PDataFields, PEq)
     via (PIsDataReprInstances PProposalDatum)
 
 -- TODO: Derive this.
