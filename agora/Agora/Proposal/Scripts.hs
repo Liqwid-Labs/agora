@@ -230,24 +230,18 @@ proposalValidator proposal =
 
           -- TODO: maybe we can move this outside of the pmatch block.
           -- Filter out own output with own address and PST.
-          ownOutput <-
-            tclet $
-              mustBePJust # "Own output not found" #$ pfind
-                # plam
-                  ( \input -> unTermCont $ do
-                      inputF <- tcont $ pletFields @'["address", "value"] input
-                      pure $
-                        inputF.address #== ownAddress
-                          #&& psymbolValueOf # stCurrencySymbol # inputF.value #== 1
-                  )
-                # pfromData txInfoF.outputs
+          let ownOutput =
+                mustBePJust # "Own output not found" #$ pfind
+                  # plam
+                    ( \input -> unTermCont $ do
+                        inputF <- tcont $ pletFields @'["address", "value"] input
+                        pure $
+                          inputF.address #== ownAddress
+                            #&& psymbolValueOf # stCurrencySymbol # inputF.value #== 1
+                    )
+                  # pfromData txInfoF.outputs
 
-          ownOutputF <- tcont $ pletFields @'["datumHash", "value"] ownOutput
-
-          -- TODO: is this really necessary?
-          tcassert "Own output value should be correct" $ ownOutputF.value #== pdata txOutF.value
-
-          let proposalOut :: Term _ PProposalDatum
+              proposalOut :: Term _ PProposalDatum
               proposalOut = mustFindDatum' # (pfield @"datumHash" # ownOutput) # txInfoF.datums
 
           let -- Update the vote counter of the proposal, and leave other stuff as is.

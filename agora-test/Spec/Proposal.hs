@@ -15,8 +15,9 @@ import Agora.Proposal (
   Proposal (..),
   ProposalDatum (..),
   ProposalId (ProposalId),
-  ProposalRedeemer (Cosign),
-  ProposalStatus (Draft),
+  ProposalRedeemer (Cosign, Vote),
+  ProposalStatus (Draft, VotingReady),
+  ProposalVotes (ProposalVotes),
   ResultTag (ResultTag),
   cosigners,
   effects,
@@ -30,7 +31,11 @@ import Agora.Proposal.Scripts (
   proposalPolicy,
   proposalValidator,
  )
-import Agora.Stake (StakeDatum (StakeDatum), StakeRedeemer (WitnessStake))
+import Agora.Stake (
+  ProposalLock (ProposalLock),
+  StakeDatum (StakeDatum),
+  StakeRedeemer (PermitVote, WitnessStake),
+ )
 import Agora.Stake.Scripts (stakeValidator)
 import Plutarch.SafeMoney (Tagged (Tagged))
 import Plutus.V1.Ledger.Api (ScriptContext (..), ScriptPurpose (..))
@@ -89,6 +94,47 @@ tests =
               (StakeDatum (Tagged 50_000_000) signer2 [])
               WitnessStake
               (ScriptContext (Proposal.cosignProposal [signer2]) (Spending Proposal.stakeRef))
+          ]
+      , testGroup
+          "voting"
+          [ validatorSucceedsWith
+              "proposal"
+              (proposalValidator Shared.proposal)
+              ( ProposalDatum
+                  { proposalId = ProposalId 42
+                  , effects =
+                      AssocMap.fromList
+                        [ (ResultTag 0, AssocMap.empty)
+                        , (ResultTag 1, AssocMap.empty)
+                        ]
+                  , status = VotingReady
+                  , cosigners = [signer]
+                  , thresholds = Shared.defaultProposalThresholds
+                  , votes =
+                      ProposalVotes
+                        ( AssocMap.fromList
+                            [ (ResultTag 0, 42)
+                            , (ResultTag 1, 4242)
+                            ]
+                        )
+                  , timingConfig = Shared.proposalTimingConfig
+                  , startingTime = Shared.tmpProposalStartingTime
+                  }
+              )
+              (Vote (ResultTag 0))
+              (ScriptContext (Proposal.voteOnProposal (ResultTag 0) 27) (Spending Proposal.proposalRef))
+          , validatorSucceedsWith
+              "stake"
+              (stakeValidator Shared.stake)
+              ( StakeDatum
+                  (Tagged 27)
+                  signer
+                  [ ProposalLock (ResultTag 0) (ProposalId 0)
+                  , ProposalLock (ResultTag 2) (ProposalId 1)
+                  ]
+              )
+              (PermitVote $ ProposalLock (ResultTag 0) (ProposalId 42))
+              (ScriptContext (Proposal.voteOnProposal (ResultTag 0) 27) (Spending Proposal.stakeRef))
           ]
       ]
   ]

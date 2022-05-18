@@ -11,6 +11,7 @@ module Sample.Proposal (
   cosignProposal,
   proposalRef,
   stakeRef,
+  voteOnProposal,
 ) where
 
 --------------------------------------------------------------------------------
@@ -21,6 +22,7 @@ import Plutus.V1.Ledger.Api (
   Address (Address),
   Credential (ScriptCredential),
   Datum (Datum),
+  POSIXTimeRange,
   PubKeyHash,
   ScriptContext (..),
   ScriptPurpose (..),
@@ -43,14 +45,16 @@ import Agora.Proposal (
   ProposalDatum (..),
   ProposalId (..),
   ProposalStatus (..),
+  ProposalVotes (..),
   ResultTag (..),
   emptyVotesFor,
  )
-import Agora.Stake (Stake (..), StakeDatum (StakeDatum))
+import Agora.Proposal.Time (ProposalTimingConfig (..))
+import Agora.Stake (ProposalLock (ProposalLock), Stake (..), StakeDatum (..))
 import Plutarch.SafeMoney (Tagged (Tagged), untag)
 import PlutusTx.AssocMap qualified as AssocMap
 import Sample.Shared
-import Test.Util (datumPair, toDatumHash)
+import Test.Util (closedBoundedInterval, datumPair, toDatumHash, updateMap)
 
 --------------------------------------------------------------------------------
 
@@ -176,6 +180,11 @@ cosignProposal newSigners =
       stakeDatum = StakeDatum (Tagged 50_000_000) signer2 []
       proposalAfter :: ProposalDatum
       proposalAfter = proposalBefore {cosigners = newSigners <> proposalBefore.cosigners}
+      validTimeRange :: POSIXTimeRange
+      validTimeRange =
+        closedBoundedInterval
+          10
+          (proposalTimingConfig.draftTime - 10)
    in TxInfo
         { txInfoInputs =
             [ TxInInfo
@@ -227,7 +236,7 @@ cosignProposal newSigners =
         , txInfoMint = st
         , txInfoDCert = []
         , txInfoWdrl = []
-        , txInfoValidRange = Interval.always
+        , txInfoValidRange = validTimeRange
         , txInfoSignatories = newSigners
         , txInfoData =
             [ datumPair . Datum $ toBuiltinData proposalBefore
@@ -235,4 +244,146 @@ cosignProposal newSigners =
             , datumPair . Datum $ toBuiltinData stakeDatum
             ]
         , txInfoId = "0b2086cbf8b6900f8cb65e012de4516cb66b5cb08a9aaba12a8b88be"
+        }
+
+{- | A valid transaction of voting on a propsal.
+
+  -- TODO: docs
+-}
+voteOnProposal :: ResultTag -> Integer -> TxInfo
+voteOnProposal voteFor voteCount =
+  let pst = Value.singleton proposalPolicySymbol "" 1
+      sst = Value.assetClassValue stakeAssetClass 1
+
+      ---
+
+      stakeOwner = signer
+
+      ---
+
+      effects =
+        AssocMap.fromList
+          [ (ResultTag 0, AssocMap.empty)
+          , (ResultTag 1, AssocMap.empty)
+          ]
+
+      ---
+
+      initialVotes :: AssocMap.Map ResultTag Integer
+      initialVotes =
+        AssocMap.fromList
+          [ (ResultTag 0, 42)
+          , (ResultTag 1, 4242)
+          ]
+
+      ---
+
+      proposalInputDatum' :: ProposalDatum
+      proposalInputDatum' =
+        ProposalDatum
+          { proposalId = ProposalId 42
+          , effects = effects
+          , status = VotingReady
+          , cosigners = [stakeOwner]
+          , thresholds = defaultProposalThresholds
+          , votes = ProposalVotes initialVotes
+          , timingConfig = proposalTimingConfig
+          , startingTime = tmpProposalStartingTime
+          }
+      proposalInputDatum :: Datum
+      proposalInputDatum = Datum $ toBuiltinData proposalInputDatum'
+      proposalInput :: TxOut
+      proposalInput =
+        TxOut
+          { txOutAddress = proposalValidatorAddress
+          , txOutValue = pst
+          , txOutDatumHash = Just $ toDatumHash proposalInputDatum
+          }
+
+      ---
+
+      existingLocks :: [ProposalLock]
+      existingLocks =
+        [ ProposalLock (ResultTag 0) (ProposalId 0)
+        , ProposalLock (ResultTag 2) (ProposalId 1)
+        ]
+
+      ---
+
+      stakeInputDatum' :: StakeDatum
+      stakeInputDatum' =
+        StakeDatum
+          { stakedAmount = Tagged voteCount
+          , owner = stakeOwner
+          , lockedBy = existingLocks
+          }
+      stakeInputDatum :: Datum
+      stakeInputDatum = Datum $ toBuiltinData stakeInputDatum'
+      stakeInput :: TxOut
+      stakeInput =
+        TxOut
+          { txOutAddress = stakeAddress
+          , txOutValue = sst <> Value.assetClassValue (untag stake.gtClassRef) voteCount
+          , txOutDatumHash = Just $ toDatumHash stakeInputDatum
+          }
+
+      ---
+
+      updatedVotes :: AssocMap.Map ResultTag Integer
+      updatedVotes = updateMap (Just . (+ voteCount)) voteFor initialVotes
+
+      ---
+
+      proposalOutputDatum' :: ProposalDatum
+      proposalOutputDatum' =
+        proposalInputDatum'
+          { votes = ProposalVotes updatedVotes
+          }
+      proposalOutputDatum :: Datum
+      proposalOutputDatum = Datum $ toBuiltinData proposalOutputDatum'
+      proposalOutput :: TxOut
+      proposalOutput =
+        proposalInput
+          { txOutDatumHash = Just $ toDatumHash proposalOutputDatum
+          }
+
+      ---
+
+      -- Off-chain code should do exactly like this: prepend new lock to the list.
+      updatedLocks :: [ProposalLock]
+      updatedLocks = ProposalLock voteFor proposalInputDatum'.proposalId : existingLocks
+
+      ---
+
+      stakeOutputDatum' :: StakeDatum
+      stakeOutputDatum' =
+        stakeInputDatum'
+          { lockedBy = updatedLocks
+          }
+      stakeOutputDatum :: Datum
+      stakeOutputDatum = Datum $ toBuiltinData stakeOutputDatum'
+      stakeOutput :: TxOut
+      stakeOutput =
+        stakeInput
+          { txOutDatumHash = Just $ toDatumHash stakeOutputDatum
+          }
+
+      ---
+
+      validTimeRange =
+        closedBoundedInterval (proposalTimingConfig.draftTime + 1) (proposalTimingConfig.votingTime - 1)
+   in TxInfo
+        { txInfoInputs =
+            [ TxInInfo proposalRef proposalInput
+            , TxInInfo stakeRef stakeInput
+            ]
+        , txInfoOutputs = [proposalOutput, stakeOutput]
+        , txInfoFee = Value.singleton "" "" 2
+        , txInfoMint = mempty
+        , txInfoDCert = []
+        , txInfoWdrl = []
+        , txInfoValidRange = validTimeRange
+        , txInfoSignatories = [stakeOwner]
+        , txInfoData = datumPair <$> [proposalInputDatum, proposalOutputDatum, stakeInputDatum, stakeOutputDatum]
+        , txInfoId = "827598fb2d69a896bbd9e645bb14c307df907f422b39eecbe4d6329bc30b428c"
         }

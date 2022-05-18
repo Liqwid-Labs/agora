@@ -736,7 +736,7 @@ governorValidator gov =
     tmpTimingConfig :: ProposalTimingConfig
     tmpTimingConfig =
       ProposalTimingConfig
-        { draftTime = 0
+        { draftTime = 50
         , votingTime = 1000
         , lockingTime = 2000
         , executingTime = 3000

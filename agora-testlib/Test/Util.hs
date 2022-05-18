@@ -38,6 +38,8 @@ module Test.Util (
   toDatum,
   toDatumHash,
   datumPair,
+  closedBoundedInterval,
+  updateMap,
 ) where
 
 --------------------------------------------------------------------------------
@@ -62,9 +64,12 @@ import Plutarch.Crypto (pblake2b_256)
 import Plutarch.Evaluate (evalScript)
 import Plutarch.Lift (PUnsafeLiftDecl (PLifted))
 import Plutus.V1.Ledger.Contexts (ScriptContext)
+import Plutus.V1.Ledger.Interval as PlutusTx
 import Plutus.V1.Ledger.Scripts (Datum (Datum), DatumHash (DatumHash), Script)
+import PlutusTx.AssocMap qualified as AssocMap
 import PlutusTx.Builtins qualified as PlutusTx
 import PlutusTx.IsData qualified as PlutusTx
+import PlutusTx.Ord qualified as PlutusTx
 
 --------------------------------------------------------------------------------
 
@@ -231,3 +236,20 @@ toDatumHash datum =
       plift $
         pblake2b_256
           # pconstant (ByteString.Lazy.toStrict $ serialise $ PlutusTx.toData datum)
+
+--------------------------------------------------------------------------------
+
+-- | Create a closed bounded `Interval`.
+closedBoundedInterval :: PlutusTx.Ord a => a -> a -> PlutusTx.Interval a
+closedBoundedInterval from to = PlutusTx.intersection (PlutusTx.from from) (PlutusTx.to to)
+
+--------------------------------------------------------------------------------
+
+updateMap :: Eq k => (v -> Maybe v) -> k -> AssocMap.Map k v -> AssocMap.Map k v
+updateMap f k =
+  AssocMap.mapMaybeWithKey
+    ( \k' v ->
+        if k' == k
+          then f v
+          else Just v
+    )
