@@ -17,6 +17,7 @@ import Agora.Proposal (
   Proposal (governorSTAssetClass, stakeSTAssetClass),
   ProposalStatus (VotingReady),
  )
+import Agora.Proposal.Time (currentProposalTime, isVotingPeriod)
 import Agora.Record (mkRecordConstr, (.&), (.=))
 import Agora.Stake (PProposalLock (..), PStakeDatum (..), findStakeOwnedBy)
 import Agora.Utils (
@@ -131,7 +132,17 @@ proposalValidator proposal =
     ctx <- tcont $ pletFields @'["txInfo", "purpose"] ctx'
     txInfo <- tclet $ pfromData ctx.txInfo
     PTxInfo txInfo' <- tcmatch txInfo
-    txInfoF <- tcont $ pletFields @'["inputs", "outputs", "mint", "datums", "signatories"] txInfo'
+    txInfoF <-
+      tcont $
+        pletFields
+          @'[ "inputs"
+            , "outputs"
+            , "mint"
+            , "datums"
+            , "signatories"
+            , "validRange"
+            ]
+          txInfo'
     PSpending ((pfield @"_0" #) -> txOutRef) <- tcmatch $ pfromData ctx.purpose
 
     PJust txOut <- tcmatch $ findTxOutByTxOutRef # txOutRef # txInfoF.inputs
@@ -173,12 +184,16 @@ proposalValidator proposal =
 
     tcassert "ST at inputs must be 1" (spentST #== 1)
 
+    currentTime <- tclet $ currentProposalTime # txInfoF.validRange
+
     pure $
       pmatch proposalRedeemer $ \case
         PVote r -> unTermCont $ do
-          -- TODO: do we have to check the timing here?
           tcassert "Input proposal must be in VotingReady state" $
             proposalF.status #== pconstant VotingReady
+
+          tcassert "Proposal time should be wthin the voting period" $
+            isVotingPeriod # proposalF.timingConfig # proposalF.startingTime # currentTime
 
           -- Ensure the transaction is voting to a valid 'ResultTag'(outcome).
           PProposalVotes voteMap <- tcmatch proposalF.votes
