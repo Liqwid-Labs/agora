@@ -122,7 +122,15 @@ tests =
                   }
               )
               (Vote (ResultTag 0))
-              (ScriptContext (Proposal.voteOnProposal (ResultTag 0) 27) (Spending Proposal.proposalRef))
+              ( ScriptContext
+                  ( Proposal.voteOnProposal
+                      Proposal.VotingParameters
+                        { Proposal.voteFor = ResultTag 0
+                        , Proposal.voteCount = 27
+                        }
+                  )
+                  (Spending Proposal.proposalRef)
+              )
           , validatorSucceedsWith
               "stake"
               (stakeValidator Shared.stake)
@@ -134,7 +142,15 @@ tests =
                   ]
               )
               (PermitVote $ ProposalLock (ResultTag 0) (ProposalId 42))
-              (ScriptContext (Proposal.voteOnProposal (ResultTag 0) 27) (Spending Proposal.stakeRef))
+              ( ScriptContext
+                  ( Proposal.voteOnProposal
+                      Proposal.VotingParameters
+                        { Proposal.voteFor = ResultTag 0
+                        , Proposal.voteCount = 27
+                        }
+                  )
+                  (Spending Proposal.stakeRef)
+              )
           ]
       ]
   ]

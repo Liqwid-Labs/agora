@@ -12,6 +12,7 @@ module Sample.Proposal (
   proposalRef,
   stakeRef,
   voteOnProposal,
+  VotingParameters (..),
 ) where
 
 --------------------------------------------------------------------------------
@@ -246,12 +247,19 @@ cosignProposal newSigners =
         , txInfoId = "0b2086cbf8b6900f8cb65e012de4516cb66b5cb08a9aaba12a8b88be"
         }
 
-{- | A valid transaction of voting on a propsal.
+--------------------------------------------------------------------------------
 
-  -- TODO: docs
--}
-voteOnProposal :: ResultTag -> Integer -> TxInfo
-voteOnProposal voteFor voteCount =
+-- | Parameters for creating a voting transaction.
+data VotingParameters = VotingParameters
+  { voteFor :: ResultTag
+  -- ^ The outcome the transaction is voting for.
+  , voteCount :: Integer
+  -- ^ The count of votes.
+  }
+
+-- | Create a valid transaction that votes on a propsal, given the parameters.
+voteOnProposal :: VotingParameters -> TxInfo
+voteOnProposal params =
   let pst = Value.singleton proposalPolicySymbol "" 1
       sst = Value.assetClassValue stakeAssetClass 1
 
@@ -313,7 +321,7 @@ voteOnProposal voteFor voteCount =
       stakeInputDatum' :: StakeDatum
       stakeInputDatum' =
         StakeDatum
-          { stakedAmount = Tagged voteCount
+          { stakedAmount = Tagged params.voteCount
           , owner = stakeOwner
           , lockedBy = existingLocks
           }
@@ -323,14 +331,14 @@ voteOnProposal voteFor voteCount =
       stakeInput =
         TxOut
           { txOutAddress = stakeAddress
-          , txOutValue = sst <> Value.assetClassValue (untag stake.gtClassRef) voteCount
+          , txOutValue = sst <> Value.assetClassValue (untag stake.gtClassRef) params.voteCount
           , txOutDatumHash = Just $ toDatumHash stakeInputDatum
           }
 
       ---
 
       updatedVotes :: AssocMap.Map ResultTag Integer
-      updatedVotes = updateMap (Just . (+ voteCount)) voteFor initialVotes
+      updatedVotes = updateMap (Just . (+ params.voteCount)) params.voteFor initialVotes
 
       ---
 
@@ -351,7 +359,7 @@ voteOnProposal voteFor voteCount =
 
       -- Off-chain code should do exactly like this: prepend new lock to the list.
       updatedLocks :: [ProposalLock]
-      updatedLocks = ProposalLock voteFor proposalInputDatum'.proposalId : existingLocks
+      updatedLocks = ProposalLock params.voteFor proposalInputDatum'.proposalId : existingLocks
 
       ---
 
