@@ -620,6 +620,7 @@ scriptHashFromAddress = phoistAcyclic $
       PScriptCredential ((pfield @"_0" #) -> h) -> pcon $ PJust h
       _ -> pcon PNothing
 
+-- | Return true if the given address is a script address.
 isScriptAddress :: Term s (PAddress :--> PBool)
 isScriptAddress = phoistAcyclic $
   plam $ \addr ->

@@ -138,16 +138,17 @@ instance PTryFrom PData (PAsData PMutateGovernorDatum) where
 -}
 mutateGovernorValidator :: Governor -> ClosedTerm PValidator
 mutateGovernorValidator gov = makeEffect (authorityTokenSymbolFromGovernor gov) $
-  \_gatCs (datum' :: Term _ PMutateGovernorDatum) _ txInfo' -> unTermCont $ do
-    datum <- tcont $ pletFields @'["newDatum", "governorRef"] datum'
-    txInfo <- tcont $ pletFields @'["mint", "inputs", "outputs", "datums"] txInfo'
+  \_gatCs (datum :: Term _ PMutateGovernorDatum) _ txInfo -> unTermCont $ do
+    datumF <- tcont $ pletFields @'["newDatum", "governorRef"] datum
+    txInfoF <- tcont $ pletFields @'["mint", "inputs", "outputs", "datums"] txInfo
 
     let mint :: Term _ (PBuiltinList _)
-        mint = pto $ pto $ pto $ pfromData txInfo.mint
+        mint = pto $ pto $ pto $ pfromData txInfoF.mint
 
     tcassert "Nothing should be minted/burnt other than GAT" $
       plength # mint #== 1
 
+    -- Only two script inputs are alloed: one from the effect, one from the governor.
     tcassert "Only self and governor script inputs are allowed" $
       pfoldr
         # phoistAcyclic
@@ -159,9 +160,10 @@ mutateGovernorValidator gov = makeEffect (authorityTokenSymbolFromGovernor gov) 
                     count
           )
         # (0 :: Term _ PInteger)
-        # pfromData txInfo.inputs
+        # pfromData txInfoF.inputs
         #== 2
 
+    -- Find the governor input by looking for GST.
     let inputWithGST =
           mustBePJust # "Governor input not found" #$ pfind
             # phoistAcyclic
@@ -169,18 +171,20 @@ mutateGovernorValidator gov = makeEffect (authorityTokenSymbolFromGovernor gov) 
                   let value = pfield @"value" #$ pfield @"resolved" # inInfo
                    in gstValueOf # value #== 1
               )
-            # pfromData txInfo.inputs
+            # pfromData txInfoF.inputs
 
     govInInfo <- tcont $ pletFields @'["outRef", "resolved"] $ inputWithGST
 
+    -- The effect can only modify the governor UTXO referenced in the datum.
     tcassert "Can only modify the pinned governor" $
-      govInInfo.outRef #== datum.governorRef
+      govInInfo.outRef #== datumF.governorRef
 
-    tcassert "Only governor ouput is allowed" $
-      plength # pfromData txInfo.outputs #== 1
+    -- The transaction can only have one output, which should be sent to the governor.
+    tcassert "Only governor output is allowed" $
+      plength # pfromData txInfoF.outputs #== 1
 
     let govAddress = pfield @"address" #$ govInInfo.resolved
-        govOutput' = pfromData $ phead # pfromData txInfo.outputs
+        govOutput' = pfromData $ phead # pfromData txInfoF.outputs
 
     govOutput <- tcont $ pletFields @'["address", "value", "datumHash"] govOutput'
 
@@ -195,13 +199,15 @@ mutateGovernorValidator gov = makeEffect (authorityTokenSymbolFromGovernor gov) 
         governorOutputDatum =
           pfromData @PGovernorDatum $
             mustBePJust # "Governor output datum not found"
-              #$ ptryFindDatum # governorOutputDatumHash # txInfo.datums
+              #$ ptryFindDatum # governorOutputDatumHash # txInfoF.datums
 
-    tcassert "Unexpected governor datum" $ datum.newDatum #== governorOutputDatum
+    -- Ensure the output governor datum is what we want.
+    tcassert "Unexpected governor datum" $ datumF.newDatum #== governorOutputDatum
     tcassert "New governor datum should be valid" $ governorDatumValid # governorOutputDatum
 
     return $ popaque $ pconstant ()
   where
+    -- Get the amount of GST in the a given value.
     gstValueOf :: Term s (PValue :--> PInteger)
     gstValueOf = phoistAcyclic $ plam $ \v -> pvalueOf # v # pconstant cs # pconstant tn
       where
