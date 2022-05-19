@@ -9,17 +9,33 @@ module Spec.Utils (tests) where
 
 --------------------------------------------------------------------------------
 
-import Agora.Utils (phalve, pisUniq, pmergeBy, pmsort, pnubSort)
+import Agora.Utils (phalve, pisUniq, pmergeBy, pmsort, pnubSort, pupdate)
 
 --------------------------------------------------------------------------------
 
 import Data.List (nub, sort)
-import Data.Set as S
+import Data.Map qualified as M
+import Data.Set qualified as S
 
 --------------------------------------------------------------------------------
 
+import Control.Monad.Cont (cont, runCont)
 import Test.Tasty (TestTree)
-import Test.Tasty.QuickCheck (testProperty)
+import Test.Tasty.QuickCheck (
+  Arbitrary (arbitrary),
+  Property,
+  Testable (property),
+  elements,
+  forAll,
+  suchThat,
+  testProperty,
+  (.&&.),
+ )
+import Test.Util (updateMap)
+
+--------------------------------------------------------------------------------
+
+import PlutusTx.AssocMap qualified as AssocMap
 
 --------------------------------------------------------------------------------
 
@@ -30,6 +46,7 @@ tests =
   , testProperty "'phalve' splits a list in half as expected" prop_halveCorrect
   , testProperty "'pnubSort' sorts a list and remove duplicate elements" prop_nubSortProperly
   , testProperty "'pisUniq' can tell whether all elements in a list are unique" prop_uniqueList
+  , testProperty "'pupdate' updates assoc maps as 'updateMap' does" prop_updateAssocMapParity
   ]
 
 --------------------------------------------------------------------------------
@@ -142,3 +159,68 @@ prop_uniqueList l = isUnique == expected
     --
 
     isUnique = plift $ pisUniq # pconstant l
+
+{- | Test the parity between 'updateMap' and 'pupdate',
+     also ensure they both work correctly.
+-}
+prop_updateAssocMapParity :: Property
+prop_updateAssocMapParity =
+  runCont
+    ( do
+        -- Generate a bunch unique keys.
+        keys <-
+          cont $
+            forAll $
+              arbitrary @(S.Set Integer) `suchThat` (not . S.null)
+
+        -- Generate key-value pairs.
+        kvPairs <- cont $ forAll $ mapM (\k -> (k,) <$> (arbitrary @Integer)) $ S.toList keys
+
+        let initialMap = AssocMap.fromList kvPairs
+
+            pinitialMap :: Term _ _
+            pinitialMap = phoistAcyclic $ pconstant initialMap
+
+            referenceMap = M.fromList kvPairs
+
+        let pupdatedValue :: Maybe Integer -> Term _ (PMaybe PInteger)
+            pupdatedValue updatedValue = phoistAcyclic $ case updatedValue of
+              Nothing -> pcon PNothing
+              Just v -> pcon $ PJust $ pconstant v
+
+            -- Given the key and the updated value, test the parity
+            parity key updatedValue =
+              let native = updateMap (const updatedValue) key initialMap
+
+                  plutarch :: AssocMap.Map Integer Integer
+                  plutarch =
+                    plift $
+                      pupdate
+                        # plam (\_ -> pupdatedValue updatedValue)
+                        # pconstant key
+                        # pinitialMap
+
+                  expected =
+                    AssocMap.fromList $
+                      M.toList $
+                        M.update (const updatedValue) key referenceMap
+               in expected == native
+                    && expected == plutarch
+
+        -- Select a key, generate a maybe value.
+        -- The value at the key should be set to the new value or removed.
+        (targetKey, _) <- cont $ forAll $ elements kvPairs
+        updatedValue <- cont $ forAll $ arbitrary @(Maybe Integer)
+
+        -- Now what if the key doesn't exist in our map?
+        nonexistentKey <-
+          cont $
+            forAll $
+              arbitrary @Integer `suchThat` (\k -> not $ S.member k keys)
+
+        pure
+          ( property (parity targetKey updatedValue)
+              .&&. property (parity nonexistentKey updatedValue)
+          )
+    )
+    id
