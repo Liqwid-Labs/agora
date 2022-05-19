@@ -7,6 +7,7 @@ Plutus Scripts for Stakes.
 -}
 module Agora.Stake.Scripts (stakePolicy, stakeValidator) where
 
+import Agora.Record (mkRecordConstr, (.&), (.=))
 import Agora.SafeMoney (GTTag)
 import Agora.Stake
 import Agora.Utils (
@@ -222,7 +223,7 @@ stakeValidator stake =
     -- TODO: Use PTryFrom
     let stakeDatum' :: Term _ PStakeDatum
         stakeDatum' = pfromData $ punsafeCoerce datum
-    stakeDatum <- tcont $ pletFields @'["owner", "stakedAmount"] stakeDatum'
+    stakeDatum <- tcont $ pletFields @'["owner", "stakedAmount", "lockedBy"] stakeDatum'
 
     PSpending txOutRef <- tcmatch $ pfromData ctx.purpose
 
@@ -291,7 +292,7 @@ stakeValidator stake =
 
           pure $ popaque (pconstant ())
         --------------------------------------------------------------------------
-        PPermitVote _ -> unTermCont $ do
+        PPermitVote l -> unTermCont $ do
           tcassert
             "Owner signs this transaction"
             ownerSignsTransaction
@@ -301,18 +302,40 @@ stakeValidator stake =
           tcassert "Proposal ST spent" $
             spentProposalST #== 1
 
+          -- Update the stake datum, but only the 'lockedBy' field.
+
+          let -- We actually don't know whether the given lock is valid or not.
+              -- This is checked in the proposal validator.
+              newLock = pfield @"lock" # l
+              -- Prepend the new lock to the existing locks.
+              expectedLocks = pcons # newLock # stakeDatum.lockedBy
+
+          expectedDatum <-
+            tclet $
+              pdata $
+                mkRecordConstr
+                  PStakeDatum
+                  ( #stakedAmount .= stakeDatum.stakedAmount
+                      .& #owner .= stakeDatum.owner
+                      .& #lockedBy .= pdata expectedLocks
+                  )
+
           tcassert "A UTXO must exist with the correct output" $
+            -- FIXME: no need to pass the whole txInfo to 'anyOutput'.
             anyOutput @PStakeDatum # txInfo
               #$ plam
               $ \value address newStakeDatum' ->
                 let isScriptAddress = pdata address #== ownAddress
-                    _correctOutputDatum = pdata newStakeDatum' #== pdata stakeDatum'
+                    correctOutputDatum = pdata newStakeDatum' #== expectedDatum
+                    -- TODO: Is this correct? I think We only need to ensure
+                    --       correct amount of GT/SST in the continuing output.
                     valueCorrect = pdata continuingValue #== pdata value
                  in pif
                       isScriptAddress
                       ( foldl1
                           (#&&)
                           [ ptraceIfFalse "valueCorrect" valueCorrect
+                          , ptraceIfFalse "datumCorrect" correctOutputDatum
                           ]
                       )
                       (pcon PFalse)

@@ -271,8 +271,8 @@ proposalValidator proposal =
           tcassert "Invalid output proposal" $ proposalOut #== expectedProposalOut
 
           -- We validate the output stake datum here as well: We need the vote option
-          --   to create a proper 'ProposalLock'. However the vote option is encoded
-          --   in the proposal redeemer, which is invisible for the stake validator.
+          -- to create a valid 'ProposalLock', however the vote option is encoded
+          -- in the proposal redeemer, which is invisible for the stake validator.
 
           let stakeOutput =
                 mustBePJust # "Stake output not found"
@@ -292,6 +292,7 @@ proposalValidator proposal =
                   ( #vote .= pdata voteFor
                       .& #proposalTag .= proposalF.proposalId
                   )
+              -- Prepend the new lock to existing locks
               expectedProposalLocks =
                 pcons
                   # pdata newProposalLock
