@@ -198,8 +198,11 @@ benchmark agora-bench
   import:         lang, deps
   hs-source-dirs: agora-bench
   main-is:        Main.hs
+  other-modules:  Bench
   type:           exitcode-stdio-1.0
-  build-depends:  agora
+  build-depends:
+    , agora
+    , agora-sample
 
 executable agora-purescript-bridge
   import:         lang, deps, exe-opts
