@@ -245,6 +245,10 @@ closedBoundedInterval from to = PlutusTx.intersection (PlutusTx.from from) (Plut
 
 --------------------------------------------------------------------------------
 
+{- | / O(n) /. The expression @'updateMap' f k v@ will update the value @x@ at key @k@.
+    If @f x@ is Nothing, the key-value pair will be deleted from the map, otherwise the 
+     value will be updated.
+-}
 updateMap :: Eq k => (v -> Maybe v) -> k -> AssocMap.Map k v -> AssocMap.Map k v
 updateMap f k =
   AssocMap.mapMaybeWithKey

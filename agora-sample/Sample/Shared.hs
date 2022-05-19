@@ -199,7 +199,10 @@ proposalTimingConfig =
     , executingTime = 3000
     }
 
--- FIXME: should be removed.
+{- | Hard coded starting time of every propoal.
+    This will be calculated by the governor in the future.
+    FIXME: Remove this.
+-}
 tmpProposalStartingTime :: ProposalStartingTime
 tmpProposalStartingTime = ProposalStartingTime 0
 
