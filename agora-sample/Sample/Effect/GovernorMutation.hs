@@ -1,5 +1,5 @@
 module Sample.Effect.GovernorMutation (
-  mkEffectTransaction,
+  mkEffectTxInfo,
   effectValidator,
   effectValidatorAddress,
   effectValidatorHash,
@@ -86,8 +86,8 @@ mkEffectDatum newGovDatum =
 
     Note that the transaction is valid only if the given new datum is valid.
 -}
-mkEffectTransaction :: GovernorDatum -> TxInfo
-mkEffectTransaction newGovDatum =
+mkEffectTxInfo :: GovernorDatum -> TxInfo
+mkEffectTxInfo newGovDatum =
   let gst = Value.assetClassValue govAssetClass 1
       at = Value.assetClassValue atAssetClass 1
 

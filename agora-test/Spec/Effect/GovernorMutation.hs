@@ -10,7 +10,7 @@ import Sample.Effect.GovernorMutation (
   govRef,
   invalidNewGovernorDatum,
   mkEffectDatum,
-  mkEffectTransaction,
+  mkEffectTxInfo,
   validNewGovernorDatum,
  )
 import Sample.Shared qualified as Shared
@@ -24,7 +24,7 @@ tests =
       [ testGroup
           "valid new governor datum"
           [ validatorSucceedsWith
-              "governor"
+              "governor validator should pass"
               (governorValidator Shared.governor)
               ( GovernorDatum
                   { proposalThresholds = Shared.defaultProposalThresholds
@@ -33,19 +33,19 @@ tests =
               )
               MutateGovernor
               ( ScriptContext
-                  (mkEffectTransaction validNewGovernorDatum)
+                  (mkEffectTxInfo validNewGovernorDatum)
                   (Spending govRef)
               )
           , effectSucceedsWith
-              "effect"
+              "effect validator should pass"
               (mutateGovernorValidator Shared.governor)
               (mkEffectDatum validNewGovernorDatum)
-              (ScriptContext (mkEffectTransaction validNewGovernorDatum) (Spending effectRef))
+              (ScriptContext (mkEffectTxInfo validNewGovernorDatum) (Spending effectRef))
           ]
       , testGroup
           "invalid new governor datum"
           [ validatorFailsWith
-              "governor"
+              "governor validator should fail"
               (governorValidator Shared.governor)
               ( GovernorDatum
                   { proposalThresholds = Shared.defaultProposalThresholds
@@ -54,14 +54,14 @@ tests =
               )
               MutateGovernor
               ( ScriptContext
-                  (mkEffectTransaction invalidNewGovernorDatum)
+                  (mkEffectTxInfo invalidNewGovernorDatum)
                   (Spending govRef)
               )
           , effectFailsWith
-              "effect"
+              "effect validator should fail"
               (mutateGovernorValidator Shared.governor)
               (mkEffectDatum validNewGovernorDatum)
-              (ScriptContext (mkEffectTransaction invalidNewGovernorDatum) (Spending effectRef))
+              (ScriptContext (mkEffectTxInfo invalidNewGovernorDatum) (Spending effectRef))
           ]
       ]
   ]
