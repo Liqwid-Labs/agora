@@ -331,7 +331,12 @@ voteOnProposal params =
       stakeInput =
         TxOut
           { txOutAddress = stakeAddress
-          , txOutValue = sst <> Value.assetClassValue (untag stake.gtClassRef) params.voteCount
+          , txOutValue =
+              mconcat
+                [ sst
+                , Value.assetClassValue (untag stake.gtClassRef) params.voteCount
+                , minAda
+                ]
           , txOutDatumHash = Just $ toDatumHash stakeInputDatum
           }
 
@@ -374,10 +379,6 @@ voteOnProposal params =
       stakeOutput =
         stakeInput
           { txOutDatumHash = Just $ toDatumHash stakeOutputDatum
-          -- We won't include the minimum Ada in the output value
-          -- due to how we check the output value in the stake validator.
-          -- The implementation is correct though, it should work in a
-          -- real on-chain environment.
           }
 
       ---
