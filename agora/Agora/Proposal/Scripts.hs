@@ -186,6 +186,28 @@ proposalValidator proposal =
 
     currentTime <- tclet $ currentProposalTime # txInfoF.validRange
 
+    -- Filter out own output with own address and PST.
+    -- Delay the evaluation cause in some cases there won't be any continuing output.
+    ownOutputD <-
+      tclet $
+        pdelay $
+          mustBePJust # "Own output should be present" #$ pfind
+            # plam
+              ( \input -> unTermCont $ do
+                  inputF <- tcont $ pletFields @'["address", "value"] input
+                  pure $
+                    inputF.address #== ownAddress
+                      #&& psymbolValueOf # stCurrencySymbol # inputF.value #== 1
+              )
+            # pfromData txInfoF.outputs
+
+    proposalOutD <-
+      tclet $
+        pdelay $
+          mustFindDatum' @PProposalDatum
+            # (pfield @"datumHash" # pforce ownOutputD)
+            # txInfoF.datums
+
     pure $
       pmatch proposalRedeemer $ \case
         PVote r -> unTermCont $ do
@@ -228,22 +250,6 @@ proposalValidator proposal =
                 )
               # pfromData stakeInF.lockedBy
 
-          -- TODO: maybe we can move this outside of the pmatch block.
-          -- Filter out own output with own address and PST.
-          let ownOutput =
-                mustBePJust # "Own output should be present" #$ pfind
-                  # plam
-                    ( \input -> unTermCont $ do
-                        inputF <- tcont $ pletFields @'["address", "value"] input
-                        pure $
-                          inputF.address #== ownAddress
-                            #&& psymbolValueOf # stCurrencySymbol # inputF.value #== 1
-                    )
-                  # pfromData txInfoF.outputs
-
-              proposalOut :: Term _ PProposalDatum
-              proposalOut = mustFindDatum' # (pfield @"datumHash" # ownOutput) # txInfoF.datums
-
           let -- Update the vote counter of the proposal, and leave other stuff as is.
               expectedNewVotes = pmatch (pfromData proposalF.votes) $ \(PProposalVotes m) ->
                 pcon $
@@ -268,7 +274,7 @@ proposalValidator proposal =
                       .& #startingTime .= proposalF.startingTime
                   )
 
-          tcassert "Output proposal should be valid" $ proposalOut #== expectedProposalOut
+          tcassert "Output proposal should be valid" $ pforce proposalOutD #== expectedProposalOut
 
           -- We validate the output stake datum here as well: We need the vote option
           -- to create a valid 'ProposalLock', however the vote option is encoded
