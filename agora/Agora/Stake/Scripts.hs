@@ -327,8 +327,6 @@ stakeValidator stake =
               $ \value address newStakeDatum' ->
                 let isScriptAddress = pdata address #== ownAddress
                     correctOutputDatum = pdata newStakeDatum' #== expectedDatum
-                    -- TODO: Is this correct? I think We only need to ensure
-                    --       correct amount of GT/SST in the continuing output.
                     valueCorrect = pdata continuingValue #== pdata value
                  in pif
                       isScriptAddress

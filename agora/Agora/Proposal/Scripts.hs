@@ -199,14 +199,14 @@ proposalValidator proposal =
           PProposalVotes voteMap <- tcmatch proposalF.votes
           voteFor <- tclet $ pfromData $ pfield @"resultTag" # r
 
-          tcassert "Invalid vote option" $
+          tcassert "Vote option should be valid" $
             pisJust #$ plookup # voteFor # voteMap
 
           -- Find the input stake, the amount of new votes should be the 'stakedAmount'.
           let stakeInput =
                 pfield @"resolved"
                   #$ mustBePJust
-                  # "Stake input not found"
+                  # "Stake input should be present"
                     #$ pfind
                   # plam
                     ( \(pfromData . (pfield @"value" #) . (pfield @"resolved" #) -> value) ->
@@ -220,7 +220,7 @@ proposalValidator proposal =
           stakeInF <- tcont $ pletFields @'["stakedAmount", "lockedBy", "owner"] stakeIn
 
           -- Ensure that no lock with the current proposal id has been put on the stake.
-          tcassert "Cannot vote on the a proposal using the same stake twice" $
+          tcassert "Same stake shouldn't vote on the same propsoal twice" $
             pnot #$ pany
               # plam
                 ( \((pfield @"proposalTag" #) . pfromData -> pid) ->
@@ -231,7 +231,7 @@ proposalValidator proposal =
           -- TODO: maybe we can move this outside of the pmatch block.
           -- Filter out own output with own address and PST.
           let ownOutput =
-                mustBePJust # "Own output not found" #$ pfind
+                mustBePJust # "Own output should be present" #$ pfind
                   # plam
                     ( \input -> unTermCont $ do
                         inputF <- tcont $ pletFields @'["address", "value"] input
@@ -268,14 +268,14 @@ proposalValidator proposal =
                       .& #startingTime .= proposalF.startingTime
                   )
 
-          tcassert "Invalid output proposal" $ proposalOut #== expectedProposalOut
+          tcassert "Output proposal should be valid" $ proposalOut #== expectedProposalOut
 
           -- We validate the output stake datum here as well: We need the vote option
           -- to create a valid 'ProposalLock', however the vote option is encoded
           -- in the proposal redeemer, which is invisible for the stake validator.
 
           let stakeOutput =
-                mustBePJust # "Stake output not found"
+                mustBePJust # "Stake output should be present"
                   #$ pfind
                   # plam
                     ( \(pfromData . (pfield @"value" #) -> value) ->
