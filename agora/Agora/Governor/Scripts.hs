@@ -126,7 +126,7 @@ import Plutarch.TryFrom (ptryFrom)
 
 --------------------------------------------------------------------------------
 
-import Agora.Proposal.Time (ProposalStartingTime (..), ProposalTimingConfig (..))
+import Agora.Proposal.Time (ProposalStartingTime (..))
 import Plutus.V1.Ledger.Api (
   CurrencySymbol (..),
   MintingPolicy,
@@ -300,7 +300,7 @@ governorValidator gov =
     let ownAddress = pfromData $ ownInputF.address
 
     (pfromData -> (oldGovernorDatum :: Term _ PGovernorDatum), _) <- tcont $ ptryFrom datum'
-    oldGovernorDatumF <- tcont $ pletFields @'["proposalThresholds", "nextProposalId"] oldGovernorDatum
+    oldGovernorDatumF <- tcont $ pletFields @'["proposalThresholds", "nextProposalId", "proposalTimings"] oldGovernorDatum
 
     -- Check that GST will be returned to the governor.
     let ownInputGSTAmount = psymbolValueOf # pgstSymbol # ownInputF.value
@@ -337,6 +337,7 @@ governorValidator gov =
                   PGovernorDatum
                   ( #proposalThresholds .= oldGovernorDatumF.proposalThresholds
                       .& #nextProposalId .= pdata expectedNextProposalId
+                      .& #proposalTimings .= oldGovernorDatumF.proposalTimings
                   )
           tcassert "Unexpected governor state datum" $
             newGovernorDatum #== expectedNewDatum
@@ -578,7 +579,7 @@ governorValidator gov =
                       .& #thresholds .= proposalInputDatumF.thresholds
                       .& #votes .= proposalInputDatumF.votes
                       -- FIXME: copy from the governor datum
-                      .& #timingConfig .= pdata (pconstant tmpTimingConfig)
+                      .& #timingConfig .= oldGovernorDatumF.proposalTimings
                       -- FIXME: calculate from 'txInfoValidRange'
                       .& #startingTime .= pdata (pconstant tmpProposalStartingTime)
                   )
@@ -731,16 +732,6 @@ governorValidator gov =
     pgstSymbol =
       let sym = governorSTSymbolFromGovernor gov
        in phoistAcyclic $ pconstant sym
-
-    -- TODO: remove this. This is temperary.
-    tmpTimingConfig :: ProposalTimingConfig
-    tmpTimingConfig =
-      ProposalTimingConfig
-        { draftTime = 50
-        , votingTime = 1000
-        , lockingTime = 2000
-        , executingTime = 3000
-        }
 
     -- TODO: remove this.
     tmpProposalStartingTime :: ProposalStartingTime

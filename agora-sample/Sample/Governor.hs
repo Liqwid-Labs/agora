@@ -67,13 +67,13 @@ import Agora.Stake (
 import Sample.Shared (
   authorityTokenSymbol,
   defaultProposalThresholds,
+  defaultProposalTimingConfig,
   govAssetClass,
   govSymbol,
   govValidatorAddress,
   gstUTXORef,
   minAda,
   proposalPolicySymbol,
-  proposalTimingConfig,
   proposalValidatorAddress,
   signer,
   signer2,
@@ -114,6 +114,7 @@ mintGST =
         GovernorDatum
           { proposalThresholds = defaultProposalThresholds
           , nextProposalId = ProposalId 0
+          , proposalTimings = defaultProposalTimingConfig
           }
       governorOutputDatum :: Datum
       governorOutputDatum = Datum $ toBuiltinData governorOutputDatum'
@@ -207,6 +208,7 @@ createProposal =
         GovernorDatum
           { proposalThresholds = defaultProposalThresholds
           , nextProposalId = thisProposalId
+          , proposalTimings = defaultProposalTimingConfig
           }
       governorInputDatum :: Datum
       governorInputDatum = Datum $ toBuiltinData governorInputDatum'
@@ -236,7 +238,7 @@ createProposal =
                 , cosigners = [signer]
                 , thresholds = defaultProposalThresholds
                 , votes = emptyVotesFor effects
-                , timingConfig = proposalTimingConfig
+                , timingConfig = defaultProposalTimingConfig
                 , startingTime = tmpProposalStartingTime
                 }
           )
@@ -378,6 +380,7 @@ mintGATs =
         GovernorDatum
           { proposalThresholds = defaultProposalThresholds
           , nextProposalId = ProposalId 5
+          , proposalTimings = defaultProposalTimingConfig
           }
       governorInputDatum :: Datum
       governorInputDatum = Datum $ toBuiltinData governorInputDatum'
@@ -412,7 +415,7 @@ mintGATs =
           , cosigners = [signer, signer2]
           , thresholds = defaultProposalThresholds
           , votes = proposalVotes
-          , timingConfig = proposalTimingConfig
+          , timingConfig = defaultProposalTimingConfig
           , startingTime = tmpProposalStartingTime
           }
       proposalInputDatum :: Datum
@@ -565,6 +568,7 @@ mutateState =
         GovernorDatum
           { proposalThresholds = defaultProposalThresholds
           , nextProposalId = ProposalId 5
+          , proposalTimings = defaultProposalTimingConfig
           }
       governorInputDatum :: Datum
       governorInputDatum = Datum $ toBuiltinData governorInputDatum'

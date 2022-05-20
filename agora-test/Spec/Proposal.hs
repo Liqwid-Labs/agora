@@ -82,7 +82,7 @@ tests =
                           [ (ResultTag 0, AssocMap.empty)
                           , (ResultTag 1, AssocMap.empty)
                           ]
-                  , timingConfig = Shared.proposalTimingConfig
+                  , timingConfig = Shared.defaultProposalTimingConfig
                   , startingTime = Shared.tmpProposalStartingTime
                   }
               )
@@ -117,7 +117,7 @@ tests =
                             , (ResultTag 1, 4242)
                             ]
                         )
-                  , timingConfig = Shared.proposalTimingConfig
+                  , timingConfig = Shared.defaultProposalTimingConfig
                   , startingTime = Shared.tmpProposalStartingTime
                   }
               )

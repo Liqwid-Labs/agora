@@ -39,7 +39,7 @@ import Plutus.V1.Ledger.Value qualified as Value
 --------------------------------------------------------------------------------
 
 import Agora.Governor (
-  GovernorDatum (GovernorDatum, nextProposalId, proposalThresholds),
+  GovernorDatum (..),
  )
 import Agora.Proposal (
   Proposal (..),
@@ -79,7 +79,7 @@ proposalCreation =
                 , cosigners = [signer]
                 , thresholds = defaultProposalThresholds
                 , votes = emptyVotesFor effects
-                , timingConfig = proposalTimingConfig
+                , timingConfig = defaultProposalTimingConfig
                 , startingTime = tmpProposalStartingTime
                 }
           )
@@ -91,6 +91,7 @@ proposalCreation =
               GovernorDatum
                 { proposalThresholds = defaultProposalThresholds
                 , nextProposalId = ProposalId 0
+                , proposalTimings = defaultProposalTimingConfig
                 }
           )
       govAfter :: Datum
@@ -100,6 +101,7 @@ proposalCreation =
               GovernorDatum
                 { proposalThresholds = defaultProposalThresholds
                 , nextProposalId = ProposalId 1
+                , proposalTimings = defaultProposalTimingConfig
                 }
           )
    in ScriptContext
@@ -174,7 +176,7 @@ cosignProposal newSigners =
           , cosigners = [signer]
           , thresholds = defaultProposalThresholds
           , votes = emptyVotesFor effects
-          , timingConfig = proposalTimingConfig
+          , timingConfig = defaultProposalTimingConfig
           , startingTime = tmpProposalStartingTime
           }
       stakeDatum :: StakeDatum
@@ -185,7 +187,7 @@ cosignProposal newSigners =
       validTimeRange =
         closedBoundedInterval
           10
-          (proposalTimingConfig.draftTime - 10)
+          (defaultProposalTimingConfig.draftTime - 10)
    in TxInfo
         { txInfoInputs =
             [ TxInInfo
@@ -295,7 +297,7 @@ voteOnProposal params =
           , cosigners = [stakeOwner]
           , thresholds = defaultProposalThresholds
           , votes = ProposalVotes initialVotes
-          , timingConfig = proposalTimingConfig
+          , timingConfig = defaultProposalTimingConfig
           , startingTime = tmpProposalStartingTime
           }
       proposalInputDatum :: Datum
@@ -384,7 +386,7 @@ voteOnProposal params =
       ---
 
       validTimeRange =
-        closedBoundedInterval (proposalTimingConfig.draftTime + 1) (proposalTimingConfig.votingTime - 1)
+        closedBoundedInterval (defaultProposalTimingConfig.draftTime + 1) (defaultProposalTimingConfig.votingTime - 1)
    in TxInfo
         { txInfoInputs =
             [ TxInInfo proposalRef proposalInput

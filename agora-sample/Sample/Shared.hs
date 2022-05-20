@@ -36,7 +36,7 @@ module Sample.Shared (
   proposalPolicySymbol,
   proposalValidatorHash,
   proposalValidatorAddress,
-  proposalTimingConfig,
+  defaultProposalTimingConfig,
   tmpProposalStartingTime,
 
   -- ** Authority
@@ -190,8 +190,8 @@ authorityToken = authorityTokenFromGovernor governor
 authorityTokenSymbol :: CurrencySymbol
 authorityTokenSymbol = authorityTokenSymbolFromGovernor governor
 
-proposalTimingConfig :: ProposalTimingConfig
-proposalTimingConfig =
+defaultProposalTimingConfig :: ProposalTimingConfig
+defaultProposalTimingConfig =
   ProposalTimingConfig
     { draftTime = 50
     , votingTime = 1000

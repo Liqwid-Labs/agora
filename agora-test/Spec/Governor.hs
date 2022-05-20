@@ -38,19 +38,19 @@ tests =
       [ validatorSucceedsWith
           "proposal creation"
           (governorValidator Shared.governor)
-          (GovernorDatum Shared.defaultProposalThresholds (ProposalId 0))
+          (GovernorDatum Shared.defaultProposalThresholds (ProposalId 0) Shared.defaultProposalTimingConfig)
           CreateProposal
           createProposal
       , validatorSucceedsWith
           "GATs minting"
           (governorValidator Shared.governor)
-          (GovernorDatum Shared.defaultProposalThresholds (ProposalId 5))
+          (GovernorDatum Shared.defaultProposalThresholds (ProposalId 5) Shared.defaultProposalTimingConfig)
           MintGATs
           mintGATs
       , validatorSucceedsWith
           "mutate governor state"
           (governorValidator Shared.governor)
-          (GovernorDatum Shared.defaultProposalThresholds (ProposalId 5))
+          (GovernorDatum Shared.defaultProposalThresholds (ProposalId 5) Shared.defaultProposalTimingConfig)
           MutateGovernor
           mutateState
       ]
