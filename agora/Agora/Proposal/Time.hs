@@ -39,7 +39,12 @@ import Plutarch.Api.V1 (
   PPOSIXTimeRange,
   PUpperBound (PUpperBound),
  )
-import Plutarch.DataRepr (PDataFields, PIsDataReprInstances (..))
+import Plutarch.DataRepr (DerivePConstantViaData (..), PDataFields, PIsDataReprInstances (..))
+import Plutarch.Lift (
+  DerivePConstantViaNewtype (..),
+  PConstantDecl,
+  PUnsafeLiftDecl (..),
+ )
 import Plutarch.Numeric (AdditiveSemigroup ((+)))
 import Plutarch.Unsafe (punsafeCoerce)
 import Plutus.V1.Ledger.Time (POSIXTime)
@@ -122,9 +127,23 @@ newtype PProposalTime (s :: S)
     (PlutusType, PIsData, PDataFields)
     via (PIsDataReprInstances PProposalTime)
 
+instance PUnsafeLiftDecl PProposalTime where
+  type PLifted PProposalTime = ProposalTime
+deriving via
+  (DerivePConstantViaData ProposalTime PProposalTime)
+  instance
+    (PConstantDecl ProposalTime)
+
 -- | Plutarch-level version of 'ProposalStartingTime'.
 newtype PProposalStartingTime (s :: S) = PProposalStartingTime (Term s PPOSIXTime)
   deriving (PlutusType, PIsData, PEq, POrd) via (DerivePNewtype PProposalStartingTime PPOSIXTime)
+
+instance PUnsafeLiftDecl PProposalStartingTime where
+  type PLifted PProposalStartingTime = ProposalStartingTime
+deriving via
+  (DerivePConstantViaNewtype ProposalStartingTime PProposalStartingTime PPOSIXTime)
+  instance
+    (PConstantDecl ProposalStartingTime)
 
 -- | Plutarch-level version of 'ProposalTimingConfig'.
 newtype PProposalTimingConfig (s :: S) = PProposalTimingConfig
@@ -145,6 +164,13 @@ newtype PProposalTimingConfig (s :: S) = PProposalTimingConfig
   deriving
     (PlutusType, PIsData, PDataFields)
     via (PIsDataReprInstances PProposalTimingConfig)
+
+instance PUnsafeLiftDecl PProposalTimingConfig where
+  type PLifted PProposalTimingConfig = ProposalTimingConfig
+deriving via
+  (DerivePConstantViaData ProposalTimingConfig PProposalTimingConfig)
+  instance
+    (PConstantDecl ProposalTimingConfig)
 
 --------------------------------------------------------------------------------
 

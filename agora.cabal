@@ -114,6 +114,7 @@ common test-deps
     , agora
     , apropos
     , apropos-tx
+    , mtl
     , QuickCheck
     , quickcheck-instances
     , tasty

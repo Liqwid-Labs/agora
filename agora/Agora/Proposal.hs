@@ -44,6 +44,8 @@ import PlutusTx qualified
 import PlutusTx.AssocMap qualified as AssocMap
 
 --------------------------------------------------------------------------------
+
+import Agora.Proposal.Time (PProposalStartingTime, PProposalTimingConfig, ProposalStartingTime, ProposalTimingConfig)
 import Agora.SafeMoney (GTTag)
 import Agora.Utils (pkeysEqual, pnotNull)
 import Control.Applicative (Const)
@@ -186,6 +188,10 @@ data ProposalDatum = ProposalDatum
   -- ^ Thresholds copied over on initialization.
   , votes :: ProposalVotes
   -- ^ Vote tally on the proposal
+  , timingConfig :: ProposalTimingConfig
+  -- ^ Timing configuration copied over on initialization.
+  , startingTime :: ProposalStartingTime
+  -- ^ The time upon the creation of the proposal.
   }
   deriving stock (Eq, Show, GHC.Generic)
 
@@ -303,7 +309,7 @@ data PProposalStatus (s :: S)
   deriving anyclass (Generic)
   deriving anyclass (PIsDataRepr)
   deriving
-    (PlutusType, PIsData)
+    (PlutusType, PIsData, PEq)
     via PIsDataReprInstances PProposalStatus
 
 instance PUnsafeLiftDecl PProposalStatus where type PLifted PProposalStatus = ProposalStatus
@@ -354,6 +360,8 @@ newtype PProposalDatum (s :: S) = PProposalDatum
            , "cosigners" ':= PBuiltinList (PAsData PPubKeyHash)
            , "thresholds" ':= PProposalThresholds
            , "votes" ':= PProposalVotes
+           , "timingConfig" ':= PProposalTimingConfig
+           , "startingTime" ':= PProposalStartingTime
            ]
       )
   }
@@ -361,7 +369,7 @@ newtype PProposalDatum (s :: S) = PProposalDatum
   deriving anyclass (Generic)
   deriving anyclass (PIsDataRepr)
   deriving
-    (PlutusType, PIsData, PDataFields)
+    (PlutusType, PIsData, PDataFields, PEq)
     via (PIsDataReprInstances PProposalDatum)
 
 -- TODO: Derive this.

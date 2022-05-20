@@ -73,12 +73,14 @@ import Sample.Shared (
   gstUTXORef,
   minAda,
   proposalPolicySymbol,
+  proposalTimingConfig,
   proposalValidatorAddress,
   signer,
   signer2,
   stake,
   stakeAddress,
   stakeAssetClass,
+  tmpProposalStartingTime,
  )
 import Test.Util (datumPair, toDatumHash)
 
@@ -234,6 +236,8 @@ createProposal =
                 , cosigners = [signer]
                 , thresholds = defaultProposalThresholds
                 , votes = emptyVotesFor effects
+                , timingConfig = proposalTimingConfig
+                , startingTime = tmpProposalStartingTime
                 }
           )
       proposalOutput :: TxOut
@@ -408,6 +412,8 @@ mintGATs =
           , cosigners = [signer, signer2]
           , thresholds = defaultProposalThresholds
           , votes = proposalVotes
+          , timingConfig = proposalTimingConfig
+          , startingTime = tmpProposalStartingTime
           }
       proposalInputDatum :: Datum
       proposalInputDatum = Datum $ toBuiltinData proposalInputDatum'
