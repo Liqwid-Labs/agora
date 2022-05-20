@@ -60,6 +60,7 @@ module Agora.Utils (
   pmergeBy,
   phalve,
   isScriptAddress,
+  isPubKey,
 ) where
 
 --------------------------------------------------------------------------------
@@ -623,10 +624,15 @@ scriptHashFromAddress = phoistAcyclic $
 -- | Return true if the given address is a script address.
 isScriptAddress :: Term s (PAddress :--> PBool)
 isScriptAddress = phoistAcyclic $
-  plam $ \addr ->
-    pmatch (pfromData $ pfield @"credential" # addr) $ \case
-      PScriptCredential _ -> pconstant True
-      _ -> pconstant False
+  plam $ \addr -> pnot #$ isPubKey #$ pfromData $ pfield @"credential" # addr
+
+-- | Return true if the given credential is a pub-key-hash.
+isPubKey :: Term s (PCredential :--> PBool)
+isPubKey = phoistAcyclic $
+  plam $ \cred ->
+    pmatch cred $ \case
+      PScriptCredential _ -> pconstant False
+      _ -> pconstant True
 
 -- | Find all TxOuts sent to an Address
 findOutputsToAddress :: Term s (PBuiltinList (PAsData PTxOut) :--> PAddress :--> PBuiltinList (PAsData PTxOut))
