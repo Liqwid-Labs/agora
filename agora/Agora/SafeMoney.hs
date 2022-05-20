@@ -8,6 +8,9 @@ Tags and extras for "Plutarch.SafeMoney".
 module Agora.SafeMoney (
   ADATag,
   GTTag,
+  GovernorSTTag,
+  StakeSTTag,
+  ProposalSTTag,
   adaRef,
 ) where
 
@@ -18,13 +21,22 @@ import Plutus.V1.Ledger.Value (AssetClass (AssetClass))
 import Plutarch.SafeMoney
 
 --------------------------------------------------------------------------------
--- Example tags
+-- Tags
 
 -- | Governance token.
 data GTTag
 
 -- | ADA.
 data ADATag
+
+-- | Governor ST token.
+data GovernorSTTag
+
+-- | Stake ST token.
+data StakeSTTag
+
+-- | Proposal ST token.
+data ProposalSTTag
 
 --------------------------------------------------------------------------------
 
