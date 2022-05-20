@@ -23,14 +23,14 @@ opt =
       ( Opt.long "config"
           <> Opt.short 'c'
           <> Opt.metavar "CONFIG_PATH"
-          <> Opt.value "./"
+          <> Opt.value "./agora-scripts/agora-params.json"
           <> Opt.help "The path where the script configuration is."
       )
     <*> Opt.strOption
       ( Opt.long "output"
           <> Opt.short 'o'
           <> Opt.metavar "OUTPUT_PATH"
-          <> Opt.value "./"
+          <> Opt.value "./agora-scripts/agora-scripts.json"
           <> Opt.help "Output where generated scripts will be."
       )
 

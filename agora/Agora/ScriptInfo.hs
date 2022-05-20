@@ -25,7 +25,9 @@ import Plutus.V1.Ledger.Value (CurrencySymbol)
 -- | Bundle containing a 'Validator' and its hash.
 data ValidatorInfo = ValidatorInfo
   { script :: Validator
+  -- ^ The validator script.
   , hash :: ValidatorHash
+  -- ^ Hash of the validator.
   }
   deriving stock (Show, Eq, GHC.Generic)
   deriving anyclass (Aeson.ToJSON, Aeson.FromJSON)
@@ -43,7 +45,9 @@ mkValidatorInfo term =
 -- | Bundle containing a 'MintingPolicy' and its symbol.
 data PolicyInfo = PolicyInfo
   { policy :: MintingPolicy
+  -- ^ The minting policy.
   , currencySymbol :: CurrencySymbol
+  -- ^ The symbol given by the minting policy.
   }
   deriving stock (Show, Eq, GHC.Generic)
   deriving anyclass (Aeson.ToJSON, Aeson.FromJSON)

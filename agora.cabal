@@ -145,11 +145,10 @@ library
     Agora.Treasury
     Agora.Utils
     Agora.Utils.Value
-
     Agora.ScriptInfo
-    Agora.Aeson.Orphans
 
   other-modules:
+    Agora.Aeson.Orphans
   hs-source-dirs:  agora
 
 library pprelude
