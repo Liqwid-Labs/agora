@@ -44,7 +44,6 @@ module Agora.Utils (
   pmapMaybe,
 
   -- * Functions which should (probably) not be upstreamed
-  anyOutput,
   findTxOutByTxOutRef,
   scriptHashFromAddress,
   findOutputsToAddress,
@@ -87,7 +86,6 @@ import Plutarch.Api.V1 (
   PTokenName (PTokenName),
   PTuple,
   PTxInInfo (PTxInInfo),
-  PTxInfo,
   PTxOut (PTxOut),
   PTxOutRef,
   PValidatorHash,
@@ -555,30 +553,6 @@ phalve = phoistAcyclic $ plam $ \l -> go # l # l
 {- Functions which should (probably) not be upstreamed
    All of these functions are quite inefficient.
 -}
-
--- | Check if any output matches the predicate.
-anyOutput ::
-  forall (datum :: PType) s.
-  ( PIsData datum
-  , PTryFrom PData (PAsData datum)
-  ) =>
-  Term s (PTxInfo :--> (PValue :--> PAddress :--> datum :--> PBool) :--> PBool)
-anyOutput = phoistAcyclic $
-  plam $ \txInfo' predicate -> unTermCont $ do
-    txInfo <- tcont $ pletFields @'["outputs", "datums"] txInfo'
-    pure $
-      pany
-        # plam
-          ( \txOut'' -> unTermCont $ do
-              PTxOut txOut' <- tcmatch (pfromData txOut'')
-              txOut <- tcont $ pletFields @'["value", "datumHash", "address"] txOut'
-              PDJust dh <- tcmatch txOut.datumHash
-              pure $
-                pmatch (ptryFindDatum @(PAsData datum) # (pfield @"_0" # dh) # txInfo.datums) $ \case
-                  PJust datum -> predicate # txOut.value # txOut.address # pfromData datum
-                  PNothing -> pcon PFalse
-          )
-        # pfromData txInfo.outputs
 
 -- | Create a value with a single asset class.
 psingletonValue :: forall s. Term s (PCurrencySymbol :--> PTokenName :--> PInteger :--> PValue)

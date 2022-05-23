@@ -21,7 +21,6 @@ import Agora.Proposal.Time (currentProposalTime, isVotingPeriod)
 import Agora.Record (mkRecordConstr, (.&), (.=))
 import Agora.Stake (PProposalLock (..), PStakeDatum (..), findStakeOwnedBy)
 import Agora.Utils (
-  anyOutput,
   findTxOutByTxOutRef,
   getMintingPolicySymbol,
   mustBePJust,
@@ -346,34 +345,22 @@ proposalValidator proposal =
                 )
               # newSigs
 
+          let updatedSigs = pconcat # newSigs # proposalF.cosigners
+              expectedDatum =
+                mkRecordConstr
+                  PProposalDatum
+                  ( #proposalId .= proposalF.proposalId
+                      .& #effects .= proposalF.effects
+                      .& #status .= proposalF.status
+                      .& #cosigners .= pdata updatedSigs
+                      .& #thresholds .= proposalF.thresholds
+                      .& #votes .= proposalF.votes
+                      .& #timingConfig .= proposalF.timingConfig
+                      .& #startingTime .= proposalF.startingTime
+                  )
+
           tcassert "Signatures are correctly added to cosignature list" $
-            anyOutput @PProposalDatum # ctx.txInfo
-              #$ plam
-              $ \newValue address newProposalDatum ->
-                let updatedSigs = pconcat # newSigs # proposalF.cosigners
-                    correctDatum =
-                      pdata newProposalDatum
-                        #== pdata
-                          ( mkRecordConstr
-                              PProposalDatum
-                              ( #proposalId .= proposalF.proposalId
-                                  .& #effects .= proposalF.effects
-                                  .& #status .= proposalF.status
-                                  .& #cosigners .= pdata updatedSigs
-                                  .& #thresholds .= proposalF.thresholds
-                                  .& #votes .= proposalF.votes
-                                  .& #timingConfig .= proposalF.timingConfig
-                                  .& #startingTime .= proposalF.startingTime
-                              )
-                          )
-                 in foldr1
-                      (#&&)
-                      [ ptraceIfFalse "Datum must be correct" correctDatum
-                      , ptraceIfFalse "Value should be correct" $
-                          pdata txOutF.value #== pdata newValue
-                      , ptraceIfFalse "Must be sent to Proposal's address" $
-                          ownAddress #== pdata address
-                      ]
+            pforce proposalOutD #== expectedDatum
 
           pure $ popaque (pconstant ())
         --------------------------------------------------------------------------
