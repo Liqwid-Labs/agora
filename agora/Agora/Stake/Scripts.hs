@@ -11,8 +11,8 @@ import Agora.Record (mkRecordConstr, (.&), (.=))
 import Agora.SafeMoney (GTTag)
 import Agora.Stake
 import Agora.Utils (
-  anyInput,
   anyOutput,
+  mustFindDatum',
   paddValue,
   pfindTxInByTxOutRef,
   pgeqByClass,
@@ -77,7 +77,7 @@ stakePolicy gtClassRef =
     txInfo <- tclet $ ctx.txInfo
     let _a :: Term _ PTxInfo
         _a = txInfo
-    txInfoF <- tcont $ pletFields @'["mint", "inputs", "outputs", "signatories"] txInfo
+    txInfoF <- tcont $ pletFields @'["mint", "inputs", "outputs", "signatories", "datums"] txInfo
 
     PMinting ownSymbol' <- tcmatch $ pfromData ctx.purpose
     ownSymbol <- tclet $ pfield @"_0" # ownSymbol'
@@ -92,12 +92,19 @@ stakePolicy gtClassRef =
             mintedST #== -1
 
           tcassert "An unlocked input existed containing an ST" $
-            anyInput @PStakeDatum # txInfo
-              #$ plam
-              $ \value _ stakeDatum' ->
-                let hasST = psymbolValueOf # ownSymbol # value #== 1
-                    unlocked = pnot # (stakeLocked # stakeDatum')
-                 in hasST #&& unlocked
+            pany
+              # plam
+                ( \((pfield @"resolved" #) -> txOut) -> unTermCont $ do
+                    txOutF <- tcont $ pletFields @'["value", "datumHash"] txOut
+                    pure $
+                      pif
+                        (psymbolValueOf # ownSymbol # txOutF.value #== 1)
+                        ( let datum = mustFindDatum' @PStakeDatum # txOutF.datumHash # txInfoF.datums
+                           in pnot # (stakeLocked # datum)
+                        )
+                        (pconstant False)
+                )
+              # pfromData txInfoF.inputs
 
           pure $ popaque (pconstant ())
 

@@ -46,7 +46,6 @@ module Agora.Utils (
   -- * Functions which should (probably) not be upstreamed
   anyOutput,
   allOutputs,
-  anyInput,
   findTxOutByTxOutRef,
   scriptHashFromAddress,
   findOutputsToAddress,
@@ -605,32 +604,6 @@ allOutputs = phoistAcyclic $
                   PNothing -> pcon PFalse
           )
         # pfromData txInfo.outputs
-
--- | Check if any (resolved) input matches the predicate.
-anyInput ::
-  forall (datum :: PType) s.
-  ( PIsData datum
-  , PTryFrom PData (PAsData datum)
-  ) =>
-  Term s (PTxInfo :--> (PValue :--> PAddress :--> datum :--> PBool) :--> PBool)
-anyInput = phoistAcyclic $
-  plam $ \txInfo' predicate -> unTermCont $ do
-    txInfo <- tcont $ pletFields @'["inputs", "datums"] txInfo'
-    pure $
-      pany
-        # plam
-          ( \txInInfo'' -> unTermCont $ do
-              PTxInInfo txInInfo' <- tcmatch (pfromData txInInfo'')
-              let txOut'' = pfield @"resolved" # txInInfo'
-              PTxOut txOut' <- tcmatch (pfromData txOut'')
-              txOut <- tcont $ pletFields @'["value", "datumHash", "address"] txOut'
-              PDJust dh <- tcmatch txOut.datumHash
-              pure $
-                pmatch (ptryFindDatum @(PAsData datum) # (pfield @"_0" # dh) # txInfo.datums) $ \case
-                  PJust datum -> predicate # txOut.value # txOut.address # pfromData datum
-                  PNothing -> pcon PFalse
-          )
-        # pfromData txInfo.inputs
 
 -- | Create a value with a single asset class.
 psingletonValue :: forall s. Term s (PCurrencySymbol :--> PTokenName :--> PInteger :--> PValue)
