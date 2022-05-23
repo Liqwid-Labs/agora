@@ -116,7 +116,7 @@ instance PTryFrom PData (PAsData PMutateGovernorDatum) where
 {- | Validator for the governor mutation effect.
 
   This effect is implemented using the 'Agora.Effect.makeEffect' wrapper,
-   meaning that the burning of GAT is checked in the said wrapper.
+   meaning that the burning of GAT is checked in said wrapper.
 
   In order to locate the governor, the validator is parametrized with a 'Agora.Governor.Governor'.
 
