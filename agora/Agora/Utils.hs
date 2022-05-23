@@ -45,7 +45,6 @@ module Agora.Utils (
 
   -- * Functions which should (probably) not be upstreamed
   anyOutput,
-  allOutputs,
   findTxOutByTxOutRef,
   scriptHashFromAddress,
   findOutputsToAddress,
@@ -577,30 +576,6 @@ anyOutput = phoistAcyclic $
               pure $
                 pmatch (ptryFindDatum @(PAsData datum) # (pfield @"_0" # dh) # txInfo.datums) $ \case
                   PJust datum -> predicate # txOut.value # txOut.address # pfromData datum
-                  PNothing -> pcon PFalse
-          )
-        # pfromData txInfo.outputs
-
--- | Check if all outputs match the predicate.
-allOutputs ::
-  forall (datum :: PType) s.
-  ( PIsData datum
-  , PTryFrom PData (PAsData datum)
-  ) =>
-  Term s (PTxInfo :--> (PTxOut :--> PValue :--> PAddress :--> datum :--> PBool) :--> PBool)
-allOutputs = phoistAcyclic $
-  plam $ \txInfo' predicate -> unTermCont $ do
-    txInfo <- tcont $ pletFields @'["outputs", "datums"] txInfo'
-    pure $
-      pall
-        # plam
-          ( \txOut'' -> unTermCont $ do
-              PTxOut txOut' <- tcmatch (pfromData txOut'')
-              txOut <- tcont $ pletFields @'["value", "datumHash", "address"] txOut'
-              PDJust dh <- tcmatch txOut.datumHash
-              pure $
-                pmatch (ptryFindDatum @(PAsData datum) # (pfield @"_0" # dh) # txInfo.datums) $ \case
-                  PJust datum -> predicate # pfromData txOut'' # txOut.value # txOut.address # pfromData datum
                   PNothing -> pcon PFalse
           )
         # pfromData txInfo.outputs
