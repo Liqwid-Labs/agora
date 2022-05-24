@@ -61,6 +61,8 @@ module Agora.Utils (
   validatorHashToAddress,
   pmergeBy,
   phalve,
+  isScriptAddress,
+  isPubKey,
 ) where
 
 --------------------------------------------------------------------------------
@@ -214,7 +216,7 @@ pfromMaybe = phoistAcyclic $
       PJust a' -> a'
       PNothing -> e
 
--- | Yield True if a given PMaybe is of form PJust _.
+-- | Yield True if a given PMaybe is of form @'PJust' _@.
 pisJust :: forall a s. Term s (PMaybe a :--> PBool)
 pisJust = phoistAcyclic $
   plam $ \v' ->
@@ -656,6 +658,19 @@ scriptHashFromAddress = phoistAcyclic $
     pmatch (pfromData $ pfield @"credential" # addr) $ \case
       PScriptCredential ((pfield @"_0" #) -> h) -> pcon $ PJust h
       _ -> pcon PNothing
+
+-- | Return true if the given address is a script address.
+isScriptAddress :: Term s (PAddress :--> PBool)
+isScriptAddress = phoistAcyclic $
+  plam $ \addr -> pnot #$ isPubKey #$ pfromData $ pfield @"credential" # addr
+
+-- | Return true if the given credential is a pub-key-hash.
+isPubKey :: Term s (PCredential :--> PBool)
+isPubKey = phoistAcyclic $
+  plam $ \cred ->
+    pmatch cred $ \case
+      PScriptCredential _ -> pconstant False
+      _ -> pconstant True
 
 -- | Find all TxOuts sent to an Address
 findOutputsToAddress :: Term s (PBuiltinList (PAsData PTxOut) :--> PAddress :--> PBuiltinList (PAsData PTxOut))

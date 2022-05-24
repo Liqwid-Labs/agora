@@ -18,7 +18,7 @@ import GHC.Generics qualified as GHC
 import Generics.SOP (Generic, I (I))
 
 import Agora.Effect (makeEffect)
-import Agora.Utils (findTxOutByTxOutRef, paddValue, tcassert, tclet, tcmatch)
+import Agora.Utils (findTxOutByTxOutRef, isPubKey, paddValue, tcassert, tclet, tcmatch)
 import Plutarch.Api.V1 (
   PCredential (..),
   PTuple,
@@ -82,8 +82,8 @@ deriving via
   instance
     (PConstantDecl TreasuryWithdrawalDatum)
 
-instance PTryFrom PData PTreasuryWithdrawalDatum where
-  type PTryFromExcess PData PTreasuryWithdrawalDatum = Const ()
+instance PTryFrom PData (PAsData PTreasuryWithdrawalDatum) where
+  type PTryFromExcess PData (PAsData PTreasuryWithdrawalDatum) = Const ()
   ptryFrom' opq cont =
     -- TODO: This should not use 'punsafeCoerce'.
     -- Blocked by 'PCredential', and 'PTuple'.
@@ -140,12 +140,6 @@ treasuryWithdrawalValidator currSymbol = makeEffect currSymbol $
         treasuryInputValuesSum = sumValues #$ ofTreasury # inputValues
         treasuryOutputValuesSum = sumValues #$ ofTreasury # outputValues
         receiverValuesSum = sumValues # datum.receivers
-        isPubkey = plam $ \cred ->
-          pmatch cred $
-            \case
-              PPubKeyCredential _ -> pcon PTrue
-              PScriptCredential _ -> pcon PFalse
-
         -- Constraints
         outputContentMatchesRecivers =
           pall # plam (\out -> pelem # out # outputValues)
@@ -165,7 +159,7 @@ treasuryWithdrawalValidator currSymbol = makeEffect currSymbol $
               ( \((pfield @"_0" #) . pfromData -> cred) ->
                   cred #== pfield @"credential" # effInput.address
                     #|| pelem # cred # datum.treasuries
-                    #|| isPubkey # pfromData cred
+                    #|| isPubKey # pfromData cred
               )
             # inputValues
 

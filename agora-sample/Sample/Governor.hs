@@ -508,7 +508,7 @@ mintGATs =
     The effect script should carry an valid tagged authority token,
       and said token will be burnt in the transaction. We use 'noOpValidator'
       here as a mock effect, so no actual change is done to the governor state.
-    TODO: use 'mutateGovernorEffect' as the mock effect in the future.
+    TODO: use 'Agora.Effect.GovernorMutation.mutateGovernorEffect' as the mock effect in the future.
 
     The governor will ensure the new governor state is valid.
 -}
