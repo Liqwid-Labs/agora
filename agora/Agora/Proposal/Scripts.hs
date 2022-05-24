@@ -187,25 +187,23 @@ proposalValidator proposal =
 
     -- Filter out own output with own address and PST.
     -- Delay the evaluation cause in some cases there won't be any continuing output.
-    ownOutputD <-
+    ownOutput <-
       tclet $
-        pdelay $
-          mustBePJust # "Own output should be present" #$ pfind
-            # plam
-              ( \input -> unTermCont $ do
-                  inputF <- tcont $ pletFields @'["address", "value"] input
-                  pure $
-                    inputF.address #== ownAddress
-                      #&& psymbolValueOf # stCurrencySymbol # inputF.value #== 1
-              )
-            # pfromData txInfoF.outputs
+        mustBePJust # "Own output should be present" #$ pfind
+          # plam
+            ( \input -> unTermCont $ do
+                inputF <- tcont $ pletFields @'["address", "value"] input
+                pure $
+                  inputF.address #== ownAddress
+                    #&& psymbolValueOf # stCurrencySymbol # inputF.value #== 1
+            )
+          # pfromData txInfoF.outputs
 
-    proposalOutD <-
+    proposalOut <-
       tclet $
-        pdelay $
-          mustFindDatum' @PProposalDatum
-            # (pfield @"datumHash" # pforce ownOutputD)
-            # txInfoF.datums
+        mustFindDatum' @PProposalDatum
+          # (pfield @"datumHash" # ownOutput)
+          # txInfoF.datums
 
     pure $
       pmatch proposalRedeemer $ \case
@@ -273,7 +271,7 @@ proposalValidator proposal =
                       .& #startingTime .= proposalF.startingTime
                   )
 
-          tcassert "Output proposal should be valid" $ pforce proposalOutD #== expectedProposalOut
+          tcassert "Output proposal should be valid" $ proposalOut #== expectedProposalOut
 
           -- We validate the output stake datum here as well: We need the vote option
           -- to create a valid 'ProposalLock', however the vote option is encoded
@@ -360,7 +358,7 @@ proposalValidator proposal =
                   )
 
           tcassert "Signatures are correctly added to cosignature list" $
-            pforce proposalOutD #== expectedDatum
+            proposalOut #== expectedDatum
 
           pure $ popaque (pconstant ())
         --------------------------------------------------------------------------
