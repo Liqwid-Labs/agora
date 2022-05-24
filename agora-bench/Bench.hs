@@ -1,6 +1,7 @@
 module Bench (Benchmark (..), benchmarkScript, specificationTreeToBenchmarks) where
 
 import Codec.Serialise (serialise)
+import Data.Aeson hiding (Success)
 import Data.ByteString.Lazy qualified as LBS
 import Data.ByteString.Short qualified as SBS
 import Data.List (intercalate)
@@ -34,6 +35,23 @@ data Benchmark = Benchmark
   -- ^ The on-chain size of a script.
   }
   deriving stock (Show, Eq, Ord)
+
+instance FromJSON Benchmark where
+  parseJSON (Object v) =
+    Benchmark <$> v .: "name"
+      <*> v .: "cpu"
+      <*> v .: "mem"
+      <*> v .: "size"
+  parseJSON _ = mempty
+
+instance ToJSON Benchmark where
+  toJSON (Benchmark name cpu mem size) =
+    object
+      [ "name" .= name
+      , "cpu" .= cpu
+      , "mem" .= mem
+      , "size" .= size
+      ]
 
 benchmarkScript :: String -> Script -> Benchmark
 benchmarkScript name script = Benchmark (pack name) cpu mem size

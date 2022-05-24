@@ -50,7 +50,7 @@ exists s (Group name st) = or (exists s <$> st) || s == name
 
 group :: String -> [SpecificationTree] -> SpecificationTree
 group name st
-  | or $ exists name <$> st = error "Name already exists"
+  | or $ exists name <$> st = error $ "Name already exists: " <> name
   | otherwise = Group name st
 
 getSpecification :: String -> SpecificationTree -> Maybe Specification
