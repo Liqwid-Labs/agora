@@ -2,6 +2,7 @@ import Prelude
 
 --------------------------------------------------------------------------------
 
+import GHC.IO.Encoding (setLocaleEncoding, utf8)
 import Test.Tasty (defaultMain, testGroup)
 
 --------------------------------------------------------------------------------
@@ -16,39 +17,26 @@ import Spec.Stake qualified as Stake
 import Spec.Treasury qualified as Treasury
 import Spec.Utils qualified as Utils
 
+import Spec.Spec (group, toTestTree)
+
 -- | The Agora test suite.
 main :: IO ()
-main =
+main = do
+  setLocaleEncoding utf8
   defaultMain $
     testGroup
       "test suite"
       [ testGroup
           "Effects"
-          [ testGroup
-              "Treasury Withdrawal Effect"
-              TreasuryWithdrawal.tests
-          , testGroup
-              "Governor Mutation Effect"
-              GovernorMutation.tests
+          [ toTestTree $ group "Treasury Withdrawal Effect" TreasuryWithdrawal.specs
+          , toTestTree $ group "Governor Mutation Effect" GovernorMutation.specs
           ]
-      , testGroup
-          "Stake tests"
-          Stake.tests
-      , testGroup
-          "Proposal tests"
-          Proposal.tests
-      , testGroup
-          "AuthorityToken tests"
-          AuthorityToken.tests
-      , testGroup
-          "Treasury tests"
-          Treasury.tests
-      , testGroup
-          "AuthorityToken tests"
-          AuthorityToken.tests
-      , testGroup
-          "Governor tests"
-          Governor.tests
+      , toTestTree $ group "Stake tests" Stake.specs
+      , toTestTree $ group "Proposal tests" Proposal.specs
+      , toTestTree $ group "AuthorityToken tests" AuthorityToken.specs
+      , toTestTree $ group "Treasury tests" Treasury.specs
+      , toTestTree $ group "AuthorityToken tests" AuthorityToken.specs
+      , toTestTree $ group "Governor tests" Governor.specs
       , testGroup
           "Utility tests"
           Utils.tests

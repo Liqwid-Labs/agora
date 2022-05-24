@@ -5,7 +5,7 @@ Module: Spec.Treasury
 Description: Tests for Agora treasury.
 Maintainer: jack@mlabs.city
 
-This module exports `tests`, a list of `TestTree`s, which ensure
+This module exports `specs`, a list of `TestTree`s, which ensure
 that Agora's treasury component works as desired.
 
 Tests need to fail when:
@@ -19,7 +19,7 @@ Tests need to fail when:
       ii. A script has a GAT, the token name for which does /not/
           match the script's validator hash.
 -}
-module Spec.Treasury (tests) where
+module Spec.Treasury (specs) where
 
 import Agora.Treasury (
   TreasuryRedeemer (SpendTreasuryGAT),
@@ -48,14 +48,18 @@ import Sample.Treasury (
   validCtx,
   walletIn,
  )
-import Test.Tasty (TestTree, testGroup)
-import Test.Util (validatorFailsWith, validatorSucceedsWith)
+import Spec.Spec (
+  SpecificationTree,
+  group,
+  validatorFailsWith,
+  validatorSucceedsWith,
+ )
 
-tests :: [TestTree]
-tests =
-  [ testGroup
+specs :: [SpecificationTree]
+specs =
+  [ group
       "Validator"
-      [ testGroup
+      [ group
           "Positive"
           [ validatorSucceedsWith
               "Allows for effect changes"
@@ -64,9 +68,9 @@ tests =
               SpendTreasuryGAT
               validCtx
           ]
-      , testGroup
+      , group
           "Negative"
-          [ testGroup
+          [ group
               "Fails with ScriptPurpose not Minting"
               [ validatorFailsWith
                   "Spending"

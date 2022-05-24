@@ -191,6 +191,7 @@ test-suite agora-test
     Spec.Governor
     Spec.Model.MultiSig
     Spec.Proposal
+    Spec.Spec
     Spec.Stake
     Spec.Treasury
     Spec.Utils

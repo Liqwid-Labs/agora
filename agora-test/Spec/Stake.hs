@@ -7,15 +7,11 @@ Description: Tests for Stake policy and validator
 
 Tests for Stake policy and validator
 -}
-module Spec.Stake (tests) where
+module Spec.Stake (specs) where
 
 --------------------------------------------------------------------------------
 
 import Prelude
-
---------------------------------------------------------------------------------
-
-import Test.Tasty (TestTree, testGroup)
 
 --------------------------------------------------------------------------------
 
@@ -26,14 +22,21 @@ import Agora.Stake.Scripts (stakePolicy, stakeValidator)
 
 import Sample.Stake (DepositWithdrawExample (DepositWithdrawExample, delta, startAmount), signer)
 import Sample.Stake qualified as Stake
-import Test.Util (policyFailsWith, policySucceedsWith, toDatum, validatorFailsWith, validatorSucceedsWith)
+import Spec.Spec (
+  SpecificationTree,
+  group,
+  policyFailsWith,
+  policySucceedsWith,
+  validatorFailsWith,
+  validatorSucceedsWith,
+ )
+import Test.Util (toDatum)
 
 --------------------------------------------------------------------------------
 
--- | Stake tests.
-tests :: [TestTree]
-tests =
-  [ testGroup
+specs :: [SpecificationTree]
+specs =
+  [ group
       "policy"
       [ policySucceedsWith
           "stakeCreation"
@@ -51,7 +54,7 @@ tests =
           ()
           Stake.stakeCreationUnsigned
       ]
-  , testGroup
+  , group
       "validator"
       [ validatorSucceedsWith
           "stakeDepositWithdraw deposit"
