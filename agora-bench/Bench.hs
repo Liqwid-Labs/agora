@@ -5,7 +5,7 @@ module Bench (Benchmark (..), benchmarkScript, specificationTreeToBenchmarks) wh
 import Codec.Serialise (serialise)
 import Data.ByteString.Lazy qualified as LBS
 import Data.ByteString.Short qualified as SBS
-import Data.Csv (ToNamedRecord, DefaultOrdered, toNamedRecord, namedRecord, header, headerOrder, (.=))
+import Data.Csv (DefaultOrdered, ToNamedRecord, header, headerOrder, namedRecord, toNamedRecord, (.=))
 import Data.List (intercalate)
 import Data.Maybe (fromJust)
 import Data.Text (Text, pack)
