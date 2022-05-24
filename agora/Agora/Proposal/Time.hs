@@ -198,7 +198,7 @@ createProposalStartingTime = phoistAcyclic $
             # (currentTimeF.lowerBound + currentTimeF.upperBound)
             # 2
 
-    tcassert "Given time range should be tight enough" $
+    tcassert "createProposalStartingTime: given time range should be tight enough" $
       duration #<= maxDuration
 
     pure $ pcon $ PProposalStartingTime startingTime

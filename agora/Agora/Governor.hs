@@ -43,6 +43,7 @@ import Agora.Utils (tclet)
 
 --------------------------------------------------------------------------------
 
+import Plutarch.Api.V1 (PPOSIXTime)
 import Plutarch.DataRepr (
   DerivePConstantViaData (..),
   PDataFields,
@@ -55,7 +56,7 @@ import Plutarch.Unsafe (punsafeCoerce)
 
 --------------------------------------------------------------------------------
 
-import Plutus.V1.Ledger.Api (TxOutRef)
+import Plutus.V1.Ledger.Api (POSIXTime, TxOutRef)
 import Plutus.V1.Ledger.Value (AssetClass (..))
 import PlutusTx qualified
 
@@ -70,6 +71,8 @@ data GovernorDatum = GovernorDatum
   , proposalTimings :: ProposalTimingConfig
   -- ^ The timing configuration for proposals.
   --   Will get copied over upon the creation of proposals.
+  , createProposalTimeRangeMaxDuration :: POSIXTime
+  -- ^ The maximum valid duration of a transaction that creats a proposal.
   }
   deriving stock (Show, GHC.Generic)
 
@@ -123,6 +126,7 @@ newtype PGovernorDatum (s :: S) = PGovernorDatum
           '[ "proposalThresholds" ':= PProposalThresholds
            , "nextProposalId" ':= PProposalId
            , "proposalTimings" ':= PProposalTimingConfig
+           , "createProposalTimeRangeMaxDuration" ':= PPOSIXTime
            ]
       )
   }
