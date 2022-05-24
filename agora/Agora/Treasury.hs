@@ -72,6 +72,7 @@ deriving via
      do so in a valid manner.
 -}
 treasuryValidator ::
+  -- | Governance Authority Token that can unlock this validator.
   CurrencySymbol ->
   ClosedTerm PValidator
 treasuryValidator gatCs' = plam $ \_datum redeemer ctx' -> unTermCont $ do

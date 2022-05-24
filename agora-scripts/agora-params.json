@@ -1,0 +1,11 @@
+{
+  "governorInitialSpend": {
+    "txOutRefId": "0b2086cbf8b6900f8cb65e012de4516cb66b5cb08a9aaba12a8b88be",
+    "txOutRefIdx": 0
+  },
+  "gtClassRef": [
+    "",
+    ""
+  ],
+  "maximumCosigners": 5
+}

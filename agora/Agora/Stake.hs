@@ -191,7 +191,7 @@ newtype PStakeDatum (s :: S) = PStakeDatum
   deriving anyclass (Generic)
   deriving anyclass (PIsDataRepr)
   deriving
-    (PlutusType, PIsData, PDataFields)
+    (PlutusType, PIsData, PDataFields, PEq)
     via (PIsDataReprInstances PStakeDatum)
 
 instance PTryFrom PData (PAsData PStakeDatum) where
@@ -241,7 +241,7 @@ newtype PProposalLock (s :: S) = PProposalLock
   deriving anyclass (Generic)
   deriving anyclass (PIsDataRepr)
   deriving
-    (PlutusType, PIsData, PDataFields)
+    (PlutusType, PIsData, PDataFields, PEq)
     via (PIsDataReprInstances PProposalLock)
 
 deriving via
