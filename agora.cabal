@@ -217,6 +217,7 @@ benchmark agora-bench
   build-depends:
     , agora
     , agora-sample
+    , agora-spec
 
 executable agora-scripts
   import:         lang, deps, exe-opts
