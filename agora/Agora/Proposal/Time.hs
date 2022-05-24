@@ -20,6 +20,7 @@ module Agora.Proposal.Time (
   PProposalStartingTime (..),
 
   -- * Compute periods given config and starting time.
+  createProposalStartingTime,
   currentProposalTime,
   isDraftPeriod,
   isVotingPeriod,
@@ -28,7 +29,7 @@ module Agora.Proposal.Time (
 ) where
 
 import Agora.Record (mkRecordConstr, (.&), (.=))
-import Agora.Utils (tcmatch)
+import Agora.Utils (tcassert, tcmatch)
 import GHC.Generics qualified as GHC
 import Generics.SOP (Generic, I (I))
 import Plutarch.Api.V1 (
@@ -177,6 +178,30 @@ deriving via
 -- FIXME: Orphan instance, move this to plutarch-extra.
 instance AdditiveSemigroup (Term s PPOSIXTime) where
   (punsafeCoerce @_ @_ @PInteger -> x) + (punsafeCoerce @_ @_ @PInteger -> y) = punsafeCoerce $ x + y
+
+{- | Get the starting time of a proposal, from the 'Plutus.V1.Ledger.Api.txInfoValidPeriod' field.
+     For every proposal, this is only meant to run once upon creation.
+-}
+createProposalStartingTime :: forall (s :: S). Term s (PPOSIXTime :--> PPOSIXTimeRange :--> PProposalStartingTime)
+createProposalStartingTime = phoistAcyclic $
+  plam $ \maxDuration iv -> unTermCont $ do
+    currentTimeF <-
+      tcont $
+        pletFields @'["lowerBound", "upperBound"] $
+          currentProposalTime # iv
+
+    -- Use the middle of the current time range as the starting time.
+    let duration = currentTimeF.upperBound - currentTimeF.lowerBound
+
+        startingTime =
+          pdiv
+            # (currentTimeF.lowerBound + currentTimeF.upperBound)
+            # 2
+
+    tcassert "Given time range should be tight enough" $
+      duration #<= maxDuration
+
+    pure $ pcon $ PProposalStartingTime startingTime
 
 {- | Get the current proposal time, from the 'Plutus.V1.Ledger.Api.txInfoValidPeriod' field.
 
