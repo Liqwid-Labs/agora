@@ -1,7 +1,8 @@
 module Main (main) where
 
 import Bench (specificationTreeToBenchmarks)
-import Data.Aeson.Text (encodeToLazyText)
+import Data.Csv (encodeDefaultOrderedByName)
+import Data.Text.Lazy.Encoding (decodeUtf8)
 import Data.Text.Lazy.IO as I
 import Spec.AuthorityToken qualified as AuthorityToken
 import Spec.Effect.GovernorMutation qualified as GovernorMutation
@@ -17,8 +18,8 @@ import Prelude
 
 main :: IO ()
 main = do
-  I.writeFile "bench.json" $
-    encodeToLazyText $
+  I.writeFile "bench.csv" $
+    (decodeUtf8 . encodeDefaultOrderedByName) $
       specificationTreeToBenchmarks $
         group
           "Benchmark"

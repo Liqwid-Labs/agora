@@ -1,12 +1,15 @@
+{-# LANGUAGE RecordWildCards #-}
+
 module Bench (Benchmark (..), benchmarkScript, specificationTreeToBenchmarks) where
 
 import Codec.Serialise (serialise)
-import Data.Aeson hiding (Success)
 import Data.ByteString.Lazy qualified as LBS
 import Data.ByteString.Short qualified as SBS
+import Data.Csv (ToNamedRecord, DefaultOrdered, toNamedRecord, namedRecord, header, headerOrder, (.=))
 import Data.List (intercalate)
 import Data.Maybe (fromJust)
 import Data.Text (Text, pack)
+import GHC.Generics (Generic)
 import Plutus.V1.Ledger.Api (
   ExBudget (ExBudget),
   ExCPU,
@@ -34,24 +37,19 @@ data Benchmark = Benchmark
   , bScriptSize :: Int
   -- ^ The on-chain size of a script.
   }
-  deriving stock (Show, Eq, Ord)
+  deriving stock (Show, Eq, Ord, Generic)
 
-instance FromJSON Benchmark where
-  parseJSON (Object v) =
-    Benchmark <$> v .: "name"
-      <*> v .: "cpu"
-      <*> v .: "mem"
-      <*> v .: "size"
-  parseJSON _ = mempty
-
-instance ToJSON Benchmark where
-  toJSON (Benchmark name cpu mem size) =
-    object
+instance ToNamedRecord Benchmark where
+  toNamedRecord (Benchmark {..}) =
+    namedRecord
       [ "name" .= name
-      , "cpu" .= cpu
-      , "mem" .= mem
-      , "size" .= size
+      , "cpu" .= bCPUBudget
+      , "mem" .= bMemoryBudget
+      , "size" .= bScriptSize
       ]
+
+instance DefaultOrdered Benchmark where
+  headerOrder _ = header ["name", "cpu", "mem", "size"]
 
 benchmarkScript :: String -> Script -> Benchmark
 benchmarkScript name script = Benchmark (pack name) cpu mem size

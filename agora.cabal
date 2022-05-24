@@ -218,6 +218,7 @@ benchmark agora-bench
     , agora
     , agora-sample
     , agora-spec
+    , cassava
 
 executable agora-scripts
   import:         lang, deps, exe-opts

@@ -1,4 +1,23 @@
 name,cpu,mem,size
-full_scripts:authorityTokenPolicy,1756707,6000,841
-full_scripts:stakePolicy,3751498,12700,1610
-full_scripts:stakeValidator,3126265,10600,1500
+Benchmark/Effects/Treasury Withdrawal Effect/effect/Simple,340268715,724428,3050
+Benchmark/Effects/Treasury Withdrawal Effect/effect/Simple with multiple treasuries ,570029812,1211300,3377
+Benchmark/Effects/Treasury Withdrawal Effect/effect/Mixed Assets,502351827,1071087,3242
+Benchmark/Effects/Governor Mutation Effect/validator/valid new governor datum/governor validator should pass,103054094,227264,7467
+Benchmark/Effects/Governor Mutation Effect/validator/valid new governor datum/effect validator should pass,126696096,263635,3293
+Benchmark/Stake/policy/stakeCreation,147898986,329450,2265
+Benchmark/Stake/validator/stakeDepositWithdraw deposit,261845190,576377,3829
+Benchmark/Stake/validator/stakeDepositWithdraw withdraw,261845190,576377,3821
+Benchmark/Proposal/policy/proposalCreation,34571405,70066,1549
+Benchmark/Proposal/validator/cosignature/proposal,242652509,511783,5247
+Benchmark/Proposal/validator/cosignature/stake,183513647,395070,4366
+Benchmark/Proposal/validator/voting/proposal,240358004,492704,5255
+Benchmark/Proposal/validator/voting/stake,154841851,329311,4419
+Benchmark/AuthorityToken/singleAuthorityTokenBurned/Correct simple,25177457,55883,806
+Benchmark/AuthorityToken/singleAuthorityTokenBurned/Correct many inputs,40266637,88241,900
+Benchmark/Treasury/Validator/Positive/Allows for effect changes,37343572,79744,1841
+Benchmark/AuthorityToken/singleAuthorityTokenBurned/Correct simple,25177457,55883,806
+Benchmark/AuthorityToken/singleAuthorityTokenBurned/Correct many inputs,40266637,88241,900
+Benchmark/Governor/policy/GST minting,57648280,119961,1836
+Benchmark/Governor/validator/proposal creation,309839049,649395,7994
+Benchmark/Governor/validator/GATs minting,429394828,928681,8113
+Benchmark/Governor/validator/mutate governor state,100243054,221538,7540
