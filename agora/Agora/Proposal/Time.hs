@@ -13,11 +13,13 @@ module Agora.Proposal.Time (
   ProposalTime (..),
   ProposalTimingConfig (..),
   ProposalStartingTime (..),
+  MaxTimeRangeWidth (..),
 
   -- * Plutarch-land
   PProposalTime (..),
   PProposalTimingConfig (..),
   PProposalStartingTime (..),
+  PMaxTimeRangeWidth (..),
 
   -- * Compute periods given config and starting time.
   createProposalStartingTime,
@@ -108,6 +110,11 @@ data ProposalTimingConfig = ProposalTimingConfig
 
 PlutusTx.makeIsDataIndexed ''ProposalTimingConfig [('ProposalTimingConfig, 0)]
 
+-- | Represents the maximum width of a 'POSIXTimeRange'.
+newtype MaxTimeRangeWidth = MaxTimeRangeWidth {getMaxWidth :: POSIXTime}
+  deriving stock (Eq, Show, Ord, GHC.Generic)
+  deriving newtype (PlutusTx.ToData, PlutusTx.FromData, PlutusTx.UnsafeFromData)
+
 --------------------------------------------------------------------------------
 
 -- | Plutarch-level version of 'ProposalTime'.
@@ -173,6 +180,17 @@ deriving via
   instance
     (PConstantDecl ProposalTimingConfig)
 
+-- | Plutarch-level version of 'MaxTimeRangeWidth'.
+newtype PMaxTimeRangeWidth (s :: S)
+  = PMaxTimeRangeWidth (Term s PPOSIXTime)
+  deriving (PlutusType, PIsData, PEq, POrd) via (DerivePNewtype PMaxTimeRangeWidth PPOSIXTime)
+
+instance PUnsafeLiftDecl PMaxTimeRangeWidth where type PLifted PMaxTimeRangeWidth = MaxTimeRangeWidth
+deriving via
+  (DerivePConstantViaNewtype MaxTimeRangeWidth PMaxTimeRangeWidth PPOSIXTime)
+  instance
+    (PConstantDecl MaxTimeRangeWidth)
+
 --------------------------------------------------------------------------------
 
 -- FIXME: Orphan instance, move this to plutarch-extra.
@@ -180,11 +198,12 @@ instance AdditiveSemigroup (Term s PPOSIXTime) where
   (punsafeCoerce @_ @_ @PInteger -> x) + (punsafeCoerce @_ @_ @PInteger -> y) = punsafeCoerce $ x + y
 
 {- | Get the starting time of a proposal, from the 'Plutus.V1.Ledger.Api.txInfoValidPeriod' field.
-     For every proposal, this is only meant to run once upon creation.
+     For every proposal, this is only meant to run once upon creation. Given time range should be
+     tight enough, meaning that the width of the time range should be less than the maximum value.
 -}
-createProposalStartingTime :: forall (s :: S). Term s (PPOSIXTime :--> PPOSIXTimeRange :--> PProposalStartingTime)
+createProposalStartingTime :: forall (s :: S). Term s (PMaxTimeRangeWidth :--> PPOSIXTimeRange :--> PProposalStartingTime)
 createProposalStartingTime = phoistAcyclic $
-  plam $ \maxDuration iv -> unTermCont $ do
+  plam $ \(pto -> maxDuration) iv -> unTermCont $ do
     currentTimeF <-
       tcont $
         pletFields @'["lowerBound", "upperBound"] $

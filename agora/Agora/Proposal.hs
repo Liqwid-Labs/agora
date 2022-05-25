@@ -349,7 +349,7 @@ deriving via
   instance
     (PConstantDecl ProposalVotes)
 
--- Plutarch version of 'pemptyVotesFor'.
+-- Plutarch-level version of 'emptyVotesFor'.
 pemptyVotesFor :: forall s a. (PIsData a) => Term s (PMap PResultTag a :--> PProposalVotes)
 pemptyVotesFor =
   phoistAcyclic $

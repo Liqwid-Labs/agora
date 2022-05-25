@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-orphans #-}
+
 {- |
 Module     : Sample.Shared
 Maintainer : emi@haskell.fyi
@@ -36,8 +38,6 @@ module Sample.Shared (
   proposalPolicySymbol,
   proposalValidatorHash,
   proposalValidatorAddress,
-  defaultProposalTimingConfig,
-  defaultCreateProposalTimeRangeMaxDuration,
   proposalStartingTimeFromTimeRange,
 
   -- ** Authority
@@ -78,12 +78,14 @@ import Agora.Proposal (
   ProposalThresholds (..),
  )
 import Agora.Proposal.Time (
+  MaxTimeRangeWidth (..),
   ProposalStartingTime (ProposalStartingTime),
   ProposalTimingConfig (..),
  )
 import Agora.Stake (Stake (..))
 import Agora.Treasury (treasuryValidator)
 import Agora.Utils (validatorHashToTokenName)
+import Data.Default.Class (Default (..))
 import Plutarch.Api.V1 (
   mintingPolicySymbol,
   mkMintingPolicy,
@@ -100,7 +102,6 @@ import Plutus.V1.Ledger.Api (
   Interval (..),
   LowerBound (..),
   MintingPolicy (..),
-  POSIXTime,
   POSIXTimeRange,
   PubKeyHash,
   TxOutRef (TxOutRef),
@@ -197,18 +198,27 @@ authorityToken = authorityTokenFromGovernor governor
 authorityTokenSymbol :: CurrencySymbol
 authorityTokenSymbol = authorityTokenSymbolFromGovernor governor
 
-defaultProposalTimingConfig :: ProposalTimingConfig
-defaultProposalTimingConfig =
-  ProposalTimingConfig
-    { draftTime = 50
-    , votingTime = 1000
-    , lockingTime = 2000
-    , executingTime = 3000
-    }
+{- | Default value of 'Agora.Governor.GovernorDatum.proposalTimings'.
+     For testing purpose only.
+-}
+instance Default ProposalTimingConfig where
+  def =
+    ProposalTimingConfig
+      { draftTime = 50
+      , votingTime = 1000
+      , lockingTime = 2000
+      , executingTime = 3000
+      }
 
-defaultCreateProposalTimeRangeMaxDuration :: POSIXTime
-defaultCreateProposalTimeRangeMaxDuration = 10
+{- | Default value of 'Agora.Governor.GovernorDatum.createProposalTimeRangeMaxWidth'.
+     For testing purpose only.
+-}
+instance Default MaxTimeRangeWidth where
+  def = MaxTimeRangeWidth 10
 
+{- | Get the starting time of a proposal, given a closed finite time range.
+     Tightness of the time range is not checked. See 'Agora.Proposal.Time.createProposalStartingTime'.
+-}
 proposalStartingTimeFromTimeRange :: POSIXTimeRange -> ProposalStartingTime
 proposalStartingTimeFromTimeRange
   (Interval (LowerBound (Finite l) True) (UpperBound (Finite u) True)) =

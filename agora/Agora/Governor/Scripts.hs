@@ -307,7 +307,7 @@ governorValidator gov =
           @'[ "proposalThresholds"
             , "nextProposalId"
             , "proposalTimings"
-            , "createProposalTimeRangeMaxDuration"
+            , "createProposalTimeRangeMaxWidth"
             ]
           oldGovernorDatum
 
@@ -347,8 +347,8 @@ governorValidator gov =
                   ( #proposalThresholds .= oldGovernorDatumF.proposalThresholds
                       .& #nextProposalId .= pdata expectedNextProposalId
                       .& #proposalTimings .= oldGovernorDatumF.proposalTimings
-                      .& #createProposalTimeRangeMaxDuration
-                        .= oldGovernorDatumF.createProposalTimeRangeMaxDuration
+                      .& #createProposalTimeRangeMaxWidth
+                        .= oldGovernorDatumF.createProposalTimeRangeMaxWidth
                   )
           tcassert "Unexpected governor state datum" $
             newGovernorDatum #== expectedNewDatum
@@ -436,7 +436,7 @@ governorValidator gov =
               expectedVotes = pemptyVotesFor # pfromData proposalOutputDatum.effects
               expectedStartingTime =
                 createProposalStartingTime
-                  # oldGovernorDatumF.createProposalTimeRangeMaxDuration
+                  # oldGovernorDatumF.createProposalTimeRangeMaxWidth
                   # txInfoF.validRange
               -- Id, thresholds and timings should be copied from the old governor state datum.
               expectedProposalOut =

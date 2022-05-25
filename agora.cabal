@@ -114,6 +114,7 @@ common test-deps
     , agora
     , apropos
     , apropos-tx
+    , data-default-class
     , mtl
     , QuickCheck
     , quickcheck-instances

@@ -16,6 +16,7 @@ module Spec.Governor (tests) where
 import Agora.Governor (GovernorDatum (..), GovernorRedeemer (..))
 import Agora.Governor.Scripts (governorPolicy, governorValidator)
 import Agora.Proposal (ProposalId (..))
+import Data.Default.Class (Default (def))
 import Sample.Governor (createProposal, mintGATs, mintGST, mutateState)
 import Sample.Shared qualified as Shared
 import Test.Tasty (TestTree, testGroup)
@@ -41,8 +42,8 @@ tests =
           ( GovernorDatum
               Shared.defaultProposalThresholds
               (ProposalId 0)
-              Shared.defaultProposalTimingConfig
-              Shared.defaultCreateProposalTimeRangeMaxDuration
+              def
+              def
           )
           CreateProposal
           createProposal
@@ -52,8 +53,8 @@ tests =
           ( GovernorDatum
               Shared.defaultProposalThresholds
               (ProposalId 5)
-              Shared.defaultProposalTimingConfig
-              Shared.defaultCreateProposalTimeRangeMaxDuration
+              def
+              def
           )
           MintGATs
           mintGATs
@@ -63,8 +64,8 @@ tests =
           ( GovernorDatum
               Shared.defaultProposalThresholds
               (ProposalId 5)
-              Shared.defaultProposalTimingConfig
-              Shared.defaultCreateProposalTimeRangeMaxDuration
+              def
+              def
           )
           MutateGovernor
           mutateState

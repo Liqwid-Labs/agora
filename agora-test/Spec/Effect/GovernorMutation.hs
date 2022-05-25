@@ -4,6 +4,7 @@ import Agora.Effect.GovernorMutation (mutateGovernorValidator)
 import Agora.Governor (GovernorDatum (..), GovernorRedeemer (MutateGovernor))
 import Agora.Governor.Scripts (governorValidator)
 import Agora.Proposal (ProposalId (..))
+import Data.Default.Class (Default (def))
 import Plutus.V1.Ledger.Api (ScriptContext (ScriptContext), ScriptPurpose (Spending))
 import Sample.Effect.GovernorMutation (
   effectRef,
@@ -29,8 +30,8 @@ tests =
               ( GovernorDatum
                   Shared.defaultProposalThresholds
                   (ProposalId 0)
-                  Shared.defaultProposalTimingConfig
-                  Shared.defaultCreateProposalTimeRangeMaxDuration
+                  def
+                  def
               )
               MutateGovernor
               ( ScriptContext
@@ -51,8 +52,8 @@ tests =
               ( GovernorDatum
                   Shared.defaultProposalThresholds
                   (ProposalId 0)
-                  Shared.defaultProposalTimingConfig
-                  Shared.defaultCreateProposalTimeRangeMaxDuration
+                  def
+                  def
               )
               MutateGovernor
               ( ScriptContext

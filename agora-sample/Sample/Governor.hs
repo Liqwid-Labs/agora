@@ -56,6 +56,10 @@ import Agora.Proposal (
   emptyVotesFor,
  )
 import Agora.Proposal qualified as P
+import Agora.Proposal.Time (
+  ProposalStartingTime (ProposalStartingTime),
+  ProposalTimingConfig (..),
+ )
 import Agora.Stake (
   ProposalLock (..),
   Stake (..),
@@ -64,15 +68,9 @@ import Agora.Stake (
 
 --------------------------------------------------------------------------------
 
-import Agora.Proposal.Time (
-  ProposalStartingTime (ProposalStartingTime),
-  ProposalTimingConfig (..),
- )
 import Sample.Shared (
   authorityTokenSymbol,
-  defaultCreateProposalTimeRangeMaxDuration,
   defaultProposalThresholds,
-  defaultProposalTimingConfig,
   govAssetClass,
   govSymbol,
   govValidatorAddress,
@@ -88,6 +86,10 @@ import Sample.Shared (
   stakeAssetClass,
  )
 import Test.Util (closedBoundedInterval, datumPair, toDatumHash)
+
+--------------------------------------------------------------------------------
+
+import Data.Default.Class (Default (def))
 
 --------------------------------------------------------------------------------
 
@@ -119,8 +121,8 @@ mintGST =
         GovernorDatum
           { proposalThresholds = defaultProposalThresholds
           , nextProposalId = ProposalId 0
-          , proposalTimings = defaultProposalTimingConfig
-          , createProposalTimeRangeMaxDuration = defaultCreateProposalTimeRangeMaxDuration
+          , proposalTimings = def
+          , createProposalTimeRangeMaxWidth = def
           }
       governorOutputDatum :: Datum
       governorOutputDatum = Datum $ toBuiltinData governorOutputDatum'
@@ -214,8 +216,8 @@ createProposal =
         GovernorDatum
           { proposalThresholds = defaultProposalThresholds
           , nextProposalId = thisProposalId
-          , proposalTimings = defaultProposalTimingConfig
-          , createProposalTimeRangeMaxDuration = defaultCreateProposalTimeRangeMaxDuration
+          , proposalTimings = def
+          , createProposalTimeRangeMaxWidth = def
           }
       governorInputDatum :: Datum
       governorInputDatum = Datum $ toBuiltinData governorInputDatum'
@@ -245,7 +247,7 @@ createProposal =
                 , cosigners = [signer]
                 , thresholds = defaultProposalThresholds
                 , votes = emptyVotesFor effects
-                , timingConfig = defaultProposalTimingConfig
+                , timingConfig = def
                 , startingTime = proposalStartingTimeFromTimeRange validTimeRange
                 }
           )
@@ -392,8 +394,8 @@ mintGATs =
         GovernorDatum
           { proposalThresholds = defaultProposalThresholds
           , nextProposalId = ProposalId 5
-          , proposalTimings = defaultProposalTimingConfig
-          , createProposalTimeRangeMaxDuration = defaultCreateProposalTimeRangeMaxDuration
+          , proposalTimings = def
+          , createProposalTimeRangeMaxWidth = def
           }
       governorInputDatum :: Datum
       governorInputDatum = Datum $ toBuiltinData governorInputDatum'
@@ -428,7 +430,7 @@ mintGATs =
           , cosigners = [signer, signer2]
           , thresholds = defaultProposalThresholds
           , votes = proposalVotes
-          , timingConfig = defaultProposalTimingConfig
+          , timingConfig = def
           , startingTime = ProposalStartingTime 10
           }
       proposalInputDatum :: Datum
@@ -485,8 +487,8 @@ mintGATs =
       --
       validTimeRange =
         closedBoundedInterval
-          (defaultProposalTimingConfig.lockingTime + 11)
-          (defaultProposalTimingConfig.executingTime - 11)
+          ((def :: ProposalTimingConfig).lockingTime + 11)
+          ((def :: ProposalTimingConfig).executingTime - 11)
    in ScriptContext
         { scriptContextTxInfo =
             TxInfo
@@ -587,8 +589,8 @@ mutateState =
         GovernorDatum
           { proposalThresholds = defaultProposalThresholds
           , nextProposalId = ProposalId 5
-          , proposalTimings = defaultProposalTimingConfig
-          , createProposalTimeRangeMaxDuration = defaultCreateProposalTimeRangeMaxDuration
+          , proposalTimings = def
+          , createProposalTimeRangeMaxWidth = def
           }
       governorInputDatum :: Datum
       governorInputDatum = Datum $ toBuiltinData governorInputDatum'

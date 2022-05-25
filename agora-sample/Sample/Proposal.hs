@@ -16,9 +16,14 @@ module Sample.Proposal (
 ) where
 
 --------------------------------------------------------------------------------
+
 import Plutarch.Api.V1 (
   validatorHash,
  )
+import Plutarch.SafeMoney (Tagged (Tagged), untag)
+
+--------------------------------------------------------------------------------
+
 import Plutus.V1.Ledger.Api (
   Address (Address),
   Credential (ScriptCredential),
@@ -34,6 +39,7 @@ import Plutus.V1.Ledger.Api (
   TxOutRef (TxOutRef),
  )
 import Plutus.V1.Ledger.Value qualified as Value
+import PlutusTx.AssocMap qualified as AssocMap
 
 --------------------------------------------------------------------------------
 
@@ -51,10 +57,15 @@ import Agora.Proposal (
  )
 import Agora.Proposal.Time (ProposalStartingTime (ProposalStartingTime), ProposalTimingConfig (..))
 import Agora.Stake (ProposalLock (ProposalLock), Stake (..), StakeDatum (..))
-import Plutarch.SafeMoney (Tagged (Tagged), untag)
-import PlutusTx.AssocMap qualified as AssocMap
+
+--------------------------------------------------------------------------------
+
 import Sample.Shared
 import Test.Util (closedBoundedInterval, datumPair, toDatumHash, updateMap)
+
+--------------------------------------------------------------------------------
+
+import Data.Default.Class (Default (def))
 
 --------------------------------------------------------------------------------
 
@@ -78,7 +89,7 @@ proposalCreation =
                 , cosigners = [signer]
                 , thresholds = defaultProposalThresholds
                 , votes = emptyVotesFor effects
-                , timingConfig = defaultProposalTimingConfig
+                , timingConfig = def
                 , startingTime = proposalStartingTimeFromTimeRange validTimeRange
                 }
           )
@@ -90,8 +101,8 @@ proposalCreation =
               GovernorDatum
                 { proposalThresholds = defaultProposalThresholds
                 , nextProposalId = ProposalId 0
-                , proposalTimings = defaultProposalTimingConfig
-                , createProposalTimeRangeMaxDuration = defaultCreateProposalTimeRangeMaxDuration
+                , proposalTimings = def
+                , createProposalTimeRangeMaxWidth = def
                 }
           )
       govAfter :: Datum
@@ -101,8 +112,8 @@ proposalCreation =
               GovernorDatum
                 { proposalThresholds = defaultProposalThresholds
                 , nextProposalId = ProposalId 1
-                , proposalTimings = defaultProposalTimingConfig
-                , createProposalTimeRangeMaxDuration = defaultCreateProposalTimeRangeMaxDuration
+                , proposalTimings = def
+                , createProposalTimeRangeMaxWidth = def
                 }
           )
 
@@ -179,7 +190,7 @@ cosignProposal newSigners =
           , cosigners = [signer]
           , thresholds = defaultProposalThresholds
           , votes = emptyVotesFor effects
-          , timingConfig = defaultProposalTimingConfig
+          , timingConfig = def
           , startingTime = ProposalStartingTime 0
           }
       stakeDatum :: StakeDatum
@@ -190,7 +201,7 @@ cosignProposal newSigners =
       validTimeRange =
         closedBoundedInterval
           10
-          (defaultProposalTimingConfig.draftTime - 10)
+          ((def :: ProposalTimingConfig).draftTime - 10)
    in TxInfo
         { txInfoInputs =
             [ TxInInfo
@@ -300,7 +311,7 @@ voteOnProposal params =
           , cosigners = [stakeOwner]
           , thresholds = defaultProposalThresholds
           , votes = ProposalVotes initialVotes
-          , timingConfig = defaultProposalTimingConfig
+          , timingConfig = def
           , startingTime = ProposalStartingTime 0
           }
       proposalInputDatum :: Datum
@@ -389,7 +400,9 @@ voteOnProposal params =
       ---
 
       validTimeRange =
-        closedBoundedInterval (defaultProposalTimingConfig.draftTime + 1) (defaultProposalTimingConfig.votingTime - 1)
+        closedBoundedInterval
+          ((def :: ProposalTimingConfig).draftTime + 1)
+          ((def :: ProposalTimingConfig).votingTime - 1)
    in TxInfo
         { txInfoInputs =
             [ TxInInfo proposalRef proposalInput
