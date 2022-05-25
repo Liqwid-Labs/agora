@@ -23,23 +23,23 @@ Open a development shell with `nix develop` and build the project with `cabal bu
 
 ## Documentation
 
-Documentation for Agora may be found in [docs](./docs).
+Documentation for Agora is hosted on Notion. You can find the specs [here](https://liqwid.notion.site/e85c09d2c9a542b19aac8dd3d6caa98b?v=d863219cd6a14082a661c4959cabd6e7).
 
 Haddock is deployed on GitHub Pages [here](https://liqwid-labs.github.io/agora/).
 
 ### Using Agora for your protocol
 
-If you are a protocol wanting to use Agora, read [Using Agora](./docs/using-agora.md).
+If you are a protocol wanting to use Agora, read [Using Agora](https://liqwid.notion.site/Using-Agora-74ceb4a70d024992abd9ff07087013e6).
 
 ## Road-map
 
 ### v1
 
--   [ ] Governor
--   [ ] Treasury
+-   [x] Governor
+-   [x] Treasury
 -   [ ] Staking pool
 -   [ ] Proposals
--   [ ] Effects
+-   [x] Effects
 
 ### v2
 
