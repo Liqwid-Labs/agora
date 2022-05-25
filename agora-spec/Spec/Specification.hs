@@ -101,13 +101,13 @@ getSpecification :: String -> SpecificationTree -> [Specification]
 getSpecification name (Terminal spec@(Specification sn _ _))
   | name == sn = [spec]
   | otherwise = []
-getSpecification name (Group _ st) = mconcat $ (getSpecification name) <$> st
+getSpecification name (Group _ st) = mconcat $ getSpecification name <$> st
 
 -- | Query specific @SpecificationTree@ from a tree.
 getSpecificationTree :: String -> SpecificationTree -> [SpecificationTree]
 getSpecificationTree name specTree@(Group gn st)
   | gn == name = [specTree]
-  | otherwise = mconcat $ (getSpecificationTree name) <$> st
+  | otherwise = mconcat $ getSpecificationTree name <$> st
 getSpecificationTree _ _ = []
 
 -- | Convert @SpecificationTree@ into @TestTree@ to be used as a unit test.

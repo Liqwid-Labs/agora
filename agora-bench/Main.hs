@@ -21,12 +21,12 @@ main = do
   I.writeFile "bench.csv" $
     (decodeUtf8 . encodeDefaultOrderedByName) res
 
-  mapM_ print res
+  mapM_ (Prelude.putStrLn . (<> "\n") . show) res
   where
     res =
       specificationTreeToBenchmarks $
         group
-          "Benchmark"
+          "Agora"
           [ group
               "Effects"
               [ group "Treasury Withdrawal Effect" TreasuryWithdrawal.specs
