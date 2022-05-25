@@ -37,7 +37,6 @@ import GHC.Generics qualified as GHC
 --------------------------------------------------------------------------------
 
 import Agora.Utils (
-  allOutputs,
   plookup,
   psymbolValueOf,
   ptokenSpent,
@@ -134,7 +133,7 @@ authorityTokenPolicy params =
     pmatch ctx' $ \(PScriptContext ctx') -> unTermCont $ do
       ctx <- tcont $ pletFields @'["txInfo", "purpose"] ctx'
       PTxInfo txInfo' <- tcmatch $ pfromData ctx.txInfo
-      txInfo <- tcont $ pletFields @'["inputs", "mint"] txInfo'
+      txInfo <- tcont $ pletFields @'["inputs", "mint", "outputs"] txInfo'
       let inputs = txInfo.inputs
           mintedValue = pfromData txInfo.mint
           AssetClass (govCs, govTn) = params.authority
@@ -151,10 +150,12 @@ authorityTokenPolicy params =
           ( unTermCont $ do
               tcassert "Parent token did not move in minting GATs" govTokenSpent
               tcassert "All outputs only emit valid GATs" $
-                allOutputs @PData # pfromData ctx.txInfo #$ plam $ \txOut _value _address _datum ->
-                  authorityTokensValidIn
-                    # ownSymbol
-                    # txOut
+                pall
+                  # plam
+                    ( (authorityTokensValidIn # ownSymbol #)
+                        . pfromData
+                    )
+                  # txInfo.outputs
               pure $ popaque $ pconstant ()
           )
           (popaque $ pconstant ())

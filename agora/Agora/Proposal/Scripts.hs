@@ -21,7 +21,6 @@ import Agora.Proposal.Time (currentProposalTime, isVotingPeriod)
 import Agora.Record (mkRecordConstr, (.&), (.=))
 import Agora.Stake (PProposalLock (..), PStakeDatum (..), findStakeOwnedBy)
 import Agora.Utils (
-  anyOutput,
   findTxOutByTxOutRef,
   getMintingPolicySymbol,
   mustBePJust,
@@ -188,25 +187,23 @@ proposalValidator proposal =
 
     -- Filter out own output with own address and PST.
     -- Delay the evaluation cause in some cases there won't be any continuing output.
-    ownOutputD <-
+    ownOutput <-
       tclet $
-        pdelay $
-          mustBePJust # "Own output should be present" #$ pfind
-            # plam
-              ( \input -> unTermCont $ do
-                  inputF <- tcont $ pletFields @'["address", "value"] input
-                  pure $
-                    inputF.address #== ownAddress
-                      #&& psymbolValueOf # stCurrencySymbol # inputF.value #== 1
-              )
-            # pfromData txInfoF.outputs
+        mustBePJust # "Own output should be present" #$ pfind
+          # plam
+            ( \input -> unTermCont $ do
+                inputF <- tcont $ pletFields @'["address", "value"] input
+                pure $
+                  inputF.address #== ownAddress
+                    #&& psymbolValueOf # stCurrencySymbol # inputF.value #== 1
+            )
+          # pfromData txInfoF.outputs
 
-    proposalOutD <-
+    proposalOut <-
       tclet $
-        pdelay $
-          mustFindDatum' @PProposalDatum
-            # (pfield @"datumHash" # pforce ownOutputD)
-            # txInfoF.datums
+        mustFindDatum' @PProposalDatum
+          # (pfield @"datumHash" # ownOutput)
+          # txInfoF.datums
 
     pure $
       pmatch proposalRedeemer $ \case
@@ -274,7 +271,7 @@ proposalValidator proposal =
                       .& #startingTime .= proposalF.startingTime
                   )
 
-          tcassert "Output proposal should be valid" $ pforce proposalOutD #== expectedProposalOut
+          tcassert "Output proposal should be valid" $ proposalOut #== expectedProposalOut
 
           -- We validate the output stake datum here as well: We need the vote option
           -- to create a valid 'ProposalLock', however the vote option is encoded
@@ -346,34 +343,22 @@ proposalValidator proposal =
                 )
               # newSigs
 
+          let updatedSigs = pconcat # newSigs # proposalF.cosigners
+              expectedDatum =
+                mkRecordConstr
+                  PProposalDatum
+                  ( #proposalId .= proposalF.proposalId
+                      .& #effects .= proposalF.effects
+                      .& #status .= proposalF.status
+                      .& #cosigners .= pdata updatedSigs
+                      .& #thresholds .= proposalF.thresholds
+                      .& #votes .= proposalF.votes
+                      .& #timingConfig .= proposalF.timingConfig
+                      .& #startingTime .= proposalF.startingTime
+                  )
+
           tcassert "Signatures are correctly added to cosignature list" $
-            anyOutput @PProposalDatum # ctx.txInfo
-              #$ plam
-              $ \newValue address newProposalDatum ->
-                let updatedSigs = pconcat # newSigs # proposalF.cosigners
-                    correctDatum =
-                      pdata newProposalDatum
-                        #== pdata
-                          ( mkRecordConstr
-                              PProposalDatum
-                              ( #proposalId .= proposalF.proposalId
-                                  .& #effects .= proposalF.effects
-                                  .& #status .= proposalF.status
-                                  .& #cosigners .= pdata updatedSigs
-                                  .& #thresholds .= proposalF.thresholds
-                                  .& #votes .= proposalF.votes
-                                  .& #timingConfig .= proposalF.timingConfig
-                                  .& #startingTime .= proposalF.startingTime
-                              )
-                          )
-                 in foldr1
-                      (#&&)
-                      [ ptraceIfFalse "Datum must be correct" correctDatum
-                      , ptraceIfFalse "Value should be correct" $
-                          pdata txOutF.value #== pdata newValue
-                      , ptraceIfFalse "Must be sent to Proposal's address" $
-                          ownAddress #== pdata address
-                      ]
+            proposalOut #== expectedDatum
 
           pure $ popaque (pconstant ())
         --------------------------------------------------------------------------
