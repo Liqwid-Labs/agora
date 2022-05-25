@@ -47,7 +47,6 @@ module Spec.Specification (
   toTestTree,
 ) where
 
-import Data.Maybe (catMaybes)
 import Plutarch.Api.V1 (PMintingPolicy, PValidator)
 import Plutarch.Builtin (pforgetData)
 import Plutarch.Evaluate (evalScript)
@@ -98,25 +97,18 @@ group name st
   | otherwise = Group name st
 
 -- | Query specific @Specification@ from a tree.
-getSpecification :: String -> SpecificationTree -> Maybe Specification
+getSpecification :: String -> SpecificationTree -> [Specification]
 getSpecification name (Terminal spec@(Specification sn _ _))
-  | name == sn = Just spec
-  | otherwise = Nothing
-getSpecification name (Group _ st)
-  | length specs == 1 = Just $ head specs
-  | otherwise = Nothing
-  where
-    specs = catMaybes $ getSpecification name <$> st
+  | name == sn = [spec]
+  | otherwise = []
+getSpecification name (Group _ st) = mconcat $ (getSpecification name) <$> st
 
 -- | Query specific @SpecificationTree@ from a tree.
-getSpecificationTree :: String -> SpecificationTree -> Maybe SpecificationTree
+getSpecificationTree :: String -> SpecificationTree -> [SpecificationTree]
 getSpecificationTree name specTree@(Group gn st)
-  | gn == name = Just specTree
-  | length trees == 1 = Just $ head trees
-  | otherwise = Nothing
-  where
-    trees = catMaybes $ getSpecificationTree name <$> st
-getSpecificationTree _ _ = Nothing
+  | gn == name = [specTree]
+  | otherwise = mconcat $ (getSpecificationTree name) <$> st
+getSpecificationTree _ _ = []
 
 -- | Convert @SpecificationTree@ into @TestTree@ to be used as a unit test.
 toTestTree :: SpecificationTree -> TestTree
