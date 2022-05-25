@@ -22,7 +22,7 @@ import Agora.Stake.Scripts (stakePolicy, stakeValidator)
 
 import Sample.Stake (DepositWithdrawExample (DepositWithdrawExample, delta, startAmount), signer)
 import Sample.Stake qualified as Stake
-import Spec.Spec (
+import Spec.Specification (
   SpecificationTree,
   group,
   policyFailsWith,

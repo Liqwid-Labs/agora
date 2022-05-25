@@ -182,13 +182,13 @@ library agora-sample
 library agora-spec
   import:          lang, deps, test-deps
   exposed-modules:
+    Spec.Specification
     Spec.AuthorityToken
     Spec.Effect.GovernorMutation
     Spec.Effect.TreasuryWithdrawal
     Spec.Governor
     Spec.Model.MultiSig
     Spec.Proposal
-    Spec.Spec
     Spec.Stake
     Spec.Treasury
     Spec.Utils

@@ -1,11 +1,39 @@
-module Spec.Spec (
+{- |
+Module     : Spec.Specification
+Maintainer : seungheon.ooh@gmail.com
+Description: Helpers to build Specification for testing and bench-marking
+
+Constructors for building a specification for Plutarch scripts:
+
+  - 'policySucceedsWith': checks that a minting policy succeeds.
+
+  - 'policyFailsWith': checks that a minting policy fails.
+
+  - 'validatorSucceedsWith': checks that validator succeeds.
+
+  - 'validatorFailsWith': checks that validator fails.
+
+  - 'effectSucceedsWith': checks that effect succeeds.
+
+  - 'effectFailsWith': checks that effect fails.
+
+  - 'scriptSucceeds': checks that an arbitrary script does not
+    `perror`.
+
+  - 'scriptFails': checks that an arbitrary script `perror`s out.
+-}
+module Spec.Specification (
+  -- * Structures
   Specification (..),
   SpecificationExpectation (..),
   SpecificationTree (..),
+
+  -- * Spec helpers
   group,
-  toTestTree,
   getSpecification,
   getSpecificationTree,
+
+  -- * Spec builders
   scriptSucceeds,
   scriptFails,
   policySucceedsWith,
@@ -14,6 +42,9 @@ module Spec.Spec (
   validatorFailsWith,
   effectSucceedsWith,
   effectFailsWith,
+
+  -- * Converters
+  toTestTree,
 ) where
 
 import Data.Maybe (catMaybes)
@@ -26,12 +57,20 @@ import PlutusTx.IsData qualified as PlutusTx (ToData)
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.HUnit (assertFailure, testCase)
 
+{-| Expectations upon execution of script
+ @Success@ indicates a successful execution.
+ @Failure@ inidcates a faulty execution.
+ @FailureWith@ indicates a faulty execution but with expected reason for failure.
+-}
 data SpecificationExpectation
   = Success
   | Failure
   | FailureWith String
   deriving stock (Show)
 
+{-| Unit of specification. @Specification@ holds name, expectation, and
+  script to be tested or executed later on.
+-}
 data Specification = Specification
   { sName :: String
   , sExpectation :: SpecificationExpectation
@@ -39,20 +78,25 @@ data Specification = Specification
   }
   deriving stock (Show)
 
+-- | Tree-structure to group alike specifications--modeled after @TestTree@ from tasty.
 data SpecificationTree
   = Terminal Specification
   | Group String [SpecificationTree]
   deriving stock (Show)
 
+-- | Checks if given name exists in @SpecificationTree@ as either
+-- group name or specification name.
 exists :: String -> SpecificationTree -> Bool
 exists s (Terminal (Specification name _ _)) = s == name
 exists s (Group name st) = or (exists s <$> st) || s == name
 
+-- | Groups alike @SpecificationTree@s into a bigger tree.
 group :: String -> [SpecificationTree] -> SpecificationTree
 group name st
   | or $ exists name <$> st = error $ "Name already exists: " <> name
   | otherwise = Group name st
 
+-- | Query specific @Specification@ from a tree.
 getSpecification :: String -> SpecificationTree -> Maybe Specification
 getSpecification name (Terminal spec@(Specification sn _ _))
   | name == sn = Just spec
@@ -63,6 +107,7 @@ getSpecification name (Group _ st)
   where
     specs = catMaybes $ getSpecification name <$> st
 
+-- | Query specific @SpecificationTree@ from a tree.
 getSpecificationTree :: String -> SpecificationTree -> Maybe SpecificationTree
 getSpecificationTree name specTree@(Group gn st)
   | gn == name = Just specTree
@@ -72,6 +117,7 @@ getSpecificationTree name specTree@(Group gn st)
     trees = catMaybes $ getSpecificationTree name <$> st
 getSpecificationTree _ _ = Nothing
 
+-- | Convert @SpecificationTree@ into @TestTree@ to be used as a unit test.
 toTestTree :: SpecificationTree -> TestTree
 toTestTree (Group name st) = testGroup name $ toTestTree <$> st
 toTestTree (Terminal (Specification name expectation script)) =
@@ -103,12 +149,15 @@ toTestTree (Terminal (Specification name expectation script)) =
             <> ts
       _ -> pure ()
 
+-- | Check that an arbitrary script doesn't error when evaluated, given a name.
 scriptSucceeds :: String -> Script -> SpecificationTree
 scriptSucceeds name script = Terminal $ Specification name Success script
 
+-- | Check that an arbitrary script **does** error when evaluated, given a name.
 scriptFails :: String -> Script -> SpecificationTree
 scriptFails name script = Terminal $ Specification name Failure script
 
+-- | Check that a policy script succeeds, given a name and arguments.
 policySucceedsWith ::
   ( PLift redeemer
   , PlutusTx.ToData (PLifted redeemer)
@@ -125,7 +174,8 @@ policySucceedsWith tag policy redeemer scriptContext =
           # pforgetData (pconstantData redeemer)
           # pconstant scriptContext
       )
-
+      
+-- | Check that a policy script fails, given a name and arguments.
 policyFailsWith ::
   ( PLift redeemer
   , PlutusTx.ToData (PLifted redeemer)
@@ -142,7 +192,8 @@ policyFailsWith tag policy redeemer scriptContext =
           # pforgetData (pconstantData redeemer)
           # pconstant scriptContext
       )
-
+      
+-- | Check that a validator script succeeds, given a name and arguments.
 validatorSucceedsWith ::
   ( PLift datum
   , PlutusTx.ToData (PLifted datum)
@@ -164,6 +215,7 @@ validatorSucceedsWith tag validator datum redeemer scriptContext =
           # pconstant scriptContext
       )
 
+-- | Check that a validator script fails, given a name and arguments.
 validatorFailsWith ::
   ( PLift datum
   , PlutusTx.ToData (PLifted datum)
@@ -185,6 +237,7 @@ validatorFailsWith tag validator datum redeemer scriptContext =
           # pconstant scriptContext
       )
 
+-- | Check that an effect succeeds, given a name and argument.
 effectSucceedsWith ::
   ( PLift datum
   , PlutusTx.ToData (PLifted datum)
@@ -196,6 +249,7 @@ effectSucceedsWith ::
   SpecificationTree
 effectSucceedsWith tag eff datum = validatorSucceedsWith tag eff datum ()
 
+-- | Check that an effect fails, given a name and argument.
 effectFailsWith ::
   ( PLift datum
   , PlutusTx.ToData (PLifted datum)

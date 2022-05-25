@@ -48,7 +48,7 @@ import Sample.Treasury (
   validCtx,
   walletIn,
  )
-import Spec.Spec (
+import Spec.Specification (
   SpecificationTree,
   group,
   validatorFailsWith,
