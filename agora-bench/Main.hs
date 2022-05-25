@@ -9,7 +9,7 @@ import Spec.Effect.GovernorMutation qualified as GovernorMutation
 import Spec.Effect.TreasuryWithdrawal qualified as TreasuryWithdrawal
 import Spec.Governor qualified as Governor
 import Spec.Proposal qualified as Proposal
-import Spec.Spec (group)
+import Spec.Specification (group)
 import Spec.Stake qualified as Stake
 import Spec.Treasury qualified as Treasury
 import Prelude
@@ -20,6 +20,11 @@ main :: IO ()
 main = do
   I.writeFile "bench.csv" $
     (decodeUtf8 . encodeDefaultOrderedByName) $
+    res
+
+  mapM_ print res  
+  where
+    res = 
       specificationTreeToBenchmarks $
         group
           "Benchmark"

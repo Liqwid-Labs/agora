@@ -18,7 +18,7 @@ import Plutus.V1.Ledger.Api (
  )
 import Plutus.V1.Ledger.Api qualified as Plutus
 
-import Spec.Spec (
+import Spec.Specification (
   Specification (Specification),
   SpecificationExpectation (Success),
   SpecificationTree (..),
@@ -30,11 +30,11 @@ import Spec.Spec (
 data Benchmark = Benchmark
   { name :: Text
   -- ^ Human readable name describing script.
-  , bCPUBudget :: ExCPU
+  , cpuBudget :: ExCPU
   -- ^ The on-chain execution cost of a script.
-  , bMemoryBudget :: ExMemory
+  , memoryBudget :: ExMemory
   -- ^ The on-chain memory budget of a script.
-  , bScriptSize :: Int
+  , scriptSize :: Int
   -- ^ The on-chain size of a script.
   }
   deriving stock (Show, Eq, Ord, Generic)
@@ -43,9 +43,9 @@ instance ToNamedRecord Benchmark where
   toNamedRecord (Benchmark {..}) =
     namedRecord
       [ "name" .= name
-      , "cpu" .= bCPUBudget
-      , "mem" .= bMemoryBudget
-      , "size" .= bScriptSize
+      , "cpu" .= cpuBudget
+      , "mem" .= memoryBudget
+      , "size" .= scriptSize
       ]
 
 instance DefaultOrdered Benchmark where
