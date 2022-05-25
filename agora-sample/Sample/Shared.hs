@@ -37,7 +37,8 @@ module Sample.Shared (
   proposalValidatorHash,
   proposalValidatorAddress,
   defaultProposalTimingConfig,
-  tmpProposalStartingTime,
+  defaultCreateProposalTimeRangeMaxDuration,
+  proposalStartingTimeFromTimeRange,
 
   -- ** Authority
   authorityToken,
@@ -77,7 +78,7 @@ import Agora.Proposal (
   ProposalThresholds (..),
  )
 import Agora.Proposal.Time (
-  ProposalStartingTime (..),
+  ProposalStartingTime (ProposalStartingTime),
   ProposalTimingConfig (..),
  )
 import Agora.Stake (Stake (..))
@@ -95,9 +96,15 @@ import Plutus.V1.Ledger.Api (
   Address (Address),
   Credential (ScriptCredential),
   CurrencySymbol,
+  Extended (..),
+  Interval (..),
+  LowerBound (..),
   MintingPolicy (..),
+  POSIXTime,
+  POSIXTimeRange,
   PubKeyHash,
   TxOutRef (TxOutRef),
+  UpperBound (..),
   Value,
  )
 import Plutus.V1.Ledger.Contexts (
@@ -199,12 +206,14 @@ defaultProposalTimingConfig =
     , executingTime = 3000
     }
 
-{- | Hard coded starting time of every propoal.
-    This will be calculated by the governor in the future.
-    FIXME: Remove this.
--}
-tmpProposalStartingTime :: ProposalStartingTime
-tmpProposalStartingTime = ProposalStartingTime 0
+defaultCreateProposalTimeRangeMaxDuration :: POSIXTime
+defaultCreateProposalTimeRangeMaxDuration = 10
+
+proposalStartingTimeFromTimeRange :: POSIXTimeRange -> ProposalStartingTime
+proposalStartingTimeFromTimeRange
+  (Interval (LowerBound (Finite l) True) (UpperBound (Finite u) True)) =
+    ProposalStartingTime $ (l + u) `div` 2
+proposalStartingTimeFromTimeRange _ = error "Given time range should be finite and closed"
 
 ------------------------------------------------------------------
 

@@ -33,7 +33,6 @@ import Plutus.V1.Ledger.Api (
   TxOut (TxOut, txOutAddress, txOutDatumHash, txOutValue),
   TxOutRef (TxOutRef),
  )
-import Plutus.V1.Ledger.Interval qualified as Interval
 import Plutus.V1.Ledger.Value qualified as Value
 
 --------------------------------------------------------------------------------
@@ -50,7 +49,7 @@ import Agora.Proposal (
   ResultTag (..),
   emptyVotesFor,
  )
-import Agora.Proposal.Time (ProposalTimingConfig (..))
+import Agora.Proposal.Time (ProposalStartingTime (ProposalStartingTime), ProposalTimingConfig (..))
 import Agora.Stake (ProposalLock (ProposalLock), Stake (..), StakeDatum (..))
 import Plutarch.SafeMoney (Tagged (Tagged), untag)
 import PlutusTx.AssocMap qualified as AssocMap
@@ -80,7 +79,7 @@ proposalCreation =
                 , thresholds = defaultProposalThresholds
                 , votes = emptyVotesFor effects
                 , timingConfig = defaultProposalTimingConfig
-                , startingTime = tmpProposalStartingTime
+                , startingTime = proposalStartingTimeFromTimeRange validTimeRange
                 }
           )
 
@@ -92,6 +91,7 @@ proposalCreation =
                 { proposalThresholds = defaultProposalThresholds
                 , nextProposalId = ProposalId 0
                 , proposalTimings = defaultProposalTimingConfig
+                , createProposalTimeRangeMaxDuration = defaultCreateProposalTimeRangeMaxDuration
                 }
           )
       govAfter :: Datum
@@ -102,8 +102,11 @@ proposalCreation =
                 { proposalThresholds = defaultProposalThresholds
                 , nextProposalId = ProposalId 1
                 , proposalTimings = defaultProposalTimingConfig
+                , createProposalTimeRangeMaxDuration = defaultCreateProposalTimeRangeMaxDuration
                 }
           )
+
+      validTimeRange = closedBoundedInterval 10 15
    in ScriptContext
         { scriptContextTxInfo =
             TxInfo
@@ -140,7 +143,7 @@ proposalCreation =
               , txInfoMint = st
               , txInfoDCert = []
               , txInfoWdrl = []
-              , txInfoValidRange = Interval.always
+              , txInfoValidRange = validTimeRange
               , txInfoSignatories = [signer]
               , txInfoData =
                   [ datumPair proposalDatum
@@ -177,7 +180,7 @@ cosignProposal newSigners =
           , thresholds = defaultProposalThresholds
           , votes = emptyVotesFor effects
           , timingConfig = defaultProposalTimingConfig
-          , startingTime = tmpProposalStartingTime
+          , startingTime = ProposalStartingTime 0
           }
       stakeDatum :: StakeDatum
       stakeDatum = StakeDatum (Tagged 50_000_000) signer2 []
@@ -298,7 +301,7 @@ voteOnProposal params =
           , thresholds = defaultProposalThresholds
           , votes = ProposalVotes initialVotes
           , timingConfig = defaultProposalTimingConfig
-          , startingTime = tmpProposalStartingTime
+          , startingTime = ProposalStartingTime 0
           }
       proposalInputDatum :: Datum
       proposalInputDatum = Datum $ toBuiltinData proposalInputDatum'

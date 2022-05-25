@@ -141,22 +141,20 @@ library
     Agora.Proposal.Time
     Agora.Record
     Agora.SafeMoney
+    Agora.ScriptInfo
     Agora.Stake
     Agora.Stake.Scripts
     Agora.Treasury
     Agora.Utils
     Agora.Utils.Value
-    Agora.ScriptInfo
 
-  other-modules:
-    Agora.Aeson.Orphans
+  other-modules:   Agora.Aeson.Orphans
   hs-source-dirs:  agora
 
 library pprelude
   default-language: Haskell2010
   exposed-modules:  PPrelude
   hs-source-dirs:   agora
-
   build-depends:
     , base
     , plutarch
@@ -176,8 +174,8 @@ library agora-sample
     Sample.Shared
     Sample.Stake
     Sample.Treasury
-  hs-source-dirs:  agora-sample
 
+  hs-source-dirs:  agora-sample
   build-depends:   agora-testlib
 
 test-suite agora-test
@@ -214,8 +212,7 @@ executable agora-scripts
   import:         lang, deps, exe-opts
   main-is:        Scripts.hs
   hs-source-dirs: agora-scripts
-  other-modules:
-    Options
+  other-modules:  Options
   build-depends:
     , agora
     , optparse-applicative

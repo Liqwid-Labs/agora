@@ -37,7 +37,9 @@ import Plutus.V1.Ledger.Value (AssetClass, assetClass)
 import Plutus.V1.Ledger.Value qualified as Value
 import Sample.Shared (
   authorityTokenSymbol,
+  defaultCreateProposalTimeRangeMaxDuration,
   defaultProposalThresholds,
+  defaultProposalTimingConfig,
   govAssetClass,
   govValidatorAddress,
   governor,
@@ -101,6 +103,8 @@ mkEffectTxInfo newGovDatum =
         GovernorDatum
           { proposalThresholds = defaultProposalThresholds
           , nextProposalId = ProposalId 0
+          , proposalTimings = defaultProposalTimingConfig
+          , createProposalTimeRangeMaxDuration = defaultCreateProposalTimeRangeMaxDuration
           }
       governorInputDatum :: Datum
       governorInputDatum = Datum $ toBuiltinData governorInputDatum'
@@ -161,6 +165,8 @@ validNewGovernorDatum =
   GovernorDatum
     { proposalThresholds = defaultProposalThresholds
     , nextProposalId = ProposalId 42
+    , proposalTimings = defaultProposalTimingConfig
+    , createProposalTimeRangeMaxDuration = defaultCreateProposalTimeRangeMaxDuration
     }
 
 invalidNewGovernorDatum :: GovernorDatum
@@ -171,4 +177,6 @@ invalidNewGovernorDatum =
           { countVoting = Tagged (-1)
           }
     , nextProposalId = ProposalId 42
+    , proposalTimings = defaultProposalTimingConfig
+    , createProposalTimeRangeMaxDuration = defaultCreateProposalTimeRangeMaxDuration
     }

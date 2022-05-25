@@ -31,6 +31,7 @@ import Agora.Proposal.Scripts (
   proposalPolicy,
   proposalValidator,
  )
+import Agora.Proposal.Time (ProposalStartingTime (ProposalStartingTime))
 import Agora.Stake (
   ProposalLock (ProposalLock),
   StakeDatum (StakeDatum),
@@ -83,7 +84,7 @@ tests =
                           , (ResultTag 1, AssocMap.empty)
                           ]
                   , timingConfig = Shared.defaultProposalTimingConfig
-                  , startingTime = Shared.tmpProposalStartingTime
+                  , startingTime = ProposalStartingTime 0
                   }
               )
               (Cosign [signer2])
@@ -118,7 +119,7 @@ tests =
                             ]
                         )
                   , timingConfig = Shared.defaultProposalTimingConfig
-                  , startingTime = Shared.tmpProposalStartingTime
+                  , startingTime = ProposalStartingTime 0
                   }
               )
               (Vote (ResultTag 0))

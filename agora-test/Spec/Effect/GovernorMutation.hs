@@ -27,9 +27,10 @@ tests =
               "governor validator should pass"
               (governorValidator Shared.governor)
               ( GovernorDatum
-                  { proposalThresholds = Shared.defaultProposalThresholds
-                  , nextProposalId = ProposalId 0
-                  }
+                  Shared.defaultProposalThresholds
+                  (ProposalId 0)
+                  Shared.defaultProposalTimingConfig
+                  Shared.defaultCreateProposalTimeRangeMaxDuration
               )
               MutateGovernor
               ( ScriptContext
@@ -48,9 +49,10 @@ tests =
               "governor validator should fail"
               (governorValidator Shared.governor)
               ( GovernorDatum
-                  { proposalThresholds = Shared.defaultProposalThresholds
-                  , nextProposalId = ProposalId 0
-                  }
+                  Shared.defaultProposalThresholds
+                  (ProposalId 0)
+                  Shared.defaultProposalTimingConfig
+                  Shared.defaultCreateProposalTimeRangeMaxDuration
               )
               MutateGovernor
               ( ScriptContext
