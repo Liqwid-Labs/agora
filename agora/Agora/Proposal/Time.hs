@@ -10,7 +10,6 @@ Time functions for proposal phases.
 -}
 module Agora.Proposal.Time (
   -- * Haskell-land
-  ProposalTime (..),
   ProposalTimingConfig (..),
   ProposalStartingTime (..),
   MaxTimeRangeWidth (..),
@@ -30,10 +29,9 @@ module Agora.Proposal.Time (
   isExecutionPeriod,
 ) where
 
-import Agora.Record (mkRecordConstr, (.&), (.=))
 import Agora.Utils (tcassert, tcmatch)
 import GHC.Generics qualified as GHC
-import Generics.SOP (Generic, I (I))
+import Generics.SOP (Generic, HasDatatypeInfo, I (I))
 import Plutarch.Api.V1 (
   PExtended (PFinite),
   PInterval (PInterval),
@@ -42,7 +40,11 @@ import Plutarch.Api.V1 (
   PPOSIXTimeRange,
   PUpperBound (PUpperBound),
  )
-import Plutarch.DataRepr (DerivePConstantViaData (..), PDataFields, PIsDataReprInstances (..))
+import Plutarch.DataRepr (
+  DerivePConstantViaData (..),
+  PDataFields,
+  PIsDataReprInstances (..),
+ )
 import Plutarch.Lift (
   DerivePConstantViaNewtype (..),
   PConstantDecl,
@@ -55,35 +57,6 @@ import PlutusTx qualified
 import Prelude hiding ((+))
 
 --------------------------------------------------------------------------------
-
-{- | == Establishing timing in Proposal interactions.
-
-   In Plutus, it's impossible to determine time exactly. It's also impossible
-   to get a single point in time, yet often we need to check
-   various constraints on time.
-
-   For the purposes of proposals, there's a single most important feature:
-   The ability to determine if we can perform an action. In order to correctly
-   determine if we are able to perform certain actions, we need to know what
-   time it roughly is, compared to when the proposal was created.
-
-   'ProposalTime' represents "the time according to the proposal".
-   Its representation is opaque, and doesn't matter.
-
-   Various functions work simply on 'ProposalTime' and 'ProposalTimingConfig'.
-   In particular, 'currentProposalTime' is useful for extracting the time
-   from the 'Plutus.V1.Ledger.Api.txInfoValidPeriod' field
-   of 'Plutus.V1.Ledger.Api.TxInfo'.
-
-   We avoid 'PPOSIXTimeRange' where we can in order to save on operations.
--}
-data ProposalTime = ProposalTime
-  { lowerBound :: POSIXTime
-  , upperBound :: POSIXTime
-  }
-  deriving stock (Eq, Show, GHC.Generic)
-
-PlutusTx.makeIsDataIndexed ''ProposalTime [('ProposalTime, 0)]
 
 -- | Represents the starting time of the proposal.
 newtype ProposalStartingTime = ProposalStartingTime
@@ -117,30 +90,33 @@ newtype MaxTimeRangeWidth = MaxTimeRangeWidth {getMaxWidth :: POSIXTime}
 
 --------------------------------------------------------------------------------
 
--- | Plutarch-level version of 'ProposalTime'.
-newtype PProposalTime (s :: S)
-  = PProposalTime
-      ( Term
-          s
-          ( PDataRecord
-              '[ "lowerBound" ':= PPOSIXTime
-               , "upperBound" ':= PPOSIXTime
-               ]
-          )
-      )
-  deriving stock (GHC.Generic)
-  deriving anyclass (Generic)
-  deriving anyclass (PIsDataRepr)
-  deriving
-    (PlutusType, PIsData, PDataFields)
-    via (PIsDataReprInstances PProposalTime)
+{- | == Establishing timing in Proposal interactions.
 
-instance PUnsafeLiftDecl PProposalTime where
-  type PLifted PProposalTime = ProposalTime
-deriving via
-  (DerivePConstantViaData ProposalTime PProposalTime)
-  instance
-    (PConstantDecl ProposalTime)
+   In Plutus, it's impossible to determine time exactly. It's also impossible
+   to get a single point in time, yet often we need to check
+   various constraints on time.
+
+   For the purposes of proposals, there's a single most important feature:
+   The ability to determine if we can perform an action. In order to correctly
+   determine if we are able to perform certain actions, we need to know what
+   time it roughly is, compared to when the proposal was created.
+
+   'ProposalTime' represents "the time according to the proposal".
+   Its representation is opaque, and doesn't matter.
+
+   Various functions work simply on 'ProposalTime' and 'ProposalTimingConfig'.
+   In particular, 'currentProposalTime' is useful for extracting the time
+   from the 'Plutus.V1.Ledger.Api.txInfoValidPeriod' field
+   of 'Plutus.V1.Ledger.Api.TxInfo'.
+
+   We avoid 'PPOSIXTimeRange' where we can in order to save on operations.
+-}
+data PProposalTime (s :: S) = PProposalTime
+  { lowerBound :: Term s PPOSIXTime
+  , upperBound :: Term s PPOSIXTime
+  }
+  deriving stock (GHC.Generic)
+  deriving anyclass (Generic, PlutusType, HasDatatypeInfo, PEq)
 
 -- | Plutarch-level version of 'ProposalStartingTime'.
 newtype PProposalStartingTime (s :: S) = PProposalStartingTime (Term s PPOSIXTime)
@@ -204,10 +180,7 @@ instance AdditiveSemigroup (Term s PPOSIXTime) where
 createProposalStartingTime :: forall (s :: S). Term s (PMaxTimeRangeWidth :--> PPOSIXTimeRange :--> PProposalStartingTime)
 createProposalStartingTime = phoistAcyclic $
   plam $ \(pto -> maxDuration) iv -> unTermCont $ do
-    currentTimeF <-
-      tcont $
-        pletFields @'["lowerBound", "upperBound"] $
-          currentProposalTime # iv
+    currentTimeF <- tcmatch $ currentProposalTime # iv
 
     -- Use the middle of the current time range as the starting time.
     let duration = currentTimeF.upperBound - currentTimeF.lowerBound
@@ -237,21 +210,23 @@ currentProposalTime = phoistAcyclic $
     lbf <- tcont $ pletFields @'["_0", "_1"] lb
     ubf <- tcont $ pletFields @'["_0", "_1"] ub
     pure $
-      mkRecordConstr PProposalTime $
-        #lowerBound
-          .= pmatch
-            lbf._0
-            ( \case
-                PFinite ((pfield @"_0" #) -> d) -> d
-                _ -> ptraceError "currentProposalTime: Can't get fully-bounded proposal time."
-            )
-          .& #upperBound
-          .= pmatch
-            ubf._0
-            ( \case
-                PFinite ((pfield @"_0" #) -> d) -> d
-                _ -> ptraceError "currentProposalTime: Can't get fully-bounded proposal time."
-            )
+      pcon $
+        PProposalTime
+          { lowerBound =
+              pmatch
+                lbf._0
+                ( \case
+                    PFinite ((pfield @"_0" #) -> d) -> d
+                    _ -> ptraceError "currentProposalTime: Can't get fully-bounded proposal time."
+                )
+          , upperBound =
+              pmatch
+                ubf._0
+                ( \case
+                    PFinite ((pfield @"_0" #) -> d) -> d
+                    _ -> ptraceError "currentProposalTime: Can't get fully-bounded proposal time."
+                )
+          }
 
 -- | Check if 'PProposalTime' is within two 'PPOSIXTime'. Inclusive.
 proposalTimeWithin ::
@@ -264,13 +239,12 @@ proposalTimeWithin ::
     )
 proposalTimeWithin = phoistAcyclic $
   plam $ \l h proposalTime' -> unTermCont $ do
-    PProposalTime proposalTime <- tcmatch proposalTime'
-    ptf <- tcont $ pletFields @'["lowerBound", "upperBound"] proposalTime
+    PProposalTime ut lt <- tcmatch proposalTime'
     pure $
       foldr1
         (#&&)
-        [ l #<= pfromData ptf.lowerBound
-        , pfromData ptf.upperBound #<= h
+        [ l #<= lt
+        , ut #<= h
         ]
 
 -- | True if the 'PProposalTime' is in the draft period.
