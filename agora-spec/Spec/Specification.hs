@@ -57,7 +57,7 @@ import PlutusTx.IsData qualified as PlutusTx (ToData)
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.HUnit (assertFailure, testCase)
 
-{-| Expectations upon execution of script
+{- | Expectations upon execution of script
  @Success@ indicates a successful execution.
  @Failure@ inidcates a faulty execution.
  @FailureWith@ indicates a faulty execution but with expected reason for failure.
@@ -68,7 +68,7 @@ data SpecificationExpectation
   | FailureWith String
   deriving stock (Show)
 
-{-| Unit of specification. @Specification@ holds name, expectation, and
+{- | Unit of specification. @Specification@ holds name, expectation, and
   script to be tested or executed later on.
 -}
 data Specification = Specification
@@ -84,8 +84,9 @@ data SpecificationTree
   | Group String [SpecificationTree]
   deriving stock (Show)
 
--- | Checks if given name exists in @SpecificationTree@ as either
--- group name or specification name.
+{- | Checks if given name exists in @SpecificationTree@ as either
+ group name or specification name.
+-}
 exists :: String -> SpecificationTree -> Bool
 exists s (Terminal (Specification name _ _)) = s == name
 exists s (Group name st) = or (exists s <$> st) || s == name
@@ -174,7 +175,7 @@ policySucceedsWith tag policy redeemer scriptContext =
           # pforgetData (pconstantData redeemer)
           # pconstant scriptContext
       )
-      
+
 -- | Check that a policy script fails, given a name and arguments.
 policyFailsWith ::
   ( PLift redeemer
@@ -192,7 +193,7 @@ policyFailsWith tag policy redeemer scriptContext =
           # pforgetData (pconstantData redeemer)
           # pconstant scriptContext
       )
-      
+
 -- | Check that a validator script succeeds, given a name and arguments.
 validatorSucceedsWith ::
   ( PLift datum

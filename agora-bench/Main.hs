@@ -19,12 +19,11 @@ import Prelude
 main :: IO ()
 main = do
   I.writeFile "bench.csv" $
-    (decodeUtf8 . encodeDefaultOrderedByName) $
-    res
+    (decodeUtf8 . encodeDefaultOrderedByName) res
 
-  mapM_ print res  
+  mapM_ print res
   where
-    res = 
+    res =
       specificationTreeToBenchmarks $
         group
           "Benchmark"
