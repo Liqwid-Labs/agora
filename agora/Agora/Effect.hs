@@ -23,7 +23,7 @@ import Plutus.V1.Ledger.Value (CurrencySymbol)
 -}
 makeEffect ::
   forall (datum :: PType).
-  (PIsData datum, PTryFrom PData datum) =>
+  (PIsData datum, PTryFrom PData (PAsData datum)) =>
   CurrencySymbol ->
   (forall (s :: S). Term s PCurrencySymbol -> Term s datum -> Term s PTxOutRef -> Term s (PAsData PTxInfo) -> Term s POpaque) ->
   ClosedTerm PValidator
@@ -35,7 +35,7 @@ makeEffect gatCs' f =
     -- convert input datum, PData, into desierable type
     -- the way this conversion is performed should be defined
     -- by PTryFrom for each datum in effect script.
-    (datum', _) <- tctryFrom @datum datum
+    (pfromData -> datum', _) <- tctryFrom datum
 
     -- ensure purpose is Spending.
     PSpending txOutRef <- tcmatch $ pfromData ctx.purpose
