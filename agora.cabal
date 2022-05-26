@@ -212,13 +212,17 @@ benchmark agora-bench
   import:         lang, deps
   hs-source-dirs: agora-bench
   main-is:        Main.hs
-  other-modules:  Bench
+  other-modules:
+    Bench
+    Options
+
   type:           exitcode-stdio-1.0
   build-depends:
     , agora
     , agora-sample
     , agora-spec
     , cassava
+    , optparse-applicative
 
 executable agora-scripts
   import:         lang, deps, exe-opts
