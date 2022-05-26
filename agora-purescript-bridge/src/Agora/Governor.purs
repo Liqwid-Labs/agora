@@ -4,6 +4,7 @@ module Agora.Governor where
 import Prelude
 
 import Agora.Proposal (ProposalId, ProposalThresholds)
+import Agora.Proposal.Time (MaxTimeRangeWidth, ProposalTimingConfig)
 import Agora.SafeMoney (GTTag)
 import Data.Bounded.Generic (genericBottom, genericTop)
 import Data.Enum (class Enum)
@@ -23,6 +24,8 @@ import Type.Proxy (Proxy(Proxy))
 newtype GovernorDatum = GovernorDatum
   { proposalThresholds :: ProposalThresholds
   , nextProposalId :: ProposalId
+  , proposalTimings :: ProposalTimingConfig
+  , createProposalTimeRangeMaxWidth :: MaxTimeRangeWidth
   }
 
 derive instance Generic GovernorDatum _
@@ -31,7 +34,7 @@ derive instance Newtype GovernorDatum _
 
 --------------------------------------------------------------------------------
 
-_GovernorDatum :: Iso' GovernorDatum {proposalThresholds :: ProposalThresholds, nextProposalId :: ProposalId}
+_GovernorDatum :: Iso' GovernorDatum {proposalThresholds :: ProposalThresholds, nextProposalId :: ProposalId, proposalTimings :: ProposalTimingConfig, createProposalTimeRangeMaxWidth :: MaxTimeRangeWidth}
 _GovernorDatum = _Newtype
 
 --------------------------------------------------------------------------------

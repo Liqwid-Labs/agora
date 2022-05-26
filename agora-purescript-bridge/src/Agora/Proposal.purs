@@ -3,6 +3,7 @@ module Agora.Proposal where
 
 import Prelude
 
+import Agora.Proposal.Time (ProposalStartingTime, ProposalTimingConfig)
 import Agora.SafeMoney (GTTag)
 import Data.Bounded.Generic (genericBottom, genericTop)
 import Data.Enum (class Enum)
@@ -124,6 +125,8 @@ newtype ProposalDatum = ProposalDatum
   , cosigners :: Array PubKeyHash
   , thresholds :: ProposalThresholds
   , votes :: ProposalVotes
+  , timingConfig :: ProposalTimingConfig
+  , startingTime :: ProposalStartingTime
   }
 
 derive instance Generic ProposalDatum _
@@ -132,7 +135,7 @@ derive instance Newtype ProposalDatum _
 
 --------------------------------------------------------------------------------
 
-_ProposalDatum :: Iso' ProposalDatum {proposalId :: ProposalId, effects :: Map ResultTag (Map ValidatorHash DatumHash), status :: ProposalStatus, cosigners :: Array PubKeyHash, thresholds :: ProposalThresholds, votes :: ProposalVotes}
+_ProposalDatum :: Iso' ProposalDatum {proposalId :: ProposalId, effects :: Map ResultTag (Map ValidatorHash DatumHash), status :: ProposalStatus, cosigners :: Array PubKeyHash, thresholds :: ProposalThresholds, votes :: ProposalVotes, timingConfig :: ProposalTimingConfig, startingTime :: ProposalStartingTime}
 _ProposalDatum = _Newtype
 
 --------------------------------------------------------------------------------
