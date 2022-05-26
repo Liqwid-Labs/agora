@@ -3,7 +3,9 @@ module Main (main) where
 import Bench (specificationTreeToBenchmarks)
 import Data.Csv (encodeDefaultOrderedByName)
 import Data.Text.Lazy.Encoding (decodeUtf8)
-import Data.Text.Lazy.IO as I
+import Data.Text.Lazy.IO as I (writeFile)
+import Prettyprinter (defaultLayoutOptions, layoutPretty, pretty)
+import Prettyprinter.Render.String (renderString)
 import Spec.AuthorityToken qualified as AuthorityToken
 import Spec.Effect.GovernorMutation qualified as GovernorMutation
 import Spec.Effect.TreasuryWithdrawal qualified as TreasuryWithdrawal
@@ -21,7 +23,7 @@ main = do
   I.writeFile "bench.csv" $
     (decodeUtf8 . encodeDefaultOrderedByName) res
 
-  mapM_ (Prelude.putStrLn . (<> "\n") . show) res
+  mapM_ (putStrLn . renderString . layoutPretty defaultLayoutOptions . pretty) res
   where
     res =
       specificationTreeToBenchmarks $

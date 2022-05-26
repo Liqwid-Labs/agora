@@ -8,7 +8,7 @@ import Data.ByteString.Short qualified as SBS
 import Data.Csv (DefaultOrdered, ToNamedRecord, header, headerOrder, namedRecord, toNamedRecord, (.=))
 import Data.List (intercalate)
 import Data.Maybe (fromJust)
-import Data.Text (Text, pack, unpack)
+import Data.Text (Text, pack)
 import GHC.Generics (Generic)
 import Plutus.V1.Ledger.Api (
   ExBudget (ExBudget),
@@ -17,6 +17,7 @@ import Plutus.V1.Ledger.Api (
   Script,
  )
 import Plutus.V1.Ledger.Api qualified as Plutus
+import Prettyprinter (Pretty (pretty), indent, vsep)
 
 import Spec.Specification (
   Specification (Specification),
@@ -37,11 +38,19 @@ data Benchmark = Benchmark
   , scriptSize :: Int
   -- ^ The on-chain size of a script.
   }
-  deriving stock (Eq, Ord, Generic)
+  deriving stock (Show, Eq, Ord, Generic)
 
-instance Show Benchmark where
-  show (Benchmark name (ExCPU cpu) (ExMemory mem) size) =
-    unpack name <> "\n\tCPU: " <> show cpu <> " MEM: " <> show mem <> " SIZE: " <> show size
+instance Pretty Benchmark where
+  pretty (Benchmark name (ExCPU (toInteger -> cpu)) (ExMemory (toInteger -> mem)) size) =
+    vsep
+      [ pretty name
+      , indent 4 $
+          vsep
+            [ "CPU: " <> pretty cpu
+            , "MEM: " <> pretty mem
+            , "SIZE: " <> pretty size
+            ]
+      ]
 
 instance ToNamedRecord Benchmark where
   toNamedRecord (Benchmark {..}) =
