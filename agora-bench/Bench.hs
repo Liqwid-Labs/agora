@@ -1,12 +1,29 @@
-module Bench (Benchmark (..), benchmarkSize) where
+{-# LANGUAGE RecordWildCards #-}
+
+module Bench (Benchmark (..), benchmarkScript, specificationTreeToBenchmarks) where
 
 import Codec.Serialise (serialise)
 import Data.ByteString.Lazy qualified as LBS
 import Data.ByteString.Short qualified as SBS
-import Data.Set (Set)
-import Data.Set qualified as Set
-import Data.Text (Text)
-import Plutus.V1.Ledger.Scripts qualified as Plutus
+import Data.Csv (DefaultOrdered, ToNamedRecord, header, headerOrder, namedRecord, toNamedRecord, (.=))
+import Data.List (intercalate)
+import Data.Maybe (fromJust)
+import Data.Text (Text, pack)
+import GHC.Generics (Generic)
+import Plutus.V1.Ledger.Api (
+  ExBudget (ExBudget),
+  ExCPU (..),
+  ExMemory (..),
+  Script,
+ )
+import Plutus.V1.Ledger.Api qualified as Plutus
+import Prettyprinter (Pretty (pretty), indent, vsep)
+
+import Spec.Specification (
+  Specification (Specification),
+  SpecificationExpectation (Success),
+  SpecificationTree (..),
+ )
 
 --------------------------------------------------------------------------------
 
@@ -14,20 +31,59 @@ import Plutus.V1.Ledger.Scripts qualified as Plutus
 data Benchmark = Benchmark
   { name :: Text
   -- ^ Human readable name describing script.
-  , size :: Int
+  , cpuBudget :: ExCPU
+  -- ^ The on-chain execution cost of a script.
+  , memoryBudget :: ExMemory
+  -- ^ The on-chain memory budget of a script.
+  , scriptSize :: Int
   -- ^ The on-chain size of a script.
   }
-  deriving stock (Show, Eq, Ord)
+  deriving stock (Show, Eq, Ord, Generic)
 
--- | Create a benchmark containing only the size of the script.
-benchmarkSize :: Text -> Plutus.Script -> Set Benchmark
-benchmarkSize name script =
-  Set.singleton $
-    Benchmark
-      { name = name
-      , size = scriptSize script
-      }
+instance Pretty Benchmark where
+  pretty (Benchmark name (ExCPU (toInteger -> cpu)) (ExMemory (toInteger -> mem)) size) =
+    vsep
+      [ pretty name
+      , indent 4 $
+          vsep
+            [ "CPU: " <> pretty cpu
+            , "MEM: " <> pretty mem
+            , "SIZE: " <> pretty size
+            ]
+      ]
 
--- | Compute the size of a script on-chain.
-scriptSize :: Plutus.Script -> Int
-scriptSize = SBS.length . SBS.toShort . LBS.toStrict . serialise
+instance ToNamedRecord Benchmark where
+  toNamedRecord (Benchmark {..}) =
+    namedRecord
+      [ "name" .= name
+      , "cpu" .= cpuBudget
+      , "mem" .= memoryBudget
+      , "size" .= scriptSize
+      ]
+
+instance DefaultOrdered Benchmark where
+  headerOrder _ = header ["name", "cpu", "mem", "size"]
+
+benchmarkScript :: String -> Script -> Benchmark
+benchmarkScript name script = Benchmark (pack name) cpu mem size
+  where
+    (ExBudget cpu mem) = evalScriptCounting . serialiseScriptShort $ script
+    size = SBS.length . SBS.toShort . LBS.toStrict . serialise $ script
+
+    serialiseScriptShort :: Script -> SBS.ShortByteString
+    serialiseScriptShort = SBS.toShort . LBS.toStrict . serialise -- Using `flat` here breaks `evalScriptCounting`
+    evalScriptCounting :: Plutus.SerializedScript -> Plutus.ExBudget
+    evalScriptCounting script =
+      let costModel = fromJust Plutus.defaultCostModelParams
+          (_logout, e) = Plutus.evaluateScriptCounting Plutus.Verbose costModel script []
+       in case e of
+            Left evalError -> error ("Eval Error: " <> show evalError)
+            Right exbudget -> exbudget
+
+specificationTreeToBenchmarks :: SpecificationTree -> [Benchmark]
+specificationTreeToBenchmarks = go []
+  where
+    go names (Terminal ((Specification n ex s))) = case ex of
+      Success -> [benchmarkScript (intercalate "/" (names <> [n])) s]
+      _ -> []
+    go names (Group gn tree) = mconcat $ go (names <> [gn]) <$> tree

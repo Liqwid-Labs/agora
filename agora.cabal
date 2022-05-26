@@ -179,24 +179,33 @@ library agora-sample
   hs-source-dirs:  agora-sample
   build-depends:   agora-testlib
 
-test-suite agora-test
-  import:         lang, deps, test-deps
-  type:           exitcode-stdio-1.0
-  main-is:        Spec.hs
-  hs-source-dirs: agora-test
-  other-modules:
+library agora-spec
+  import:          lang, deps, test-deps
+  exposed-modules:
     Spec.AuthorityToken
     Spec.Effect.GovernorMutation
     Spec.Effect.TreasuryWithdrawal
     Spec.Governor
     Spec.Model.MultiSig
     Spec.Proposal
+    Spec.Specification
     Spec.Stake
     Spec.Treasury
     Spec.Utils
 
+  hs-source-dirs:  agora-spec
   build-depends:
     , agora-sample
+    , agora-testlib
+
+test-suite agora-test
+  import:         lang, deps, test-deps
+  type:           exitcode-stdio-1.0
+  main-is:        Spec.hs
+  hs-source-dirs: agora-test
+  build-depends:
+    , agora-sample
+    , agora-spec
     , agora-testlib
 
 benchmark agora-bench
@@ -208,6 +217,8 @@ benchmark agora-bench
   build-depends:
     , agora
     , agora-sample
+    , agora-spec
+    , cassava
 
 executable agora-scripts
   import:         lang, deps, exe-opts

@@ -7,7 +7,7 @@ Description: Tests for Proposal policy and validator
 
 Tests for Proposal policy and validator
 -}
-module Spec.Proposal (tests) where
+module Spec.Proposal (specs) where
 
 --------------------------------------------------------------------------------
 
@@ -45,15 +45,19 @@ import PlutusTx.AssocMap qualified as AssocMap
 import Sample.Proposal qualified as Proposal
 import Sample.Shared (signer, signer2)
 import Sample.Shared qualified as Shared
-import Test.Tasty (TestTree, testGroup)
-import Test.Util (policySucceedsWith, validatorSucceedsWith)
+import Spec.Specification (
+  SpecificationTree,
+  group,
+  policySucceedsWith,
+  validatorSucceedsWith,
+ )
 
 --------------------------------------------------------------------------------
 
--- | Stake tests.
-tests :: [TestTree]
-tests =
-  [ testGroup
+-- | Stake specs.
+specs :: [SpecificationTree]
+specs =
+  [ group
       "policy"
       [ policySucceedsWith
           "proposalCreation"
@@ -61,9 +65,9 @@ tests =
           ()
           Proposal.proposalCreation
       ]
-  , testGroup
+  , group
       "validator"
-      [ testGroup
+      [ group
           "cosignature"
           [ validatorSucceedsWith
               "proposal"
@@ -97,7 +101,7 @@ tests =
               WitnessStake
               (ScriptContext (Proposal.cosignProposal [signer2]) (Spending Proposal.stakeRef))
           ]
-      , testGroup
+      , group
           "voting"
           [ validatorSucceedsWith
               "proposal"

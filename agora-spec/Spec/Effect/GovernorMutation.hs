@@ -1,4 +1,4 @@
-module Spec.Effect.GovernorMutation (tests) where
+module Spec.Effect.GovernorMutation (specs) where
 
 import Agora.Effect.GovernorMutation (mutateGovernorValidator)
 import Agora.Governor (GovernorDatum (..), GovernorRedeemer (MutateGovernor))
@@ -15,14 +15,20 @@ import Sample.Effect.GovernorMutation (
   validNewGovernorDatum,
  )
 import Sample.Shared qualified as Shared
-import Test.Tasty (TestTree, testGroup)
-import Test.Util (effectFailsWith, effectSucceedsWith, validatorFailsWith, validatorSucceedsWith)
+import Spec.Specification (
+  SpecificationTree,
+  effectFailsWith,
+  effectSucceedsWith,
+  group,
+  validatorFailsWith,
+  validatorSucceedsWith,
+ )
 
-tests :: [TestTree]
-tests =
-  [ testGroup
+specs :: [SpecificationTree]
+specs =
+  [ group
       "validator"
-      [ testGroup
+      [ group
           "valid new governor datum"
           [ validatorSucceedsWith
               "governor validator should pass"
@@ -44,7 +50,7 @@ tests =
               (mkEffectDatum validNewGovernorDatum)
               (ScriptContext (mkEffectTxInfo validNewGovernorDatum) (Spending effectRef))
           ]
-      , testGroup
+      , group
           "invalid new governor datum"
           [ validatorFailsWith
               "governor validator should fail"
