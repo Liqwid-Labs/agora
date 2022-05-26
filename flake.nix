@@ -14,14 +14,14 @@
     "plutarch/haskell-nix/nixpkgs-unstable";
   inputs.plutarch.inputs.nixpkgs.follows =
     "plutarch/haskell-nix/nixpkgs-unstable";
-  
+
   inputs.liqwid-plutarch-extra.url =
     "git+ssh://git@github.com/Liqwid-Labs/liqwid-plutarch-extra?ref=main";
   inputs.plutarch-numeric.url =
     "git+ssh://git@github.com/Liqwid-Labs/plutarch-numeric?ref=main";
   inputs.plutarch-safe-money.url =
     "git+ssh://git@github.com/Liqwid-Labs/plutarch-safe-money?ref=main";
- 
+
   # Follows jhodgdev's forks of apropos and apropos-tx, as these
   # are not constrained to `base ^>= 4.14`. Once these are merged
   # to their respective master branches, we should change the
@@ -139,7 +139,7 @@
               ps.apropos-tx
               ps.apropos
               ps.apropos
-              
+
             ];
           };
         };

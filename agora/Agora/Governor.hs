@@ -42,18 +42,18 @@ import Agora.Utils (tclet)
 
 --------------------------------------------------------------------------------
 
+import Data.Tagged (Tagged (..))
 import Plutarch.DataRepr (
   DerivePConstantViaData (..),
   PDataFields,
   PIsDataReprInstances (PIsDataReprInstances),
  )
-import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (..))
-import Data.Tagged (Tagged (..))
 import Plutarch.Extra.Comonad (pextract)
+import Plutarch.Extra.TermCont (pmatchC)
+import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (..))
+import Plutarch.SafeMoney (PDiscrete (..))
 import Plutarch.TryFrom (PTryFrom (..))
 import Plutarch.Unsafe (punsafeCoerce)
-import Plutarch.SafeMoney (PDiscrete (..))
-import Plutarch.Extra.TermCont (pmatchC)
 
 --------------------------------------------------------------------------------
 

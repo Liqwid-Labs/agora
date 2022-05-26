@@ -112,19 +112,15 @@ import Plutarch.Api.V1.AssetClass (
   passetClass,
   passetClassValueOf,
  )
+import Plutarch.Extra.Comonad (pextract)
 import Plutarch.Extra.Map (
   pkeys,
   plookup,
   plookup',
  )
-import Plutarch.Extra.Comonad ( pextract)
-import Plutarch.SafeMoney (
-  PDiscrete,
-  pvalueDiscrete',
- )
-import Plutarch.TryFrom ()
-import Plutarch.SafeMoney (PDiscrete (..))
 import Plutarch.Extra.TermCont (pmatchC)
+import Plutarch.SafeMoney (PDiscrete (..), pvalueDiscrete')
+import Plutarch.TryFrom ()
 
 --------------------------------------------------------------------------------
 

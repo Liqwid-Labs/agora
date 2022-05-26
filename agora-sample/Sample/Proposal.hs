@@ -52,7 +52,7 @@ import Agora.Proposal (
  )
 import Agora.Proposal.Time (ProposalTimingConfig (..))
 import Agora.Stake (ProposalLock (ProposalLock), Stake (..), StakeDatum (..))
-import Data.Tagged (Tagged(..), untag)
+import Data.Tagged (Tagged (..), untag)
 import PlutusTx.AssocMap qualified as AssocMap
 import Sample.Shared
 import Test.Util (closedBoundedInterval, datumPair, toDatumHash, updateMap)

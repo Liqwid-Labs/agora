@@ -44,9 +44,6 @@ module Agora.Utils (
   pmapMaybe,
 
   -- * Functions which should (probably) not be upstreamed
-  anyOutput,
-  allOutputs,
-  anyInput,
   findTxOutByTxOutRef,
   scriptHashFromAddress,
   findOutputsToAddress,
@@ -91,7 +88,6 @@ import Plutarch.Api.V1 (
   PTokenName (PTokenName),
   PTuple,
   PTxInInfo (PTxInInfo),
-  PTxInfo,
   PTxOut (PTxOut),
   PTxOutRef,
   PValidatorHash,
@@ -99,14 +95,13 @@ import Plutarch.Api.V1 (
   mintingPolicySymbol,
   mkMintingPolicy,
  )
-import Plutarch.Api.V1.AssocMap (PMap (PMap))
 import Plutarch.Api.V1.AssetClass (PAssetClass, passetClassValueOf, pvalueOf)
+import Plutarch.Api.V1.AssocMap (PMap (PMap))
 import "plutarch" Plutarch.Api.V1.Value (PValue (PValue))
 import Plutarch.Builtin (pforgetData, ppairDataBuiltin)
+import Plutarch.Extra.Map (pkeys)
 import Plutarch.Reducible (Reducible (Reduce))
 import Plutarch.TryFrom (PTryFrom (PTryFromExcess))
-import Plutarch.Extra.Map (pkeys)
-
 
 --------------------------------------------------------------------------------
 -- TermCont-based combinators. Some of these will live in plutarch eventually.
@@ -560,80 +555,6 @@ phalve = phoistAcyclic $ plam $ \l -> go # l # l
 {- Functions which should (probably) not be upstreamed
    All of these functions are quite inefficient.
 -}
-
--- | Check if any output matches the predicate.
-anyOutput ::
-  forall (datum :: PType) s.
-  ( PIsData datum
-  , PTryFrom PData (PAsData datum)
-  ) =>
-  Term s (PTxInfo :--> (PValue :--> PAddress :--> datum :--> PBool) :--> PBool)
-anyOutput = phoistAcyclic $
-  plam $ \txInfo' predicate -> unTermCont $ do
-    txInfo <- tcont $ pletFields @'["outputs", "datums"] txInfo'
-    pure $
-      pany
-        # plam
-          ( \txOut'' -> unTermCont $ do
-              PTxOut txOut' <- tcmatch (pfromData txOut'')
-              txOut <- tcont $ pletFields @'["value", "datumHash", "address"] txOut'
-              PDJust dh <- tcmatch txOut.datumHash
-              pure $
-                pmatch (ptryFindDatum @(PAsData datum) # (pfield @"_0" # dh) # txInfo.datums) $ \case
-                  PJust datum -> predicate # txOut.value # txOut.address # pfromData datum
-                  PNothing -> pcon PFalse
-          )
-        # pfromData txInfo.outputs
-
--- | Check if all outputs match the predicate.
-allOutputs ::
-  forall (datum :: PType) s.
-  ( PIsData datum
-  , PTryFrom PData (PAsData datum)
-  ) =>
-  Term s (PTxInfo :--> (PTxOut :--> PValue :--> PAddress :--> datum :--> PBool) :--> PBool)
-allOutputs = phoistAcyclic $
-  plam $ \txInfo' predicate -> unTermCont $ do
-    txInfo <- tcont $ pletFields @'["outputs", "datums"] txInfo'
-    pure $
-      pall
-        # plam
-          ( \txOut'' -> unTermCont $ do
-              PTxOut txOut' <- tcmatch (pfromData txOut'')
-              txOut <- tcont $ pletFields @'["value", "datumHash", "address"] txOut'
-              PDJust dh <- tcmatch txOut.datumHash
-              pure $
-                pmatch (ptryFindDatum @(PAsData datum) # (pfield @"_0" # dh) # txInfo.datums) $ \case
-                  PJust datum -> predicate # pfromData txOut'' # txOut.value # txOut.address # pfromData datum
-                  PNothing -> pcon PFalse
-          )
-        # pfromData txInfo.outputs
-
--- | Check if any (resolved) input matches the predicate.
-anyInput ::
-  forall (datum :: PType) s.
-  ( PIsData datum
-  , PTryFrom PData (PAsData datum)
-  ) =>
-  Term s (PTxInfo :--> (PValue :--> PAddress :--> datum :--> PBool) :--> PBool)
-anyInput = phoistAcyclic $
-  plam $ \txInfo' predicate -> unTermCont $ do
-    txInfo <- tcont $ pletFields @'["inputs", "datums"] txInfo'
-    pure $
-      pany
-        # plam
-          ( \txInInfo'' -> unTermCont $ do
-              PTxInInfo txInInfo' <- tcmatch (pfromData txInInfo'')
-              let txOut'' = pfield @"resolved" # txInInfo'
-              PTxOut txOut' <- tcmatch (pfromData txOut'')
-              txOut <- tcont $ pletFields @'["value", "datumHash", "address"] txOut'
-              PDJust dh <- tcmatch txOut.datumHash
-              pure $
-                pmatch (ptryFindDatum @(PAsData datum) # (pfield @"_0" # dh) # txInfo.datums) $ \case
-                  PJust datum -> predicate # txOut.value # txOut.address # pfromData datum
-                  PNothing -> pcon PFalse
-          )
-        # pfromData txInfo.inputs
 
 -- | Create a value with a single asset class.
 psingletonValue :: forall s. Term s (PCurrencySymbol :--> PTokenName :--> PInteger :--> PValue)
