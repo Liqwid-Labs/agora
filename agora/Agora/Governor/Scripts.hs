@@ -51,12 +51,14 @@ import Agora.Proposal (
   PResultTag,
   Proposal (..),
   ProposalStatus (Draft, Locked),
+  pemptyVotesFor,
   proposalDatumValid,
  )
 import Agora.Proposal.Scripts (
   proposalPolicy,
   proposalValidator,
  )
+import Agora.Proposal.Time (createProposalStartingTime)
 import Agora.Record
 import Agora.SafeMoney (GTTag)
 import Agora.Stake (
@@ -126,7 +128,6 @@ import Plutarch.TryFrom (ptryFrom)
 
 --------------------------------------------------------------------------------
 
-import Agora.Proposal.Time (ProposalStartingTime (..), ProposalTimingConfig (..))
 import Plutus.V1.Ledger.Api (
   CurrencySymbol (..),
   MintingPolicy,
@@ -172,7 +173,7 @@ governorPolicy gov =
     let ownAssetClass = passetClass # ownSymbol # pconstant ""
         txInfo = pfromData $ pfield @"txInfo" # ctx'
 
-    txInfoF <- tcont $ pletFields @'["mint", "inputs", "outputs", "datums"] txInfo
+    txInfoF <- tcont $ pletFields @'["mint", "inputs", "outputs", "datums", "validRange"] txInfo
 
     tcassert "Referenced utxo should be spent" $
       pisUTXOSpent # oref # txInfoF.inputs
@@ -288,7 +289,7 @@ governorValidator gov =
     ctxF <- tcont $ pletFields @'["txInfo", "purpose"] ctx'
 
     txInfo' <- tclet $ pfromData $ ctxF.txInfo
-    txInfoF <- tcont $ pletFields @'["mint", "inputs", "outputs", "datums", "signatories"] txInfo'
+    txInfoF <- tcont $ pletFields @'["mint", "inputs", "outputs", "datums", "signatories", "validRange"] txInfo'
 
     PSpending (pfromData . (pfield @"_0" #) -> ownInputRef) <- tcmatch $ pfromData ctxF.purpose
 
@@ -300,7 +301,15 @@ governorValidator gov =
     let ownAddress = pfromData $ ownInputF.address
 
     (pfromData -> (oldGovernorDatum :: Term _ PGovernorDatum), _) <- tcont $ ptryFrom datum'
-    oldGovernorDatumF <- tcont $ pletFields @'["proposalThresholds", "nextProposalId"] oldGovernorDatum
+    oldGovernorDatumF <-
+      tcont $
+        pletFields
+          @'[ "proposalThresholds"
+            , "nextProposalId"
+            , "proposalTimings"
+            , "createProposalTimeRangeMaxWidth"
+            ]
+          oldGovernorDatum
 
     -- Check that GST will be returned to the governor.
     let ownInputGSTAmount = psymbolValueOf # pgstSymbol # ownInputF.value
@@ -337,6 +346,9 @@ governorValidator gov =
                   PGovernorDatum
                   ( #proposalThresholds .= oldGovernorDatumF.proposalThresholds
                       .& #nextProposalId .= pdata expectedNextProposalId
+                      .& #proposalTimings .= oldGovernorDatumF.proposalTimings
+                      .& #createProposalTimeRangeMaxWidth
+                        .= oldGovernorDatumF.createProposalTimeRangeMaxWidth
                   )
           tcassert "Unexpected governor state datum" $
             newGovernorDatum #== expectedNewDatum
@@ -402,9 +414,6 @@ governorValidator gov =
 
           outputDatumHash <- tclet $ pfield @"datumHash" #$ phead # outputsToProposalValidatorWithStateToken
 
-          tcassert "The utxo paid to the proposal validator must have datum" $
-            pisDJust # outputDatumHash
-
           proposalOutputDatum' <-
             tclet $
               mustFindDatum' @PProposalDatum
@@ -417,22 +426,33 @@ governorValidator gov =
           proposalOutputDatum <-
             tcont $
               pletFields
-                @'["proposalId", "status", "cosigners", "thresholds", "votes"]
+                @'["effects", "cosigners", "proposalId", "votes"]
                 proposalOutputDatum'
-
-          -- Id and thresholds should be copied from the old governor state datum.
-          tcassert "Invalid proposal id in proposal datum" $
-            proposalOutputDatum.proposalId #== oldGovernorDatumF.nextProposalId
-
-          tcassert "Invalid thresholds in proposal datum" $
-            proposalOutputDatum.thresholds #== oldGovernorDatumF.proposalThresholds
-
-          -- The proposal at this point should be in draft state.
-          tcassert "Proposal state should be draft" $
-            proposalOutputDatum.status #== pconstantData Draft
 
           tcassert "Proposal should have only one cosigner" $
             plength # pfromData proposalOutputDatum.cosigners #== 1
+
+          let -- Votes should be empty at this point
+              expectedVotes = pemptyVotesFor # pfromData proposalOutputDatum.effects
+              expectedStartingTime =
+                createProposalStartingTime
+                  # oldGovernorDatumF.createProposalTimeRangeMaxWidth
+                  # txInfoF.validRange
+              -- Id, thresholds and timings should be copied from the old governor state datum.
+              expectedProposalOut =
+                mkRecordConstr
+                  PProposalDatum
+                  ( #proposalId .= oldGovernorDatumF.nextProposalId
+                      .& #effects .= proposalOutputDatum.effects
+                      .& #status .= pconstantData Draft
+                      .& #cosigners .= proposalOutputDatum.cosigners
+                      .& #thresholds .= oldGovernorDatumF.proposalThresholds
+                      .& #votes .= pdata expectedVotes
+                      .& #timingConfig .= oldGovernorDatumF.proposalTimings
+                      .& #startingTime .= pdata expectedStartingTime
+                  )
+
+          tcassert "Datum correct" $ expectedProposalOut #== proposalOutputDatum'
 
           let cosigner = phead # pfromData proposalOutputDatum.cosigners
 
@@ -560,7 +580,7 @@ governorValidator gov =
 
           proposalInputDatumF <-
             tcont $
-              pletFields @'["proposalId", "effects", "status", "cosigners", "thresholds", "votes"]
+              pletFields @'["proposalId", "effects", "status", "cosigners", "thresholds", "votes", "timingConfig", "startingTime"]
                 proposalInputDatum
 
           -- Check that the proposal state is advanced so that a proposal cannot be executed twice.
@@ -577,10 +597,8 @@ governorValidator gov =
                       .& #cosigners .= proposalInputDatumF.cosigners
                       .& #thresholds .= proposalInputDatumF.thresholds
                       .& #votes .= proposalInputDatumF.votes
-                      -- FIXME: copy from the governor datum
-                      .& #timingConfig .= pdata (pconstant tmpTimingConfig)
-                      -- FIXME: calculate from 'txInfoValidRange'
-                      .& #startingTime .= pdata (pconstant tmpProposalStartingTime)
+                      .& #timingConfig .= proposalInputDatumF.timingConfig
+                      .& #startingTime .= proposalInputDatumF.startingTime
                   )
 
           tcassert "Unexpected output proposal datum" $
@@ -731,20 +749,6 @@ governorValidator gov =
     pgstSymbol =
       let sym = governorSTSymbolFromGovernor gov
        in phoistAcyclic $ pconstant sym
-
-    -- TODO: remove this. This is temperary.
-    tmpTimingConfig :: ProposalTimingConfig
-    tmpTimingConfig =
-      ProposalTimingConfig
-        { draftTime = 50
-        , votingTime = 1000
-        , lockingTime = 2000
-        , executingTime = 3000
-        }
-
-    -- TODO: remove this.
-    tmpProposalStartingTime :: ProposalStartingTime
-    tmpProposalStartingTime = ProposalStartingTime 0
 
 --------------------------------------------------------------------------------
 

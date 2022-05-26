@@ -4,6 +4,7 @@ import Agora.Effect.GovernorMutation (mutateGovernorValidator)
 import Agora.Governor (GovernorDatum (..), GovernorRedeemer (MutateGovernor))
 import Agora.Governor.Scripts (governorValidator)
 import Agora.Proposal (ProposalId (..))
+import Data.Default.Class (Default (def))
 import Plutus.V1.Ledger.Api (ScriptContext (ScriptContext), ScriptPurpose (Spending))
 import Sample.Effect.GovernorMutation (
   effectRef,
@@ -27,9 +28,10 @@ tests =
               "governor validator should pass"
               (governorValidator Shared.governor)
               ( GovernorDatum
-                  { proposalThresholds = Shared.defaultProposalThresholds
-                  , nextProposalId = ProposalId 0
-                  }
+                  Shared.defaultProposalThresholds
+                  (ProposalId 0)
+                  def
+                  def
               )
               MutateGovernor
               ( ScriptContext
@@ -48,9 +50,10 @@ tests =
               "governor validator should fail"
               (governorValidator Shared.governor)
               ( GovernorDatum
-                  { proposalThresholds = Shared.defaultProposalThresholds
-                  , nextProposalId = ProposalId 0
-                  }
+                  Shared.defaultProposalThresholds
+                  (ProposalId 0)
+                  def
+                  def
               )
               MutateGovernor
               ( ScriptContext

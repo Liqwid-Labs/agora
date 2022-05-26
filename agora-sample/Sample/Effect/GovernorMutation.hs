@@ -11,14 +11,22 @@ module Sample.Effect.GovernorMutation (
   mkEffectDatum,
 ) where
 
+--------------------------------------------------------------------------------
+
 import Agora.Effect.GovernorMutation (
   MutateGovernorDatum (..),
   mutateGovernorValidator,
  )
 import Agora.Governor (GovernorDatum (..))
 import Agora.Proposal (ProposalId (..), ProposalThresholds (..))
+
+--------------------------------------------------------------------------------
+
 import Plutarch.Api.V1 (mkValidator, validatorHash)
 import Plutarch.SafeMoney (Tagged (Tagged))
+
+--------------------------------------------------------------------------------
+
 import Plutus.V1.Ledger.Address (scriptHashAddress)
 import Plutus.V1.Ledger.Api (
   Address,
@@ -35,6 +43,9 @@ import Plutus.V1.Ledger.Api (
 import Plutus.V1.Ledger.Api qualified as Interval
 import Plutus.V1.Ledger.Value (AssetClass, assetClass)
 import Plutus.V1.Ledger.Value qualified as Value
+
+--------------------------------------------------------------------------------
+
 import Sample.Shared (
   authorityTokenSymbol,
   defaultProposalThresholds,
@@ -45,6 +56,12 @@ import Sample.Shared (
   signer,
  )
 import Test.Util (datumPair, toDatumHash)
+
+--------------------------------------------------------------------------------
+
+import Data.Default.Class (Default (def))
+
+--------------------------------------------------------------------------------
 
 -- | The effect validator instance.
 effectValidator :: Validator
@@ -101,6 +118,8 @@ mkEffectTxInfo newGovDatum =
         GovernorDatum
           { proposalThresholds = defaultProposalThresholds
           , nextProposalId = ProposalId 0
+          , proposalTimings = def
+          , createProposalTimeRangeMaxWidth = def
           }
       governorInputDatum :: Datum
       governorInputDatum = Datum $ toBuiltinData governorInputDatum'
@@ -161,6 +180,8 @@ validNewGovernorDatum =
   GovernorDatum
     { proposalThresholds = defaultProposalThresholds
     , nextProposalId = ProposalId 42
+    , proposalTimings = def
+    , createProposalTimeRangeMaxWidth = def
     }
 
 invalidNewGovernorDatum :: GovernorDatum
@@ -171,4 +192,6 @@ invalidNewGovernorDatum =
           { countVoting = Tagged (-1)
           }
     , nextProposalId = ProposalId 42
+    , proposalTimings = def
+    , createProposalTimeRangeMaxWidth = def
     }

@@ -31,12 +31,14 @@ import Agora.Proposal.Scripts (
   proposalPolicy,
   proposalValidator,
  )
+import Agora.Proposal.Time (ProposalStartingTime (ProposalStartingTime))
 import Agora.Stake (
   ProposalLock (ProposalLock),
   StakeDatum (StakeDatum),
   StakeRedeemer (PermitVote, WitnessStake),
  )
 import Agora.Stake.Scripts (stakeValidator)
+import Data.Default.Class (Default (def))
 import Plutarch.SafeMoney (Tagged (Tagged))
 import Plutus.V1.Ledger.Api (ScriptContext (..), ScriptPurpose (..))
 import PlutusTx.AssocMap qualified as AssocMap
@@ -82,8 +84,8 @@ tests =
                           [ (ResultTag 0, AssocMap.empty)
                           , (ResultTag 1, AssocMap.empty)
                           ]
-                  , timingConfig = Shared.proposalTimingConfig
-                  , startingTime = Shared.tmpProposalStartingTime
+                  , timingConfig = def
+                  , startingTime = ProposalStartingTime 0
                   }
               )
               (Cosign [signer2])
@@ -117,8 +119,8 @@ tests =
                             , (ResultTag 1, 4242)
                             ]
                         )
-                  , timingConfig = Shared.proposalTimingConfig
-                  , startingTime = Shared.tmpProposalStartingTime
+                  , timingConfig = def
+                  , startingTime = ProposalStartingTime 0
                   }
               )
               (Vote (ResultTag 0))
