@@ -45,7 +45,7 @@ import Plutarch.Lift (
   PConstantDecl,
   PUnsafeLiftDecl (..),
  )
-import Plutarch.Numeric (AdditiveSemigroup ((+)))
+import Plutarch.Numeric.Additive (AdditiveSemigroup ((+)))
 import Plutarch.Unsafe (punsafeCoerce)
 import Plutus.V1.Ledger.Time (POSIXTime)
 import PlutusTx qualified
@@ -241,7 +241,7 @@ isDraftPeriod ::
     )
 isDraftPeriod = phoistAcyclic $
   plam $ \config s' -> pmatch s' $ \(PProposalStartingTime s) ->
-    proposalTimeWithin # s # (s + pfield @"draftTime" # config)
+    proposalTimeWithin # s # (s + (pfield @"draftTime" # config))
 
 -- | True if the 'PProposalTime' is in the voting period.
 isVotingPeriod ::

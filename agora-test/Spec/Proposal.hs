@@ -37,7 +37,7 @@ import Agora.Stake (
   StakeRedeemer (PermitVote, WitnessStake),
  )
 import Agora.Stake.Scripts (stakeValidator)
-import Plutarch.SafeMoney (Tagged (Tagged))
+import Data.Tagged (Tagged (Tagged))
 import Plutus.V1.Ledger.Api (ScriptContext (..), ScriptPurpose (..))
 import PlutusTx.AssocMap qualified as AssocMap
 import Sample.Proposal qualified as Proposal

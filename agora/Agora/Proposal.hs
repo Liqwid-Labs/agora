@@ -56,7 +56,8 @@ import Plutarch.Lift (
   PConstantDecl,
   PUnsafeLiftDecl (..),
  )
-import Plutarch.SafeMoney (PDiscrete, Tagged)
+import Plutarch.SafeMoney (PDiscrete)
+import Data.Tagged (Tagged)
 import Plutarch.TryFrom (PTryFrom (PTryFromExcess, ptryFrom'))
 import Plutarch.Unsafe (punsafeCoerce)
 import Plutus.V1.Ledger.Api (DatumHash, PubKeyHash, ValidatorHash)

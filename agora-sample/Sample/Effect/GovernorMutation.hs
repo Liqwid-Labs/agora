@@ -18,7 +18,7 @@ import Agora.Effect.GovernorMutation (
 import Agora.Governor (GovernorDatum (..))
 import Agora.Proposal (ProposalId (..), ProposalThresholds (..))
 import Plutarch.Api.V1 (mkValidator, validatorHash)
-import Plutarch.SafeMoney (Tagged (Tagged))
+import Data.Tagged (Tagged (..))
 import Plutus.V1.Ledger.Address (scriptHashAddress)
 import Plutus.V1.Ledger.Api (
   Address,

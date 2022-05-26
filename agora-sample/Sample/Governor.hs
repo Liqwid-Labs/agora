@@ -15,7 +15,7 @@ module Sample.Governor (
 --------------------------------------------------------------------------------
 
 import Plutarch.Api.V1 (mkValidator, validatorHash)
-import Plutarch.SafeMoney.Tagged
+import Data.Tagged (Tagged(..), untag)
 
 --------------------------------------------------------------------------------
 
