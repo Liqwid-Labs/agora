@@ -16,13 +16,13 @@ import GHC.Generics qualified as GHC
 import Generics.SOP
 import Plutarch.Api.V1 (PValidator)
 import Plutarch.Api.V1.Contexts (PScriptPurpose (PMinting))
-import Plutarch.Api.V1.Value (PValue)
+import "plutarch" Plutarch.Api.V1.Value (PValue)
 import Plutarch.DataRepr (
   DerivePConstantViaData (..),
   PIsDataReprInstances (PIsDataReprInstances),
  )
 import Plutarch.Lift (PConstantDecl (..), PLifted (..), PUnsafeLiftDecl)
-import Plutarch.TryFrom (PTryFrom)
+import Plutarch.TryFrom ()
 import Plutus.V1.Ledger.Value (CurrencySymbol)
 import PlutusTx qualified
 

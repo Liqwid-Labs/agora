@@ -37,14 +37,13 @@ import Plutarch.Api.V1 (
   mintingPolicySymbol,
   mkMintingPolicy,
  )
-import Plutarch.Api.V1.Extra (passetClass, passetClassValueOf, pvalueOf)
+import Plutarch.Api.V1.AssetClass (passetClass, passetClassValueOf, pvalueOf)
 import Plutarch.Internal (punsafeCoerce)
-import Plutarch.Numeric
+import Plutarch.Numeric.Additive ( AdditiveMonoid(zero), AdditiveSemigroup((+)) )
+import Data.Tagged (Tagged (..), untag)
 import Plutarch.SafeMoney (
-  Tagged (..),
   pdiscreteValue',
   pvalueDiscrete',
-  untag,
  )
 import Plutus.V1.Ledger.Value (AssetClass (AssetClass))
 import Prelude hiding (Num (..))

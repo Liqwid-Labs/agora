@@ -92,7 +92,7 @@ import Plutarch.Api.V1 (
   mkValidator,
   validatorHash,
  )
-import Plutarch.SafeMoney
+import Data.Tagged (Tagged (..))
 import Plutus.V1.Ledger.Address (scriptHashAddress)
 import Plutus.V1.Ledger.Api (
   Address (Address),
