@@ -54,9 +54,12 @@ import Plutarch.DataRepr (
   PIsDataReprInstances (PIsDataReprInstances),
  )
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (..))
-import Plutarch.SafeMoney (Tagged (..), puntag)
+import Data.Tagged (Tagged (..))
+import Plutarch.Extra.Comonad (pextract)
 import Plutarch.TryFrom (PTryFrom (..))
 import Plutarch.Unsafe (punsafeCoerce)
+import Plutarch.SafeMoney (PDiscrete (..))
+import Plutarch.Extra.TermCont (pmatchC)
 
 --------------------------------------------------------------------------------
 
@@ -188,9 +191,13 @@ governorDatumValid = phoistAcyclic $
         pletFields @'["execute", "draft", "vote"] $
           pfield @"proposalThresholds" # datum
 
-    execute <- tclet $ puntag thresholds.execute
-    draft <- tclet $ puntag thresholds.draft
-    vote <- tclet $ puntag thresholds.vote
+    PDiscrete execute' <- pmatchC thresholds.execute
+    PDiscrete draft' <- pmatchC thresholds.draft
+    PDiscrete vote' <- pmatchC thresholds.vote
+
+    execute <- tclet $ pextract # execute'
+    draft <- tclet $ pextract # draft'
+    vote <- tclet $ pextract # vote'
 
     pure $
       foldr1

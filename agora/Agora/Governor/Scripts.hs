@@ -110,21 +110,23 @@ import Plutarch.Api.V1 (
   mkValidator,
   validatorHash,
  )
-import Plutarch.Api.V1.Extra (
+import Plutarch.Api.V1.AssetClass (
   passetClass,
   passetClassValueOf,
  )
-import Plutarch.Map.Extra (
+import Plutarch.Extra.Map (
   pkeys,
   plookup,
   plookup',
  )
+import Plutarch.Extra.Comonad ( pextract)
 import Plutarch.SafeMoney (
   PDiscrete,
-  puntag,
   pvalueDiscrete',
  )
-import Plutarch.TryFrom (ptryFrom)
+import Plutarch.TryFrom ()
+import Plutarch.SafeMoney (PDiscrete (..))
+import Plutarch.Extra.TermCont (pmatchC)
 
 --------------------------------------------------------------------------------
 
@@ -629,8 +631,9 @@ governorValidator gov =
 
           winner <- tclet $ mustBePJust # "No winning outcome" # maybeWinner
 
+          PDiscrete minimumVotes' <- pmatchC $ pfromData $ pfield @"execute" # proposalInputDatumF.thresholds
           let highestVote = pfromData $ psndBuiltin # winner
-              minimumVotes = puntag $ pfromData $ pfield @"execute" # proposalInputDatumF.thresholds
+              minimumVotes = pextract # minimumVotes'
 
           tcassert "Higgest vote doesn't meet the minimum requirement" $ minimumVotes #<= highestVote
 

@@ -23,6 +23,7 @@ common lang
     pprelude (PPrelude as Prelude)
 
   default-extensions:
+    PackageImports
     NoStarIsType
     BangPatterns
     BinaryLiterals
@@ -97,8 +98,9 @@ common deps
     , generics-sop
     , plutarch
     , plutarch-extra
+    , liqwid-plutarch-extra
     , plutarch-numeric
-    , plutarch-safemoney
+    , plutarch-safe-money
     , plutus-core
     , plutus-ledger-api
     , plutus-tx
@@ -108,6 +110,9 @@ common deps
     , serialise
     , template-haskell
     , text
+    , tagged
+  mixins:
+    
 
 common test-deps
   build-depends:
@@ -147,7 +152,7 @@ library
     Agora.Stake.Scripts
     Agora.Treasury
     Agora.Utils
-    Agora.Utils.Value
+    Agora.ScriptInfo
 
   other-modules:   Agora.Aeson.Orphans
   hs-source-dirs:  agora
