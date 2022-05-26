@@ -2,22 +2,22 @@ name,cpu,mem,size
 Agora/Effects/Treasury Withdrawal Effect/effect/Simple,340268715,724428,3050
 Agora/Effects/Treasury Withdrawal Effect/effect/Simple with multiple treasuries ,570029812,1211300,3377
 Agora/Effects/Treasury Withdrawal Effect/effect/Mixed Assets,502351827,1071087,3242
-Agora/Effects/Governor Mutation Effect/validator/valid new governor datum/governor validator should pass,103054094,227264,7467
-Agora/Effects/Governor Mutation Effect/validator/valid new governor datum/effect validator should pass,126696096,263635,3293
-Agora/Stake/policy/stakeCreation,147898986,329450,2265
-Agora/Stake/validator/stakeDepositWithdraw deposit,261845190,576377,3829
-Agora/Stake/validator/stakeDepositWithdraw withdraw,261845190,576377,3821
-Agora/Proposal/policy/proposalCreation,34571405,70066,1549
-Agora/Proposal/validator/cosignature/proposal,242652509,511783,5247
-Agora/Proposal/validator/cosignature/stake,183513647,395070,4366
-Agora/Proposal/validator/voting/proposal,240358004,492704,5255
-Agora/Proposal/validator/voting/stake,154841851,329311,4419
+Agora/Effects/Governor Mutation Effect/validator/valid new governor datum/governor validator should pass,103651824,228328,7681
+Agora/Effects/Governor Mutation Effect/validator/valid new governor datum/effect validator should pass,126986096,263635,3357
+Agora/Stake/policy/stakeCreation,60250773,128585,2144
+Agora/Stake/validator/stakeDepositWithdraw deposit,275919558,599033,4063
+Agora/Stake/validator/stakeDepositWithdraw withdraw,275919558,599033,4055
+Agora/Proposal/policy/proposalCreation,34571405,70066,1585
+Agora/Proposal/validator/cosignature/proposal,240007066,509127,4892
+Agora/Proposal/validator/cosignature/stake,185913543,402497,4600
+Agora/Proposal/validator/voting/proposal,238383906,489848,4900
+Agora/Proposal/validator/voting/stake,153804848,328239,4653
 Agora/AuthorityToken/singleAuthorityTokenBurned/Correct simple,25177457,55883,806
 Agora/AuthorityToken/singleAuthorityTokenBurned/Correct many inputs,40266637,88241,900
 Agora/Treasury/Validator/Positive/Allows for effect changes,37343572,79744,1841
 Agora/AuthorityToken/singleAuthorityTokenBurned/Correct simple,25177457,55883,806
 Agora/AuthorityToken/singleAuthorityTokenBurned/Correct many inputs,40266637,88241,900
-Agora/Governor/policy/GST minting,57648280,119961,1836
-Agora/Governor/validator/proposal creation,309839049,649395,7994
-Agora/Governor/validator/GATs minting,429394828,928681,8113
-Agora/Governor/validator/mutate governor state,100243054,221538,7540
+Agora/Governor/policy/GST minting,57648280,119961,1851
+Agora/Governor/validator/proposal creation,329287002,679689,8196
+Agora/Governor/validator/GATs minting,430385143,929607,8319
+Agora/Governor/validator/mutate governor state,100840784,222602,7738
