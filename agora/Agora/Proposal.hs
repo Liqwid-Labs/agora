@@ -31,6 +31,7 @@ module Agora.Proposal (
   -- * Plutarch helpers
   proposalDatumValid,
   pemptyVotesFor,
+  pwinner,
 ) where
 
 import GHC.Generics qualified as GHC
@@ -448,3 +449,37 @@ proposalDatumValid proposal =
           , ptraceIfFalse "Proposal has fewer cosigners than the limit" $ plength # (pfromData datum.cosigners) #<= pconstant proposal.maximumCosigners
           , ptraceIfFalse "Proposal votes and effects are compatible with each other" $ pkeysEqual # datum.effects # pto (pfromData datum.votes)
           ]
+
+{- | Find the winning outcome (and the corresponding vote count) given the votes.
+
+    FIXME: What if two or more outcomes have the exact same vote count?
+-}
+pwinner ::
+  Term
+    s
+    ( PProposalVotes
+        :--> PMaybe (PBuiltinPair (PAsData PResultTag) (PAsData PInteger))
+    )
+pwinner = phoistAcyclic $
+  plam $ \votes ->
+    let l :: Term _ (PBuiltinList _)
+        l = pto $ pto votes
+
+        f ::
+          Term
+            _
+            ( PBuiltinPair (PAsData PResultTag) (PAsData PInteger)
+                :--> PMaybe (PBuiltinPair (PAsData PResultTag) (PAsData PInteger))
+                :--> PMaybe (PBuiltinPair (PAsData PResultTag) (PAsData PInteger))
+            )
+        f = phoistAcyclic $
+          plam $ \this maybeLast -> pmatch maybeLast $ \case
+            PNothing -> pcon $ PJust this
+            PJust last ->
+              let lastVotes = pfromData $ psndBuiltin # last
+                  thisVotes = pfromData $ psndBuiltin # this
+               in pif
+                    (lastVotes #< thisVotes)
+                    (pcon $ PJust this)
+                    maybeLast
+     in pfoldr # f # pcon PNothing # l

@@ -53,6 +53,7 @@ import Agora.Proposal (
   ProposalStatus (Draft, Locked),
   pemptyVotesFor,
   proposalDatumValid,
+  pwinner,
  )
 import Agora.Proposal.Scripts (
   proposalPolicy,
@@ -77,7 +78,6 @@ import Agora.Utils (
   mustFindDatum',
   pfindTxInByTxOutRef,
   pisDJust,
-  pisJust,
   pisUTXOSpent,
   psymbolValueOf,
   ptryFindDatum,
@@ -605,27 +605,7 @@ governorValidator gov =
           -- TODO: anything else to check here?
 
           -- Find the highest votes and the corresponding tag.
-          let highestVoteFolder =
-                phoistAcyclic $
-                  plam
-                    ( \pair last' ->
-                        pif
-                          (pisJust # last')
-                          ( unTermCont $ do
-                              PJust last <- tcmatch last'
-                              let lastHighestVote = pfromData $ psndBuiltin # last
-                                  thisVote = pfromData $ psndBuiltin # pair
-                              pure $ pif (lastHighestVote #< thisVote) (pcon $ PJust pair) last'
-                          )
-                          (pcon $ PJust pair)
-                    )
-
-              votesList = pto $ pto $ pfromData proposalInputDatumF.votes
-
-              maybeWinner =
-                pfoldr # highestVoteFolder # pcon PNothing # votesList
-
-          winner <- tclet $ mustBePJust # "No winning outcome" # maybeWinner
+          winner <- tclet $ mustBePJust # "No winning outcome" #$ pwinner # proposalInputDatumF.votes
 
           PDiscrete minimumVotes' <- pmatchC $ pfromData $ pfield @"execute" # proposalInputDatumF.thresholds
           let highestVote = pfromData $ psndBuiltin # winner
