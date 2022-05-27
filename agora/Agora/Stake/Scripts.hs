@@ -27,6 +27,7 @@ import Agora.Utils (
   tcmatch,
   tctryFrom,
  )
+import Data.Tagged (Tagged (..), untag)
 import Plutarch.Api.V1 (
   PCredential (PPubKeyCredential, PScriptCredential),
   PMintingPolicy,
@@ -39,8 +40,7 @@ import Plutarch.Api.V1 (
  )
 import Plutarch.Api.V1.AssetClass (passetClass, passetClassValueOf, pvalueOf)
 import Plutarch.Internal (punsafeCoerce)
-import Plutarch.Numeric.Additive ( AdditiveMonoid(zero), AdditiveSemigroup((+)) )
-import Data.Tagged (Tagged (..), untag)
+import Plutarch.Numeric.Additive (AdditiveMonoid (zero), AdditiveSemigroup ((+)))
 import Plutarch.SafeMoney (
   pdiscreteValue',
   pvalueDiscrete',

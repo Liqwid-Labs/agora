@@ -23,7 +23,6 @@ common lang
     pprelude (PPrelude as Prelude)
 
   default-extensions:
-    PackageImports
     NoStarIsType
     BangPatterns
     BinaryLiterals
@@ -63,6 +62,7 @@ common lang
     NumericUnderscores
     OverloadedLabels
     OverloadedStrings
+    PackageImports
     PartialTypeSignatures
     PatternGuards
     PolyKinds
@@ -88,7 +88,7 @@ common deps
   build-depends:
     , aeson
     , ansi-terminal
-    , base                >=4.14 && <5
+    , base                   >=4.14 && <5
     , base-compat
     , bytestring
     , cardano-prelude
@@ -96,9 +96,9 @@ common deps
     , data-default
     , data-default-class
     , generics-sop
+    , liqwid-plutarch-extra
     , plutarch
     , plutarch-extra
-    , liqwid-plutarch-extra
     , plutarch-numeric
     , plutarch-safe-money
     , plutus-core
@@ -108,11 +108,11 @@ common deps
     , prettyprinter
     , recursion-schemes
     , serialise
+    , tagged
     , template-haskell
     , text
-    , tagged
+
   mixins:
-    
 
 common test-deps
   build-depends:

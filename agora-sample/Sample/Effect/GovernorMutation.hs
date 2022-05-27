@@ -22,8 +22,8 @@ import Agora.Proposal (ProposalId (..), ProposalThresholds (..))
 
 --------------------------------------------------------------------------------
 
-import Plutarch.Api.V1 (mkValidator, validatorHash)
 import Data.Tagged (Tagged (..))
+import Plutarch.Api.V1 (mkValidator, validatorHash)
 import Plutus.V1.Ledger.Address (scriptHashAddress)
 import Plutus.V1.Ledger.Api (
   Address,

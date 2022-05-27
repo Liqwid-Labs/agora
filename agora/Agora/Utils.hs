@@ -96,14 +96,13 @@ import Plutarch.Api.V1 (
   mintingPolicySymbol,
   mkMintingPolicy,
  )
-import Plutarch.Api.V1.AssocMap (PMap (PMap))
 import Plutarch.Api.V1.AssetClass (PAssetClass, passetClassValueOf, pvalueOf)
+import Plutarch.Api.V1.AssocMap (PMap (PMap))
 import "plutarch" Plutarch.Api.V1.Value (PValue (PValue))
 import Plutarch.Builtin (pforgetData, ppairDataBuiltin)
+import Plutarch.Extra.Map (pkeys)
 import Plutarch.Reducible (Reducible (Reduce))
 import Plutarch.TryFrom (PTryFrom (PTryFromExcess))
-import Plutarch.Extra.Map (pkeys)
-
 
 --------------------------------------------------------------------------------
 -- TermCont-based combinators. Some of these will live in plutarch eventually.

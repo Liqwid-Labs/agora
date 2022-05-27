@@ -86,13 +86,13 @@ import Agora.Stake (Stake (..))
 import Agora.Treasury (treasuryValidator)
 import Agora.Utils (validatorHashToTokenName)
 import Data.Default.Class (Default (..))
+import Data.Tagged (Tagged (..))
 import Plutarch.Api.V1 (
   mintingPolicySymbol,
   mkMintingPolicy,
   mkValidator,
   validatorHash,
  )
-import Data.Tagged (Tagged (..))
 import Plutus.V1.Ledger.Address (scriptHashAddress)
 import Plutus.V1.Ledger.Api (
   Address (Address),

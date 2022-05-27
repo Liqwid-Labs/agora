@@ -45,12 +45,11 @@ import Plutarch.Api.V1 (
   PValidator,
  )
 import Plutarch.Api.V1.AssetClass (passetClass, passetClassValueOf)
-import Plutarch.Extra.Map (plookup)
 import Plutarch.Extra.Comonad (pextract)
+import Plutarch.Extra.Map (plookup)
+import Plutarch.Extra.TermCont (pmatchC)
 import Plutarch.SafeMoney (PDiscrete (..))
 import Plutus.V1.Ledger.Value (AssetClass (AssetClass))
-import Plutarch.Extra.TermCont (pmatchC)
-
 
 {- | Policy for Proposals.
 

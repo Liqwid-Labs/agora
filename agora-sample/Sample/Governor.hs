@@ -14,8 +14,8 @@ module Sample.Governor (
 
 --------------------------------------------------------------------------------
 
+import Data.Tagged (Tagged (..), untag)
 import Plutarch.Api.V1 (mkValidator, validatorHash)
-import Data.Tagged (Tagged(..), untag)
 
 --------------------------------------------------------------------------------
 
