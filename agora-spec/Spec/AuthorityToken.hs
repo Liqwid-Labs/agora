@@ -7,13 +7,12 @@ Description: Tests for Authority token functions
 
 Tests for Authority token functions
 -}
-module Spec.AuthorityToken (tests) where
+module Spec.AuthorityToken (specs) where
 
 --------------------------------------------------------------------------------
 
 import Agora.AuthorityToken (singleAuthorityTokenBurned)
 import Plutarch
-import Test.Tasty (TestTree, testGroup)
 import Prelude
 
 --------------------------------------------------------------------------------
@@ -33,7 +32,12 @@ import Plutus.V1.Ledger.Api (
 import Plutus.V1.Ledger.Interval qualified as Interval
 import Plutus.V1.Ledger.Value qualified as Value
 import PlutusTx.AssocMap qualified as AssocMap
-import Test.Util (scriptFails, scriptSucceeds)
+import Spec.Specification (
+  SpecificationTree,
+  group,
+  scriptFails,
+  scriptSucceeds,
+ )
 
 currencySymbol :: CurrencySymbol
 currencySymbol = "deadbeef"
@@ -65,10 +69,10 @@ singleAuthorityTokenBurnedTest mint outs =
           perror
    in compile s
 
-tests :: [TestTree]
-tests =
+specs :: [SpecificationTree]
+specs =
   [ -- This is better suited for plutarch-test
-    testGroup
+    group
       "singleAuthorityTokenBurned"
       [ scriptSucceeds
           "Correct simple"

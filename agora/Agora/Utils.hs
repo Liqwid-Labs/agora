@@ -41,6 +41,7 @@ module Agora.Utils (
   pmsort,
   pnubSort,
   pupdate,
+  pmapMap,
   pmapMaybe,
 
   -- * Functions which should (probably) not be upstreamed
@@ -319,6 +320,23 @@ pupdate = phoistAcyclic $
                             _ -> pcon PNothing
                       )
                       (pcon $ PJust kv)
+            )
+          # ps
+
+-- | / O(n) /. Map a function over all values in a 'PMap'.
+pmapMap :: forall s k a b. (PIsData k, PIsData a, PIsData b) => Term s ((a :--> b) :--> PMap k a :--> PMap k b)
+pmapMap = phoistAcyclic $
+  plam $ \f (pto -> (ps :: Term _ (PBuiltinList _))) ->
+    pcon $
+      PMap $
+        pmap
+          # plam
+            ( \kv ->
+                let k = pfstBuiltin # kv
+                    v = psndBuiltin # kv
+
+                    nv = pdata $ f # pfromData v
+                 in ppairDataBuiltin # k # nv
             )
           # ps
 

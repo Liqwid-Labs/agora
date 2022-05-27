@@ -56,6 +56,10 @@ import Agora.Proposal (
   emptyVotesFor,
  )
 import Agora.Proposal qualified as P
+import Agora.Proposal.Time (
+  ProposalStartingTime (ProposalStartingTime),
+  ProposalTimingConfig (..),
+ )
 import Agora.Stake (
   ProposalLock (..),
   Stake (..),
@@ -73,16 +77,19 @@ import Sample.Shared (
   gstUTXORef,
   minAda,
   proposalPolicySymbol,
-  proposalTimingConfig,
+  proposalStartingTimeFromTimeRange,
   proposalValidatorAddress,
   signer,
   signer2,
   stake,
   stakeAddress,
   stakeAssetClass,
-  tmpProposalStartingTime,
  )
-import Test.Util (datumPair, toDatumHash)
+import Test.Util (closedBoundedInterval, datumPair, toDatumHash)
+
+--------------------------------------------------------------------------------
+
+import Data.Default.Class (Default (def))
 
 --------------------------------------------------------------------------------
 
@@ -114,6 +121,8 @@ mintGST =
         GovernorDatum
           { proposalThresholds = defaultProposalThresholds
           , nextProposalId = ProposalId 0
+          , proposalTimings = def
+          , createProposalTimeRangeMaxWidth = def
           }
       governorOutputDatum :: Datum
       governorOutputDatum = Datum $ toBuiltinData governorOutputDatum'
@@ -207,6 +216,8 @@ createProposal =
         GovernorDatum
           { proposalThresholds = defaultProposalThresholds
           , nextProposalId = thisProposalId
+          , proposalTimings = def
+          , createProposalTimeRangeMaxWidth = def
           }
       governorInputDatum :: Datum
       governorInputDatum = Datum $ toBuiltinData governorInputDatum'
@@ -236,8 +247,8 @@ createProposal =
                 , cosigners = [signer]
                 , thresholds = defaultProposalThresholds
                 , votes = emptyVotesFor effects
-                , timingConfig = proposalTimingConfig
-                , startingTime = tmpProposalStartingTime
+                , timingConfig = def
+                , startingTime = proposalStartingTimeFromTimeRange validTimeRange
                 }
           )
       proposalOutput :: TxOut
@@ -298,8 +309,13 @@ createProposal =
           }
 
       ---
+
       ownInputRef :: TxOutRef
       ownInputRef = TxOutRef "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865" 1
+
+      ---
+
+      validTimeRange = closedBoundedInterval 10 15
    in ScriptContext
         { scriptContextTxInfo =
             TxInfo
@@ -316,7 +332,7 @@ createProposal =
               , txInfoMint = pst
               , txInfoDCert = []
               , txInfoWdrl = []
-              , txInfoValidRange = Interval.always
+              , txInfoValidRange = validTimeRange
               , txInfoSignatories = [signer]
               , txInfoData =
                   datumPair
@@ -378,6 +394,8 @@ mintGATs =
         GovernorDatum
           { proposalThresholds = defaultProposalThresholds
           , nextProposalId = ProposalId 5
+          , proposalTimings = def
+          , createProposalTimeRangeMaxWidth = def
           }
       governorInputDatum :: Datum
       governorInputDatum = Datum $ toBuiltinData governorInputDatum'
@@ -412,8 +430,8 @@ mintGATs =
           , cosigners = [signer, signer2]
           , thresholds = defaultProposalThresholds
           , votes = proposalVotes
-          , timingConfig = proposalTimingConfig
-          , startingTime = tmpProposalStartingTime
+          , timingConfig = def
+          , startingTime = ProposalStartingTime 10
           }
       proposalInputDatum :: Datum
       proposalInputDatum = Datum $ toBuiltinData proposalInputDatum'
@@ -465,6 +483,12 @@ mintGATs =
 
       ownInputRef :: TxOutRef
       ownInputRef = TxOutRef "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865" 1
+
+      --
+      validTimeRange =
+        closedBoundedInterval
+          ((def :: ProposalTimingConfig).lockingTime + 11)
+          ((def :: ProposalTimingConfig).executingTime - 11)
    in ScriptContext
         { scriptContextTxInfo =
             TxInfo
@@ -483,7 +507,7 @@ mintGATs =
               , txInfoMint = gat
               , txInfoDCert = []
               , txInfoWdrl = []
-              , txInfoValidRange = Interval.always
+              , txInfoValidRange = validTimeRange
               , txInfoSignatories = [signer, signer2]
               , txInfoData =
                   datumPair
@@ -565,6 +589,8 @@ mutateState =
         GovernorDatum
           { proposalThresholds = defaultProposalThresholds
           , nextProposalId = ProposalId 5
+          , proposalTimings = def
+          , createProposalTimeRangeMaxWidth = def
           }
       governorInputDatum :: Datum
       governorInputDatum = Datum $ toBuiltinData governorInputDatum'

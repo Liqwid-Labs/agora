@@ -174,6 +174,26 @@
           mkdir $out
         '';
 
+      benchCheckFor = system: agora-bench:
+        let
+          pkgs = nixpkgsFor system;
+          pkgs' = nixpkgsFor' system;
+        in
+        pkgs.runCommand "bench-check"
+          {
+            bench = "${agora-bench}/bin/agora-bench";
+            nativeBuildInputs = [
+              pkgs'.diffutils
+            ];
+          } ''
+          export LC_CTYPE=C.UTF-8
+          export LC_ALL=C.UTF-8
+          export LANG=C.UTF-8
+          cd ${self}
+          make bench_check || (echo "    Please run 'make bench'" ; exit 1)
+          mkdir $out 
+        '';
+
     in
     {
       project = perSystem projectFor;
@@ -197,6 +217,7 @@
       checks = perSystem (system:
         self.flake.${system}.checks // {
           formatCheck = formatCheckFor system;
+          benchCheck = benchCheckFor system self.flake.${system}.packages."agora:bench:agora-bench";
           agora = self.flake.${system}.packages."agora:lib:agora";
           agora-test = self.flake.${system}.packages."agora:test:agora-test";
         });

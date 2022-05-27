@@ -3,9 +3,9 @@ Module     : Spec.Effect.TreasuryWithdrawalEffect
 Maintainer : seungheon.ooh@gmail.com
 Description: Sample based testing for Treasury Withdrawal Effect
 
-This module tests the Treasury Withdrawal Effect.
+This module specs the Treasury Withdrawal Effect.
 -}
-module Spec.Effect.TreasuryWithdrawal (tests) where
+module Spec.Effect.TreasuryWithdrawal (specs) where
 
 import Agora.Effect.TreasuryWithdrawal (
   TreasuryWithdrawalDatum (TreasuryWithdrawalDatum),
@@ -25,12 +25,16 @@ import Sample.Effect.TreasuryWithdrawal (
   treasuries,
   users,
  )
-import Test.Tasty (TestTree, testGroup)
-import Test.Util (effectFailsWith, effectSucceedsWith)
+import Spec.Specification (
+  SpecificationTree,
+  effectFailsWith,
+  effectSucceedsWith,
+  group,
+ )
 
-tests :: [TestTree]
-tests =
-  [ testGroup
+specs :: [SpecificationTree]
+specs =
+  [ group
       "effect"
       [ effectSucceedsWith
           "Simple"

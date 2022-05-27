@@ -7,7 +7,7 @@ Description: Tests for Proposal policy and validator
 
 Tests for Proposal policy and validator
 -}
-module Spec.Proposal (tests) where
+module Spec.Proposal (specs) where
 
 --------------------------------------------------------------------------------
 
@@ -31,27 +31,33 @@ import Agora.Proposal.Scripts (
   proposalPolicy,
   proposalValidator,
  )
+import Agora.Proposal.Time (ProposalStartingTime (ProposalStartingTime))
 import Agora.Stake (
   ProposalLock (ProposalLock),
   StakeDatum (StakeDatum),
   StakeRedeemer (PermitVote, WitnessStake),
  )
 import Agora.Stake.Scripts (stakeValidator)
+import Data.Default.Class (Default (def))
 import Data.Tagged (Tagged (Tagged))
 import Plutus.V1.Ledger.Api (ScriptContext (..), ScriptPurpose (..))
 import PlutusTx.AssocMap qualified as AssocMap
 import Sample.Proposal qualified as Proposal
 import Sample.Shared (signer, signer2)
 import Sample.Shared qualified as Shared
-import Test.Tasty (TestTree, testGroup)
-import Test.Util (policySucceedsWith, validatorSucceedsWith)
+import Spec.Specification (
+  SpecificationTree,
+  group,
+  policySucceedsWith,
+  validatorSucceedsWith,
+ )
 
 --------------------------------------------------------------------------------
 
--- | Stake tests.
-tests :: [TestTree]
-tests =
-  [ testGroup
+-- | Stake specs.
+specs :: [SpecificationTree]
+specs =
+  [ group
       "policy"
       [ policySucceedsWith
           "proposalCreation"
@@ -59,9 +65,9 @@ tests =
           ()
           Proposal.proposalCreation
       ]
-  , testGroup
+  , group
       "validator"
-      [ testGroup
+      [ group
           "cosignature"
           [ validatorSucceedsWith
               "proposal"
@@ -82,8 +88,8 @@ tests =
                           [ (ResultTag 0, AssocMap.empty)
                           , (ResultTag 1, AssocMap.empty)
                           ]
-                  , timingConfig = Shared.proposalTimingConfig
-                  , startingTime = Shared.tmpProposalStartingTime
+                  , timingConfig = def
+                  , startingTime = ProposalStartingTime 0
                   }
               )
               (Cosign [signer2])
@@ -95,7 +101,7 @@ tests =
               WitnessStake
               (ScriptContext (Proposal.cosignProposal [signer2]) (Spending Proposal.stakeRef))
           ]
-      , testGroup
+      , group
           "voting"
           [ validatorSucceedsWith
               "proposal"
@@ -117,8 +123,8 @@ tests =
                             , (ResultTag 1, 4242)
                             ]
                         )
-                  , timingConfig = Shared.proposalTimingConfig
-                  , startingTime = Shared.tmpProposalStartingTime
+                  , timingConfig = def
+                  , startingTime = ProposalStartingTime 0
                   }
               )
               (Vote (ResultTag 0))

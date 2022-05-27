@@ -37,6 +37,12 @@ import Agora.Proposal (
   ProposalId (ProposalId),
   ProposalThresholds,
  )
+import Agora.Proposal.Time (
+  MaxTimeRangeWidth,
+  PMaxTimeRangeWidth,
+  PProposalTimingConfig,
+  ProposalTimingConfig,
+ )
 import Agora.SafeMoney (GTTag)
 import Agora.Utils (tclet)
 
@@ -69,6 +75,11 @@ data GovernorDatum = GovernorDatum
   -- ^ Gets copied over upon creation of a 'Agora.Proposal.ProposalDatum'.
   , nextProposalId :: ProposalId
   -- ^ What tag the next proposal will get upon creating.
+  , proposalTimings :: ProposalTimingConfig
+  -- ^ The timing configuration for proposals.
+  --   Will get copied over upon the creation of proposals.
+  , createProposalTimeRangeMaxWidth :: MaxTimeRangeWidth
+  -- ^ The maximum valid duration of a transaction that creats a proposal.
   }
   deriving stock (Show, GHC.Generic)
 
@@ -121,6 +132,8 @@ newtype PGovernorDatum (s :: S) = PGovernorDatum
       ( PDataRecord
           '[ "proposalThresholds" ':= PProposalThresholds
            , "nextProposalId" ':= PProposalId
+           , "proposalTimings" ':= PProposalTimingConfig
+           , "createProposalTimeRangeMaxWidth" ':= PMaxTimeRangeWidth
            ]
       )
   }

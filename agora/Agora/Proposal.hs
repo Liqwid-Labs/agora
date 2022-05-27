@@ -30,6 +30,7 @@ module Agora.Proposal (
 
   -- * Plutarch helpers
   proposalDatumValid,
+  pemptyVotesFor,
 ) where
 
 import GHC.Generics qualified as GHC
@@ -47,7 +48,7 @@ import PlutusTx.AssocMap qualified as AssocMap
 
 import Agora.Proposal.Time (PProposalStartingTime, PProposalTimingConfig, ProposalStartingTime, ProposalTimingConfig)
 import Agora.SafeMoney (GTTag)
-import Agora.Utils (pkeysEqual, pnotNull)
+import Agora.Utils (pkeysEqual, pmapMap, pnotNull)
 import Control.Applicative (Const)
 import Control.Arrow (first)
 import Data.Tagged (Tagged)
@@ -348,6 +349,16 @@ deriving via
   (DerivePConstantViaNewtype ProposalVotes PProposalVotes (PMap PResultTag PInteger))
   instance
     (PConstantDecl ProposalVotes)
+
+-- Plutarch-level version of 'emptyVotesFor'.
+pemptyVotesFor :: forall s a. (PIsData a) => Term s (PMap PResultTag a :--> PProposalVotes)
+pemptyVotesFor =
+  phoistAcyclic $
+    plam
+      ( \m ->
+          pcon $
+            PProposalVotes $ pmapMap # plam (const $ pconstant 0) # m
+      )
 
 -- | Plutarch-level version of 'ProposalDatum'.
 newtype PProposalDatum (s :: S) = PProposalDatum
