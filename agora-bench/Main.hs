@@ -4,6 +4,7 @@ import Bench (specificationTreeToBenchmarks)
 import Data.Csv (encodeDefaultOrderedByName)
 import Data.Text.Lazy.Encoding (decodeUtf8)
 import Data.Text.Lazy.IO as I (writeFile)
+import Options (Options (..), parseOptions)
 import Prettyprinter (defaultLayoutOptions, layoutPretty, pretty)
 import Prettyprinter.Render.String (renderString)
 import Spec.AuthorityToken qualified as AuthorityToken
@@ -20,7 +21,9 @@ import Prelude
 
 main :: IO ()
 main = do
-  I.writeFile "bench.csv" $
+  options <- parseOptions
+
+  I.writeFile options.output $
     (decodeUtf8 . encodeDefaultOrderedByName) res
 
   mapM_ (putStrLn . renderString . layoutPretty defaultLayoutOptions . pretty) res

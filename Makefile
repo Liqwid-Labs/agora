@@ -1,7 +1,7 @@
 # This really ought to be `/usr/bin/env bash`, but nix flakes don't like that.
 SHELL := /bin/sh
 
-.PHONY: hoogle format haddock usage tag format_nix format_haskell format_check lint ps_bridge
+.PHONY: hoogle format haddock usage tag format_nix format_haskell format_check lint ps_bridge bench bench_check
 
 usage:
 	@echo "usage: make <command> [OPTIONS]"
@@ -16,6 +16,8 @@ usage:
 	@echo "  format_check -- Check if all haskell stuff have been formatted correctly"
 	@echo "  lint -- Get hlint suggestions for project"
 	@echo "  ps_bridge -- Generate purescript bridge files"
+	@echo "  bench -- Generate bench report bench.csv"
+	@echo "  bench_check -- Check if bench report is up-to-date"
 
 hoogle:
 	pkill hoogle || true
@@ -51,3 +53,16 @@ lint:
 PS_BRIDGE_OUTPUT_DIR := agora-purescript-bridge/
 ps_bridge:
 	cabal run exe:agora-purescript-bridge -- -o $(PS_BRIDGE_OUTPUT_DIR)
+
+bench:
+	cabal run agora-bench
+
+BENCH_TMPDIR := $(shell mktemp -d)
+BENCH_TMPFILE := $(BENCH_TMPDIR)/bench.csv
+bench_check:
+	(cabal run agora-bench -- -o "$(BENCH_TMPFILE)" \
+		|| $(bench) -o "$(BENCH_TMPFILE)") >> /dev/null
+	diff bench.csv $(BENCH_TMPFILE) \
+		|| (echo "bench.csv is outdated"; exit 1)
+	# TODO: do the clean-up even if `diff` fails.
+	rm -rf $(BENCH_TMPDIR)
