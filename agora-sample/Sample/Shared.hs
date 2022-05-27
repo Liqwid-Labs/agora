@@ -85,8 +85,8 @@ import Agora.Proposal.Time (
 import Agora.Stake (Stake (..))
 import Agora.Treasury (treasuryValidator)
 import Agora.Utils (validatorHashToTokenName)
-import Data.Tagged (Tagged (..))
 import Data.Default.Class (Default (..))
+import Data.Tagged (Tagged (..))
 import Plutarch.Api.V1 (
   mintingPolicySymbol,
   mkMintingPolicy,

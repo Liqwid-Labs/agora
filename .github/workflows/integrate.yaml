@@ -15,21 +15,21 @@ on:
       - "flake.lock"
       - "agora.cabal"
 jobs:
-  check-formatting:
+  flake:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        tasks: ["formatCheck", "benchCheck", "agora"]
     steps:
       - uses: actions/checkout@v2.4.0
 
-      - name: Setup SSH Keys and known_hosts
-        env:
-          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
-        run: |
-          ssh-agent -a $SSH_AUTH_SOCK > /dev/null
-          ssh-add - <<< "${{ secrets.LIQWID_PLUTARCH_EXTRA_PRIVATE }}"
-          ssh-add - <<< "${{ secrets.PLUTARCH_NUMERIC_PRIVATE }}"
-          ssh-add - <<< "${{ secrets.PLUTARCH_SAFE_MONEY_PRIVATE }}"
-          ssh -T git@github.com
-
+      - uses: webfactory/ssh-agent@v0.5.4
+        with:
+          ssh-private-key: |
+            ${{ secrets.LIQWID_PLUTARCH_EXTRA_PRIVATE }}
+            ${{ secrets.PLUTARCH_NUMERIC_PRIVATE }}
+            ${{ secrets.PLUTARCH_SAFE_MONEY_PRIVATE }}
+      
       - uses: cachix/install-nix-action@v16
         name: Set up Nix and IOHK caches
         with:
@@ -44,85 +44,20 @@ jobs:
           name: mlabs
           authToken: ${{ secrets.CACHIX_KEY }}
 
-      - run: nix build .#checks.x86_64-linux.formatCheck
-        name: Run 'formatCheck' from flake.nix
-
-  check-bench:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2.4.0
-
-      - uses: cachix/install-nix-action@v16
-        name: Set up Nix and IOHK caches
-        with:
-          nix_path: nixpkgs=channel:nixos-unstable
-          extra_nix_config: |
-            trusted-public-keys = hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ= iohk.cachix.org-1:DpRUyj7h7V830dp/i6Nti+NEO2/nhblbov/8MW7Rqoo= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
-            substituters = https://hydra.iohk.io https://iohk.cachix.org https://cache.nixos.org/
-            experimental-features = nix-command flakes
-
-      - uses: cachix/cachix-action@v10
-        with:
-          name: mlabs
-          authToken: ${{ secrets.CACHIX_KEY }}
-
-      - run: nix build .#checks.x86_64-linux.benchCheck
-        name: Run 'benchCheck' from flake.nix
-
-  check-build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2.4.0
-
-      - name: Setup SSH Keys and known_hosts
-        env:
-          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
-        run: |
-          ssh-agent -a $SSH_AUTH_SOCK > /dev/null
-          ssh-add - <<< "${{ secrets.LIQWID_PLUTARCH_EXTRA_PRIVATE }}"
-          ssh-add - <<< "${{ secrets.PLUTARCH_NUMERIC_PRIVATE }}"
-          ssh-add - <<< "${{ secrets.PLUTARCH_SAFE_MONEY_PRIVATE }}"
-
-      - uses: cachix/install-nix-action@v16
-        name: Set up Nix and IOHK caches
-        with:
-          nix_path: nixpkgs=channel:nixos-unstable
-          extra_nix_config: |
-            trusted-public-keys = hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ= iohk.cachix.org-1:DpRUyj7h7V830dp/i6Nti+NEO2/nhblbov/8MW7Rqoo= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
-            substituters = https://hydra.iohk.io https://iohk.cachix.org https://cache.nixos.org/
-            experimental-features = nix-command flakes
-
-      - uses: cachix/cachix-action@v10
-        with:
-          name: mlabs
-          authToken: ${{ secrets.CACHIX_KEY }}
-
-      - name: Add cabal folder to cache
-        id: cabal
-        uses: actions/cache@v2.1.4
-        with:
-          path: |
-            ~/.cabal/packages
-            ~/.cabal/store
-            dist-newstyle
-          key: ${{ runner.os }}-cabal
-
-      - name: Build the project
-        run: nix build .#check.x86_64-linux
+      - run: nix build .#checks.x86_64-linux.${{ matrix.tasks }}
+        name: Run '${{ matrix.tasks }}' from flake.nix
 
   haddock:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2.4.0
       
-      - name: Setup SSH Keys and known_hosts
-        env:
-          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
-        run: |
-          ssh-agent -a $SSH_AUTH_SOCK > /dev/null
-          ssh-add - <<< "${{ secrets.LIQWID_PLUTARCH_EXTRA_PRIVATE }}"
-          ssh-add - <<< "${{ secrets.PLUTARCH_NUMERIC_PRIVATE }}"
-          ssh-add - <<< "${{ secrets.PLUTARCH_SAFE_MONEY_PRIVATE }}"      
+      - uses: webfactory/ssh-agent@v0.5.4
+        with:
+          ssh-private-key: |
+            ${{ secrets.LIQWID_PLUTARCH_EXTRA_PRIVATE }}
+            ${{ secrets.PLUTARCH_NUMERIC_PRIVATE }}
+            ${{ secrets.PLUTARCH_SAFE_MONEY_PRIVATE }}
 
       - uses: cachix/install-nix-action@v16
         name: Set up Nix and IOHK caches
