@@ -31,6 +31,10 @@ Haddock is deployed on GitHub Pages [here](https://liqwid-labs.github.io/agora/)
 
 If you are a protocol wanting to use Agora, read [Using Agora](https://liqwid.notion.site/Using-Agora-74ceb4a70d024992abd9ff07087013e6).
 
+## Contributing
+
+Please read [CONTRIBUTING.md](./CONTRIBUTING.md). Additionally, please follow the [Git policy](https://liqwid.notion.site/Git-Policy-9a7979b2fd5d4604b6d042b084e7e14f) when contributing to this project.
+
 ## Road-map
 
 ### v1
