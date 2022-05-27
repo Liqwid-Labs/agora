@@ -4,6 +4,8 @@ This document is intended for those whom wish to contribute to Agora, in the for
 
 Before making any form of contribution, it is advised that one familiarises themselves with the [existing documentation](https://liqwid.notion.site/e85c09d2c9a542b19aac8dd3d6caa98b?v=d863219cd6a14082a661c4959cabd6e7). This will enable the contributor to submit better, more informed issues and will potentially aid a developer in writing PRs.
 
+Please follow the [Git policy](https://liqwid.notion.site/Git-Policy-9a7979b2fd5d4604b6d042b084e7e14f) when contributing to this project.
+
 ## Agora core team
 
 This document will make reference to the _Agora core team_. These are the people who work on Agora professionally and will be responsible for maintaining the project in its open source life. They include:
@@ -46,7 +48,7 @@ Agora utilises [Plutarch](https://github.com/plutonomicon/plutarch) and your wor
 
 ### Stylistic guidelines
 
-All work must comply with the [MLabs style guide](https://github.com/mlabs-haskell/styleguide/). 
+All work must comply with the [MLabs style guide](https://github.com/mlabs-haskell/styleguide/).
 
 ### Continuous integration
 
