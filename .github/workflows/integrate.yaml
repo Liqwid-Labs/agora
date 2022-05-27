@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        tasks: ["formatCheck", "benchCheck", "agora"]
+        tasks: ["agora", "formatCheck", "benchCheck"]
     steps:
       - uses: actions/checkout@v2.4.0
 
