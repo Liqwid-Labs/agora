@@ -24,9 +24,9 @@ import Plutarch.Api.V1 (
   PTxInfo (..),
   PTxOut (..),
  )
+import Plutarch.Api.V1.AssetClass (passetClass, passetClassValueOf)
 import Plutarch.Api.V1.AssocMap (PMap (PMap))
-import Plutarch.Api.V1.Extra (passetClass, passetClassValueOf)
-import Plutarch.Api.V1.Value (PValue (PValue))
+import "plutarch" Plutarch.Api.V1.Value (PValue (PValue))
 import Plutarch.Builtin (pforgetData)
 import Plutus.V1.Ledger.Value (AssetClass (AssetClass))
 

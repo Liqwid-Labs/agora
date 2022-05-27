@@ -7,12 +7,20 @@
   # see https://github.com/NixOS/nix/issues/6013
   inputs.nixpkgs-2111 = { url = "github:NixOS/nixpkgs/nixpkgs-21.11-darwin"; };
 
+  # Plutarch and its friends
   inputs.plutarch.url =
-    "github:peter-mlabs/plutarch?rev=6ef18aacd02050fc07398e399cff5e8734c1045e";
+    "github:liqwid-labs/plutarch/staging";
   inputs.plutarch.inputs.emanote.follows =
     "plutarch/haskell-nix/nixpkgs-unstable";
   inputs.plutarch.inputs.nixpkgs.follows =
     "plutarch/haskell-nix/nixpkgs-unstable";
+
+  inputs.liqwid-plutarch-extra.url =
+    "git+ssh://git@github.com/Liqwid-Labs/liqwid-plutarch-extra?ref=main";
+  inputs.plutarch-numeric.url =
+    "git+ssh://git@github.com/Liqwid-Labs/plutarch-numeric?ref=main";
+  inputs.plutarch-safe-money.url =
+    "git+ssh://git@github.com/Liqwid-Labs/plutarch-safe-money?ref=main";
 
   # Follows jhodgdev's forks of apropos and apropos-tx, as these
   # are not constrained to `base ^>= 4.14`. Once these are merged
@@ -66,11 +74,20 @@
               src = inputs.plutarch;
               subdirs = [
                 "."
-                "plutarch-test"
                 "plutarch-extra"
-                "plutarch-numeric"
-                "plutarch-safemoney"
               ];
+            }
+            {
+              src = inputs.liqwid-plutarch-extra;
+              subdirs = [ "." ];
+            }
+            {
+              src = inputs.plutarch-numeric;
+              subdirs = [ "." ];
+            }
+            {
+              src = inputs.plutarch-safe-money;
+              subdirs = [ "." ];
             }
             {
               src = inputs.apropos-tx;
@@ -82,9 +99,7 @@
             }
             {
               src = inputs.purescript-bridge;
-              subdirs = [
-                "."
-              ];
+              subdirs = [ "." ];
             }
           ];
           modules = [ (plutarch.haskellModule system) ];
@@ -110,16 +125,21 @@
             inherit (plutarch) tools;
 
             additional = ps: [
+              # plutarch
               ps.plutarch
+              ps.liqwid-plutarch-extra
+              ps.plutarch-numeric
+              ps.plutarch-safe-money
+
+              # purescript
+              ps.purescript-bridge
+
+              # testing
               ps.tasty-quickcheck
               ps.apropos-tx
               ps.apropos
-              ps.plutarch-extra
-              ps.plutarch-numeric
-              ps.plutarch-safemoney
-              ps.plutarch-test
               ps.apropos
-              ps.purescript-bridge
+
             ];
           };
         };

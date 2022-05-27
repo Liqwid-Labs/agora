@@ -27,10 +27,10 @@ import Agora.Stake.Scripts (stakePolicy, stakeValidator)
 import Agora.Treasury (treasuryValidator)
 import Control.Monad ((>=>))
 import Data.Aeson qualified as Aeson
+import Data.Tagged (Tagged)
 import GHC.Generics qualified as GHC
 import Options (Options (..), parseOptions)
 import Plutarch.Api.V1 (mintingPolicySymbol, mkMintingPolicy)
-import Plutarch.SafeMoney (Tagged)
 import Plutus.V1.Ledger.Api (TxOutRef)
 import Plutus.V1.Ledger.Value (AssetClass, CurrencySymbol)
 import Plutus.V1.Ledger.Value qualified as Value

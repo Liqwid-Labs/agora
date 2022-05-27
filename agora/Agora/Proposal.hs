@@ -51,13 +51,14 @@ import Agora.SafeMoney (GTTag)
 import Agora.Utils (pkeysEqual, pmapMap, pnotNull)
 import Control.Applicative (Const)
 import Control.Arrow (first)
+import Data.Tagged (Tagged)
 import Plutarch.DataRepr (DerivePConstantViaData (..), PDataFields, PIsDataReprInstances (..))
 import Plutarch.Lift (
   DerivePConstantViaNewtype (..),
   PConstantDecl,
   PUnsafeLiftDecl (..),
  )
-import Plutarch.SafeMoney (PDiscrete, Tagged)
+import Plutarch.SafeMoney (PDiscrete)
 import Plutarch.TryFrom (PTryFrom (PTryFromExcess, ptryFrom'))
 import Plutarch.Unsafe (punsafeCoerce)
 import Plutus.V1.Ledger.Api (DatumHash, PubKeyHash, ValidatorHash)

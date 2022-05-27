@@ -10,7 +10,7 @@ module Agora.Effect (makeEffect) where
 import Agora.AuthorityToken (singleAuthorityTokenBurned)
 import Agora.Utils (tcassert, tclet, tcmatch, tctryFrom)
 import Plutarch.Api.V1 (PCurrencySymbol, PScriptPurpose (PSpending), PTxInfo, PTxOutRef, PValidator, PValue)
-import Plutarch.TryFrom (PTryFrom)
+import Plutarch.TryFrom ()
 import Plutus.V1.Ledger.Value (CurrencySymbol)
 
 --------------------------------------------------------------------------------

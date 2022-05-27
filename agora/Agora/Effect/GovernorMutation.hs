@@ -31,7 +31,7 @@ import Plutarch.Api.V1 (
   PValidator,
   PValue,
  )
-import Plutarch.Api.V1.Extra (pvalueOf)
+import "liqwid-plutarch-extra" Plutarch.Api.V1.Value (pvalueOf)
 import Plutarch.DataRepr (
   DerivePConstantViaData (..),
   PDataFields,

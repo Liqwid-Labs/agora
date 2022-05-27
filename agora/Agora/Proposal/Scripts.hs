@@ -44,9 +44,11 @@ import Plutarch.Api.V1 (
   PTxInfo (PTxInfo),
   PValidator,
  )
-import Plutarch.Api.V1.Extra (passetClass, passetClassValueOf)
-import Plutarch.Map.Extra (plookup)
-import Plutarch.SafeMoney (puntag)
+import Plutarch.Api.V1.AssetClass (passetClass, passetClassValueOf)
+import Plutarch.Extra.Comonad (pextract)
+import Plutarch.Extra.Map (plookup)
+import Plutarch.Extra.TermCont (pmatchC)
+import Plutarch.SafeMoney (PDiscrete (..))
 import Plutus.V1.Ledger.Value (AssetClass (AssetClass))
 
 {- | Policy for Proposals.
@@ -253,8 +255,9 @@ proposalValidator proposal =
                   PProposalVotes $
                     pupdate
                       # plam
-                        ( \votes ->
-                            pcon $ PJust $ votes + (puntag stakeInF.stakedAmount)
+                        ( \votes -> unTermCont $ do
+                            PDiscrete v <- pmatchC stakeInF.stakedAmount
+                            pure $ pcon $ PJust $ votes + (pextract # v)
                         )
                       # voteFor
                       # m

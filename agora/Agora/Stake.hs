@@ -66,12 +66,9 @@ import Agora.Utils (
   tcmatch,
  )
 import Control.Applicative (Const)
-import Plutarch.Api.V1.Extra (PAssetClass, passetClassValueOf)
-import Plutarch.Numeric ()
-import Plutarch.SafeMoney (
-  PDiscrete,
-  Tagged (..),
- )
+import Data.Tagged (Tagged (..))
+import Plutarch.Api.V1.AssetClass (PAssetClass, passetClassValueOf)
+import Plutarch.SafeMoney (PDiscrete)
 import Plutarch.TryFrom (PTryFrom (PTryFromExcess, ptryFrom'))
 
 --------------------------------------------------------------------------------
