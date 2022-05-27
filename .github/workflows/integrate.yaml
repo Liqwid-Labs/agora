@@ -27,7 +27,8 @@ jobs:
           ssh-agent -a $SSH_AUTH_SOCK > /dev/null
           ssh-add - <<< "${{ secrets.LIQWID_PLUTARCH_EXTRA_PRIVATE }}"
           ssh-add - <<< "${{ secrets.PLUTARCH_NUMERIC_PRIVATE }}"
-          ssh-add - <<< "${{ secrets.PLUTARCH_SAFE_MONEY_PRIVATE }}"        
+          ssh-add - <<< "${{ secrets.PLUTARCH_SAFE_MONEY_PRIVATE }}"
+          ssh -T git@github.com
 
       - uses: cachix/install-nix-action@v16
         name: Set up Nix and IOHK caches
