@@ -12,6 +12,12 @@ Agora/Proposal/validator/cosignature/proposal,241651391,511819,5772
 Agora/Proposal/validator/cosignature/stake,186332635,402961,4561
 Agora/Proposal/validator/voting/proposal,240181636,491168,5780
 Agora/Proposal/validator/voting/stake,154223940,328703,4614
+Agora/Proposal/validator/advancing/successfully advance to next state/Draft -> VotringReady,129146959,254742,5158
+Agora/Proposal/validator/advancing/successfully advance to next state/VotingReady -> Locked,138455315,275396,5166
+Agora/Proposal/validator/advancing/successfully advance to next state/Locked -> Finished,131138537,260050,5167
+Agora/Proposal/validator/advancing/successfully advance to failed state: timeout/Draft -> Finished,127634992,252012,5160
+Agora/Proposal/validator/advancing/successfully advance to failed state: timeout/VotingReady -> Finished,128625282,254416,5167
+Agora/Proposal/validator/advancing/successfully advance to failed state: timeout/Locked -> Finished,128130137,253214,5167
 Agora/AuthorityToken/singleAuthorityTokenBurned/Correct simple,25177457,55883,806
 Agora/AuthorityToken/singleAuthorityTokenBurned/Correct many inputs,40266637,88241,900
 Agora/Treasury/Validator/Positive/Allows for effect changes,37343572,79744,1841

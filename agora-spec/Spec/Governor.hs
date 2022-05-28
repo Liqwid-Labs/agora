@@ -44,7 +44,7 @@ specs =
           "proposal creation"
           (governorValidator Shared.governor)
           ( GovernorDatum
-              Shared.defaultProposalThresholds
+              def
               (ProposalId 0)
               def
               def
@@ -55,7 +55,7 @@ specs =
           "GATs minting"
           (governorValidator Shared.governor)
           ( GovernorDatum
-              Shared.defaultProposalThresholds
+              def
               (ProposalId 5)
               def
               def
@@ -66,7 +66,7 @@ specs =
           "mutate governor state"
           (governorValidator Shared.governor)
           ( GovernorDatum
-              Shared.defaultProposalThresholds
+              def
               (ProposalId 5)
               def
               def
