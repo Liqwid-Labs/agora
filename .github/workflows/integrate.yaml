@@ -1,6 +1,7 @@
 on:
   push:
     paths:
+      - ".github/workflows/integrate.yaml"
       - "**.hs"
       - "**.nix"
       - "flake.lock"
@@ -10,6 +11,7 @@ on:
       - staging
   pull_request:
     paths:
+      - ".github/workflows/integrate.yaml"
       - "**.hs"
       - "**.nix"
       - "flake.lock"
@@ -19,7 +21,11 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        tasks: ["agora", "formatCheck", "benchCheck"]
+        tasks: 
+          - agora
+          - formatCheck
+          - benchCheck
+          - agora-test
     steps:
       - uses: actions/checkout@v2.4.0
 
