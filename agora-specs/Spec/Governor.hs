@@ -19,7 +19,7 @@ import Agora.Proposal (ProposalId (..))
 import Data.Default.Class (Default (def))
 import Sample.Governor (createProposal, mintGATs, mintGST, mutateState)
 import Sample.Shared qualified as Shared
-import Spec.Specification (
+import Test.Specification (
   SpecificationTree,
   group,
   policySucceedsWith,

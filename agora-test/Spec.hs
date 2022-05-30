@@ -17,7 +17,7 @@ import Spec.Stake qualified as Stake
 import Spec.Treasury qualified as Treasury
 import Spec.Utils qualified as Utils
 
-import Spec.Specification (group, toTestTree)
+import Test.Specification (group, toTestTree)
 
 -- | The Agora test suite.
 main :: IO ()

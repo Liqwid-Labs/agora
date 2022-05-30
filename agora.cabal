@@ -165,10 +165,13 @@ library pprelude
 
 library agora-testlib
   import:          lang, deps, test-deps
-  exposed-modules: Test.Util
+  exposed-modules:
+    Test.Specification
+    Test.Util
+
   hs-source-dirs:  agora-testlib
 
-library agora-sample
+library agora-specs
   import:          lang, deps, test-deps
   exposed-modules:
     Sample.Effect.GovernorMutation
@@ -178,28 +181,18 @@ library agora-sample
     Sample.Shared
     Sample.Stake
     Sample.Treasury
-
-  hs-source-dirs:  agora-sample
-  build-depends:   agora-testlib
-
-library agora-spec
-  import:          lang, deps, test-deps
-  exposed-modules:
     Spec.AuthorityToken
     Spec.Effect.GovernorMutation
     Spec.Effect.TreasuryWithdrawal
     Spec.Governor
     Spec.Model.MultiSig
     Spec.Proposal
-    Spec.Specification
     Spec.Stake
     Spec.Treasury
     Spec.Utils
 
-  hs-source-dirs:  agora-spec
-  build-depends:
-    , agora-sample
-    , agora-testlib
+  hs-source-dirs:  agora-specs
+  build-depends:   agora-testlib
 
 test-suite agora-test
   import:         lang, deps, test-deps
@@ -207,8 +200,7 @@ test-suite agora-test
   main-is:        Spec.hs
   hs-source-dirs: agora-test
   build-depends:
-    , agora-sample
-    , agora-spec
+    , agora-specs
     , agora-testlib
 
 benchmark agora-bench
@@ -222,8 +214,8 @@ benchmark agora-bench
   type:           exitcode-stdio-1.0
   build-depends:
     , agora
-    , agora-sample
-    , agora-spec
+    , agora-specs
+    , agora-testlib
     , cassava
     , optparse-applicative
 
