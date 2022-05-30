@@ -145,7 +145,6 @@ library
     Agora.Proposal
     Agora.Proposal.Scripts
     Agora.Proposal.Time
-    Agora.Record
     Agora.SafeMoney
     Agora.ScriptInfo
     Agora.Stake

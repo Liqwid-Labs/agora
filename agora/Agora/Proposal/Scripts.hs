@@ -18,7 +18,6 @@ import Agora.Proposal (
   ProposalStatus (VotingReady),
  )
 import Agora.Proposal.Time (currentProposalTime, isVotingPeriod)
-import Agora.Record (mkRecordConstr, (.&), (.=))
 import Agora.Stake (PProposalLock (..), PStakeDatum (..), findStakeOwnedBy)
 import Agora.Utils (
   findTxOutByTxOutRef,
@@ -47,6 +46,7 @@ import Plutarch.Api.V1 (
 import Plutarch.Api.V1.AssetClass (passetClass, passetClassValueOf)
 import Plutarch.Extra.Comonad (pextract)
 import Plutarch.Extra.Map (plookup)
+import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
 import Plutarch.Extra.TermCont (pmatchC)
 import Plutarch.SafeMoney (PDiscrete (..))
 import Plutus.V1.Ledger.Value (AssetClass (AssetClass))
