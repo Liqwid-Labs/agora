@@ -12,9 +12,9 @@ import Spec.Effect.GovernorMutation qualified as GovernorMutation
 import Spec.Effect.TreasuryWithdrawal qualified as TreasuryWithdrawal
 import Spec.Governor qualified as Governor
 import Spec.Proposal qualified as Proposal
-import Spec.Specification (group)
 import Spec.Stake qualified as Stake
 import Spec.Treasury qualified as Treasury
+import Test.Specification (group)
 import Prelude
 
 --------------------------------------------------------------------------------

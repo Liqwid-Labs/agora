@@ -1,5 +1,5 @@
 {- |
-Module     : Spec.Specification
+Module     : Test.Specification
 Maintainer : seungheon.ooh@gmail.com
 Description: Helpers to build Specification for testing and bench-marking
 
@@ -22,7 +22,7 @@ Constructors for building a specification for Plutarch scripts:
 
   - 'scriptFails': checks that an arbitrary script `perror`s out.
 -}
-module Spec.Specification (
+module Test.Specification (
   -- * Structures
   Specification (..),
   SpecificationExpectation (..),

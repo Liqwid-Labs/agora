@@ -15,7 +15,7 @@ import Sample.Effect.GovernorMutation (
   validNewGovernorDatum,
  )
 import Sample.Shared qualified as Shared
-import Spec.Specification (
+import Test.Specification (
   SpecificationTree,
   effectFailsWith,
   effectSucceedsWith,

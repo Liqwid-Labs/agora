@@ -46,7 +46,7 @@ import PlutusTx.AssocMap qualified as AssocMap
 import Sample.Proposal qualified as Proposal
 import Sample.Shared (signer, signer2)
 import Sample.Shared qualified as Shared
-import Spec.Specification (
+import Test.Specification (
   SpecificationTree,
   group,
   policySucceedsWith,

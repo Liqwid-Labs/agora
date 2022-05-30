@@ -19,7 +19,7 @@ import Plutus.V1.Ledger.Api (
 import Plutus.V1.Ledger.Api qualified as Plutus
 import Prettyprinter (Pretty (pretty), indent, vsep)
 
-import Spec.Specification (
+import Test.Specification (
   Specification (Specification),
   SpecificationExpectation (Success),
   SpecificationTree (..),

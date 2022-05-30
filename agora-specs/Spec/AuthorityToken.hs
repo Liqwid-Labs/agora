@@ -32,7 +32,7 @@ import Plutus.V1.Ledger.Api (
 import Plutus.V1.Ledger.Interval qualified as Interval
 import Plutus.V1.Ledger.Value qualified as Value
 import PlutusTx.AssocMap qualified as AssocMap
-import Spec.Specification (
+import Test.Specification (
   SpecificationTree,
   group,
   scriptFails,

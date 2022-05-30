@@ -25,7 +25,7 @@ import Sample.Effect.TreasuryWithdrawal (
   treasuries,
   users,
  )
-import Spec.Specification (
+import Test.Specification (
   SpecificationTree,
   effectFailsWith,
   effectSucceedsWith,
