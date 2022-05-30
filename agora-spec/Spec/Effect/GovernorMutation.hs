@@ -34,7 +34,7 @@ specs =
               "governor validator should pass"
               (governorValidator Shared.governor)
               ( GovernorDatum
-                  Shared.defaultProposalThresholds
+                  def
                   (ProposalId 0)
                   def
                   def
@@ -56,7 +56,7 @@ specs =
               "governor validator should fail"
               (governorValidator Shared.governor)
               ( GovernorDatum
-                  Shared.defaultProposalThresholds
+                  def
                   (ProposalId 0)
                   def
                   def

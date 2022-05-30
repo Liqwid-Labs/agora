@@ -70,7 +70,6 @@ import Agora.Stake (
 
 import Sample.Shared (
   authorityTokenSymbol,
-  defaultProposalThresholds,
   govAssetClass,
   govSymbol,
   govValidatorAddress,
@@ -119,7 +118,7 @@ mintGST =
       governorOutputDatum' :: GovernorDatum
       governorOutputDatum' =
         GovernorDatum
-          { proposalThresholds = defaultProposalThresholds
+          { proposalThresholds = def
           , nextProposalId = ProposalId 0
           , proposalTimings = def
           , createProposalTimeRangeMaxWidth = def
@@ -214,7 +213,7 @@ createProposal =
       governorInputDatum' :: GovernorDatum
       governorInputDatum' =
         GovernorDatum
-          { proposalThresholds = defaultProposalThresholds
+          { proposalThresholds = def
           , nextProposalId = thisProposalId
           , proposalTimings = def
           , createProposalTimeRangeMaxWidth = def
@@ -245,7 +244,7 @@ createProposal =
                 , effects = effects
                 , status = Draft
                 , cosigners = [signer]
-                , thresholds = defaultProposalThresholds
+                , thresholds = def
                 , votes = emptyVotesFor effects
                 , timingConfig = def
                 , startingTime = proposalStartingTimeFromTimeRange validTimeRange
@@ -392,7 +391,7 @@ mintGATs =
       governorInputDatum' :: GovernorDatum
       governorInputDatum' =
         GovernorDatum
-          { proposalThresholds = defaultProposalThresholds
+          { proposalThresholds = def
           , nextProposalId = ProposalId 5
           , proposalTimings = def
           , createProposalTimeRangeMaxWidth = def
@@ -428,7 +427,7 @@ mintGATs =
           , effects = effects
           , status = Locked
           , cosigners = [signer, signer2]
-          , thresholds = defaultProposalThresholds
+          , thresholds = def
           , votes = proposalVotes
           , timingConfig = def
           , startingTime = ProposalStartingTime 10
@@ -587,7 +586,7 @@ mutateState =
       governorInputDatum' :: GovernorDatum
       governorInputDatum' =
         GovernorDatum
-          { proposalThresholds = defaultProposalThresholds
+          { proposalThresholds = def
           , nextProposalId = ProposalId 5
           , proposalTimings = def
           , createProposalTimeRangeMaxWidth = def

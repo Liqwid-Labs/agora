@@ -15,8 +15,9 @@ import Agora.Proposal (
   Proposal (..),
   ProposalDatum (..),
   ProposalId (ProposalId),
-  ProposalRedeemer (Cosign, Vote),
-  ProposalStatus (Draft, VotingReady),
+  ProposalRedeemer (..),
+  ProposalStatus (..),
+  ProposalThresholds (..),
   ProposalVotes (ProposalVotes),
   ResultTag (ResultTag),
   cosigners,
@@ -39,7 +40,7 @@ import Agora.Stake (
  )
 import Agora.Stake.Scripts (stakeValidator)
 import Data.Default.Class (Default (def))
-import Data.Tagged (Tagged (Tagged))
+import Data.Tagged (Tagged (Tagged), untag)
 import Plutus.V1.Ledger.Api (ScriptContext (..), ScriptPurpose (..))
 import PlutusTx.AssocMap qualified as AssocMap
 import Sample.Proposal qualified as Proposal
@@ -49,6 +50,7 @@ import Spec.Specification (
   SpecificationTree,
   group,
   policySucceedsWith,
+  validatorFailsWith,
   validatorSucceedsWith,
  )
 
@@ -81,7 +83,7 @@ specs =
                         ]
                   , status = Draft
                   , cosigners = [signer]
-                  , thresholds = Shared.defaultProposalThresholds
+                  , thresholds = def
                   , votes =
                       emptyVotesFor $
                         AssocMap.fromList
@@ -115,7 +117,7 @@ specs =
                         ]
                   , status = VotingReady
                   , cosigners = [signer]
-                  , thresholds = Shared.defaultProposalThresholds
+                  , thresholds = def
                   , votes =
                       ProposalVotes
                         ( AssocMap.fromList
@@ -156,6 +158,190 @@ specs =
                         }
                   )
                   (Spending Proposal.stakeRef)
+              )
+          ]
+      , group
+          "advancing"
+          [ group "successfully advance to next state" $
+              map
+                ( \(name, initialState) ->
+                    validatorSucceedsWith
+                      name
+                      (proposalValidator Shared.proposal)
+                      ( ProposalDatum
+                          { proposalId = ProposalId 0
+                          , effects =
+                              AssocMap.fromList
+                                [ (ResultTag 0, AssocMap.empty)
+                                , (ResultTag 1, AssocMap.empty)
+                                ]
+                          , status = initialState
+                          , cosigners = [signer]
+                          , thresholds = def
+                          , votes =
+                              ProposalVotes
+                                ( AssocMap.fromList
+                                    [
+                                      ( ResultTag 0
+                                      , case initialState of
+                                        Draft -> 0
+                                        _ -> untag (def :: ProposalThresholds).countVoting + 1
+                                      )
+                                    , (ResultTag 1, 0)
+                                    ]
+                                )
+                          , timingConfig = def
+                          , startingTime = ProposalStartingTime 0
+                          }
+                      )
+                      AdvanceProposal
+                      ( ScriptContext
+                          ( Proposal.advanceProposalSuccess
+                              Proposal.TransitionParameters
+                                { Proposal.initialProposalStatus = initialState
+                                , Proposal.proposalStartingTime = ProposalStartingTime 0
+                                }
+                          )
+                          (Spending Proposal.proposalRef)
+                      )
+                )
+                [ ("Draft -> VotringReady", Draft)
+                , ("VotingReady -> Locked", VotingReady)
+                , ("Locked -> Finished", Locked)
+                ]
+          , group "successfully advance to failed state: timeout" $
+              map
+                ( \(name, initialState) ->
+                    validatorSucceedsWith
+                      name
+                      (proposalValidator Shared.proposal)
+                      ( ProposalDatum
+                          { proposalId = ProposalId 0
+                          , effects =
+                              AssocMap.fromList
+                                [ (ResultTag 0, AssocMap.empty)
+                                , (ResultTag 1, AssocMap.empty)
+                                ]
+                          , status = initialState
+                          , cosigners = [signer]
+                          , thresholds = def
+                          , votes =
+                              ProposalVotes
+                                ( AssocMap.fromList
+                                    [
+                                      ( ResultTag 0
+                                      , case initialState of
+                                        Draft -> 0
+                                        _ -> untag (def :: ProposalThresholds).countVoting + 1
+                                      )
+                                    , (ResultTag 1, 0)
+                                    ]
+                                )
+                          , timingConfig = def
+                          , startingTime = ProposalStartingTime 0
+                          }
+                      )
+                      AdvanceProposal
+                      ( ScriptContext
+                          ( Proposal.advanceProposalFailureTimeout
+                              Proposal.TransitionParameters
+                                { Proposal.initialProposalStatus = initialState
+                                , Proposal.proposalStartingTime = ProposalStartingTime 0
+                                }
+                          )
+                          (Spending Proposal.proposalRef)
+                      )
+                )
+                [ ("Draft -> Finished", Draft)
+                , ("VotingReady -> Finished", VotingReady)
+                , ("Locked -> Finished", Locked)
+                ]
+          , validatorFailsWith
+              "illegal: insufficient votes"
+              (proposalValidator Shared.proposal)
+              ( ProposalDatum
+                  { proposalId = ProposalId 0
+                  , effects =
+                      AssocMap.fromList
+                        [ (ResultTag 0, AssocMap.empty)
+                        , (ResultTag 1, AssocMap.empty)
+                        ]
+                  , status = VotingReady
+                  , cosigners = [signer]
+                  , thresholds = def
+                  , votes =
+                      ProposalVotes
+                        ( AssocMap.fromList
+                            [ (ResultTag 0, 0)
+                            , (ResultTag 1, 0)
+                            ]
+                        )
+                  , timingConfig = def
+                  , startingTime = ProposalStartingTime 0
+                  }
+              )
+              AdvanceProposal
+              ( ScriptContext
+                  Proposal.advanceProposalInsufficientVotes
+                  (Spending Proposal.proposalRef)
+              )
+          , validatorFailsWith
+              "illegal: initial state is Finished"
+              (proposalValidator Shared.proposal)
+              ( ProposalDatum
+                  { proposalId = ProposalId 0
+                  , effects =
+                      AssocMap.fromList
+                        [ (ResultTag 0, AssocMap.empty)
+                        , (ResultTag 1, AssocMap.empty)
+                        ]
+                  , status = Finished
+                  , cosigners = [signer]
+                  , thresholds = def
+                  , votes =
+                      ProposalVotes
+                        ( AssocMap.fromList
+                            [ (ResultTag 0, untag (def :: ProposalThresholds).countVoting + 1)
+                            , (ResultTag 1, 0)
+                            ]
+                        )
+                  , timingConfig = def
+                  , startingTime = ProposalStartingTime 0
+                  }
+              )
+              AdvanceProposal
+              ( ScriptContext
+                  Proposal.advanceFinishedPropsoal
+                  (Spending Proposal.proposalRef)
+              )
+          , validatorFailsWith
+              "illegal: with stake input"
+              (proposalValidator Shared.proposal)
+              ( ProposalDatum
+                  { proposalId = ProposalId 0
+                  , effects =
+                      AssocMap.fromList
+                        [ (ResultTag 0, AssocMap.empty)
+                        , (ResultTag 1, AssocMap.empty)
+                        ]
+                  , status = VotingReady
+                  , cosigners = [signer]
+                  , thresholds = def
+                  , votes =
+                      ProposalVotes
+                        ( AssocMap.fromList
+                            [ (ResultTag 0, 0)
+                            , (ResultTag 1, 0)
+                            ]
+                        )
+                  , timingConfig = def
+                  , startingTime = ProposalStartingTime 0
+                  }
+              )
+              AdvanceProposal
+              ( ScriptContext
+                  Proposal.advancePropsoalWithsStake
+                  (Spending Proposal.proposalRef)
               )
           ]
       ]

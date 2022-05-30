@@ -33,7 +33,6 @@ module Sample.Shared (
   gstUTXORef,
 
   -- ** Proposal
-  defaultProposalThresholds,
   proposal,
   proposalPolicySymbol,
   proposalValidatorHash,
@@ -184,13 +183,16 @@ proposalValidatorHash = proposalValidatorHashFromGovernor governor
 proposalValidatorAddress :: Address
 proposalValidatorAddress = scriptHashAddress proposalValidatorHash
 
-defaultProposalThresholds :: ProposalThresholds
-defaultProposalThresholds =
-  ProposalThresholds
-    { countVoting = Tagged 1000
-    , create = Tagged 1
-    , startVoting = Tagged 10
-    }
+{- | Default value of 'Agora.Proposal.ProposalThresholds'.
+     For testing purpose only.
+-}
+instance Default ProposalThresholds where
+  def =
+    ProposalThresholds
+      { countVoting = Tagged 1000
+      , create = Tagged 1
+      , startVoting = Tagged 10
+      }
 
 authorityToken :: AuthorityToken
 authorityToken = authorityTokenFromGovernor governor

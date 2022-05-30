@@ -13,11 +13,18 @@ module Agora.Proposal.Scripts (
 import Agora.Proposal (
   PProposalDatum (PProposalDatum),
   PProposalRedeemer (..),
+  PProposalStatus (..),
   PProposalVotes (PProposalVotes),
   Proposal (governorSTAssetClass, stakeSTAssetClass),
-  ProposalStatus (VotingReady),
+  ProposalStatus (..),
  )
-import Agora.Proposal.Time (currentProposalTime, isVotingPeriod)
+import Agora.Proposal.Time (
+  currentProposalTime,
+  isDraftPeriod,
+  isExecutionPeriod,
+  isLockingPeriod,
+  isVotingPeriod,
+ )
 import Agora.Stake (PProposalLock (..), PStakeDatum (..), findStakeOwnedBy)
 import Agora.Utils (
   findTxOutByTxOutRef,
@@ -368,5 +375,84 @@ proposalValidator proposal =
         PUnlock _r ->
           popaque (pconstant ())
         --------------------------------------------------------------------------
-        PAdvanceProposal _r ->
-          popaque (pconstant ())
+        PAdvanceProposal _r -> unTermCont $ do
+          tcassert "No stake input is allowed" $ spentStakeST #== 0
+
+          currentTime <- tclet $ currentProposalTime # txInfoF.validRange
+          proposalOutStatus <- tclet $ pfield @"status" # proposalOut
+
+          let -- Only the status of proposals should be updated in this case.
+              templateProposalOut =
+                mkRecordConstr
+                  PProposalDatum
+                  ( #proposalId .= proposalF.proposalId
+                      .& #effects .= proposalF.effects
+                      .& #status .= proposalOutStatus
+                      .& #cosigners .= proposalF.cosigners
+                      .& #thresholds .= proposalF.thresholds
+                      .& #votes .= proposalF.votes
+                      .& #timingConfig .= proposalF.timingConfig
+                      .& #startingTime .= proposalF.startingTime
+                  )
+
+          tcassert "Only status changes in the output proposal" $
+            templateProposalOut #== proposalOut
+
+          inDraftPeriod <- tclet $ isDraftPeriod # proposalF.timingConfig # proposalF.startingTime # currentTime
+          inVotingPeriod <- tclet $ isVotingPeriod # proposalF.timingConfig # proposalF.startingTime # currentTime
+          inLockedPeriod <- tclet $ isLockingPeriod # proposalF.timingConfig # proposalF.startingTime # currentTime
+          inExecutionPeriod <- tclet $ isExecutionPeriod # proposalF.timingConfig # proposalF.startingTime # currentTime
+
+          -- Check the timings.
+          let isFinished = proposalF.status #== pconstantData Finished
+
+              notTooLate = pmatch (pfromData proposalF.status) $ \case
+                PDraft _ -> inDraftPeriod
+                -- Can only advance after the voting period is over.
+                PVotingReady _ -> inLockedPeriod
+                PLocked _ -> inExecutionPeriod
+                _ -> pconstant False
+
+              notTooEarly = pmatch (pfromData proposalF.status) $ \case
+                PVotingReady _ -> pnot # inVotingPeriod
+                PLocked _ -> pnot # inLockedPeriod
+                _ -> pconstant True
+
+          tcassert "Cannot advance ahead of time" notTooEarly
+          tcassert "Finished proposals cannot be advanced" $ pnot # isFinished
+
+          pure $
+            pif
+              notTooLate
+              -- On time: advance to next status.
+              ( pmatch (pfromData proposalF.status) $ \case
+                  PDraft _ -> unTermCont $ do
+                    -- TODO: Perform other necessary checks.
+
+                    -- 'Draft' -> 'VotingReady'
+                    tcassert "Proposal status set to VotingReady" $
+                      proposalOutStatus #== pconstantData VotingReady
+
+                    pure $ popaque (pconstant ())
+                  PVotingReady _ -> unTermCont $ do
+                    -- 'VotingReady' -> 'Locked'
+                    tcassert "Proposal status set to Locked" $
+                      proposalOutStatus #== pconstantData Locked
+
+                    pure $ popaque (pconstant ())
+                  PLocked _ -> unTermCont $ do
+                    -- 'Locked' -> 'Finished'
+                    tcassert "Proposal status set to Finished" $
+                      proposalOutStatus #== pconstantData Finished
+
+                    -- TODO: Perform other necessary checks.
+                    pure $ popaque (pconstant ())
+                  _ -> popaque (pconstant ())
+              )
+              -- Too late: failed proposal, status set to 'Finished'.
+              ( popaque $
+                  ptraceIfFalse "Proposal should fail: not on time" $
+                    proposalOutStatus #== pconstantData Finished
+                    -- TODO: Should check that the GST is not moved
+                    --        if the proposal is in 'Locked' state.
+              )
