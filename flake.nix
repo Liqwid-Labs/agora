@@ -22,6 +22,11 @@
   inputs.plutarch-safe-money.url =
     "git+ssh://git@github.com/Liqwid-Labs/plutarch-safe-money?ref=main";
 
+  # Testing 
+  inputs.plutarch-quickcheck.url =
+    "github:liqwid-labs/plutarch-quickcheck";
+  inputs.plutarch-context-builder.url =
+    "git+ssh://git@github.com/Liqwid-Labs/plutarch-context-builder?ref=main";
   # Follows jhodgdev's forks of apropos and apropos-tx, as these
   # are not constrained to `base ^>= 4.14`. Once these are merged
   # to their respective master branches, we should change the
@@ -36,6 +41,7 @@
   inputs.apropos.inputs.nixpkgs.follows =
     "plutarch/haskell-nix/nixpkgs-unstable";
 
+  # Purescript
   inputs.purescript-bridge.url =
     "github:mlabs-haskell/purescript-bridge?rev=8e6251e8b1f489748f5bbd9ca6384bcf8cefbbef";
 
@@ -90,6 +96,14 @@
               subdirs = [ "." ];
             }
             {
+              src = inputs.plutarch-quickcheck;
+              subdirs = [ "." ];
+            }
+            {
+              src = inputs.plutarch-context-builder;
+              subdirs = [ "." ];
+            }            
+            {
               src = inputs.apropos-tx;
               subdirs = [ "." ];
             }
@@ -136,6 +150,8 @@
 
               # testing
               ps.tasty-quickcheck
+              ps.plutarch-quickcheck
+              ps.plutarch-context-builder 
               ps.apropos-tx
               ps.apropos
               ps.apropos

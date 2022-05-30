@@ -35,6 +35,7 @@ jobs:
             ${{ secrets.LIQWID_PLUTARCH_EXTRA_PRIVATE }}
             ${{ secrets.PLUTARCH_NUMERIC_PRIVATE }}
             ${{ secrets.PLUTARCH_SAFE_MONEY_PRIVATE }}
+            ${{ secrets.PLUTARCH_CONTEXT_BUILDER_PRIVATE }}
       
       - uses: cachix/install-nix-action@v16
         name: Set up Nix and IOHK caches
@@ -64,6 +65,7 @@ jobs:
             ${{ secrets.LIQWID_PLUTARCH_EXTRA_PRIVATE }}
             ${{ secrets.PLUTARCH_NUMERIC_PRIVATE }}
             ${{ secrets.PLUTARCH_SAFE_MONEY_PRIVATE }}
+            ${{ secrets.PLUTARCH_CONTEXT_BUILDER_PRIVATE }}	    
 
       - uses: cachix/install-nix-action@v16
         name: Set up Nix and IOHK caches
