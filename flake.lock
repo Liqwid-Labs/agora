@@ -5219,11 +5219,11 @@
         "plutarch": "plutarch"
       },
       "locked": {
-        "lastModified": 1653534226,
-        "narHash": "sha256-rgSziKfQPajq7qAIehg+o8oS5QZkFdqGEP5+1oKXwxA=",
+        "lastModified": 1653918532,
+        "narHash": "sha256-qpPc6Sctp+VUc1GaE1w7U5qmVKQtDTXXYA6CEnz7Lmk=",
         "ref": "main",
-        "rev": "636bdcf5f262fd90626a55e98a68b4c26bafe663",
-        "revCount": 13,
+        "rev": "4ec564be34a9445be65b47e80758164268773f91",
+        "revCount": 16,
         "type": "git",
         "url": "ssh://git@github.com/Liqwid-Labs/liqwid-plutarch-extra"
       },
@@ -5876,11 +5876,11 @@
     },
     "nixpkgs-2111_5": {
       "locked": {
-        "lastModified": 1653399365,
-        "narHash": "sha256-uU80SquzngmRHSWDFvHazBD3JvckRYLbEYWPhZ18smA=",
+        "lastModified": 1653830209,
+        "narHash": "sha256-V+HnLKJzvk2HZcLUKt9z2puZ46vLo74chOakxbLfXek=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "2eb86322c17232ca01a50435e8bb2751e048ff3c",
+        "rev": "cc257c49c495b2d0d7d40c5753a452d0abc8adf3",
         "type": "github"
       },
       "original": {

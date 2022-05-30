@@ -7,7 +7,6 @@ Plutus Scripts for Stakes.
 -}
 module Agora.Stake.Scripts (stakePolicy, stakeValidator) where
 
-import Agora.Record (mkRecordConstr, (.&), (.=))
 import Agora.SafeMoney (GTTag)
 import Agora.Stake
 import Agora.Utils (
@@ -39,6 +38,7 @@ import Plutarch.Api.V1 (
   mkMintingPolicy,
  )
 import Plutarch.Api.V1.AssetClass (passetClass, passetClassValueOf, pvalueOf)
+import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
 import Plutarch.Internal (punsafeCoerce)
 import Plutarch.Numeric.Additive (AdditiveMonoid (zero), AdditiveSemigroup ((+)))
 import Plutarch.SafeMoney (

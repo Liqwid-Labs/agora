@@ -59,7 +59,6 @@ import Agora.Proposal.Scripts (
   proposalValidator,
  )
 import Agora.Proposal.Time (createProposalStartingTime)
-import Agora.Record
 import Agora.SafeMoney (GTTag)
 import Agora.Stake (
   PProposalLock (..),
@@ -91,6 +90,7 @@ import Agora.Utils (
   validatorHashToAddress,
   validatorHashToTokenName,
  )
+import Plutarch.Extra.Record
 
 --------------------------------------------------------------------------------
 
