@@ -554,16 +554,19 @@ advanceProposalSuccess params =
           closedBoundedInterval
             (proposalStartingTime + 1)
             (proposalStartingTime + (def :: ProposalTimingConfig).draftTime - 1)
-        -- [S + D + 1, S + D + V - 1]
+        -- [S + D + V + 1, S + D + V + L - 1]
         VotingReady ->
           closedBoundedInterval
             ( proposalStartingTime
                 + (def :: ProposalTimingConfig).draftTime
+                + (def :: ProposalTimingConfig).votingTime
                 + 1
             )
             ( proposalStartingTime
                 + (def :: ProposalTimingConfig).draftTime
-                + (def :: ProposalTimingConfig).votingTime - 1
+                + (def :: ProposalTimingConfig).votingTime
+                + (def :: ProposalTimingConfig).lockingTime
+                - 1
             )
         -- [S + D + V + L + 1, S + + D + V + L + E - 1]
         Locked ->
@@ -633,18 +636,21 @@ advanceProposalFailureTimeout params =
                 + (def :: ProposalTimingConfig).draftTime
                 + (def :: ProposalTimingConfig).votingTime - 1
             )
-        -- [S + D + V + 1, S + D + V + L -1]
+        -- [S + D + V + L + 1, S + D + V + L + E -1]
         VotingReady ->
           closedBoundedInterval
             ( proposalStartingTime
                 + (def :: ProposalTimingConfig).draftTime
                 + (def :: ProposalTimingConfig).votingTime
+                + (def :: ProposalTimingConfig).lockingTime
                 + 1
             )
             ( proposalStartingTime
                 + (def :: ProposalTimingConfig).draftTime
                 + (def :: ProposalTimingConfig).votingTime
-                + (def :: ProposalTimingConfig).lockingTime - 1
+                + (def :: ProposalTimingConfig).lockingTime
+                + (def :: ProposalTimingConfig).executingTime
+                - 1
             )
         -- [S + D + V + L + E + 1, S + D + V + L + E + 100]
         Locked ->

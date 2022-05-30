@@ -17,7 +17,6 @@ import Agora.Proposal (
   PProposalVotes (PProposalVotes),
   Proposal (governorSTAssetClass, stakeSTAssetClass),
   ProposalStatus (..),
-  pwinner,
  )
 import Agora.Proposal.Time (
   currentProposalTime,
@@ -382,8 +381,6 @@ proposalValidator proposal =
           currentTime <- tclet $ currentProposalTime # txInfoF.validRange
           proposalOutStatus <- tclet $ pfield @"status" # proposalOut
 
-          thresholdsF <- tcont $ pletFields @'["execute", "draft", "vote"] proposalF.thresholds
-
           let -- Only the status of proposals should be updated in this case.
               templateProposalOut =
                 mkRecordConstr
@@ -411,11 +408,18 @@ proposalValidator proposal =
 
               notTooLate = pmatch (pfromData proposalF.status) $ \case
                 PDraft _ -> inDraftPeriod
-                PVotingReady _ -> inVotingPeriod
+                -- Can only advance after the voting period is over.
+                PVotingReady _ -> inLockedPeriod
                 PLocked _ -> inExecutionPeriod
                 _ -> pconstant False
 
-          tcassert "Finished proposals cannnot be advanced" $ pnot # isFinished
+              notTooEarly = pmatch (pfromData proposalF.status) $ \case
+                PVotingReady _ -> pnot # inVotingPeriod
+                PLocked _ -> pnot # inLockedPeriod
+                _ -> pconstant True
+
+          tcassert "Cannot advance ahead of time" notTooEarly
+          tcassert "Finished proposals cannot be advanced" $ pnot # isFinished
 
           pure $
             pif
@@ -435,21 +439,11 @@ proposalValidator proposal =
                     tcassert "Proposal status set to Locked" $
                       proposalOutStatus #== pconstantData Locked
 
-                    -- Check that the highest votes meet the minimum requirement.
-                    let winner = mustBePJust # "Highest votes not found" #$ pwinner # proposalF.votes
-                        highestVotes = pfromData $ psndBuiltin # winner
-
-                    tcassert "Highest vote count should exceed the threshold" $
-                      pto (pto $ pfromData thresholdsF.execute) #< highestVotes
-
                     pure $ popaque (pconstant ())
                   PLocked _ -> unTermCont $ do
                     -- 'Locked' -> 'Finished'
                     tcassert "Proposal status set to Finished" $
                       proposalOutStatus #== pconstantData Finished
-
-                    tcassert "Can only unlock after the locking period" $
-                      pnot # inLockedPeriod
 
                     -- TODO: Perform other necessary checks.
                     pure $ popaque (pconstant ())

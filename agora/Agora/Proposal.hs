@@ -32,6 +32,7 @@ module Agora.Proposal (
   proposalDatumValid,
   pemptyVotesFor,
   pwinner,
+  pneutralOption,
 ) where
 
 import GHC.Generics qualified as GHC
@@ -49,7 +50,7 @@ import PlutusTx.AssocMap qualified as AssocMap
 
 import Agora.Proposal.Time (PProposalStartingTime, PProposalTimingConfig, ProposalStartingTime, ProposalTimingConfig)
 import Agora.SafeMoney (GTTag)
-import Agora.Utils (pkeysEqual, pmapMap, pnotNull)
+import Agora.Utils (mustBePJust, pkeysEqual, pmapMap, pnotNull, tclet)
 import Control.Applicative (Const)
 import Control.Arrow (first)
 import Data.Tagged (Tagged)
@@ -450,17 +451,63 @@ proposalDatumValid proposal =
           , ptraceIfFalse "Proposal votes and effects are compatible with each other" $ pkeysEqual # datum.effects # pto (pfromData datum.votes)
           ]
 
-{- | Find the winning outcome (and the corresponding vote count) given the votes.
+{- Find the winner result tag, given the votes, the quorum the "neutral" result tag.
 
-    FIXME: What if two or more outcomes have the exact same vote count?
+   The winner should be unambiguous, meaning that if two options have the same highest votes,
+     the "neutral" option will be the winner.
 -}
 pwinner ::
   Term
     s
     ( PProposalVotes
-        :--> PMaybe (PBuiltinPair (PAsData PResultTag) (PAsData PInteger))
+        :--> PInteger
+        :--> PResultTag
+        :--> PResultTag
     )
 pwinner = phoistAcyclic $
+  plam $ \votes quorum neutral -> unTermCont $ do
+    winner <- tclet $ phighestVotes # votes
+    winnerResultTag <- tclet $ pfromData $ pfstBuiltin # winner
+    highestVotes <- tclet $ pfromData $ psndBuiltin # winner
+
+    let l :: Term _ (PBuiltinList _)
+        l = pto $ pto votes
+
+        f ::
+          Term
+            _
+            ( PBuiltinPair (PAsData PResultTag) (PAsData PInteger)
+                :--> PInteger
+                :--> PInteger
+            )
+        f = plam $ \(pfromData . (psndBuiltin #) -> thisVotes) i ->
+          pif
+            (thisVotes #== highestVotes)
+            (i + 1)
+            i
+
+        noDuplicateHighestVotes =
+          ptraceIfFalse "Ambiguous winner" $
+            pfoldr # f # 0 # l #== 1
+
+        exceedQuorum =
+          ptraceIfFalse "Highest vote count should exceed the minimum threshold" $
+            quorum #< highestVotes
+
+    pure $
+      pif
+        (noDuplicateHighestVotes #&& exceedQuorum)
+        winnerResultTag
+        neutral
+
+-- | Find the winning outcome (and the corresponding vote count) given the votes.
+phighestVotes ::
+  Term
+    s
+    ( PProposalVotes
+        :--> PBuiltinPair (PAsData PResultTag) (PAsData PInteger)
+    )
+phighestVotes = phoistAcyclic $
   plam $ \votes ->
     let l :: Term _ (PBuiltinList _)
         l = pto $ pto votes
@@ -469,17 +516,32 @@ pwinner = phoistAcyclic $
           Term
             _
             ( PBuiltinPair (PAsData PResultTag) (PAsData PInteger)
-                :--> PMaybe (PBuiltinPair (PAsData PResultTag) (PAsData PInteger))
-                :--> PMaybe (PBuiltinPair (PAsData PResultTag) (PAsData PInteger))
+                :--> PBuiltinPair (PAsData PResultTag) (PAsData PInteger)
+                :--> PBuiltinPair (PAsData PResultTag) (PAsData PInteger)
             )
         f = phoistAcyclic $
-          plam $ \this maybeLast -> pmatch maybeLast $ \case
-            PNothing -> pcon $ PJust this
-            PJust last ->
-              let lastVotes = pfromData $ psndBuiltin # last
-                  thisVotes = pfromData $ psndBuiltin # this
-               in pif
-                    (lastVotes #< thisVotes)
-                    (pcon $ PJust this)
-                    maybeLast
-     in pfoldr # f # pcon PNothing # l
+          plam $ \this last ->
+            let lastVotes = pfromData $ psndBuiltin # last
+                thisVotes = pfromData $ psndBuiltin # this
+             in pif (lastVotes #< thisVotes) this last
+     in pfoldr # f # (phead # l) # l
+
+-- | Find the "neutral" option (a dummy outcome with no effect) given the effects.
+pneutralOption ::
+  Term
+    s
+    ( PMap PResultTag (PMap PValidatorHash PDatumHash)
+        :--> PResultTag
+    )
+pneutralOption = phoistAcyclic $
+  plam $ \effects ->
+    let l :: Term _ (PBuiltinList (PBuiltinPair (PAsData PResultTag) _))
+        l = pto effects
+
+        f :: Term _ (PBuiltinPair (PAsData PResultTag) (PAsData (PMap _ _)) :--> PBool)
+        f = phoistAcyclic $
+          plam $ \((pfromData . (psndBuiltin #) -> el)) ->
+            let el' :: Term _ (PBuiltinList _)
+                el' = pto el
+             in pnull # el'
+     in pfromData $ pfstBuiltin #$ mustBePJust # "No neutral option" #$ pfind # f # l
