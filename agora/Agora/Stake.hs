@@ -18,10 +18,12 @@ module Agora.Stake (
   PStakeDatum (..),
   PStakeRedeemer (..),
   PProposalLock (..),
+  PStakeUsage (..),
 
   -- * Utility functions
   stakeLocked,
   findStakeOwnedBy,
+  pgetStakeUsage,
 ) where
 
 --------------------------------------------------------------------------------
@@ -29,7 +31,7 @@ module Agora.Stake (
 import Control.Applicative (Const)
 import Data.Tagged (Tagged (..))
 import GHC.Generics qualified as GHC
-import Generics.SOP (Generic, I (I))
+import Generics.SOP (Generic, HasDatatypeInfo, I (I))
 import Prelude hiding (Num (..))
 
 --------------------------------------------------------------------------------
@@ -56,8 +58,8 @@ import Plutarch.DataRepr (
   PDataFields,
   PIsDataReprInstances (PIsDataReprInstances),
  )
-import Plutarch.Extra.List (pnotNull)
-import Plutarch.Extra.TermCont (pletC, pmatchC)
+import Plutarch.Extra.List (pmapMaybe, pnotNull)
+import Plutarch.Extra.TermCont (pletC, pletFieldsC, pmatchC)
 import Plutarch.Internal (punsafeCoerce)
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (..))
 import Plutarch.SafeMoney (PDiscrete)
@@ -286,7 +288,7 @@ stakeDatumOwnedBy =
       pletFields @'["owner"] (pto stakeDatum) $ \stakeDatumF ->
         stakeDatumF.owner #== pdata pk
 
--- Does the input have a `Stake` owned by a particular PK?
+-- | Does the input have a `Stake` owned by a particular PK?
 isInputStakeOwnedBy ::
   Term
     _
@@ -299,7 +301,7 @@ isInputStakeOwnedBy =
   plam $ \ac ss datums txInInfo' -> unTermCont $ do
     PTxInInfo ((pfield @"resolved" #) -> txOut) <- pmatchC $ pfromData txInInfo'
     PTxOut txOut' <- pmatchC txOut
-    txOutF <- tcont $ pletFields @'["value", "datumHash"] txOut'
+    txOutF <- pletFieldsC @'["value", "datumHash"] txOut'
     outStakeST <- pletC $ passetClassValueOf # txOutF.value # ac
     pure $
       pmatch txOutF.datumHash $ \case
@@ -312,3 +314,53 @@ isInputStakeOwnedBy =
                 PJust v -> stakeDatumOwnedBy # ss # pfromData (punsafeCoerce v)
             )
             (pcon PFalse)
+
+{- | Represent the usage of a stake on a particular proposal.
+     A stake can be used to either create or vote on a proposal.
+-}
+data PStakeUsage (s :: S)
+  = PVotedFor (Term s PResultTag)
+  | PCreated
+  | PDidNothing
+  deriving stock (GHC.Generic)
+  deriving anyclass (Generic, PlutusType, HasDatatypeInfo, PEq)
+
+{- | / O(n) /.Return the usage of a stake on a particular proposal,
+      given the 'lockedBy' field of a stake and the target proposal.
+-}
+pgetStakeUsage ::
+  Term
+    _
+    ( PBuiltinList (PAsData PProposalLock)
+        :--> PProposalId
+        :--> PStakeUsage
+    )
+pgetStakeUsage = phoistAcyclic $
+  plam $ \locks pid ->
+    let -- All locks from the given proposal.
+        filteredLocks =
+          pmapMaybe
+            # plam
+              ( \lock'@(pfromData -> lock) -> unTermCont $ do
+                  lockF <- pletFieldsC @'["proposalTag"] lock
+
+                  pure $
+                    pif
+                      (lockF.proposalTag #== pid)
+                      (pcon $ PJust lock')
+                      (pcon PNothing)
+              )
+            # locks
+
+        lockCount' = plength # filteredLocks
+     in plet lockCount' $ \lockCount ->
+          pif (lockCount #== 0) (pcon PDidNothing) $
+            pif
+              (lockCount #== 1)
+              ( pcon $
+                  PVotedFor $
+                    pfromData $
+                      pfield @"vote" #$ phead # filteredLocks
+              )
+              -- Note: see the implementation of the governor.
+              (pcon PCreated)

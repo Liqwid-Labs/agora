@@ -33,6 +33,7 @@ module Agora.Proposal (
   pemptyVotesFor,
   pwinner,
   pneutralOption,
+  pretractVotes,
 ) where
 
 --------------------------------------------------------------------------------
@@ -63,7 +64,7 @@ import Plutarch.DataRepr (DerivePConstantViaData (..), PDataFields, PIsDataReprI
 import Plutarch.Extra.List (pnotNull)
 import Plutarch.Extra.Map qualified as PM
 import Plutarch.Extra.Map.Unsorted qualified as PUM
-import Plutarch.Extra.TermCont (pletC)
+import Plutarch.Extra.TermCont (pguardC, pletC)
 import Plutarch.Lift (
   DerivePConstantViaNewtype (..),
   PConstantDecl,
@@ -366,6 +367,24 @@ deriving via (DerivePConstantViaData ProposalThresholds PProposalThresholds) ins
 newtype PProposalVotes (s :: S)
   = PProposalVotes (Term s (PMap 'Unsorted PResultTag PInteger))
   deriving (PlutusType, PIsData) via (DerivePNewtype PProposalVotes (PMap 'Unsorted PResultTag PInteger))
+
+-- | Retract votes given the option and the amount of votes.
+pretractVotes :: Term s (PProposalVotes :--> PResultTag :--> PInteger :--> PProposalVotes)
+pretractVotes = phoistAcyclic $
+  plam $ \votes rt count ->
+    let voteMap :: Term _ (PMap 'Unsorted PResultTag PInteger)
+        voteMap = pto votes
+     in pcon $
+          PProposalVotes $
+            PM.pupdate
+              # plam
+                ( \oldCount -> unTermCont $ do
+                    newCount <- pletC $ oldCount - count
+                    pguardC "Resulting vote count greater or equal to 0" $ 0 #<= newCount
+                    pure $ pcon $ PJust newCount
+                )
+              # rt
+              # voteMap
 
 instance PUnsafeLiftDecl PProposalVotes where type PLifted PProposalVotes = ProposalVotes
 deriving via

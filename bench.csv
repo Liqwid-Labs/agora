@@ -2,28 +2,28 @@ name,cpu,mem,size
 Agora/Effects/Treasury Withdrawal Effect/effect/Simple,289461528,703055,3191
 Agora/Effects/Treasury Withdrawal Effect/effect/Simple with multiple treasuries ,448521458,1070167,3518
 Agora/Effects/Treasury Withdrawal Effect/effect/Mixed Assets,408085321,966048,3383
-Agora/Effects/Governor Mutation Effect/validator/valid new governor datum/governor validator should pass,83758582,229228,7664
+Agora/Effects/Governor Mutation Effect/validator/valid new governor datum/governor validator should pass,83758582,229228,7665
 Agora/Effects/Governor Mutation Effect/validator/valid new governor datum/effect validator should pass,97345575,266935,3358
 Agora/Stake/policy/stakeCreation,43114795,124549,2156
-Agora/Stake/validator/stakeDepositWithdraw deposit,171823342,464745,4144
-Agora/Stake/validator/stakeDepositWithdraw withdraw,171823342,464745,4132
-Agora/Proposal/policy/proposalCreation,23140177,69194,1517
-Agora/Proposal/validator/cosignature/proposal,213692648,591151,5767
-Agora/Proposal/validator/cosignature/stake,115369581,282557,4681
-Agora/Proposal/validator/voting/proposal,167847632,446101,5696
-Agora/Proposal/validator/voting/stake,99545453,256941,4655
-Agora/Proposal/validator/advancing/successfully advance to next state/Draft -> VotringReady,167492034,450393,5594
-Agora/Proposal/validator/advancing/successfully advance to next state/VotingReady -> Locked,166648612,448890,5597
-Agora/Proposal/validator/advancing/successfully advance to next state/Locked -> Finished,168345079,452496,5597
-Agora/Proposal/validator/advancing/successfully advance to failed state: timeout/Draft -> Finished,166362233,447663,5596
-Agora/Proposal/validator/advancing/successfully advance to failed state: timeout/VotingReady -> Finished,164953322,444958,5597
-Agora/Proposal/validator/advancing/successfully advance to failed state: timeout/Locked -> Finished,166084300,447362,5597
+Agora/Stake/validator/stakeDepositWithdraw deposit,171823342,464745,4189
+Agora/Stake/validator/stakeDepositWithdraw withdraw,171823342,464745,4177
+Agora/Proposal/policy/proposalCreation,23140177,69194,1518
+Agora/Proposal/validator/cosignature/proposal,204675349,564476,6565
+Agora/Proposal/validator/cosignature/stake,114125937,284821,4726
+Agora/Proposal/validator/voting/proposal,166129664,437310,6494
+Agora/Proposal/validator/voting/stake,107127768,275725,4700
+Agora/Proposal/validator/advancing/successfully advance to next state/Draft -> VotringReady,162018766,433842,6392
+Agora/Proposal/validator/advancing/successfully advance to next state/VotingReady -> Locked,161175344,432339,6395
+Agora/Proposal/validator/advancing/successfully advance to next state/Locked -> Finished,162871811,435945,6395
+Agora/Proposal/validator/advancing/successfully advance to failed state: timeout/Draft -> Finished,160888965,431112,6394
+Agora/Proposal/validator/advancing/successfully advance to failed state: timeout/VotingReady -> Finished,159480054,428407,6395
+Agora/Proposal/validator/advancing/successfully advance to failed state: timeout/Locked -> Finished,160611032,430811,6395
 Agora/AuthorityToken/singleAuthorityTokenBurned/Correct simple,21017788,55883,806
 Agora/AuthorityToken/singleAuthorityTokenBurned/Correct many inputs,33204186,88241,900
 Agora/Treasury/Validator/Positive/Allows for effect changes,29938856,79744,1390
 Agora/AuthorityToken/singleAuthorityTokenBurned/Correct simple,21017788,55883,806
 Agora/AuthorityToken/singleAuthorityTokenBurned/Correct many inputs,33204186,88241,900
 Agora/Governor/policy/GST minting,43087287,120125,1829
-Agora/Governor/validator/proposal creation,262494214,690689,8180
-Agora/Governor/validator/GATs minting,349283864,932132,8301
-Agora/Governor/validator/mutate governor state,84905433,234687,7765
+Agora/Governor/validator/proposal creation,261928725,689487,8181
+Agora/Governor/validator/GATs minting,352305185,937264,8302
+Agora/Governor/validator/mutate governor state,84905433,234687,7766

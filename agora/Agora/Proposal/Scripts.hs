@@ -17,6 +17,7 @@ import Agora.Proposal (
   PProposalVotes (PProposalVotes),
   Proposal (governorSTAssetClass, stakeSTAssetClass),
   ProposalStatus (..),
+  pretractVotes,
  )
 import Agora.Proposal.Time (
   currentProposalTime,
@@ -25,7 +26,13 @@ import Agora.Proposal.Time (
   isLockingPeriod,
   isVotingPeriod,
  )
-import Agora.Stake (PProposalLock (..), PStakeDatum (..), findStakeOwnedBy)
+import Agora.Stake (
+  PProposalLock (..),
+  PStakeDatum (..),
+  PStakeUsage (..),
+  findStakeOwnedBy,
+  pgetStakeUsage,
+ )
 import Agora.Utils (
   findTxOutByTxOutRef,
   getMintingPolicySymbol,
@@ -183,7 +190,6 @@ proposalValidator proposal =
     let stCurrencySymbol =
           pconstant $ getMintingPolicySymbol (proposalPolicy proposal.governorSTAssetClass)
     valueSpent <- pletC $ pvalueSpent # txInfoF.inputs
-    spentST <- pletC $ psymbolValueOf # stCurrencySymbol #$ valueSpent
 
     signedBy <- pletC $ ptxSignedBy # txInfoF.signatories
 
@@ -225,6 +231,7 @@ proposalValidator proposal =
           # (pfield @"datumHash" # ownOutput)
           # txInfoF.datums
 
+    proposalUnchanged <- pletC $ proposalOut #== proposalDatum
     --------------------------------------------------------------------------
     -- Find the stake input and stake output by SST.
 
@@ -233,8 +240,6 @@ proposalValidator proposal =
       pletC $ passetClass # pconstant stakeSym # pconstant stakeTn
     spentStakeST <-
       pletC $ passetClassValueOf # valueSpent # stakeSTAssetClass
-
-    pguardC "ST at inputs must be 1" (spentST #== 1)
 
     let stakeInput =
           pfield @"resolved"
@@ -397,7 +402,82 @@ proposalValidator proposal =
 
           pure $ popaque (pconstant ())
         --------------------------------------------------------------------------
-        PUnlock _r -> popaque (pconstant ())
+        PUnlock r -> unTermCont $ do
+          -- At draft stage, the votes should be empty.
+          pguardC "Shouldn't retract votes from a draft propsoal" $
+            pnot #$ proposalF.status #== pconstantData Draft
+
+          -- This is the vote option we're retracting from.
+          retractFrom <- pletC $ pfield @"resultTag" # r
+
+          -- Determine if the input stake is actually locked by this proposal.
+          stakeUsage <- pletC $ pgetStakeUsage # stakeInF.lockedBy # proposalF.proposalId
+
+          pguardC "Stake input relevant" $
+            pmatch stakeUsage $ \case
+              PDidNothing ->
+                ptrace "Not relevant" $
+                  pconstant False
+              PCreated ->
+                ptraceIfFalse "Too early" $
+                  proposalF.status #== pconstantData Finished
+              PVotedFor rt ->
+                ptraceIfFalse "Result tag not match" $
+                  rt #== retractFrom
+
+          -- The count of removing votes is equal to the 'stakeAmount' of input stake.
+          retractCount <-
+            pletC $
+              pmatch stakeInF.stakedAmount $ (\(PDiscrete v) -> pextract # v)
+
+          -- The votes can only change when the proposal still allows voting.
+          let shouldUpdateVotes =
+                proposalF.status #== pconstantData VotingReady
+                  #&& pnot # (pcon PCreated #== stakeUsage)
+
+          pguardC "Proposal output correct" $
+            pif
+              shouldUpdateVotes
+              ( let -- Remove votes and leave other parts of the proposal as it.
+                    expectedVotes = pretractVotes # proposalF.votes # retractFrom # retractCount
+
+                    expectedProposalOut =
+                      mkRecordConstr
+                        PProposalDatum
+                        ( #proposalId .= proposalF.proposalId
+                            .& #effects .= proposalF.effects
+                            .& #status .= proposalF.status
+                            .& #cosigners .= proposalF.cosigners
+                            .& #thresholds .= proposalF.thresholds
+                            .& #votes .= pdata expectedVotes
+                            .& #timingConfig .= proposalF.timingConfig
+                            .& #startingTime .= proposalF.startingTime
+                        )
+                 in ptraceIfFalse "Update votes" $
+                      expectedProposalOut #== proposalOut
+              )
+              -- No change to the proposal is allowed.
+              $ ptraceIfFalse "Proposal unchanged" proposalUnchanged
+
+          -- At last, we ensure that all locks belong to this proposal will be removed.
+          stakeOutputLocks <- pletC $ pfield @"lockedBy" # stakeOut
+
+          let templateStakeOut =
+                mkRecordConstr
+                  PStakeDatum
+                  ( #stakedAmount .= stakeInF.stakedAmount
+                      .& #owner .= stakeInF.owner
+                      .& #lockedBy .= stakeOutputLocks
+                  )
+
+          pguardC "Only locks updated in the output stake" $
+            templateStakeOut #== stakeOut
+
+          pguardC "All relevant locks removed from the stake" $
+            pgetStakeUsage # pfromData stakeOutputLocks
+              # proposalF.proposalId #== pcon PDidNothing
+
+          pure $ popaque (pconstant ())
         --------------------------------------------------------------------------
         PAdvanceProposal _r -> unTermCont $ do
           pguardC "Stake should not change" stakeUnchanged

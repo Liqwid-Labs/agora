@@ -287,7 +287,7 @@ stakeValidator stake =
 
           pure $
             pmatch stakeRedeemer $ \case
-              PRetractVotes _ -> unTermCont $ do
+              PRetractVotes l -> unTermCont $ do
                 pguardC
                   "Owner signs this transaction"
                   ownerSignsTransaction
@@ -301,15 +301,22 @@ stakeValidator stake =
                   spentProposalST #== 1
 
                 pguardC "A UTXO must exist with the correct output" $
-                  unTermCont $ do
-                    let valueCorrect = ownOutputValueUnchanged
+                  let expectedLocks = pfield @"locks" # l
 
-                    -- TODO: check output datum is expected.
+                      expectedDatum =
+                        mkRecordConstr
+                          PStakeDatum
+                          ( #stakedAmount .= stakeDatum.stakedAmount
+                              .& #owner .= stakeDatum.owner
+                              .& #lockedBy .= expectedLocks
+                          )
 
-                    pure $
-                      foldl1
+                      valueCorrect = ownOutputValueUnchanged
+                      outputDatumCorrect = stakeOut #== expectedDatum
+                   in foldl1
                         (#&&)
                         [ ptraceIfFalse "valueCorrect" valueCorrect
+                        , ptraceIfFalse "datumCorrect" outputDatumCorrect
                         ]
 
                 pure $ popaque (pconstant ())
