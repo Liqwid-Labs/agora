@@ -117,8 +117,6 @@ common deps
 common test-deps
   build-depends:
     , agora
-    , apropos
-    , apropos-tx
     , data-default-class
     , mtl
     , plutarch-context-builder
@@ -177,6 +175,7 @@ library agora-testlib
 library agora-specs
   import:          lang, deps, test-deps
   exposed-modules:
+    Property.Generator
     Property.MultiSig
     Sample.Effect.GovernorMutation
     Sample.Effect.TreasuryWithdrawal
@@ -188,7 +187,6 @@ library agora-specs
     Spec.AuthorityToken
     Spec.Effect.GovernorMutation
     Spec.Effect.TreasuryWithdrawal
-    Spec.Generator
     Spec.Governor
     Spec.Proposal
     Spec.Stake

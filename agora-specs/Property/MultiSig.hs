@@ -28,7 +28,7 @@ import Plutus.V1.Ledger.Api (
   ScriptContext (scriptContextTxInfo),
   TxInfo (txInfoSignatories),
  )
-import Spec.Generator (genAnyValue, genPubKeyHash)
+import Property.Generator (genAnyValue, genPubKeyHash)
 import Test.Tasty (TestTree)
 import Test.Tasty.Plutarch.Property (classifiedProperty)
 import Test.Tasty.QuickCheck (
@@ -40,7 +40,7 @@ import Test.Tasty.QuickCheck (
   vectorOf,
  )
 
--- | apropos model for testing multisigs.
+-- | Model for testing multisigs.
 type MultiSigModel = (MultiSig, ScriptContext)
 
 -- | Propositions that may hold true of a `MultiSigModel`.
@@ -63,7 +63,7 @@ genMultiSigProp :: MultiSigProp -> Gen MultiSigModel
 genMultiSigProp prop = do
   size <- chooseInt (4, 20)
   pkhs <- vectorOf size genPubKeyHash
-  vutxo <- pure . ValidatorUTXO () <$> genAnyValue
+  vutxo <- ValidatorUTXO () <$> genAnyValue
   minSig <- chooseInt (1, length pkhs)
   othersigners <- take 20 <$> listOf genPubKeyHash
 

@@ -1,11 +1,11 @@
 {- |
-Module     : Spec.Generator
+Module     : Property.Generator
 Maintainer : seungheon.ooh@gmail.com
 Description: Generic generators for property tests
 
 Shared generators for all Agora property tests
 -}
-module Spec.Generator (
+module Property.Generator (
   -- * Credentials
   genPubKeyHash,
   genUserCredential,
@@ -17,10 +17,6 @@ module Spec.Generator (
   genValue,
   genAssetClass,
   genAnyValue,
-
-  -- * Tx info
-  genTxOut,
-  genTxInInfo,
 ) where
 
 import Control.Applicative (Applicative (liftA2))
@@ -29,11 +25,7 @@ import Data.ByteString.Hash (sha2)
 import Plutus.V1.Ledger.Api (
   Address (Address),
   Credential (..),
-  DatumHash (DatumHash),
   PubKeyHash (PubKeyHash),
-  TxInInfo (TxInInfo),
-  TxOut (..),
-  TxOutRef (TxOutRef),
   ValidatorHash (ValidatorHash),
   Value,
   toBuiltin,
@@ -49,7 +41,6 @@ import Test.QuickCheck (
   Gen,
   chooseAny,
   elements,
-  listOf,
   listOf1,
   oneof,
  )
