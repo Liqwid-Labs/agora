@@ -51,7 +51,7 @@ import Sample.Proposal qualified as Proposal (
   advanceProposalFailureTimeout,
   advanceProposalInsufficientVotes,
   advanceProposalSuccess,
-  advancePropsoalWithsStake,
+  advancePropsoalWithInvalidOutputStake,
   cosignProposal,
   proposalCreation,
   proposalRef,
@@ -352,7 +352,7 @@ specs =
               )
               AdvanceProposal
               ( ScriptContext
-                  Proposal.advancePropsoalWithsStake
+                  Proposal.advancePropsoalWithInvalidOutputStake
                   (Spending Proposal.proposalRef)
               )
           ]
