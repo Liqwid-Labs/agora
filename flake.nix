@@ -102,7 +102,7 @@
             {
               src = inputs.plutarch-context-builder;
               subdirs = [ "." ];
-            }            
+            }
             {
               src = inputs.apropos-tx;
               subdirs = [ "." ];
@@ -151,7 +151,7 @@
               # testing
               ps.tasty-quickcheck
               ps.plutarch-quickcheck
-              ps.plutarch-context-builder 
+              ps.plutarch-context-builder
               ps.apropos-tx
               ps.apropos
               ps.apropos

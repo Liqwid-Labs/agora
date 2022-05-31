@@ -48,7 +48,7 @@ tag:
 	hasktags -x agora agora-bench agora-test agora-testlib agora-sample agora-purescript-bridge
 
 lint:
-	hlint agora agora-bench agora-test agora-testlib agora-sample agora-purescript-bridge
+	hlint agora agora-bench agora-test agora-testlib agora-specs agora-purescript-bridge
 
 PS_BRIDGE_OUTPUT_DIR := agora-purescript-bridge/
 ps_bridge:
