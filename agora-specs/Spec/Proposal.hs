@@ -340,7 +340,7 @@ specs =
               )
               AdvanceProposal
               ( ScriptContext
-                  Proposal.advancePropsoalWithsStake
+                  Proposal.advancePropsoalWithInvalidOutputStake
                   (Spending Proposal.proposalRef)
               )
           ]
