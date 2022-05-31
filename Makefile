@@ -45,7 +45,7 @@ haddock:
 	cabal haddock --haddock-html --haddock-hoogle --builddir=haddock
 
 tag:
-	hasktags -x agora agora-bench agora-test agora-testlib agora-sample agora-purescript-bridge
+	hasktags -x agora agora-bench agora-purescript-bridge agora-scripts agora-test agora-testlib
 
 lint:
 	hlint agora agora-bench agora-test agora-testlib agora-sample agora-purescript-bridge
