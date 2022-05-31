@@ -3,6 +3,8 @@ SHELL := /bin/sh
 
 .PHONY: hoogle format haddock usage tag format_nix format_haskell format_check lint ps_bridge bench bench_check
 
+AGORA_TARGETS := agora agora-bench agora-purescript-bridge agora-scripts agora-specs agora-test agora-testlib
+
 usage:
 	@echo "usage: make <command> [OPTIONS]"
 	@echo
@@ -45,10 +47,10 @@ haddock:
 	cabal haddock --haddock-html --haddock-hoogle --builddir=haddock
 
 tag:
-	hasktags -x agora agora-bench agora-purescript-bridge agora-scripts agora-test agora-testlib
+	hasktags -x $(AGORA_TARGETS)
 
 lint:
-	hlint agora agora-bench agora-test agora-testlib agora-sample agora-purescript-bridge
+	hlint $(AGORA_TARGETS)
 
 PS_BRIDGE_OUTPUT_DIR := agora-purescript-bridge/
 ps_bridge:
