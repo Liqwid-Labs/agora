@@ -18,6 +18,10 @@ Agora/Proposal/validator/advancing/successfully advance to next state/Locked -> 
 Agora/Proposal/validator/advancing/successfully advance to failed state: timeout/Draft -> Finished,160888965,431112,6394
 Agora/Proposal/validator/advancing/successfully advance to failed state: timeout/VotingReady -> Finished,159480054,428407,6395
 Agora/Proposal/validator/advancing/successfully advance to failed state: timeout/Locked -> Finished,160611032,430811,6395
+Agora/Proposal/validator/unlocking/legal/retract votes and unlock stake while voting,171592676,462566,6467
+Agora/Proposal/validator/unlocking/legal/unlock the stake that has been used to create the proposal,149988973,407906,6474
+Agora/Proposal/validator/unlocking/legal/unlock stake after voting/Locked,149056062,408201,6468
+Agora/Proposal/validator/unlocking/legal/unlock stake after voting/Finished,149056062,408201,6468
 Agora/AuthorityToken/singleAuthorityTokenBurned/Correct simple,21017788,55883,806
 Agora/AuthorityToken/singleAuthorityTokenBurned/Correct many inputs,33204186,88241,900
 Agora/Treasury/Validator/Positive/Allows for effect changes,29938856,79744,1390

@@ -53,10 +53,16 @@ import Sample.Proposal qualified as Proposal (
   advanceProposalSuccess,
   advancePropsoalWithInvalidOutputStake,
   cosignProposal,
+  creatorRetractVotesWhile,
+  creatorUnlockStakeWhile,
   proposalCreation,
   proposalRef,
   stakeRef,
+  unlockStakeAndRetractVotesUsingIrrelevantStakeWhile,
+  unlockStakeUsingIrrelevantStakeWhile,
   voteOnProposal,
+  voterUnlockStakeAndRetractVotesWhile,
+  voterUnlockStakeWhile,
  )
 import Sample.Shared (signer, signer2)
 import Sample.Shared qualified as Shared (proposal, stake)
@@ -355,6 +361,250 @@ specs =
                   Proposal.advancePropsoalWithInvalidOutputStake
                   (Spending Proposal.proposalRef)
               )
+          ]
+      , group
+          "unlocking"
+          [ group
+              "legal"
+              [ validatorSucceedsWith
+                  "retract votes and unlock stake while voting"
+                  (proposalValidator Shared.proposal)
+                  ( ProposalDatum
+                      { proposalId = ProposalId 0
+                      , effects =
+                          AssocMap.fromList
+                            [ (ResultTag 0, AssocMap.empty)
+                            , (ResultTag 1, AssocMap.empty)
+                            ]
+                      , status = VotingReady
+                      , cosigners = [signer]
+                      , thresholds = def
+                      , votes =
+                          ProposalVotes
+                            ( AssocMap.fromList
+                                [ (ResultTag 0, 42)
+                                , (ResultTag 1, 0)
+                                ]
+                            )
+                      , timingConfig = def
+                      , startingTime = ProposalStartingTime 0
+                      }
+                  )
+                  (Unlock (ResultTag 0))
+                  ( ScriptContext
+                      (Proposal.voterUnlockStakeAndRetractVotesWhile VotingReady)
+                      (Spending Proposal.proposalRef)
+                  )
+              , validatorSucceedsWith
+                  "unlock the stake that has been used to create the proposal"
+                  (proposalValidator Shared.proposal)
+                  ( ProposalDatum
+                      { proposalId = ProposalId 0
+                      , effects =
+                          AssocMap.fromList
+                            [ (ResultTag 0, AssocMap.empty)
+                            , (ResultTag 1, AssocMap.empty)
+                            ]
+                      , status = Finished
+                      , cosigners = [signer]
+                      , thresholds = def
+                      , votes =
+                          ProposalVotes
+                            ( AssocMap.fromList
+                                [ (ResultTag 0, 42)
+                                , (ResultTag 1, 0)
+                                ]
+                            )
+                      , timingConfig = def
+                      , startingTime = ProposalStartingTime 0
+                      }
+                  )
+                  (Unlock (ResultTag 0))
+                  ( ScriptContext
+                      (Proposal.creatorUnlockStakeWhile Finished)
+                      (Spending Proposal.proposalRef)
+                  )
+              , group "unlock stake after voting" $
+                  map
+                    ( \ps ->
+                        validatorSucceedsWith
+                          (show ps)
+                          (proposalValidator Shared.proposal)
+                          ( ProposalDatum
+                              { proposalId = ProposalId 0
+                              , effects =
+                                  AssocMap.fromList
+                                    [ (ResultTag 0, AssocMap.empty)
+                                    , (ResultTag 1, AssocMap.empty)
+                                    ]
+                              , status = ps
+                              , cosigners = [signer]
+                              , thresholds = def
+                              , votes =
+                                  ProposalVotes
+                                    ( AssocMap.fromList
+                                        [ (ResultTag 0, 42)
+                                        , (ResultTag 1, 0)
+                                        ]
+                                    )
+                              , timingConfig = def
+                              , startingTime = ProposalStartingTime 0
+                              }
+                          )
+                          (Unlock (ResultTag 0))
+                          ( ScriptContext
+                              (Proposal.voterUnlockStakeWhile ps)
+                              (Spending Proposal.proposalRef)
+                          )
+                    )
+                    [Locked, Finished]
+              ]
+          , group
+              "illegal"
+              [ group "retract votes while the proposal is not voting ready" $
+                  map
+                    ( \ps ->
+                        validatorFailsWith
+                          (show ps)
+                          (proposalValidator Shared.proposal)
+                          ( ProposalDatum
+                              { proposalId = ProposalId 0
+                              , effects =
+                                  AssocMap.fromList
+                                    [ (ResultTag 0, AssocMap.empty)
+                                    , (ResultTag 1, AssocMap.empty)
+                                    ]
+                              , status = ps
+                              , cosigners = [signer]
+                              , thresholds = def
+                              , votes =
+                                  ProposalVotes
+                                    ( AssocMap.fromList
+                                        [ (ResultTag 0, 42)
+                                        , (ResultTag 1, 0)
+                                        ]
+                                    )
+                              , timingConfig = def
+                              , startingTime = ProposalStartingTime 0
+                              }
+                          )
+                          (Unlock (ResultTag 0))
+                          ( ScriptContext
+                              (Proposal.voterUnlockStakeAndRetractVotesWhile ps)
+                              (Spending Proposal.proposalRef)
+                          )
+                    )
+                    [Draft, Locked, Finished]
+              , group
+                  "irrelevant stake"
+                  $ foldMap
+                    ( \(f, s) ->
+                        map
+                          ( \ps ->
+                              validatorFailsWith
+                                (s <> " (" <> show ps <> ")")
+                                (proposalValidator Shared.proposal)
+                                ( ProposalDatum
+                                    { proposalId = ProposalId 0
+                                    , effects =
+                                        AssocMap.fromList
+                                          [ (ResultTag 0, AssocMap.empty)
+                                          , (ResultTag 1, AssocMap.empty)
+                                          ]
+                                    , status = ps
+                                    , cosigners = [signer]
+                                    , thresholds = def
+                                    , votes =
+                                        ProposalVotes
+                                          ( AssocMap.fromList
+                                              [ (ResultTag 0, 42)
+                                              , (ResultTag 1, 0)
+                                              ]
+                                          )
+                                    , timingConfig = def
+                                    , startingTime = ProposalStartingTime 0
+                                    }
+                                )
+                                (Unlock (ResultTag 0))
+                                ( ScriptContext
+                                    (f ps)
+                                    (Spending Proposal.proposalRef)
+                                )
+                          )
+                          [Draft, VotingReady, Locked, Finished]
+                    )
+                    [ (Proposal.unlockStakeAndRetractVotesUsingIrrelevantStakeWhile, "unlock stake + retract votes")
+                    , (Proposal.unlockStakeUsingIrrelevantStakeWhile, "unlock stake")
+                    ]
+              , group "unlock stake that has been used to create the proposal before finished" $
+                  map
+                    ( \ps ->
+                        validatorFailsWith
+                          (show ps)
+                          (proposalValidator Shared.proposal)
+                          ( ProposalDatum
+                              { proposalId = ProposalId 0
+                              , effects =
+                                  AssocMap.fromList
+                                    [ (ResultTag 0, AssocMap.empty)
+                                    , (ResultTag 1, AssocMap.empty)
+                                    ]
+                              , status = ps
+                              , cosigners = [signer]
+                              , thresholds = def
+                              , votes =
+                                  ProposalVotes
+                                    ( AssocMap.fromList
+                                        [ (ResultTag 0, 42)
+                                        , (ResultTag 1, 0)
+                                        ]
+                                    )
+                              , timingConfig = def
+                              , startingTime = ProposalStartingTime 0
+                              }
+                          )
+                          (Unlock (ResultTag 0))
+                          ( ScriptContext
+                              (Proposal.creatorUnlockStakeWhile ps)
+                              (Spending Proposal.proposalRef)
+                          )
+                    )
+                    [Draft, VotingReady, Locked]
+              , group "creator stake retract votes" $
+                  map
+                    ( \ps ->
+                        validatorFailsWith
+                          (show ps)
+                          (proposalValidator Shared.proposal)
+                          ( ProposalDatum
+                              { proposalId = ProposalId 0
+                              , effects =
+                                  AssocMap.fromList
+                                    [ (ResultTag 0, AssocMap.empty)
+                                    , (ResultTag 1, AssocMap.empty)
+                                    ]
+                              , status = ps
+                              , cosigners = [signer]
+                              , thresholds = def
+                              , votes =
+                                  ProposalVotes
+                                    ( AssocMap.fromList
+                                        [ (ResultTag 0, 42)
+                                        , (ResultTag 1, 0)
+                                        ]
+                                    )
+                              , timingConfig = def
+                              , startingTime = ProposalStartingTime 0
+                              }
+                          )
+                          (Unlock (ResultTag 0))
+                          ( ScriptContext
+                              (Proposal.creatorRetractVotesWhile ps)
+                              (Spending Proposal.proposalRef)
+                          )
+                    )
+                    [Draft, VotingReady, Locked, Finished]
+              ]
           ]
       ]
   ]
