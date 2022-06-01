@@ -28,7 +28,7 @@ import Plutus.V1.Ledger.Api (
   ScriptContext (scriptContextTxInfo),
   TxInfo (txInfoSignatories),
  )
-import Property.Generator (genAnyValue, genPubKeyHash)
+import Property.Generator (genPubKeyHash, genSingletonValue)
 import Test.Tasty (TestTree)
 import Test.Tasty.Plutarch.Property (classifiedProperty)
 import Test.Tasty.QuickCheck (
@@ -63,7 +63,7 @@ genMultiSigProp :: MultiSigProp -> Gen MultiSigModel
 genMultiSigProp prop = do
   size <- chooseInt (4, 20)
   pkhs <- vectorOf size genPubKeyHash
-  vutxo <- ValidatorUTXO () <$> genAnyValue
+  vutxo <- ValidatorUTXO () <$> genSingletonValue
   minSig <- chooseInt (1, length pkhs)
   othersigners <- take 20 <$> listOf genPubKeyHash
 
@@ -89,6 +89,7 @@ classifyMultiSigProp (MultiSig keys (fromIntegral -> minsig), ctx)
 shrinkMultiSigProp :: MultiSigModel -> [MultiSigModel]
 shrinkMultiSigProp = const []
 
+-- | Expected behavior of @pvalidatedByMultisig@.
 expected :: Term s (PBuiltinPair PMultiSig PScriptContext :--> PMaybe PBool)
 expected = plam $ \x -> unTermCont $ do
   ms <- tclet $ pfstBuiltin # x
@@ -98,12 +99,14 @@ expected = plam $ \x -> unTermCont $ do
       validSigners = plength #$ pfilter # plam (\x -> pelem # x # multsig.keys) # signers
   pure $ pcon $ PJust $ pfromData multsig.minSigs #<= validSigners
 
+-- | Actual implementation of @pvalidatedByMultisig@.
 actual :: Term s (PBuiltinPair PMultiSig PScriptContext :--> PBool)
 actual = plam $ \x -> unTermCont $ do
   ms <- tclet $ pfstBuiltin # x
   sc <- tclet $ psndBuiltin # x
   pure $ pvalidatedByMultisig # ms # (pfield @"txInfo" # sc)
 
+-- | Proposed property.
 prop :: Property
 prop = classifiedProperty genMultiSigProp shrinkMultiSigProp expected classifyMultiSigProp actual
 

@@ -16,7 +16,7 @@ module Property.Generator (
   -- * Values
   genValue,
   genAssetClass,
-  genAnyValue,
+  genSingletonValue,
 ) where
 
 import Control.Applicative (Applicative (liftA2))
@@ -74,14 +74,16 @@ genAddress :: Gen Address
 genAddress = flip Address Nothing <$> genCredential
 
 {- | Random Value of given AssetClass
-`genAnyValue` will create a random value with a random assetclass.
+`genSingletonValue` will create a random value with a random assetclass.
 -}
 genValue :: AssetClass -> Gen Value
 genValue ac = assetClassValue ac . abs <$> (arbitrary :: Gen Integer)
 
+-- | Random bytestring but only with alphabets for better legibility.
 genPrettyByteString :: Gen C.ByteString
 genPrettyByteString = C.pack <$> listOf1 (elements ['a' .. 'z'])
 
+-- | Random @AssetClass@ with pretty token name.
 genAssetClass :: Gen AssetClass
 genAssetClass =
   AssetClass
@@ -90,5 +92,6 @@ genAssetClass =
       (currencySymbol <$> genHashByteString)
       (tokenName <$> genPrettyByteString)
 
-genAnyValue :: Gen Value
-genAnyValue = genAssetClass >>= genValue
+-- | Random *singleton* value with random @AssetClass@.
+genSingletonValue :: Gen Value
+genSingletonValue = genAssetClass >>= genValue
