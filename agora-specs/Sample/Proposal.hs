@@ -19,6 +19,14 @@ module Sample.Proposal (
   advanceFinishedPropsoal,
   advanceProposalInsufficientVotes,
   advancePropsoalWithInvalidOutputStake,
+  voterUnlockStakeAndRetractVotesWhile,
+  voterUnlockStakeWhile,
+  creatorRetractVotesWhile,
+  creatorUnlockStakeWhile,
+  unlockStakeAndRetractVotesUsingIrrelevantStakeWhile,
+  unlockStakeUsingIrrelevantStakeWhile,
+  unlockStakeProposalId,
+  unlockStake,
 ) where
 
 --------------------------------------------------------------------------------
@@ -886,3 +894,280 @@ advancePropsoalWithInvalidOutputStake =
               <> templateTxInfo.txInfoData
         , txInfoSignatories = [stakeOwner]
         }
+
+--------------------------------------------------------------------------------
+
+-- | Create empty effects for every result tag given the votes.
+emptyEffectFor ::
+  ProposalVotes ->
+  AssocMap.Map ResultTag (AssocMap.Map ValidatorHash DatumHash)
+emptyEffectFor (ProposalVotes vs) =
+  AssocMap.fromList $
+    map (,AssocMap.empty) (AssocMap.keys vs)
+
+-- | The proposal id shared by all the samples relate to unlocking stake.
+unlockStakeProposalId :: ProposalId
+unlockStakeProposalId = ProposalId 0
+
+-- | A 'ProposalVotes' that has only two options, serves as a template for unlokcing stake samples.
+unlockStakePropsoalVotesTemplate :: ProposalVotes
+unlockStakePropsoalVotesTemplate =
+  ProposalVotes $
+    AssocMap.fromList
+      [ (ResultTag 0, 0)
+      , (ResultTag 1, 0)
+      ]
+
+-- | Create a 'TxInfo' that unlocks a stake from a proposal. For internal use only.
+mkUnlockStakeTxInfo ::
+  -- | The current state of the proposal.
+  ProposalStatus ->
+  -- | The votes of the input propsoal
+  ProposalVotes ->
+  -- | The votes of the output proposal.
+  ProposalVotes ->
+  -- | Stake amount.
+  Integer ->
+  -- | Retract from option.
+  [ProposalLock] ->
+  -- | The locks of output stake.
+  [ProposalLock] ->
+  TxInfo
+mkUnlockStakeTxInfo
+  status
+  votesBefore
+  votesAfter
+  stakedAmount
+  locksBefore
+  locksAfter =
+    let stakeOwner = signer
+
+        stakeInputDatum' :: StakeDatum
+        stakeInputDatum' =
+          StakeDatum
+            { stakedAmount = Tagged stakedAmount
+            , owner = stakeOwner
+            , lockedBy = locksBefore
+            }
+
+        stakeOutputDatum' :: StakeDatum
+        stakeOutputDatum' =
+          stakeInputDatum'
+            { lockedBy = locksAfter
+            }
+
+        ---
+
+        effects = emptyEffectFor votesBefore
+
+        proposalInputDatum' :: ProposalDatum
+        proposalInputDatum' =
+          ProposalDatum
+            { proposalId = unlockStakeProposalId
+            , effects = effects
+            , status = status
+            , cosigners = [signer]
+            , thresholds = def
+            , votes = votesBefore
+            , timingConfig = def
+            , startingTime = ProposalStartingTime 0
+            }
+
+        proposalOutputDatum' :: ProposalDatum
+        proposalOutputDatum' =
+          proposalInputDatum'
+            { votes = votesAfter
+            }
+
+        ---
+
+        sst = Value.assetClassValue stakeAssetClass 1
+
+        stakeInputDatum :: Datum
+        stakeInputDatum = Datum $ toBuiltinData stakeInputDatum'
+        stakeInput :: TxOut
+        stakeInput =
+          TxOut
+            { txOutAddress = stakeAddress
+            , txOutValue =
+                mconcat
+                  [ sst
+                  , Value.assetClassValue (untag stake.gtClassRef) stakedAmount
+                  , minAda
+                  ]
+            , txOutDatumHash = Just $ toDatumHash stakeInputDatum
+            }
+
+        stakeOutputDatum :: Datum
+        stakeOutputDatum = Datum $ toBuiltinData stakeOutputDatum'
+        stakeOutput :: TxOut
+        stakeOutput =
+          stakeInput
+            { txOutDatumHash = Just $ toDatumHash stakeOutputDatum
+            }
+
+        ---
+
+        pst = Value.singleton proposalPolicySymbol "" 1
+
+        proposalInputDatum :: Datum
+        proposalInputDatum = Datum $ toBuiltinData proposalInputDatum'
+        proposalInput :: TxOut
+        proposalInput =
+          TxOut
+            { txOutAddress = proposalValidatorAddress
+            , txOutValue = pst
+            , txOutDatumHash = Just $ toDatumHash proposalInputDatum
+            }
+
+        ---
+
+        proposalOutputDatum :: Datum
+        proposalOutputDatum = Datum $ toBuiltinData proposalOutputDatum'
+        proposalOutput :: TxOut
+        proposalOutput =
+          proposalInput
+            { txOutValue = proposalInput.txOutValue <> minAda
+            , txOutDatumHash = Just $ toDatumHash proposalOutputDatum
+            }
+     in TxInfo
+          { txInfoInputs = [TxInInfo proposalRef proposalInput, TxInInfo stakeRef stakeInput]
+          , txInfoOutputs = [proposalOutput, stakeOutput]
+          , txInfoFee = Value.singleton "" "" 2
+          , txInfoMint = mempty
+          , txInfoDCert = []
+          , txInfoWdrl = []
+          , -- Time doesn't matter int this case.
+            txInfoValidRange = closedBoundedInterval 0 100
+          , txInfoSignatories = [signer]
+          , txInfoData = datumPair <$> [proposalInputDatum, proposalOutputDatum, stakeInputDatum, stakeOutputDatum]
+          , txInfoId = "95ba4015e30aef16a3461ea97a779f814aeea6b8009d99a94add4b8293be737a"
+          }
+
+-- | How a stake has been used on a particular proposal.
+data StakeUsage
+  = -- | The stake was spent to vote for a paraticular option.
+    VotedFor ResultTag
+  | -- | The stake was used to created the proposal.
+    Created
+  | -- | The stake has nothing to do with the proposal.
+    DidNothing
+
+-- | Create a bunch of 'ProposalLock' given the 'StakeUsgae'.
+mkStakeLocks :: StakeUsage -> [ProposalLock]
+mkStakeLocks (VotedFor rt) = [ProposalLock rt unlockStakeProposalId]
+mkStakeLocks Created =
+  map (`ProposalLock` unlockStakeProposalId) $
+    AssocMap.keys $ getProposalVotes unlockStakePropsoalVotesTemplate
+mkStakeLocks _ = []
+
+-- | Assemble the votes of the input propsoal based on 'unlockStakePropsoalVotesTemplate'.
+mkVotesBefore ::
+  StakeUsage ->
+  -- | The staked amount/votes.
+  Integer ->
+  ProposalVotes
+mkVotesBefore (VotedFor rt) vc =
+  ProposalVotes $
+    updateMap (Just . const vc) rt $
+      getProposalVotes unlockStakePropsoalVotesTemplate
+mkVotesBefore _ vc = mkVotesBefore (VotedFor $ ResultTag 0) vc
+
+{- | Create a 'TxInfo' that unlocks the stake from the proposal.
+     The last parameter controls whether votes should be retracted or not.
+-}
+unlockStake ::
+  -- | The status of both the input and output propsoals.
+  ProposalStatus ->
+  StakeUsage ->
+  -- | Staked amount/vote count.
+  Integer ->
+  -- | Should we retract votes?
+  Bool ->
+  TxInfo
+unlockStake ps su staked shouldRetract =
+  let votesBefore = mkVotesBefore su staked
+      votesAfter =
+        if shouldRetract
+          then unlockStakePropsoalVotesTemplate
+          else votesBefore
+
+      locksBefore = mkStakeLocks su
+      locksAfter = []
+   in mkUnlockStakeTxInfo
+        ps
+        votesBefore
+        votesAfter
+        staked
+        locksBefore
+        locksAfter
+
+{- | Create a 'TxInfo' that unlocks a stake which is used to vote on the proposal.
+     Correct count of votes is also retracted. The 'TxInfo' is valid only if the given
+      proposal status is 'VotingReady'.
+-}
+voterUnlockStakeAndRetractVotesWhile :: ProposalStatus -> TxInfo
+voterUnlockStakeAndRetractVotesWhile ps =
+  unlockStake
+    ps
+    (VotedFor $ ResultTag 0)
+    42
+    True
+
+{- | Create a 'TxInfo' that unlocks a stake which is used to vote on the proposal
+      without retracting the votes, given the status of the proposal.
+
+     The 'TxInfo' is valid only if the status of the propsoal is either 'Locked'
+      or 'Finished'.
+-}
+voterUnlockStakeWhile :: ProposalStatus -> TxInfo
+voterUnlockStakeWhile ps =
+  unlockStake
+    ps
+    (VotedFor $ ResultTag 0)
+    42
+    False
+
+{- | Create an invalid 'TxInfo' that retracts votes using the stake
+      that is used to create the proposal.
+-}
+creatorRetractVotesWhile :: ProposalStatus -> TxInfo
+creatorRetractVotesWhile ps =
+  unlockStake
+    ps
+    Created
+    42
+    True
+
+{- | Create a 'TxInfo' to unlock the stake that is used to create the propsoal.
+      The 'TxInfo' is valid only if the given proposal status is 'Finished'.
+-}
+creatorUnlockStakeWhile :: ProposalStatus -> TxInfo
+creatorUnlockStakeWhile ps =
+  unlockStake
+    ps
+    Created
+    42
+    False
+
+{- | Create an invalid 'TxInfo' that tries to retract votes and also unlock a stake
+      which is not locked by the proposal, given the status of the proposal.
+-}
+unlockStakeAndRetractVotesUsingIrrelevantStakeWhile :: ProposalStatus -> TxInfo
+unlockStakeAndRetractVotesUsingIrrelevantStakeWhile ps =
+  unlockStake
+    ps
+    DidNothing
+    42
+    True
+
+{- | Create an invalid 'TxInfo' that tries to unlock a stake which is not locked by the proposal,
+      given the status of the proposal.
+-}
+unlockStakeUsingIrrelevantStakeWhile :: ProposalStatus -> TxInfo
+unlockStakeUsingIrrelevantStakeWhile ps =
+  unlockStake
+    ps
+    DidNothing
+    42
+    False
