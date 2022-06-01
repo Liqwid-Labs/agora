@@ -30,7 +30,7 @@ import Plutus.V1.Ledger.Api (
  )
 import Property.Generator (genPubKeyHash, genSingletonValue)
 import Test.Tasty (TestTree)
-import Test.Tasty.Plutarch.Property (classifiedProperty)
+import Test.Tasty.Plutarch.Property (classifiedPropertyNative)
 import Test.Tasty.QuickCheck (
   Gen,
   Property,
@@ -90,14 +90,10 @@ shrinkMultiSigProp :: MultiSigModel -> [MultiSigModel]
 shrinkMultiSigProp = const []
 
 -- | Expected behavior of @pvalidatedByMultisig@.
-expected :: Term s (PBuiltinPair PMultiSig PScriptContext :--> PMaybe PBool)
-expected = plam $ \x -> unTermCont $ do
-  ms <- tclet $ pfstBuiltin # x
-  sc <- tclet $ psndBuiltin # x
-  multsig <- tcont $ pletFields @'["keys", "minSigs"] ms
-  let signers = pfromData $ pfield @"signatories" #$ pfromData (pfield @"txInfo" # sc)
-      validSigners = plength #$ pfilter # plam (\x -> pelem # x # multsig.keys) # signers
-  pure $ pcon $ PJust $ pfromData multsig.minSigs #<= validSigners
+expectedHs :: MultiSigModel -> Maybe Bool
+expectedHs model = case classifyMultiSigProp model of
+  MeetsMinSigs -> Just True
+  _ -> Just False
 
 -- | Actual implementation of @pvalidatedByMultisig@.
 actual :: Term s (PBuiltinPair PMultiSig PScriptContext :--> PBool)
@@ -108,7 +104,7 @@ actual = plam $ \x -> unTermCont $ do
 
 -- | Proposed property.
 prop :: Property
-prop = classifiedProperty genMultiSigProp shrinkMultiSigProp expected classifyMultiSigProp actual
+prop = classifiedPropertyNative genMultiSigProp shrinkMultiSigProp expectedHs classifyMultiSigProp actual
 
 props :: [TestTree]
 props =

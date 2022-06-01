@@ -24,7 +24,7 @@
 
   # Testing 
   inputs.plutarch-quickcheck.url =
-    "github:liqwid-labs/plutarch-quickcheck";
+    "github:liqwid-labs/plutarch-quickcheck?ref=staging";
   inputs.plutarch-context-builder.url =
     "git+ssh://git@github.com/Liqwid-Labs/plutarch-context-builder?ref=main";
 
