@@ -14,6 +14,8 @@ module Agora.AuthorityToken (
 --------------------------------------------------------------------------------
 
 import Plutarch.Api.V1 (
+  AmountGuarantees,
+  KeyGuarantees,
   PAddress (..),
   PCredential (..),
   PCurrencySymbol (..),
@@ -28,7 +30,7 @@ import Plutarch.Api.V1.AssetClass (passetClass, passetClassValueOf)
 import Plutarch.Api.V1.AssocMap (PMap (PMap))
 import "plutarch" Plutarch.Api.V1.Value (PValue (PValue))
 import Plutarch.Builtin (pforgetData)
-import Plutus.V1.Ledger.Value (AssetClass (AssetClass))
+import PlutusLedgerApi.V1.Value (AssetClass (AssetClass))
 
 --------------------------------------------------------------------------------
 
@@ -100,10 +102,10 @@ authorityTokensValidIn = phoistAcyclic $
 
 -- | Assert that a single authority token has been burned.
 singleAuthorityTokenBurned ::
-  forall (s :: S).
+  forall (keys :: KeyGuarantees) (amounts :: AmountGuarantees) (s :: S).
   Term s PCurrencySymbol ->
   Term s (PAsData PTxInfo) ->
-  Term s PValue ->
+  Term s (PValue keys amounts) ->
   Term s PBool
 singleAuthorityTokenBurned gatCs txInfo mint = unTermCont $ do
   let gatAmountMinted :: Term _ PInteger

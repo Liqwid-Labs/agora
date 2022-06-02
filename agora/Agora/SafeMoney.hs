@@ -16,7 +16,7 @@ module Agora.SafeMoney (
 
 --------------------------------------------------------------------------------
 
-import Plutus.V1.Ledger.Value (AssetClass (AssetClass))
+import PlutusLedgerApi.V1.Value (AssetClass (AssetClass))
 
 import Data.Tagged (Tagged (Tagged))
 

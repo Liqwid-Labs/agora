@@ -32,7 +32,7 @@ import Prelude hiding (Num (..))
 
 --------------------------------------------------------------------------------
 
-import Plutus.V1.Ledger.Api (PubKeyHash)
+import PlutusLedgerApi.V1 (PubKeyHash)
 import PlutusTx qualified
 
 --------------------------------------------------------------------------------
@@ -53,7 +53,7 @@ import Plutarch.DataRepr (
  )
 import Plutarch.Internal (punsafeCoerce)
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (..))
-import Plutus.V1.Ledger.Value (AssetClass)
+import PlutusLedgerApi.V1.Value (AssetClass)
 
 --------------------------------------------------------------------------------
 
@@ -175,14 +175,14 @@ PlutusTx.makeIsDataIndexed ''StakeDatum [('StakeDatum, 0)]
 -- | Plutarch-level datum for Stake scripts.
 newtype PStakeDatum (s :: S) = PStakeDatum
   { getStakeDatum ::
-    Term
-      s
-      ( PDataRecord
-          '[ "stakedAmount" ':= PDiscrete GTTag
-           , "owner" ':= PPubKeyHash
-           , "lockedBy" ':= PBuiltinList (PAsData PProposalLock)
-           ]
-      )
+      Term
+        s
+        ( PDataRecord
+            '[ "stakedAmount" ':= PDiscrete GTTag
+             , "owner" ':= PPubKeyHash
+             , "lockedBy" ':= PBuiltinList (PAsData PProposalLock)
+             ]
+        )
   }
   deriving stock (GHC.Generic)
   deriving anyclass (Generic)
@@ -226,13 +226,13 @@ deriving via (DerivePConstantViaData StakeRedeemer PStakeRedeemer) instance (PCo
 -- | Plutarch-level version of 'ProposalLock'.
 newtype PProposalLock (s :: S) = PProposalLock
   { getProposalLock ::
-    Term
-      s
-      ( PDataRecord
-          '[ "vote" ':= PResultTag
-           , "proposalTag" ':= PProposalId
-           ]
-      )
+      Term
+        s
+        ( PDataRecord
+            '[ "vote" ':= PResultTag
+             , "proposalTag" ':= PProposalId
+             ]
+        )
   }
   deriving stock (GHC.Generic)
   deriving anyclass (Generic)

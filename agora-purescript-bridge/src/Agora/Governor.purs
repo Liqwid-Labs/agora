@@ -17,8 +17,8 @@ import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype)
 import Data.Tagged (Tagged)
 import GHC.Num.Integer (Integer)
-import Plutus.V1.Ledger.Tx (TxOutRef)
-import Plutus.V1.Ledger.Value (AssetClass)
+import PlutusLedgerApi.V1.Tx (TxOutRef)
+import PlutusLedgerApi.V1.Value (AssetClass)
 import Type.Proxy (Proxy(Proxy))
 
 newtype GovernorDatum = GovernorDatum

@@ -11,7 +11,7 @@ import Agora.AuthorityToken (singleAuthorityTokenBurned)
 import Agora.Utils (tcassert, tclet, tcmatch, tctryFrom)
 import Plutarch.Api.V1 (PCurrencySymbol, PScriptPurpose (PSpending), PTxInfo, PTxOutRef, PValidator, PValue)
 import Plutarch.TryFrom ()
-import Plutus.V1.Ledger.Value (CurrencySymbol)
+import PlutusLedgerApi.V1.Value (CurrencySymbol)
 
 --------------------------------------------------------------------------------
 
@@ -43,7 +43,7 @@ makeEffect gatCs' f =
 
     -- fetch minted values to ensure single GAT is burned
     txInfo <- tcont $ pletFields @'["mint"] txInfo'
-    let mint :: Term _ PValue
+    let mint :: Term _ (PValue _ _)
         mint = txInfo.mint
 
     -- fetch script context

@@ -7,18 +7,16 @@ import Data.ByteString.Lazy qualified as LBS
 import Data.ByteString.Short qualified as SBS
 import Data.Csv (DefaultOrdered, ToNamedRecord, header, headerOrder, namedRecord, toNamedRecord, (.=))
 import Data.List (intercalate)
-import Data.Maybe (fromJust)
 import Data.Text (Text, pack)
 import GHC.Generics (Generic)
-import Plutus.V1.Ledger.Api (
+import Plutarch.Evaluate (evalScript)
+import PlutusLedgerApi.V1 (
   ExBudget (ExBudget),
   ExCPU (..),
   ExMemory (..),
   Script,
  )
-import Plutus.V1.Ledger.Api qualified as Plutus
 import Prettyprinter (Pretty (pretty), indent, vsep)
-
 import Test.Specification (
   Specification (Specification),
   SpecificationExpectation (Success),
@@ -67,18 +65,9 @@ instance DefaultOrdered Benchmark where
 benchmarkScript :: String -> Script -> Benchmark
 benchmarkScript name script = Benchmark (pack name) cpu mem size
   where
-    (ExBudget cpu mem) = evalScriptCounting . serialiseScriptShort $ script
-    size = SBS.length . SBS.toShort . LBS.toStrict . serialise $ script
+    (_res, ExBudget cpu mem, _traces) = evalScript script
 
-    serialiseScriptShort :: Script -> SBS.ShortByteString
-    serialiseScriptShort = SBS.toShort . LBS.toStrict . serialise -- Using `flat` here breaks `evalScriptCounting`
-    evalScriptCounting :: Plutus.SerializedScript -> Plutus.ExBudget
-    evalScriptCounting script =
-      let costModel = fromJust Plutus.defaultCostModelParams
-          (_logout, e) = Plutus.evaluateScriptCounting Plutus.Verbose costModel script []
-       in case e of
-            Left evalError -> error ("Eval Error: " <> show evalError)
-            Right exbudget -> exbudget
+    size = SBS.length . SBS.toShort . LBS.toStrict . serialise $ script
 
 specificationTreeToBenchmarks :: SpecificationTree -> [Benchmark]
 specificationTreeToBenchmarks = go []

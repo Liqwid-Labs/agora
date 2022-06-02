@@ -10,7 +10,7 @@ import Data.Lens.Iso.Newtype (_Newtype)
 import Data.Lens.Record (prop)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype)
-import Plutus.V1.Ledger.Tx (TxOutRef)
+import PlutusLedgerApi.V1.Tx (TxOutRef)
 import Type.Proxy (Proxy(Proxy))
 
 newtype MutateGovernorDatum = MutateGovernorDatum

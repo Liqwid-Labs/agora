@@ -12,7 +12,7 @@ import Control.Applicative (Const)
 import Agora.Effect (makeEffect)
 import Plutarch.Api.V1 (PValidator)
 import Plutarch.TryFrom (PTryFrom (..))
-import Plutus.V1.Ledger.Value (CurrencySymbol)
+import PlutusLedgerApi.V1.Value (CurrencySymbol)
 
 -- | Dummy datum for NoOp effect.
 newtype PNoOp (s :: S) = PNoOp (Term s PUnit)

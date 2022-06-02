@@ -18,9 +18,9 @@ import Data.Text.Encoding qualified as T
 
 --------------------------------------------------------------------------------
 
-import Plutus.V1.Ledger.Api qualified as Plutus
-import Plutus.V1.Ledger.Bytes qualified as Plutus
-import Plutus.V1.Ledger.Value qualified as Plutus
+import PlutusLedgerApi.V1 qualified as Plutus
+import PlutusLedgerApi.V1.Bytes qualified as Plutus
+import PlutusLedgerApi.V1.Value qualified as Plutus
 
 --------------------------------------------------------------------------------
 
@@ -60,7 +60,7 @@ instance (Coercible a Plutus.LedgerBytes) => Aeson.ToJSON (AsBase16Bytes a) wher
 instance (Coercible Plutus.LedgerBytes a) => Aeson.FromJSON (AsBase16Bytes a) where
   parseJSON v =
     Aeson.parseJSON @T.Text v
-      >>= either (Aeson.parserThrowError []) (pure . coerce @_ @(AsBase16Bytes a))
+      >>= either (Aeson.parserThrowError [] . show) (pure . coerce @_ @(AsBase16Bytes a))
         . Plutus.fromHex
         . T.encodeUtf8
 

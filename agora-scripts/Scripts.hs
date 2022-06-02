@@ -31,9 +31,9 @@ import Data.Tagged (Tagged)
 import GHC.Generics qualified as GHC
 import Options (Options (..), parseOptions)
 import Plutarch.Api.V1 (mintingPolicySymbol, mkMintingPolicy)
-import Plutus.V1.Ledger.Api (TxOutRef)
-import Plutus.V1.Ledger.Value (AssetClass, CurrencySymbol)
-import Plutus.V1.Ledger.Value qualified as Value
+import PlutusLedgerApi.V1 (TxOutRef)
+import PlutusLedgerApi.V1.Value (AssetClass, CurrencySymbol)
+import PlutusLedgerApi.V1.Value qualified as Value
 import System.Exit (exitFailure)
 import Text.Printf (printf)
 

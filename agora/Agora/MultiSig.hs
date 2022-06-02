@@ -29,7 +29,7 @@ import Plutarch.Lift (
   PUnsafeLiftDecl,
  )
 
-import Plutus.V1.Ledger.Crypto (PubKeyHash)
+import PlutusLedgerApi.V1.Crypto (PubKeyHash)
 import PlutusTx qualified
 
 --------------------------------------------------------------------------------
@@ -57,13 +57,13 @@ PlutusTx.unstableMakeIsData ''MultiSig
 -- | Plutarch-level MultiSig
 newtype PMultiSig (s :: S) = PMultiSig
   { getMultiSig ::
-    Term
-      s
-      ( PDataRecord
-          '[ "keys" ':= PBuiltinList (PAsData PPubKeyHash)
-           , "minSigs" ':= PInteger
-           ]
-      )
+      Term
+        s
+        ( PDataRecord
+            '[ "keys" ':= PBuiltinList (PAsData PPubKeyHash)
+             , "minSigs" ':= PInteger
+             ]
+        )
   }
   deriving stock (GHC.Generic)
   deriving anyclass (Generic)

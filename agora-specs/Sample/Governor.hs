@@ -19,10 +19,11 @@ import Plutarch.Api.V1 (mkValidator, validatorHash)
 
 --------------------------------------------------------------------------------
 
-import Plutus.V1.Ledger.Address (scriptHashAddress)
-import Plutus.V1.Ledger.Api (
+import PlutusLedgerApi.V1 (
   Address (..),
+  BuiltinData (BuiltinData),
   Credential (ScriptCredential),
+  Data (I),
   Datum (..),
   ScriptContext (..),
   ScriptPurpose (Minting, Spending),
@@ -35,12 +36,12 @@ import Plutus.V1.Ledger.Api (
   Validator,
   ValidatorHash (..),
  )
-import Plutus.V1.Ledger.Interval qualified as Interval
-import Plutus.V1.Ledger.Scripts (unitDatum)
-import Plutus.V1.Ledger.Value (
+import PlutusLedgerApi.V1.Address (scriptHashAddress)
+import PlutusLedgerApi.V1.Interval qualified as Interval
+import PlutusLedgerApi.V1.Value (
   AssetClass (..),
  )
-import Plutus.V1.Ledger.Value qualified as Value
+import PlutusLedgerApi.V1.Value qualified as Value
 import PlutusTx.AssocMap qualified as AssocMap
 
 --------------------------------------------------------------------------------
@@ -91,6 +92,10 @@ import Test.Util (closedBoundedInterval, datumPair, toDatumHash)
 import Data.Default.Class (Default (def))
 
 --------------------------------------------------------------------------------
+
+-- | Unit datum
+unitDatum :: Datum
+unitDatum = Datum . BuiltinData $ I 0 -- This could be anything, really. It doesn't matter.
 
 {- | A valid 'ScriptContext' for minting GST.
 

@@ -56,7 +56,7 @@ import Plutarch.Extra.Map (plookup)
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
 import Plutarch.Extra.TermCont (pmatchC)
 import Plutarch.SafeMoney (PDiscrete (..))
-import Plutus.V1.Ledger.Value (AssetClass (AssetClass))
+import PlutusLedgerApi.V1.Value (AssetClass (AssetClass))
 
 {- | Policy for Proposals.
 

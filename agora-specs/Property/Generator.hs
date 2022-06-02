@@ -21,8 +21,8 @@ module Property.Generator (
 
 import Control.Applicative (Applicative (liftA2))
 import Data.ByteString.Char8 qualified as C (ByteString, pack)
-import Data.ByteString.Hash (sha2)
-import Plutus.V1.Ledger.Api (
+import Data.ByteString.Hash (sha2_256)
+import PlutusLedgerApi.V1 (
   Address (Address),
   Credential (..),
   PubKeyHash (PubKeyHash),
@@ -30,7 +30,7 @@ import Plutus.V1.Ledger.Api (
   Value,
   toBuiltin,
  )
-import Plutus.V1.Ledger.Value (
+import PlutusLedgerApi.V1.Value (
   AssetClass (AssetClass),
   assetClassValue,
   currencySymbol,
@@ -50,7 +50,7 @@ Hashs cannot be shrunken; functions utilizing this function,
 therefore, cannot be shrunken as well.
 -}
 genHashByteString :: Gen C.ByteString
-genHashByteString = sha2 . C.pack . show <$> (chooseAny :: Gen Integer)
+genHashByteString = sha2_256 . C.pack . show <$> (chooseAny :: Gen Integer)
 
 -- TODO: How do I need to ensure uniqueness?
 

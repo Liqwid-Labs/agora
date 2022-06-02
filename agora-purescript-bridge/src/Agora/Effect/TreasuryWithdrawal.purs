@@ -10,8 +10,8 @@ import Data.Lens.Record (prop)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype)
 import Data.Tuple (Tuple)
-import Plutus.V1.Ledger.Credential (Credential)
-import Plutus.V1.Ledger.Value (Value)
+import PlutusLedgerApi.V1.Credential (Credential)
+import PlutusLedgerApi.V1.Value (Value)
 import Type.Proxy (Proxy(Proxy))
 
 newtype TreasuryWithdrawalDatum = TreasuryWithdrawalDatum

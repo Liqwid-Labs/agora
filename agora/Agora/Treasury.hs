@@ -23,7 +23,7 @@ import Plutarch.DataRepr (
  )
 import Plutarch.Lift (PConstantDecl (..), PLifted (..), PUnsafeLiftDecl)
 import Plutarch.TryFrom ()
-import Plutus.V1.Ledger.Value (CurrencySymbol)
+import PlutusLedgerApi.V1.Value (CurrencySymbol)
 import PlutusTx qualified
 
 --------------------------------------------------------------------------------
@@ -90,7 +90,7 @@ treasuryValidator gatCs' = plam $ \_datum redeemer ctx' -> unTermCont $ do
   -- Get the minted value from txInfo.
   txInfo' <- tclet ctx.txInfo
   txInfo <- tcont $ pletFields @'["mint"] txInfo'
-  let mint :: Term _ PValue
+  let mint :: Term _ (PValue _ _)
       mint = txInfo.mint
 
   gatCs <- tclet $ pconstant gatCs'

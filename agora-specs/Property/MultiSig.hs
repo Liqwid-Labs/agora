@@ -24,7 +24,7 @@ import Plutarch.Context.Spending (
   signedWith,
   spendingContext,
  )
-import Plutus.V1.Ledger.Api (
+import PlutusLedgerApi.V1 (
   ScriptContext (scriptContextTxInfo),
   TxInfo (txInfoSignatories),
  )

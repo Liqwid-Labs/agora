@@ -29,7 +29,7 @@ import Plutarch.Api.V1 (
 
 --------------------------------------------------------------------------------
 
-import Plutus.V1.Ledger.Api (
+import PlutusLedgerApi.V1 (
   Address (Address),
   Credential (ScriptCredential),
   Datum (Datum),
@@ -46,7 +46,7 @@ import Plutus.V1.Ledger.Api (
   TxOutRef (TxOutRef),
   ValidatorHash,
  )
-import Plutus.V1.Ledger.Value qualified as Value
+import PlutusLedgerApi.V1.Value qualified as Value
 import PlutusTx.AssocMap qualified as AssocMap
 
 --------------------------------------------------------------------------------
@@ -431,9 +431,9 @@ voteOnProposal params =
 -- | Parameters for state transition of proposals.
 data TransitionParameters = TransitionParameters
   { -- The initial status of the propsoal.
-  initialProposalStatus :: ProposalStatus
+    initialProposalStatus :: ProposalStatus
   , -- The starting time of the propsoal.
-  proposalStartingTime :: ProposalStartingTime
+    proposalStartingTime :: ProposalStartingTime
   }
 
 -- | Create a 'TxInfo' that update the status of a proposal.

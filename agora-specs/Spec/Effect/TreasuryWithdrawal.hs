@@ -11,7 +11,7 @@ import Agora.Effect.TreasuryWithdrawal (
   TreasuryWithdrawalDatum (TreasuryWithdrawalDatum),
   treasuryWithdrawalValidator,
  )
-import Plutus.V1.Ledger.Value qualified as Value
+import PlutusLedgerApi.V1.Value qualified as Value
 import Sample.Effect.TreasuryWithdrawal (
   buildReceiversOutputFromDatum,
   buildScriptContext,

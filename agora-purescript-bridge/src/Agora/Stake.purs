@@ -13,8 +13,8 @@ import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype)
 import Data.Tagged (Tagged)
 import GHC.Num.Integer (Integer)
-import Plutus.V1.Ledger.Crypto (PubKeyHash)
-import Plutus.V1.Ledger.Value (AssetClass)
+import PlutusLedgerApi.V1.Crypto (PubKeyHash)
+import PlutusLedgerApi.V1.Value (AssetClass)
 import Type.Proxy (Proxy(Proxy))
 
 newtype Stake = Stake

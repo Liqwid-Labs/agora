@@ -125,12 +125,12 @@ import Plutarch.TryFrom ()
 
 --------------------------------------------------------------------------------
 
-import Plutus.V1.Ledger.Api (
+import PlutusLedgerApi.V1 (
   CurrencySymbol (..),
   MintingPolicy,
  )
-import Plutus.V1.Ledger.Scripts (ValidatorHash (..))
-import Plutus.V1.Ledger.Value (
+import PlutusLedgerApi.V1.Scripts (ValidatorHash (..))
+import PlutusLedgerApi.V1.Value (
   AssetClass (..),
  )
 
@@ -631,7 +631,7 @@ governorValidator gov =
           tcassert "Output GATs is more than minted GATs" $
             plength # outputsWithGAT #== gatCount
 
-          let gatOutputValidator' :: Term s (PMap PValidatorHash PDatumHash :--> PAsData PTxOut :--> PBool)
+          let gatOutputValidator' :: Term s (PMap _ PValidatorHash PDatumHash :--> PAsData PTxOut :--> PBool)
               gatOutputValidator' =
                 phoistAcyclic $
                   plam
@@ -679,7 +679,7 @@ governorValidator gov =
           pure $ popaque $ singleAuthorityTokenBurned patSymbol ctxF.txInfo txInfoF.mint
   where
     -- Get th amount of governance tokens in a value.
-    pgtValueOf :: Term s (PValue :--> PDiscrete GTTag)
+    pgtValueOf :: Term s (PValue _ _ :--> PDiscrete GTTag)
     pgtValueOf = phoistAcyclic $ pvalueDiscrete' gov.gtClassRef
 
     -- The currency symbol of authority token.

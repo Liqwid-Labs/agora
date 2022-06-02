@@ -52,7 +52,7 @@ import Plutarch.Lift (
  )
 import Plutarch.Numeric.Additive (AdditiveSemigroup ((+)))
 import Plutarch.Unsafe (punsafeCoerce)
-import Plutus.V1.Ledger.Time (POSIXTime)
+import PlutusLedgerApi.V1.Time (POSIXTime)
 import PlutusTx qualified
 import Prelude hiding ((+))
 
@@ -83,7 +83,7 @@ data ProposalTimingConfig = ProposalTimingConfig
 
 PlutusTx.makeIsDataIndexed ''ProposalTimingConfig [('ProposalTimingConfig, 0)]
 
--- | Represents the maximum width of a 'Plutus.V1.Ledger.Time.POSIXTimeRange'.
+-- | Represents the maximum width of a 'PlutusLedgerApi.V1.Time.POSIXTimeRange'.
 newtype MaxTimeRangeWidth = MaxTimeRangeWidth {getMaxWidth :: POSIXTime}
   deriving stock (Eq, Show, Ord, GHC.Generic)
   deriving newtype (PlutusTx.ToData, PlutusTx.FromData, PlutusTx.UnsafeFromData)
@@ -106,8 +106,8 @@ newtype MaxTimeRangeWidth = MaxTimeRangeWidth {getMaxWidth :: POSIXTime}
 
    Various functions work simply on 'PProposalTime' and 'ProposalTimingConfig'.
    In particular, 'currentProposalTime' is useful for extracting the time
-   from the 'Plutus.V1.Ledger.Api.txInfoValidPeriod' field
-   of 'Plutus.V1.Ledger.Api.TxInfo'.
+   from the 'PlutusLedgerApi.V1.txInfoValidPeriod' field
+   of 'PlutusLedgerApi.V1.TxInfo'.
 
    We avoid 'PPOSIXTimeRange' where we can in order to save on operations.
 
@@ -136,15 +136,15 @@ deriving via
 -- | Plutarch-level version of 'ProposalTimingConfig'.
 newtype PProposalTimingConfig (s :: S) = PProposalTimingConfig
   { getProposalTimingConfig ::
-    Term
-      s
-      ( PDataRecord
-          '[ "draftTime" ':= PPOSIXTime
-           , "votingTime" ':= PPOSIXTime
-           , "lockingTime" ':= PPOSIXTime
-           , "executingTime" ':= PPOSIXTime
-           ]
-      )
+      Term
+        s
+        ( PDataRecord
+            '[ "draftTime" ':= PPOSIXTime
+             , "votingTime" ':= PPOSIXTime
+             , "lockingTime" ':= PPOSIXTime
+             , "executingTime" ':= PPOSIXTime
+             ]
+        )
   }
   deriving stock (GHC.Generic)
   deriving anyclass (Generic)
@@ -177,7 +177,7 @@ deriving via
 instance AdditiveSemigroup (Term s PPOSIXTime) where
   (punsafeCoerce @_ @_ @PInteger -> x) + (punsafeCoerce @_ @_ @PInteger -> y) = punsafeCoerce $ x + y
 
-{- | Get the starting time of a proposal, from the 'Plutus.V1.Ledger.Api.txInfoValidPeriod' field.
+{- | Get the starting time of a proposal, from the 'PlutusLedgerApi.V1.txInfoValidPeriod' field.
      For every proposal, this is only meant to run once upon creation. Given time range should be
      tight enough, meaning that the width of the time range should be less than the maximum value.
 -}
@@ -199,7 +199,7 @@ createProposalStartingTime = phoistAcyclic $
 
     pure $ pcon $ PProposalStartingTime startingTime
 
-{- | Get the current proposal time, from the 'Plutus.V1.Ledger.Api.txInfoValidPeriod' field.
+{- | Get the current proposal time, from the 'PlutusLedgerApi.V1.txInfoValidPeriod' field.
 
  If it's impossible to get a fully-bounded time, (e.g. either end of the 'PPOSIXTimeRange' is
  an infinity) then we error out.

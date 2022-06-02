@@ -92,8 +92,7 @@ import Plutarch.Api.V1 (
   mkValidator,
   validatorHash,
  )
-import Plutus.V1.Ledger.Address (scriptHashAddress)
-import Plutus.V1.Ledger.Api (
+import PlutusLedgerApi.V1 (
   Address (Address),
   Credential (ScriptCredential),
   CurrencySymbol,
@@ -107,12 +106,13 @@ import Plutus.V1.Ledger.Api (
   UpperBound (..),
   Value,
  )
-import Plutus.V1.Ledger.Contexts (
+import PlutusLedgerApi.V1.Address (scriptHashAddress)
+import PlutusLedgerApi.V1.Contexts (
   TxOut (..),
  )
-import Plutus.V1.Ledger.Scripts (Validator, ValidatorHash (..))
-import Plutus.V1.Ledger.Value (AssetClass, TokenName)
-import Plutus.V1.Ledger.Value qualified as Value
+import PlutusLedgerApi.V1.Scripts (Validator, ValidatorHash (..))
+import PlutusLedgerApi.V1.Value (AssetClass, TokenName)
+import PlutusLedgerApi.V1.Value qualified as Value
 
 --------------------------------------------------------------------------------
 
