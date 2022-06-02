@@ -7,11 +7,11 @@ import Test.Tasty (defaultMain, testGroup)
 
 --------------------------------------------------------------------------------
 
+import Property.MultiSig qualified as MultiSig
 import Spec.AuthorityToken qualified as AuthorityToken
 import Spec.Effect.GovernorMutation qualified as GovernorMutation
 import Spec.Effect.TreasuryWithdrawal qualified as TreasuryWithdrawal
 import Spec.Governor qualified as Governor
-import Spec.Model.MultiSig qualified as MultiSig
 import Spec.Proposal qualified as Proposal
 import Spec.Stake qualified as Stake
 import Spec.Treasury qualified as Treasury
@@ -42,10 +42,5 @@ main = do
           Utils.tests
       , testGroup
           "Multisig tests"
-          [ testGroup
-              "MultiSig"
-              [ MultiSig.plutarchTests
-              , MultiSig.genTests
-              ]
-          ]
+          MultiSig.props
       ]

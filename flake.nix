@@ -24,22 +24,9 @@
 
   # Testing 
   inputs.plutarch-quickcheck.url =
-    "github:liqwid-labs/plutarch-quickcheck";
+    "github:liqwid-labs/plutarch-quickcheck?ref=staging";
   inputs.plutarch-context-builder.url =
     "git+ssh://git@github.com/Liqwid-Labs/plutarch-context-builder?ref=main";
-  # Follows jhodgdev's forks of apropos and apropos-tx, as these
-  # are not constrained to `base ^>= 4.14`. Once these are merged
-  # to their respective master branches, we should change the
-  # inputs to follow a commit on those master branches. For more
-  # info, see: https://github.com/mlabs-haskell/apropos-tx/pull/37
-  inputs.apropos-tx.url =
-    "github:jhodgdev/apropos-tx?rev=4eca3fac23c339caee04ea6176e641a4b3857a25";
-  inputs.apropos-tx.inputs.nixpkgs.follows =
-    "plutarch/haskell-nix/nixpkgs-unstable";
-  inputs.apropos.url =
-    "github:mlabs-haskell/apropos?rev=3734bb3baa297ed990725a5ef14efcbb6a1c1c23";
-  inputs.apropos.inputs.nixpkgs.follows =
-    "plutarch/haskell-nix/nixpkgs-unstable";
 
   # Purescript
   inputs.purescript-bridge.url =
@@ -102,14 +89,6 @@
             {
               src = inputs.plutarch-context-builder;
               subdirs = [ "." ];
-            }            
-            {
-              src = inputs.apropos-tx;
-              subdirs = [ "." ];
-            }
-            {
-              src = inputs.apropos;
-              subdirs = [ "." ];
             }
             {
               src = inputs.purescript-bridge;
@@ -151,11 +130,7 @@
               # testing
               ps.tasty-quickcheck
               ps.plutarch-quickcheck
-              ps.plutarch-context-builder 
-              ps.apropos-tx
-              ps.apropos
-              ps.apropos
-
+              ps.plutarch-context-builder
             ];
           };
         };

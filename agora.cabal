@@ -117,16 +117,17 @@ common deps
 common test-deps
   build-depends:
     , agora
-    , apropos
-    , apropos-tx
     , data-default-class
     , mtl
+    , plutarch-context-builder
+    , plutarch-quickcheck
     , QuickCheck
     , quickcheck-instances
     , tasty
     , tasty-hedgehog
     , tasty-hunit
     , tasty-quickcheck
+    , universe
 
 common exe-opts
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -O0
@@ -174,6 +175,8 @@ library agora-testlib
 library agora-specs
   import:          lang, deps, test-deps
   exposed-modules:
+    Property.Generator
+    Property.MultiSig
     Sample.Effect.GovernorMutation
     Sample.Effect.TreasuryWithdrawal
     Sample.Governor
@@ -185,7 +188,6 @@ library agora-specs
     Spec.Effect.GovernorMutation
     Spec.Effect.TreasuryWithdrawal
     Spec.Governor
-    Spec.Model.MultiSig
     Spec.Proposal
     Spec.Stake
     Spec.Treasury
