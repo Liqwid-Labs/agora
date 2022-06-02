@@ -687,5 +687,6 @@ mustBePDJust = phoistAcyclic $
     PDJust ((pfield @"_0" #) -> v) -> v
     _ -> ptraceError emsg
 
+-- | Create an 'Address' from a given 'ValidatorHash' with no 'Plutus.V1.Ledger.Credential.StakingCredential'.
 validatorHashToAddress :: ValidatorHash -> Address
 validatorHashToAddress vh = Address (ScriptCredential vh) Nothing

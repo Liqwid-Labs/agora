@@ -34,6 +34,7 @@ import Test.Util (toDatum)
 
 --------------------------------------------------------------------------------
 
+-- | The SpecificationTree exported by this module.
 specs :: [SpecificationTree]
 specs =
   [ group

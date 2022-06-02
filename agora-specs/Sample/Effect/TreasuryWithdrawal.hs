@@ -87,6 +87,7 @@ inputGAT =
       , txOutDatumHash = Just (DatumHash "")
       }
 
+-- | Create an input given the index of the treasury and the 'Value' at this input.
 inputTreasury :: Int -> Value -> TxInInfo
 inputTreasury indx val =
   TxInInfo
@@ -97,6 +98,7 @@ inputTreasury indx val =
       , txOutDatumHash = Just (DatumHash "")
       }
 
+-- | Create a input given the index of the user and the 'Value' at this input.
 inputUser :: Int -> Value -> TxInInfo
 inputUser indx val =
   TxInInfo
@@ -107,6 +109,7 @@ inputUser indx val =
       , txOutDatumHash = Just (DatumHash "")
       }
 
+-- | Create a input representing the collateral given by a user.
 inputCollateral :: Int -> TxInInfo
 inputCollateral indx =
   TxInInfo -- Initiator
@@ -117,6 +120,7 @@ inputCollateral indx =
       , txOutDatumHash = Just (DatumHash "")
       }
 
+-- | Create an output at the nth treasury with the given 'Value'.
 outputTreasury :: Int -> Value -> TxOut
 outputTreasury indx val =
   TxOut
@@ -125,6 +129,7 @@ outputTreasury indx val =
     , txOutDatumHash = Nothing
     }
 
+-- | Create an output at the nth user with the given 'Value'.
 outputUser :: Int -> Value -> TxOut
 outputUser indx val =
   TxOut
@@ -133,6 +138,7 @@ outputUser indx val =
     , txOutDatumHash = Nothing
     }
 
+-- | Create a list of the outputs that are required as encoded in 'TreasuryWithdrawalDatum'.
 buildReceiversOutputFromDatum :: TreasuryWithdrawalDatum -> [TxOut]
 buildReceiversOutputFromDatum (TreasuryWithdrawalDatum xs _) = f <$> xs
   where
@@ -147,7 +153,7 @@ buildReceiversOutputFromDatum (TreasuryWithdrawalDatum xs _) = f <$> xs
 validator :: Validator
 validator = mkValidator $ treasuryWithdrawalValidator currSymbol
 
--- | 'TokenName' that represents the hash of the 'Stake' validator.
+-- | 'TokenName' that represents the hash of the 'Agora.Stake.Stake' validator.
 validatorHashTN :: TokenName
 validatorHashTN = let ValidatorHash vh = validatorHash validator in TokenName vh
 

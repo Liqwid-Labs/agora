@@ -203,15 +203,15 @@ governorPolicy gov =
 
     - The UTXO which holds the GST must be spent.
     - The GST always stays at the validator's address.
-    - The new state UTXO has a valid datum of type 'GovernorDatum'.
+    - The new state UTXO has a valid datum of type 'Agora.Governor.GovernorDatum'.
 
   == Creating a Proposal
 
-  When the redeemer is 'CreateProposal', the script will check:
+  When the redeemer is 'Agora.Governor.CreateProposal', the script will check:
 
   - For governor's state datum:
 
-      * 'nextProposalId' is advanced.
+      * 'Agora.Governor.nextProposalId' is advanced.
       * Nothing is changed other that that.
 
   - Exactly one stake (the "input stake") must be provided in the input:
@@ -236,7 +236,7 @@ governorPolicy gov =
 
   == Minting GATs
 
-  When the redeemer is 'MintGATs', the script will check:
+  When the redeemer is 'Agora.Governor.MintGATs', the script will check:
 
   - Governor's state is not changed.
   - Exactly only one proposal is in the inputs. Let's call this the /input proposal/.
@@ -272,7 +272,7 @@ governorPolicy gov =
 
   == Changing the State
 
-  Redeemer 'MutateGovernor' allows the state datum to be changed by an external effect.
+  Redeemer 'Agora.Governor.MutateGovernor' allows the state datum to be changed by an external effect.
 
   In this case, the script will check
 

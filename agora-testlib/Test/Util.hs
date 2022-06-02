@@ -34,11 +34,11 @@ import PlutusTx.Ord qualified as PlutusTx
 
 --------------------------------------------------------------------------------
 
-{- | Create a pair from data for use in 'txInfoData'.
+{- | Create a pair from data for use in 'Plutus.V1.Ledger.Contexts.txInfoData'.
 
    Example:
    @
-     myTxInfo { 'txInfoData' = ['datumPair' myDatum] }
+     myTxInfo { 'Plutus.V1.Ledger.Contexts.txInfoData' = ['datumPair' myDatum] }
    @
 -}
 datumPair :: PlutusTx.ToData a => a -> (DatumHash, Datum)

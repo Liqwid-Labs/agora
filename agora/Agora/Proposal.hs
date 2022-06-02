@@ -352,7 +352,7 @@ deriving via
   instance
     (PConstantDecl ProposalVotes)
 
--- Plutarch-level version of 'emptyVotesFor'.
+-- | Plutarch-level version of 'emptyVotesFor'.
 pemptyVotesFor :: forall s a. (PIsData a) => Term s (PMap PResultTag a :--> PProposalVotes)
 pemptyVotesFor =
   phoistAcyclic $
@@ -451,7 +451,7 @@ proposalDatumValid proposal =
           , ptraceIfFalse "Proposal votes and effects are compatible with each other" $ pkeysEqual # datum.effects # pto (pfromData datum.votes)
           ]
 
-{- Find the winner result tag, given the votes, the quorum the "neutral" result tag.
+{- | Find the winner result tag, given the votes, the quorum the "neutral" result tag.
 
    The winner should be unambiguous, meaning that if two options have the same highest votes,
      the "neutral" option will be the winner.

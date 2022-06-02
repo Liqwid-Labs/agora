@@ -69,6 +69,7 @@ singleAuthorityTokenBurnedTest mint outs =
           perror
    in compile s
 
+-- | The SpecificationTree exported by this module.
 specs :: [SpecificationTree]
 specs =
   [ -- This is better suited for plutarch-test

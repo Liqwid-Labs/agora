@@ -83,7 +83,7 @@ data ProposalTimingConfig = ProposalTimingConfig
 
 PlutusTx.makeIsDataIndexed ''ProposalTimingConfig [('ProposalTimingConfig, 0)]
 
--- | Represents the maximum width of a 'POSIXTimeRange'.
+-- | Represents the maximum width of a 'Plutus.V1.Ledger.Time.POSIXTimeRange'.
 newtype MaxTimeRangeWidth = MaxTimeRangeWidth {getMaxWidth :: POSIXTime}
   deriving stock (Eq, Show, Ord, GHC.Generic)
   deriving newtype (PlutusTx.ToData, PlutusTx.FromData, PlutusTx.UnsafeFromData)
@@ -101,15 +101,19 @@ newtype MaxTimeRangeWidth = MaxTimeRangeWidth {getMaxWidth :: POSIXTime}
    determine if we are able to perform certain actions, we need to know what
    time it roughly is, compared to when the proposal was created.
 
-   'ProposalTime' represents "the time according to the proposal".
+   'PProposalTime' represents "the time according to the proposal".
    Its representation is opaque, and doesn't matter.
 
-   Various functions work simply on 'ProposalTime' and 'ProposalTimingConfig'.
+   Various functions work simply on 'PProposalTime' and 'ProposalTimingConfig'.
    In particular, 'currentProposalTime' is useful for extracting the time
    from the 'Plutus.V1.Ledger.Api.txInfoValidPeriod' field
    of 'Plutus.V1.Ledger.Api.TxInfo'.
 
    We avoid 'PPOSIXTimeRange' where we can in order to save on operations.
+
+   Note: 'PProposalTime' doesn't need a Haskell-level equivalent because it
+   is only used in scripts, and does not go in datums. It is also scott-encoded
+   which is more efficient in usage.
 -}
 data PProposalTime (s :: S) = PProposalTime
   { lowerBound :: Term s PPOSIXTime

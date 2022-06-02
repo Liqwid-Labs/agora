@@ -183,6 +183,7 @@ getNextProposalId (ProposalId pid) = ProposalId $ pid + 1
 
 --------------------------------------------------------------------------------
 
+-- | Check whether a particular 'PGovernorDatum' is well-formed.
 governorDatumValid :: Term s (PGovernorDatum :--> PBool)
 governorDatumValid = phoistAcyclic $
   plam $ \datum -> unTermCont $ do
