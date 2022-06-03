@@ -10,7 +10,7 @@
 
   # Plutarch and its friends
   inputs.plutarch.url =
-    "github:liqwid-labs/plutarch/staging";
+    "github:liqwid-labs/plutarch?rev=e7ef565645146e26e75ec29fe97122a74e52c6b7";
   inputs.plutarch.inputs.emanote.follows =
     "plutarch/haskell-nix/nixpkgs-unstable";
   inputs.plutarch.inputs.nixpkgs.follows =
@@ -19,15 +19,15 @@
   inputs.liqwid-plutarch-extra.url =
     "git+ssh://git@github.com/Liqwid-Labs/liqwid-plutarch-extra?ref=main";
   inputs.plutarch-numeric.url =
-    "git+ssh://git@github.com/Liqwid-Labs/plutarch-numeric?ref=emiflake/bump-plutarch-nix";
+    "git+ssh://git@github.com/Liqwid-Labs/plutarch-numeric?ref=main";
   inputs.plutarch-safe-money.url =
-    "git+ssh://git@github.com/Liqwid-Labs/plutarch-safe-money?ref=emiflake/bump-plutarch-nix";
+    "git+ssh://git@github.com/Liqwid-Labs/plutarch-safe-money?ref=main";
 
   # Testing
   inputs.plutarch-quickcheck.url =
-    "github:liqwid-labs/plutarch-quickcheck?ref=emiflake/bump-plutarch";
+    "github:liqwid-labs/plutarch-quickcheck?ref=staging";
   inputs.plutarch-context-builder.url =
-    "git+ssh://git@github.com/Liqwid-Labs/plutarch-context-builder?ref=emiflake/bump-plutarch";
+    "git+ssh://git@github.com/Liqwid-Labs/plutarch-context-builder?ref=main";
 
   outputs = inputs@{ self, nixpkgs, nixpkgs-latest, haskell-nix, plutarch, ... }:
     let

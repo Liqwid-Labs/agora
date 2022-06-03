@@ -7387,16 +7387,16 @@
         "plutarch": "plutarch_3"
       },
       "locked": {
-        "lastModified": 1654196598,
+        "lastModified": 1654293673,
         "narHash": "sha256-qH61Jm0ttY1GcWbto0IyiE0KEyHH3blFZlU1A0QhOGM=",
-        "ref": "emiflake/bump-plutarch",
-        "rev": "842214a5567907349218f670b32d7ec12f408463",
-        "revCount": 14,
+        "ref": "main",
+        "rev": "f6903c61237edac47021ac9b67be25f677841b6c",
+        "revCount": 15,
         "type": "git",
         "url": "ssh://git@github.com/Liqwid-Labs/plutarch-context-builder"
       },
       "original": {
-        "ref": "emiflake/bump-plutarch",
+        "ref": "main",
         "type": "git",
         "url": "ssh://git@github.com/Liqwid-Labs/plutarch-context-builder"
       }
@@ -7419,16 +7419,16 @@
         "plutarch": "plutarch_4"
       },
       "locked": {
-        "lastModified": 1654189181,
+        "lastModified": 1654293347,
         "narHash": "sha256-AQK39AHQpZZcqaaCSSzIErM5xTrlqbJzGYV+NW8ITs4=",
-        "ref": "emiflake/bump-plutarch-nix",
-        "rev": "1dd0a024e141dc396e0b3e997268d06772770a38",
-        "revCount": 3,
+        "ref": "main",
+        "rev": "a8e47fa1f35273341b230486f5a0e83e462c9605",
+        "revCount": 4,
         "type": "git",
         "url": "ssh://git@github.com/Liqwid-Labs/plutarch-numeric"
       },
       "original": {
-        "ref": "emiflake/bump-plutarch-nix",
+        "ref": "main",
         "type": "git",
         "url": "ssh://git@github.com/Liqwid-Labs/plutarch-numeric"
       }
@@ -7483,16 +7483,16 @@
         "plutarch": "plutarch_5"
       },
       "locked": {
-        "lastModified": 1654286126,
+        "lastModified": 1654293728,
         "narHash": "sha256-6Pd410I03CetLM4YYrJmMldOYDyqGPATlmorhKKWU0Q=",
         "owner": "liqwid-labs",
         "repo": "plutarch-quickcheck",
-        "rev": "d9cffca0fc29dbc21ba295d2690850298a930285",
+        "rev": "cd7df08176e0ee5111980ead903764979d920147",
         "type": "github"
       },
       "original": {
         "owner": "liqwid-labs",
-        "ref": "emiflake/bump-plutarch",
+        "ref": "staging",
         "repo": "plutarch-quickcheck",
         "type": "github"
       }
@@ -7517,16 +7517,16 @@
         "plutarch-numeric": "plutarch-numeric_2"
       },
       "locked": {
-        "lastModified": 1654190971,
+        "lastModified": 1654293326,
         "narHash": "sha256-QR+Clo6vYfK7hexjfhsSgE06FavPxSjSyuG7ur/mXWs=",
-        "ref": "emiflake/bump-plutarch-nix",
-        "rev": "0bbd095317610a45ad49191bd438a8851c7a3f3c",
-        "revCount": 6,
+        "ref": "main",
+        "rev": "c2dbd7e8542a5d9a87a05a4f2e23a95846bcd01a",
+        "revCount": 7,
         "type": "git",
         "url": "ssh://git@github.com/Liqwid-Labs/plutarch-safe-money"
       },
       "original": {
-        "ref": "emiflake/bump-plutarch-nix",
+        "ref": "main",
         "type": "git",
         "url": "ssh://git@github.com/Liqwid-Labs/plutarch-safe-money"
       }
@@ -7567,8 +7567,8 @@
       },
       "original": {
         "owner": "liqwid-labs",
-        "ref": "staging",
         "repo": "plutarch",
+        "rev": "e7ef565645146e26e75ec29fe97122a74e52c6b7",
         "type": "github"
       }
     },
