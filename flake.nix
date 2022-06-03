@@ -67,8 +67,7 @@
 
   outputs = inputs@{ self, nixpkgs, nixpkgs-latest, haskell-nix, plutarch, purescript-bridge, haskell-nix-extra-hackage, iohk-nix, ... }:
     let
-      supportedSystems = with nixpkgs.lib.systems.supported;
-        tier1 ++ tier2 ++ tier3;
+      supportedSystems = nixpkgs-latest.lib.systems.flakeExposed;
 
       perSystem = nixpkgs.lib.genAttrs supportedSystems;
 
