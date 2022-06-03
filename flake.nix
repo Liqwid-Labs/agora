@@ -16,7 +16,7 @@
     "plutarch/haskell-nix/nixpkgs-unstable";
 
   inputs.liqwid-plutarch-extra.url =
-    "git+ssh://git@github.com/Liqwid-Labs/liqwid-plutarch-extra?ref=main";
+    "git+ssh://git@github.com/Liqwid-Labs/liqwid-plutarch-extra?rev=ddc54fd24271173d8a86b1df54a7e11ed24699a3";
   inputs.plutarch-numeric.url =
     "git+ssh://git@github.com/Liqwid-Labs/plutarch-numeric?ref=main";
   inputs.plutarch-safe-money.url =

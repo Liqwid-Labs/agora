@@ -6208,12 +6208,10 @@
     "liqwid-plutarch-extra": {
       "inputs": {
         "haskell-nix": [
-          "liqwid-plutarch-extra",
           "plutarch",
           "haskell-nix"
         ],
         "nixpkgs": [
-          "liqwid-plutarch-extra",
           "plutarch",
           "nixpkgs"
         ],
@@ -6221,16 +6219,15 @@
         "plutarch": "plutarch"
       },
       "locked": {
-        "lastModified": 1653918532,
-        "narHash": "sha256-qpPc6Sctp+VUc1GaE1w7U5qmVKQtDTXXYA6CEnz7Lmk=",
-        "ref": "main",
-        "rev": "4ec564be34a9445be65b47e80758164268773f91",
+        "lastModified": 1653920198,
+        "narHash": "sha256-rYCYdqw9RKio5wmiW1aun0dBlDsjAzvmXt5l3avEYMQ=",
+        "rev": "ddc54fd24271173d8a86b1df54a7e11ed24699a3",
         "revCount": 16,
         "type": "git",
         "url": "ssh://git@github.com/Liqwid-Labs/liqwid-plutarch-extra"
       },
       "original": {
-        "ref": "main",
+        "rev": "ddc54fd24271173d8a86b1df54a7e11ed24699a3",
         "type": "git",
         "url": "ssh://git@github.com/Liqwid-Labs/liqwid-plutarch-extra"
       }
