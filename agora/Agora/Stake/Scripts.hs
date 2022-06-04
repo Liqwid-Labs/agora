@@ -28,12 +28,14 @@ import Agora.Utils (
  )
 import Data.Tagged (Tagged (..), untag)
 import Plutarch.Api.V1 (
+  AmountGuarantees (Positive),
   PCredential (PPubKeyCredential, PScriptCredential),
   PMintingPolicy,
   PScriptPurpose (PMinting, PSpending),
   PTokenName,
   PTxInfo,
   PValidator,
+  PValue,
   mintingPolicySymbol,
   mkMintingPolicy,
  )
@@ -45,7 +47,7 @@ import Plutarch.SafeMoney (
   pdiscreteValue',
   pvalueDiscrete',
  )
-import Plutus.V1.Ledger.Value (AssetClass (AssetClass))
+import PlutusLedgerApi.V1.Value (AssetClass (AssetClass))
 import Prelude hiding (Num (..))
 
 {- | Policy for Stake state threads.
@@ -57,7 +59,7 @@ import Prelude hiding (Num (..))
    - Check that exactly one state thread is minted.
    - Check that an output exists with a state thread and a valid datum.
    - Check that no state thread is an input.
-   - assert @'Plutus.V1.Ledger.Api.TokenName' == 'Plutus.V1.Ledger.Api.ValidatorHash'@
+   - assert @'PlutusLedgerApi.V1.TokenName' == 'PlutusLedgerApi.V1.ValidatorHash'@
      of the script that we pay to.
 
    === For burning:
@@ -226,7 +228,8 @@ stakeValidator stake =
 
     PJust txInInfo <- tcmatch $ pfindTxInByTxOutRef # (pfield @"_0" # txOutRef) # txInfoF.inputs
     ownAddress <- tclet $ pfield @"address" #$ pfield @"resolved" # txInInfo
-    let continuingValue = pfield @"value" #$ pfield @"resolved" # txInInfo
+    let continuingValue :: Term _ (PValue _ _)
+        continuingValue = pfield @"value" #$ pfield @"resolved" # txInInfo
 
     -- Whether the owner signs this transaction or not.
     ownerSignsTransaction <- tclet $ ptxSignedBy # txInfoF.signatories # stakeDatum.owner
@@ -413,8 +416,11 @@ stakeValidator stake =
                             )
                         datumCorrect = stakeOut #== expectedDatum
 
-                    let expectedValue =
-                          paddValue # continuingValue # (pdiscreteValue' stake.gtClassRef # delta)
+                    let valueDelta :: Term _ (PValue _ 'Positive)
+                        valueDelta = pdiscreteValue' stake.gtClassRef # delta
+
+                        expectedValue =
+                          paddValue # continuingValue # valueDelta
 
                         valueCorrect =
                           foldr1

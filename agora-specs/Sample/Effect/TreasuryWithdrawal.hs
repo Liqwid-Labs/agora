@@ -20,7 +20,7 @@ module Sample.Effect.TreasuryWithdrawal (
 ) where
 
 import Plutarch.Api.V1 (mkValidator, validatorHash)
-import Plutus.V1.Ledger.Api (
+import PlutusLedgerApi.V1 (
   Address (Address),
   Credential (..),
   CurrencySymbol (CurrencySymbol),
@@ -50,11 +50,11 @@ import Plutus.V1.Ledger.Api (
   Value,
   toBuiltin,
  )
-import Plutus.V1.Ledger.Interval qualified as Interval
-import Plutus.V1.Ledger.Value qualified as Value
+import PlutusLedgerApi.V1.Interval qualified as Interval
+import PlutusLedgerApi.V1.Value qualified as Value
 
 import Data.ByteString.Char8 qualified as C
-import Data.ByteString.Hash (sha2)
+import Data.ByteString.Hash (sha2_256)
 
 import Agora.Effect.TreasuryWithdrawal (
   TreasuryWithdrawalDatum (TreasuryWithdrawalDatum),
@@ -71,11 +71,11 @@ signer = "8a30896c4fd5e79843e4ca1bd2cdbaa36f8c0bc3be7401214142019c"
 
 -- | List of users who the effect will pay to.
 users :: [Credential]
-users = PubKeyCredential . PubKeyHash . toBuiltin . sha2 . C.pack . show <$> ([1 ..] :: [Integer])
+users = PubKeyCredential . PubKeyHash . toBuiltin . sha2_256 . C.pack . show <$> ([1 ..] :: [Integer])
 
 -- | List of users who the effect will pay to.
 treasuries :: [Credential]
-treasuries = ScriptCredential . ValidatorHash . toBuiltin . sha2 . C.pack . show <$> ([1 ..] :: [Integer])
+treasuries = ScriptCredential . ValidatorHash . toBuiltin . sha2_256 . C.pack . show <$> ([1 ..] :: [Integer])
 
 inputGAT :: TxInInfo
 inputGAT =
@@ -87,6 +87,7 @@ inputGAT =
       , txOutDatumHash = Just (DatumHash "")
       }
 
+-- | Create an input given the index of the treasury and the 'Value' at this input.
 inputTreasury :: Int -> Value -> TxInInfo
 inputTreasury indx val =
   TxInInfo
@@ -97,6 +98,7 @@ inputTreasury indx val =
       , txOutDatumHash = Just (DatumHash "")
       }
 
+-- | Create a input given the index of the user and the 'Value' at this input.
 inputUser :: Int -> Value -> TxInInfo
 inputUser indx val =
   TxInInfo
@@ -107,6 +109,7 @@ inputUser indx val =
       , txOutDatumHash = Just (DatumHash "")
       }
 
+-- | Create a input representing the collateral given by a user.
 inputCollateral :: Int -> TxInInfo
 inputCollateral indx =
   TxInInfo -- Initiator
@@ -117,6 +120,7 @@ inputCollateral indx =
       , txOutDatumHash = Just (DatumHash "")
       }
 
+-- | Create an output at the nth treasury with the given 'Value'.
 outputTreasury :: Int -> Value -> TxOut
 outputTreasury indx val =
   TxOut
@@ -125,6 +129,7 @@ outputTreasury indx val =
     , txOutDatumHash = Nothing
     }
 
+-- | Create an output at the nth user with the given 'Value'.
 outputUser :: Int -> Value -> TxOut
 outputUser indx val =
   TxOut
@@ -133,6 +138,7 @@ outputUser indx val =
     , txOutDatumHash = Nothing
     }
 
+-- | Create a list of the outputs that are required as encoded in 'TreasuryWithdrawalDatum'.
 buildReceiversOutputFromDatum :: TreasuryWithdrawalDatum -> [TxOut]
 buildReceiversOutputFromDatum (TreasuryWithdrawalDatum xs _) = f <$> xs
   where
@@ -147,7 +153,7 @@ buildReceiversOutputFromDatum (TreasuryWithdrawalDatum xs _) = f <$> xs
 validator :: Validator
 validator = mkValidator $ treasuryWithdrawalValidator currSymbol
 
--- | 'TokenName' that represents the hash of the 'Stake' validator.
+-- | 'TokenName' that represents the hash of the 'Agora.Stake.Stake' validator.
 validatorHashTN :: TokenName
 validatorHashTN = let ValidatorHash vh = validatorHash validator in TokenName vh
 

@@ -19,8 +19,8 @@ import Agora.Aeson.Orphans ()
 import Data.Aeson qualified as Aeson
 import GHC.Generics qualified as GHC
 import Plutarch.Api.V1 (PMintingPolicy, PValidator, mintingPolicySymbol, mkMintingPolicy, mkValidator, validatorHash)
-import Plutus.V1.Ledger.Api (MintingPolicy, Validator, ValidatorHash)
-import Plutus.V1.Ledger.Value (CurrencySymbol)
+import PlutusLedgerApi.V1 (MintingPolicy, Validator, ValidatorHash)
+import PlutusLedgerApi.V1.Value (CurrencySymbol)
 
 -- | Bundle containing a 'Validator' and its hash.
 data ValidatorInfo = ValidatorInfo

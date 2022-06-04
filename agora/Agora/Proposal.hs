@@ -38,6 +38,7 @@ module Agora.Proposal (
 import GHC.Generics qualified as GHC
 import Generics.SOP (Generic, I (I))
 import Plutarch.Api.V1 (
+  KeyGuarantees (Unsorted),
   PDatumHash,
   PMap,
   PPubKeyHash,
@@ -63,8 +64,8 @@ import Plutarch.Lift (
 import Plutarch.SafeMoney (PDiscrete)
 import Plutarch.TryFrom (PTryFrom (PTryFromExcess, ptryFrom'))
 import Plutarch.Unsafe (punsafeCoerce)
-import Plutus.V1.Ledger.Api (DatumHash, PubKeyHash, ValidatorHash)
-import Plutus.V1.Ledger.Value (AssetClass)
+import PlutusLedgerApi.V1 (DatumHash, PubKeyHash, ValidatorHash)
+import PlutusLedgerApi.V1.Value (AssetClass)
 
 --------------------------------------------------------------------------------
 -- Haskell-land
@@ -322,14 +323,14 @@ deriving via (DerivePConstantViaData ProposalStatus PProposalStatus) instance (P
 -- | Plutarch-level version of 'ProposalThresholds'.
 newtype PProposalThresholds (s :: S) = PProposalThresholds
   { getProposalThresholds ::
-    Term
-      s
-      ( PDataRecord
-          '[ "execute" ':= PDiscrete GTTag
-           , "draft" ':= PDiscrete GTTag
-           , "vote" ':= PDiscrete GTTag
-           ]
-      )
+      Term
+        s
+        ( PDataRecord
+            '[ "execute" ':= PDiscrete GTTag
+             , "draft" ':= PDiscrete GTTag
+             , "vote" ':= PDiscrete GTTag
+             ]
+        )
   }
   deriving stock (GHC.Generic)
   deriving anyclass (Generic)
@@ -343,17 +344,17 @@ deriving via (DerivePConstantViaData ProposalThresholds PProposalThresholds) ins
 
 -- | Plutarch-level version of 'ProposalVotes'.
 newtype PProposalVotes (s :: S)
-  = PProposalVotes (Term s (PMap PResultTag PInteger))
-  deriving (PlutusType, PIsData) via (DerivePNewtype PProposalVotes (PMap PResultTag PInteger))
+  = PProposalVotes (Term s (PMap 'Unsorted PResultTag PInteger))
+  deriving (PlutusType, PIsData) via (DerivePNewtype PProposalVotes (PMap 'Unsorted PResultTag PInteger))
 
 instance PUnsafeLiftDecl PProposalVotes where type PLifted PProposalVotes = ProposalVotes
 deriving via
-  (DerivePConstantViaNewtype ProposalVotes PProposalVotes (PMap PResultTag PInteger))
+  (DerivePConstantViaNewtype ProposalVotes PProposalVotes (PMap 'Unsorted PResultTag PInteger))
   instance
     (PConstantDecl ProposalVotes)
 
--- Plutarch-level version of 'emptyVotesFor'.
-pemptyVotesFor :: forall s a. (PIsData a) => Term s (PMap PResultTag a :--> PProposalVotes)
+-- | Plutarch-level version of 'emptyVotesFor'.
+pemptyVotesFor :: forall s a. (PIsData a) => Term s (PMap 'Unsorted PResultTag a :--> PProposalVotes)
 pemptyVotesFor =
   phoistAcyclic $
     plam
@@ -365,19 +366,19 @@ pemptyVotesFor =
 -- | Plutarch-level version of 'ProposalDatum'.
 newtype PProposalDatum (s :: S) = PProposalDatum
   { getProposalDatum ::
-    Term
-      s
-      ( PDataRecord
-          '[ "proposalId" ':= PProposalId
-           , "effects" ':= PMap PResultTag (PMap PValidatorHash PDatumHash)
-           , "status" ':= PProposalStatus
-           , "cosigners" ':= PBuiltinList (PAsData PPubKeyHash)
-           , "thresholds" ':= PProposalThresholds
-           , "votes" ':= PProposalVotes
-           , "timingConfig" ':= PProposalTimingConfig
-           , "startingTime" ':= PProposalStartingTime
-           ]
-      )
+      Term
+        s
+        ( PDataRecord
+            '[ "proposalId" ':= PProposalId
+             , "effects" ':= PMap 'Unsorted PResultTag (PMap 'Unsorted PValidatorHash PDatumHash)
+             , "status" ':= PProposalStatus
+             , "cosigners" ':= PBuiltinList (PAsData PPubKeyHash)
+             , "thresholds" ':= PProposalThresholds
+             , "votes" ':= PProposalVotes
+             , "timingConfig" ':= PProposalTimingConfig
+             , "startingTime" ':= PProposalStartingTime
+             ]
+        )
   }
   deriving stock (GHC.Generic)
   deriving anyclass (Generic)
@@ -451,7 +452,7 @@ proposalDatumValid proposal =
           , ptraceIfFalse "Proposal votes and effects are compatible with each other" $ pkeysEqual # datum.effects # pto (pfromData datum.votes)
           ]
 
-{- Find the winner result tag, given the votes, the quorum the "neutral" result tag.
+{- | Find the winner result tag, given the votes, the quorum the "neutral" result tag.
 
    The winner should be unambiguous, meaning that if two options have the same highest votes,
      the "neutral" option will be the winner.
@@ -530,7 +531,7 @@ phighestVotes = phoistAcyclic $
 pneutralOption ::
   Term
     s
-    ( PMap PResultTag (PMap PValidatorHash PDatumHash)
+    ( PMap 'Unsorted PResultTag (PMap 'Unsorted PValidatorHash PDatumHash)
         :--> PResultTag
     )
 pneutralOption = phoistAcyclic $
@@ -538,7 +539,7 @@ pneutralOption = phoistAcyclic $
     let l :: Term _ (PBuiltinList (PBuiltinPair (PAsData PResultTag) _))
         l = pto effects
 
-        f :: Term _ (PBuiltinPair (PAsData PResultTag) (PAsData (PMap _ _)) :--> PBool)
+        f :: Term _ (PBuiltinPair (PAsData PResultTag) (PAsData (PMap 'Unsorted _ _)) :--> PBool)
         f = phoistAcyclic $
           plam $ \((pfromData . (psndBuiltin #) -> el)) ->
             let el' :: Term _ (PBuiltinList _)

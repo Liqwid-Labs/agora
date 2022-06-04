@@ -125,12 +125,12 @@ import Plutarch.TryFrom ()
 
 --------------------------------------------------------------------------------
 
-import Plutus.V1.Ledger.Api (
+import PlutusLedgerApi.V1 (
   CurrencySymbol (..),
   MintingPolicy,
  )
-import Plutus.V1.Ledger.Scripts (ValidatorHash (..))
-import Plutus.V1.Ledger.Value (
+import PlutusLedgerApi.V1.Scripts (ValidatorHash (..))
+import PlutusLedgerApi.V1.Value (
   AssetClass (..),
  )
 
@@ -203,15 +203,15 @@ governorPolicy gov =
 
     - The UTXO which holds the GST must be spent.
     - The GST always stays at the validator's address.
-    - The new state UTXO has a valid datum of type 'GovernorDatum'.
+    - The new state UTXO has a valid datum of type 'Agora.Governor.GovernorDatum'.
 
   == Creating a Proposal
 
-  When the redeemer is 'CreateProposal', the script will check:
+  When the redeemer is 'Agora.Governor.CreateProposal', the script will check:
 
   - For governor's state datum:
 
-      * 'nextProposalId' is advanced.
+      * 'Agora.Governor.nextProposalId' is advanced.
       * Nothing is changed other that that.
 
   - Exactly one stake (the "input stake") must be provided in the input:
@@ -236,7 +236,7 @@ governorPolicy gov =
 
   == Minting GATs
 
-  When the redeemer is 'MintGATs', the script will check:
+  When the redeemer is 'Agora.Governor.MintGATs', the script will check:
 
   - Governor's state is not changed.
   - Exactly only one proposal is in the inputs. Let's call this the /input proposal/.
@@ -272,7 +272,7 @@ governorPolicy gov =
 
   == Changing the State
 
-  Redeemer 'MutateGovernor' allows the state datum to be changed by an external effect.
+  Redeemer 'Agora.Governor.MutateGovernor' allows the state datum to be changed by an external effect.
 
   In this case, the script will check
 
@@ -631,7 +631,7 @@ governorValidator gov =
           tcassert "Output GATs is more than minted GATs" $
             plength # outputsWithGAT #== gatCount
 
-          let gatOutputValidator' :: Term s (PMap PValidatorHash PDatumHash :--> PAsData PTxOut :--> PBool)
+          let gatOutputValidator' :: Term s (PMap _ PValidatorHash PDatumHash :--> PAsData PTxOut :--> PBool)
               gatOutputValidator' =
                 phoistAcyclic $
                   plam
@@ -679,7 +679,7 @@ governorValidator gov =
           pure $ popaque $ singleAuthorityTokenBurned patSymbol ctxF.txInfo txInfoF.mint
   where
     -- Get th amount of governance tokens in a value.
-    pgtValueOf :: Term s (PValue :--> PDiscrete GTTag)
+    pgtValueOf :: Term s (PValue _ _ :--> PDiscrete GTTag)
     pgtValueOf = phoistAcyclic $ pvalueDiscrete' gov.gtClassRef
 
     -- The currency symbol of authority token.

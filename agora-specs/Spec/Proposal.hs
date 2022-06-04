@@ -41,7 +41,7 @@ import Agora.Stake (
 import Agora.Stake.Scripts (stakeValidator)
 import Data.Default.Class (Default (def))
 import Data.Tagged (Tagged (Tagged), untag)
-import Plutus.V1.Ledger.Api (ScriptContext (..), ScriptPurpose (..))
+import PlutusLedgerApi.V1 (ScriptContext (..), ScriptPurpose (..))
 import PlutusTx.AssocMap qualified as AssocMap
 import Sample.Proposal qualified as Proposal
 import Sample.Shared (signer, signer2)
@@ -184,8 +184,8 @@ specs =
                                     [
                                       ( ResultTag 0
                                       , case initialState of
-                                        Draft -> 0
-                                        _ -> untag (def :: ProposalThresholds).countVoting + 1
+                                          Draft -> 0
+                                          _ -> untag (def :: ProposalThresholds).countVoting + 1
                                       )
                                     , (ResultTag 1, 0)
                                     ]
@@ -231,8 +231,8 @@ specs =
                                     [
                                       ( ResultTag 0
                                       , case initialState of
-                                        Draft -> 0
-                                        _ -> untag (def :: ProposalThresholds).countVoting + 1
+                                          Draft -> 0
+                                          _ -> untag (def :: ProposalThresholds).countVoting + 1
                                       )
                                     , (ResultTag 1, 0)
                                     ]

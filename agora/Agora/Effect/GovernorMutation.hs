@@ -43,8 +43,8 @@ import Plutarch.Unsafe (punsafeCoerce)
 
 --------------------------------------------------------------------------------
 
-import Plutus.V1.Ledger.Api (TxOutRef)
-import Plutus.V1.Ledger.Value (AssetClass (..))
+import PlutusLedgerApi.V1 (TxOutRef)
+import PlutusLedgerApi.V1.Value (AssetClass (..))
 import PlutusTx qualified
 
 --------------------------------------------------------------------------------
@@ -208,7 +208,7 @@ mutateGovernorValidator gov = makeEffect (authorityTokenSymbolFromGovernor gov) 
     return $ popaque $ pconstant ()
   where
     -- Get the amount of GST in the a given value.
-    gstValueOf :: Term s (PValue :--> PInteger)
+    gstValueOf :: Term s (PValue _ _ :--> PInteger)
     gstValueOf = phoistAcyclic $ plam $ \v -> pvalueOf # v # pconstant cs # pconstant tn
       where
         AssetClass (cs, tn) = governorSTAssetClassFromGovernor gov

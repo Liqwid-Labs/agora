@@ -24,8 +24,7 @@ import Agora.Proposal (ProposalId (..), ProposalThresholds (..))
 
 import Data.Tagged (Tagged (..))
 import Plutarch.Api.V1 (mkValidator, validatorHash)
-import Plutus.V1.Ledger.Address (scriptHashAddress)
-import Plutus.V1.Ledger.Api (
+import PlutusLedgerApi.V1 (
   Address,
   Datum (..),
   ToData (..),
@@ -37,9 +36,10 @@ import Plutus.V1.Ledger.Api (
   Validator,
   ValidatorHash (..),
  )
-import Plutus.V1.Ledger.Api qualified as Interval
-import Plutus.V1.Ledger.Value (AssetClass, assetClass)
-import Plutus.V1.Ledger.Value qualified as Value
+import PlutusLedgerApi.V1 qualified as Interval
+import PlutusLedgerApi.V1.Address (scriptHashAddress)
+import PlutusLedgerApi.V1.Value (AssetClass, assetClass)
+import PlutusLedgerApi.V1.Value qualified as Value
 
 --------------------------------------------------------------------------------
 

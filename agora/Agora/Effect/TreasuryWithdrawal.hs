@@ -20,12 +20,15 @@ import Generics.SOP (Generic, I (I))
 import Agora.Effect (makeEffect)
 import Agora.Utils (findTxOutByTxOutRef, isPubKey, paddValue, tcassert, tclet, tcmatch)
 import Plutarch.Api.V1 (
+  AmountGuarantees (Positive),
+  KeyGuarantees (Sorted),
   PCredential (..),
   PTuple,
   PValidator,
   PValue,
   ptuple,
  )
+import "plutarch" Plutarch.Api.V1.Value (pnormalize)
 import Plutarch.Internal (punsafeCoerce)
 
 import Plutarch.DataRepr (
@@ -35,8 +38,8 @@ import Plutarch.DataRepr (
  )
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (..))
 import Plutarch.TryFrom (PTryFrom (..))
-import Plutus.V1.Ledger.Credential (Credential)
-import Plutus.V1.Ledger.Value (CurrencySymbol, Value)
+import PlutusLedgerApi.V1.Credential (Credential)
+import PlutusLedgerApi.V1.Value (CurrencySymbol, Value)
 import PlutusTx qualified
 
 {- | Datum that encodes behavior of Treasury Withdrawal effect.
@@ -63,7 +66,7 @@ newtype PTreasuryWithdrawalDatum (s :: S)
       ( Term
           s
           ( PDataRecord
-              '[ "receivers" ':= PBuiltinList (PAsData (PTuple PCredential PValue))
+              '[ "receivers" ':= PBuiltinList (PAsData (PTuple PCredential (PValue 'Sorted 'Positive)))
                , "treasuries" ':= PBuiltinList (PAsData PCredential)
                ]
           )
@@ -135,8 +138,8 @@ treasuryWithdrawalValidator currSymbol = makeEffect currSymbol $
             # plam (\((pfield @"_0" #) . pfromData -> cred) -> pelem # cred # datum.treasuries)
         sumValues =
           pfoldr
-            # plam (\((pfield @"_1" #) . pfromData -> x) y -> paddValue # pfromData x # y)
-            # pconstant (mempty :: Value)
+            # plam (\((pfield @"_1" #) . pfromData -> x) ((pnormalize #) -> y) -> paddValue # pfromData x # y)
+            # punsafeCoerce (pconstant (mempty :: Value))
         treasuryInputValuesSum = sumValues #$ ofTreasury # inputValues
         treasuryOutputValuesSum = sumValues #$ ofTreasury # outputValues
         receiverValuesSum = sumValues # datum.receivers

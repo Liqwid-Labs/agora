@@ -17,7 +17,7 @@ import Prelude
 
 --------------------------------------------------------------------------------
 
-import Plutus.V1.Ledger.Api (
+import PlutusLedgerApi.V1 (
   Address (Address),
   Credential (PubKeyCredential, ScriptCredential),
   CurrencySymbol,
@@ -29,8 +29,8 @@ import Plutus.V1.Ledger.Api (
   ValidatorHash (ValidatorHash),
   Value,
  )
-import Plutus.V1.Ledger.Interval qualified as Interval
-import Plutus.V1.Ledger.Value qualified as Value
+import PlutusLedgerApi.V1.Interval qualified as Interval
+import PlutusLedgerApi.V1.Value qualified as Value
 import PlutusTx.AssocMap qualified as AssocMap
 import Test.Specification (
   SpecificationTree,
@@ -69,6 +69,7 @@ singleAuthorityTokenBurnedTest mint outs =
           perror
    in compile s
 
+-- | The SpecificationTree exported by this module.
 specs :: [SpecificationTree]
 specs =
   [ -- This is better suited for plutarch-test

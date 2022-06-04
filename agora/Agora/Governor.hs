@@ -63,8 +63,8 @@ import Plutarch.Unsafe (punsafeCoerce)
 
 --------------------------------------------------------------------------------
 
-import Plutus.V1.Ledger.Api (TxOutRef)
-import Plutus.V1.Ledger.Value (AssetClass (..))
+import PlutusLedgerApi.V1 (TxOutRef)
+import PlutusLedgerApi.V1.Value (AssetClass (..))
 import PlutusTx qualified
 
 --------------------------------------------------------------------------------
@@ -127,15 +127,15 @@ data Governor = Governor
 -- | Plutarch-level datum for the Governor script.
 newtype PGovernorDatum (s :: S) = PGovernorDatum
   { getGovernorDatum ::
-    Term
-      s
-      ( PDataRecord
-          '[ "proposalThresholds" ':= PProposalThresholds
-           , "nextProposalId" ':= PProposalId
-           , "proposalTimings" ':= PProposalTimingConfig
-           , "createProposalTimeRangeMaxWidth" ':= PMaxTimeRangeWidth
-           ]
-      )
+      Term
+        s
+        ( PDataRecord
+            '[ "proposalThresholds" ':= PProposalThresholds
+             , "nextProposalId" ':= PProposalId
+             , "proposalTimings" ':= PProposalTimingConfig
+             , "createProposalTimeRangeMaxWidth" ':= PMaxTimeRangeWidth
+             ]
+        )
   }
   deriving stock (GHC.Generic)
   deriving anyclass (Generic)
@@ -183,6 +183,7 @@ getNextProposalId (ProposalId pid) = ProposalId $ pid + 1
 
 --------------------------------------------------------------------------------
 
+-- | Check whether a particular 'PGovernorDatum' is well-formed.
 governorDatumValid :: Term s (PGovernorDatum :--> PBool)
 governorDatumValid = phoistAcyclic $
   plam $ \datum -> unTermCont $ do

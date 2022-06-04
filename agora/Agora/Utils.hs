@@ -65,18 +65,20 @@ module Agora.Utils (
 
 --------------------------------------------------------------------------------
 
-import Plutus.V1.Ledger.Api (
+import PlutusLedgerApi.V1 (
   Address (..),
   Credential (..),
   CurrencySymbol,
   TokenName (..),
   ValidatorHash (..),
  )
-import Plutus.V1.Ledger.Value (AssetClass (..))
+import PlutusLedgerApi.V1.Value (AssetClass (..))
 
 --------------------------------------------------------------------------------
 
 import Plutarch.Api.V1 (
+  AmountGuarantees (NoGuarantees, NonZero, Positive),
+  KeyGuarantees (Sorted, Unsorted),
   PAddress,
   PCredential (PScriptCredential),
   PCurrencySymbol,
@@ -103,6 +105,7 @@ import Plutarch.Builtin (pforgetData, ppairDataBuiltin)
 import Plutarch.Extra.Map (pkeys)
 import Plutarch.Reducible (Reducible (Reduce))
 import Plutarch.TryFrom (PTryFrom (PTryFromExcess))
+import Plutarch.Unsafe (punsafeCoerce)
 
 --------------------------------------------------------------------------------
 -- TermCont-based combinators. Some of these will live in plutarch eventually.
@@ -222,7 +225,9 @@ pisJust = phoistAcyclic $
       PNothing -> pconstant False
 
 -- | Get the sum of all values belonging to a particular CurrencySymbol.
-psymbolValueOf :: Term s (PCurrencySymbol :--> PValue :--> PInteger)
+psymbolValueOf ::
+  forall (keys :: KeyGuarantees) (amounts :: AmountGuarantees) (s :: S).
+  Term s (PCurrencySymbol :--> PValue keys amounts :--> PInteger)
 psymbolValueOf =
   phoistAcyclic $
     plam $ \sym value'' -> unTermCont $ do
@@ -233,33 +238,46 @@ psymbolValueOf =
       pure $ pfoldr # plam (\x v -> pfromData (psndBuiltin # x) + v) # 0 # m
 
 -- | Extract amount from PValue belonging to a Haskell-level AssetClass.
-passetClassValueOf' :: AssetClass -> Term s (PValue :--> PInteger)
+passetClassValueOf' ::
+  forall (keys :: KeyGuarantees) (amounts :: AmountGuarantees) (s :: S).
+  AssetClass ->
+  Term s (PValue keys amounts :--> PInteger)
 passetClassValueOf' (AssetClass (sym, token)) =
   phoistAcyclic $ plam $ \value -> pvalueOf # value # pconstant sym # pconstant token
 
 -- | Return '>=' on two values comparing by only a particular AssetClass.
-pgeqByClass :: Term s (PCurrencySymbol :--> PTokenName :--> PValue :--> PValue :--> PBool)
+pgeqByClass ::
+  forall (keys :: KeyGuarantees) (amounts :: AmountGuarantees) (s :: S).
+  Term s (PCurrencySymbol :--> PTokenName :--> PValue keys amounts :--> PValue keys amounts :--> PBool)
 pgeqByClass =
   phoistAcyclic $
     plam $ \cs tn a b ->
       pvalueOf # b # cs # tn #<= pvalueOf # a # cs # tn
 
 -- | Return '>=' on two values comparing by only a particular CurrencySymbol.
-pgeqBySymbol :: Term s (PCurrencySymbol :--> PValue :--> PValue :--> PBool)
+pgeqBySymbol ::
+  forall (keys :: KeyGuarantees) (amounts :: AmountGuarantees) (s :: S).
+  Term s (PCurrencySymbol :--> PValue keys amounts :--> PValue keys amounts :--> PBool)
 pgeqBySymbol =
   phoistAcyclic $
     plam $ \cs a b ->
       psymbolValueOf # cs # b #<= psymbolValueOf # cs # a
 
 -- | Return '>=' on two values comparing by only a particular Haskell-level AssetClass.
-pgeqByClass' :: AssetClass -> Term s (PValue :--> PValue :--> PBool)
+pgeqByClass' ::
+  forall (keys :: KeyGuarantees) (amounts :: AmountGuarantees) (s :: S).
+  AssetClass ->
+  Term s (PValue keys amounts :--> PValue keys amounts :--> PBool)
 pgeqByClass' ac =
   phoistAcyclic $
     plam $ \a b ->
       passetClassValueOf' ac # b #<= passetClassValueOf' ac # a
 
 -- | Union two maps using a merge function on collisions.
-pmapUnionWith :: forall k v s. PIsData v => Term s ((v :--> v :--> v) :--> PMap k v :--> PMap k v :--> PMap k v)
+pmapUnionWith ::
+  forall (k :: PType) (v :: PType) (keys :: KeyGuarantees) (s :: S).
+  PIsData v =>
+  Term s ((v :--> v :--> v) :--> PMap keys k v :--> PMap keys k v :--> PMap keys k v)
 pmapUnionWith = phoistAcyclic $
   -- TODO: this function is kinda suspect. I feel like a lot of optimizations could be done here
   plam $ \f xs' ys' -> unTermCont $ do
@@ -301,7 +319,10 @@ pmapMaybe = phoistAcyclic $
           _ -> self # f # xs
 
 -- | / O(n) /. Update the value at a given key in a `PMap`, have the same functionalities as 'Data.Map.update'.
-pupdate :: forall s k v. (PIsData k, PIsData v) => Term s ((v :--> PMaybe v) :--> k :--> PMap k v :--> PMap k v)
+pupdate ::
+  forall (k :: PType) (v :: PType) (keys :: KeyGuarantees) (s :: S).
+  (PIsData k, PIsData v) =>
+  Term s ((v :--> PMaybe v) :--> k :--> PMap keys k v :--> PMap keys k v)
 pupdate = phoistAcyclic $
   plam $ \f (pdata -> tk) (pto -> (ps :: Term _ (PBuiltinList _))) ->
     pcon $
@@ -324,7 +345,10 @@ pupdate = phoistAcyclic $
           # ps
 
 -- | / O(n) /. Map a function over all values in a 'PMap'.
-pmapMap :: forall s k a b. (PIsData k, PIsData a, PIsData b) => Term s ((a :--> b) :--> PMap k a :--> PMap k b)
+pmapMap ::
+  forall (k :: PType) (a :: PType) (b :: PType) (keys :: KeyGuarantees) (s :: S).
+  (PIsData k, PIsData a, PIsData b) =>
+  Term s ((a :--> b) :--> PMap keys k a :--> PMap keys k b)
 pmapMap = phoistAcyclic $
   plam $ \f (pto -> (ps :: Term _ (PBuiltinList _))) ->
     pcon $
@@ -340,8 +364,15 @@ pmapMap = phoistAcyclic $
             )
           # ps
 
+-- | Compute the guarantees known after adding two values.
+type family AddGuarantees (a :: AmountGuarantees) (b :: AmountGuarantees) where
+  AddGuarantees 'Positive 'Positive = 'Positive
+  AddGuarantees _ _ = 'NoGuarantees
+
 -- | Add two 'PValue's together.
-paddValue :: forall s. Term s (PValue :--> PValue :--> PValue)
+paddValue ::
+  forall (keys :: KeyGuarantees) (as :: AmountGuarantees) (bs :: AmountGuarantees) (s :: S).
+  Term s (PValue keys as :--> PValue keys bs :--> PValue keys (AddGuarantees as bs))
 paddValue = phoistAcyclic $
   plam $ \a' b' -> unTermCont $ do
     PValue a <- tcmatch a'
@@ -353,7 +384,9 @@ paddValue = phoistAcyclic $
         )
 
 -- | Sum of all value at input.
-pvalueSpent :: Term s (PBuiltinList (PAsData PTxInInfo) :--> PValue)
+pvalueSpent ::
+  forall (s :: S).
+  Term s (PBuiltinList (PAsData PTxInInfo) :--> PValue 'Sorted 'Positive)
 pvalueSpent = phoistAcyclic $
   plam $ \inputs ->
     pfoldr
@@ -368,7 +401,8 @@ pvalueSpent = phoistAcyclic $
                     (\(PTxOut o) -> pfromData $ pfield @"value" # o)
                   # v
         )
-      # pconstant mempty
+      -- TODO: This should be possible without coercions, but I can't figure out the types atm.
+      # punsafeCoerce (pconstant mempty :: Term _ (PValue 'Unsorted 'NonZero))
       # inputs
 
 -- | Find the TxInInfo by a TxOutRef.
@@ -415,7 +449,10 @@ ptokenSpent =
 {- | True if both maps have exactly the same keys.
      Using @'#=='@ is not sufficient, because keys returned are not ordered.
 -}
-pkeysEqual :: (POrd k, PIsData k) => forall (s :: S) a b. Term s (PMap k a :--> PMap k b :--> PBool)
+pkeysEqual ::
+  forall (k :: PType) (a :: PType) (b :: PType) (keys :: KeyGuarantees) (s :: S).
+  (POrd k, PIsData k) =>
+  Term s (PMap keys k a :--> PMap keys k b :--> PBool)
 pkeysEqual = phoistAcyclic $
   plam $ \p q -> unTermCont $ do
     pks <- tclet $ pkeys # p
@@ -575,7 +612,9 @@ phalve = phoistAcyclic $ plam $ \l -> go # l # l
 -}
 
 -- | Create a value with a single asset class.
-psingletonValue :: forall s. Term s (PCurrencySymbol :--> PTokenName :--> PInteger :--> PValue)
+psingletonValue ::
+  forall (keys :: KeyGuarantees) (amounts :: AmountGuarantees) (s :: S).
+  Term s (PCurrencySymbol :--> PTokenName :--> PInteger :--> PValue keys amounts)
 psingletonValue = phoistAcyclic $
   plam $ \sym tok int ->
     let innerTup = pcon $ PMap $ psingleton #$ ppairDataBuiltin # pdata tok # pdata int
@@ -645,7 +684,9 @@ getMintingPolicySymbol :: ClosedTerm PMintingPolicy -> CurrencySymbol
 getMintingPolicySymbol v = mintingPolicySymbol $ mkMintingPolicy v
 
 -- | The entire value only contains one token of the given currency symbol.
-hasOnlyOneTokenOfCurrencySymbol :: Term s (PCurrencySymbol :--> PValue :--> PBool)
+hasOnlyOneTokenOfCurrencySymbol ::
+  forall (keys :: KeyGuarantees) (amounts :: AmountGuarantees) (s :: S).
+  Term s (PCurrencySymbol :--> PValue keys amounts :--> PBool)
 hasOnlyOneTokenOfCurrencySymbol = phoistAcyclic $
   plam $ \cs vs -> P.do
     psymbolValueOf # cs # vs #== 1
@@ -687,5 +728,6 @@ mustBePDJust = phoistAcyclic $
     PDJust ((pfield @"_0" #) -> v) -> v
     _ -> ptraceError emsg
 
+-- | Create an 'Address' from a given 'ValidatorHash' with no 'PlutusLedgerApi.V1.Credential.StakingCredential'.
 validatorHashToAddress :: ValidatorHash -> Address
 validatorHashToAddress vh = Address (ScriptCredential vh) Nothing

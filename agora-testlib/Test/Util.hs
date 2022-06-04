@@ -25,8 +25,8 @@ import Data.ByteString.Lazy qualified as ByteString.Lazy
 --------------------------------------------------------------------------------
 
 import Plutarch.Crypto (pblake2b_256)
-import Plutus.V1.Ledger.Interval as PlutusTx
-import Plutus.V1.Ledger.Scripts (Datum (Datum), DatumHash (DatumHash))
+import PlutusLedgerApi.V1.Interval as PlutusTx
+import PlutusLedgerApi.V1.Scripts (Datum (Datum), DatumHash (DatumHash))
 import PlutusTx.AssocMap qualified as AssocMap
 import PlutusTx.Builtins qualified as PlutusTx
 import PlutusTx.IsData qualified as PlutusTx
@@ -34,11 +34,11 @@ import PlutusTx.Ord qualified as PlutusTx
 
 --------------------------------------------------------------------------------
 
-{- | Create a pair from data for use in 'txInfoData'.
+{- | Create a pair from data for use in 'PlutusLedgerApi.V1.Contexts.txInfoData'.
 
    Example:
    @
-     myTxInfo { 'txInfoData' = ['datumPair' myDatum] }
+     myTxInfo { 'PlutusLedgerApi.V1.Contexts.txInfoData' = ['datumPair' myDatum] }
    @
 -}
 datumPair :: PlutusTx.ToData a => a -> (DatumHash, Datum)

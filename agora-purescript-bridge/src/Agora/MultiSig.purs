@@ -10,7 +10,7 @@ import Data.Lens.Record (prop)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype)
 import GHC.Num.Integer (Integer)
-import Plutus.V1.Ledger.Crypto (PubKeyHash)
+import PlutusLedgerApi.V1.Crypto (PubKeyHash)
 import Type.Proxy (Proxy(Proxy))
 
 newtype MultiSig = MultiSig

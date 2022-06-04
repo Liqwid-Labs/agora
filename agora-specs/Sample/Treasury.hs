@@ -18,13 +18,13 @@ module Sample.Treasury (
 ) where
 
 import Plutarch.Api.V1 (validatorHash)
-import Plutus.V1.Ledger.Address (Address (..))
-import Plutus.V1.Ledger.Api (
+import PlutusLedgerApi.V1 (
   BuiltinByteString,
   Credential (PubKeyCredential),
   PubKeyHash (PubKeyHash),
  )
-import Plutus.V1.Ledger.Contexts (
+import PlutusLedgerApi.V1.Address (Address (..))
+import PlutusLedgerApi.V1.Contexts (
   ScriptContext (..),
   ScriptPurpose (Minting),
   TxInInfo (..),
@@ -32,12 +32,12 @@ import Plutus.V1.Ledger.Contexts (
   TxOut (..),
   TxOutRef (..),
  )
-import Plutus.V1.Ledger.Credential (Credential (ScriptCredential))
-import Plutus.V1.Ledger.Interval qualified as Interval
-import Plutus.V1.Ledger.Scripts (
+import PlutusLedgerApi.V1.Credential (Credential (ScriptCredential))
+import PlutusLedgerApi.V1.Interval qualified as Interval
+import PlutusLedgerApi.V1.Scripts (
   ValidatorHash (ValidatorHash),
  )
-import Plutus.V1.Ledger.Value qualified as Value
+import PlutusLedgerApi.V1.Value qualified as Value
 import Sample.Shared (
   gatCs,
   gatTn,

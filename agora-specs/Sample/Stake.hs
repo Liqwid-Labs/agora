@@ -25,7 +25,7 @@ import Plutarch.Api.V1 (
   mkValidator,
   validatorHash,
  )
-import Plutus.V1.Ledger.Api (
+import PlutusLedgerApi.V1 (
   Address (Address),
   Credential (ScriptCredential),
   Datum (Datum),
@@ -38,10 +38,10 @@ import Plutus.V1.Ledger.Api (
   TxOut (txOutAddress, txOutDatumHash, txOutValue),
   ValidatorHash (ValidatorHash),
  )
-import Plutus.V1.Ledger.Contexts (TxOut (TxOut), TxOutRef (TxOutRef))
-import Plutus.V1.Ledger.Interval qualified as Interval
-import Plutus.V1.Ledger.Value (TokenName (TokenName))
-import Plutus.V1.Ledger.Value qualified as Value
+import PlutusLedgerApi.V1.Contexts (TxOut (TxOut), TxOutRef (TxOutRef))
+import PlutusLedgerApi.V1.Interval qualified as Interval
+import PlutusLedgerApi.V1.Value (TokenName (TokenName))
+import PlutusLedgerApi.V1.Value qualified as Value
 
 --------------------------------------------------------------------------------
 

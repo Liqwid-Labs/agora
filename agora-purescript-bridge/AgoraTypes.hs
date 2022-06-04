@@ -2,6 +2,7 @@ module AgoraTypes (agoraTypes) where
 
 --------------------------------------------------------------------------------
 
+import Data.Proxy (Proxy (..))
 import Language.PureScript.Bridge (
   Language (Haskell),
   SumType,
@@ -24,30 +25,30 @@ import Agora.Treasury qualified as Treasury
 agoraTypes :: [SumType 'Haskell]
 agoraTypes =
   [ -- Proposal
-    mkSumType @Proposal.ProposalId
-  , mkSumType @Proposal.ResultTag
-  , mkSumType @Proposal.ProposalStatus
-  , mkSumType @Proposal.ProposalThresholds
-  , mkSumType @Proposal.ProposalVotes
-  , mkSumType @Proposal.ProposalDatum
-  , mkSumType @Proposal.ProposalRedeemer
-  , mkSumType @Proposal.Proposal
+    mkSumType (Proxy @Proposal.ProposalId)
+  , mkSumType (Proxy @Proposal.ResultTag)
+  , mkSumType (Proxy @Proposal.ProposalStatus)
+  , mkSumType (Proxy @Proposal.ProposalThresholds)
+  , mkSumType (Proxy @Proposal.ProposalVotes)
+  , mkSumType (Proxy @Proposal.ProposalDatum)
+  , mkSumType (Proxy @Proposal.ProposalRedeemer)
+  , mkSumType (Proxy @Proposal.Proposal)
   , -- Governor
-    mkSumType @Governor.GovernorDatum
-  , mkSumType @Governor.GovernorRedeemer
-  , mkSumType @Governor.Governor
+    mkSumType (Proxy @Governor.GovernorDatum)
+  , mkSumType (Proxy @Governor.GovernorRedeemer)
+  , mkSumType (Proxy @Governor.Governor)
   , -- MultiSig
-    mkSumType @MultiSig.MultiSig
+    mkSumType (Proxy @MultiSig.MultiSig)
   , -- Stake
-    mkSumType @Stake.Stake
-  , mkSumType @Stake.ProposalLock
-  , mkSumType @Stake.StakeRedeemer
-  , mkSumType @Stake.StakeDatum
+    mkSumType (Proxy @Stake.Stake)
+  , mkSumType (Proxy @Stake.ProposalLock)
+  , mkSumType (Proxy @Stake.StakeRedeemer)
+  , mkSumType (Proxy @Stake.StakeDatum)
   , -- Treasury
-    mkSumType @Treasury.TreasuryRedeemer
+    mkSumType (Proxy @Treasury.TreasuryRedeemer)
   , -- AuthorityToken
-    mkSumType @AuthorityToken.AuthorityToken
+    mkSumType (Proxy @AuthorityToken.AuthorityToken)
   , -- Effects
-    mkSumType @TreasuryWithdrawalEffect.TreasuryWithdrawalDatum
-  , mkSumType @GovernorMutation.MutateGovernorDatum
+    mkSumType (Proxy @TreasuryWithdrawalEffect.TreasuryWithdrawalDatum)
+  , mkSumType (Proxy @GovernorMutation.MutateGovernorDatum)
   ]
