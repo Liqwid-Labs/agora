@@ -369,9 +369,9 @@ newtype PProposalVotes (s :: S)
   deriving (PlutusType, PIsData) via (DerivePNewtype PProposalVotes (PMap 'Unsorted PResultTag PInteger))
 
 -- | Retract votes given the option and the amount of votes.
-pretractVotes :: Term s (PProposalVotes :--> PResultTag :--> PInteger :--> PProposalVotes)
+pretractVotes :: Term s (PResultTag :--> PInteger :--> PProposalVotes :--> PProposalVotes)
 pretractVotes = phoistAcyclic $
-  plam $ \votes rt count ->
+  plam $ \rt count votes ->
     let voteMap :: Term _ (PMap 'Unsorted PResultTag PInteger)
         voteMap = pto votes
      in pcon $

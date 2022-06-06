@@ -416,19 +416,19 @@ proposalValidator proposal =
           pguardC "Stake input relevant" $
             pmatch stakeUsage $ \case
               PDidNothing ->
-                ptrace "Not relevant" $
+                ptraceIfFalse "Stake should be relevant" $
                   pconstant False
               PCreated ->
-                ptraceIfFalse "Too early" $
+                ptraceIfFalse "Removing creator's locks means status is Finished" $
                   proposalF.status #== pconstantData Finished
               PVotedFor rt ->
-                ptraceIfFalse "Result tag not match" $
+                ptraceIfFalse "Result tag should match the one given in the redeemer" $
                   rt #== retractFrom
 
           -- The count of removing votes is equal to the 'stakeAmount' of input stake.
           retractCount <-
             pletC $
-              pmatch stakeInF.stakedAmount $ (\(PDiscrete v) -> pextract # v)
+              pmatch stakeInF.stakedAmount $ \(PDiscrete v) -> pextract # v
 
           -- The votes can only change when the proposal still allows voting.
           let shouldUpdateVotes =
@@ -439,7 +439,7 @@ proposalValidator proposal =
             pif
               shouldUpdateVotes
               ( let -- Remove votes and leave other parts of the proposal as it.
-                    expectedVotes = pretractVotes # proposalF.votes # retractFrom # retractCount
+                    expectedVotes = pretractVotes # retractFrom # retractCount # proposalF.votes
 
                     expectedProposalOut =
                       mkRecordConstr
