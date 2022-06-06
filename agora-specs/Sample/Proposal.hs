@@ -408,7 +408,7 @@ mkTransitionTxInfo ::
   ProposalStartingTime ->
   -- | Valid time range of the transaction.
   POSIXTimeRange ->
-  -- | Add a unchanged stake or not.
+  -- | Whether to add an unchanged stake or not.
   Bool ->
   TxInfo
 mkTransitionTxInfo from to effects votes startingTime validTime shouldAddUnchangedStake =
