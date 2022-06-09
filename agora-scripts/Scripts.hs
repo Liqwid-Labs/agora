@@ -1,3 +1,5 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 {- |
 Module     : Scripts
 Maintainer : emi@haskell.fyi
@@ -28,6 +30,7 @@ import Agora.Treasury (treasuryValidator)
 import Control.Monad ((>=>))
 import Data.Aeson qualified as Aeson
 import Data.Tagged (Tagged)
+import Development.GitRev (gitBranch, gitHash)
 import GHC.Generics qualified as GHC
 import Options (Options (..), parseOptions)
 import Plutarch.Api.V1 (mintingPolicySymbol, mkMintingPolicy)
@@ -48,7 +51,8 @@ data ScriptParams = ScriptParams
 
 -- | Scripts that get exported.
 data AgoraScripts = AgoraScripts
-  { governorPolicyInfo :: PolicyInfo
+  { gitRev :: String
+  , governorPolicyInfo :: PolicyInfo
   , governorValidatorInfo :: ValidatorInfo
   , stakePolicyInfo :: PolicyInfo
   , stakeValidatorInfo :: ValidatorInfo
@@ -78,7 +82,8 @@ main = do
 agoraScripts :: ScriptParams -> AgoraScripts
 agoraScripts params =
   AgoraScripts
-    { governorPolicyInfo = mkPolicyInfo (governorPolicy governor)
+    { gitRev = revision
+    , governorPolicyInfo = mkPolicyInfo (governorPolicy governor)
     , governorValidatorInfo = mkValidatorInfo (governorValidator governor)
     , stakePolicyInfo = mkPolicyInfo (stakePolicy params.gtClassRef)
     , stakeValidatorInfo = mkValidatorInfo (stakeValidator stake)
@@ -88,6 +93,9 @@ agoraScripts params =
     , authorityTokenPolicyInfo = mkPolicyInfo (authorityTokenPolicy authorityToken)
     }
   where
+    revision :: String
+    revision = $(gitBranch) <> "@" <> $(gitHash)
+
     governor :: Governor
     governor =
       Governor

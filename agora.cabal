@@ -230,6 +230,7 @@ executable agora-scripts
   other-modules:  Options
   build-depends:
     , agora
+    , gitrev
     , optparse-applicative
 
 executable agora-purescript-bridge
