@@ -152,6 +152,7 @@ library
     Agora.Stake.Scripts
     Agora.Treasury
     Agora.Utils
+    Agora.Utils.BST
 
   other-modules:   Agora.Aeson.Orphans
   hs-source-dirs:  agora
