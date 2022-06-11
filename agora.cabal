@@ -143,6 +143,7 @@ library
     Agora.Effect.TreasuryWithdrawal
     Agora.Governor
     Agora.Governor.Scripts
+    Agora.GT.Policy
     Agora.MultiSig
     Agora.Proposal
     Agora.Proposal.Scripts

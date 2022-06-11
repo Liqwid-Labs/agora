@@ -8,6 +8,7 @@ Export scripts given configuration.
 module Main (main) where
 
 import Agora.AuthorityToken (AuthorityToken, authorityTokenPolicy)
+import Agora.GT.Policy (gtMintingPolicy)
 import Agora.Governor (Governor (Governor))
 import Agora.Governor qualified as Governor
 import Agora.Governor.Scripts (
@@ -56,6 +57,7 @@ data AgoraScripts = AgoraScripts
   , proposalValidatorInfo :: ValidatorInfo
   , treasuryValidatorInfo :: ValidatorInfo
   , authorityTokenPolicyInfo :: PolicyInfo
+  , gtPolicyInfo :: PolicyInfo
   }
   deriving anyclass (Aeson.ToJSON, Aeson.FromJSON)
   deriving stock (Show, Eq, GHC.Generic)
@@ -84,8 +86,11 @@ agoraScripts params =
     , stakeValidatorInfo = mkValidatorInfo (stakeValidator stake)
     , proposalPolicyInfo = mkPolicyInfo (proposalPolicy governorSTAssetClass)
     , proposalValidatorInfo = mkValidatorInfo (proposalValidator proposal)
-    , treasuryValidatorInfo = mkValidatorInfo (treasuryValidator authorityTokenSymbol)
+    , treasuryValidatorInfo =
+        mkValidatorInfo
+          (treasuryValidator authorityTokenSymbol)
     , authorityTokenPolicyInfo = mkPolicyInfo (authorityTokenPolicy authorityToken)
+    , gtPolicyInfo = mkPolicyInfo gtMintingPolicy
     }
   where
     governor :: Governor
@@ -104,7 +109,9 @@ agoraScripts params =
 
     governorSTAssetClass :: AssetClass
     governorSTAssetClass =
-      Value.assetClass (mintingPolicySymbol $ mkMintingPolicy $ governorPolicy governor) ""
+      Value.assetClass
+        (mintingPolicySymbol $ mkMintingPolicy $ governorPolicy governor)
+        ""
 
     proposal :: Proposal
     proposal = proposalFromGovernor governor
