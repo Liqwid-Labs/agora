@@ -7,7 +7,7 @@ on:
       - "flake.lock"
       - "agora.cabal"
     branches:
-      - master
+      - main
       - staging
   pull_request:
     paths:
@@ -88,7 +88,7 @@ jobs:
       # which is set to automatically deploy to https://liqwid-labs.github.io/agora/.
       - name: Publish Documentation
         uses: peaceiris/actions-gh-pages@v3
-        if: github.ref == 'refs/heads/master'
+        if: github.ref == 'refs/heads/main'
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./result/agora/html
