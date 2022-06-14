@@ -17,17 +17,17 @@
     "plutarch/haskell-nix/nixpkgs-unstable";
 
   inputs.liqwid-plutarch-extra.url =
-    "git+ssh://git@github.com/Liqwid-Labs/liqwid-plutarch-extra?ref=main";
+    "github:Liqwid-Labs/liqwid-plutarch-extra?ref=main";
   inputs.plutarch-numeric.url =
-    "git+ssh://git@github.com/Liqwid-Labs/plutarch-numeric?ref=main";
+    "github:Liqwid-Labs/plutarch-numeric?ref=main";
   inputs.plutarch-safe-money.url =
-    "git+ssh://git@github.com/Liqwid-Labs/plutarch-safe-money?ref=main";
+    "github:Liqwid-Labs/plutarch-safe-money?ref=main";
 
   # Testing
   inputs.plutarch-quickcheck.url =
     "github:liqwid-labs/plutarch-quickcheck?ref=staging";
   inputs.plutarch-context-builder.url =
-    "git+ssh://git@github.com/Liqwid-Labs/plutarch-context-builder?ref=main";
+    "github:Liqwid-Labs/plutarch-context-builder?ref=main";
 
   outputs = inputs@{ self, nixpkgs, nixpkgs-latest, haskell-nix, plutarch, ... }:
     let
