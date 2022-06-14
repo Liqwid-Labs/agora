@@ -29,14 +29,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2.4.0
 
-      - uses: webfactory/ssh-agent@v0.5.4
-        with:
-          ssh-private-key: |
-            ${{ secrets.LIQWID_PLUTARCH_EXTRA_PRIVATE }}
-            ${{ secrets.PLUTARCH_NUMERIC_PRIVATE }}
-            ${{ secrets.PLUTARCH_SAFE_MONEY_PRIVATE }}
-            ${{ secrets.PLUTARCH_CONTEXT_BUILDER_PRIVATE }}
-      
       - uses: cachix/install-nix-action@v16
         name: Set up Nix and IOHK caches
         with:
@@ -58,14 +50,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2.4.0
-      
-      - uses: webfactory/ssh-agent@v0.5.4
-        with:
-          ssh-private-key: |
-            ${{ secrets.LIQWID_PLUTARCH_EXTRA_PRIVATE }}
-            ${{ secrets.PLUTARCH_NUMERIC_PRIVATE }}
-            ${{ secrets.PLUTARCH_SAFE_MONEY_PRIVATE }}
-            ${{ secrets.PLUTARCH_CONTEXT_BUILDER_PRIVATE }}	    
 
       - uses: cachix/install-nix-action@v16
         name: Set up Nix and IOHK caches
