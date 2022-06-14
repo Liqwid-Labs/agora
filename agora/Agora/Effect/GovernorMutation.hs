@@ -31,12 +31,14 @@ import Plutarch.Api.V1 (
   PValidator,
   PValue,
  )
+import Plutarch.Api.V1.ScriptContext (ptryFindDatum)
 import "liqwid-plutarch-extra" Plutarch.Api.V1.Value (pvalueOf)
 import Plutarch.DataRepr (
   DerivePConstantViaData (..),
   PDataFields,
   PIsDataReprInstances (PIsDataReprInstances),
  )
+import Plutarch.Extra.TermCont (pguardC)
 import Plutarch.Lift (PConstantDecl, PLifted, PUnsafeLiftDecl)
 import Plutarch.TryFrom (PTryFrom (..))
 import Plutarch.Unsafe (punsafeCoerce)
@@ -64,8 +66,6 @@ import Agora.Utils (
   isScriptAddress,
   mustBePDJust,
   mustBePJust,
-  ptryFindDatum,
-  tcassert,
  )
 
 --------------------------------------------------------------------------------
@@ -145,11 +145,11 @@ mutateGovernorValidator gov = makeEffect (authorityTokenSymbolFromGovernor gov) 
     let mint :: Term _ (PBuiltinList _)
         mint = pto $ pto $ pto $ pfromData txInfoF.mint
 
-    tcassert "Nothing should be minted/burnt other than GAT" $
+    pguardC "Nothing should be minted/burnt other than GAT" $
       plength # mint #== 1
 
     -- Only two script inputs are alloed: one from the effect, one from the governor.
-    tcassert "Only self and governor script inputs are allowed" $
+    pguardC "Only self and governor script inputs are allowed" $
       pfoldr
         # phoistAcyclic
           ( plam $ \inInfo count ->
@@ -176,11 +176,11 @@ mutateGovernorValidator gov = makeEffect (authorityTokenSymbolFromGovernor gov) 
     govInInfo <- tcont $ pletFields @'["outRef", "resolved"] $ inputWithGST
 
     -- The effect can only modify the governor UTXO referenced in the datum.
-    tcassert "Can only modify the pinned governor" $
+    pguardC "Can only modify the pinned governor" $
       govInInfo.outRef #== datumF.governorRef
 
     -- The transaction can only have one output, which should be sent to the governor.
-    tcassert "Only governor output is allowed" $
+    pguardC "Only governor output is allowed" $
       plength # pfromData txInfoF.outputs #== 1
 
     let govAddress = pfield @"address" #$ govInInfo.resolved
@@ -188,10 +188,10 @@ mutateGovernorValidator gov = makeEffect (authorityTokenSymbolFromGovernor gov) 
 
     govOutput <- tcont $ pletFields @'["address", "value", "datumHash"] govOutput'
 
-    tcassert "No output to the governor" $
+    pguardC "No output to the governor" $
       govOutput.address #== govAddress
 
-    tcassert "Governor output doesn't carry the GST" $
+    pguardC "Governor output doesn't carry the GST" $
       gstValueOf # govOutput.value #== 1
 
     let governorOutputDatumHash =
@@ -202,8 +202,8 @@ mutateGovernorValidator gov = makeEffect (authorityTokenSymbolFromGovernor gov) 
               #$ ptryFindDatum # governorOutputDatumHash # txInfoF.datums
 
     -- Ensure the output governor datum is what we want.
-    tcassert "Unexpected governor datum" $ datumF.newDatum #== governorOutputDatum
-    tcassert "New governor datum should be valid" $ governorDatumValid # governorOutputDatum
+    pguardC "Unexpected governor datum" $ datumF.newDatum #== governorOutputDatum
+    pguardC "New governor datum should be valid" $ governorDatumValid # governorOutputDatum
 
     return $ popaque $ pconstant ()
   where

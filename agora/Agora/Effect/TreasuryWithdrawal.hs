@@ -18,7 +18,7 @@ import GHC.Generics qualified as GHC
 import Generics.SOP (Generic, I (I))
 
 import Agora.Effect (makeEffect)
-import Agora.Utils (findTxOutByTxOutRef, isPubKey, paddValue, tcassert, tclet, tcmatch)
+import Agora.Utils (findTxOutByTxOutRef, isPubKey)
 import Plutarch.Api.V1 (
   AmountGuarantees (Positive),
   KeyGuarantees (Sorted),
@@ -28,14 +28,15 @@ import Plutarch.Api.V1 (
   PValue,
   ptuple,
  )
-import "plutarch" Plutarch.Api.V1.Value (pnormalize)
 import Plutarch.Internal (punsafeCoerce)
 
+import "plutarch" Plutarch.Api.V1.Value (pnormalize)
 import Plutarch.DataRepr (
   DerivePConstantViaData (..),
   PDataFields,
   PIsDataReprInstances (..),
  )
+import Plutarch.Extra.TermCont (pguardC, pletC, pmatchC)
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (..))
 import Plutarch.TryFrom (PTryFrom (..))
 import PlutusLedgerApi.V1.Credential (Credential)
@@ -111,10 +112,10 @@ treasuryWithdrawalValidator currSymbol = makeEffect currSymbol $
   \_cs (datum' :: Term _ PTreasuryWithdrawalDatum) txOutRef' txInfo' -> unTermCont $ do
     datum <- tcont $ pletFields @'["receivers", "treasuries"] datum'
     txInfo <- tcont $ pletFields @'["outputs", "inputs"] txInfo'
-    PJust txOut <- tcmatch $ findTxOutByTxOutRef # txOutRef' # pfromData txInfo.inputs
+    PJust txOut <- pmatchC $ findTxOutByTxOutRef # txOutRef' # pfromData txInfo.inputs
     effInput <- tcont $ pletFields @'["address", "value"] $ txOut
     outputValues <-
-      tclet $
+      pletC $
         pmap
           # plam
             ( \(pfromData -> txOut') -> unTermCont $ do
@@ -124,7 +125,7 @@ treasuryWithdrawalValidator currSymbol = makeEffect currSymbol $
             )
           # txInfo.outputs
     inputValues <-
-      tclet $
+      pletC $
         pmap
           # plam
             ( \((pfield @"resolved" #) . pfromData -> txOut') -> unTermCont $ do
@@ -136,10 +137,13 @@ treasuryWithdrawalValidator currSymbol = makeEffect currSymbol $
     let ofTreasury =
           pfilter
             # plam (\((pfield @"_0" #) . pfromData -> cred) -> pelem # cred # datum.treasuries)
-        sumValues =
-          pfoldr
-            # plam (\((pfield @"_1" #) . pfromData -> x) ((pnormalize #) -> y) -> paddValue # pfromData x # y)
-            # punsafeCoerce (pconstant (mempty :: Value))
+        sumValues = phoistAcyclic $
+          plam $ \v ->
+            pnormalize
+              #$ pfoldr
+              # plam (\(pfromData . (pfield @"_1" #) -> x) y -> x <> y)
+              # mempty
+              # v
         treasuryInputValuesSum = sumValues #$ ofTreasury # inputValues
         treasuryOutputValuesSum = sumValues #$ ofTreasury # outputValues
         receiverValuesSum = sumValues # datum.receivers
@@ -148,7 +152,7 @@ treasuryWithdrawalValidator currSymbol = makeEffect currSymbol $
           pall # plam (\out -> pelem # out # outputValues)
             #$ datum.receivers
         excessShouldBePaidToInputs =
-          pdata (paddValue # receiverValuesSum # treasuryOutputValuesSum) #== pdata treasuryInputValuesSum
+          treasuryOutputValuesSum <> receiverValuesSum #== treasuryInputValuesSum
         shouldNotPayToEffect =
           pnot #$ pany
             # plam
@@ -166,8 +170,8 @@ treasuryWithdrawalValidator currSymbol = makeEffect currSymbol $
               )
             # inputValues
 
-    tcassert "Transaction should not pay to effects" shouldNotPayToEffect
-    tcassert "Transaction output does not match receivers" outputContentMatchesRecivers
-    tcassert "Remainders should be returned to the treasury" excessShouldBePaidToInputs
-    tcassert "Transaction should only have treasuries specified in the datum as input" inputsAreOnlyTreasuriesOrCollateral
+    pguardC "Transaction should not pay to effects" shouldNotPayToEffect
+    pguardC "Transaction output does not match receivers" outputContentMatchesRecivers
+    pguardC "Remainders should be returned to the treasury" excessShouldBePaidToInputs
+    pguardC "Transaction should only have treasuries specified in the datum as input" inputsAreOnlyTreasuriesOrCollateral
     pure . popaque $ pconstant ()

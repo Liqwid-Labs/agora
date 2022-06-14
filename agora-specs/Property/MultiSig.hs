@@ -12,7 +12,6 @@ import Agora.MultiSig (
   PMultiSig,
   pvalidatedByMultisig,
  )
-import Agora.Utils (tclet)
 import Data.Maybe (fromJust)
 import Data.Tagged (Tagged (Tagged))
 import Data.Universe (Finite (..), Universe (..))
@@ -24,6 +23,7 @@ import Plutarch.Context.Spending (
   signedWith,
   spendingContext,
  )
+import Plutarch.Extra.TermCont (pletC)
 import PlutusLedgerApi.V1 (
   ScriptContext (scriptContextTxInfo),
   TxInfo (txInfoSignatories),
@@ -98,8 +98,8 @@ expectedHs model = case classifyMultiSigProp model of
 -- | Actual implementation of @pvalidatedByMultisig@.
 actual :: Term s (PBuiltinPair PMultiSig PScriptContext :--> PBool)
 actual = plam $ \x -> unTermCont $ do
-  ms <- tclet $ pfstBuiltin # x
-  sc <- tclet $ psndBuiltin # x
+  ms <- pletC $ pfstBuiltin # x
+  sc <- pletC $ psndBuiltin # x
   pure $ pvalidatedByMultisig # ms # (pfield @"txInfo" # sc)
 
 -- | Proposed property.

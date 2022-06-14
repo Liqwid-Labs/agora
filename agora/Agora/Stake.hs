@@ -26,6 +26,8 @@ module Agora.Stake (
 
 --------------------------------------------------------------------------------
 
+import Control.Applicative (Const)
+import Data.Tagged (Tagged (..))
 import GHC.Generics qualified as GHC
 import Generics.SOP (Generic, I (I))
 import Prelude hiding (Num (..))
@@ -33,6 +35,7 @@ import Prelude hiding (Num (..))
 --------------------------------------------------------------------------------
 
 import PlutusLedgerApi.V1 (PubKeyHash)
+import PlutusLedgerApi.V1.Value (AssetClass)
 import PlutusTx qualified
 
 --------------------------------------------------------------------------------
@@ -46,30 +49,24 @@ import Plutarch.Api.V1 (
   PTxInInfo (PTxInInfo),
   PTxOut (PTxOut),
  )
+import Plutarch.Api.V1.AssetClass (PAssetClass, passetClassValueOf)
+import Plutarch.Api.V1.ScriptContext (ptryFindDatum)
 import Plutarch.DataRepr (
   DerivePConstantViaData (..),
   PDataFields,
   PIsDataReprInstances (PIsDataReprInstances),
  )
+import Plutarch.Extra.List (pnotNull)
+import Plutarch.Extra.TermCont (pletC, pmatchC)
 import Plutarch.Internal (punsafeCoerce)
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (..))
-import PlutusLedgerApi.V1.Value (AssetClass)
+import Plutarch.SafeMoney (PDiscrete)
+import Plutarch.TryFrom (PTryFrom (PTryFromExcess, ptryFrom'))
 
 --------------------------------------------------------------------------------
 
 import Agora.Proposal (PProposalId, PResultTag, ProposalId (..), ResultTag (..))
 import Agora.SafeMoney (GTTag)
-import Agora.Utils (
-  pnotNull,
-  ptryFindDatum,
-  tclet,
-  tcmatch,
- )
-import Control.Applicative (Const)
-import Data.Tagged (Tagged (..))
-import Plutarch.Api.V1.AssetClass (PAssetClass, passetClassValueOf)
-import Plutarch.SafeMoney (PDiscrete)
-import Plutarch.TryFrom (PTryFrom (PTryFromExcess, ptryFrom'))
 
 --------------------------------------------------------------------------------
 
@@ -300,10 +297,10 @@ isInputStakeOwnedBy ::
     )
 isInputStakeOwnedBy =
   plam $ \ac ss datums txInInfo' -> unTermCont $ do
-    PTxInInfo ((pfield @"resolved" #) -> txOut) <- tcmatch $ pfromData txInInfo'
-    PTxOut txOut' <- tcmatch txOut
+    PTxInInfo ((pfield @"resolved" #) -> txOut) <- pmatchC $ pfromData txInInfo'
+    PTxOut txOut' <- pmatchC txOut
     txOutF <- tcont $ pletFields @'["value", "datumHash"] txOut'
-    outStakeST <- tclet $ passetClassValueOf # txOutF.value # ac
+    outStakeST <- pletC $ passetClassValueOf # txOutF.value # ac
     pure $
       pmatch txOutF.datumHash $ \case
         PDNothing _ -> pcon PFalse

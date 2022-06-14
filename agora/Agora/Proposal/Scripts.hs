@@ -31,17 +31,6 @@ import Agora.Utils (
   getMintingPolicySymbol,
   mustBePJust,
   mustFindDatum',
-  pisJust,
-  pisUniqBy,
-  psymbolValueOf,
-  ptokenSpent,
-  ptxSignedBy,
-  pupdate,
-  pvalueSpent,
-  tcassert,
-  tclet,
-  tcmatch,
-  tctryFrom,
  )
 import Plutarch.Api.V1 (
   PMintingPolicy,
@@ -51,10 +40,23 @@ import Plutarch.Api.V1 (
   PValidator,
  )
 import Plutarch.Api.V1.AssetClass (passetClass, passetClassValueOf)
+import Plutarch.Api.V1.ScriptContext (
+  pisTokenSpent,
+  ptxSignedBy,
+  pvalueSpent,
+ )
+import "liqwid-plutarch-extra" Plutarch.Api.V1.Value (psymbolValueOf)
 import Plutarch.Extra.Comonad (pextract)
-import Plutarch.Extra.Map (plookup)
+import Plutarch.Extra.List (pisUniqBy)
+import Plutarch.Extra.Map (plookup, pupdate)
+import Plutarch.Extra.Maybe (pisJust)
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
-import Plutarch.Extra.TermCont (pmatchC)
+import Plutarch.Extra.TermCont (
+  pguardC,
+  pletC,
+  pmatchC,
+  ptryFromC,
+ )
 import Plutarch.SafeMoney (PDiscrete (..))
 import PlutusLedgerApi.V1.Value (AssetClass (AssetClass))
 
@@ -82,27 +84,27 @@ proposalPolicy ::
   ClosedTerm PMintingPolicy
 proposalPolicy (AssetClass (govCs, govTn)) =
   plam $ \_redeemer ctx' -> unTermCont $ do
-    PScriptContext ctx' <- tcmatch ctx'
+    PScriptContext ctx' <- pmatchC ctx'
     ctx <- tcont $ pletFields @'["txInfo", "purpose"] ctx'
-    PTxInfo txInfo' <- tcmatch $ pfromData ctx.txInfo
+    PTxInfo txInfo' <- pmatchC $ pfromData ctx.txInfo
     txInfo <- tcont $ pletFields @'["inputs", "mint"] txInfo'
-    PMinting _ownSymbol <- tcmatch $ pfromData ctx.purpose
+    PMinting _ownSymbol <- pmatchC $ pfromData ctx.purpose
 
     let inputs = txInfo.inputs
         mintedValue = pfromData txInfo.mint
 
-    PMinting ownSymbol' <- tcmatch $ pfromData ctx.purpose
+    PMinting ownSymbol' <- pmatchC $ pfromData ctx.purpose
     let mintedProposalST =
           passetClassValueOf
             # mintedValue
             # (passetClass # (pfield @"_0" # ownSymbol') # pconstant "")
 
-    tcassert "Governance state-thread token must move" $
-      ptokenSpent
+    pguardC "Governance state-thread token must move" $
+      pisTokenSpent
         # (passetClass # pconstant govCs # pconstant govTn)
         # inputs
 
-    tcassert "Minted exactly one proposal ST" $
+    pguardC "Minted exactly one proposal ST" $
       mintedProposalST #== 1
 
     pure $ popaque (pconstant ())
@@ -136,10 +138,10 @@ A list of all time-sensitive redeemers and their requirements:
 proposalValidator :: Proposal -> ClosedTerm PValidator
 proposalValidator proposal =
   plam $ \datum redeemer ctx' -> unTermCont $ do
-    PScriptContext ctx' <- tcmatch ctx'
+    PScriptContext ctx' <- pmatchC ctx'
     ctx <- tcont $ pletFields @'["txInfo", "purpose"] ctx'
-    txInfo <- tclet $ pfromData ctx.txInfo
-    PTxInfo txInfo' <- tcmatch txInfo
+    txInfo <- pletC $ pfromData ctx.txInfo
+    PTxInfo txInfo' <- pmatchC txInfo
     txInfoF <-
       tcont $
         pletFields
@@ -151,15 +153,15 @@ proposalValidator proposal =
             , "validRange"
             ]
           txInfo'
-    PSpending ((pfield @"_0" #) -> txOutRef) <- tcmatch $ pfromData ctx.purpose
+    PSpending ((pfield @"_0" #) -> txOutRef) <- pmatchC $ pfromData ctx.purpose
 
-    PJust txOut <- tcmatch $ findTxOutByTxOutRef # txOutRef # txInfoF.inputs
+    PJust txOut <- pmatchC $ findTxOutByTxOutRef # txOutRef # txInfoF.inputs
     txOutF <- tcont $ pletFields @'["address", "value"] $ txOut
 
     (pfromData -> proposalDatum, _) <-
-      tctryFrom @(PAsData PProposalDatum) datum
+      ptryFromC @(PAsData PProposalDatum) datum
     (pfromData -> proposalRedeemer, _) <-
-      tctryFrom @(PAsData PProposalRedeemer) redeemer
+      ptryFromC @(PAsData PProposalRedeemer) redeemer
 
     proposalF <-
       tcont $
@@ -175,29 +177,29 @@ proposalValidator proposal =
             ]
           proposalDatum
 
-    ownAddress <- tclet $ txOutF.address
+    ownAddress <- pletC $ txOutF.address
 
     let stCurrencySymbol =
           pconstant $ getMintingPolicySymbol (proposalPolicy proposal.governorSTAssetClass)
-    valueSpent <- tclet $ pvalueSpent # txInfoF.inputs
-    spentST <- tclet $ psymbolValueOf # stCurrencySymbol #$ valueSpent
+    valueSpent <- pletC $ pvalueSpent # txInfoF.inputs
+    spentST <- pletC $ psymbolValueOf # stCurrencySymbol #$ valueSpent
 
     let AssetClass (stakeSym, stakeTn) = proposal.stakeSTAssetClass
     stakeSTAssetClass <-
-      tclet $ passetClass # pconstant stakeSym # pconstant stakeTn
+      pletC $ passetClass # pconstant stakeSym # pconstant stakeTn
     spentStakeST <-
-      tclet $ passetClassValueOf # valueSpent # stakeSTAssetClass
+      pletC $ passetClassValueOf # valueSpent # stakeSTAssetClass
 
-    signedBy <- tclet $ ptxSignedBy # txInfoF.signatories
+    signedBy <- pletC $ ptxSignedBy # txInfoF.signatories
 
-    tcassert "ST at inputs must be 1" (spentST #== 1)
+    pguardC "ST at inputs must be 1" (spentST #== 1)
 
-    currentTime <- tclet $ currentProposalTime # txInfoF.validRange
+    currentTime <- pletC $ currentProposalTime # txInfoF.validRange
 
     -- Filter out own output with own address and PST.
     -- Delay the evaluation cause in some cases there won't be any continuing output.
     ownOutput <-
-      tclet $
+      pletC $
         mustBePJust # "Own output should be present" #$ pfind
           # plam
             ( \input -> unTermCont $ do
@@ -209,7 +211,7 @@ proposalValidator proposal =
           # pfromData txInfoF.outputs
 
     proposalOut <-
-      tclet $
+      pletC $
         mustFindDatum' @PProposalDatum
           # (pfield @"datumHash" # ownOutput)
           # txInfoF.datums
@@ -217,17 +219,17 @@ proposalValidator proposal =
     pure $
       pmatch proposalRedeemer $ \case
         PVote r -> unTermCont $ do
-          tcassert "Input proposal must be in VotingReady state" $
+          pguardC "Input proposal must be in VotingReady state" $
             proposalF.status #== pconstant VotingReady
 
-          tcassert "Proposal time should be wthin the voting period" $
+          pguardC "Proposal time should be wthin the voting period" $
             isVotingPeriod # proposalF.timingConfig # proposalF.startingTime # currentTime
 
           -- Ensure the transaction is voting to a valid 'ResultTag'(outcome).
-          PProposalVotes voteMap <- tcmatch proposalF.votes
-          voteFor <- tclet $ pfromData $ pfield @"resultTag" # r
+          PProposalVotes voteMap <- pmatchC proposalF.votes
+          voteFor <- pletC $ pfromData $ pfield @"resultTag" # r
 
-          tcassert "Vote option should be valid" $
+          pguardC "Vote option should be valid" $
             pisJust #$ plookup # voteFor # voteMap
 
           -- Find the input stake, the amount of new votes should be the 'stakedAmount'.
@@ -248,7 +250,7 @@ proposalValidator proposal =
           stakeInF <- tcont $ pletFields @'["stakedAmount", "lockedBy", "owner"] stakeIn
 
           -- Ensure that no lock with the current proposal id has been put on the stake.
-          tcassert "Same stake shouldn't vote on the same propsoal twice" $
+          pguardC "Same stake shouldn't vote on the same propsoal twice" $
             pnot #$ pany
               # plam
                 ( \((pfield @"proposalTag" #) . pfromData -> pid) ->
@@ -281,7 +283,7 @@ proposalValidator proposal =
                       .& #startingTime .= proposalF.startingTime
                   )
 
-          tcassert "Output proposal should be valid" $ proposalOut #== expectedProposalOut
+          pguardC "Output proposal should be valid" $ proposalOut #== expectedProposalOut
 
           -- We validate the output stake datum here as well: We need the vote option
           -- to create a valid 'ProposalLock', however the vote option is encoded
@@ -318,26 +320,26 @@ proposalValidator proposal =
                       .& #lockedBy .= pdata expectedProposalLocks
                   )
 
-          tcassert "Output stake should be locked by the proposal" $ expectedStakeOut #== stakeOut
+          pguardC "Output stake should be locked by the proposal" $ expectedStakeOut #== stakeOut
 
           pure $ popaque (pconstant ())
         --------------------------------------------------------------------------
         PCosign r -> unTermCont $ do
-          newSigs <- tclet $ pfield @"newCosigners" # r
+          newSigs <- pletC $ pfield @"newCosigners" # r
 
-          tcassert "Cosigners are unique" $
+          pguardC "Cosigners are unique" $
             pisUniqBy
               # phoistAcyclic (plam (#==))
               # phoistAcyclic (plam $ \(pfromData -> x) (pfromData -> y) -> x #< y)
               # newSigs
 
-          tcassert "Signed by all new cosigners" $
+          pguardC "Signed by all new cosigners" $
             pall # signedBy # newSigs
 
-          tcassert "As many new cosigners as Stake datums" $
+          pguardC "As many new cosigners as Stake datums" $
             spentStakeST #== plength # newSigs
 
-          tcassert "All new cosigners are witnessed by their Stake datums" $
+          pguardC "All new cosigners are witnessed by their Stake datums" $
             pall
               # plam
                 ( \sig ->
@@ -367,7 +369,7 @@ proposalValidator proposal =
                       .& #startingTime .= proposalF.startingTime
                   )
 
-          tcassert "Signatures are correctly added to cosignature list" $
+          pguardC "Signatures are correctly added to cosignature list" $
             proposalOut #== expectedDatum
 
           pure $ popaque (pconstant ())
@@ -376,10 +378,10 @@ proposalValidator proposal =
           popaque (pconstant ())
         --------------------------------------------------------------------------
         PAdvanceProposal _r -> unTermCont $ do
-          tcassert "No stake input is allowed" $ spentStakeST #== 0
+          pguardC "No stake input is allowed" $ spentStakeST #== 0
 
-          currentTime <- tclet $ currentProposalTime # txInfoF.validRange
-          proposalOutStatus <- tclet $ pfield @"status" # proposalOut
+          currentTime <- pletC $ currentProposalTime # txInfoF.validRange
+          proposalOutStatus <- pletC $ pfield @"status" # proposalOut
 
           let -- Only the status of proposals should be updated in this case.
               templateProposalOut =
@@ -395,13 +397,13 @@ proposalValidator proposal =
                       .& #startingTime .= proposalF.startingTime
                   )
 
-          tcassert "Only status changes in the output proposal" $
+          pguardC "Only status changes in the output proposal" $
             templateProposalOut #== proposalOut
 
-          inDraftPeriod <- tclet $ isDraftPeriod # proposalF.timingConfig # proposalF.startingTime # currentTime
-          inVotingPeriod <- tclet $ isVotingPeriod # proposalF.timingConfig # proposalF.startingTime # currentTime
-          inLockedPeriod <- tclet $ isLockingPeriod # proposalF.timingConfig # proposalF.startingTime # currentTime
-          inExecutionPeriod <- tclet $ isExecutionPeriod # proposalF.timingConfig # proposalF.startingTime # currentTime
+          inDraftPeriod <- pletC $ isDraftPeriod # proposalF.timingConfig # proposalF.startingTime # currentTime
+          inVotingPeriod <- pletC $ isVotingPeriod # proposalF.timingConfig # proposalF.startingTime # currentTime
+          inLockedPeriod <- pletC $ isLockingPeriod # proposalF.timingConfig # proposalF.startingTime # currentTime
+          inExecutionPeriod <- pletC $ isExecutionPeriod # proposalF.timingConfig # proposalF.startingTime # currentTime
 
           -- Check the timings.
           let isFinished = proposalF.status #== pconstantData Finished
@@ -418,8 +420,8 @@ proposalValidator proposal =
                 PLocked _ -> pnot # inLockedPeriod
                 _ -> pconstant True
 
-          tcassert "Cannot advance ahead of time" notTooEarly
-          tcassert "Finished proposals cannot be advanced" $ pnot # isFinished
+          pguardC "Cannot advance ahead of time" notTooEarly
+          pguardC "Finished proposals cannot be advanced" $ pnot # isFinished
 
           pure $
             pif
@@ -430,19 +432,19 @@ proposalValidator proposal =
                     -- TODO: Perform other necessary checks.
 
                     -- 'Draft' -> 'VotingReady'
-                    tcassert "Proposal status set to VotingReady" $
+                    pguardC "Proposal status set to VotingReady" $
                       proposalOutStatus #== pconstantData VotingReady
 
                     pure $ popaque (pconstant ())
                   PVotingReady _ -> unTermCont $ do
                     -- 'VotingReady' -> 'Locked'
-                    tcassert "Proposal status set to Locked" $
+                    pguardC "Proposal status set to Locked" $
                       proposalOutStatus #== pconstantData Locked
 
                     pure $ popaque (pconstant ())
                   PLocked _ -> unTermCont $ do
                     -- 'Locked' -> 'Finished'
-                    tcassert "Proposal status set to Finished" $
+                    pguardC "Proposal status set to Finished" $
                       proposalOutStatus #== pconstantData Finished
 
                     -- TODO: Perform other necessary checks.
