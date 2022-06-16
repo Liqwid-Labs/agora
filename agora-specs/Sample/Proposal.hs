@@ -532,7 +532,7 @@ advanceProposalSuccess params =
       outcome0WinningVotes =
         ProposalVotes $
           updateMap
-            (\_ -> Just $ untag (def :: ProposalThresholds).countVoting + 1)
+            (\_ -> Just $ untag (def :: ProposalThresholds).vote + 1)
             (ResultTag 0)
             emptyVotes'
 
@@ -611,7 +611,7 @@ advanceProposalFailureTimeout params =
       outcome0WinningVotes =
         ProposalVotes $
           updateMap
-            (\_ -> Just $ untag (def :: ProposalThresholds).countVoting + 1)
+            (\_ -> Just $ untag (def :: ProposalThresholds).vote + 1)
             (ResultTag 0)
             emptyVotes'
 
@@ -720,7 +720,7 @@ advanceFinishedPropsoal =
       outcome0WinningVotes =
         ProposalVotes $
           AssocMap.fromList
-            [ (ResultTag 0, untag (def :: ProposalThresholds).countVoting + 1)
+            [ (ResultTag 0, untag (def :: ProposalThresholds).vote + 1)
             , (ResultTag 1, 0)
             ]
 

@@ -185,7 +185,7 @@ specs =
                                       ( ResultTag 0
                                       , case initialState of
                                           Draft -> 0
-                                          _ -> untag (def :: ProposalThresholds).countVoting + 1
+                                          _ -> untag (def :: ProposalThresholds).vote + 1
                                       )
                                     , (ResultTag 1, 0)
                                     ]
@@ -232,7 +232,7 @@ specs =
                                       ( ResultTag 0
                                       , case initialState of
                                           Draft -> 0
-                                          _ -> untag (def :: ProposalThresholds).countVoting + 1
+                                          _ -> untag (def :: ProposalThresholds).vote + 1
                                       )
                                     , (ResultTag 1, 0)
                                     ]
@@ -301,7 +301,7 @@ specs =
                   , votes =
                       ProposalVotes
                         ( AssocMap.fromList
-                            [ (ResultTag 0, untag (def :: ProposalThresholds).countVoting + 1)
+                            [ (ResultTag 0, untag (def :: ProposalThresholds).vote + 1)
                             , (ResultTag 1, 0)
                             ]
                         )
