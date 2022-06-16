@@ -502,14 +502,14 @@ Unlock :: ResultTag -> ProposalRedeemer
 --   
 --   <ol>
 --   <li>The sum of all of the cosigner's GT is larger than the
---   <a>startVoting</a> field of <a>ProposalThresholds</a>.</li>
+--   <tt>startVoting</tt> field of <a>ProposalThresholds</a>.</li>
 --   <li>The proposal's current time ensures <tt>isDraftPeriod</tt>.</li>
 --   </ol>
 --   
 --   <h3><tt><a>VotingReady</a> -&gt; <a>Locked</a></tt>:</h3>
 --   
 --   <ol>
---   <li>The sum of all votes is larger than <a>countVoting</a>.</li>
+--   <li>The sum of all votes is larger than <tt>countVoting</tt>.</li>
 --   <li>The winning <a>ResultTag</a> has more votes than all other
 --   <a>ResultTag</a>s.</li>
 --   <li>The proposal's current time ensures <tt>isVotingPeriod</tt>.</li>
@@ -585,7 +585,7 @@ ProposalThresholds :: Tagged GTTag Integer -> Tagged GTTag Integer -> Tagged GTT
 
 -- | How much GT minimum must a particular <a>ResultTag</a> accumulate for
 --   it to pass.
-[countVoting] :: ProposalThresholds -> Tagged GTTag Integer
+[execute] :: ProposalThresholds -> Tagged GTTag Integer
 
 -- | How much GT required to "create" a proposal.
 --   
@@ -595,7 +595,7 @@ ProposalThresholds :: Tagged GTTag Integer -> Tagged GTTag Integer -> Tagged GTT
 
 -- | How much GT required to allow voting to happen. (i.e. to move into
 --   <a>VotingReady</a>)
-[startVoting] :: ProposalThresholds -> Tagged GTTag Integer
+[vote] :: ProposalThresholds -> Tagged GTTag Integer
 
 -- | Map which encodes the total tally for each result. It's important that
 --   the "shape" is consistent with the shape of <a>effects</a>.
@@ -660,8 +660,8 @@ PFinished :: Term s (PDataRecord '[]) -> PProposalStatus (s :: S)
 
 -- | Plutarch-level version of <a>ProposalThresholds</a>.
 newtype PProposalThresholds (s :: S)
-PProposalThresholds :: Term s (PDataRecord '["execute" := PDiscrete GTTag, "draft" := PDiscrete GTTag, "vote" := PDiscrete GTTag]) -> PProposalThresholds (s :: S)
-[getProposalThresholds] :: PProposalThresholds (s :: S) -> Term s (PDataRecord '["execute" := PDiscrete GTTag, "draft" := PDiscrete GTTag, "vote" := PDiscrete GTTag])
+PProposalThresholds :: Term s (PDataRecord '["execute" := PDiscrete GTTag, "create" := PDiscrete GTTag, "vote" := PDiscrete GTTag]) -> PProposalThresholds (s :: S)
+[getProposalThresholds] :: PProposalThresholds (s :: S) -> Term s (PDataRecord '["execute" := PDiscrete GTTag, "create" := PDiscrete GTTag, "vote" := PDiscrete GTTag])
 
 -- | Plutarch-level version of <a>ProposalVotes</a>.
 newtype PProposalVotes (s :: S)

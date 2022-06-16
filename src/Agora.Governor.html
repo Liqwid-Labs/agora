@@ -629,7 +629,7 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
         ((':)
            @Symbol
            &quot;execute&quot;
-           ((':) @Symbol &quot;draft&quot; ((':) @Symbol &quot;vote&quot; ('[] @Symbol)))))
+           ((':) @Symbol &quot;create&quot; ((':) @Symbol &quot;vote&quot; ('[] @Symbol)))))
      s)
 </span><a href="#local-6989586621679567643"><span class="hs-identifier hs-var">thresholds</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span>
 </span><span id="line-191"></span><span>      </span><span class="annot"><span class="annottext">((HRec
@@ -640,7 +640,7 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
           ((':)
              @Symbol
              &quot;execute&quot;
-             ((':) @Symbol &quot;draft&quot; ((':) @Symbol &quot;vote&quot; ('[] @Symbol)))))
+             ((':) @Symbol &quot;create&quot; ((':) @Symbol &quot;vote&quot; ('[] @Symbol)))))
        s)
   -&gt; Term s PBool)
  -&gt; Term s PBool)
@@ -655,7 +655,7 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
               ((':)
                  @Symbol
                  &quot;execute&quot;
-                 ((':) @Symbol &quot;draft&quot; ((':) @Symbol &quot;vote&quot; ('[] @Symbol)))))
+                 ((':) @Symbol &quot;create&quot; ((':) @Symbol &quot;vote&quot; ('[] @Symbol)))))
            s))
 forall a (s :: S) (r :: PType).
 ((a -&gt; Term s r) -&gt; Term s r) -&gt; TermCont @r s a
@@ -667,7 +667,7 @@ forall a (s :: S) (r :: PType).
            ((':)
               @Symbol
               &quot;execute&quot;
-              ((':) @Symbol &quot;draft&quot; ((':) @Symbol &quot;vote&quot; ('[] @Symbol)))))
+              ((':) @Symbol &quot;create&quot; ((':) @Symbol &quot;vote&quot; ('[] @Symbol)))))
         s)
    -&gt; Term s PBool)
   -&gt; Term s PBool)
@@ -682,7 +682,7 @@ forall a (s :: S) (r :: PType).
                ((':)
                   @Symbol
                   &quot;execute&quot;
-                  ((':) @Symbol &quot;draft&quot; ((':) @Symbol &quot;vote&quot; ('[] @Symbol)))))
+                  ((':) @Symbol &quot;create&quot; ((':) @Symbol &quot;vote&quot; ('[] @Symbol)))))
             s)))
 -&gt; ((HRec
        (BoundTerms
@@ -692,7 +692,7 @@ forall a (s :: S) (r :: PType).
              ((':)
                 @Symbol
                 &quot;execute&quot;
-                ((':) @Symbol &quot;draft&quot; ((':) @Symbol &quot;vote&quot; ('[] @Symbol)))))
+                ((':) @Symbol &quot;create&quot; ((':) @Symbol &quot;vote&quot; ('[] @Symbol)))))
           s)
      -&gt; Term s PBool)
     -&gt; Term s PBool)
@@ -707,7 +707,7 @@ forall a (s :: S) (r :: PType).
               ((':)
                  @Symbol
                  &quot;execute&quot;
-                 ((':) @Symbol &quot;draft&quot; ((':) @Symbol &quot;vote&quot; ('[] @Symbol)))))
+                 ((':) @Symbol &quot;create&quot; ((':) @Symbol &quot;vote&quot; ('[] @Symbol)))))
            s))
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src"><span class="hs-operator hs-var">$</span></a></span><span>
@@ -718,7 +718,7 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
  (bs :: [ToBind]) ~ (Bindings ps fs :: [ToBind]),
  BindFields ps bs) =&gt;
 Term s a -&gt; (HRecOf a fs s -&gt; Term s b) -&gt; Term s b
-</span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pletFields</span></a></span><span> </span><span class="hs-glyph">@</span><span class="hs-special">'</span><span class="hs-special">[</span><span class="annot"><span class="hs-string">&quot;execute&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-string">&quot;draft&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-string">&quot;vote&quot;</span></span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">(Term s (PAsData PProposalThresholds)
+</span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pletFields</span></a></span><span> </span><span class="hs-glyph">@</span><span class="hs-special">'</span><span class="hs-special">[</span><span class="annot"><span class="hs-string">&quot;execute&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-string">&quot;create&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-string">&quot;vote&quot;</span></span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">(Term s (PAsData PProposalThresholds)
  -&gt; (HRec
        (BoundTerms
           (PFields (PAsData PProposalThresholds))
@@ -727,7 +727,7 @@ Term s a -&gt; (HRecOf a fs s -&gt; Term s b) -&gt; Term s b
              ((':)
                 @Symbol
                 &quot;execute&quot;
-                ((':) @Symbol &quot;draft&quot; ((':) @Symbol &quot;vote&quot; ('[] @Symbol)))))
+                ((':) @Symbol &quot;create&quot; ((':) @Symbol &quot;vote&quot; ('[] @Symbol)))))
           s)
      -&gt; Term s PBool)
  -&gt; Term s PBool)
@@ -740,7 +740,7 @@ Term s a -&gt; (HRecOf a fs s -&gt; Term s b) -&gt; Term s b
             ((':)
                @Symbol
                &quot;execute&quot;
-               ((':) @Symbol &quot;draft&quot; ((':) @Symbol &quot;vote&quot; ('[] @Symbol)))))
+               ((':) @Symbol &quot;create&quot; ((':) @Symbol &quot;vote&quot; ('[] @Symbol)))))
          s)
     -&gt; Term s PBool)
 -&gt; Term s PBool
@@ -775,7 +775,7 @@ Term s a -&gt; TermCont @r s (a s)
         ((':)
            @Symbol
            &quot;execute&quot;
-           ((':) @Symbol &quot;draft&quot; ((':) @Symbol &quot;vote&quot; ('[] @Symbol)))))
+           ((':) @Symbol &quot;create&quot; ((':) @Symbol &quot;vote&quot; ('[] @Symbol)))))
      s)
 </span><a href="#local-6989586621679567643"><span class="hs-identifier hs-var">thresholds</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">execute</span><span>
 </span><span id="line-196"></span><span>    </span><span class="annot"><a href="../file:///nix/store/2px0d6jdp4w2prvcjyrdv8f69fc0bh60-plutarch-safe-money-lib-plutarch-safe-money-1.0.0-haddock-doc/share/doc/plutarch-safe-money/html/src"><span class="hs-identifier hs-type">PDiscrete</span></a></span><span> </span><span id="local-6989586621679567636"><span class="annot"><span class="annottext">Term s (PTagged @Type GTTag (PInteger @S))
@@ -792,9 +792,9 @@ Term s a -&gt; TermCont @r s (a s)
         ((':)
            @Symbol
            &quot;execute&quot;
-           ((':) @Symbol &quot;draft&quot; ((':) @Symbol &quot;vote&quot; ('[] @Symbol)))))
+           ((':) @Symbol &quot;create&quot; ((':) @Symbol &quot;vote&quot; ('[] @Symbol)))))
      s)
-</span><a href="#local-6989586621679567643"><span class="hs-identifier hs-var">thresholds</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">draft</span><span>
+</span><a href="#local-6989586621679567643"><span class="hs-identifier hs-var">thresholds</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">create</span><span>
 </span><span id="line-197"></span><span>    </span><span class="annot"><a href="../file:///nix/store/2px0d6jdp4w2prvcjyrdv8f69fc0bh60-plutarch-safe-money-lib-plutarch-safe-money-1.0.0-haddock-doc/share/doc/plutarch-safe-money/html/src"><span class="hs-identifier hs-type">PDiscrete</span></a></span><span> </span><span id="local-6989586621679567635"><span class="annot"><span class="annottext">Term s (PTagged @Type GTTag (PInteger @S))
 </span><a href="#local-6989586621679567635"><span class="hs-identifier hs-var">vote'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Term s (PDiscrete @Type GTTag)
 -&gt; TermCont @PBool s (PDiscrete @Type GTTag s)
@@ -809,7 +809,7 @@ Term s a -&gt; TermCont @r s (a s)
         ((':)
            @Symbol
            &quot;execute&quot;
-           ((':) @Symbol &quot;draft&quot; ((':) @Symbol &quot;vote&quot; ('[] @Symbol)))))
+           ((':) @Symbol &quot;create&quot; ((':) @Symbol &quot;vote&quot; ('[] @Symbol)))))
      s)
 </span><a href="#local-6989586621679567643"><span class="hs-identifier hs-var">thresholds</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">vote</span><span>
 </span><span id="line-198"></span><span>
