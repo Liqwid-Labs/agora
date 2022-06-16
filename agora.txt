@@ -47,53 +47,6 @@ instance GHC.Classes.Eq Agora.MultiSig.MultiSig
 instance GHC.Generics.Generic Agora.MultiSig.MultiSig
 
 
--- | <a>PDataRecord</a> helper functions.
-module Agora.Record
-
--- | Turn a constant <a>RecordMorphism</a> into a fully built
---   <a>PDataRecord</a>.
-mkRecord :: forall (r :: [PLabeledType]) (s :: S). RecordMorphism s '[] r -> Term s (PDataRecord r)
-
--- | <a>mkRecord</a> but for known data-types.
---   
---   This allows you to dynamically construct a record type constructor.
---   
---   <h3>Example:</h3>
---   
---   <pre>
---   <a>mkRecordConstr</a>
---     <a>PStakeDatum</a>
---     ( #stakedAmount <a>.=</a> <a>pconstantData</a> (<a>Tagged</a> @GTTag 42)
---         <a>.&amp;</a> #owner <a>.=</a> <a>pconstantData</a> "aabbcc"
---         <a>.&amp;</a> #lockedBy <a>.=</a> <a>pdata</a> pnil
---     )
---   </pre>
---   
---   Is the same as
---   
---   <pre>
---   <a>pconstant</a> (<a>StakeDatum</a> (<a>Tagged</a> 42) "aabbcc" [])
---   </pre>
-mkRecordConstr :: forall (r :: [PLabeledType]) (s :: S) (pt :: PType). PlutusType pt => (forall s'. Term s' (PDataRecord r) -> pt s') -> RecordMorphism s '[] r -> Term s pt
-
--- | Cons a labeled type as a <a>RecordMorphism</a>.
-(.=) :: forall (sym :: Symbol) (a :: PType) (as :: [PLabeledType]) (s :: S). FieldName sym -> Term s (PAsData a) -> RecordMorphism s as ((sym := a) : as)
-infix 7 .=
-
--- | Compose two <a>RecordMorphism</a>s.
-(.&) :: forall (s :: S) (a :: [PLabeledType]) (b :: [PLabeledType]) (c :: [PLabeledType]). RecordMorphism s b c -> RecordMorphism s a b -> RecordMorphism s a c
-infixr 6 .&
-
--- | A morphism from one <a>PDataRecord</a> to another, representing some
---   sort of consing of data.
-data RecordMorphism (s :: S) (as :: [PLabeledType]) (bs :: [PLabeledType])
-
--- | Like <a>Proxy</a> but local to this module.
-data FieldName (sym :: Symbol)
-instance forall (s :: Plutarch.Internal.S). Control.Category.Category @{[Plutarch.DataRepr.Internal.PLabeledType]} (Agora.Record.RecordMorphism s)
-instance forall (sym :: GHC.Types.Symbol) (sym' :: GHC.Types.Symbol). ((sym :: GHC.Types.Symbol) GHC.Types.~ (sym' :: GHC.Types.Symbol)) => GHC.OverloadedLabels.IsLabel sym (Agora.Record.FieldName sym)
-
-
 -- | Tags and extras for <a>Plutarch.SafeMoney</a>.
 module Agora.SafeMoney
 
@@ -103,8 +56,57 @@ data ADATag
 -- | Governance token.
 data GTTag
 
+-- | Governor ST token.
+data GovernorSTTag
+
+-- | Stake ST token.
+data StakeSTTag
+
+-- | Proposal ST token.
+data ProposalSTTag
+
 -- | Resolves ada tags.
 adaRef :: Tagged ADATag AssetClass
+
+
+-- | Exportable script bundles for off-chain consumption.
+module Agora.ScriptInfo
+
+-- | Bundle containing a <a>MintingPolicy</a> and its symbol.
+data PolicyInfo
+PolicyInfo :: MintingPolicy -> CurrencySymbol -> PolicyInfo
+
+-- | The minting policy.
+[policy] :: PolicyInfo -> MintingPolicy
+
+-- | The symbol given by the minting policy.
+[currencySymbol] :: PolicyInfo -> CurrencySymbol
+
+-- | Bundle containing a <a>Validator</a> and its hash.
+data ValidatorInfo
+ValidatorInfo :: Validator -> ValidatorHash -> ValidatorInfo
+
+-- | The validator script.
+[script] :: ValidatorInfo -> Validator
+
+-- | Hash of the validator.
+[hash] :: ValidatorInfo -> ValidatorHash
+
+-- | Create a <a>ValidatorInfo</a> given a Plutarch term.
+mkValidatorInfo :: ClosedTerm PValidator -> ValidatorInfo
+
+-- | Create a <a>PolicyInfo</a> given a Plutarch term.
+mkPolicyInfo :: ClosedTerm PMintingPolicy -> PolicyInfo
+instance Data.Aeson.Types.FromJSON.FromJSON Agora.ScriptInfo.ValidatorInfo
+instance Data.Aeson.Types.ToJSON.ToJSON Agora.ScriptInfo.ValidatorInfo
+instance GHC.Generics.Generic Agora.ScriptInfo.ValidatorInfo
+instance GHC.Classes.Eq Agora.ScriptInfo.ValidatorInfo
+instance GHC.Show.Show Agora.ScriptInfo.ValidatorInfo
+instance Data.Aeson.Types.FromJSON.FromJSON Agora.ScriptInfo.PolicyInfo
+instance Data.Aeson.Types.ToJSON.ToJSON Agora.ScriptInfo.PolicyInfo
+instance GHC.Generics.Generic Agora.ScriptInfo.PolicyInfo
+instance GHC.Classes.Eq Agora.ScriptInfo.PolicyInfo
+instance GHC.Show.Show Agora.ScriptInfo.PolicyInfo
 
 
 -- | Plutarch utility functions that should be upstreamed or don't belong
@@ -133,13 +135,13 @@ pfindDatum :: Term s (PDatumHash :--> (PBuiltinList (PAsData (PTuple PDatumHash 
 ptryFindDatum :: forall (a :: PType) (s :: S). PTryFrom PData a => Term s (PDatumHash :--> (PBuiltinList (PAsData (PTuple PDatumHash PDatum)) :--> PMaybe a))
 
 -- | Sum of all value at input.
-pvalueSpent :: Term s (PBuiltinList (PAsData PTxInInfo) :--> PValue)
+pvalueSpent :: forall (s :: S). Term s (PBuiltinList (PAsData PTxInInfo) :--> PValue 'Sorted 'Positive)
 
 -- | Check if a PubKeyHash signs this transaction.
 ptxSignedBy :: Term s (PBuiltinList (PAsData PPubKeyHash) :--> (PAsData PPubKeyHash :--> PBool))
 
 -- | Add two <a>PValue</a>s together.
-paddValue :: forall s. Term s (PValue :--> (PValue :--> PValue))
+paddValue :: forall (keys :: KeyGuarantees) (as :: AmountGuarantees) (bs :: AmountGuarantees) (s :: S). Term s (PValue keys as :--> (PValue keys bs :--> PValue keys (AddGuarantees as bs)))
 
 -- | Find the value for a given key in an associative list.
 plookup :: (PEq a, PIsListLike list (PBuiltinPair a b)) => Term s (a :--> (list (PBuiltinPair a b) :--> PMaybe b))
@@ -148,25 +150,25 @@ plookup :: (PEq a, PIsListLike list (PBuiltinPair a b)) => Term s (a :--> (list 
 pfromMaybe :: forall a s. Term s (a :--> (PMaybe a :--> a))
 
 -- | Get the sum of all values belonging to a particular CurrencySymbol.
-psymbolValueOf :: Term s (PCurrencySymbol :--> (PValue :--> PInteger))
+psymbolValueOf :: forall (keys :: KeyGuarantees) (amounts :: AmountGuarantees) (s :: S). Term s (PCurrencySymbol :--> (PValue keys amounts :--> PInteger))
 
 -- | Return <a>&gt;=</a> on two values comparing by only a particular
 --   AssetClass.
-pgeqByClass :: Term s (PCurrencySymbol :--> (PTokenName :--> (PValue :--> (PValue :--> PBool))))
+pgeqByClass :: forall (keys :: KeyGuarantees) (amounts :: AmountGuarantees) (s :: S). Term s (PCurrencySymbol :--> (PTokenName :--> (PValue keys amounts :--> (PValue keys amounts :--> PBool))))
 
 -- | Return <a>&gt;=</a> on two values comparing by only a particular
 --   CurrencySymbol.
-pgeqBySymbol :: Term s (PCurrencySymbol :--> (PValue :--> (PValue :--> PBool)))
+pgeqBySymbol :: forall (keys :: KeyGuarantees) (amounts :: AmountGuarantees) (s :: S). Term s (PCurrencySymbol :--> (PValue keys amounts :--> (PValue keys amounts :--> PBool)))
 
 -- | Return <a>&gt;=</a> on two values comparing by only a particular
 --   Haskell-level AssetClass.
-pgeqByClass' :: AssetClass -> Term s (PValue :--> (PValue :--> PBool))
+pgeqByClass' :: forall (keys :: KeyGuarantees) (amounts :: AmountGuarantees) (s :: S). AssetClass -> Term s (PValue keys amounts :--> (PValue keys amounts :--> PBool))
 
 -- | Find the TxInInfo by a TxOutRef.
 pfindTxInByTxOutRef :: Term s (PTxOutRef :--> (PBuiltinList (PAsData PTxInInfo) :--> PMaybe PTxInInfo))
 
 -- | Create a value with a single asset class.
-psingletonValue :: forall s. Term s (PCurrencySymbol :--> (PTokenName :--> (PInteger :--> PValue)))
+psingletonValue :: forall (keys :: KeyGuarantees) (amounts :: AmountGuarantees) (s :: S). Term s (PCurrencySymbol :--> (PTokenName :--> (PInteger :--> PValue keys amounts)))
 
 -- | Get the first element that maps to a PJust in a list.
 pfindMap :: PIsListLike list a => Term s ((a :--> PMaybe b) :--> (list a :--> PMaybe b))
@@ -174,7 +176,7 @@ pfindMap :: PIsListLike list a => Term s ((a :--> PMaybe b) :--> (list a :--> PM
 -- | True if a list is not empty.
 pnotNull :: forall list a. PIsListLike list a => Term _ (list a :--> PBool)
 
--- | Yield True if a given PMaybe is of form PJust _.
+-- | Yield True if a given PMaybe is of form <tt><a>PJust</a> _</tt>.
 pisJust :: forall a s. Term s (PMaybe a :--> PBool)
 
 -- | Check if a particular asset class has been spent in the input list.
@@ -186,23 +188,49 @@ ptokenSpent :: forall {s :: S}. Term s (PAssetClass :--> (PBuiltinList (PAsData 
 -- | True if both maps have exactly the same keys. Using
 --   <tt><a>#==</a></tt> is not sufficient, because keys returned are not
 --   ordered.
-pkeysEqual :: forall (s :: S) k a b. Term s (PMap k a :--> (PMap k b :--> PBool))
+pkeysEqual :: forall (k :: PType) (a :: PType) (b :: PType) (keys :: KeyGuarantees) (s :: S). (POrd k, PIsData k) => Term s (PMap keys k a :--> (PMap keys k b :--> PBool))
 
--- | <i> O(n^2) </i>. Clear out duplicates in a list. The order is not
---   preserved.
-pnub :: forall list a (s :: S). (PEq a, PIsListLike list a) => Term s (list a :--> list a)
+-- | <i> O(nlogn) </i>. Sort and remove dupicate elements in a list.
+pnubSortBy :: forall list a (s :: S). PIsListLike list a => Term s ((a :--> (a :--> PBool)) :--> ((a :--> (a :--> PBool)) :--> (list a :--> list a)))
 
--- | <i> O(n^2) </i>. Check if a list contains no duplicates.
-pisUniq :: forall list a (s :: S). (PEq a, PIsListLike list a) => Term s (list a :--> PBool)
+-- | A special case of <a>pisUniqBy</a> which requires elements have
+--   <a>POrd</a> instance.
+pisUniq :: forall list a (s :: S). (POrd a, PIsListLike list a) => Term s (list a :--> PBool)
 
--- | Check if any output matches the predicate.
-anyOutput :: forall (datum :: PType) s. (PIsData datum, PTryFrom PData (PAsData datum)) => Term s (PTxInfo :--> ((PValue :--> (PAddress :--> (datum :--> PBool))) :--> PBool))
+-- | <i> O(nlogn) </i>. Check if a list contains no duplicates.
+pisUniqBy :: forall list a (s :: S). PIsListLike list a => Term s ((a :--> (a :--> PBool)) :--> ((a :--> (a :--> PBool)) :--> (list a :--> PBool)))
 
--- | Check if all outputs match the predicate.
-allOutputs :: forall (datum :: PType) s. (PIsData datum, PTryFrom PData (PAsData datum)) => Term s (PTxInfo :--> ((PTxOut :--> (PValue :--> (PAddress :--> (datum :--> PBool)))) :--> PBool))
+-- | Yield True if a given PMaybeData is of form <tt><a>PDJust</a> _</tt>.
+pisDJust :: Term s (PMaybeData a :--> PBool)
 
--- | Check if any (resolved) input matches the predicate.
-anyInput :: forall (datum :: PType) s. (PIsData datum, PTryFrom PData (PAsData datum)) => Term s (PTxInfo :--> ((PValue :--> (PAddress :--> (datum :--> PBool))) :--> PBool))
+-- | Determines if a given UTXO is spent.
+pisUTXOSpent :: Term s (PTxOutRef :--> (PBuiltinList (PAsData PTxInInfo) :--> PBool))
+
+-- | <i> O(nlogn) </i>. Merge sort, bottom-up version, given a custom
+--   comparator.
+--   
+--   Elements are arranged from lowest to highest, keeping duplicates in
+--   the order they appeared in the input.
+pmsortBy :: PIsListLike l a => Term s ((a :--> (a :--> PBool)) :--> (l a :--> l a))
+
+-- | A special case of <a>pmsortBy</a> which requires elements have
+--   <a>POrd</a> instance.
+pmsort :: (POrd a, PIsListLike l a) => Term s (l a :--> l a)
+
+-- | Special version of <a>pnubSortBy</a>, which requires elements have
+--   <a>POrd</a>.
+pnubSort :: forall list a (s :: S). (PIsListLike list a, POrd a) => Term s (list a :--> list a)
+
+-- | <i> O(n) </i>. Update the value at a given key in a <a>PMap</a>, have
+--   the same functionalities as <a>update</a>.
+pupdate :: forall (k :: PType) (v :: PType) (keys :: KeyGuarantees) (s :: S). (PIsData k, PIsData v) => Term s ((v :--> PMaybe v) :--> (k :--> (PMap keys k v :--> PMap keys k v)))
+
+-- | <i> O(n) </i>. Map a function over all values in a <a>PMap</a>.
+pmapMap :: forall (k :: PType) (a :: PType) (b :: PType) (keys :: KeyGuarantees) (s :: S). (PIsData k, PIsData a, PIsData b) => Term s ((a :--> b) :--> (PMap keys k a :--> PMap keys k b))
+
+-- | A special version of <a>pmap</a> which allows list elements to be
+--   thrown out.
+pmapMaybe :: forall s a list. PIsListLike list a => Term s ((a :--> PMaybe a) :--> (list a :--> list a))
 
 -- | Finds the TxOut of an effect from TxInfo and TxOutRef
 findTxOutByTxOutRef :: Term s (PTxOutRef :--> (PBuiltinList (PAsData PTxInInfo) :--> PMaybe PTxOut))
@@ -226,36 +254,40 @@ pvalidatorHashToTokenName :: forall (s :: S). Term s PValidatorHash -> Term s PT
 -- | Get the CurrencySymbol of a PMintingPolicy.
 getMintingPolicySymbol :: ClosedTerm PMintingPolicy -> CurrencySymbol
 
+-- | The entire value only contains one token of the given currency symbol.
+hasOnlyOneTokenOfCurrencySymbol :: forall (keys :: KeyGuarantees) (amounts :: AmountGuarantees) (s :: S). Term s (PCurrencySymbol :--> (PValue keys amounts :--> PBool))
+
+-- | Find datum given a maybe datum hash
+mustFindDatum' :: forall (datum :: PType). (PIsData datum, PTryFrom PData (PAsData datum)) => forall s. Term s (PMaybeData PDatumHash :--> (PBuiltinList (PAsData (PTuple PDatumHash PDatum)) :--> datum))
+
+-- | Extract the value stored in a PMaybe container. If there's no value,
+--   throw an error with the given message.
+mustBePJust :: forall a s. Term s (PString :--> (PMaybe a :--> a))
+
+-- | Extract the value stored in a PMaybeData container. If there's no
+--   value, throw an error with the given message.
+mustBePDJust :: forall a s. PIsData a => Term s (PString :--> (PMaybeData a :--> a))
+
+-- | Create an <a>Address</a> from a given <a>ValidatorHash</a> with no
+--   <a>StakingCredential</a>.
+validatorHashToAddress :: ValidatorHash -> Address
+
+-- | <i> O(n) </i>. Merge two lists which are assumed to be ordered, given
+--   a custom comparator.
+pmergeBy :: PIsListLike l a => Term s ((a :--> (a :--> PBool)) :--> (l a :--> (l a :--> l a)))
+
+-- | Split a list in half.
+phalve :: PIsListLike l a => Term s (l a :--> PPair (l a) (l a))
+
+-- | Return true if the given address is a script address.
+isScriptAddress :: Term s (PAddress :--> PBool)
+
+-- | Return true if the given credential is a pub-key-hash.
+isPubKey :: Term s (PCredential :--> PBool)
+
 
 -- | Time functions for proposal phases.
 module Agora.Proposal.Time
-
--- | <h2>Establishing timing in Proposal interactions.</h2>
---   
---   In Plutus, it's impossible to determine time exactly. It's also
---   impossible to get a single point in time, yet often we need to check
---   various constraints on time.
---   
---   For the purposes of proposals, there's a single most important
---   feature: The ability to determine if we can perform an action. In
---   order to correctly determine if we are able to perform certain
---   actions, we need to know what time it roughly is, compared to when the
---   proposal was created.
---   
---   <a>ProposalTime</a> represents "the time according to the proposal".
---   Its representation is opaque, and doesn't matter.
---   
---   Various functions work simply on <a>ProposalTime</a> and
---   <a>ProposalTimingConfig</a>. In particular, <a>currentProposalTime</a>
---   is useful for extracting the time from the <a>txInfoValidPeriod</a>
---   field of <a>TxInfo</a>.
---   
---   We avoid <a>PPOSIXTimeRange</a> where we can in order to save on
---   operations.
-data ProposalTime
-ProposalTime :: POSIXTime -> POSIXTime -> ProposalTime
-[lowerBound] :: ProposalTime -> POSIXTime
-[upperBound] :: ProposalTime -> POSIXTime
 
 -- | Configuration of proposal timings.
 --   
@@ -281,9 +313,41 @@ newtype ProposalStartingTime
 ProposalStartingTime :: POSIXTime -> ProposalStartingTime
 [getProposalStartingTime] :: ProposalStartingTime -> POSIXTime
 
--- | Plutarch-level version of <a>ProposalTime</a>.
-newtype PProposalTime (s :: S)
-PProposalTime :: Term s (PDataRecord '["lowerBound" := PPOSIXTime, "upperBound" := PPOSIXTime]) -> PProposalTime (s :: S)
+-- | Represents the maximum width of a <a>POSIXTimeRange</a>.
+newtype MaxTimeRangeWidth
+MaxTimeRangeWidth :: POSIXTime -> MaxTimeRangeWidth
+[getMaxWidth] :: MaxTimeRangeWidth -> POSIXTime
+
+-- | <h2>Establishing timing in Proposal interactions.</h2>
+--   
+--   In Plutus, it's impossible to determine time exactly. It's also
+--   impossible to get a single point in time, yet often we need to check
+--   various constraints on time.
+--   
+--   For the purposes of proposals, there's a single most important
+--   feature: The ability to determine if we can perform an action. In
+--   order to correctly determine if we are able to perform certain
+--   actions, we need to know what time it roughly is, compared to when the
+--   proposal was created.
+--   
+--   <a>PProposalTime</a> represents "the time according to the proposal".
+--   Its representation is opaque, and doesn't matter.
+--   
+--   Various functions work simply on <a>PProposalTime</a> and
+--   <a>ProposalTimingConfig</a>. In particular, <a>currentProposalTime</a>
+--   is useful for extracting the time from the <a>txInfoValidPeriod</a>
+--   field of <a>TxInfo</a>.
+--   
+--   We avoid <a>PPOSIXTimeRange</a> where we can in order to save on
+--   operations.
+--   
+--   Note: <a>PProposalTime</a> doesn't need a Haskell-level equivalent
+--   because it is only used in scripts, and does not go in datums. It is
+--   also scott-encoded which is more efficient in usage.
+data PProposalTime (s :: S)
+PProposalTime :: Term s PPOSIXTime -> Term s PPOSIXTime -> PProposalTime (s :: S)
+[lowerBound] :: PProposalTime (s :: S) -> Term s PPOSIXTime
+[upperBound] :: PProposalTime (s :: S) -> Term s PPOSIXTime
 
 -- | Plutarch-level version of <a>ProposalTimingConfig</a>.
 newtype PProposalTimingConfig (s :: S)
@@ -293,6 +357,16 @@ PProposalTimingConfig :: Term s (PDataRecord '["draftTime" := PPOSIXTime, "votin
 -- | Plutarch-level version of <a>ProposalStartingTime</a>.
 newtype PProposalStartingTime (s :: S)
 PProposalStartingTime :: Term s PPOSIXTime -> PProposalStartingTime (s :: S)
+
+-- | Plutarch-level version of <a>MaxTimeRangeWidth</a>.
+newtype PMaxTimeRangeWidth (s :: S)
+PMaxTimeRangeWidth :: Term s PPOSIXTime -> PMaxTimeRangeWidth (s :: S)
+
+-- | Get the starting time of a proposal, from the <a>txInfoValidPeriod</a>
+--   field. For every proposal, this is only meant to run once upon
+--   creation. Given time range should be tight enough, meaning that the
+--   width of the time range should be less than the maximum value.
+createProposalStartingTime :: forall (s :: S). Term s (PMaxTimeRangeWidth :--> (PPOSIXTimeRange :--> PProposalStartingTime))
 
 -- | Get the current proposal time, from the <a>txInfoValidPeriod</a>
 --   field.
@@ -312,10 +386,16 @@ isLockingPeriod :: forall (s :: S). Term s (PProposalTimingConfig :--> (PProposa
 
 -- | True if the <a>PProposalTime</a> is in the execution period.
 isExecutionPeriod :: forall (s :: S). Term s (PProposalTimingConfig :--> (PProposalStartingTime :--> (PProposalTime :--> PBool)))
-instance Plutarch.DataRepr.Internal.Field.PDataFields Agora.Proposal.Time.PProposalTime
-instance Plutarch.Builtin.PIsData Agora.Proposal.Time.PProposalTime
+instance PlutusTx.IsData.Class.UnsafeFromData Agora.Proposal.Time.MaxTimeRangeWidth
+instance PlutusTx.IsData.Class.FromData Agora.Proposal.Time.MaxTimeRangeWidth
+instance PlutusTx.IsData.Class.ToData Agora.Proposal.Time.MaxTimeRangeWidth
+instance GHC.Generics.Generic Agora.Proposal.Time.MaxTimeRangeWidth
+instance GHC.Classes.Ord Agora.Proposal.Time.MaxTimeRangeWidth
+instance GHC.Show.Show Agora.Proposal.Time.MaxTimeRangeWidth
+instance GHC.Classes.Eq Agora.Proposal.Time.MaxTimeRangeWidth
+instance Plutarch.Bool.PEq Agora.Proposal.Time.PProposalTime
+instance forall (s :: Plutarch.Internal.S). Generics.SOP.Universe.HasDatatypeInfo (Agora.Proposal.Time.PProposalTime s)
 instance Plutarch.Internal.PlutusType.PlutusType Agora.Proposal.Time.PProposalTime
-instance Plutarch.DataRepr.Internal.PIsDataRepr Agora.Proposal.Time.PProposalTime
 instance forall (s :: Plutarch.Internal.S). Generics.SOP.Universe.Generic (Agora.Proposal.Time.PProposalTime s)
 instance forall (s :: Plutarch.Internal.S). GHC.Generics.Generic (Agora.Proposal.Time.PProposalTime s)
 instance Plutarch.Bool.POrd Agora.Proposal.Time.PProposalStartingTime
@@ -328,6 +408,16 @@ instance Plutarch.Internal.PlutusType.PlutusType Agora.Proposal.Time.PProposalTi
 instance Plutarch.DataRepr.Internal.PIsDataRepr Agora.Proposal.Time.PProposalTimingConfig
 instance forall (s :: Plutarch.Internal.S). Generics.SOP.Universe.Generic (Agora.Proposal.Time.PProposalTimingConfig s)
 instance forall (s :: Plutarch.Internal.S). GHC.Generics.Generic (Agora.Proposal.Time.PProposalTimingConfig s)
+instance Plutarch.Bool.POrd Agora.Proposal.Time.PMaxTimeRangeWidth
+instance Plutarch.Bool.PEq Agora.Proposal.Time.PMaxTimeRangeWidth
+instance Plutarch.Builtin.PIsData Agora.Proposal.Time.PMaxTimeRangeWidth
+instance Plutarch.Internal.PlutusType.PlutusType Agora.Proposal.Time.PMaxTimeRangeWidth
+instance Plutarch.Lift.PConstantDecl Agora.Proposal.Time.ProposalStartingTime
+instance Plutarch.Lift.PConstantDecl Agora.Proposal.Time.ProposalTimingConfig
+instance Plutarch.Lift.PConstantDecl Agora.Proposal.Time.MaxTimeRangeWidth
+instance Plutarch.Lift.PUnsafeLiftDecl Agora.Proposal.Time.PMaxTimeRangeWidth
+instance Plutarch.Lift.PUnsafeLiftDecl Agora.Proposal.Time.PProposalTimingConfig
+instance Plutarch.Lift.PUnsafeLiftDecl Agora.Proposal.Time.PProposalStartingTime
 instance PlutusTx.IsData.Class.ToData Agora.Proposal.Time.ProposalTimingConfig
 instance PlutusTx.IsData.Class.FromData Agora.Proposal.Time.ProposalTimingConfig
 instance PlutusTx.IsData.Class.UnsafeFromData Agora.Proposal.Time.ProposalTimingConfig
@@ -341,12 +431,6 @@ instance PlutusTx.IsData.Class.ToData Agora.Proposal.Time.ProposalStartingTime
 instance GHC.Generics.Generic Agora.Proposal.Time.ProposalTimingConfig
 instance GHC.Show.Show Agora.Proposal.Time.ProposalTimingConfig
 instance GHC.Classes.Eq Agora.Proposal.Time.ProposalTimingConfig
-instance PlutusTx.IsData.Class.ToData Agora.Proposal.Time.ProposalTime
-instance PlutusTx.IsData.Class.FromData Agora.Proposal.Time.ProposalTime
-instance PlutusTx.IsData.Class.UnsafeFromData Agora.Proposal.Time.ProposalTime
-instance GHC.Generics.Generic Agora.Proposal.Time.ProposalTime
-instance GHC.Show.Show Agora.Proposal.Time.ProposalTime
-instance GHC.Classes.Eq Agora.Proposal.Time.ProposalTime
 
 
 -- | Proposal scripts encoding effects that operate on the system.
@@ -363,13 +447,15 @@ Proposal :: AssetClass -> AssetClass -> Integer -> Proposal
 
 -- | Haskell-level datum for Proposal scripts.
 data ProposalDatum
-ProposalDatum :: ProposalId -> Map ResultTag [(ValidatorHash, DatumHash)] -> ProposalStatus -> [PubKeyHash] -> ProposalThresholds -> ProposalVotes -> ProposalDatum
+ProposalDatum :: ProposalId -> Map ResultTag (Map ValidatorHash DatumHash) -> ProposalStatus -> [PubKeyHash] -> ProposalThresholds -> ProposalVotes -> ProposalTimingConfig -> ProposalStartingTime -> ProposalDatum
 
--- | Identification of the proposal.
+-- | Identification of the proposal. TODO: could we encode this more
+--   efficiently? This is shaped this way for future proofing. See
+--   <a>https://github.com/Liqwid-Labs/agora/issues/39</a>
 [proposalId] :: ProposalDatum -> ProposalId
 
 -- | Effect lookup table. First by result, then by effect hash.
-[effects] :: ProposalDatum -> Map ResultTag [(ValidatorHash, DatumHash)]
+[effects] :: ProposalDatum -> Map ResultTag (Map ValidatorHash DatumHash)
 
 -- | The status the proposal is in.
 [status] :: ProposalDatum -> ProposalStatus
@@ -382,6 +468,12 @@ ProposalDatum :: ProposalId -> Map ResultTag [(ValidatorHash, DatumHash)] -> Pro
 
 -- | Vote tally on the proposal
 [votes] :: ProposalDatum -> ProposalVotes
+
+-- | Timing configuration copied over on initialization.
+[timingConfig] :: ProposalDatum -> ProposalTimingConfig
+
+-- | The time upon the creation of the proposal.
+[startingTime] :: ProposalDatum -> ProposalStartingTime
 
 -- | Haskell-level redeemer for Proposal scripts.
 data ProposalRedeemer
@@ -549,8 +641,8 @@ emptyVotesFor :: forall a. Map ResultTag a -> ProposalVotes
 
 -- | Plutarch-level version of <a>ProposalDatum</a>.
 newtype PProposalDatum (s :: S)
-PProposalDatum :: Term s (PDataRecord '["proposalId" := PProposalId, "effects" := PMap PResultTag (PMap PValidatorHash PDatumHash), "status" := PProposalStatus, "cosigners" := PBuiltinList (PAsData PPubKeyHash), "thresholds" := PProposalThresholds, "votes" := PProposalVotes]) -> PProposalDatum (s :: S)
-[getProposalDatum] :: PProposalDatum (s :: S) -> Term s (PDataRecord '["proposalId" := PProposalId, "effects" := PMap PResultTag (PMap PValidatorHash PDatumHash), "status" := PProposalStatus, "cosigners" := PBuiltinList (PAsData PPubKeyHash), "thresholds" := PProposalThresholds, "votes" := PProposalVotes])
+PProposalDatum :: Term s (PDataRecord '["proposalId" := PProposalId, "effects" := PMap 'Unsorted PResultTag (PMap 'Unsorted PValidatorHash PDatumHash), "status" := PProposalStatus, "cosigners" := PBuiltinList (PAsData PPubKeyHash), "thresholds" := PProposalThresholds, "votes" := PProposalVotes, "timingConfig" := PProposalTimingConfig, "startingTime" := PProposalStartingTime]) -> PProposalDatum (s :: S)
+[getProposalDatum] :: PProposalDatum (s :: S) -> Term s (PDataRecord '["proposalId" := PProposalId, "effects" := PMap 'Unsorted PResultTag (PMap 'Unsorted PValidatorHash PDatumHash), "status" := PProposalStatus, "cosigners" := PBuiltinList (PAsData PPubKeyHash), "thresholds" := PProposalThresholds, "votes" := PProposalVotes, "timingConfig" := PProposalTimingConfig, "startingTime" := PProposalStartingTime])
 
 -- | Plutarch-level version of <a>ProposalRedeemer</a>.
 data PProposalRedeemer (s :: S)
@@ -573,7 +665,7 @@ PProposalThresholds :: Term s (PDataRecord '["execute" := PDiscrete GTTag, "draf
 
 -- | Plutarch-level version of <a>ProposalVotes</a>.
 newtype PProposalVotes (s :: S)
-PProposalVotes :: Term s (PMap PResultTag PInteger) -> PProposalVotes (s :: S)
+PProposalVotes :: Term s (PMap 'Unsorted PResultTag PInteger) -> PProposalVotes (s :: S)
 
 -- | Plutarch-level version of <a>PProposalId</a>.
 newtype PProposalId (s :: S)
@@ -587,6 +679,20 @@ PResultTag :: Term s PInteger -> PResultTag (s :: S)
 --   to check both upon creation and upon any following state transitions
 --   in the proposal.
 proposalDatumValid :: Proposal -> Term s (PProposalDatum :--> PBool)
+
+-- | Plutarch-level version of <a>emptyVotesFor</a>.
+pemptyVotesFor :: forall s a. PIsData a => Term s (PMap 'Unsorted PResultTag a :--> PProposalVotes)
+
+-- | Find the winner result tag, given the votes, the quorum the "neutral"
+--   result tag.
+--   
+--   The winner should be unambiguous, meaning that if two options have the
+--   same highest votes, the "neutral" option will be the winner.
+pwinner :: Term s (PProposalVotes :--> (PInteger :--> (PResultTag :--> PResultTag)))
+
+-- | Find the "neutral" option (a dummy outcome with no effect) given the
+--   effects.
+pneutralOption :: Term s (PMap 'Unsorted PResultTag (PMap 'Unsorted PValidatorHash PDatumHash) :--> PResultTag)
 instance GHC.Generics.Generic Agora.Proposal.Proposal
 instance GHC.Classes.Eq Agora.Proposal.Proposal
 instance GHC.Show.Show Agora.Proposal.Proposal
@@ -598,6 +704,7 @@ instance Plutarch.Bool.POrd Agora.Proposal.PProposalId
 instance Plutarch.Bool.PEq Agora.Proposal.PProposalId
 instance Plutarch.Builtin.PIsData Agora.Proposal.PProposalId
 instance Plutarch.Internal.PlutusType.PlutusType Agora.Proposal.PProposalId
+instance Plutarch.Bool.PEq Agora.Proposal.PProposalStatus
 instance Plutarch.Builtin.PIsData Agora.Proposal.PProposalStatus
 instance Plutarch.Internal.PlutusType.PlutusType Agora.Proposal.PProposalStatus
 instance Plutarch.DataRepr.Internal.PIsDataRepr Agora.Proposal.PProposalStatus
@@ -611,6 +718,7 @@ instance forall (s :: Plutarch.Internal.S). Generics.SOP.Universe.Generic (Agora
 instance forall (s :: Plutarch.Internal.S). GHC.Generics.Generic (Agora.Proposal.PProposalThresholds s)
 instance Plutarch.Builtin.PIsData Agora.Proposal.PProposalVotes
 instance Plutarch.Internal.PlutusType.PlutusType Agora.Proposal.PProposalVotes
+instance Plutarch.Bool.PEq Agora.Proposal.PProposalDatum
 instance Plutarch.DataRepr.Internal.Field.PDataFields Agora.Proposal.PProposalDatum
 instance Plutarch.Builtin.PIsData Agora.Proposal.PProposalDatum
 instance Plutarch.Internal.PlutusType.PlutusType Agora.Proposal.PProposalDatum
@@ -808,6 +916,7 @@ stakeLocked :: forall (s :: S). Term s (PStakeDatum :--> PBool)
 
 -- | Find a stake owned by a particular PK.
 findStakeOwnedBy :: Term s (PAssetClass :--> (PPubKeyHash :--> (PBuiltinList (PAsData (PTuple PDatumHash PDatum)) :--> (PBuiltinList (PAsData PTxInInfo) :--> PMaybe (PAsData PStakeDatum)))))
+instance Plutarch.Bool.PEq Agora.Stake.PProposalLock
 instance Plutarch.DataRepr.Internal.Field.PDataFields Agora.Stake.PProposalLock
 instance Plutarch.Builtin.PIsData Agora.Stake.PProposalLock
 instance Plutarch.Internal.PlutusType.PlutusType Agora.Stake.PProposalLock
@@ -819,6 +928,7 @@ instance Plutarch.Internal.PlutusType.PlutusType Agora.Stake.PStakeRedeemer
 instance Plutarch.DataRepr.Internal.PIsDataRepr Agora.Stake.PStakeRedeemer
 instance forall (s :: Plutarch.Internal.S). Generics.SOP.Universe.Generic (Agora.Stake.PStakeRedeemer s)
 instance forall (s :: Plutarch.Internal.S). GHC.Generics.Generic (Agora.Stake.PStakeRedeemer s)
+instance Plutarch.Bool.PEq Agora.Stake.PStakeDatum
 instance Plutarch.DataRepr.Internal.Field.PDataFields Agora.Stake.PStakeDatum
 instance Plutarch.Builtin.PIsData Agora.Stake.PStakeDatum
 instance Plutarch.Internal.PlutusType.PlutusType Agora.Stake.PStakeDatum
@@ -994,7 +1104,7 @@ proposalValidator :: Proposal -> ClosedTerm PValidator
 --   <ul>
 --   <li>This policy cannot be burned.</li>
 --   </ul>
-proposalPolicy :: Proposal -> ClosedTerm PMintingPolicy
+proposalPolicy :: AssetClass -> ClosedTerm PMintingPolicy
 
 
 -- | Governor entity scripts acting as authority of entire system.
@@ -1002,13 +1112,20 @@ module Agora.Governor
 
 -- | Datum for the Governor script.
 data GovernorDatum
-GovernorDatum :: ProposalThresholds -> ProposalId -> GovernorDatum
+GovernorDatum :: ProposalThresholds -> ProposalId -> ProposalTimingConfig -> MaxTimeRangeWidth -> GovernorDatum
 
 -- | Gets copied over upon creation of a <a>ProposalDatum</a>.
 [proposalThresholds] :: GovernorDatum -> ProposalThresholds
 
 -- | What tag the next proposal will get upon creating.
 [nextProposalId] :: GovernorDatum -> ProposalId
+
+-- | The timing configuration for proposals. Will get copied over upon the
+--   creation of proposals.
+[proposalTimings] :: GovernorDatum -> ProposalTimingConfig
+
+-- | The maximum valid duration of a transaction that creats a proposal.
+[createProposalTimeRangeMaxWidth] :: GovernorDatum -> MaxTimeRangeWidth
 
 -- | Redeemer for Governor script. The governor has two primary
 --   responsibilities:
@@ -1017,6 +1134,8 @@ GovernorDatum :: ProposalThresholds -> ProposalId -> GovernorDatum
 --   <li>The gating of Proposal creation.</li>
 --   <li>The gating of minting authority tokens.</li>
 --   </ol>
+--   
+--   Parameters of the governor can also be mutated by an effect.
 data GovernorRedeemer
 
 -- | Checks that a proposal was created lawfully, and allows it.
@@ -1026,31 +1145,78 @@ CreateProposal :: GovernorRedeemer
 --   GATs for each effect script.
 MintGATs :: GovernorRedeemer
 
+-- | Allows effects to mutate the parameters.
+MutateGovernor :: GovernorRedeemer
+
 -- | Parameters for creating Governor scripts.
 data Governor
-Governor :: Governor
+Governor :: TxOutRef -> Tagged GTTag AssetClass -> Integer -> Governor
 
--- | Policy for Governors.
-governorPolicy :: Governor -> ClosedTerm PMintingPolicy
+-- | Referenced utxo will be spent to mint the GST.
+[gstOutRef] :: Governor -> TxOutRef
 
--- | Validator for Governors.
-governorValidator :: Governor -> ClosedTerm PValidator
+-- | Governance token of the system.
+[gtClassRef] :: Governor -> Tagged GTTag AssetClass
+
+-- | Arbitrary limit for maximum amount of cosigners on a proposal. See
+--   <a>proposalDatumValid</a>.
+[maximumCosigners] :: Governor -> Integer
+
+-- | Plutarch-level datum for the Governor script.
+newtype PGovernorDatum (s :: S)
+PGovernorDatum :: Term s (PDataRecord '["proposalThresholds" := PProposalThresholds, "nextProposalId" := PProposalId, "proposalTimings" := PProposalTimingConfig, "createProposalTimeRangeMaxWidth" := PMaxTimeRangeWidth]) -> PGovernorDatum (s :: S)
+[getGovernorDatum] :: PGovernorDatum (s :: S) -> Term s (PDataRecord '["proposalThresholds" := PProposalThresholds, "nextProposalId" := PProposalId, "proposalTimings" := PProposalTimingConfig, "createProposalTimeRangeMaxWidth" := PMaxTimeRangeWidth])
+
+-- | Plutarch-level version of <a>GovernorRedeemer</a>.
+data PGovernorRedeemer (s :: S)
+PCreateProposal :: Term s (PDataRecord '[]) -> PGovernorRedeemer (s :: S)
+PMintGATs :: Term s (PDataRecord '[]) -> PGovernorRedeemer (s :: S)
+PMutateGovernor :: Term s (PDataRecord '[]) -> PGovernorRedeemer (s :: S)
+
+-- | Plutrach version of <a>getNextProposalId</a>.
+pgetNextProposalId :: Term s (PProposalId :--> PProposalId)
+
+-- | Get next proposal id.
+getNextProposalId :: ProposalId -> ProposalId
+
+-- | Check whether a particular <a>PGovernorDatum</a> is well-formed.
+governorDatumValid :: Term s (PGovernorDatum :--> PBool)
 instance GHC.Generics.Generic Agora.Governor.Governor
+instance Plutarch.Bool.PEq Agora.Governor.PGovernorDatum
+instance Plutarch.DataRepr.Internal.Field.PDataFields Agora.Governor.PGovernorDatum
+instance Plutarch.Builtin.PIsData Agora.Governor.PGovernorDatum
+instance Plutarch.Internal.PlutusType.PlutusType Agora.Governor.PGovernorDatum
+instance Plutarch.DataRepr.Internal.PIsDataRepr Agora.Governor.PGovernorDatum
+instance forall (s :: Plutarch.Internal.S). Generics.SOP.Universe.Generic (Agora.Governor.PGovernorDatum s)
+instance forall (s :: Plutarch.Internal.S). GHC.Generics.Generic (Agora.Governor.PGovernorDatum s)
+instance Plutarch.Builtin.PIsData Agora.Governor.PGovernorRedeemer
+instance Plutarch.Internal.PlutusType.PlutusType Agora.Governor.PGovernorRedeemer
+instance Plutarch.DataRepr.Internal.PIsDataRepr Agora.Governor.PGovernorRedeemer
+instance forall (s :: Plutarch.Internal.S). Generics.SOP.Universe.Generic (Agora.Governor.PGovernorRedeemer s)
+instance forall (s :: Plutarch.Internal.S). GHC.Generics.Generic (Agora.Governor.PGovernorRedeemer s)
+instance Plutarch.Lift.PConstantDecl Agora.Governor.GovernorDatum
+instance Plutarch.Lift.PConstantDecl Agora.Governor.GovernorRedeemer
+instance Plutarch.TryFrom.PTryFrom Plutarch.Builtin.PData (Plutarch.Builtin.PAsData Agora.Governor.PGovernorRedeemer)
+instance Plutarch.Lift.PUnsafeLiftDecl Agora.Governor.PGovernorRedeemer
+instance Plutarch.Lift.PUnsafeLiftDecl Agora.Governor.PGovernorDatum
+instance Plutarch.TryFrom.PTryFrom Plutarch.Builtin.PData (Plutarch.Builtin.PAsData Agora.Governor.PGovernorDatum)
 instance PlutusTx.IsData.Class.ToData Agora.Governor.GovernorRedeemer
 instance PlutusTx.IsData.Class.FromData Agora.Governor.GovernorRedeemer
 instance PlutusTx.IsData.Class.UnsafeFromData Agora.Governor.GovernorRedeemer
 instance GHC.Generics.Generic Agora.Governor.GovernorRedeemer
+instance GHC.Show.Show Agora.Governor.GovernorRedeemer
 instance PlutusTx.IsData.Class.ToData Agora.Governor.GovernorDatum
 instance PlutusTx.IsData.Class.FromData Agora.Governor.GovernorDatum
 instance PlutusTx.IsData.Class.UnsafeFromData Agora.Governor.GovernorDatum
 instance GHC.Generics.Generic Agora.Governor.GovernorDatum
+instance GHC.Show.Show Agora.Governor.GovernorDatum
 
 
 -- | Tokens acting as redeemable proofs of DAO authority.
 module Agora.AuthorityToken
 
 -- | Policy given <a>AuthorityToken</a> params.
-authorityTokenPolicy :: AuthorityToken -> Term s (PData :--> (PScriptContext :--> PUnit))
+authorityTokenPolicy :: AuthorityToken -> ClosedTerm PMintingPolicy
 
 -- | Check that all GATs are valid in a particular TxOut. How this is
 --   checked: an AuthorityToken should never leave the Effect it was
@@ -1063,7 +1229,7 @@ authorityTokenPolicy :: AuthorityToken -> Term s (PData :--> (PScriptContext :--
 authorityTokensValidIn :: Term s (PCurrencySymbol :--> (PTxOut :--> PBool))
 
 -- | Assert that a single authority token has been burned.
-singleAuthorityTokenBurned :: forall (s :: S). Term s PCurrencySymbol -> Term s (PAsData PTxInfo) -> Term s PValue -> Term s PBool
+singleAuthorityTokenBurned :: forall (keys :: KeyGuarantees) (amounts :: AmountGuarantees) (s :: S). Term s PCurrencySymbol -> Term s (PAsData PTxInfo) -> Term s (PValue keys amounts) -> Term s PBool
 
 -- | An AuthorityToken represents a proof that a particular token moved
 --   while this token was minted. In effect, this means that the validator
@@ -1114,6 +1280,165 @@ instance GHC.Show.Show Agora.Treasury.TreasuryRedeemer
 instance GHC.Classes.Eq Agora.Treasury.TreasuryRedeemer
 
 
+-- | Plutus scripts for Governors.
+module Agora.Governor.Scripts
+
+-- | Policy for minting GSTs.
+--   
+--   This policy perform the following checks:
+--   
+--   <ul>
+--   <li>The UTXO referenced in the parameter is spent in the
+--   transaction.</li>
+--   <li>Exactly one GST is minted.</li>
+--   <li>Ensure the token name is empty.</li>
+--   <li>Said UTXO should carry a valid <a>GovernorDatum</a>.</li>
+--   </ul>
+--   
+--   NOTE: It's user's responsibility to make sure the token is sent to the
+--   corresponding governor validator. We <i>can't</i> really check this in
+--   the policy, otherwise we create a cyclic reference issue.
+governorPolicy :: Governor -> ClosedTerm PMintingPolicy
+
+-- | Validator for Governors.
+--   
+--   <h2>Common checks</h2>
+--   
+--   The validator always ensures:
+--   
+--   <ul>
+--   <li>The UTXO which holds the GST must be spent.</li>
+--   <li>The GST always stays at the validator's address.</li>
+--   <li>The new state UTXO has a valid datum of type
+--   <a>GovernorDatum</a>.</li>
+--   </ul>
+--   
+--   <h2>Creating a Proposal</h2>
+--   
+--   When the redeemer is <a>CreateProposal</a>, the script will check:
+--   
+--   <ul>
+--   <li>For governor's state datum:<ul><li><a>nextProposalId</a> is
+--   advanced.</li><li>Nothing is changed other that that.</li></ul></li>
+--   <li>Exactly one stake (the "input stake") must be provided in the
+--   input:</li>
+--   <li>At least <a>stackedAmount</a> of GT must be spent in the
+--   transaction.</li>
+--   <li>The transaction must be signed by the stake owner.</li>
+--   <li>Exactly one new proposal state token is minted.</li>
+--   <li>An UTXO which holds the newly minted proposal state token is sent
+--   to the proposal validator. This UTXO must have a valid datum of type
+--   <a>ProposalDatum</a>, the datum must:<ul><li>Copy its id and
+--   thresholds from the governor's state.</li><li>Have status set to
+--   <a>Draft</a>.</li><li>Have zero votes.</li><li>Have exactly one
+--   cosigner - the stake owner</li></ul></li>
+--   <li>An UTXO which holds the stake state token is sent back to the
+--   stake validator. This UTXO must have a valid datum of type
+--   <a>StakeDatum</a>:<ul><li>The <a>stakedAmount</a> and <a>owner</a>
+--   should not be changed, comparing to the input stake.</li><li>The new
+--   proposal locks must be appended to the <a>lockedBy</a>.</li></ul></li>
+--   </ul>
+--   
+--   <h2>Minting GATs</h2>
+--   
+--   When the redeemer is <a>MintGATs</a>, the script will check:
+--   
+--   <ul>
+--   <li>Governor's state is not changed.</li>
+--   <li>Exactly only one proposal is in the inputs. Let's call this the
+--   <i>input proposal</i>.</li>
+--   <li>The proposal is in the <a>Executable</a> state.</li>
+--   </ul>
+--   
+--   NOTE: The input proposal is found by looking for the UTXO with a
+--   proposal state token in the inputs.
+--   
+--   <h3>Effect Group Selection</h3>
+--   
+--   Currently a proposal can have two or more than two options to vote on,
+--   meaning that it can contains two or more effect groups, according to
+--   <a>#39</a>.
+--   
+--   Either way, the shapes of <a>votes</a> and <a>effects</a> should be
+--   the same. This is checked by <a>proposalDatumValid</a>.
+--   
+--   The script will look at the the <a>votes</a> to determine which group
+--   has the highest votes, said group shoud be executed.
+--   
+--   During the process, minimum votes requirement will also be enforced.
+--   
+--   Next, the script will:
+--   
+--   <ul>
+--   <li>Ensure that for every effect in the said effect group, exactly one
+--   valid GAT is minted and sent to the effect.</li>
+--   <li>The amount of GAT minted in the transaction should be equal to the
+--   number of effects.</li>
+--   <li>A new UTXO is sent to the proposal validator, this UTXO
+--   should:<ul><li>Include the one proposal state token.</li><li>Have a
+--   valid datum of type <a>ProposalDatum</a>. This datum should be as same
+--   as the one of the input proposal, except its status should be
+--   <a>Finished</a>.</li></ul></li>
+--   </ul>
+--   
+--   <h2>Changing the State</h2>
+--   
+--   Redeemer <a>MutateGovernor</a> allows the state datum to be changed by
+--   an external effect.
+--   
+--   In this case, the script will check
+--   
+--   <ul>
+--   <li>Exactly one GAT is burnt in the transaction.</li>
+--   <li>Said GAT is tagged by the effect.</li>
+--   </ul>
+governorValidator :: Governor -> ClosedTerm PValidator
+
+-- | Get the <a>CurrencySymbol</a> of GST.
+governorSTSymbolFromGovernor :: Governor -> CurrencySymbol
+
+-- | Get the <a>AssetClass</a> of GST.
+governorSTAssetClassFromGovernor :: Governor -> AssetClass
+
+-- | Get the <a>AssetClass</a> of the proposal state token.
+proposalSTAssetClassFromGovernor :: Governor -> AssetClass
+
+-- | Get the <a>CurrencySymbol</a> of the stake token/
+stakeSTSymbolFromGovernor :: Governor -> CurrencySymbol
+
+-- | Get the <a>Stake</a> parameter, given the <a>Governor</a> parameter.
+stakeFromGovernor :: Governor -> Stake
+
+-- | Get the hash of <a>stakePolicy</a>.
+stakeValidatorHashFromGovernor :: Governor -> ValidatorHash
+
+-- | Get the <a>Proposal</a> parameter, given the <a>Governor</a>
+--   parameter.
+proposalFromGovernor :: Governor -> Proposal
+
+-- | Get the hash of <a>proposalPolicy</a>.
+proposalValidatorHashFromGovernor :: Governor -> ValidatorHash
+
+-- | Get the <a>CurrencySymbol</a> of the proposal state token.
+proposalSTSymbolFromGovernor :: Governor -> CurrencySymbol
+
+-- | Get the <a>AssetClass</a> of the stake token.
+--   
+--   Note that the token is tagged with the hash of the stake validator.
+--   See <a>stakePolicy</a>.
+stakeSTAssetClassFromGovernor :: Governor -> AssetClass
+
+-- | Get the hash of <a>proposalValidator</a>.
+governorValidatorHash :: Governor -> ValidatorHash
+
+-- | Get the <a>AuthorityToken</a> parameter given the <a>Governor</a>
+--   parameter.
+authorityTokenFromGovernor :: Governor -> AuthorityToken
+
+-- | Get the <a>CurrencySymbol</a> of the authority token.
+authorityTokenSymbolFromGovernor :: Governor -> CurrencySymbol
+
+
 -- | Helpers for constructing effects.
 module Agora.Effect
 
@@ -1122,7 +1447,7 @@ module Agora.Effect
 --   In some situations, it may be the case that we need more control over
 --   how an effect is implemented. In such situations, it's okay to not use
 --   this helper.
-makeEffect :: forall (datum :: PType). (PIsData datum, PTryFrom PData datum) => CurrencySymbol -> (forall (s :: S). Term s PCurrencySymbol -> Term s datum -> Term s PTxOutRef -> Term s (PAsData PTxInfo) -> Term s POpaque) -> ClosedTerm PValidator
+makeEffect :: forall (datum :: PType). (PIsData datum, PTryFrom PData (PAsData datum)) => CurrencySymbol -> (forall (s :: S). Term s PCurrencySymbol -> Term s datum -> Term s PTxOutRef -> Term s (PAsData PTxInfo) -> Term s POpaque) -> ClosedTerm PValidator
 
 
 -- | An Effect that withdraws treasury deposit
@@ -1144,7 +1469,7 @@ TreasuryWithdrawalDatum :: [(Credential, Value)] -> [Credential] -> TreasuryWith
 
 -- | Haskell-level version of <a>TreasuryWithdrawalDatum</a>.
 newtype PTreasuryWithdrawalDatum (s :: S)
-PTreasuryWithdrawalDatum :: Term s (PDataRecord '["receivers" := PBuiltinList (PAsData (PTuple PCredential PValue)), "treasuries" := PBuiltinList (PAsData PCredential)]) -> PTreasuryWithdrawalDatum (s :: S)
+PTreasuryWithdrawalDatum :: Term s (PDataRecord '["receivers" := PBuiltinList (PAsData (PTuple PCredential (PValue 'Sorted 'Positive))), "treasuries" := PBuiltinList (PAsData PCredential)]) -> PTreasuryWithdrawalDatum (s :: S)
 
 -- | Withdraws given list of values to specific target addresses. It can be
 --   evoked by burning GAT. The transaction should have correct outputs to
@@ -1166,7 +1491,7 @@ instance forall (s :: Plutarch.Internal.S). Generics.SOP.Universe.Generic (Agora
 instance forall (s :: Plutarch.Internal.S). GHC.Generics.Generic (Agora.Effect.TreasuryWithdrawal.PTreasuryWithdrawalDatum s)
 instance Plutarch.Lift.PConstantDecl Agora.Effect.TreasuryWithdrawal.TreasuryWithdrawalDatum
 instance Plutarch.Lift.PUnsafeLiftDecl Agora.Effect.TreasuryWithdrawal.PTreasuryWithdrawalDatum
-instance Plutarch.TryFrom.PTryFrom Plutarch.Builtin.PData Agora.Effect.TreasuryWithdrawal.PTreasuryWithdrawalDatum
+instance Plutarch.TryFrom.PTryFrom Plutarch.Builtin.PData (Plutarch.Builtin.PAsData Agora.Effect.TreasuryWithdrawal.PTreasuryWithdrawalDatum)
 instance PlutusTx.IsData.Class.ToData Agora.Effect.TreasuryWithdrawal.TreasuryWithdrawalDatum
 instance PlutusTx.IsData.Class.FromData Agora.Effect.TreasuryWithdrawal.TreasuryWithdrawalDatum
 instance PlutusTx.IsData.Class.UnsafeFromData Agora.Effect.TreasuryWithdrawal.TreasuryWithdrawalDatum
@@ -1187,18 +1512,62 @@ noOpValidator :: CurrencySymbol -> ClosedTerm PValidator
 data PNoOp (s :: S)
 instance Plutarch.Builtin.PIsData Agora.Effect.NoOp.PNoOp
 instance Plutarch.Internal.PlutusType.PlutusType Agora.Effect.NoOp.PNoOp
-instance Plutarch.TryFrom.PTryFrom Plutarch.Builtin.PData Agora.Effect.NoOp.PNoOp
+instance Plutarch.TryFrom.PTryFrom Plutarch.Builtin.PData (Plutarch.Builtin.PAsData Agora.Effect.NoOp.PNoOp)
 
-module Agora.Utils.Value
 
--- | Establishes if a value is greater than or equal to another.
-pgeq :: Term s (PValue :--> (PValue :--> PBool))
+-- | An effect for mutating governor settings.
+module Agora.Effect.GovernorMutation
 
--- | Establishes if a value is less than or equal to another.
-pleq :: Term s (PValue :--> (PValue :--> PBool))
+-- | Haskell-level datum for the governor mutation effect script.
+data MutateGovernorDatum
+MutateGovernorDatum :: TxOutRef -> GovernorDatum -> MutateGovernorDatum
 
--- | Establishes if a value is strictly greater than another.
-pgt :: Term s (PValue :--> (PValue :--> PBool))
+-- | Referenced governor state UTXO should be updated by the effect.
+[governorRef] :: MutateGovernorDatum -> TxOutRef
 
--- | Establishes if a value is strictly less than another.
-plt :: Term s (PValue :--> (PValue :--> PBool))
+-- | The new settings for the governor.
+[newDatum] :: MutateGovernorDatum -> GovernorDatum
+
+-- | Plutarch-level version of <a>MutateGovernorDatum</a>.
+newtype PMutateGovernorDatum (s :: S)
+PMutateGovernorDatum :: Term s (PDataRecord '["governorRef" := PTxOutRef, "newDatum" := PGovernorDatum]) -> PMutateGovernorDatum (s :: S)
+
+-- | Validator for the governor mutation effect.
+--   
+--   This effect is implemented using the <a>makeEffect</a> wrapper,
+--   meaning that the burning of GAT is checked in said wrapper.
+--   
+--   In order to locate the governor, the validator is parametrized with a
+--   <a>Governor</a>.
+--   
+--   All the information it needs to validate the effect is encoded in the
+--   <a>MutateGovernorDatum</a>, so regardless what redeemer it's given, it
+--   will check:
+--   
+--   <ul>
+--   <li>No token is minted/burnt other than GAT.</li>
+--   <li>Nothing is being paid to the the effect validator.</li>
+--   <li>The governor's state UTXO must be spent:<ul><li>It carries exactly
+--   one GST.</li><li>It's referenced by <a>governorRef</a> in the effect's
+--   datum.</li></ul></li>
+--   <li>A new state UTXO is paid to the governor:<ul><li>It contains the
+--   GST.</li><li>It has valid governor state datum.</li><li>The datum is
+--   exactly the same as the <a>newDatum</a>.</li></ul></li>
+--   </ul>
+mutateGovernorValidator :: Governor -> ClosedTerm PValidator
+instance Plutarch.Bool.PEq Agora.Effect.GovernorMutation.PMutateGovernorDatum
+instance Plutarch.DataRepr.Internal.Field.PDataFields Agora.Effect.GovernorMutation.PMutateGovernorDatum
+instance Plutarch.Builtin.PIsData Agora.Effect.GovernorMutation.PMutateGovernorDatum
+instance Plutarch.Internal.PlutusType.PlutusType Agora.Effect.GovernorMutation.PMutateGovernorDatum
+instance Plutarch.DataRepr.Internal.PIsDataRepr Agora.Effect.GovernorMutation.PMutateGovernorDatum
+instance forall (s :: Plutarch.Internal.S). Generics.SOP.Universe.Generic (Agora.Effect.GovernorMutation.PMutateGovernorDatum s)
+instance forall (s :: Plutarch.Internal.S). GHC.Generics.Generic (Agora.Effect.GovernorMutation.PMutateGovernorDatum s)
+instance Plutarch.Lift.PConstantDecl Agora.Effect.GovernorMutation.MutateGovernorDatum
+instance Plutarch.Lift.PUnsafeLiftDecl Agora.Effect.GovernorMutation.PMutateGovernorDatum
+instance Plutarch.TryFrom.PTryFrom Plutarch.Builtin.PData (Plutarch.Builtin.PAsData Agora.Effect.GovernorMutation.PMutateGovernorDatum)
+instance PlutusTx.IsData.Class.ToData Agora.Effect.GovernorMutation.MutateGovernorDatum
+instance PlutusTx.IsData.Class.FromData Agora.Effect.GovernorMutation.MutateGovernorDatum
+instance PlutusTx.IsData.Class.UnsafeFromData Agora.Effect.GovernorMutation.MutateGovernorDatum
+instance Generics.SOP.Universe.Generic Agora.Effect.GovernorMutation.MutateGovernorDatum
+instance GHC.Generics.Generic Agora.Effect.GovernorMutation.MutateGovernorDatum
+instance GHC.Show.Show Agora.Effect.GovernorMutation.MutateGovernorDatum

@@ -1,0 +1,217 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-comment">{- |
+Module     : Agora.ScriptInfo
+Maintainer : emi@haskell.fyi
+Description: Exportable script bundles for off-chain consumption.
+
+Exportable script bundles for off-chain consumption.
+-}</span><span>
+</span><span id="line-8"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Agora.ScriptInfo</span><span> </span><span class="hs-special">(</span><span>
+</span><span id="line-9"></span><span>  </span><span class="annot"><span class="hs-comment">-- * Types</span></span><span>
+</span><span id="line-10"></span><span>  </span><span class="annot"><a href="Agora.ScriptInfo.html#PolicyInfo"><span class="hs-identifier">PolicyInfo</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-11"></span><span>  </span><span class="annot"><a href="Agora.ScriptInfo.html#ValidatorInfo"><span class="hs-identifier">ValidatorInfo</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-12"></span><span>
+</span><span id="line-13"></span><span>  </span><span class="annot"><span class="hs-comment">-- * Introduction functions</span></span><span>
+</span><span id="line-14"></span><span>  </span><span class="annot"><a href="Agora.ScriptInfo.html#mkValidatorInfo"><span class="hs-identifier">mkValidatorInfo</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-15"></span><span>  </span><span class="annot"><a href="Agora.ScriptInfo.html#mkPolicyInfo"><span class="hs-identifier">mkPolicyInfo</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-16"></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-17"></span><span>
+</span><span id="line-18"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Agora.Aeson.Orphans.html"><span class="hs-identifier">Agora.Aeson.Orphans</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-19"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/zl8icbmbd4alvsbfzzz398pz0xi7jdp1-aeson-lib-aeson-2.0.3.0-haddock-doc/share/doc/aeson/html/src"><span class="hs-identifier">Data.Aeson</span></a></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Aeson</span></span><span>
+</span><span id="line-20"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src"><span class="hs-identifier">GHC.Generics</span></a></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">GHC</span></span><span>
+</span><span id="line-21"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier">Plutarch.Api.V1</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier">PMintingPolicy</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier">PValidator</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier">mintingPolicySymbol</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier">mkMintingPolicy</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier">mkValidator</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier">validatorHash</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-22"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/6ilca7icmqibgfqmnsl33jwlfyzd55gp-plutus-ledger-api-lib-plutus-ledger-api-1.0.0.0-haddock-doc/share/doc/plutus-ledger-api/html/src"><span class="hs-identifier">PlutusLedgerApi.V1</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/6ilca7icmqibgfqmnsl33jwlfyzd55gp-plutus-ledger-api-lib-plutus-ledger-api-1.0.0.0-haddock-doc/share/doc/plutus-ledger-api/html/src"><span class="hs-identifier">MintingPolicy</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/6ilca7icmqibgfqmnsl33jwlfyzd55gp-plutus-ledger-api-lib-plutus-ledger-api-1.0.0.0-haddock-doc/share/doc/plutus-ledger-api/html/src"><span class="hs-identifier">Validator</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="../file:///nix/store/6ilca7icmqibgfqmnsl33jwlfyzd55gp-plutus-ledger-api-lib-plutus-ledger-api-1.0.0.0-haddock-doc/share/doc/plutus-ledger-api/html/src"><span class="hs-identifier">ValidatorHash</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-23"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="../file:///nix/store/6ilca7icmqibgfqmnsl33jwlfyzd55gp-plutus-ledger-api-lib-plutus-ledger-api-1.0.0.0-haddock-doc/share/doc/plutus-ledger-api/html/src"><span class="hs-identifier">PlutusLedgerApi.V1.Value</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/6ilca7icmqibgfqmnsl33jwlfyzd55gp-plutus-ledger-api-lib-plutus-ledger-api-1.0.0.0-haddock-doc/share/doc/plutus-ledger-api/html/src"><span class="hs-identifier">CurrencySymbol</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-24"></span><span>
+</span><span id="line-25"></span><span class="hs-comment">-- | Bundle containing a 'Validator' and its hash.</span><span>
+</span><span id="line-26"></span><span id="local-6989586621679554542"><span id="local-6989586621679554543"></span></span><span class="hs-keyword">data</span><span> </span><span id="ValidatorInfo"><span class="annot"><a href="Agora.ScriptInfo.html#ValidatorInfo"><span class="hs-identifier hs-var">ValidatorInfo</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="ValidatorInfo"><span class="annot"><a href="Agora.ScriptInfo.html#ValidatorInfo"><span class="hs-identifier hs-var">ValidatorInfo</span></a></span></span><span>
+</span><span id="line-27"></span><span>  </span><span class="hs-special">{</span><span> </span><span id="script"><span class="annot"><span class="annottext">ValidatorInfo -&gt; Validator
+</span><a href="Agora.ScriptInfo.html#script"><span class="hs-identifier hs-var hs-var">script</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/6ilca7icmqibgfqmnsl33jwlfyzd55gp-plutus-ledger-api-lib-plutus-ledger-api-1.0.0.0-haddock-doc/share/doc/plutus-ledger-api/html/src"><span class="hs-identifier hs-type">Validator</span></a></span><span>
+</span><span id="line-28"></span><span>  </span><span class="hs-comment">-- ^ The validator script.</span><span>
+</span><span id="line-29"></span><span>  </span><span class="hs-special">,</span><span> </span><span id="hash"><span class="annot"><span class="annottext">ValidatorInfo -&gt; ValidatorHash
+</span><a href="Agora.ScriptInfo.html#hash"><span class="hs-identifier hs-var hs-var">hash</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/6ilca7icmqibgfqmnsl33jwlfyzd55gp-plutus-ledger-api-lib-plutus-ledger-api-1.0.0.0-haddock-doc/share/doc/plutus-ledger-api/html/src"><span class="hs-identifier hs-type">ValidatorHash</span></a></span><span>
+</span><span id="line-30"></span><span>  </span><span class="hs-comment">-- ^ Hash of the validator.</span><span>
+</span><span id="line-31"></span><span>  </span><span class="hs-special">}</span><span>
+</span><span id="line-32"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">stock</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679554527"><span id="local-6989586621679554529"><span id="local-6989586621679554537"><span class="annot"><span class="annottext">Int -&gt; ValidatorInfo -&gt; ShowS
+[ValidatorInfo] -&gt; ShowS
+ValidatorInfo -&gt; String
+(Int -&gt; ValidatorInfo -&gt; ShowS)
+-&gt; (ValidatorInfo -&gt; String)
+-&gt; ([ValidatorInfo] -&gt; ShowS)
+-&gt; Show ValidatorInfo
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [ValidatorInfo] -&gt; ShowS
+$cshowList :: [ValidatorInfo] -&gt; ShowS
+show :: ValidatorInfo -&gt; String
+$cshow :: ValidatorInfo -&gt; String
+showsPrec :: Int -&gt; ValidatorInfo -&gt; ShowS
+$cshowsPrec :: Int -&gt; ValidatorInfo -&gt; ShowS
+</span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679554518"><span id="local-6989586621679554524"><span class="annot"><span class="annottext">ValidatorInfo -&gt; ValidatorInfo -&gt; Bool
+(ValidatorInfo -&gt; ValidatorInfo -&gt; Bool)
+-&gt; (ValidatorInfo -&gt; ValidatorInfo -&gt; Bool) -&gt; Eq ValidatorInfo
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: ValidatorInfo -&gt; ValidatorInfo -&gt; Bool
+$c/= :: ValidatorInfo -&gt; ValidatorInfo -&gt; Bool
+== :: ValidatorInfo -&gt; ValidatorInfo -&gt; Bool
+$c== :: ValidatorInfo -&gt; ValidatorInfo -&gt; Bool
+</span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.8.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">(forall x. ValidatorInfo -&gt; Rep ValidatorInfo x)
+-&gt; (forall x. Rep ValidatorInfo x -&gt; ValidatorInfo)
+-&gt; Generic ValidatorInfo
+forall x. Rep ValidatorInfo x -&gt; ValidatorInfo
+forall x. ValidatorInfo -&gt; Rep ValidatorInfo x
+forall a.
+(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
+$cto :: forall x. Rep ValidatorInfo x -&gt; ValidatorInfo
+$cfrom :: forall x. ValidatorInfo -&gt; Rep ValidatorInfo x
+</span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">GHC.Generic</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-33"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">anyclass</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679554506"><span id="local-6989586621679554508"><span id="local-6989586621679554510"><span id="local-6989586621679554512"><span class="annot"><span class="annottext">[ValidatorInfo] -&gt; Encoding
+[ValidatorInfo] -&gt; Value
+ValidatorInfo -&gt; Encoding
+ValidatorInfo -&gt; Value
+(ValidatorInfo -&gt; Value)
+-&gt; (ValidatorInfo -&gt; Encoding)
+-&gt; ([ValidatorInfo] -&gt; Value)
+-&gt; ([ValidatorInfo] -&gt; Encoding)
+-&gt; ToJSON ValidatorInfo
+forall a.
+(a -&gt; Value)
+-&gt; (a -&gt; Encoding)
+-&gt; ([a] -&gt; Value)
+-&gt; ([a] -&gt; Encoding)
+-&gt; ToJSON a
+toEncodingList :: [ValidatorInfo] -&gt; Encoding
+$ctoEncodingList :: [ValidatorInfo] -&gt; Encoding
+toJSONList :: [ValidatorInfo] -&gt; Value
+$ctoJSONList :: [ValidatorInfo] -&gt; Value
+toEncoding :: ValidatorInfo -&gt; Encoding
+$ctoEncoding :: ValidatorInfo -&gt; Encoding
+toJSON :: ValidatorInfo -&gt; Value
+$ctoJSON :: ValidatorInfo -&gt; Value
+</span><a href="../file:///nix/store/zl8icbmbd4alvsbfzzz398pz0xi7jdp1-aeson-lib-aeson-2.0.3.0-haddock-doc/share/doc/aeson/html/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Aeson.ToJSON</span></a></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679554501"><span id="local-6989586621679554503"><span class="annot"><span class="annottext">Value -&gt; Parser [ValidatorInfo]
+Value -&gt; Parser ValidatorInfo
+(Value -&gt; Parser ValidatorInfo)
+-&gt; (Value -&gt; Parser [ValidatorInfo]) -&gt; FromJSON ValidatorInfo
+forall a.
+(Value -&gt; Parser a) -&gt; (Value -&gt; Parser [a]) -&gt; FromJSON a
+parseJSONList :: Value -&gt; Parser [ValidatorInfo]
+$cparseJSONList :: Value -&gt; Parser [ValidatorInfo]
+parseJSON :: Value -&gt; Parser ValidatorInfo
+$cparseJSON :: Value -&gt; Parser ValidatorInfo
+</span><a href="../file:///nix/store/zl8icbmbd4alvsbfzzz398pz0xi7jdp1-aeson-lib-aeson-2.0.3.0-haddock-doc/share/doc/aeson/html/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Aeson.FromJSON</span></a></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-34"></span><span>
+</span><span id="line-35"></span><span class="hs-comment">-- | Create a 'ValidatorInfo' given a Plutarch term.</span><span>
+</span><span id="line-36"></span><span class="annot"><a href="Agora.ScriptInfo.html#mkValidatorInfo"><span class="hs-identifier hs-type">mkValidatorInfo</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">ClosedTerm</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PValidator</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Agora.ScriptInfo.html#ValidatorInfo"><span class="hs-identifier hs-type">ValidatorInfo</span></a></span><span>
+</span><span id="line-37"></span><span id="mkValidatorInfo"><span class="annot"><span class="annottext">mkValidatorInfo :: ClosedTerm PValidator -&gt; ValidatorInfo
+</span><a href="Agora.ScriptInfo.html#mkValidatorInfo"><span class="hs-identifier hs-var hs-var">mkValidatorInfo</span></a></span></span><span> </span><span id="local-6989586621679554499"><span class="annot"><span class="annottext">ClosedTerm PValidator
+</span><a href="#local-6989586621679554499"><span class="hs-identifier hs-var">term</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-38"></span><span>  </span><span class="annot"><a href="Agora.ScriptInfo.html#ValidatorInfo"><span class="hs-identifier hs-type">ValidatorInfo</span></a></span><span>
+</span><span id="line-39"></span><span>    </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="annottext">script :: Validator
+</span><a href="Agora.ScriptInfo.html#script"><span class="hs-identifier hs-var">script</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Validator
+</span><a href="#local-6989586621679554498"><span class="hs-identifier hs-var">validator</span></a></span><span>
+</span><span id="line-40"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">hash :: ValidatorHash
+</span><a href="Agora.ScriptInfo.html#hash"><span class="hs-identifier hs-var">hash</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Validator -&gt; ValidatorHash
+</span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">validatorHash</span></a></span><span> </span><span class="annot"><span class="annottext">Validator
+</span><a href="#local-6989586621679554498"><span class="hs-identifier hs-var">validator</span></a></span><span>
+</span><span id="line-41"></span><span>    </span><span class="hs-special">}</span><span>
+</span><span id="line-42"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-43"></span><span>    </span><span id="local-6989586621679554498"><span class="annot"><span class="annottext">validator :: Validator
+</span><a href="#local-6989586621679554498"><span class="hs-identifier hs-var hs-var">validator</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ClosedTerm PValidator -&gt; Validator
+</span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">mkValidator</span></a></span><span> </span><span class="annot"><span class="annottext">ClosedTerm PValidator
+</span><a href="#local-6989586621679554499"><span class="hs-identifier hs-var">term</span></a></span><span>
+</span><span id="line-44"></span><span>
+</span><span id="line-45"></span><span class="hs-comment">-- | Bundle containing a 'MintingPolicy' and its symbol.</span><span>
+</span><span id="line-46"></span><span id="local-6989586621679554496"><span id="local-6989586621679554497"></span></span><span class="hs-keyword">data</span><span> </span><span id="PolicyInfo"><span class="annot"><a href="Agora.ScriptInfo.html#PolicyInfo"><span class="hs-identifier hs-var">PolicyInfo</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="PolicyInfo"><span class="annot"><a href="Agora.ScriptInfo.html#PolicyInfo"><span class="hs-identifier hs-var">PolicyInfo</span></a></span></span><span>
+</span><span id="line-47"></span><span>  </span><span class="hs-special">{</span><span> </span><span id="policy"><span class="annot"><span class="annottext">PolicyInfo -&gt; MintingPolicy
+</span><a href="Agora.ScriptInfo.html#policy"><span class="hs-identifier hs-var hs-var">policy</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/6ilca7icmqibgfqmnsl33jwlfyzd55gp-plutus-ledger-api-lib-plutus-ledger-api-1.0.0.0-haddock-doc/share/doc/plutus-ledger-api/html/src"><span class="hs-identifier hs-type">MintingPolicy</span></a></span><span>
+</span><span id="line-48"></span><span>  </span><span class="hs-comment">-- ^ The minting policy.</span><span>
+</span><span id="line-49"></span><span>  </span><span class="hs-special">,</span><span> </span><span id="currencySymbol"><span class="annot"><span class="annottext">PolicyInfo -&gt; CurrencySymbol
+</span><a href="Agora.ScriptInfo.html#currencySymbol"><span class="hs-identifier hs-var hs-var">currencySymbol</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/6ilca7icmqibgfqmnsl33jwlfyzd55gp-plutus-ledger-api-lib-plutus-ledger-api-1.0.0.0-haddock-doc/share/doc/plutus-ledger-api/html/src"><span class="hs-identifier hs-type">CurrencySymbol</span></a></span><span>
+</span><span id="line-50"></span><span>  </span><span class="hs-comment">-- ^ The symbol given by the minting policy.</span><span>
+</span><span id="line-51"></span><span>  </span><span class="hs-special">}</span><span>
+</span><span id="line-52"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">stock</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679554482"><span id="local-6989586621679554484"><span id="local-6989586621679554491"><span class="annot"><span class="annottext">Int -&gt; PolicyInfo -&gt; ShowS
+[PolicyInfo] -&gt; ShowS
+PolicyInfo -&gt; String
+(Int -&gt; PolicyInfo -&gt; ShowS)
+-&gt; (PolicyInfo -&gt; String)
+-&gt; ([PolicyInfo] -&gt; ShowS)
+-&gt; Show PolicyInfo
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [PolicyInfo] -&gt; ShowS
+$cshowList :: [PolicyInfo] -&gt; ShowS
+show :: PolicyInfo -&gt; String
+$cshow :: PolicyInfo -&gt; String
+showsPrec :: Int -&gt; PolicyInfo -&gt; ShowS
+$cshowsPrec :: Int -&gt; PolicyInfo -&gt; ShowS
+</span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679554474"><span id="local-6989586621679554480"><span class="annot"><span class="annottext">PolicyInfo -&gt; PolicyInfo -&gt; Bool
+(PolicyInfo -&gt; PolicyInfo -&gt; Bool)
+-&gt; (PolicyInfo -&gt; PolicyInfo -&gt; Bool) -&gt; Eq PolicyInfo
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: PolicyInfo -&gt; PolicyInfo -&gt; Bool
+$c/= :: PolicyInfo -&gt; PolicyInfo -&gt; Bool
+== :: PolicyInfo -&gt; PolicyInfo -&gt; Bool
+$c== :: PolicyInfo -&gt; PolicyInfo -&gt; Bool
+</span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.8.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">(forall x. PolicyInfo -&gt; Rep PolicyInfo x)
+-&gt; (forall x. Rep PolicyInfo x -&gt; PolicyInfo) -&gt; Generic PolicyInfo
+forall x. Rep PolicyInfo x -&gt; PolicyInfo
+forall x. PolicyInfo -&gt; Rep PolicyInfo x
+forall a.
+(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
+$cto :: forall x. Rep PolicyInfo x -&gt; PolicyInfo
+$cfrom :: forall x. PolicyInfo -&gt; Rep PolicyInfo x
+</span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">GHC.Generic</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-53"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">anyclass</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679554464"><span id="local-6989586621679554466"><span id="local-6989586621679554468"><span id="local-6989586621679554470"><span class="annot"><span class="annottext">[PolicyInfo] -&gt; Encoding
+[PolicyInfo] -&gt; Value
+PolicyInfo -&gt; Encoding
+PolicyInfo -&gt; Value
+(PolicyInfo -&gt; Value)
+-&gt; (PolicyInfo -&gt; Encoding)
+-&gt; ([PolicyInfo] -&gt; Value)
+-&gt; ([PolicyInfo] -&gt; Encoding)
+-&gt; ToJSON PolicyInfo
+forall a.
+(a -&gt; Value)
+-&gt; (a -&gt; Encoding)
+-&gt; ([a] -&gt; Value)
+-&gt; ([a] -&gt; Encoding)
+-&gt; ToJSON a
+toEncodingList :: [PolicyInfo] -&gt; Encoding
+$ctoEncodingList :: [PolicyInfo] -&gt; Encoding
+toJSONList :: [PolicyInfo] -&gt; Value
+$ctoJSONList :: [PolicyInfo] -&gt; Value
+toEncoding :: PolicyInfo -&gt; Encoding
+$ctoEncoding :: PolicyInfo -&gt; Encoding
+toJSON :: PolicyInfo -&gt; Value
+$ctoJSON :: PolicyInfo -&gt; Value
+</span><a href="#local-6989586621679554464"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Aeson.ToJSON</span></a></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679554460"><span id="local-6989586621679554462"><span class="annot"><span class="annottext">Value -&gt; Parser [PolicyInfo]
+Value -&gt; Parser PolicyInfo
+(Value -&gt; Parser PolicyInfo)
+-&gt; (Value -&gt; Parser [PolicyInfo]) -&gt; FromJSON PolicyInfo
+forall a.
+(Value -&gt; Parser a) -&gt; (Value -&gt; Parser [a]) -&gt; FromJSON a
+parseJSONList :: Value -&gt; Parser [PolicyInfo]
+$cparseJSONList :: Value -&gt; Parser [PolicyInfo]
+parseJSON :: Value -&gt; Parser PolicyInfo
+$cparseJSON :: Value -&gt; Parser PolicyInfo
+</span><a href="#local-6989586621679554460"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Aeson.FromJSON</span></a></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-54"></span><span>
+</span><span id="line-55"></span><span class="hs-comment">-- | Create a 'PolicyInfo' given a Plutarch term.</span><span>
+</span><span id="line-56"></span><span class="annot"><a href="Agora.ScriptInfo.html#mkPolicyInfo"><span class="hs-identifier hs-type">mkPolicyInfo</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">ClosedTerm</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PMintingPolicy</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Agora.ScriptInfo.html#PolicyInfo"><span class="hs-identifier hs-type">PolicyInfo</span></a></span><span>
+</span><span id="line-57"></span><span id="mkPolicyInfo"><span class="annot"><span class="annottext">mkPolicyInfo :: ClosedTerm PMintingPolicy -&gt; PolicyInfo
+</span><a href="Agora.ScriptInfo.html#mkPolicyInfo"><span class="hs-identifier hs-var hs-var">mkPolicyInfo</span></a></span></span><span> </span><span id="local-6989586621679554459"><span class="annot"><span class="annottext">ClosedTerm PMintingPolicy
+</span><a href="#local-6989586621679554459"><span class="hs-identifier hs-var">term</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-58"></span><span>  </span><span class="annot"><a href="Agora.ScriptInfo.html#PolicyInfo"><span class="hs-identifier hs-type">PolicyInfo</span></a></span><span>
+</span><span id="line-59"></span><span>    </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="annottext">policy :: MintingPolicy
+</span><a href="Agora.ScriptInfo.html#policy"><span class="hs-identifier hs-var">policy</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">MintingPolicy
+</span><a href="#local-6989586621679554458"><span class="hs-identifier hs-var">policy</span></a></span><span>
+</span><span id="line-60"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">currencySymbol :: CurrencySymbol
+</span><a href="Agora.ScriptInfo.html#currencySymbol"><span class="hs-identifier hs-var">currencySymbol</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">MintingPolicy -&gt; CurrencySymbol
+</span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">mintingPolicySymbol</span></a></span><span> </span><span class="annot"><span class="annottext">MintingPolicy
+</span><a href="#local-6989586621679554458"><span class="hs-identifier hs-var">policy</span></a></span><span>
+</span><span id="line-61"></span><span>    </span><span class="hs-special">}</span><span>
+</span><span id="line-62"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-63"></span><span>    </span><span id="local-6989586621679554458"><span class="annot"><span class="annottext">policy :: MintingPolicy
+</span><a href="#local-6989586621679554458"><span class="hs-identifier hs-var hs-var">policy</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ClosedTerm PMintingPolicy -&gt; MintingPolicy
+</span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">mkMintingPolicy</span></a></span><span> </span><span class="annot"><span class="annottext">ClosedTerm PMintingPolicy
+</span><a href="#local-6989586621679554459"><span class="hs-identifier hs-var">term</span></a></span><span>
+</span><span id="line-64"></span></pre></body></html>
