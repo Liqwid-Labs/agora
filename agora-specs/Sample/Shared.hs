@@ -189,9 +189,9 @@ proposalValidatorAddress = scriptHashAddress proposalValidatorHash
 instance Default ProposalThresholds where
   def =
     ProposalThresholds
-      { countVoting = Tagged 1000
+      { execute = Tagged 1000
       , create = Tagged 1
-      , startVoting = Tagged 10
+      , vote = Tagged 10
       }
 
 authorityToken :: AuthorityToken

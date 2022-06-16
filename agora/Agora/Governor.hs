@@ -189,11 +189,11 @@ governorDatumValid = phoistAcyclic $
   plam $ \datum -> unTermCont $ do
     thresholds <-
       tcont $
-        pletFields @'["execute", "draft", "vote"] $
+        pletFields @'["execute", "create", "vote"] $
           pfield @"proposalThresholds" # datum
 
     PDiscrete execute' <- pmatchC thresholds.execute
-    PDiscrete draft' <- pmatchC thresholds.draft
+    PDiscrete draft' <- pmatchC thresholds.create
     PDiscrete vote' <- pmatchC thresholds.vote
 
     execute <- tclet $ pextract # execute'
