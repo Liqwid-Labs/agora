@@ -1,7 +1,7 @@
 # This really ought to be `/usr/bin/env bash`, but nix flakes don't like that.
 SHELL := /bin/sh
 
-.PHONY: hoogle format haddock usage tag format_nix format_haskell format_check lint ps_bridge bench bench_check
+.PHONY: hoogle format haddock usage tag format_nix format_haskell format_check lint ps_bridge bench bench_check scripts
 
 AGORA_TARGETS := agora agora-bench agora-purescript-bridge agora-scripts agora-specs agora-test agora-testlib
 
@@ -20,6 +20,7 @@ usage:
 	@echo "  ps_bridge -- Generate purescript bridge files"
 	@echo "  bench -- Generate bench report bench.csv"
 	@echo "  bench_check -- Check if bench report is up-to-date"
+	@echo "  scripts -- Export scripts to json files"
 
 hoogle:
 	pkill hoogle || true
@@ -68,3 +69,6 @@ bench_check:
 		|| (echo "bench.csv is outdated"; exit 1)
 	# TODO: do the clean-up even if `diff` fails.
 	rm -rf $(BENCH_TMPDIR)
+
+scripts:
+	cabal run agora-scripts
