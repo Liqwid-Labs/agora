@@ -8317,18 +8317,18 @@
         "plutarch": "plutarch_4"
       },
       "locked": {
-        "lastModified": 1654293673,
-        "narHash": "sha256-qH61Jm0ttY1GcWbto0IyiE0KEyHH3blFZlU1A0QhOGM=",
-        "ref": "main",
-        "rev": "f6903c61237edac47021ac9b67be25f677841b6c",
-        "revCount": 15,
-        "type": "git",
-        "url": "ssh://git@github.com/Liqwid-Labs/plutarch-context-builder"
+        "lastModified": 1654950895,
+        "narHash": "sha256-HfTdkaPkyGDUiw+E8tUb/CHRzumuF+sDNcpuNRusVqM=",
+        "owner": "Liqwid-Labs",
+        "repo": "plutarch-context-builder",
+        "rev": "ae73a43ecfc51475376d2f8a9928cf27f7f10b4c",
+        "type": "github"
       },
       "original": {
+        "owner": "Liqwid-Labs",
         "ref": "main",
-        "type": "git",
-        "url": "ssh://git@github.com/Liqwid-Labs/plutarch-context-builder"
+        "repo": "plutarch-context-builder",
+        "type": "github"
       }
     },
     "plutarch-numeric": {
