@@ -18,7 +18,7 @@ import GHC.Generics qualified as GHC
 import Generics.SOP (Generic, I (I))
 
 import Agora.Effect (makeEffect)
-import Agora.Utils (findTxOutByTxOutRef, isPubKey)
+import Agora.Utils (isPubKey)
 import Plutarch.Api.V1 (
   AmountGuarantees (Positive),
   KeyGuarantees (Sorted),
@@ -30,6 +30,7 @@ import Plutarch.Api.V1 (
  )
 import Plutarch.Internal (punsafeCoerce)
 
+import Plutarch.Api.V1.ScriptContext (pfindTxInByTxOutRef)
 import "plutarch" Plutarch.Api.V1.Value (pnormalize)
 import Plutarch.DataRepr (
   DerivePConstantViaData (..),
@@ -112,7 +113,7 @@ treasuryWithdrawalValidator currSymbol = makeEffect currSymbol $
   \_cs (datum' :: Term _ PTreasuryWithdrawalDatum) txOutRef' txInfo' -> unTermCont $ do
     datum <- tcont $ pletFields @'["receivers", "treasuries"] datum'
     txInfo <- tcont $ pletFields @'["outputs", "inputs"] txInfo'
-    PJust txOut <- pmatchC $ findTxOutByTxOutRef # txOutRef' # pfromData txInfo.inputs
+    PJust ((pfield @"resolved" #) -> txOut) <- pmatchC $ pfindTxInByTxOutRef # txOutRef' # pfromData txInfo.inputs
     effInput <- tcont $ pletFields @'["address", "value"] $ txOut
     outputValues <-
       pletC $

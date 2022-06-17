@@ -34,7 +34,6 @@ import Agora.Stake (
   pgetStakeUsage,
  )
 import Agora.Utils (
-  findTxOutByTxOutRef,
   getMintingPolicySymbol,
   mustBePJust,
   mustFindDatum',
@@ -48,6 +47,7 @@ import Plutarch.Api.V1 (
  )
 import Plutarch.Api.V1.AssetClass (passetClass, passetClassValueOf)
 import Plutarch.Api.V1.ScriptContext (
+  pfindTxInByTxOutRef,
   pisTokenSpent,
   ptxSignedBy,
   pvalueSpent,
@@ -163,7 +163,7 @@ proposalValidator proposal =
           txInfo'
     PSpending ((pfield @"_0" #) -> txOutRef) <- pmatchC $ pfromData ctx.purpose
 
-    PJust txOut <- pmatchC $ findTxOutByTxOutRef # txOutRef # txInfoF.inputs
+    PJust ((pfield @"resolved" #) -> txOut) <- pmatchC $ pfindTxInByTxOutRef # txOutRef # txInfoF.inputs
     txOutF <- tcont $ pletFields @'["address", "value"] $ txOut
 
     (pfromData -> proposalDatum, _) <-
