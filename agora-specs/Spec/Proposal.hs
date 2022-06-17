@@ -9,8 +9,6 @@ Tests for Proposal policy and validator
 -}
 module Spec.Proposal (specs) where
 
---------------------------------------------------------------------------------
-
 import Agora.Proposal (
   Proposal (..),
   ProposalDatum (..),
@@ -28,11 +26,10 @@ import Agora.Proposal (
   thresholds,
   votes,
  )
-import Agora.Proposal.Scripts (
-  proposalPolicy,
-  proposalValidator,
+import Agora.Proposal.Scripts (proposalPolicy, proposalValidator)
+import Agora.Proposal.Time (
+  ProposalStartingTime (ProposalStartingTime),
  )
-import Agora.Proposal.Time (ProposalStartingTime (ProposalStartingTime))
 import Agora.Stake (
   ProposalLock (ProposalLock),
   StakeDatum (StakeDatum),
@@ -42,10 +39,27 @@ import Agora.Stake.Scripts (stakeValidator)
 import Data.Default.Class (Default (def))
 import Data.Tagged (Tagged (Tagged), untag)
 import PlutusLedgerApi.V1 (ScriptContext (..), ScriptPurpose (..))
-import PlutusTx.AssocMap qualified as AssocMap
-import Sample.Proposal qualified as Proposal
+import PlutusTx.AssocMap qualified as AssocMap (empty, fromList)
+import Sample.Proposal qualified as Proposal (
+  TransitionParameters (
+    TransitionParameters,
+    initialProposalStatus,
+    proposalStartingTime
+  ),
+  VotingParameters (VotingParameters, voteCount, voteFor),
+  advanceFinishedPropsoal,
+  advanceProposalFailureTimeout,
+  advanceProposalInsufficientVotes,
+  advanceProposalSuccess,
+  advancePropsoalWithsStake,
+  cosignProposal,
+  proposalCreation,
+  proposalRef,
+  stakeRef,
+  voteOnProposal,
+ )
 import Sample.Shared (signer, signer2)
-import Sample.Shared qualified as Shared
+import Sample.Shared qualified as Shared (proposal, stake)
 import Test.Specification (
   SpecificationTree,
   group,
@@ -53,8 +67,6 @@ import Test.Specification (
   validatorFailsWith,
   validatorSucceedsWith,
  )
-
---------------------------------------------------------------------------------
 
 -- | Stake specs.
 specs :: [SpecificationTree]

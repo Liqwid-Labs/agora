@@ -26,8 +26,6 @@ import Test.Specification (
   validatorSucceedsWith,
  )
 
---------------------------------------------------------------------------------
-
 -- | The SpecificationTree exported by this module.
 specs :: [SpecificationTree]
 specs =

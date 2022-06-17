@@ -9,14 +9,8 @@ Tests for Authority token functions
 -}
 module Spec.AuthorityToken (specs) where
 
---------------------------------------------------------------------------------
-
 import Agora.AuthorityToken (singleAuthorityTokenBurned)
-import Plutarch
-import Prelude
-
---------------------------------------------------------------------------------
-
+import Plutarch (ClosedTerm, POpaque, compile, perror, popaque)
 import PlutusLedgerApi.V1 (
   Address (Address),
   Credential (PubKeyCredential, ScriptCredential),
@@ -29,14 +23,26 @@ import PlutusLedgerApi.V1 (
   ValidatorHash (ValidatorHash),
   Value,
  )
-import PlutusLedgerApi.V1.Interval qualified as Interval
-import PlutusLedgerApi.V1.Value qualified as Value
-import PlutusTx.AssocMap qualified as AssocMap
+import PlutusLedgerApi.V1.Interval qualified as Interval (always)
+import PlutusLedgerApi.V1.Value qualified as Value (
+  Value (Value),
+  singleton,
+ )
+import PlutusTx.AssocMap qualified as AssocMap (empty)
 import Test.Specification (
   SpecificationTree,
   group,
   scriptFails,
   scriptSucceeds,
+ )
+import Prelude (
+  Functor (fmap),
+  Maybe (Nothing),
+  PBool,
+  Semigroup ((<>)),
+  pconstant,
+  pconstantData,
+  pif,
  )
 
 currencySymbol :: CurrencySymbol
