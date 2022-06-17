@@ -27,7 +27,7 @@
   inputs.plutarch-quickcheck.url =
     "github:liqwid-labs/plutarch-quickcheck?ref=staging";
   inputs.plutarch-context-builder.url =
-    "github:Liqwid-Labs/plutarch-context-builder?ref=main";
+    "github:Liqwid-Labs/plutarch-context-builder?ref=staging";
 
   outputs = inputs@{ self, nixpkgs, nixpkgs-latest, haskell-nix, plutarch, ... }:
     let

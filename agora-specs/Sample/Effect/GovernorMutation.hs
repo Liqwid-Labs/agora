@@ -11,17 +11,13 @@ module Sample.Effect.GovernorMutation (
   mkEffectDatum,
 ) where
 
---------------------------------------------------------------------------------
-
 import Agora.Effect.GovernorMutation (
   MutateGovernorDatum (..),
   mutateGovernorValidator,
  )
 import Agora.Governor (GovernorDatum (..))
 import Agora.Proposal (ProposalId (..), ProposalThresholds (..))
-
---------------------------------------------------------------------------------
-
+import Data.Default.Class (Default (def))
 import Data.Tagged (Tagged (..))
 import Plutarch.Api.V1 (mkValidator, validatorHash)
 import PlutusLedgerApi.V1 (
@@ -36,13 +32,13 @@ import PlutusLedgerApi.V1 (
   Validator,
   ValidatorHash (..),
  )
-import PlutusLedgerApi.V1 qualified as Interval
+import PlutusLedgerApi.V1 qualified as Interval (always)
 import PlutusLedgerApi.V1.Address (scriptHashAddress)
 import PlutusLedgerApi.V1.Value (AssetClass, assetClass)
-import PlutusLedgerApi.V1.Value qualified as Value
-
---------------------------------------------------------------------------------
-
+import PlutusLedgerApi.V1.Value qualified as Value (
+  assetClassValue,
+  singleton,
+ )
 import Sample.Shared (
   authorityTokenSymbol,
   govAssetClass,
@@ -52,12 +48,6 @@ import Sample.Shared (
   signer,
  )
 import Test.Util (datumPair, toDatumHash)
-
---------------------------------------------------------------------------------
-
-import Data.Default.Class (Default (def))
-
---------------------------------------------------------------------------------
 
 -- | The effect validator instance.
 effectValidator :: Validator

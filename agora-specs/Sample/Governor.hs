@@ -12,40 +12,6 @@ module Sample.Governor (
   mintGST,
 ) where
 
---------------------------------------------------------------------------------
-
-import Data.Tagged (Tagged (..), untag)
-import Plutarch.Api.V1 (mkValidator, validatorHash)
-
---------------------------------------------------------------------------------
-
-import PlutusLedgerApi.V1 (
-  Address (..),
-  BuiltinData (BuiltinData),
-  Credential (ScriptCredential),
-  Data (I),
-  Datum (..),
-  ScriptContext (..),
-  ScriptPurpose (Minting, Spending),
-  ToData (toBuiltinData),
-  TokenName (..),
-  TxInInfo (TxInInfo),
-  TxInfo (..),
-  TxOut (..),
-  TxOutRef (..),
-  Validator,
-  ValidatorHash (..),
- )
-import PlutusLedgerApi.V1.Address (scriptHashAddress)
-import PlutusLedgerApi.V1.Interval qualified as Interval
-import PlutusLedgerApi.V1.Value (
-  AssetClass (..),
- )
-import PlutusLedgerApi.V1.Value qualified as Value
-import PlutusTx.AssocMap qualified as AssocMap
-
---------------------------------------------------------------------------------
-
 import Agora.Effect.NoOp (noOpValidator)
 import Agora.Governor (GovernorDatum (..), getNextProposalId)
 import Agora.Proposal (
@@ -56,42 +22,70 @@ import Agora.Proposal (
   ResultTag (..),
   emptyVotesFor,
  )
-import Agora.Proposal qualified as P
+import Agora.Proposal qualified as P (ProposalDatum (proposalId))
 import Agora.Proposal.Time (
   ProposalStartingTime (ProposalStartingTime),
   ProposalTimingConfig (..),
  )
-import Agora.Stake (
-  ProposalLock (..),
-  Stake (..),
-  StakeDatum (..),
+import Agora.Stake (ProposalLock (..), Stake (..), StakeDatum (..))
+import Data.Default.Class (Default (def))
+import Data.Tagged (Tagged (..), untag)
+import Plutarch.Api.V1 (mkValidator, validatorHash)
+import Plutarch.Context (
+  MintingBuilder,
+  SpendingBuilder,
+  buildMintingUnsafe,
+  buildSpendingUnsafe,
+  fee,
+  input,
+  mint,
+  output,
+  script,
+  signedWith,
+  timeRange,
+  txId,
+  withDatum,
+  withRefIndex,
+  withSpending,
+  withTxId,
+  withValue,
  )
-
---------------------------------------------------------------------------------
-
+import PlutusLedgerApi.V1 (
+  BuiltinData (BuiltinData),
+  Data (I),
+  Datum (Datum),
+  ScriptContext,
+  TokenName (TokenName),
+  TxOutRef (txOutRefId),
+  Validator,
+  ValidatorHash (..),
+ )
+import PlutusLedgerApi.V1.Value (AssetClass (AssetClass))
+import PlutusLedgerApi.V1.Value qualified as Value (
+  assetClassValue,
+  singleton,
+ )
+import PlutusTx.AssocMap qualified as AssocMap (
+  empty,
+  fromList,
+  singleton,
+ )
 import Sample.Shared (
   authorityTokenSymbol,
   govAssetClass,
-  govSymbol,
-  govValidatorAddress,
+  govValidatorHash,
   gstUTXORef,
   minAda,
   proposalPolicySymbol,
   proposalStartingTimeFromTimeRange,
-  proposalValidatorAddress,
+  proposalValidatorHash,
   signer,
   signer2,
   stake,
-  stakeAddress,
   stakeAssetClass,
+  stakeValidatorHash,
  )
-import Test.Util (closedBoundedInterval, datumPair, toDatumHash)
-
---------------------------------------------------------------------------------
-
-import Data.Default.Class (Default (def))
-
---------------------------------------------------------------------------------
+import Test.Util (closedBoundedInterval, toDatumHash)
 
 -- | Unit datum
 unitDatum :: Datum
@@ -118,65 +112,34 @@ mintGST :: ScriptContext
 mintGST =
   let gst = Value.assetClassValue govAssetClass 1
 
-      ---
-
-      governorOutputDatum' :: GovernorDatum
-      governorOutputDatum' =
+      governorOutputDatum :: GovernorDatum
+      governorOutputDatum =
         GovernorDatum
           { proposalThresholds = def
           , nextProposalId = ProposalId 0
           , proposalTimings = def
           , createProposalTimeRangeMaxWidth = def
           }
-      governorOutputDatum :: Datum
-      governorOutputDatum = Datum $ toBuiltinData governorOutputDatum'
-      governorOutput :: TxOut
-      governorOutput =
-        TxOut
-          { txOutAddress = govValidatorAddress
-          , txOutValue = gst <> minAda
-          , txOutDatumHash = Just $ toDatumHash governorOutputDatum
-          }
-
-      ---
 
       witness :: ValidatorHash
       witness = "a926a9a72a0963f428e3252caa8354e655603996fb8892d6b8323fd072345924"
-      witnessAddress :: Address
-      witnessAddress = Address (ScriptCredential witness) Nothing
 
-      ---
-
-      -- The witness UTXO must be consumed.
-      witnessInput :: TxOut
-      witnessInput =
-        TxOut
-          { txOutAddress = witnessAddress
-          , txOutValue = mempty
-          , txOutDatumHash = Nothing
-          }
-      initialSpend :: TxInInfo
-      initialSpend = TxInInfo gstUTXORef witnessInput
-   in ScriptContext
-        { scriptContextTxInfo =
-            TxInfo
-              { txInfoInputs =
-                  [ initialSpend
-                  ]
-              , txInfoOutputs = [governorOutput]
-              , -- Some ada to cover the transaction fee
-                txInfoFee = Value.singleton "" "" 2
-              , -- Exactly one GST is minted
-                txInfoMint = gst
-              , txInfoDCert = []
-              , txInfoWdrl = []
-              , txInfoValidRange = Interval.always
-              , txInfoSignatories = [signer]
-              , txInfoData = [datumPair governorOutputDatum]
-              , txInfoId = "90906d3e6b4d6dec2e747dcdd9617940ea8358164c7244694cfa39dec18bd9d4"
-              }
-        , scriptContextPurpose = Minting govSymbol
-        }
+      builder :: MintingBuilder
+      builder =
+        mconcat
+          [ txId "90906d3e6b4d6dec2e747dcdd9617940ea8358164c7244694cfa39dec18bd9d4"
+          , signedWith signer
+          , mint gst
+          , input $
+              script witness
+                . withTxId (txOutRefId gstUTXORef)
+                . withRefIndex 0
+          , output $
+              script govValidatorHash
+                . withValue (gst <> minAda)
+                . withDatum governorOutputDatum
+          ]
+   in buildMintingUnsafe builder
 
 {- | A valid script context to create a proposal.
 
@@ -213,143 +176,90 @@ createProposal =
       stackedGTs = 424242424242
       thisProposalId = ProposalId 0
 
-      ---
-
-      governorInputDatum' :: GovernorDatum
-      governorInputDatum' =
+      governorInputDatum :: GovernorDatum
+      governorInputDatum =
         GovernorDatum
           { proposalThresholds = def
           , nextProposalId = thisProposalId
           , proposalTimings = def
           , createProposalTimeRangeMaxWidth = def
           }
-      governorInputDatum :: Datum
-      governorInputDatum = Datum $ toBuiltinData governorInputDatum'
-      governorInput :: TxOut
-      governorInput =
-        TxOut
-          { txOutAddress = govValidatorAddress
-          , txOutValue = gst
-          , txOutDatumHash = Just $ toDatumHash governorInputDatum
-          }
-
-      ---
 
       effects =
         AssocMap.fromList
           [ (ResultTag 0, AssocMap.empty)
           , (ResultTag 1, AssocMap.empty)
           ]
-      proposalDatum :: Datum
+      proposalDatum :: ProposalDatum
       proposalDatum =
-        Datum
-          ( toBuiltinData $
-              ProposalDatum
-                { P.proposalId = ProposalId 0
-                , effects = effects
-                , status = Draft
-                , cosigners = [signer]
-                , thresholds = def
-                , votes = emptyVotesFor effects
-                , timingConfig = def
-                , startingTime = proposalStartingTimeFromTimeRange validTimeRange
-                }
-          )
-      proposalOutput :: TxOut
-      proposalOutput =
-        TxOut
-          { txOutAddress = proposalValidatorAddress
-          , txOutValue = pst <> minAda
-          , txOutDatumHash = Just (toDatumHash proposalDatum)
+        ProposalDatum
+          { P.proposalId = ProposalId 0
+          , effects = effects
+          , status = Draft
+          , cosigners = [signer]
+          , thresholds = def
+          , votes = emptyVotesFor effects
+          , timingConfig = def
+          , startingTime = proposalStartingTimeFromTimeRange validTimeRange
           }
 
-      ---
-
-      stakeInputDatum' :: StakeDatum
-      stakeInputDatum' =
+      stakeInputDatum :: StakeDatum
+      stakeInputDatum =
         StakeDatum
           { stakedAmount = Tagged stackedGTs
           , owner = signer
           , lockedBy = []
           }
-      stakeInputDatum :: Datum
-      stakeInputDatum = Datum $ toBuiltinData stakeInputDatum'
-      stakeInput :: TxOut
-      stakeInput =
-        TxOut
-          { txOutAddress = stakeAddress
-          , txOutValue = sst <> Value.assetClassValue (untag stake.gtClassRef) stackedGTs
-          , txOutDatumHash = Just (toDatumHash stakeInputDatum)
-          }
 
-      ---
-      governorOutputDatum' :: GovernorDatum
-      governorOutputDatum' = governorInputDatum' {nextProposalId = getNextProposalId thisProposalId}
-      governorOutputDatum :: Datum
-      governorOutputDatum = Datum $ toBuiltinData governorOutputDatum'
-      governorOutput :: TxOut
-      governorOutput =
-        governorInput
-          { txOutDatumHash = Just $ toDatumHash governorOutputDatum
-          , txOutValue = gst <> minAda
-          }
-
-      ---
+      governorOutputDatum :: GovernorDatum
+      governorOutputDatum = governorInputDatum {nextProposalId = getNextProposalId thisProposalId}
 
       proposalLocks :: [ProposalLock]
       proposalLocks =
         [ ProposalLock (ResultTag 0) thisProposalId
         , ProposalLock (ResultTag 1) thisProposalId
         ]
-      stakeOutputDatum' :: StakeDatum
-      stakeOutputDatum' = stakeInputDatum' {lockedBy = proposalLocks}
-      stakeOutputDatum :: Datum
-      stakeOutputDatum = Datum $ toBuiltinData stakeOutputDatum'
-      stakeOutput :: TxOut
-      stakeOutput =
-        stakeInput
-          { txOutDatumHash = Just $ toDatumHash stakeOutputDatum
-          , txOutValue = sst <> Value.assetClassValue (untag stake.gtClassRef) stackedGTs <> minAda
-          }
-
-      ---
-
-      ownInputRef :: TxOutRef
-      ownInputRef = TxOutRef "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865" 1
-
-      ---
+      stakeOutputDatum :: StakeDatum
+      stakeOutputDatum = stakeInputDatum {lockedBy = proposalLocks}
 
       validTimeRange = closedBoundedInterval 10 15
-   in ScriptContext
-        { scriptContextTxInfo =
-            TxInfo
-              { txInfoInputs =
-                  [ TxInInfo
-                      ownInputRef
-                      governorInput
-                  , TxInInfo
-                      (TxOutRef "4262bbd0b3fc926b74eaa8abab5def6ce5e6b94f19cf221c02a16e7da8cd470f" 1)
-                      stakeInput
-                  ]
-              , txInfoOutputs = [proposalOutput, governorOutput, stakeOutput]
-              , txInfoFee = Value.singleton "" "" 2
-              , txInfoMint = pst
-              , txInfoDCert = []
-              , txInfoWdrl = []
-              , txInfoValidRange = validTimeRange
-              , txInfoSignatories = [signer]
-              , txInfoData =
-                  datumPair
-                    <$> [ governorInputDatum
-                        , governorOutputDatum
-                        , proposalDatum
-                        , stakeInputDatum
-                        , stakeOutputDatum
-                        ]
-              , txInfoId = "1ffb9669335c908d9a4774a4bf7aa7bfafec91d015249b4138bc83fde4a3330a"
-              }
-        , scriptContextPurpose = Spending ownInputRef
-        }
+
+      builder :: SpendingBuilder
+      builder =
+        mconcat
+          [ txId "1ffb9669335c908d9a4774a4bf7aa7bfafec91d015249b4138bc83fde4a3330a"
+          , fee $ Value.singleton "" "" 2
+          , timeRange $ closedBoundedInterval 10 15
+          , signedWith signer
+          , mint pst
+          , input $
+              script govValidatorHash
+                . withValue gst
+                . withDatum governorInputDatum
+                . withTxId "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865"
+          , input $
+              script stakeValidatorHash
+                . withValue (sst <> Value.assetClassValue (untag stake.gtClassRef) stackedGTs)
+                . withDatum stakeInputDatum
+                . withTxId "4262bbd0b3fc926b74eaa8abab5def6ce5e6b94f19cf221c02a16e7da8cd470f"
+          , output $
+              script proposalValidatorHash
+                . withValue (pst <> minAda)
+                . withDatum proposalDatum
+          , output $
+              script govValidatorHash
+                . withValue (gst <> minAda)
+                . withDatum governorOutputDatum
+          , output $
+              script stakeValidatorHash
+                . withValue (sst <> Value.assetClassValue (untag stake.gtClassRef) stackedGTs <> minAda)
+                . withDatum stakeOutputDatum
+          , withSpending $
+              script govValidatorHash
+                . withValue gst
+                . withDatum governorInputDatum
+          ]
+   in buildSpendingUnsafe builder
 
 {- This script context should be a valid transaction for minting authority for the effect scrips.
 
@@ -374,14 +284,10 @@ mintGATs =
       gst = Value.assetClassValue govAssetClass 1
       gat = Value.assetClassValue atAssetClass 1
 
-      ---
-
       mockEffect :: Validator
       mockEffect = mkValidator $ noOpValidator ""
       mockEffectHash :: ValidatorHash
       mockEffectHash = validatorHash mockEffect
-      mockEffectAddress :: Address
-      mockEffectAddress = scriptHashAddress mockEffectHash
       mockEffectOutputDatum :: Datum
       mockEffectOutputDatum = unitDatum
       atTokenName :: TokenName
@@ -391,27 +297,14 @@ mintGATs =
       atAssetClass :: AssetClass
       atAssetClass = AssetClass (authorityTokenSymbol, atTokenName)
 
-      ---
-
-      governorInputDatum' :: GovernorDatum
-      governorInputDatum' =
+      governorInputDatum :: GovernorDatum
+      governorInputDatum =
         GovernorDatum
           { proposalThresholds = def
           , nextProposalId = ProposalId 5
           , proposalTimings = def
           , createProposalTimeRangeMaxWidth = def
           }
-      governorInputDatum :: Datum
-      governorInputDatum = Datum $ toBuiltinData governorInputDatum'
-      governorInput :: TxOut
-      governorInput =
-        TxOut
-          { txOutAddress = govValidatorAddress
-          , txOutValue = gst
-          , txOutDatumHash = Just $ toDatumHash governorInputDatum
-          }
-
-      ---
 
       effects =
         AssocMap.fromList
@@ -425,8 +318,8 @@ mintGATs =
             [ (ResultTag 0, 100)
             , (ResultTag 1, 2000) -- The winner
             ]
-      proposalInputDatum' :: ProposalDatum
-      proposalInputDatum' =
+      proposalInputDatum :: ProposalDatum
+      proposalInputDatum =
         ProposalDatum
           { P.proposalId = ProposalId 0
           , effects = effects
@@ -437,94 +330,55 @@ mintGATs =
           , timingConfig = def
           , startingTime = ProposalStartingTime 10
           }
-      proposalInputDatum :: Datum
-      proposalInputDatum = Datum $ toBuiltinData proposalInputDatum'
-      proposalInput :: TxOut
-      proposalInput =
-        TxOut
-          { txOutAddress = proposalValidatorAddress
-          , txOutValue = pst
-          , txOutDatumHash = Just (toDatumHash proposalInputDatum)
-          }
 
-      ---
+      governorOutputDatum :: GovernorDatum
+      governorOutputDatum = governorInputDatum
 
-      governorOutputDatum' :: GovernorDatum
-      governorOutputDatum' = governorInputDatum'
-      governorOutputDatum :: Datum
-      governorOutputDatum = Datum $ toBuiltinData governorOutputDatum'
-      governorOutput :: TxOut
-      governorOutput =
-        governorInput
-          { txOutDatumHash = Just $ toDatumHash governorOutputDatum
-          , txOutValue = gst <> minAda
-          }
+      proposalOutputDatum :: ProposalDatum
+      proposalOutputDatum = proposalInputDatum {status = Finished}
 
-      ---
-
-      proposalOutputDatum' :: ProposalDatum
-      proposalOutputDatum' = proposalInputDatum' {status = Finished}
-      proposalOutputDatum :: Datum
-      proposalOutputDatum = Datum $ toBuiltinData proposalOutputDatum'
-      proposalOutput :: TxOut
-      proposalOutput =
-        proposalInput
-          { txOutDatumHash = Just $ toDatumHash proposalOutputDatum
-          , txOutValue = pst <> minAda
-          }
-
-      --
-
-      mockEffectOutput :: TxOut
-      mockEffectOutput =
-        TxOut
-          { txOutAddress = mockEffectAddress
-          , txOutDatumHash = Just $ toDatumHash mockEffectOutputDatum
-          , txOutValue = gat <> minAda
-          }
-
-      --
-
-      ownInputRef :: TxOutRef
-      ownInputRef = TxOutRef "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865" 1
-
-      --
       validTimeRange =
         closedBoundedInterval
           ((def :: ProposalTimingConfig).lockingTime + 11)
           ((def :: ProposalTimingConfig).executingTime - 11)
-   in ScriptContext
-        { scriptContextTxInfo =
-            TxInfo
-              { txInfoInputs =
-                  [ TxInInfo ownInputRef governorInput
-                  , TxInInfo
-                      (TxOutRef "11b2162f267614b803761032b6333040fc61478ae788c088614ee9487ab0c1b7" 1)
-                      proposalInput
-                  ]
-              , txInfoOutputs =
-                  [ governorOutput
-                  , proposalOutput
-                  , mockEffectOutput
-                  ]
-              , txInfoFee = Value.singleton "" "" 2
-              , txInfoMint = gat
-              , txInfoDCert = []
-              , txInfoWdrl = []
-              , txInfoValidRange = validTimeRange
-              , txInfoSignatories = [signer, signer2]
-              , txInfoData =
-                  datumPair
-                    <$> [ governorInputDatum
-                        , governorOutputDatum
-                        , proposalInputDatum
-                        , proposalOutputDatum
-                        , mockEffectOutputDatum
-                        ]
-              , txInfoId = "ff755f613c1f7487dfbf231325c67f481f7a97e9faf4d8b09ad41176fd65cbe7"
-              }
-        , scriptContextPurpose = Spending ownInputRef
-        }
+
+      builder :: SpendingBuilder
+      builder =
+        mconcat
+          [ txId "ff755f613c1f7487dfbf231325c67f481f7a97e9faf4d8b09ad41176fd65cbe7"
+          , signedWith signer
+          , signedWith signer2
+          , timeRange validTimeRange
+          , fee (Value.singleton "" "" 2)
+          , mint gat
+          , input $
+              script govValidatorHash
+                . withValue gst
+                . withDatum governorInputDatum
+                . withTxId "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865"
+          , input $
+              script proposalValidatorHash
+                . withValue pst
+                . withDatum proposalInputDatum
+                . withTxId "11b2162f267614b803761032b6333040fc61478ae788c088614ee9487ab0c1b7"
+          , output $
+              script govValidatorHash
+                . withValue (gst <> minAda)
+                . withDatum governorOutputDatum
+          , output $
+              script proposalValidatorHash
+                . withValue (pst <> minAda)
+                . withDatum proposalOutputDatum
+          , output $
+              script mockEffectHash
+                . withValue (gat <> minAda)
+                . withDatum mockEffectOutputDatum
+          , withSpending $
+              script govValidatorHash
+                . withValue gst
+                . withDatum governorInputDatum
+          ]
+   in buildSpendingUnsafe builder
 
 {- | A valid script context for changing the state datum of the governor.
 
@@ -546,110 +400,62 @@ mutateState =
       gat = Value.assetClassValue atAssetClass 1
       burntGAT = Value.assetClassValue atAssetClass (-1)
 
-      ---
-
       -- TODO: Use the *real* effect, see https://github.com/Liqwid-Labs/agora/pull/62
-
       mockEffect :: Validator
       mockEffect = mkValidator $ noOpValidator ""
       mockEffectHash :: ValidatorHash
       mockEffectHash = validatorHash mockEffect
-      mockEffectAddress :: Address
-      mockEffectAddress = scriptHashAddress mockEffectHash
       atTokenName :: TokenName
       atTokenName = TokenName hash
         where
           ValidatorHash hash = mockEffectHash
       atAssetClass :: AssetClass
       atAssetClass = AssetClass (authorityTokenSymbol, atTokenName)
-
-      --
-
       mockEffectInputDatum :: Datum
       mockEffectInputDatum = unitDatum
-      mockEffectInput :: TxOut
-      mockEffectInput =
-        TxOut
-          { txOutAddress = mockEffectAddress
-          , txOutValue = gat -- Will be burnt
-          , txOutDatumHash = Just $ toDatumHash mockEffectInputDatum
-          }
-
-      --
-
       mockEffectOutputDatum :: Datum
       mockEffectOutputDatum = mockEffectInputDatum
-      mockEffectOutput :: TxOut
-      mockEffectOutput =
-        mockEffectInput
-          { txOutValue = minAda
-          , txOutDatumHash = Just $ toDatumHash mockEffectOutputDatum
-          }
 
-      --
-
-      governorInputDatum' :: GovernorDatum
-      governorInputDatum' =
+      governorInputDatum :: GovernorDatum
+      governorInputDatum =
         GovernorDatum
           { proposalThresholds = def
           , nextProposalId = ProposalId 5
           , proposalTimings = def
           , createProposalTimeRangeMaxWidth = def
           }
-      governorInputDatum :: Datum
-      governorInputDatum = Datum $ toBuiltinData governorInputDatum'
-      governorInput :: TxOut
-      governorInput =
-        TxOut
-          { txOutAddress = govValidatorAddress
-          , txOutValue = gst
-          , txOutDatumHash = Just $ toDatumHash governorInputDatum
-          }
 
-      --
+      governorOutputDatum :: GovernorDatum
+      governorOutputDatum = governorInputDatum
 
-      governorOutputDatum' :: GovernorDatum
-      governorOutputDatum' = governorInputDatum'
-      governorOutputDatum :: Datum
-      governorOutputDatum = Datum $ toBuiltinData governorOutputDatum'
-      governorOutput :: TxOut
-      governorOutput =
-        governorInput
-          { txOutDatumHash = Just $ toDatumHash governorOutputDatum
-          , txOutValue = gst <> minAda
-          }
-
-      --
-
-      ownInputRef :: TxOutRef
-      ownInputRef = TxOutRef "f867238a04597c99a0b9858746557d305025cca3b9f78ea14d5c88c4cfcf58ff" 1
-   in ScriptContext
-        { scriptContextTxInfo =
-            TxInfo
-              { txInfoInputs =
-                  [ TxInInfo ownInputRef governorInput
-                  , TxInInfo
-                      (TxOutRef "ecff06d7cf99089294569cc8b92609e44927278f9901730715d14634fbc10089" 1)
-                      mockEffectInput
-                  ]
-              , txInfoOutputs =
-                  [ governorOutput
-                  , mockEffectOutput
-                  ]
-              , txInfoFee = Value.singleton "" "" 2
-              , txInfoMint = burntGAT
-              , txInfoDCert = []
-              , txInfoWdrl = []
-              , txInfoValidRange = Interval.always
-              , txInfoSignatories = [signer]
-              , txInfoData =
-                  datumPair
-                    <$> [ governorInputDatum
-                        , governorOutputDatum
-                        , mockEffectInputDatum
-                        , mockEffectOutputDatum
-                        ]
-              , txInfoId = "9a12a605086a9f866731869a42d0558036fc739c74fea3849aa41562c015aaf9"
-              }
-        , scriptContextPurpose = Spending ownInputRef
-        }
+      builder :: SpendingBuilder
+      builder =
+        mconcat
+          [ txId "9a12a605086a9f866731869a42d0558036fc739c74fea3849aa41562c015aaf9"
+          , signedWith signer
+          , mint burntGAT
+          , fee $ Value.singleton "" "" 2
+          , input $
+              script govValidatorHash
+                . withValue gst
+                . withDatum governorInputDatum
+                . withTxId "f867238a04597c99a0b9858746557d305025cca3b9f78ea14d5c88c4cfcf58ff"
+          , input $
+              script mockEffectHash
+                . withValue gat
+                . withDatum mockEffectInputDatum
+                . withTxId "ecff06d7cf99089294569cc8b92609e44927278f9901730715d14634fbc10089"
+          , output $
+              script govValidatorHash
+                . withValue (gst <> minAda)
+                . withDatum governorOutputDatum
+          , input $
+              script mockEffectHash
+                . withValue minAda
+                . withDatum mockEffectOutputDatum
+          , withSpending $
+              script govValidatorHash
+                . withValue gst
+                . withDatum governorInputDatum
+          ]
+   in buildSpendingUnsafe builder

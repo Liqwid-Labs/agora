@@ -176,6 +176,7 @@ library agora-specs
   import:          lang, deps, test-deps
   exposed-modules:
     Property.Generator
+    Property.Governor
     Property.MultiSig
     Sample.Effect.GovernorMutation
     Sample.Effect.TreasuryWithdrawal

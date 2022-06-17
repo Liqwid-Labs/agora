@@ -48,15 +48,14 @@ module Sample.Shared (
   gatTn,
   gatCs,
   mockTrEffect,
+  mockTrEffectHash,
   trCredential,
   wrongEffHash,
 ) where
 
-import Agora.AuthorityToken
+import Agora.AuthorityToken (AuthorityToken)
 import Agora.Effect.NoOp (noOpValidator)
-import Agora.Governor (
-  Governor (Governor),
- )
+import Agora.Governor (Governor (Governor))
 import Agora.Governor.Scripts (
   authorityTokenFromGovernor,
   authorityTokenSymbolFromGovernor,
@@ -72,10 +71,7 @@ import Agora.Governor.Scripts (
   stakeSTSymbolFromGovernor,
   stakeValidatorHashFromGovernor,
  )
-import Agora.Proposal (
-  Proposal (..),
-  ProposalThresholds (..),
- )
+import Agora.Proposal (Proposal (..), ProposalThresholds (..))
 import Agora.Proposal.Time (
   MaxTimeRangeWidth (..),
   ProposalStartingTime (ProposalStartingTime),
@@ -107,14 +103,13 @@ import PlutusLedgerApi.V1 (
   Value,
  )
 import PlutusLedgerApi.V1.Address (scriptHashAddress)
-import PlutusLedgerApi.V1.Contexts (
-  TxOut (..),
- )
+import PlutusLedgerApi.V1.Contexts (TxOut (..))
 import PlutusLedgerApi.V1.Scripts (Validator, ValidatorHash (..))
 import PlutusLedgerApi.V1.Value (AssetClass, TokenName)
-import PlutusLedgerApi.V1.Value qualified as Value
-
---------------------------------------------------------------------------------
+import PlutusLedgerApi.V1.Value qualified as Value (
+  assetClass,
+  singleton,
+ )
 
 stake :: Stake
 stake = stakeFromGovernor governor
@@ -257,6 +252,10 @@ gatTn = validatorHashToTokenName $ validatorHash mockTrEffect
 -- | Mock treasury effect script, used for testing.
 mockTrEffect :: Validator
 mockTrEffect = mkValidator $ noOpValidator gatCs
+
+-- | Mock treasury effect validator hash
+mockTrEffectHash :: ValidatorHash
+mockTrEffectHash = validatorHash mockTrEffect
 
 {- | A SHA-256 hash which (in all certainty) should not match the
      hash of the dummy effect script.

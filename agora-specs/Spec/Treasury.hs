@@ -25,9 +25,7 @@ import Agora.Treasury (
   TreasuryRedeemer (SpendTreasuryGAT),
   treasuryValidator,
  )
-import PlutusLedgerApi.V1 (
-  DCert (DCertDelegRegKey),
- )
+import PlutusLedgerApi.V1 (DCert (DCertDelegRegKey))
 import PlutusLedgerApi.V1.Contexts (
   ScriptContext (scriptContextPurpose, scriptContextTxInfo),
   ScriptPurpose (Certifying, Rewarding, Spending),
@@ -36,10 +34,8 @@ import PlutusLedgerApi.V1.Contexts (
 import PlutusLedgerApi.V1.Credential (
   StakingCredential (StakingHash),
  )
-import PlutusLedgerApi.V1.Value qualified as Value
-import Sample.Shared (
-  trCredential,
- )
+import PlutusLedgerApi.V1.Value qualified as Value (singleton)
+import Sample.Shared (trCredential)
 import Sample.Treasury (
   gatCs,
   gatTn,

@@ -9,7 +9,5 @@ module Spec.Utils (tests) where
 
 import Test.Tasty (TestTree)
 
---------------------------------------------------------------------------------
-
 tests :: [TestTree]
 tests = []

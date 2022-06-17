@@ -21,39 +21,7 @@ module Sample.Proposal (
   advancePropsoalWithsStake,
 ) where
 
---------------------------------------------------------------------------------
-
-import Plutarch.Api.V1 (
-  validatorHash,
- )
-
---------------------------------------------------------------------------------
-
-import PlutusLedgerApi.V1 (
-  Address (Address),
-  Credential (ScriptCredential),
-  Datum (Datum),
-  DatumHash,
-  POSIXTime,
-  POSIXTimeRange,
-  PubKeyHash,
-  ScriptContext (..),
-  ScriptPurpose (..),
-  ToData (toBuiltinData),
-  TxInInfo (TxInInfo),
-  TxInfo (..),
-  TxOut (TxOut, txOutAddress, txOutDatumHash, txOutValue),
-  TxOutRef (TxOutRef),
-  ValidatorHash,
- )
-import PlutusLedgerApi.V1.Value qualified as Value
-import PlutusTx.AssocMap qualified as AssocMap
-
---------------------------------------------------------------------------------
-
-import Agora.Governor (
-  GovernorDatum (..),
- )
+import Agora.Governor (GovernorDatum (..))
 import Agora.Proposal (
   Proposal (..),
   ProposalDatum (..),
@@ -64,19 +32,78 @@ import Agora.Proposal (
   ResultTag (..),
   emptyVotesFor,
  )
-import Agora.Proposal.Time (ProposalStartingTime (ProposalStartingTime), ProposalTimingConfig (..))
-import Agora.Stake (ProposalLock (ProposalLock), Stake (..), StakeDatum (..))
-import Data.Tagged (Tagged (..), untag)
-import Sample.Shared
-import Test.Util (closedBoundedInterval, datumPair, toDatumHash, updateMap)
-
---------------------------------------------------------------------------------
-
+import Agora.Proposal.Time (
+  ProposalStartingTime (ProposalStartingTime),
+  ProposalTimingConfig (..),
+ )
+import Agora.Stake (
+  ProposalLock (ProposalLock),
+  Stake (..),
+  StakeDatum (..),
+ )
 import Data.Default.Class (Default (def))
+import Data.Tagged (Tagged (..), untag)
+import Plutarch.Context (
+  BaseBuilder,
+  MintingBuilder,
+  buildMintingUnsafe,
+  buildTxInfoUnsafe,
+  input,
+  mint,
+  output,
+  script,
+  signedWith,
+  timeRange,
+  txId,
+  withDatum,
+  withRefIndex,
+  withTxId,
+  withValue,
+ )
+import PlutusLedgerApi.V1 (
+  Datum (Datum),
+  DatumHash,
+  POSIXTime,
+  POSIXTimeRange,
+  PubKeyHash,
+  ScriptContext (..),
+  ToData (toBuiltinData),
+  TxInInfo (TxInInfo),
+  TxInfo (..),
+  TxOut (TxOut, txOutAddress, txOutDatumHash, txOutValue),
+  TxOutRef (..),
+  ValidatorHash,
+ )
+import PlutusLedgerApi.V1.Value qualified as Value (
+  assetClassValue,
+  singleton,
+ )
+import PlutusTx.AssocMap qualified as AssocMap (
+  Map,
+  empty,
+  fromList,
+ )
+import Sample.Shared (
+  govValidatorHash,
+  minAda,
+  proposal,
+  proposalPolicySymbol,
+  proposalStartingTimeFromTimeRange,
+  proposalValidatorHash,
+  signer,
+  signer2,
+  stake,
+  stakeAddress,
+  stakeAssetClass,
+  stakeValidatorHash,
+ )
+import Test.Util (
+  closedBoundedInterval,
+  datumPair,
+  toDatumHash,
+  updateMap,
+ )
 
---------------------------------------------------------------------------------
-
--- | This script context should be a valid transaction.
 proposalCreation :: ScriptContext
 proposalCreation =
   let st = Value.singleton proposalPolicySymbol "" 1 -- Proposal ST
@@ -85,93 +112,57 @@ proposalCreation =
           [ (ResultTag 0, AssocMap.empty)
           , (ResultTag 1, AssocMap.empty)
           ]
-      proposalDatum :: Datum
+      proposalDatum :: ProposalDatum
       proposalDatum =
-        Datum
-          ( toBuiltinData $
-              ProposalDatum
-                { proposalId = ProposalId 0
-                , effects = effects
-                , status = Draft
-                , cosigners = [signer]
-                , thresholds = def
-                , votes = emptyVotesFor effects
-                , timingConfig = def
-                , startingTime = proposalStartingTimeFromTimeRange validTimeRange
-                }
-          )
+        ProposalDatum
+          { proposalId = ProposalId 0
+          , effects = effects
+          , status = Draft
+          , cosigners = [signer]
+          , thresholds = def
+          , votes = emptyVotesFor effects
+          , timingConfig = def
+          , startingTime = proposalStartingTimeFromTimeRange validTimeRange
+          }
 
-      govBefore :: Datum
+      govBefore :: GovernorDatum
       govBefore =
-        Datum
-          ( toBuiltinData $
-              GovernorDatum
-                { proposalThresholds = def
-                , nextProposalId = ProposalId 0
-                , proposalTimings = def
-                , createProposalTimeRangeMaxWidth = def
-                }
-          )
-      govAfter :: Datum
-      govAfter =
-        Datum
-          ( toBuiltinData $
-              GovernorDatum
-                { proposalThresholds = def
-                , nextProposalId = ProposalId 1
-                , proposalTimings = def
-                , createProposalTimeRangeMaxWidth = def
-                }
-          )
+        GovernorDatum
+          { proposalThresholds = def
+          , nextProposalId = ProposalId 0
+          , proposalTimings = def
+          , createProposalTimeRangeMaxWidth = def
+          }
+
+      govAfter :: GovernorDatum
+      govAfter = govBefore {nextProposalId = ProposalId 1}
 
       validTimeRange = closedBoundedInterval 10 15
-   in ScriptContext
-        { scriptContextTxInfo =
-            TxInfo
-              { txInfoInputs =
-                  [ TxInInfo
-                      (TxOutRef "0b2086cbf8b6900f8cb65e012de4516cb66b5cb08a9aaba12a8b88be" 1)
-                      TxOut
-                        { txOutAddress = Address (ScriptCredential $ validatorHash govValidator) Nothing
-                        , txOutValue = Value.assetClassValue proposal.governorSTAssetClass 1
-                        , txOutDatumHash = Just (toDatumHash govBefore)
-                        }
-                  ]
-              , txInfoOutputs =
-                  [ TxOut
-                      { txOutAddress = Address (ScriptCredential proposalValidatorHash) Nothing
-                      , txOutValue =
-                          mconcat
-                            [ st
-                            , Value.singleton "" "" 10_000_000
-                            ]
-                      , txOutDatumHash = Just (toDatumHash proposalDatum)
-                      }
-                  , TxOut
-                      { txOutAddress = Address (ScriptCredential $ validatorHash govValidator) Nothing
-                      , txOutValue =
-                          mconcat
-                            [ Value.assetClassValue proposal.governorSTAssetClass 1
-                            , Value.singleton "" "" 10_000_000
-                            ]
-                      , txOutDatumHash = Just (toDatumHash govAfter)
-                      }
-                  ]
-              , txInfoFee = Value.singleton "" "" 2
-              , txInfoMint = st
-              , txInfoDCert = []
-              , txInfoWdrl = []
-              , txInfoValidRange = validTimeRange
-              , txInfoSignatories = [signer]
-              , txInfoData =
-                  [ datumPair proposalDatum
-                  , datumPair govBefore
-                  , datumPair govAfter
-                  ]
-              , txInfoId = "0b2086cbf8b6900f8cb65e012de4516cb66b5cb08a9aaba12a8b88be"
-              }
-        , scriptContextPurpose = Minting proposalPolicySymbol
-        }
+
+      builder :: MintingBuilder
+      builder =
+        mconcat
+          [ txId "0b2086cbf8b6900f8cb65e012de4516cb66b5cb08a9aaba12a8b88be"
+          , signedWith signer
+          , mint st
+          , input $
+              script govValidatorHash
+                . withValue (Value.assetClassValue proposal.governorSTAssetClass 1)
+                . withDatum govBefore
+                . withTxId "0b2086cbf8b6900f8cb65e012de4516cb66b5cb08a9aaba12a8b88be"
+          , output $
+              script proposalValidatorHash
+                . withValue (st <> Value.singleton "" "" 10_000_000)
+                . withDatum proposalDatum
+          , output $
+              script govValidatorHash
+                . withValue
+                  ( Value.assetClassValue proposal.governorSTAssetClass 1
+                      <> Value.singleton "" "" 10_000_000
+                  )
+                . withDatum govAfter
+          ]
+   in buildMintingUnsafe builder
 
 proposalRef :: TxOutRef
 proposalRef = TxOutRef "0b2086cbf8b6900f8cb65e012de4516cb66b5cb08a9aaba12a8b88be" 1
@@ -209,66 +200,43 @@ cosignProposal newSigners =
         closedBoundedInterval
           10
           ((def :: ProposalTimingConfig).draftTime - 10)
-   in TxInfo
-        { txInfoInputs =
-            [ TxInInfo
-                proposalRef
-                TxOut
-                  { txOutAddress = proposalValidatorAddress
-                  , txOutValue =
-                      mconcat
-                        [ st
-                        , Value.singleton "" "" 10_000_000
-                        ]
-                  , txOutDatumHash = Just (toDatumHash proposalBefore)
-                  }
-            , TxInInfo
-                stakeRef
-                TxOut
-                  { txOutAddress = stakeAddress
-                  , txOutValue =
-                      mconcat
-                        [ Value.singleton "" "" 10_000_000
-                        , Value.assetClassValue (untag stake.gtClassRef) 50_000_000
-                        , Value.assetClassValue stakeAssetClass 1
-                        ]
-                  , txOutDatumHash = Just (toDatumHash stakeDatum)
-                  }
-            ]
-        , txInfoOutputs =
-            [ TxOut
-                { txOutAddress = Address (ScriptCredential proposalValidatorHash) Nothing
-                , txOutValue =
-                    mconcat
-                      [ st
-                      , Value.singleton "" "" 10_000_000
-                      ]
-                , txOutDatumHash = Just (toDatumHash . Datum $ toBuiltinData proposalAfter)
-                }
-            , TxOut
-                { txOutAddress = stakeAddress
-                , txOutValue =
-                    mconcat
-                      [ Value.singleton "" "" 10_000_000
-                      , Value.assetClassValue (untag stake.gtClassRef) 50_000_000
-                      , Value.assetClassValue stakeAssetClass 1
-                      ]
-                , txOutDatumHash = Just (toDatumHash stakeDatum)
-                }
-            ]
-        , txInfoFee = Value.singleton "" "" 2
-        , txInfoMint = st
-        , txInfoDCert = []
-        , txInfoWdrl = []
-        , txInfoValidRange = validTimeRange
-        , txInfoSignatories = newSigners
-        , txInfoData =
-            [ datumPair . Datum $ toBuiltinData proposalBefore
-            , datumPair . Datum $ toBuiltinData proposalAfter
-            , datumPair . Datum $ toBuiltinData stakeDatum
-            ]
-        , txInfoId = "0b2086cbf8b6900f8cb65e012de4516cb66b5cb08a9aaba12a8b88be"
-        }
+      builder :: BaseBuilder
+      builder =
+        mconcat
+          [ txId "0b2086cbf8b6900f8cb65e012de4516cb66b5cb08a9aaba12a8b88be"
+          , mint st
+          , mconcat $ signedWith <$> newSigners
+          , timeRange validTimeRange
+          , input $
+              script proposalValidatorHash
+                . withValue (st <> Value.singleton "" "" 10_000_000)
+                . withDatum proposalBefore
+                . withTxId (txOutRefId proposalRef)
+                . withRefIndex (txOutRefIdx proposalRef)
+          , input $
+              script stakeValidatorHash
+                . withValue
+                  ( Value.singleton "" "" 10_000_000
+                      <> Value.assetClassValue (untag stake.gtClassRef) 50_000_000
+                      <> Value.assetClassValue stakeAssetClass 1
+                  )
+                . withDatum stakeDatum
+                . withTxId (txOutRefId stakeRef)
+                . withRefIndex (txOutRefIdx stakeRef)
+          , output $
+              script proposalValidatorHash
+                . withValue (st <> Value.singleton "" "" 10_000_000)
+                . withDatum proposalAfter
+          , output $
+              script stakeValidatorHash
+                . withValue
+                  ( Value.singleton "" "" 10_000_000
+                      <> Value.assetClassValue (untag stake.gtClassRef) 50_000_000
+                      <> Value.assetClassValue stakeAssetClass 1
+                  )
+                . withDatum stakeDatum
+          ]
+   in buildTxInfoUnsafe builder
 
 --------------------------------------------------------------------------------
 
@@ -309,8 +277,8 @@ voteOnProposal params =
 
       ---
 
-      proposalInputDatum' :: ProposalDatum
-      proposalInputDatum' =
+      proposalInputDatum :: ProposalDatum
+      proposalInputDatum =
         ProposalDatum
           { proposalId = ProposalId 42
           , effects = effects
@@ -320,15 +288,6 @@ voteOnProposal params =
           , votes = ProposalVotes initialVotes
           , timingConfig = def
           , startingTime = ProposalStartingTime 0
-          }
-      proposalInputDatum :: Datum
-      proposalInputDatum = Datum $ toBuiltinData proposalInputDatum'
-      proposalInput :: TxOut
-      proposalInput =
-        TxOut
-          { txOutAddress = proposalValidatorAddress
-          , txOutValue = pst
-          , txOutDatumHash = Just $ toDatumHash proposalInputDatum
           }
 
       ---
@@ -341,26 +300,12 @@ voteOnProposal params =
 
       ---
 
-      stakeInputDatum' :: StakeDatum
-      stakeInputDatum' =
+      stakeInputDatum :: StakeDatum
+      stakeInputDatum =
         StakeDatum
           { stakedAmount = Tagged params.voteCount
           , owner = stakeOwner
           , lockedBy = existingLocks
-          }
-      stakeInputDatum :: Datum
-      stakeInputDatum = Datum $ toBuiltinData stakeInputDatum'
-      stakeInput :: TxOut
-      stakeInput =
-        TxOut
-          { txOutAddress = stakeAddress
-          , txOutValue =
-              mconcat
-                [ sst
-                , Value.assetClassValue (untag stake.gtClassRef) params.voteCount
-                , minAda
-                ]
-          , txOutDatumHash = Just $ toDatumHash stakeInputDatum
           }
 
       ---
@@ -370,38 +315,24 @@ voteOnProposal params =
 
       ---
 
-      proposalOutputDatum' :: ProposalDatum
-      proposalOutputDatum' =
-        proposalInputDatum'
+      proposalOutputDatum :: ProposalDatum
+      proposalOutputDatum =
+        proposalInputDatum
           { votes = ProposalVotes updatedVotes
-          }
-      proposalOutputDatum :: Datum
-      proposalOutputDatum = Datum $ toBuiltinData proposalOutputDatum'
-      proposalOutput :: TxOut
-      proposalOutput =
-        proposalInput
-          { txOutDatumHash = Just $ toDatumHash proposalOutputDatum
           }
 
       ---
 
       -- Off-chain code should do exactly like this: prepend new lock toStatus the list.
       updatedLocks :: [ProposalLock]
-      updatedLocks = ProposalLock params.voteFor proposalInputDatum'.proposalId : existingLocks
+      updatedLocks = ProposalLock params.voteFor proposalInputDatum.proposalId : existingLocks
 
       ---
 
-      stakeOutputDatum' :: StakeDatum
-      stakeOutputDatum' =
-        stakeInputDatum'
+      stakeOutputDatum :: StakeDatum
+      stakeOutputDatum =
+        stakeInputDatum
           { lockedBy = updatedLocks
-          }
-      stakeOutputDatum :: Datum
-      stakeOutputDatum = Datum $ toBuiltinData stakeOutputDatum'
-      stakeOutput :: TxOut
-      stakeOutput =
-        stakeInput
-          { txOutDatumHash = Just $ toDatumHash stakeOutputDatum
           }
 
       ---
@@ -410,21 +341,43 @@ voteOnProposal params =
         closedBoundedInterval
           ((def :: ProposalTimingConfig).draftTime + 1)
           ((def :: ProposalTimingConfig).votingTime - 1)
-   in TxInfo
-        { txInfoInputs =
-            [ TxInInfo proposalRef proposalInput
-            , TxInInfo stakeRef stakeInput
-            ]
-        , txInfoOutputs = [proposalOutput, stakeOutput]
-        , txInfoFee = Value.singleton "" "" 2
-        , txInfoMint = mempty
-        , txInfoDCert = []
-        , txInfoWdrl = []
-        , txInfoValidRange = validTimeRange
-        , txInfoSignatories = [stakeOwner]
-        , txInfoData = datumPair <$> [proposalInputDatum, proposalOutputDatum, stakeInputDatum, stakeOutputDatum]
-        , txInfoId = "827598fb2d69a896bbd9e645bb14c307df907f422b39eecbe4d6329bc30b428c"
-        }
+
+      builder :: BaseBuilder
+      builder =
+        mconcat
+          [ txId "827598fb2d69a896bbd9e645bb14c307df907f422b39eecbe4d6329bc30b428c"
+          , signedWith stakeOwner
+          , timeRange validTimeRange
+          , input $
+              script proposalValidatorHash
+                . withValue pst
+                . withDatum proposalInputDatum
+                . withTxId (txOutRefId proposalRef)
+                . withRefIndex (txOutRefIdx proposalRef)
+          , input $
+              script stakeValidatorHash
+                . withValue
+                  ( sst
+                      <> Value.assetClassValue (untag stake.gtClassRef) params.voteCount
+                      <> minAda
+                  )
+                . withDatum stakeInputDatum
+                . withTxId (txOutRefId stakeRef)
+                . withRefIndex (txOutRefIdx stakeRef)
+          , output $
+              script proposalValidatorHash
+                . withValue pst
+                . withDatum proposalOutputDatum
+          , output $
+              script stakeValidatorHash
+                . withValue
+                  ( sst
+                      <> Value.assetClassValue (untag stake.gtClassRef) params.voteCount
+                      <> minAda
+                  )
+                . withDatum stakeOutputDatum
+          ]
+   in buildTxInfoUnsafe builder
 
 --------------------------------------------------------------------------------
 
@@ -451,13 +404,11 @@ mkTransitionTxInfo ::
   -- | Valid time range of the transaction.
   POSIXTimeRange ->
   TxInfo
-mkTransitionTxInfo from to effects votes startingTime timeRange =
+mkTransitionTxInfo from to effects votes startingTime validTime =
   let pst = Value.singleton proposalPolicySymbol "" 1
 
-      ---
-
-      proposalInputDatum' :: ProposalDatum
-      proposalInputDatum' =
+      proposalInputDatum :: ProposalDatum
+      proposalInputDatum =
         ProposalDatum
           { proposalId = ProposalId 0
           , effects = effects
@@ -468,43 +419,30 @@ mkTransitionTxInfo from to effects votes startingTime timeRange =
           , timingConfig = def
           , startingTime = startingTime
           }
-      proposalInputDatum :: Datum
-      proposalInputDatum = Datum $ toBuiltinData proposalInputDatum'
-      proposalInput :: TxOut
-      proposalInput =
-        TxOut
-          { txOutAddress = proposalValidatorAddress
-          , txOutValue = pst
-          , txOutDatumHash = Just $ toDatumHash proposalInputDatum
-          }
 
-      ---
-
-      proposalOutputDatum' :: ProposalDatum
-      proposalOutputDatum' =
-        proposalInputDatum'
+      proposalOutputDatum :: ProposalDatum
+      proposalOutputDatum =
+        proposalInputDatum
           { status = to
           }
-      proposalOutputDatum :: Datum
-      proposalOutputDatum = Datum $ toBuiltinData proposalOutputDatum'
-      proposalOutput :: TxOut
-      proposalOutput =
-        proposalInput
-          { txOutValue = proposalInput.txOutValue <> minAda
-          , txOutDatumHash = Just $ toDatumHash proposalOutputDatum
-          }
-   in TxInfo
-        { txInfoInputs = [TxInInfo proposalRef proposalInput]
-        , txInfoOutputs = [proposalOutput]
-        , txInfoFee = Value.singleton "" "" 2
-        , txInfoMint = mempty
-        , txInfoDCert = []
-        , txInfoWdrl = []
-        , txInfoValidRange = timeRange
-        , txInfoSignatories = [signer]
-        , txInfoData = datumPair <$> [proposalInputDatum, proposalOutputDatum]
-        , txInfoId = "95ba4015e30aef16a3461ea97a779f814aeea6b8009d99a94add4b8293be737a"
-        }
+
+      builder :: BaseBuilder
+      builder =
+        mconcat
+          [ txId "95ba4015e30aef16a3461ea97a779f814aeea6b8009d99a94add4b8293be737a"
+          , signedWith signer
+          , timeRange validTime
+          , input $
+              script proposalValidatorHash
+                . withValue pst
+                . withDatum proposalInputDatum
+                . withTxId (txOutRefId proposalRef)
+          , output $
+              script proposalValidatorHash
+                . withValue (pst <> minAda)
+                . withDatum proposalOutputDatum
+          ]
+   in buildTxInfoUnsafe builder
 
 {- | Create a valid 'TxInfo' that advances a proposal, given the parameters.
      Note that 'TransitionParameters.initialProposalStatus' should not be 'Finished'.

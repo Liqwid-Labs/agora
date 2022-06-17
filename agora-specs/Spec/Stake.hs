@@ -9,19 +9,27 @@ Tests for Stake policy and validator
 -}
 module Spec.Stake (specs) where
 
---------------------------------------------------------------------------------
-
-import Prelude
-
---------------------------------------------------------------------------------
-
-import Agora.Stake (Stake (..), StakeDatum (StakeDatum), StakeRedeemer (DepositWithdraw))
+import Agora.Stake (
+  Stake (..),
+  StakeDatum (StakeDatum),
+  StakeRedeemer (DepositWithdraw),
+ )
 import Agora.Stake.Scripts (stakePolicy, stakeValidator)
-
---------------------------------------------------------------------------------
-
-import Sample.Stake (DepositWithdrawExample (DepositWithdrawExample, delta, startAmount), signer)
-import Sample.Stake qualified as Stake
+import Sample.Stake (
+  DepositWithdrawExample (
+    DepositWithdrawExample,
+    delta,
+    startAmount
+  ),
+  signer,
+ )
+import Sample.Stake qualified as Stake (
+  stake,
+  stakeCreation,
+  stakeCreationUnsigned,
+  stakeCreationWrongDatum,
+  stakeDepositWithdraw,
+ )
 import Test.Specification (
   SpecificationTree,
   group,
@@ -31,8 +39,7 @@ import Test.Specification (
   validatorSucceedsWith,
  )
 import Test.Util (toDatum)
-
---------------------------------------------------------------------------------
+import Prelude (Num (negate), ($))
 
 -- | The SpecificationTree exported by this module.
 specs :: [SpecificationTree]

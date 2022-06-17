@@ -12,23 +12,18 @@ import Agora.MultiSig (
   PMultiSig,
   pvalidatedByMultisig,
  )
-import Data.Maybe (fromJust)
 import Data.Tagged (Tagged (Tagged))
 import Data.Universe (Finite (..), Universe (..))
 import Plutarch.Api.V1 (PScriptContext)
-import Plutarch.Context.Config (defaultConfig)
-import Plutarch.Context.Spending (
-  ValidatorUTXO (ValidatorUTXO),
-  inputSelfExtra,
-  signedWith,
-  spendingContext,
- )
+import Plutarch.Context
 import Plutarch.Extra.TermCont (pletC)
 import PlutusLedgerApi.V1 (
-  ScriptContext (scriptContextTxInfo),
+  ScriptContext (..),
+  ScriptPurpose (..),
   TxInfo (txInfoSignatories),
+  TxOutRef (..),
  )
-import Property.Generator (genPubKeyHash, genSingletonValue)
+import Property.Generator (genPubKeyHash)
 import Test.Tasty (TestTree)
 import Test.Tasty.Plutarch.Property (classifiedPropertyNative)
 import Test.Tasty.QuickCheck (
@@ -63,7 +58,6 @@ genMultiSigProp :: MultiSigProp -> Gen MultiSigModel
 genMultiSigProp prop = do
   size <- chooseInt (4, 20)
   pkhs <- vectorOf size genPubKeyHash
-  vutxo <- ValidatorUTXO () <$> genSingletonValue
   minSig <- chooseInt (1, length pkhs)
   othersigners <- take 20 <$> listOf genPubKeyHash
 
@@ -73,9 +67,10 @@ genMultiSigProp prop = do
     MeetsMinSigs -> chooseInt (minSig, length pkhs)
     DoesNotMeetMinSigs -> chooseInt (0, minSig - 1)
 
-  let builder = foldr (<>) (inputSelfExtra mempty ()) (signedWith <$> take n pkhs <> othersigners)
-      ctx = fromJust $ spendingContext defaultConfig builder vutxo
-  pure (ms, ctx)
+  let builder :: BaseBuilder
+      builder = mconcat $ signedWith <$> take n pkhs <> othersigners
+      txinfo = buildTxInfoUnsafe builder
+  pure (ms, ScriptContext txinfo (Spending (TxOutRef "" 0)))
 
 -- | Classify model into propositions.
 classifyMultiSigProp :: MultiSigModel -> MultiSigProp

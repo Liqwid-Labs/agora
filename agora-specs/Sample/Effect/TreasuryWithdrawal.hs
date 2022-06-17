@@ -19,6 +19,12 @@ module Sample.Effect.TreasuryWithdrawal (
   buildScriptContext,
 ) where
 
+import Agora.Effect.TreasuryWithdrawal (
+  TreasuryWithdrawalDatum (TreasuryWithdrawalDatum),
+  treasuryWithdrawalValidator,
+ )
+import Data.ByteString.Char8 qualified as C (pack)
+import Data.ByteString.Hash (sha2_256)
 import Plutarch.Api.V1 (mkValidator, validatorHash)
 import PlutusLedgerApi.V1 (
   Address (Address),
@@ -50,16 +56,8 @@ import PlutusLedgerApi.V1 (
   Value,
   toBuiltin,
  )
-import PlutusLedgerApi.V1.Interval qualified as Interval
-import PlutusLedgerApi.V1.Value qualified as Value
-
-import Data.ByteString.Char8 qualified as C
-import Data.ByteString.Hash (sha2_256)
-
-import Agora.Effect.TreasuryWithdrawal (
-  TreasuryWithdrawalDatum (TreasuryWithdrawalDatum),
-  treasuryWithdrawalValidator,
- )
+import PlutusLedgerApi.V1.Interval qualified as Interval (always)
+import PlutusLedgerApi.V1.Value qualified as Value (singleton)
 
 -- | A sample Currency Symbol.
 currSymbol :: CurrencySymbol
