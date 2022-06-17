@@ -36,7 +36,6 @@ import Agora.Stake (
 import Agora.Utils (
   getMintingPolicySymbol,
   mustBePJust,
-  mustFindDatum',
  )
 import Plutarch.Api.V1 (
   PMintingPolicy,
@@ -67,6 +66,7 @@ import Plutarch.Extra.TermCont (
  )
 import Plutarch.SafeMoney (PDiscrete (..))
 import PlutusLedgerApi.V1.Value (AssetClass (AssetClass))
+import qualified Agora.Utils.BSM as BSM
 
 {- | Policy for Proposals.
 
@@ -195,6 +195,8 @@ proposalValidator proposal =
 
     currentTime <- pletC $ currentProposalTime # txInfoF.validRange
 
+    datums <- pletC $ BSM.pmkDatumTree #  txInfoF.datums
+    
     -- Own output is an output that
     --  * is sent to the address of the proposal validator
     --  * has an PST
@@ -212,9 +214,9 @@ proposalValidator proposal =
                 -- TODO: this is highly inefficient: O(n) for every output,
                 --       Maybe we can cache the sorted datum map?
                 let datum =
-                      mustFindDatum' @PProposalDatum
+                      BSM.mustFindDatum' @PProposalDatum
                         # inputF.datumHash
-                        # txInfoF.datums
+                        # datums
 
                     proposalId = pfield @"proposalId" # datum
 
@@ -227,9 +229,9 @@ proposalValidator proposal =
 
     proposalOut <-
       pletC $
-        mustFindDatum' @PProposalDatum
+        BSM.mustFindDatum' @PProposalDatum
           # (pfield @"datumHash" # ownOutput)
-          # txInfoF.datums
+          # datums
 
     proposalUnchanged <- pletC $ proposalOut #== proposalDatum
     --------------------------------------------------------------------------
@@ -252,7 +254,7 @@ proposalValidator proposal =
               )
             # pfromData txInfoF.inputs
 
-    stakeIn <- pletC $ mustFindDatum' @PStakeDatum # (pfield @"datumHash" # stakeInput) # txInfoF.datums
+    stakeIn <- pletC $ BSM.mustFindDatum' @PStakeDatum # (pfield @"datumHash" # stakeInput) # datums
     stakeInF <- pletFieldsC @'["stakedAmount", "lockedBy", "owner"] stakeIn
 
     let stakeOutput =
@@ -264,7 +266,7 @@ proposalValidator proposal =
               )
             # pfromData txInfoF.outputs
 
-    stakeOut <- pletC $ mustFindDatum' @PStakeDatum # (pfield @"datumHash" # stakeOutput) # txInfoF.datums
+    stakeOut <- pletC $ BSM.mustFindDatum' @PStakeDatum # (pfield @"datumHash" # stakeOutput) # datums
 
     stakeUnchanged <- pletC $ stakeIn #== stakeOut
 

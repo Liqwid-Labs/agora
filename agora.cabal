@@ -153,6 +153,7 @@ library
     Agora.Treasury
     Agora.Utils
     Agora.Utils.BST
+    Agora.Utils.BSM
 
   other-modules:   Agora.Aeson.Orphans
   hs-source-dirs:  agora

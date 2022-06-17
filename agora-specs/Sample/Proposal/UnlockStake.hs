@@ -57,6 +57,7 @@ import Data.Tagged (Tagged (..), untag)
 import Sample.Proposal.Shared (proposalRef, stakeRef)
 import Sample.Shared qualified as Shared
 import Test.Specification (SpecificationTree, validatorFailsWith, validatorSucceedsWith)
+import Data.List (sortBy)
 
 --------------------------------------------------------------------------------
 
@@ -242,6 +243,15 @@ unlockStake p =
 
       mkDatum :: forall d. (ToData d) => d -> Datum
       mkDatum = Datum . toBuiltinData
+
+      proposalDatums :: [ProposalDatum]
+      proposalDatums =
+        if p.retractVotes
+          then pInDatums <> pOutDatums
+          else pInDatums
+
+      sortDatums :: [(DatumHash, Datum)] -> [(DatumHash, Datum)]
+      sortDatums = sortBy (\(k1, _) (k2 , _) -> compare k2 k1)
    in TxInfo
         { txInfoInputs = sIn : pIns
         , txInfoOutputs = sOut : pOuts
@@ -252,7 +262,7 @@ unlockStake p =
         , -- Time doesn't matter int this case.
           txInfoValidRange = closedBoundedInterval 0 100
         , txInfoSignatories = [signer]
-        , txInfoData = datumPair <$> (mkDatum <$> [sInDatum, sOutDatum]) <> (mkDatum <$> pInDatums <> pOutDatums)
+        , txInfoData = sortDatums $ datumPair <$> (mkDatum <$> [sInDatum, sOutDatum]) <> (mkDatum <$> proposalDatums)
         , txInfoId = "95ba4015e30aef16a3461ea97a779f814aeea6b8009d99a94add4b8293be737a"
         }
 

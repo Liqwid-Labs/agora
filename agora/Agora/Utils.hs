@@ -162,3 +162,5 @@ mustBePDJust = phoistAcyclic $
 -- | Create an 'Address' from a given 'ValidatorHash' with no 'PlutusLedgerApi.V1.Credential.StakingCredential'.
 validatorHashToAddress :: ValidatorHash -> Address
 validatorHashToAddress vh = Address (ScriptCredential vh) Nothing
+
+-- mkDatumTree :: Term _ (PBuiltinList (PAsData (PTuple PDatumHash PDatum) :--> )
