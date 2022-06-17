@@ -31,8 +31,8 @@ import Plutarch.Api.V1 (mkValidator, validatorHash)
 import Plutarch.Context (
   MintingBuilder,
   SpendingBuilder,
-  buildMinting,
-  buildSpending,
+  buildMintingUnsafe,
+  buildSpendingUnsafe,
   input,
   mint,
   output,
@@ -87,7 +87,7 @@ stakeCreation =
                 . withValue (st <> Value.singleton "da8c30857834c6ae7203935b89278c532b3995245295456f993e1d24" "LQ" 424242424242)
                 . withDatum datum
           ]
-   in either error id $ buildMinting builder
+   in buildMintingUnsafe builder
 
 -- | This ScriptContext should fail because the datum has too much GT.
 stakeCreationWrongDatum :: ScriptContext
@@ -150,4 +150,4 @@ stakeDepositWithdraw config =
                 . withValue (st <> Value.assetClassValue (untag stake.gtClassRef) (untag stakeBefore.stakedAmount))
                 . withDatum stakeAfter
           ]
-   in either error id $ buildSpending builder
+   in buildSpendingUnsafe builder

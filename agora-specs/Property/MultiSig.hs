@@ -67,8 +67,9 @@ genMultiSigProp prop = do
     MeetsMinSigs -> chooseInt (minSig, length pkhs)
     DoesNotMeetMinSigs -> chooseInt (0, minSig - 1)
 
-  let builder = mconcat $ signedWith <$> take n pkhs <> othersigners
-      txinfo = either error id $ buildTxInfo builder
+  let builder :: BaseBuilder
+      builder = mconcat $ signedWith <$> take n pkhs <> othersigners
+      txinfo = buildTxInfoUnsafe builder
   pure (ms, ScriptContext txinfo (Spending (TxOutRef "" 0)))
 
 -- | Classify model into propositions.

@@ -34,8 +34,8 @@ import Plutarch.Api.V1 (mkValidator, validatorHash)
 import Plutarch.Context (
   MintingBuilder,
   SpendingBuilder,
-  buildMinting,
-  buildSpending,
+  buildMintingUnsafe,
+  buildSpendingUnsafe,
   fee,
   input,
   mint,
@@ -139,7 +139,7 @@ mintGST =
                 . withValue (gst <> minAda)
                 . withDatum governorOutputDatum
           ]
-   in either error id $ buildMinting builder
+   in buildMintingUnsafe builder
 
 {- | A valid script context to create a proposal.
 
@@ -259,7 +259,7 @@ createProposal =
                 . withValue gst
                 . withDatum governorInputDatum
           ]
-   in either error id $ buildSpending builder
+   in buildSpendingUnsafe builder
 
 {- This script context should be a valid transaction for minting authority for the effect scrips.
 
@@ -378,7 +378,7 @@ mintGATs =
                 . withValue gst
                 . withDatum governorInputDatum
           ]
-   in either error id $ buildSpending builder
+   in buildSpendingUnsafe builder
 
 {- | A valid script context for changing the state datum of the governor.
 
@@ -458,4 +458,4 @@ mutateState =
                 . withValue gst
                 . withDatum governorInputDatum
           ]
-   in either error id $ buildSpending builder
+   in buildSpendingUnsafe builder

@@ -20,7 +20,7 @@ module Sample.Treasury (
 import Plutarch.Context (
   MintingBuilder,
   UTXO,
-  buildMinting,
+  buildMintingUnsafe,
   credential,
   input,
   mint,
@@ -83,7 +83,7 @@ validCtx =
                 . withValue (Value.singleton gatCs gatTn 1 <> minAda)
                 . withTxId "52b67b60260da3937510ad545c7f46f8d9915bd27e1082e76947fb309f913bd3"
           ]
-   in either error id $ buildMinting builder
+   in buildMintingUnsafe builder
 
 treasuryRef :: TxOutRef
 treasuryRef =
@@ -124,4 +124,4 @@ trCtxGATNameNotAddress =
                 . withValue (Value.singleton gatCs gatTn 1 <> minAda)
                 . withTxId "52b67b60260da3937510ad545c7f46f8d9915bd27e1082e76947fb309f913bd3"
           ]
-   in either error id $ buildMinting builder
+   in buildMintingUnsafe builder

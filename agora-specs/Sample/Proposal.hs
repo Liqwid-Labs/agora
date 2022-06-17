@@ -46,8 +46,8 @@ import Data.Tagged (Tagged (..), untag)
 import Plutarch.Context (
   BaseBuilder,
   MintingBuilder,
-  buildMinting,
-  buildTxInfo,
+  buildMintingUnsafe,
+  buildTxInfoUnsafe,
   input,
   mint,
   output,
@@ -162,7 +162,7 @@ proposalCreation =
                   )
                 . withDatum govAfter
           ]
-   in either error id $ buildMinting builder
+   in buildMintingUnsafe builder
 
 proposalRef :: TxOutRef
 proposalRef = TxOutRef "0b2086cbf8b6900f8cb65e012de4516cb66b5cb08a9aaba12a8b88be" 1
@@ -236,7 +236,7 @@ cosignProposal newSigners =
                   )
                 . withDatum stakeDatum
           ]
-   in either error id $ buildTxInfo builder
+   in buildTxInfoUnsafe builder
 
 --------------------------------------------------------------------------------
 
@@ -377,7 +377,7 @@ voteOnProposal params =
                   )
                 . withDatum stakeOutputDatum
           ]
-   in either error id $ buildTxInfo builder
+   in buildTxInfoUnsafe builder
 
 --------------------------------------------------------------------------------
 
@@ -442,7 +442,7 @@ mkTransitionTxInfo from to effects votes startingTime validTime =
                 . withValue (pst <> minAda)
                 . withDatum proposalOutputDatum
           ]
-   in either error id $ buildTxInfo builder
+   in buildTxInfoUnsafe builder
 
 {- | Create a valid 'TxInfo' that advances a proposal, given the parameters.
      Note that 'TransitionParameters.initialProposalStatus' should not be 'Finished'.
