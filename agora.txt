@@ -6,6 +6,62 @@
 @version 0.1
 
 
+-- | Tokens acting as redeemable proofs of DAO authority.
+module Agora.AuthorityToken
+
+-- | Policy given <a>AuthorityToken</a> params.
+authorityTokenPolicy :: AuthorityToken -> ClosedTerm PMintingPolicy
+
+-- | Check that all GATs are valid in a particular TxOut. How this is
+--   checked: an AuthorityToken should never leave the Effect it was
+--   initially sent to, so we simply check that the script address the
+--   token resides in matches the TokenName. Since the TokenName was tagged
+--   upon mint with the Effect script it was sent to, this is enough to
+--   prove validity. In other words, check that all assets of a particular
+--   currency symbol are tagged with a TokenName that matches where they
+--   live.
+authorityTokensValidIn :: Term s (PCurrencySymbol :--> (PTxOut :--> PBool))
+
+-- | Assert that a single authority token has been burned.
+singleAuthorityTokenBurned :: forall (keys :: KeyGuarantees) (amounts :: AmountGuarantees) (s :: S). Term s PCurrencySymbol -> Term s (PAsData PTxInfo) -> Term s (PValue keys amounts) -> Term s PBool
+
+-- | An AuthorityToken represents a proof that a particular token moved
+--   while this token was minted. In effect, this means that the validator
+--   that locked such a token must have approved said transaction. Said
+--   validator should be made aware of *this* token's existence in order to
+--   prevent incorrect minting.
+newtype AuthorityToken
+AuthorityToken :: AssetClass -> AuthorityToken
+
+-- | Token that must move in order for minting this to be valid.
+[authority] :: AuthorityToken -> AssetClass
+instance GHC.Generics.Generic Agora.AuthorityToken.AuthorityToken
+
+
+-- | Helpers for constructing effects.
+module Agora.Effect
+
+-- | Helper "template" for creating effect validator.
+--   
+--   In some situations, it may be the case that we need more control over
+--   how an effect is implemented. In such situations, it's okay to not use
+--   this helper.
+makeEffect :: forall (datum :: PType). (PIsData datum, PTryFrom PData (PAsData datum)) => CurrencySymbol -> (forall (s :: S). Term s PCurrencySymbol -> Term s datum -> Term s PTxOutRef -> Term s (PAsData PTxInfo) -> Term s POpaque) -> ClosedTerm PValidator
+
+
+-- | A dumb effect that only burns its GAT.
+module Agora.Effect.NoOp
+
+-- | Dummy effect which can only burn its GAT.
+noOpValidator :: CurrencySymbol -> ClosedTerm PValidator
+
+-- | Dummy datum for NoOp effect.
+data PNoOp (s :: S)
+instance Plutarch.Builtin.PIsData Agora.Effect.NoOp.PNoOp
+instance Plutarch.Internal.PlutusType.PlutusType Agora.Effect.NoOp.PNoOp
+instance Plutarch.TryFrom.PTryFrom Plutarch.Builtin.PData (Plutarch.Builtin.PAsData Agora.Effect.NoOp.PNoOp)
+
+
 -- | A basic N of M multisignature validation function.
 module Agora.MultiSig
 
@@ -45,245 +101,6 @@ instance Generics.SOP.Universe.Generic Agora.MultiSig.MultiSig
 instance GHC.Show.Show Agora.MultiSig.MultiSig
 instance GHC.Classes.Eq Agora.MultiSig.MultiSig
 instance GHC.Generics.Generic Agora.MultiSig.MultiSig
-
-
--- | Tags and extras for <a>Plutarch.SafeMoney</a>.
-module Agora.SafeMoney
-
--- | ADA.
-data ADATag
-
--- | Governance token.
-data GTTag
-
--- | Governor ST token.
-data GovernorSTTag
-
--- | Stake ST token.
-data StakeSTTag
-
--- | Proposal ST token.
-data ProposalSTTag
-
--- | Resolves ada tags.
-adaRef :: Tagged ADATag AssetClass
-
-
--- | Exportable script bundles for off-chain consumption.
-module Agora.ScriptInfo
-
--- | Bundle containing a <a>MintingPolicy</a> and its symbol.
-data PolicyInfo
-PolicyInfo :: MintingPolicy -> CurrencySymbol -> PolicyInfo
-
--- | The minting policy.
-[policy] :: PolicyInfo -> MintingPolicy
-
--- | The symbol given by the minting policy.
-[currencySymbol] :: PolicyInfo -> CurrencySymbol
-
--- | Bundle containing a <a>Validator</a> and its hash.
-data ValidatorInfo
-ValidatorInfo :: Validator -> ValidatorHash -> ValidatorInfo
-
--- | The validator script.
-[script] :: ValidatorInfo -> Validator
-
--- | Hash of the validator.
-[hash] :: ValidatorInfo -> ValidatorHash
-
--- | Create a <a>ValidatorInfo</a> given a Plutarch term.
-mkValidatorInfo :: ClosedTerm PValidator -> ValidatorInfo
-
--- | Create a <a>PolicyInfo</a> given a Plutarch term.
-mkPolicyInfo :: ClosedTerm PMintingPolicy -> PolicyInfo
-instance Data.Aeson.Types.FromJSON.FromJSON Agora.ScriptInfo.ValidatorInfo
-instance Data.Aeson.Types.ToJSON.ToJSON Agora.ScriptInfo.ValidatorInfo
-instance GHC.Generics.Generic Agora.ScriptInfo.ValidatorInfo
-instance GHC.Classes.Eq Agora.ScriptInfo.ValidatorInfo
-instance GHC.Show.Show Agora.ScriptInfo.ValidatorInfo
-instance Data.Aeson.Types.FromJSON.FromJSON Agora.ScriptInfo.PolicyInfo
-instance Data.Aeson.Types.ToJSON.ToJSON Agora.ScriptInfo.PolicyInfo
-instance GHC.Generics.Generic Agora.ScriptInfo.PolicyInfo
-instance GHC.Classes.Eq Agora.ScriptInfo.PolicyInfo
-instance GHC.Show.Show Agora.ScriptInfo.PolicyInfo
-
-
--- | Plutarch utility functions that should be upstreamed or don't belong
---   anywhere else.
-module Agora.Utils
-
--- | Assert a particular <a>PBool</a>, trace if false.
-tcassert :: forall r (s :: S). Term s PString -> Term s PBool -> TermCont @r s ()
-
--- | <a>plet</a> but for use in <a>TermCont</a>.
-tclet :: forall r (s :: S) (a :: PType). Term s a -> TermCont @r s (Term s a)
-
--- | <a>pmatch</a> but for use in <a>TermCont</a>.
-tcmatch :: forall (a :: PType) (s :: S). PlutusType a => Term s a -> TermCont s (a s)
-
--- | <a>ptryFrom</a> but for use in <a>TermCont</a>.
-tctryFrom :: forall b a s r. PTryFrom a b => Term s a -> TermCont @r s (Term s b, Reduce (PTryFromExcess a b s))
-
--- | Get the first element that matches a predicate or return Nothing.
-pfind' :: PIsListLike list a => (Term s a -> Term s PBool) -> Term s (list a :--> PMaybe a)
-
--- | Find a datum with the given hash.
-pfindDatum :: Term s (PDatumHash :--> (PBuiltinList (PAsData (PTuple PDatumHash PDatum)) :--> PMaybe PDatum))
-
--- | Find a datum with the given hash, and <a>ptryFrom</a> it.
-ptryFindDatum :: forall (a :: PType) (s :: S). PTryFrom PData a => Term s (PDatumHash :--> (PBuiltinList (PAsData (PTuple PDatumHash PDatum)) :--> PMaybe a))
-
--- | Sum of all value at input.
-pvalueSpent :: forall (s :: S). Term s (PBuiltinList (PAsData PTxInInfo) :--> PValue 'Sorted 'Positive)
-
--- | Check if a PubKeyHash signs this transaction.
-ptxSignedBy :: Term s (PBuiltinList (PAsData PPubKeyHash) :--> (PAsData PPubKeyHash :--> PBool))
-
--- | Add two <a>PValue</a>s together.
-paddValue :: forall (keys :: KeyGuarantees) (as :: AmountGuarantees) (bs :: AmountGuarantees) (s :: S). Term s (PValue keys as :--> (PValue keys bs :--> PValue keys (AddGuarantees as bs)))
-
--- | Find the value for a given key in an associative list.
-plookup :: (PEq a, PIsListLike list (PBuiltinPair a b)) => Term s (a :--> (list (PBuiltinPair a b) :--> PMaybe b))
-
--- | Extract a Maybe by providing a default value in case of Just.
-pfromMaybe :: forall a s. Term s (a :--> (PMaybe a :--> a))
-
--- | Get the sum of all values belonging to a particular CurrencySymbol.
-psymbolValueOf :: forall (keys :: KeyGuarantees) (amounts :: AmountGuarantees) (s :: S). Term s (PCurrencySymbol :--> (PValue keys amounts :--> PInteger))
-
--- | Return <a>&gt;=</a> on two values comparing by only a particular
---   AssetClass.
-pgeqByClass :: forall (keys :: KeyGuarantees) (amounts :: AmountGuarantees) (s :: S). Term s (PCurrencySymbol :--> (PTokenName :--> (PValue keys amounts :--> (PValue keys amounts :--> PBool))))
-
--- | Return <a>&gt;=</a> on two values comparing by only a particular
---   CurrencySymbol.
-pgeqBySymbol :: forall (keys :: KeyGuarantees) (amounts :: AmountGuarantees) (s :: S). Term s (PCurrencySymbol :--> (PValue keys amounts :--> (PValue keys amounts :--> PBool)))
-
--- | Return <a>&gt;=</a> on two values comparing by only a particular
---   Haskell-level AssetClass.
-pgeqByClass' :: forall (keys :: KeyGuarantees) (amounts :: AmountGuarantees) (s :: S). AssetClass -> Term s (PValue keys amounts :--> (PValue keys amounts :--> PBool))
-
--- | Find the TxInInfo by a TxOutRef.
-pfindTxInByTxOutRef :: Term s (PTxOutRef :--> (PBuiltinList (PAsData PTxInInfo) :--> PMaybe PTxInInfo))
-
--- | Create a value with a single asset class.
-psingletonValue :: forall (keys :: KeyGuarantees) (amounts :: AmountGuarantees) (s :: S). Term s (PCurrencySymbol :--> (PTokenName :--> (PInteger :--> PValue keys amounts)))
-
--- | Get the first element that maps to a PJust in a list.
-pfindMap :: PIsListLike list a => Term s ((a :--> PMaybe b) :--> (list a :--> PMaybe b))
-
--- | True if a list is not empty.
-pnotNull :: forall list a. PIsListLike list a => Term _ (list a :--> PBool)
-
--- | Yield True if a given PMaybe is of form <tt><a>PJust</a> _</tt>.
-pisJust :: forall a s. Term s (PMaybe a :--> PBool)
-
--- | Check if a particular asset class has been spent in the input list.
---   
---   When using this as an authority check, you <b>MUST</b> ensure the
---   authority knows how to ensure its end of the contract.
-ptokenSpent :: forall {s :: S}. Term s (PAssetClass :--> (PBuiltinList (PAsData PTxInInfo) :--> PBool))
-
--- | True if both maps have exactly the same keys. Using
---   <tt><a>#==</a></tt> is not sufficient, because keys returned are not
---   ordered.
-pkeysEqual :: forall (k :: PType) (a :: PType) (b :: PType) (keys :: KeyGuarantees) (s :: S). (POrd k, PIsData k) => Term s (PMap keys k a :--> (PMap keys k b :--> PBool))
-
--- | <i> O(nlogn) </i>. Sort and remove dupicate elements in a list.
-pnubSortBy :: forall list a (s :: S). PIsListLike list a => Term s ((a :--> (a :--> PBool)) :--> ((a :--> (a :--> PBool)) :--> (list a :--> list a)))
-
--- | A special case of <a>pisUniqBy</a> which requires elements have
---   <a>POrd</a> instance.
-pisUniq :: forall list a (s :: S). (POrd a, PIsListLike list a) => Term s (list a :--> PBool)
-
--- | <i> O(nlogn) </i>. Check if a list contains no duplicates.
-pisUniqBy :: forall list a (s :: S). PIsListLike list a => Term s ((a :--> (a :--> PBool)) :--> ((a :--> (a :--> PBool)) :--> (list a :--> PBool)))
-
--- | Yield True if a given PMaybeData is of form <tt><a>PDJust</a> _</tt>.
-pisDJust :: Term s (PMaybeData a :--> PBool)
-
--- | Determines if a given UTXO is spent.
-pisUTXOSpent :: Term s (PTxOutRef :--> (PBuiltinList (PAsData PTxInInfo) :--> PBool))
-
--- | <i> O(nlogn) </i>. Merge sort, bottom-up version, given a custom
---   comparator.
---   
---   Elements are arranged from lowest to highest, keeping duplicates in
---   the order they appeared in the input.
-pmsortBy :: PIsListLike l a => Term s ((a :--> (a :--> PBool)) :--> (l a :--> l a))
-
--- | A special case of <a>pmsortBy</a> which requires elements have
---   <a>POrd</a> instance.
-pmsort :: (POrd a, PIsListLike l a) => Term s (l a :--> l a)
-
--- | Special version of <a>pnubSortBy</a>, which requires elements have
---   <a>POrd</a>.
-pnubSort :: forall list a (s :: S). (PIsListLike list a, POrd a) => Term s (list a :--> list a)
-
--- | <i> O(n) </i>. Update the value at a given key in a <a>PMap</a>, have
---   the same functionalities as <a>update</a>.
-pupdate :: forall (k :: PType) (v :: PType) (keys :: KeyGuarantees) (s :: S). (PIsData k, PIsData v) => Term s ((v :--> PMaybe v) :--> (k :--> (PMap keys k v :--> PMap keys k v)))
-
--- | <i> O(n) </i>. Map a function over all values in a <a>PMap</a>.
-pmapMap :: forall (k :: PType) (a :: PType) (b :: PType) (keys :: KeyGuarantees) (s :: S). (PIsData k, PIsData a, PIsData b) => Term s ((a :--> b) :--> (PMap keys k a :--> PMap keys k b))
-
--- | A special version of <a>pmap</a> which allows list elements to be
---   thrown out.
-pmapMaybe :: forall s a list. PIsListLike list a => Term s ((a :--> PMaybe a) :--> (list a :--> list a))
-
--- | Finds the TxOut of an effect from TxInfo and TxOutRef
-findTxOutByTxOutRef :: Term s (PTxOutRef :--> (PBuiltinList (PAsData PTxInInfo) :--> PMaybe PTxOut))
-
--- | Get script hash from an Address.
-scriptHashFromAddress :: Term s (PAddress :--> PMaybe PValidatorHash)
-
--- | Find all TxOuts sent to an Address
-findOutputsToAddress :: Term s (PBuiltinList (PAsData PTxOut) :--> (PAddress :--> PBuiltinList (PAsData PTxOut)))
-
--- | Find the data corresponding to a TxOut, if there is one
-findTxOutDatum :: Term s (PBuiltinList (PAsData (PTuple PDatumHash PDatum)) :--> (PTxOut :--> PMaybe PDatum))
-
--- | Safely convert a <a>PValidatorHash</a> into a <a>PTokenName</a>. This
---   can be useful for tagging tokens for extra safety.
-validatorHashToTokenName :: ValidatorHash -> TokenName
-
--- | Plutarch level <a>validatorHashToTokenName</a>.
-pvalidatorHashToTokenName :: forall (s :: S). Term s PValidatorHash -> Term s PTokenName
-
--- | Get the CurrencySymbol of a PMintingPolicy.
-getMintingPolicySymbol :: ClosedTerm PMintingPolicy -> CurrencySymbol
-
--- | The entire value only contains one token of the given currency symbol.
-hasOnlyOneTokenOfCurrencySymbol :: forall (keys :: KeyGuarantees) (amounts :: AmountGuarantees) (s :: S). Term s (PCurrencySymbol :--> (PValue keys amounts :--> PBool))
-
--- | Find datum given a maybe datum hash
-mustFindDatum' :: forall (datum :: PType). (PIsData datum, PTryFrom PData (PAsData datum)) => forall s. Term s (PMaybeData PDatumHash :--> (PBuiltinList (PAsData (PTuple PDatumHash PDatum)) :--> datum))
-
--- | Extract the value stored in a PMaybe container. If there's no value,
---   throw an error with the given message.
-mustBePJust :: forall a s. Term s (PString :--> (PMaybe a :--> a))
-
--- | Extract the value stored in a PMaybeData container. If there's no
---   value, throw an error with the given message.
-mustBePDJust :: forall a s. PIsData a => Term s (PString :--> (PMaybeData a :--> a))
-
--- | Create an <a>Address</a> from a given <a>ValidatorHash</a> with no
---   <a>StakingCredential</a>.
-validatorHashToAddress :: ValidatorHash -> Address
-
--- | <i> O(n) </i>. Merge two lists which are assumed to be ordered, given
---   a custom comparator.
-pmergeBy :: PIsListLike l a => Term s ((a :--> (a :--> PBool)) :--> (l a :--> (l a :--> l a)))
-
--- | Split a list in half.
-phalve :: PIsListLike l a => Term s (l a :--> PPair (l a) (l a))
-
--- | Return true if the given address is a script address.
-isScriptAddress :: Term s (PAddress :--> PBool)
-
--- | Return true if the given credential is a pub-key-hash.
-isPubKey :: Term s (PCredential :--> PBool)
 
 
 -- | Time functions for proposal phases.
@@ -431,6 +248,158 @@ instance PlutusTx.IsData.Class.ToData Agora.Proposal.Time.ProposalStartingTime
 instance GHC.Generics.Generic Agora.Proposal.Time.ProposalTimingConfig
 instance GHC.Show.Show Agora.Proposal.Time.ProposalTimingConfig
 instance GHC.Classes.Eq Agora.Proposal.Time.ProposalTimingConfig
+
+
+-- | Tags and extras for <a>Plutarch.SafeMoney</a>.
+module Agora.SafeMoney
+
+-- | ADA.
+data ADATag
+
+-- | Governance token.
+data GTTag
+
+-- | Governor ST token.
+data GovernorSTTag
+
+-- | Stake ST token.
+data StakeSTTag
+
+-- | Proposal ST token.
+data ProposalSTTag
+
+-- | Resolves ada tags.
+adaRef :: Tagged ADATag AssetClass
+
+
+-- | Exportable script bundles for off-chain consumption.
+module Agora.ScriptInfo
+
+-- | Bundle containing a <a>MintingPolicy</a> and its symbol.
+data PolicyInfo
+PolicyInfo :: MintingPolicy -> CurrencySymbol -> PolicyInfo
+
+-- | The minting policy.
+[policy] :: PolicyInfo -> MintingPolicy
+
+-- | The symbol given by the minting policy.
+[currencySymbol] :: PolicyInfo -> CurrencySymbol
+
+-- | Bundle containing a <a>Validator</a> and its hash.
+data ValidatorInfo
+ValidatorInfo :: Validator -> ValidatorHash -> ValidatorInfo
+
+-- | The validator script.
+[script] :: ValidatorInfo -> Validator
+
+-- | Hash of the validator.
+[hash] :: ValidatorInfo -> ValidatorHash
+
+-- | Create a <a>ValidatorInfo</a> given a Plutarch term.
+mkValidatorInfo :: ClosedTerm PValidator -> ValidatorInfo
+
+-- | Create a <a>PolicyInfo</a> given a Plutarch term.
+mkPolicyInfo :: ClosedTerm PMintingPolicy -> PolicyInfo
+instance Data.Aeson.Types.FromJSON.FromJSON Agora.ScriptInfo.ValidatorInfo
+instance Data.Aeson.Types.ToJSON.ToJSON Agora.ScriptInfo.ValidatorInfo
+instance GHC.Generics.Generic Agora.ScriptInfo.ValidatorInfo
+instance GHC.Classes.Eq Agora.ScriptInfo.ValidatorInfo
+instance GHC.Show.Show Agora.ScriptInfo.ValidatorInfo
+instance Data.Aeson.Types.FromJSON.FromJSON Agora.ScriptInfo.PolicyInfo
+instance Data.Aeson.Types.ToJSON.ToJSON Agora.ScriptInfo.PolicyInfo
+instance GHC.Generics.Generic Agora.ScriptInfo.PolicyInfo
+instance GHC.Classes.Eq Agora.ScriptInfo.PolicyInfo
+instance GHC.Show.Show Agora.ScriptInfo.PolicyInfo
+
+
+-- | Contains the datum, redeemer and validator for a template DAO
+--   treasury.
+module Agora.Treasury
+
+-- | Redeemer for Treasury actions.
+data TreasuryRedeemer
+
+-- | Allow transaction to pass by delegating to GAT burn.
+SpendTreasuryGAT :: TreasuryRedeemer
+
+-- | Plutarch level type representing valid redeemers of the treasury.
+newtype PTreasuryRedeemer (s :: S)
+
+-- | Alters treasury parameters, subject to the burning of a governance
+--   authority token.
+PSpendTreasuryGAT :: Term s (PDataRecord '[]) -> PTreasuryRedeemer (s :: S)
+
+-- | Validator ensuring that transactions consuming the treasury do so in a
+--   valid manner.
+treasuryValidator :: CurrencySymbol -> ClosedTerm PValidator
+instance Plutarch.Builtin.PIsData Agora.Treasury.PTreasuryRedeemer
+instance Plutarch.Internal.PlutusType.PlutusType Agora.Treasury.PTreasuryRedeemer
+instance Plutarch.DataRepr.Internal.PIsDataRepr Agora.Treasury.PTreasuryRedeemer
+instance forall (s :: Plutarch.Internal.S). Generics.SOP.Universe.Generic (Agora.Treasury.PTreasuryRedeemer s)
+instance forall (s :: Plutarch.Internal.S). GHC.Generics.Generic (Agora.Treasury.PTreasuryRedeemer s)
+instance Plutarch.TryFrom.PTryFrom Plutarch.Builtin.PData (Plutarch.Builtin.PAsData Agora.Treasury.PTreasuryRedeemer)
+instance Plutarch.Lift.PConstantDecl Agora.Treasury.TreasuryRedeemer
+instance Plutarch.Lift.PUnsafeLiftDecl Agora.Treasury.PTreasuryRedeemer
+instance PlutusTx.IsData.Class.ToData Agora.Treasury.TreasuryRedeemer
+instance PlutusTx.IsData.Class.FromData Agora.Treasury.TreasuryRedeemer
+instance PlutusTx.IsData.Class.UnsafeFromData Agora.Treasury.TreasuryRedeemer
+instance GHC.Generics.Generic Agora.Treasury.TreasuryRedeemer
+instance GHC.Show.Show Agora.Treasury.TreasuryRedeemer
+instance GHC.Classes.Eq Agora.Treasury.TreasuryRedeemer
+
+
+-- | Plutarch utility functions that should be upstreamed or don't belong
+--   anywhere else.
+module Agora.Utils
+
+-- | Finds the TxOut of an effect from TxInfo and TxOutRef
+findTxOutByTxOutRef :: Term s (PTxOutRef :--> (PBuiltinList (PAsData PTxInInfo) :--> PMaybe PTxOut))
+
+-- | Get script hash from an Address.
+scriptHashFromAddress :: Term s (PAddress :--> PMaybe PValidatorHash)
+
+-- | Find all TxOuts sent to an Address
+findOutputsToAddress :: Term s (PBuiltinList (PAsData PTxOut) :--> (PAddress :--> PBuiltinList (PAsData PTxOut)))
+
+-- | Find the data corresponding to a TxOut, if there is one
+findTxOutDatum :: Term s (PBuiltinList (PAsData (PTuple PDatumHash PDatum)) :--> (PTxOut :--> PMaybe PDatum))
+
+-- | Safely convert a <a>PValidatorHash</a> into a <a>PTokenName</a>. This
+--   can be useful for tagging tokens for extra safety.
+validatorHashToTokenName :: ValidatorHash -> TokenName
+
+-- | Plutarch level <a>validatorHashToTokenName</a>.
+pvalidatorHashToTokenName :: forall (s :: S). Term s PValidatorHash -> Term s PTokenName
+
+-- | Get the CurrencySymbol of a PMintingPolicy.
+getMintingPolicySymbol :: ClosedTerm PMintingPolicy -> CurrencySymbol
+
+-- | The entire value only contains one token of the given currency symbol.
+hasOnlyOneTokenOfCurrencySymbol :: forall (keys :: KeyGuarantees) (amounts :: AmountGuarantees) (s :: S). Term s (PCurrencySymbol :--> (PValue keys amounts :--> PBool))
+
+-- | Find datum given a maybe datum hash
+mustFindDatum' :: forall (datum :: PType). (PIsData datum, PTryFrom PData (PAsData datum)) => forall s. Term s (PMaybeData PDatumHash :--> (PBuiltinList (PAsData (PTuple PDatumHash PDatum)) :--> datum))
+
+-- | Extract the value stored in a PMaybe container. If there's no value,
+--   throw an error with the given message.
+mustBePJust :: forall a s. Term s (PString :--> (PMaybe a :--> a))
+
+-- | Extract the value stored in a PMaybeData container. If there's no
+--   value, throw an error with the given message.
+mustBePDJust :: forall a s. PIsData a => Term s (PString :--> (PMaybeData a :--> a))
+
+-- | Create an <a>Address</a> from a given <a>ValidatorHash</a> with no
+--   <a>StakingCredential</a>.
+validatorHashToAddress :: ValidatorHash -> Address
+
+-- | Return true if the given address is a script address.
+isScriptAddress :: Term s (PAddress :--> PBool)
+
+-- | Return true if the given credential is a pub-key-hash.
+isPubKey :: Term s (PCredential :--> PBool)
+
+-- | Create a value with a single asset class.
+psingletonValue :: forall (keys :: KeyGuarantees) (amounts :: AmountGuarantees) (s :: S). Term s (PCurrencySymbol :--> (PTokenName :--> (PInteger :--> PValue keys amounts)))
 
 
 -- | Proposal scripts encoding effects that operate on the system.
@@ -1212,74 +1181,6 @@ instance GHC.Generics.Generic Agora.Governor.GovernorDatum
 instance GHC.Show.Show Agora.Governor.GovernorDatum
 
 
--- | Tokens acting as redeemable proofs of DAO authority.
-module Agora.AuthorityToken
-
--- | Policy given <a>AuthorityToken</a> params.
-authorityTokenPolicy :: AuthorityToken -> ClosedTerm PMintingPolicy
-
--- | Check that all GATs are valid in a particular TxOut. How this is
---   checked: an AuthorityToken should never leave the Effect it was
---   initially sent to, so we simply check that the script address the
---   token resides in matches the TokenName. Since the TokenName was tagged
---   upon mint with the Effect script it was sent to, this is enough to
---   prove validity. In other words, check that all assets of a particular
---   currency symbol are tagged with a TokenName that matches where they
---   live.
-authorityTokensValidIn :: Term s (PCurrencySymbol :--> (PTxOut :--> PBool))
-
--- | Assert that a single authority token has been burned.
-singleAuthorityTokenBurned :: forall (keys :: KeyGuarantees) (amounts :: AmountGuarantees) (s :: S). Term s PCurrencySymbol -> Term s (PAsData PTxInfo) -> Term s (PValue keys amounts) -> Term s PBool
-
--- | An AuthorityToken represents a proof that a particular token moved
---   while this token was minted. In effect, this means that the validator
---   that locked such a token must have approved said transaction. Said
---   validator should be made aware of *this* token's existence in order to
---   prevent incorrect minting.
-newtype AuthorityToken
-AuthorityToken :: AssetClass -> AuthorityToken
-
--- | Token that must move in order for minting this to be valid.
-[authority] :: AuthorityToken -> AssetClass
-instance GHC.Generics.Generic Agora.AuthorityToken.AuthorityToken
-
-
--- | Contains the datum, redeemer and validator for a template DAO
---   treasury.
-module Agora.Treasury
-
--- | Redeemer for Treasury actions.
-data TreasuryRedeemer
-
--- | Allow transaction to pass by delegating to GAT burn.
-SpendTreasuryGAT :: TreasuryRedeemer
-
--- | Plutarch level type representing valid redeemers of the treasury.
-newtype PTreasuryRedeemer (s :: S)
-
--- | Alters treasury parameters, subject to the burning of a governance
---   authority token.
-PSpendTreasuryGAT :: Term s (PDataRecord '[]) -> PTreasuryRedeemer (s :: S)
-
--- | Validator ensuring that transactions consuming the treasury do so in a
---   valid manner.
-treasuryValidator :: CurrencySymbol -> ClosedTerm PValidator
-instance Plutarch.Builtin.PIsData Agora.Treasury.PTreasuryRedeemer
-instance Plutarch.Internal.PlutusType.PlutusType Agora.Treasury.PTreasuryRedeemer
-instance Plutarch.DataRepr.Internal.PIsDataRepr Agora.Treasury.PTreasuryRedeemer
-instance forall (s :: Plutarch.Internal.S). Generics.SOP.Universe.Generic (Agora.Treasury.PTreasuryRedeemer s)
-instance forall (s :: Plutarch.Internal.S). GHC.Generics.Generic (Agora.Treasury.PTreasuryRedeemer s)
-instance Plutarch.TryFrom.PTryFrom Plutarch.Builtin.PData (Plutarch.Builtin.PAsData Agora.Treasury.PTreasuryRedeemer)
-instance Plutarch.Lift.PConstantDecl Agora.Treasury.TreasuryRedeemer
-instance Plutarch.Lift.PUnsafeLiftDecl Agora.Treasury.PTreasuryRedeemer
-instance PlutusTx.IsData.Class.ToData Agora.Treasury.TreasuryRedeemer
-instance PlutusTx.IsData.Class.FromData Agora.Treasury.TreasuryRedeemer
-instance PlutusTx.IsData.Class.UnsafeFromData Agora.Treasury.TreasuryRedeemer
-instance GHC.Generics.Generic Agora.Treasury.TreasuryRedeemer
-instance GHC.Show.Show Agora.Treasury.TreasuryRedeemer
-instance GHC.Classes.Eq Agora.Treasury.TreasuryRedeemer
-
-
 -- | Plutus scripts for Governors.
 module Agora.Governor.Scripts
 
@@ -1439,17 +1340,6 @@ authorityTokenFromGovernor :: Governor -> AuthorityToken
 authorityTokenSymbolFromGovernor :: Governor -> CurrencySymbol
 
 
--- | Helpers for constructing effects.
-module Agora.Effect
-
--- | Helper "template" for creating effect validator.
---   
---   In some situations, it may be the case that we need more control over
---   how an effect is implemented. In such situations, it's okay to not use
---   this helper.
-makeEffect :: forall (datum :: PType). (PIsData datum, PTryFrom PData (PAsData datum)) => CurrencySymbol -> (forall (s :: S). Term s PCurrencySymbol -> Term s datum -> Term s PTxOutRef -> Term s (PAsData PTxInfo) -> Term s POpaque) -> ClosedTerm PValidator
-
-
 -- | An Effect that withdraws treasury deposit
 module Agora.Effect.TreasuryWithdrawal
 
@@ -1500,19 +1390,6 @@ instance PlutusTx.Lift.Class.Lift PlutusCore.Default.Universe.DefaultUni Agora.E
 instance Generics.SOP.Universe.Generic Agora.Effect.TreasuryWithdrawal.TreasuryWithdrawalDatum
 instance GHC.Generics.Generic Agora.Effect.TreasuryWithdrawal.TreasuryWithdrawalDatum
 instance GHC.Show.Show Agora.Effect.TreasuryWithdrawal.TreasuryWithdrawalDatum
-
-
--- | A dumb effect that only burns its GAT.
-module Agora.Effect.NoOp
-
--- | Dummy effect which can only burn its GAT.
-noOpValidator :: CurrencySymbol -> ClosedTerm PValidator
-
--- | Dummy datum for NoOp effect.
-data PNoOp (s :: S)
-instance Plutarch.Builtin.PIsData Agora.Effect.NoOp.PNoOp
-instance Plutarch.Internal.PlutusType.PlutusType Agora.Effect.NoOp.PNoOp
-instance Plutarch.TryFrom.PTryFrom Plutarch.Builtin.PData (Plutarch.Builtin.PAsData Agora.Effect.NoOp.PNoOp)
 
 
 -- | An effect for mutating governor settings.
