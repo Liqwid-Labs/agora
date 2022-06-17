@@ -2,32 +2,36 @@ name,cpu,mem,size
 Agora/Effects/Treasury Withdrawal Effect/effect/Simple,289461528,703055,3191
 Agora/Effects/Treasury Withdrawal Effect/effect/Simple with multiple treasuries ,448521458,1070167,3518
 Agora/Effects/Treasury Withdrawal Effect/effect/Mixed Assets,408085321,966048,3383
-Agora/Effects/Governor Mutation Effect/validator/valid new governor datum/governor validator should pass,83758582,229228,7665
+Agora/Effects/Governor Mutation Effect/validator/valid new governor datum/governor validator should pass,83758582,229228,7664
 Agora/Effects/Governor Mutation Effect/validator/valid new governor datum/effect validator should pass,97345575,266935,3358
 Agora/Stake/policy/stakeCreation,43114609,124549,2094
 Agora/Stake/validator/stakeDepositWithdraw deposit,171823342,464745,4114
 Agora/Stake/validator/stakeDepositWithdraw withdraw,171823342,464745,4106
 Agora/Proposal/policy/proposalCreation,23140177,69194,1526
-Agora/Proposal/validator/cosignature/proposal,222301540,603340,6636
+Agora/Proposal/validator/cosignature/proposal,208476265,574928,6579
 Agora/Proposal/validator/cosignature/stake,116026395,290047,4651
-Agora/Proposal/validator/voting/proposal,178054481,460496,6644
+Agora/Proposal/validator/voting/proposal,164229206,432084,6587
 Agora/Proposal/validator/voting/stake,107127768,275725,4704
-Agora/Proposal/validator/advancing/successfully advance to next state/Draft -> VotringReady,172258044,439573,6534
-Agora/Proposal/validator/advancing/successfully advance to next state/VotingReady -> Locked,171414622,438070,6537
-Agora/Proposal/validator/advancing/successfully advance to next state/Locked -> Finished,173111089,441676,6537
-Agora/Proposal/validator/advancing/successfully advance to failed state: timeout/Draft -> Finished,171128243,436843,6536
-Agora/Proposal/validator/advancing/successfully advance to failed state: timeout/VotingReady -> Finished,169719332,434138,6537
-Agora/Proposal/validator/advancing/successfully advance to failed state: timeout/Locked -> Finished,170850310,436542,6537
-Agora/Proposal/validator/unlocking/legal/retract votes and unlock stake while voting,185279951,490378,6613
-Agora/Proposal/validator/unlocking/legal/unlock the stake that has been used to create the proposal,163814248,436318,6620
-Agora/Proposal/validator/unlocking/legal/unlock stake after voting/Locked,162881337,436613,6614
-Agora/Proposal/validator/unlocking/legal/unlock stake after voting/Finished,162881337,436613,6614
+Agora/Proposal/validator/advancing/successfully advance to next state/Draft -> VotringReady,158432769,411161,6477
+Agora/Proposal/validator/advancing/successfully advance to next state/VotingReady -> Locked,157589347,409658,6480
+Agora/Proposal/validator/advancing/successfully advance to next state/Locked -> Finished,159285814,413264,6480
+Agora/Proposal/validator/advancing/successfully advance to failed state: timeout/Draft -> Finished,157302968,408431,6479
+Agora/Proposal/validator/advancing/successfully advance to failed state: timeout/VotingReady -> Finished,155894057,405726,6480
+Agora/Proposal/validator/advancing/successfully advance to failed state: timeout/Locked -> Finished,157025035,408130,6480
+"Agora/Proposal/validator/unlocking/1 proposals/legal/retract votes and unlock stake while voting/1 proposals, voter, unlock stake + retract votes, VotingReady",189052005,492891,6583
+"Agora/Proposal/validator/unlocking/1 proposals/legal/unlock the stake that has been used to create the proposal/1 proposals, creator, unlock stake, Finished",167586302,438831,6587
+"Agora/Proposal/validator/unlocking/1 proposals/legal/unlock stake after voting/1 proposals, voter, unlock stake, Finished",166653391,439126,6587
+"Agora/Proposal/validator/unlocking/1 proposals/legal/unlock stake after voting/1 proposals, voter, unlock stake, Locked",166653391,439126,6587
+"Agora/Proposal/validator/unlocking/25 proposals/legal/retract votes and unlock stake while voting/25 proposals, voter, unlock stake + retract votes, VotingReady",1105824237,3030675,19333
+"Agora/Proposal/validator/unlocking/25 proposals/legal/unlock the stake that has been used to create the proposal/25 proposals, creator, unlock stake, Finished",935680982,2549151,19483
+"Agora/Proposal/validator/unlocking/25 proposals/legal/unlock stake after voting/25 proposals, voter, unlock stake, Finished",934748071,2549446,19434
+"Agora/Proposal/validator/unlocking/25 proposals/legal/unlock stake after voting/25 proposals, voter, unlock stake, Locked",934748071,2549446,19434
 Agora/AuthorityToken/singleAuthorityTokenBurned/Correct simple,21017788,55883,806
 Agora/AuthorityToken/singleAuthorityTokenBurned/Correct many inputs,33204186,88241,900
 Agora/Treasury/Validator/Positive/Allows for effect changes,29938856,79744,1841
 Agora/AuthorityToken/singleAuthorityTokenBurned/Correct simple,21017788,55883,806
 Agora/AuthorityToken/singleAuthorityTokenBurned/Correct many inputs,33204186,88241,900
 Agora/Governor/policy/GST minting,43087287,120125,1833
-Agora/Governor/validator/proposal creation,261928725,689487,8181
-Agora/Governor/validator/GATs minting,354205643,942490,8302
-Agora/Governor/validator/mutate governor state,81730538,223502,7718
+Agora/Governor/validator/proposal creation,262494214,690689,8180
+Agora/Governor/validator/GATs minting,353640154,941288,8301
+Agora/Governor/validator/mutate governor state,81730538,223502,7717
