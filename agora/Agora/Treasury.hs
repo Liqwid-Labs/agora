@@ -11,7 +11,6 @@ treasury.
 module Agora.Treasury (module Agora.Treasury) where
 
 import Agora.AuthorityToken (singleAuthorityTokenBurned)
-import Agora.Utils (tcassert, tclet, tcmatch, tctryFrom)
 import GHC.Generics qualified as GHC
 import Generics.SOP
 import Plutarch.Api.V1 (PValidator)
@@ -21,6 +20,7 @@ import Plutarch.DataRepr (
   DerivePConstantViaData (..),
   PIsDataReprInstances (PIsDataReprInstances),
  )
+import Plutarch.Extra.TermCont (pguardC, pletC, pmatchC, ptryFromC)
 import Plutarch.Lift (PConstantDecl (..), PLifted (..), PUnsafeLiftDecl)
 import Plutarch.TryFrom ()
 import PlutusLedgerApi.V1.Value (CurrencySymbol)
@@ -76,26 +76,26 @@ treasuryValidator ::
   CurrencySymbol ->
   ClosedTerm PValidator
 treasuryValidator gatCs' = plam $ \_datum redeemer ctx' -> unTermCont $ do
-  (treasuryRedeemer, _) <- tctryFrom redeemer
+  (treasuryRedeemer, _) <- ptryFromC redeemer
 
   -- plet required fields from script context.
   ctx <- tcont $ pletFields @["txInfo", "purpose"] ctx'
 
   -- Ensure that script is for burning i.e. minting a negative amount.
-  PMinting _ <- tcmatch ctx.purpose
+  PMinting _ <- pmatchC ctx.purpose
 
   -- Ensure redeemer type is valid.
-  PSpendTreasuryGAT _ <- tcmatch $ pfromData treasuryRedeemer
+  PSpendTreasuryGAT _ <- pmatchC $ pfromData treasuryRedeemer
 
   -- Get the minted value from txInfo.
-  txInfo' <- tclet ctx.txInfo
+  txInfo' <- pletC ctx.txInfo
   txInfo <- tcont $ pletFields @'["mint"] txInfo'
   let mint :: Term _ (PValue _ _)
       mint = txInfo.mint
 
-  gatCs <- tclet $ pconstant gatCs'
+  gatCs <- pletC $ pconstant gatCs'
 
-  tcassert "A single authority token has been burned" $
+  pguardC "A single authority token has been burned" $
     singleAuthorityTokenBurned gatCs txInfo' mint
 
   pure . popaque $ pconstant ()

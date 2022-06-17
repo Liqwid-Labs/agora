@@ -29,7 +29,6 @@ module Agora.Proposal.Time (
   isExecutionPeriod,
 ) where
 
-import Agora.Utils (tcassert, tcmatch)
 import GHC.Generics qualified as GHC
 import Generics.SOP (Generic, HasDatatypeInfo, I (I))
 import Plutarch.Api.V1 (
@@ -45,6 +44,7 @@ import Plutarch.DataRepr (
   PDataFields,
   PIsDataReprInstances (..),
  )
+import Plutarch.Extra.TermCont (pguardC, pmatchC)
 import Plutarch.Lift (
   DerivePConstantViaNewtype (..),
   PConstantDecl,
@@ -184,7 +184,7 @@ instance AdditiveSemigroup (Term s PPOSIXTime) where
 createProposalStartingTime :: forall (s :: S). Term s (PMaxTimeRangeWidth :--> PPOSIXTimeRange :--> PProposalStartingTime)
 createProposalStartingTime = phoistAcyclic $
   plam $ \(pto -> maxDuration) iv -> unTermCont $ do
-    currentTimeF <- tcmatch $ currentProposalTime # iv
+    currentTimeF <- pmatchC $ currentProposalTime # iv
 
     -- Use the middle of the current time range as the starting time.
     let duration = currentTimeF.upperBound - currentTimeF.lowerBound
@@ -194,7 +194,7 @@ createProposalStartingTime = phoistAcyclic $
             # (currentTimeF.lowerBound + currentTimeF.upperBound)
             # 2
 
-    tcassert "createProposalStartingTime: given time range should be tight enough" $
+    pguardC "createProposalStartingTime: given time range should be tight enough" $
       duration #<= maxDuration
 
     pure $ pcon $ PProposalStartingTime startingTime
@@ -207,10 +207,10 @@ createProposalStartingTime = phoistAcyclic $
 currentProposalTime :: forall (s :: S). Term s (PPOSIXTimeRange :--> PProposalTime)
 currentProposalTime = phoistAcyclic $
   plam $ \iv -> unTermCont $ do
-    PInterval iv' <- tcmatch iv
+    PInterval iv' <- pmatchC iv
     ivf <- tcont $ pletFields @'["from", "to"] iv'
-    PLowerBound lb <- tcmatch ivf.from
-    PUpperBound ub <- tcmatch ivf.to
+    PLowerBound lb <- pmatchC ivf.from
+    PUpperBound ub <- pmatchC ivf.to
     lbf <- tcont $ pletFields @'["_0", "_1"] lb
     ubf <- tcont $ pletFields @'["_0", "_1"] ub
     pure $
@@ -243,7 +243,7 @@ proposalTimeWithin ::
     )
 proposalTimeWithin = phoistAcyclic $
   plam $ \l h proposalTime' -> unTermCont $ do
-    PProposalTime ut lt <- tcmatch proposalTime'
+    PProposalTime ut lt <- pmatchC proposalTime'
     pure $
       foldr1
         (#&&)

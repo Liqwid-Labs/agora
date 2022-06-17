@@ -155,8 +155,8 @@ specs =
         ]
     datum2 =
       TreasuryWithdrawalDatum
-        [ (head users, asset1 4 <> asset2 5)
-        , (users !! 1, asset1 2 <> asset2 1)
+        [ (head users, asset2 5 <> asset1 4)
+        , (users !! 1, asset2 1 <> asset1 2)
         , (users !! 2, asset1 1)
         ]
         [ head treasuries

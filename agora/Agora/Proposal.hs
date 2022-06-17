@@ -35,8 +35,23 @@ module Agora.Proposal (
   pneutralOption,
 ) where
 
+--------------------------------------------------------------------------------
+
+import Control.Applicative (Const)
+import Control.Arrow (first)
+import Data.Tagged (Tagged)
 import GHC.Generics qualified as GHC
 import Generics.SOP (Generic, I (I))
+
+--------------------------------------------------------------------------------
+
+import PlutusLedgerApi.V1 (DatumHash, PubKeyHash, ValidatorHash)
+import PlutusLedgerApi.V1.Value (AssetClass)
+import PlutusTx qualified
+import PlutusTx.AssocMap qualified as AssocMap
+
+--------------------------------------------------------------------------------
+
 import Plutarch.Api.V1 (
   KeyGuarantees (Unsorted),
   PDatumHash,
@@ -44,18 +59,11 @@ import Plutarch.Api.V1 (
   PPubKeyHash,
   PValidatorHash,
  )
-import PlutusTx qualified
-import PlutusTx.AssocMap qualified as AssocMap
-
---------------------------------------------------------------------------------
-
-import Agora.Proposal.Time (PProposalStartingTime, PProposalTimingConfig, ProposalStartingTime, ProposalTimingConfig)
-import Agora.SafeMoney (GTTag)
-import Agora.Utils (mustBePJust, pkeysEqual, pmapMap, pnotNull, tclet)
-import Control.Applicative (Const)
-import Control.Arrow (first)
-import Data.Tagged (Tagged)
 import Plutarch.DataRepr (DerivePConstantViaData (..), PDataFields, PIsDataReprInstances (..))
+import Plutarch.Extra.List (pnotNull)
+import Plutarch.Extra.Map qualified as PM
+import Plutarch.Extra.Map.Unsorted qualified as PUM
+import Plutarch.Extra.TermCont (pletC)
 import Plutarch.Lift (
   DerivePConstantViaNewtype (..),
   PConstantDecl,
@@ -64,8 +72,12 @@ import Plutarch.Lift (
 import Plutarch.SafeMoney (PDiscrete)
 import Plutarch.TryFrom (PTryFrom (PTryFromExcess, ptryFrom'))
 import Plutarch.Unsafe (punsafeCoerce)
-import PlutusLedgerApi.V1 (DatumHash, PubKeyHash, ValidatorHash)
-import PlutusLedgerApi.V1.Value (AssetClass)
+
+--------------------------------------------------------------------------------
+
+import Agora.Proposal.Time (PProposalStartingTime, PProposalTimingConfig, ProposalStartingTime, ProposalTimingConfig)
+import Agora.SafeMoney (GTTag)
+import Agora.Utils (mustBePJust)
 
 --------------------------------------------------------------------------------
 -- Haskell-land
@@ -281,6 +293,10 @@ instance PTryFrom PData (PAsData PResultTag) where
       -- JUSTIFICATION:
       -- We are coercing from @PAsData PInteger@ to @PAsData PResultTag@.
       -- Since 'PResultTag' is a simple newtype, their shape is the same.
+
+      -- JUSTIFICATION:
+      -- We are coercing from @PAsData PInteger@ to @PAsData PResultTag@.
+      -- Since 'PResultTag' is a simple newtype, their shape is the same.
       k . first punsafeCoerce
 
 -- | Plutarch-level version of 'PProposalId'.
@@ -291,6 +307,10 @@ instance PTryFrom PData (PAsData PProposalId) where
   type PTryFromExcess PData (PAsData PProposalId) = PTryFromExcess PData (PAsData PInteger)
   ptryFrom' d k =
     ptryFrom' @_ @(PAsData PInteger) d $
+      -- JUSTIFICATION:
+      -- We are coercing from @PAsData PInteger@ to @PAsData PProposalId@.
+      -- Since 'PProposalId' is a simple newtype, their shape is the same.
+
       -- JUSTIFICATION:
       -- We are coercing from @PAsData PInteger@ to @PAsData PProposalId@.
       -- Since 'PProposalId' is a simple newtype, their shape is the same.
@@ -360,7 +380,7 @@ pemptyVotesFor =
     plam
       ( \m ->
           pcon $
-            PProposalVotes $ pmapMap # plam (const $ pconstant 0) # m
+            PProposalVotes $ PM.pmap # plam (const $ pconstant 0) # m
       )
 
 -- | Plutarch-level version of 'ProposalDatum'.
@@ -448,8 +468,8 @@ proposalDatumValid proposal =
           (#&&)
           [ ptraceIfFalse "Proposal has at least one ResultTag has no effects" atLeastOneNegativeResult
           , ptraceIfFalse "Proposal has at least one cosigner" $ pnotNull # pfromData datum.cosigners
-          , ptraceIfFalse "Proposal has fewer cosigners than the limit" $ plength # (pfromData datum.cosigners) #<= pconstant proposal.maximumCosigners
-          , ptraceIfFalse "Proposal votes and effects are compatible with each other" $ pkeysEqual # datum.effects # pto (pfromData datum.votes)
+          , ptraceIfFalse "Proposal has fewer cosigners than the limit" $ plength # pfromData datum.cosigners #<= pconstant proposal.maximumCosigners
+          , ptraceIfFalse "Proposal votes and effects are compatible with each other" $ PUM.pkeysEqual # datum.effects # pto (pfromData datum.votes)
           ]
 
 {- | Find the winner result tag, given the votes, the quorum the "neutral" result tag.
@@ -467,9 +487,9 @@ pwinner ::
     )
 pwinner = phoistAcyclic $
   plam $ \votes quorum neutral -> unTermCont $ do
-    winner <- tclet $ phighestVotes # votes
-    winnerResultTag <- tclet $ pfromData $ pfstBuiltin # winner
-    highestVotes <- tclet $ pfromData $ psndBuiltin # winner
+    winner <- pletC $ phighestVotes # votes
+    winnerResultTag <- pletC $ pfromData $ pfstBuiltin # winner
+    highestVotes <- pletC $ pfromData $ psndBuiltin # winner
 
     let l :: Term _ (PBuiltinList _)
         l = pto $ pto votes

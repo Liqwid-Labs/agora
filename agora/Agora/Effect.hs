@@ -8,8 +8,8 @@ Helpers for constructing effects.
 module Agora.Effect (makeEffect) where
 
 import Agora.AuthorityToken (singleAuthorityTokenBurned)
-import Agora.Utils (tcassert, tclet, tcmatch, tctryFrom)
 import Plutarch.Api.V1 (PCurrencySymbol, PScriptPurpose (PSpending), PTxInfo, PTxOutRef, PValidator, PValue)
+import Plutarch.Extra.TermCont (pguardC, pletC, pmatchC, ptryFromC)
 import Plutarch.TryFrom ()
 import PlutusLedgerApi.V1.Value (CurrencySymbol)
 
@@ -30,16 +30,16 @@ makeEffect ::
 makeEffect gatCs' f =
   plam $ \datum _redeemer ctx' -> unTermCont $ do
     ctx <- tcont $ pletFields @'["txInfo", "purpose"] ctx'
-    txInfo' <- tclet ctx.txInfo
+    txInfo' <- pletC ctx.txInfo
 
     -- convert input datum, PData, into desierable type
     -- the way this conversion is performed should be defined
     -- by PTryFrom for each datum in effect script.
-    (pfromData -> datum', _) <- tctryFrom datum
+    (pfromData -> datum', _) <- ptryFromC datum
 
     -- ensure purpose is Spending.
-    PSpending txOutRef <- tcmatch $ pfromData ctx.purpose
-    txOutRef' <- tclet (pfield @"_0" # txOutRef)
+    PSpending txOutRef <- pmatchC $ pfromData ctx.purpose
+    txOutRef' <- pletC (pfield @"_0" # txOutRef)
 
     -- fetch minted values to ensure single GAT is burned
     txInfo <- tcont $ pletFields @'["mint"] txInfo'
@@ -47,9 +47,9 @@ makeEffect gatCs' f =
         mint = txInfo.mint
 
     -- fetch script context
-    gatCs <- tclet $ pconstant gatCs'
+    gatCs <- pletC $ pconstant gatCs'
 
-    tcassert "A single authority token has been burned" $ singleAuthorityTokenBurned gatCs txInfo' mint
+    pguardC "A single authority token has been burned" $ singleAuthorityTokenBurned gatCs txInfo' mint
 
     -- run effect function
     pure $ f gatCs datum' txOutRef' txInfo'

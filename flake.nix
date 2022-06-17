@@ -21,7 +21,7 @@
   inputs.plutarch-numeric.url =
     "github:Liqwid-Labs/plutarch-numeric?ref=main";
   inputs.plutarch-safe-money.url =
-    "github:Liqwid-Labs/plutarch-safe-money?ref=main";
+    "github:Liqwid-Labs/plutarch-safe-money?rev=9f968b80189c7e4b335527cd5b103dc26952f667";
 
   # Testing
   inputs.plutarch-quickcheck.url =

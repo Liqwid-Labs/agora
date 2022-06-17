@@ -28,23 +28,17 @@ import Plutarch.Api.V1 (
  )
 import Plutarch.Api.V1.AssetClass (passetClass, passetClassValueOf)
 import Plutarch.Api.V1.AssocMap (PMap (PMap))
+import Plutarch.Api.V1.ScriptContext (pisTokenSpent)
+import "liqwid-plutarch-extra" Plutarch.Api.V1.Value (psymbolValueOf)
 import "plutarch" Plutarch.Api.V1.Value (PValue (PValue))
 import Plutarch.Builtin (pforgetData)
+import Plutarch.Extra.List (plookup)
+import Plutarch.Extra.TermCont (pguardC, pmatchC)
 import PlutusLedgerApi.V1.Value (AssetClass (AssetClass))
 
 --------------------------------------------------------------------------------
 
 import GHC.Generics qualified as GHC
-
---------------------------------------------------------------------------------
-
-import Agora.Utils (
-  plookup,
-  psymbolValueOf,
-  ptokenSpent,
-  tcassert,
-  tcmatch,
- )
 
 --------------------------------------------------------------------------------
 
@@ -74,11 +68,11 @@ newtype AuthorityToken = AuthorityToken
 authorityTokensValidIn :: Term s (PCurrencySymbol :--> PTxOut :--> PBool)
 authorityTokensValidIn = phoistAcyclic $
   plam $ \authorityTokenSym txOut'' -> unTermCont $ do
-    PTxOut txOut' <- tcmatch txOut''
+    PTxOut txOut' <- pmatchC txOut''
     txOut <- tcont $ pletFields @'["address", "value"] $ txOut'
-    PAddress address <- tcmatch txOut.address
-    PValue value' <- tcmatch txOut.value
-    PMap value <- tcmatch value'
+    PAddress address <- pmatchC txOut.address
+    PValue value' <- pmatchC txOut.value
+    PMap value <- pmatchC value'
     pure $
       pmatch (plookup # pdata authorityTokenSym # value) $ \case
         PJust (pfromData -> tokenMap') ->
@@ -87,7 +81,7 @@ authorityTokensValidIn = phoistAcyclic $
               -- GATs should only be sent to Effect validators
               ptraceIfFalse "authorityTokensValidIn: GAT incorrectly lives at PubKey" $ pconstant False
             PScriptCredential ((pfromData . (pfield @"_0" #)) -> cred) -> unTermCont $ do
-              PMap tokenMap <- tcmatch tokenMap'
+              PMap tokenMap <- pmatchC tokenMap'
               pure $
                 ptraceIfFalse "authorityTokensValidIn: GAT TokenName doesn't match ScriptHash" $
                   pall
@@ -121,7 +115,7 @@ singleAuthorityTokenBurned gatCs txInfo mint = unTermCont $ do
           pall
             # plam
               ( \txInInfo' -> unTermCont $ do
-                  PTxInInfo txInInfo <- tcmatch (pfromData txInInfo')
+                  PTxInInfo txInInfo <- pmatchC (pfromData txInInfo')
                   let txOut' = pfield @"resolved" # txInInfo
                   pure $ authorityTokensValidIn # gatCs # pfromData txOut'
               )
@@ -134,15 +128,15 @@ authorityTokenPolicy params =
   plam $ \_redeemer ctx' ->
     pmatch ctx' $ \(PScriptContext ctx') -> unTermCont $ do
       ctx <- tcont $ pletFields @'["txInfo", "purpose"] ctx'
-      PTxInfo txInfo' <- tcmatch $ pfromData ctx.txInfo
+      PTxInfo txInfo' <- pmatchC $ pfromData ctx.txInfo
       txInfo <- tcont $ pletFields @'["inputs", "mint", "outputs"] txInfo'
       let inputs = txInfo.inputs
           mintedValue = pfromData txInfo.mint
           AssetClass (govCs, govTn) = params.authority
           govAc = passetClass # pconstant govCs # pconstant govTn
-          govTokenSpent = ptokenSpent # govAc # inputs
+          govTokenSpent = pisTokenSpent # govAc # inputs
 
-      PMinting ownSymbol' <- tcmatch $ pfromData ctx.purpose
+      PMinting ownSymbol' <- pmatchC $ pfromData ctx.purpose
 
       let ownSymbol = pfromData $ pfield @"_0" # ownSymbol'
           mintedATs = passetClassValueOf # mintedValue # (passetClass # ownSymbol # pconstant "")
@@ -150,8 +144,8 @@ authorityTokenPolicy params =
         pif
           (0 #< mintedATs)
           ( unTermCont $ do
-              tcassert "Parent token did not move in minting GATs" govTokenSpent
-              tcassert "All outputs only emit valid GATs" $
+              pguardC "Parent token did not move in minting GATs" govTokenSpent
+              pguardC "All outputs only emit valid GATs" $
                 pall
                   # plam
                     ( (authorityTokensValidIn # ownSymbol #)

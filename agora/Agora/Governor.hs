@@ -26,6 +26,7 @@ module Agora.Governor (
 --------------------------------------------------------------------------------
 
 import Control.Applicative (Const)
+import Data.Tagged (Tagged (..))
 import GHC.Generics qualified as GHC
 import Generics.SOP (Generic, I (I))
 
@@ -44,18 +45,16 @@ import Agora.Proposal.Time (
   ProposalTimingConfig,
  )
 import Agora.SafeMoney (GTTag)
-import Agora.Utils (tclet)
 
 --------------------------------------------------------------------------------
 
-import Data.Tagged (Tagged (..))
 import Plutarch.DataRepr (
   DerivePConstantViaData (..),
   PDataFields,
   PIsDataReprInstances (PIsDataReprInstances),
  )
 import Plutarch.Extra.Comonad (pextract)
-import Plutarch.Extra.TermCont (pmatchC)
+import Plutarch.Extra.TermCont (pletC, pmatchC)
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (..))
 import Plutarch.SafeMoney (PDiscrete (..))
 import Plutarch.TryFrom (PTryFrom (..))
@@ -196,9 +195,9 @@ governorDatumValid = phoistAcyclic $
     PDiscrete draft' <- pmatchC thresholds.create
     PDiscrete vote' <- pmatchC thresholds.vote
 
-    execute <- tclet $ pextract # execute'
-    draft <- tclet $ pextract # draft'
-    vote <- tclet $ pextract # vote'
+    execute <- pletC $ pextract # execute'
+    draft <- pletC $ pextract # draft'
+    vote <- pletC $ pextract # vote'
 
     pure $
       foldr1
