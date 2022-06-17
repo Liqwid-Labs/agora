@@ -6,7 +6,6 @@ Description: Plutarch utility functions that should be upstreamed or don't belon
 Plutarch utility functions that should be upstreamed or don't belong anywhere else.
 -}
 module Agora.Utils (
-  findTxOutByTxOutRef,
   scriptHashFromAddress,
   findOutputsToAddress,
   findTxOutDatum,
@@ -20,7 +19,6 @@ module Agora.Utils (
   validatorHashToAddress,
   isScriptAddress,
   isPubKey,
-  psingletonValue,
 ) where
 
 --------------------------------------------------------------------------------
@@ -47,44 +45,21 @@ import Plutarch.Api.V1 (
   PMintingPolicy,
   PTokenName (PTokenName),
   PTuple,
-  PTxInInfo,
   PTxOut,
-  PTxOutRef,
   PValidatorHash,
   PValue,
   mintingPolicySymbol,
   mkMintingPolicy,
  )
-import Plutarch.Api.V1.AssocMap (PMap (PMap))
-import Plutarch.Api.V1.ScriptContext (pfindDatum, pfindTxInByTxOutRef)
+import Plutarch.Api.V1.ScriptContext (pfindDatum)
 import "liqwid-plutarch-extra" Plutarch.Api.V1.Value (psymbolValueOf)
-import "plutarch" Plutarch.Api.V1.Value (PValue (PValue))
-import Plutarch.Builtin (pforgetData, ppairDataBuiltin)
+import Plutarch.Builtin (pforgetData)
 import Plutarch.Extra.List (plookupTuple)
 import Plutarch.Extra.TermCont (pletC, pmatchC)
 
 {- Functions which should (probably) not be upstreamed
    All of these functions are quite inefficient.
 -}
-
--- | Create a value with a single asset class.
-psingletonValue ::
-  forall (keys :: KeyGuarantees) (amounts :: AmountGuarantees) (s :: S).
-  Term s (PCurrencySymbol :--> PTokenName :--> PInteger :--> PValue keys amounts)
-psingletonValue = phoistAcyclic $
-  plam $ \sym tok int ->
-    let innerTup = pcon $ PMap $ psingleton #$ ppairDataBuiltin # pdata tok # pdata int
-        outerTup = pcon $ PMap $ psingleton #$ ppairDataBuiltin # pdata sym # pdata innerTup
-        res = pcon $ PValue outerTup
-     in res
-
--- | Finds the TxOut of an effect from TxInfo and TxOutRef
-findTxOutByTxOutRef :: Term s (PTxOutRef :--> PBuiltinList (PAsData PTxInInfo) :--> PMaybe PTxOut)
-findTxOutByTxOutRef = phoistAcyclic $
-  plam $ \txOutRef inputs ->
-    pmatch (pfindTxInByTxOutRef # txOutRef # inputs) $ \case
-      PJust ((pfield @"resolved" #) -> txOut) -> pcon $ PJust txOut
-      PNothing -> pcon PNothing
 
 -- | Get script hash from an Address.
 scriptHashFromAddress :: Term s (PAddress :--> PMaybe PValidatorHash)
