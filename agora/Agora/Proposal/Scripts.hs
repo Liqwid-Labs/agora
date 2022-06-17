@@ -287,7 +287,7 @@ proposalValidator proposal =
             pisJust #$ plookup # voteFor # voteMap
 
           -- Ensure that no lock with the current proposal id has been put on the stake.
-          pguardC "Same stake shouldn't vote on the same propsoal twice" $
+          pguardC "Same stake shouldn't vote on the same proposal twice" $
             pnot #$ pany
               # plam
                 ( \((pfield @"proposalTag" #) . pfromData -> pid) ->
@@ -404,7 +404,7 @@ proposalValidator proposal =
         --------------------------------------------------------------------------
         PUnlock r -> unTermCont $ do
           -- At draft stage, the votes should be empty.
-          pguardC "Shouldn't retract votes from a draft propsoal" $
+          pguardC "Shouldn't retract votes from a draft proposal" $
             pnot #$ proposalF.status #== pconstantData Draft
 
           -- This is the vote option we're retracting from.

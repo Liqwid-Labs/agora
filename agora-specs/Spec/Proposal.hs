@@ -308,7 +308,7 @@ specs =
               )
               AdvanceProposal
               ( ScriptContext
-                  Proposal.advanceFinishedPropsoal
+                  Proposal.advanceFinishedProposal
                   (Spending Proposal.proposalRef)
               )
           , validatorFailsWith
@@ -337,7 +337,7 @@ specs =
               )
               AdvanceProposal
               ( ScriptContext
-                  Proposal.advancePropsoalWithInvalidOutputStake
+                  Proposal.advanceProposalWithInvalidOutputStake
                   (Spending Proposal.proposalRef)
               )
           ]

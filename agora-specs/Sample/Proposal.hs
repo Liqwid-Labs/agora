@@ -16,9 +16,9 @@ module Sample.Proposal (
   advanceProposalSuccess,
   advanceProposalFailureTimeout,
   TransitionParameters (..),
-  advanceFinishedPropsoal,
+  advanceFinishedProposal,
   advanceProposalInsufficientVotes,
-  advancePropsoalWithInvalidOutputStake,
+  advanceProposalWithInvalidOutputStake,
 ) where
 
 import Agora.Governor (GovernorDatum (..))
@@ -374,9 +374,9 @@ voteOnProposal params =
 
 -- | Parameters for state transition of proposals.
 data TransitionParameters = TransitionParameters
-  { -- The initial status of the propsoal.
+  { -- The initial status of the proposal.
     initialProposalStatus :: ProposalStatus
-  , -- The starting time of the propsoal.
+  , -- The starting time of the proposal.
     proposalStartingTime :: ProposalStartingTime
   }
 
@@ -684,8 +684,8 @@ advanceProposalInsufficientVotes =
         True
 
 -- | An invalid 'TxInfo' that tries to advance a 'Finished' proposal.
-advanceFinishedPropsoal :: TxInfo
-advanceFinishedPropsoal =
+advanceFinishedProposal :: TxInfo
+advanceFinishedProposal =
   let effects =
         AssocMap.fromList
           [ (ResultTag 0, AssocMap.empty)
@@ -720,8 +720,8 @@ advanceFinishedPropsoal =
      From the perspective of stake validator, the transition is totally valid,
        so the proposal validator should reject this.
 -}
-advancePropsoalWithInvalidOutputStake :: TxInfo
-advancePropsoalWithInvalidOutputStake =
+advanceProposalWithInvalidOutputStake :: TxInfo
+advanceProposalWithInvalidOutputStake =
   let templateTxInfo =
         advanceProposalSuccess'
           TransitionParameters
