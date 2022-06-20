@@ -6339,11 +6339,11 @@
         "plutarch-quickcheck": "plutarch-quickcheck"
       },
       "locked": {
-        "lastModified": 1655492974,
-        "narHash": "sha256-FNshUKtfs8tbxAUlqhP3AgmkjKMiKyw+kEBULmg6bVM=",
+        "lastModified": 1655811877,
+        "narHash": "sha256-XJMB3/dbe+oNTBVV71kYhbbCYjtGIriFpdwX/QX6DpI=",
         "owner": "Liqwid-Labs",
         "repo": "liqwid-plutarch-extra",
-        "rev": "4a9cdc642b85e16e487b789012bb8417c3e197d8",
+        "rev": "8bb4d757cdc1651e76f977130010ea7b551c11ce",
         "type": "github"
       },
       "original": {
@@ -9488,17 +9488,17 @@
         "plutarch-numeric": "plutarch-numeric_2"
       },
       "locked": {
-        "lastModified": 1655471113,
-        "narHash": "sha256-6z17r2rs2M+Gv7MJep6+zP2bq6G5Id4XDhInpU5RulM=",
+        "lastModified": 1655732504,
+        "narHash": "sha256-E8LKLwtZLRfQ90V8xzTJDmyisQ8l2xcLg78G6LzTmyY=",
         "owner": "Liqwid-Labs",
         "repo": "plutarch-safe-money",
-        "rev": "9f968b80189c7e4b335527cd5b103dc26952f667",
+        "rev": "bacd84349160246efcb83d8091c28a33aa60913a",
         "type": "github"
       },
       "original": {
         "owner": "Liqwid-Labs",
+        "ref": "main",
         "repo": "plutarch-safe-money",
-        "rev": "9f968b80189c7e4b335527cd5b103dc26952f667",
         "type": "github"
       }
     },
