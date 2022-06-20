@@ -59,30 +59,30 @@ Time functions for proposal phases.
 </span><span id="line-59"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
 </span><span id="line-60"></span><span>
 </span><span id="line-61"></span><span class="hs-comment">-- | Represents the starting time of the proposal.</span><span>
-</span><span id="line-62"></span><span id="local-6989586621679521130"><span id="local-6989586621679521131"></span></span><span class="hs-keyword">newtype</span><span> </span><span id="ProposalStartingTime"><span class="annot"><a href="Agora.Proposal.Time.html#ProposalStartingTime"><span class="hs-identifier hs-var">ProposalStartingTime</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="ProposalStartingTime"><span class="annot"><a href="Agora.Proposal.Time.html#ProposalStartingTime"><span class="hs-identifier hs-var">ProposalStartingTime</span></a></span></span><span>
+</span><span id="line-62"></span><span id="local-6989586621679535100"><span id="local-6989586621679535101"></span></span><span class="hs-keyword">newtype</span><span> </span><span id="ProposalStartingTime"><span class="annot"><a href="Agora.Proposal.Time.html#ProposalStartingTime"><span class="hs-identifier hs-var">ProposalStartingTime</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="ProposalStartingTime"><span class="annot"><a href="Agora.Proposal.Time.html#ProposalStartingTime"><span class="hs-identifier hs-var">ProposalStartingTime</span></a></span></span><span>
 </span><span id="line-63"></span><span>  </span><span class="hs-special">{</span><span> </span><span id="getProposalStartingTime"><span class="annot"><span class="annottext">ProposalStartingTime -&gt; POSIXTime
 </span><a href="Agora.Proposal.Time.html#getProposalStartingTime"><span class="hs-identifier hs-var hs-var">getProposalStartingTime</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/6ilca7icmqibgfqmnsl33jwlfyzd55gp-plutus-ledger-api-lib-plutus-ledger-api-1.0.0.0-haddock-doc/share/doc/plutus-ledger-api/html/src"><span class="hs-identifier hs-type">POSIXTime</span></a></span><span>
 </span><span id="line-64"></span><span>  </span><span class="hs-special">}</span><span>
-</span><span id="line-65"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">newtype</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679521126"><span class="annot"><span class="annottext">ProposalStartingTime -&gt; BuiltinData
+</span><span id="line-65"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">newtype</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679535096"><span class="annot"><span class="annottext">ProposalStartingTime -&gt; BuiltinData
 (ProposalStartingTime -&gt; BuiltinData)
 -&gt; ToData ProposalStartingTime
 forall a. (a -&gt; BuiltinData) -&gt; ToData a
 toBuiltinData :: ProposalStartingTime -&gt; BuiltinData
 $ctoBuiltinData :: ProposalStartingTime -&gt; BuiltinData
-</span><a href="../file:///nix/store/gpgkl8qqa5x8mrqhgnb52a1l9axlhdd3-plutus-tx-lib-plutus-tx-1.0.0.0-haddock-doc/share/doc/plutus-tx/html/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">PlutusTx.ToData</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679521119"><span class="annot"><span class="annottext">BuiltinData -&gt; Maybe ProposalStartingTime
+</span><a href="../file:///nix/store/gpgkl8qqa5x8mrqhgnb52a1l9axlhdd3-plutus-tx-lib-plutus-tx-1.0.0.0-haddock-doc/share/doc/plutus-tx/html/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">PlutusTx.ToData</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679535089"><span class="annot"><span class="annottext">BuiltinData -&gt; Maybe ProposalStartingTime
 (BuiltinData -&gt; Maybe ProposalStartingTime)
 -&gt; FromData ProposalStartingTime
 forall a. (BuiltinData -&gt; Maybe a) -&gt; FromData a
 fromBuiltinData :: BuiltinData -&gt; Maybe ProposalStartingTime
 $cfromBuiltinData :: BuiltinData -&gt; Maybe ProposalStartingTime
-</span><a href="../file:///nix/store/gpgkl8qqa5x8mrqhgnb52a1l9axlhdd3-plutus-tx-lib-plutus-tx-1.0.0.0-haddock-doc/share/doc/plutus-tx/html/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">PlutusTx.FromData</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679521112"><span class="annot"><span class="annottext">BuiltinData -&gt; ProposalStartingTime
+</span><a href="../file:///nix/store/gpgkl8qqa5x8mrqhgnb52a1l9axlhdd3-plutus-tx-lib-plutus-tx-1.0.0.0-haddock-doc/share/doc/plutus-tx/html/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">PlutusTx.FromData</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679535082"><span class="annot"><span class="annottext">BuiltinData -&gt; ProposalStartingTime
 (BuiltinData -&gt; ProposalStartingTime)
 -&gt; UnsafeFromData ProposalStartingTime
 forall a. (BuiltinData -&gt; a) -&gt; UnsafeFromData a
 unsafeFromBuiltinData :: BuiltinData -&gt; ProposalStartingTime
 $cunsafeFromBuiltinData :: BuiltinData -&gt; ProposalStartingTime
 </span><a href="../file:///nix/store/gpgkl8qqa5x8mrqhgnb52a1l9axlhdd3-plutus-tx-lib-plutus-tx-1.0.0.0-haddock-doc/share/doc/plutus-tx/html/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">PlutusTx.UnsafeFromData</span></a></span></span><span class="hs-special">)</span><span>
-</span><span id="line-66"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">stock</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679521101"><span id="local-6989586621679521105"><span class="annot"><span class="annottext">ProposalStartingTime -&gt; ProposalStartingTime -&gt; Bool
+</span><span id="line-66"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">stock</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679535071"><span id="local-6989586621679535075"><span class="annot"><span class="annottext">ProposalStartingTime -&gt; ProposalStartingTime -&gt; Bool
 (ProposalStartingTime -&gt; ProposalStartingTime -&gt; Bool)
 -&gt; (ProposalStartingTime -&gt; ProposalStartingTime -&gt; Bool)
 -&gt; Eq ProposalStartingTime
@@ -91,7 +91,7 @@ forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
 $c/= :: ProposalStartingTime -&gt; ProposalStartingTime -&gt; Bool
 == :: ProposalStartingTime -&gt; ProposalStartingTime -&gt; Bool
 $c== :: ProposalStartingTime -&gt; ProposalStartingTime -&gt; Bool
-</span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.8.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679521090"><span id="local-6989586621679521092"><span id="local-6989586621679521098"><span class="annot"><span class="annottext">Int -&gt; ProposalStartingTime -&gt; ShowS
+</span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.8.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679535060"><span id="local-6989586621679535062"><span id="local-6989586621679535068"><span class="annot"><span class="annottext">Int -&gt; ProposalStartingTime -&gt; ShowS
 [ProposalStartingTime] -&gt; ShowS
 ProposalStartingTime -&gt; String
 (Int -&gt; ProposalStartingTime -&gt; ShowS)
@@ -121,7 +121,7 @@ $cfrom :: forall x. ProposalStartingTime -&gt; Rep ProposalStartingTime x
 
  See: https://github.com/Liqwid-Labs/agora/blob/master/docs/tech-design/proposals.md#when-may-interactions-occur
 -}</span><span>
-</span><span id="line-72"></span><span id="local-6989586621679521083"><span id="local-6989586621679521084"></span></span><span class="hs-keyword">data</span><span> </span><span id="ProposalTimingConfig"><span class="annot"><a href="Agora.Proposal.Time.html#ProposalTimingConfig"><span class="hs-identifier hs-var">ProposalTimingConfig</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="ProposalTimingConfig"><span class="annot"><a href="Agora.Proposal.Time.html#ProposalTimingConfig"><span class="hs-identifier hs-var">ProposalTimingConfig</span></a></span></span><span>
+</span><span id="line-72"></span><span id="local-6989586621679535053"><span id="local-6989586621679535054"></span></span><span class="hs-keyword">data</span><span> </span><span id="ProposalTimingConfig"><span class="annot"><a href="Agora.Proposal.Time.html#ProposalTimingConfig"><span class="hs-identifier hs-var">ProposalTimingConfig</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="ProposalTimingConfig"><span class="annot"><a href="Agora.Proposal.Time.html#ProposalTimingConfig"><span class="hs-identifier hs-var">ProposalTimingConfig</span></a></span></span><span>
 </span><span id="line-73"></span><span>  </span><span class="hs-special">{</span><span> </span><span id="draftTime"><span class="annot"><span class="annottext">ProposalTimingConfig -&gt; POSIXTime
 </span><a href="Agora.Proposal.Time.html#draftTime"><span class="hs-identifier hs-var hs-var">draftTime</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/6ilca7icmqibgfqmnsl33jwlfyzd55gp-plutus-ledger-api-lib-plutus-ledger-api-1.0.0.0-haddock-doc/share/doc/plutus-ledger-api/html/src"><span class="hs-identifier hs-type">POSIXTime</span></a></span><span>
 </span><span id="line-74"></span><span>  </span><span class="hs-comment">-- ^ &quot;D&quot;: the length of the draft period.</span><span>
@@ -135,7 +135,7 @@ $cfrom :: forall x. ProposalStartingTime -&gt; Rep ProposalStartingTime x
 </span><a href="Agora.Proposal.Time.html#executingTime"><span class="hs-identifier hs-var hs-var">executingTime</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/6ilca7icmqibgfqmnsl33jwlfyzd55gp-plutus-ledger-api-lib-plutus-ledger-api-1.0.0.0-haddock-doc/share/doc/plutus-ledger-api/html/src"><span class="hs-identifier hs-type">POSIXTime</span></a></span><span>
 </span><span id="line-80"></span><span>  </span><span class="hs-comment">-- ^ &quot;E&quot;: the length of the execution period.</span><span>
 </span><span id="line-81"></span><span>  </span><span class="hs-special">}</span><span>
-</span><span id="line-82"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">stock</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679521070"><span id="local-6989586621679521076"><span class="annot"><span class="annottext">ProposalTimingConfig -&gt; ProposalTimingConfig -&gt; Bool
+</span><span id="line-82"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">stock</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679535040"><span id="local-6989586621679535046"><span class="annot"><span class="annottext">ProposalTimingConfig -&gt; ProposalTimingConfig -&gt; Bool
 (ProposalTimingConfig -&gt; ProposalTimingConfig -&gt; Bool)
 -&gt; (ProposalTimingConfig -&gt; ProposalTimingConfig -&gt; Bool)
 -&gt; Eq ProposalTimingConfig
@@ -144,7 +144,7 @@ forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
 $c/= :: ProposalTimingConfig -&gt; ProposalTimingConfig -&gt; Bool
 == :: ProposalTimingConfig -&gt; ProposalTimingConfig -&gt; Bool
 $c== :: ProposalTimingConfig -&gt; ProposalTimingConfig -&gt; Bool
-</span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.8.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679521059"><span id="local-6989586621679521061"><span id="local-6989586621679521068"><span class="annot"><span class="annottext">Int -&gt; ProposalTimingConfig -&gt; ShowS
+</span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.8.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679535029"><span id="local-6989586621679535031"><span id="local-6989586621679535038"><span class="annot"><span class="annottext">Int -&gt; ProposalTimingConfig -&gt; ShowS
 [ProposalTimingConfig] -&gt; ShowS
 ProposalTimingConfig -&gt; String
 (Int -&gt; ProposalTimingConfig -&gt; ShowS)
@@ -170,12 +170,12 @@ $cto :: forall x. Rep ProposalTimingConfig x -&gt; ProposalTimingConfig
 $cfrom :: forall x. ProposalTimingConfig -&gt; Rep ProposalTimingConfig x
 </span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">GHC.Generic</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-83"></span><span>
-</span><span id="line-84"></span><span id="local-6989586621679521046"><span id="local-6989586621679521048"><span id="local-6989586621679521054"><span class="hs-identifier">PlutusTx.makeIsDataIndexed</span><span> </span><span class="hs-special">''</span><span class="hs-identifier">ProposalTimingConfig</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="hs-special">'</span><span class="hs-identifier">ProposalTimingConfig</span><span class="hs-special">,</span><span> </span><span class="hs-number">0</span><span class="hs-special">)</span><span class="hs-special">]</span></span></span></span><span>
+</span><span id="line-84"></span><span id="local-6989586621679535016"><span id="local-6989586621679535018"><span id="local-6989586621679535024"><span class="hs-identifier">PlutusTx.makeIsDataIndexed</span><span> </span><span class="hs-special">''</span><span class="hs-identifier">ProposalTimingConfig</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="hs-special">'</span><span class="hs-identifier">ProposalTimingConfig</span><span class="hs-special">,</span><span> </span><span class="hs-number">0</span><span class="hs-special">)</span><span class="hs-special">]</span></span></span></span><span>
 </span><span id="line-85"></span><span>
 </span><span id="line-86"></span><span class="hs-comment">-- | Represents the maximum width of a 'PlutusLedgerApi.V1.Time.POSIXTimeRange'.</span><span>
-</span><span id="line-87"></span><span id="local-6989586621679520971"><span id="local-6989586621679520972"></span></span><span class="hs-keyword">newtype</span><span> </span><span id="MaxTimeRangeWidth"><span class="annot"><a href="Agora.Proposal.Time.html#MaxTimeRangeWidth"><span class="hs-identifier hs-var">MaxTimeRangeWidth</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="MaxTimeRangeWidth"><span class="annot"><a href="Agora.Proposal.Time.html#MaxTimeRangeWidth"><span class="hs-identifier hs-var">MaxTimeRangeWidth</span></a></span></span><span> </span><span class="hs-special">{</span><span id="getMaxWidth"><span class="annot"><span class="annottext">MaxTimeRangeWidth -&gt; POSIXTime
+</span><span id="line-87"></span><span id="local-6989586621679534941"><span id="local-6989586621679534942"></span></span><span class="hs-keyword">newtype</span><span> </span><span id="MaxTimeRangeWidth"><span class="annot"><a href="Agora.Proposal.Time.html#MaxTimeRangeWidth"><span class="hs-identifier hs-var">MaxTimeRangeWidth</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="MaxTimeRangeWidth"><span class="annot"><a href="Agora.Proposal.Time.html#MaxTimeRangeWidth"><span class="hs-identifier hs-var">MaxTimeRangeWidth</span></a></span></span><span> </span><span class="hs-special">{</span><span id="getMaxWidth"><span class="annot"><span class="annottext">MaxTimeRangeWidth -&gt; POSIXTime
 </span><a href="Agora.Proposal.Time.html#getMaxWidth"><span class="hs-identifier hs-var hs-var">getMaxWidth</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/6ilca7icmqibgfqmnsl33jwlfyzd55gp-plutus-ledger-api-lib-plutus-ledger-api-1.0.0.0-haddock-doc/share/doc/plutus-ledger-api/html/src"><span class="hs-identifier hs-type">POSIXTime</span></a></span><span class="hs-special">}</span><span>
-</span><span id="line-88"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">stock</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679520964"><span id="local-6989586621679520967"><span class="annot"><span class="annottext">MaxTimeRangeWidth -&gt; MaxTimeRangeWidth -&gt; Bool
+</span><span id="line-88"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">stock</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679534934"><span id="local-6989586621679534937"><span class="annot"><span class="annottext">MaxTimeRangeWidth -&gt; MaxTimeRangeWidth -&gt; Bool
 (MaxTimeRangeWidth -&gt; MaxTimeRangeWidth -&gt; Bool)
 -&gt; (MaxTimeRangeWidth -&gt; MaxTimeRangeWidth -&gt; Bool)
 -&gt; Eq MaxTimeRangeWidth
@@ -184,7 +184,7 @@ forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
 $c/= :: MaxTimeRangeWidth -&gt; MaxTimeRangeWidth -&gt; Bool
 == :: MaxTimeRangeWidth -&gt; MaxTimeRangeWidth -&gt; Bool
 $c== :: MaxTimeRangeWidth -&gt; MaxTimeRangeWidth -&gt; Bool
-</span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.8.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679520956"><span id="local-6989586621679520958"><span id="local-6989586621679520962"><span class="annot"><span class="annottext">Int -&gt; MaxTimeRangeWidth -&gt; ShowS
+</span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.8.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679534926"><span id="local-6989586621679534928"><span id="local-6989586621679534932"><span class="annot"><span class="annottext">Int -&gt; MaxTimeRangeWidth -&gt; ShowS
 [MaxTimeRangeWidth] -&gt; ShowS
 MaxTimeRangeWidth -&gt; String
 (Int -&gt; MaxTimeRangeWidth -&gt; ShowS)
@@ -199,7 +199,7 @@ show :: MaxTimeRangeWidth -&gt; String
 $cshow :: MaxTimeRangeWidth -&gt; String
 showsPrec :: Int -&gt; MaxTimeRangeWidth -&gt; ShowS
 $cshowsPrec :: Int -&gt; MaxTimeRangeWidth -&gt; ShowS
-</span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679520934"><span id="local-6989586621679520936"><span id="local-6989586621679520939"><span id="local-6989586621679520942"><span id="local-6989586621679520945"><span id="local-6989586621679520948"><span id="local-6989586621679520952"><span class="annot"><span class="annottext">Eq MaxTimeRangeWidth
+</span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679534904"><span id="local-6989586621679534906"><span id="local-6989586621679534909"><span id="local-6989586621679534912"><span id="local-6989586621679534915"><span id="local-6989586621679534918"><span id="local-6989586621679534922"><span class="annot"><span class="annottext">Eq MaxTimeRangeWidth
 Eq MaxTimeRangeWidth
 -&gt; (MaxTimeRangeWidth -&gt; MaxTimeRangeWidth -&gt; Ordering)
 -&gt; (MaxTimeRangeWidth -&gt; MaxTimeRangeWidth -&gt; Bool)
@@ -246,24 +246,24 @@ forall a.
 $cto :: forall x. Rep MaxTimeRangeWidth x -&gt; MaxTimeRangeWidth
 $cfrom :: forall x. MaxTimeRangeWidth -&gt; Rep MaxTimeRangeWidth x
 </span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">GHC.Generic</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-89"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">newtype</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679520928"><span class="annot"><span class="annottext">MaxTimeRangeWidth -&gt; BuiltinData
+</span><span id="line-89"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">newtype</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679534898"><span class="annot"><span class="annottext">MaxTimeRangeWidth -&gt; BuiltinData
 (MaxTimeRangeWidth -&gt; BuiltinData) -&gt; ToData MaxTimeRangeWidth
 forall a. (a -&gt; BuiltinData) -&gt; ToData a
 toBuiltinData :: MaxTimeRangeWidth -&gt; BuiltinData
 $ctoBuiltinData :: MaxTimeRangeWidth -&gt; BuiltinData
-</span><a href="#local-6989586621679520928"><span class="hs-identifier hs-var hs-var hs-var hs-var">PlutusTx.ToData</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679520923"><span class="annot"><span class="annottext">BuiltinData -&gt; Maybe MaxTimeRangeWidth
+</span><a href="#local-6989586621679534898"><span class="hs-identifier hs-var hs-var hs-var hs-var">PlutusTx.ToData</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679534893"><span class="annot"><span class="annottext">BuiltinData -&gt; Maybe MaxTimeRangeWidth
 (BuiltinData -&gt; Maybe MaxTimeRangeWidth)
 -&gt; FromData MaxTimeRangeWidth
 forall a. (BuiltinData -&gt; Maybe a) -&gt; FromData a
 fromBuiltinData :: BuiltinData -&gt; Maybe MaxTimeRangeWidth
 $cfromBuiltinData :: BuiltinData -&gt; Maybe MaxTimeRangeWidth
-</span><a href="#local-6989586621679520923"><span class="hs-identifier hs-var hs-var hs-var hs-var">PlutusTx.FromData</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679520918"><span class="annot"><span class="annottext">BuiltinData -&gt; MaxTimeRangeWidth
+</span><a href="#local-6989586621679534893"><span class="hs-identifier hs-var hs-var hs-var hs-var">PlutusTx.FromData</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679534888"><span class="annot"><span class="annottext">BuiltinData -&gt; MaxTimeRangeWidth
 (BuiltinData -&gt; MaxTimeRangeWidth)
 -&gt; UnsafeFromData MaxTimeRangeWidth
 forall a. (BuiltinData -&gt; a) -&gt; UnsafeFromData a
 unsafeFromBuiltinData :: BuiltinData -&gt; MaxTimeRangeWidth
 $cunsafeFromBuiltinData :: BuiltinData -&gt; MaxTimeRangeWidth
-</span><a href="#local-6989586621679520918"><span class="hs-identifier hs-var hs-var hs-var hs-var">PlutusTx.UnsafeFromData</span></a></span></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679534888"><span class="hs-identifier hs-var hs-var hs-var hs-var">PlutusTx.UnsafeFromData</span></a></span></span><span class="hs-special">)</span><span>
 </span><span id="line-90"></span><span>
 </span><span id="line-91"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
 </span><span id="line-92"></span><span>
@@ -292,11 +292,11 @@ $cunsafeFromBuiltinData :: BuiltinData -&gt; MaxTimeRangeWidth
    is only used in scripts, and does not go in datums. It is also scott-encoded
    which is more efficient in usage.
 -}</span><span>
-</span><span id="line-118"></span><span id="local-6989586621679520913"><span id="local-6989586621679520914"></span></span><span class="hs-keyword">data</span><span> </span><span id="PProposalTime"><span class="annot"><a href="Agora.Proposal.Time.html#PProposalTime"><span class="hs-identifier hs-var">PProposalTime</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679521984"><span class="annot"><a href="#local-6989586621679521984"><span class="hs-identifier hs-type">s</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">S</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span id="PProposalTime"><span class="annot"><a href="Agora.Proposal.Time.html#PProposalTime"><span class="hs-identifier hs-var">PProposalTime</span></a></span></span><span>
+</span><span id="line-118"></span><span id="local-6989586621679534883"><span id="local-6989586621679534884"></span></span><span class="hs-keyword">data</span><span> </span><span id="PProposalTime"><span class="annot"><a href="Agora.Proposal.Time.html#PProposalTime"><span class="hs-identifier hs-var">PProposalTime</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679535954"><span class="annot"><a href="#local-6989586621679535954"><span class="hs-identifier hs-type">s</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">S</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span id="PProposalTime"><span class="annot"><a href="Agora.Proposal.Time.html#PProposalTime"><span class="hs-identifier hs-var">PProposalTime</span></a></span></span><span>
 </span><span id="line-119"></span><span>  </span><span class="hs-special">{</span><span> </span><span id="lowerBound"><span class="annot"><span class="annottext">forall (s :: S). PProposalTime s -&gt; Term s PPOSIXTime
-</span><a href="Agora.Proposal.Time.html#lowerBound"><span class="hs-identifier hs-var hs-var">lowerBound</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679521984"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PPOSIXTime</span></a></span><span>
+</span><a href="Agora.Proposal.Time.html#lowerBound"><span class="hs-identifier hs-var hs-var">lowerBound</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679535954"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PPOSIXTime</span></a></span><span>
 </span><span id="line-120"></span><span>  </span><span class="hs-special">,</span><span> </span><span id="upperBound"><span class="annot"><span class="annottext">forall (s :: S). PProposalTime s -&gt; Term s PPOSIXTime
-</span><a href="Agora.Proposal.Time.html#upperBound"><span class="hs-identifier hs-var hs-var">upperBound</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679521984"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PPOSIXTime</span></a></span><span>
+</span><a href="Agora.Proposal.Time.html#upperBound"><span class="hs-identifier hs-var hs-var">upperBound</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679535954"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PPOSIXTime</span></a></span><span>
 </span><span id="line-121"></span><span>  </span><span class="hs-special">}</span><span>
 </span><span id="line-122"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">stock</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(forall x. PProposalTime s -&gt; Rep (PProposalTime s) x)
 -&gt; (forall x. Rep (PProposalTime s) x -&gt; PProposalTime s)
@@ -310,7 +310,7 @@ forall (s :: S) x. PProposalTime s -&gt; Rep (PProposalTime s) x
 $cto :: forall (s :: S) x. Rep (PProposalTime s) x -&gt; PProposalTime s
 $cfrom :: forall (s :: S) x. PProposalTime s -&gt; Rep (PProposalTime s) x
 </span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">GHC.Generic</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-123"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">anyclass</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679520901"><span id="local-6989586621679520903"><span class="annot"><span class="annottext">All @[Type] (SListI @Type) (Code (PProposalTime s))
+</span><span id="line-123"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">anyclass</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679534871"><span id="local-6989586621679534873"><span class="annot"><span class="annottext">All @[Type] (SListI @Type) (Code (PProposalTime s))
 All @[Type] (SListI @Type) (Code (PProposalTime s))
 -&gt; (PProposalTime s -&gt; Rep (PProposalTime s))
 -&gt; (Rep (PProposalTime s) -&gt; PProposalTime s)
@@ -328,7 +328,7 @@ to :: Rep (PProposalTime s) -&gt; PProposalTime s
 $cto :: forall (s :: S). Rep (PProposalTime s) -&gt; PProposalTime s
 from :: PProposalTime s -&gt; Rep (PProposalTime s)
 $cfrom :: forall (s :: S). PProposalTime s -&gt; Rep (PProposalTime s)
-</span><a href="../file:///nix/store/3m16k3x671sq04j9i42i5m85z4hc6yix-generics-sop-lib-generics-sop-0.5.1.2-haddock-doc/share/doc/generics-sop/html/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679520883"><span id="local-6989586621679520885"><span class="annot"><span class="annottext">PCon PProposalTime
+</span><a href="../file:///nix/store/3m16k3x671sq04j9i42i5m85z4hc6yix-generics-sop-lib-generics-sop-0.5.1.2-haddock-doc/share/doc/generics-sop/html/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679534853"><span id="local-6989586621679534855"><span class="annot"><span class="annottext">PCon PProposalTime
 PMatch PProposalTime
 PCon PProposalTime
 -&gt; PMatch PProposalTime
@@ -360,7 +360,7 @@ pcon' :: forall (s :: S) (b :: PType).
 PProposalTime s -&gt; Term s (PInner PProposalTime b)
 $cpcon' :: forall (s :: S) (b :: PType).
 PProposalTime s -&gt; Term s (PInner PProposalTime b)
-</span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">PlutusType</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679520878"><span class="annot"><span class="annottext">Generic (PProposalTime s)
+</span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">PlutusType</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679534848"><span class="annot"><span class="annottext">Generic (PProposalTime s)
 Generic (PProposalTime s)
 -&gt; (forall (proxy :: Type -&gt; Type).
     proxy (PProposalTime s) -&gt; DatatypeInfo (Code (PProposalTime s)))
@@ -379,7 +379,7 @@ datatypeInfo :: forall (proxy :: Type -&gt; Type).
 proxy (PProposalTime s) -&gt; DatatypeInfo (Code (PProposalTime s))
 $cdatatypeInfo :: forall (s :: S) (proxy :: Type -&gt; Type).
 proxy (PProposalTime s) -&gt; DatatypeInfo (Code (PProposalTime s))
-</span><a href="../file:///nix/store/3m16k3x671sq04j9i42i5m85z4hc6yix-generics-sop-lib-generics-sop-0.5.1.2-haddock-doc/share/doc/generics-sop/html/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var">HasDatatypeInfo</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679520875"><span class="annot"><span class="annottext">(forall (s :: S).
+</span><a href="../file:///nix/store/3m16k3x671sq04j9i42i5m85z4hc6yix-generics-sop-lib-generics-sop-0.5.1.2-haddock-doc/share/doc/generics-sop/html/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var">HasDatatypeInfo</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679534845"><span class="annot"><span class="annottext">(forall (s :: S).
  Term s PProposalTime -&gt; Term s PProposalTime -&gt; Term s PBool)
 -&gt; PEq PProposalTime
 forall (s :: S).
@@ -393,8 +393,8 @@ Term s PProposalTime -&gt; Term s PProposalTime -&gt; Term s PBool
 </span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">PEq</span></a></span></span><span class="hs-special">)</span><span>
 </span><span id="line-124"></span><span>
 </span><span id="line-125"></span><span class="hs-comment">-- | Plutarch-level version of 'ProposalStartingTime'.</span><span>
-</span><span id="line-126"></span><span class="hs-keyword">newtype</span><span> </span><span id="PProposalStartingTime"><span class="annot"><a href="Agora.Proposal.Time.html#PProposalStartingTime"><span class="hs-identifier hs-var">PProposalStartingTime</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679521806"><span class="annot"><a href="#local-6989586621679521806"><span class="hs-identifier hs-type">s</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">S</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span id="PProposalStartingTime"><span class="annot"><a href="Agora.Proposal.Time.html#PProposalStartingTime"><span class="hs-identifier hs-var">PProposalStartingTime</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679521806"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PPOSIXTime</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-127"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679520858"><span id="local-6989586621679520865"><span class="annot"><span class="annottext">PCon PProposalStartingTime
+</span><span id="line-126"></span><span class="hs-keyword">newtype</span><span> </span><span id="PProposalStartingTime"><span class="annot"><a href="Agora.Proposal.Time.html#PProposalStartingTime"><span class="hs-identifier hs-var">PProposalStartingTime</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679535776"><span class="annot"><a href="#local-6989586621679535776"><span class="hs-identifier hs-type">s</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">S</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span id="PProposalStartingTime"><span class="annot"><a href="Agora.Proposal.Time.html#PProposalStartingTime"><span class="hs-identifier hs-var">PProposalStartingTime</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679535776"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PPOSIXTime</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-127"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679534828"><span id="local-6989586621679534835"><span class="annot"><span class="annottext">PCon PProposalStartingTime
 PMatch PProposalStartingTime
 PCon PProposalStartingTime
 -&gt; PMatch PProposalStartingTime
@@ -426,7 +426,7 @@ pcon' :: forall (s :: S) (b :: PType).
 PProposalStartingTime s -&gt; Term s (PInner PProposalStartingTime b)
 $cpcon' :: forall (s :: S) (b :: PType).
 PProposalStartingTime s -&gt; Term s (PInner PProposalStartingTime b)
-</span><a href="#local-6989586621679520858"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">PlutusType</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679520843"><span id="local-6989586621679520851"><span class="annot"><span class="annottext">(forall (s :: S).
+</span><a href="#local-6989586621679534828"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">PlutusType</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679534813"><span id="local-6989586621679534821"><span class="annot"><span class="annottext">(forall (s :: S).
  Term s (PAsData PProposalStartingTime)
  -&gt; Term s PProposalStartingTime)
 -&gt; (forall (s :: S). Term s PProposalStartingTime -&gt; Term s PData)
@@ -446,7 +446,7 @@ Term s (PAsData PProposalStartingTime)
 $cpfromDataImpl :: forall (s :: S).
 Term s (PAsData PProposalStartingTime)
 -&gt; Term s PProposalStartingTime
-</span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">PIsData</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679520831"><span class="annot"><span class="annottext">(forall (s :: S).
+</span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">PIsData</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679534801"><span class="annot"><span class="annottext">(forall (s :: S).
  Term s PProposalStartingTime
  -&gt; Term s PProposalStartingTime -&gt; Term s PBool)
 -&gt; PEq PProposalStartingTime
@@ -461,7 +461,7 @@ Term s PProposalStartingTime
 $c#== :: forall (s :: S).
 Term s PProposalStartingTime
 -&gt; Term s PProposalStartingTime -&gt; Term s PBool
-</span><a href="#local-6989586621679520831"><span class="hs-identifier hs-var hs-var hs-var hs-var">PEq</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679520816"><span id="local-6989586621679520822"><span class="annot"><span class="annottext">PEq PProposalStartingTime
+</span><a href="#local-6989586621679534801"><span class="hs-identifier hs-var hs-var hs-var hs-var">PEq</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679534786"><span id="local-6989586621679534792"><span class="annot"><span class="annottext">PEq PProposalStartingTime
 PEq PProposalStartingTime
 -&gt; (forall (s :: S).
     Term s PProposalStartingTime
@@ -494,13 +494,13 @@ Term s PProposalStartingTime
 </span><span id="line-128"></span><span>
 </span><span id="line-129"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PUnsafeLiftDecl</span></a></span><span> </span><span class="annot"><a href="Agora.Proposal.Time.html#PProposalStartingTime"><span class="hs-identifier hs-type">PProposalStartingTime</span></a></span><span> </span><span class="hs-keyword">where</span><span>
 </span><span id="line-130"></span><span>  </span><span class="hs-keyword">type</span><span> </span><span id="PLifted"><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">PLifted</span></a></span></span><span> </span><span class="annot"><a href="Agora.Proposal.Time.html#PProposalStartingTime"><span class="hs-identifier hs-type">PProposalStartingTime</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Agora.Proposal.Time.html#ProposalStartingTime"><span class="hs-identifier hs-type">ProposalStartingTime</span></a></span><span>
-</span><span id="line-131"></span><span id="local-6989586621679520784"><span id="local-6989586621679520793"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">via</span><span>
+</span><span id="line-131"></span><span id="local-6989586621679534754"><span id="local-6989586621679534763"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">via</span><span>
 </span><span id="line-132"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">DerivePConstantViaNewtype</span></a></span><span> </span><span class="annot"><a href="Agora.Proposal.Time.html#ProposalStartingTime"><span class="hs-identifier hs-type">ProposalStartingTime</span></a></span><span> </span><span class="annot"><a href="Agora.Proposal.Time.html#PProposalStartingTime"><span class="hs-identifier hs-type">PProposalStartingTime</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PPOSIXTime</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-133"></span><span>  </span><span class="hs-keyword">instance</span><span>
 </span><span id="line-134"></span><span>    </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PConstantDecl</span></a></span><span> </span><span class="annot"><a href="Agora.Proposal.Time.html#ProposalStartingTime"><span class="hs-identifier hs-type">ProposalStartingTime</span></a></span><span class="hs-special">)</span></span></span><span>
 </span><span id="line-135"></span><span>
 </span><span id="line-136"></span><span class="hs-comment">-- | Plutarch-level version of 'ProposalTimingConfig'.</span><span>
-</span><span id="line-137"></span><span id="local-6989586621679520769"><span id="local-6989586621679520770"></span></span><span class="hs-keyword">newtype</span><span> </span><span id="PProposalTimingConfig"><span class="annot"><a href="Agora.Proposal.Time.html#PProposalTimingConfig"><span class="hs-identifier hs-var">PProposalTimingConfig</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679521907"><span class="annot"><a href="#local-6989586621679521907"><span class="hs-identifier hs-type">s</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">S</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span id="PProposalTimingConfig"><span class="annot"><a href="Agora.Proposal.Time.html#PProposalTimingConfig"><span class="hs-identifier hs-var">PProposalTimingConfig</span></a></span></span><span>
+</span><span id="line-137"></span><span id="local-6989586621679534739"><span id="local-6989586621679534740"></span></span><span class="hs-keyword">newtype</span><span> </span><span id="PProposalTimingConfig"><span class="annot"><a href="Agora.Proposal.Time.html#PProposalTimingConfig"><span class="hs-identifier hs-var">PProposalTimingConfig</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679535877"><span class="annot"><a href="#local-6989586621679535877"><span class="hs-identifier hs-type">s</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">S</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span id="PProposalTimingConfig"><span class="annot"><a href="Agora.Proposal.Time.html#PProposalTimingConfig"><span class="hs-identifier hs-var">PProposalTimingConfig</span></a></span></span><span>
 </span><span id="line-138"></span><span>  </span><span class="hs-special">{</span><span> </span><span id="getProposalTimingConfig"><span class="annot"><span class="annottext">forall (s :: S).
 PProposalTimingConfig s
 -&gt; Term
@@ -521,7 +521,7 @@ PProposalTimingConfig s
                     ('[] @PLabeledType))))))
 </span><a href="Agora.Proposal.Time.html#getProposalTimingConfig"><span class="hs-identifier hs-var hs-var">getProposalTimingConfig</span></a></span></span><span> </span><span class="hs-glyph">::</span><span>
 </span><span id="line-139"></span><span>      </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span>
-</span><span id="line-140"></span><span>        </span><span class="annot"><a href="#local-6989586621679521907"><span class="hs-identifier hs-type">s</span></a></span><span>
+</span><span id="line-140"></span><span>        </span><span class="annot"><a href="#local-6989586621679535877"><span class="hs-identifier hs-type">s</span></a></span><span>
 </span><span id="line-141"></span><span>        </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PDataRecord</span></a></span><span>
 </span><span id="line-142"></span><span>            </span><span class="hs-special">'</span><span class="hs-special">[</span><span> </span><span class="annot"><span class="hs-string">&quot;draftTime&quot;</span></span><span> </span><span class="hs-special">'</span><span class="hs-operator">:=</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PPOSIXTime</span></a></span><span>
 </span><span id="line-143"></span><span>             </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-string">&quot;votingTime&quot;</span></span><span> </span><span class="hs-special">'</span><span class="hs-operator">:=</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PPOSIXTime</span></a></span><span>
@@ -550,7 +550,7 @@ Rep (PProposalTimingConfig s) x -&gt; PProposalTimingConfig s
 $cfrom :: forall (s :: S) x.
 PProposalTimingConfig s -&gt; Rep (PProposalTimingConfig s) x
 </span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">GHC.Generic</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-150"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">anyclass</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679520758"><span id="local-6989586621679520760"><span class="annot"><span class="annottext">All @[Type] (SListI @Type) (Code (PProposalTimingConfig s))
+</span><span id="line-150"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">anyclass</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679534728"><span id="local-6989586621679534730"><span class="annot"><span class="annottext">All @[Type] (SListI @Type) (Code (PProposalTimingConfig s))
 All @[Type] (SListI @Type) (Code (PProposalTimingConfig s))
 -&gt; (PProposalTimingConfig s -&gt; Rep (PProposalTimingConfig s))
 -&gt; (Rep (PProposalTimingConfig s) -&gt; PProposalTimingConfig s)
@@ -572,8 +572,8 @@ Rep (PProposalTimingConfig s) -&gt; PProposalTimingConfig s
 from :: PProposalTimingConfig s -&gt; Rep (PProposalTimingConfig s)
 $cfrom :: forall (s :: S).
 PProposalTimingConfig s -&gt; Rep (PProposalTimingConfig s)
-</span><a href="#local-6989586621679520758"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></a></span></span></span><span class="hs-special">)</span><span>
-</span><span id="line-151"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">anyclass</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679520744"><span id="local-6989586621679520746"><span class="annot"><span class="annottext">PIsData PProposalTimingConfig
+</span><a href="#local-6989586621679534728"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></a></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-151"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">anyclass</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679534714"><span id="local-6989586621679534716"><span class="annot"><span class="annottext">PIsData PProposalTimingConfig
 PlutusType PProposalTimingConfig
 PlutusType PProposalTimingConfig
 -&gt; PIsData PProposalTimingConfig
@@ -612,7 +612,7 @@ PProposalTimingConfig s
 -&gt; Term s (PDataSum (PIsDataReprRepr PProposalTimingConfig))
 </span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">PIsDataRepr</span></a></span></span></span><span class="hs-special">)</span><span>
 </span><span id="line-152"></span><span>  </span><span class="hs-keyword">deriving</span><span>
-</span><span id="line-153"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621679520728"><span id="local-6989586621679520735"><span class="annot"><span class="annottext">PCon PProposalTimingConfig
+</span><span id="line-153"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621679534698"><span id="local-6989586621679534705"><span class="annot"><span class="annottext">PCon PProposalTimingConfig
 PMatch PProposalTimingConfig
 PCon PProposalTimingConfig
 -&gt; PMatch PProposalTimingConfig
@@ -644,7 +644,7 @@ pcon' :: forall (s :: S) (b :: PType).
 PProposalTimingConfig s -&gt; Term s (PInner PProposalTimingConfig b)
 $cpcon' :: forall (s :: S) (b :: PType).
 PProposalTimingConfig s -&gt; Term s (PInner PProposalTimingConfig b)
-</span><a href="#local-6989586621679520728"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">PlutusType</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679520716"><span id="local-6989586621679520722"><span class="annot"><span class="annottext">(forall (s :: S).
+</span><a href="#local-6989586621679534698"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">PlutusType</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679534686"><span id="local-6989586621679534692"><span class="annot"><span class="annottext">(forall (s :: S).
  Term s (PAsData PProposalTimingConfig)
  -&gt; Term s PProposalTimingConfig)
 -&gt; (forall (s :: S). Term s PProposalTimingConfig -&gt; Term s PData)
@@ -664,7 +664,7 @@ Term s (PAsData PProposalTimingConfig)
 $cpfromDataImpl :: forall (s :: S).
 Term s (PAsData PProposalTimingConfig)
 -&gt; Term s PProposalTimingConfig
-</span><a href="#local-6989586621679520716"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">PIsData</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679520711"><span class="annot"><span class="annottext">(forall (s :: S).
+</span><a href="#local-6989586621679534686"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">PIsData</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679534681"><span class="annot"><span class="annottext">(forall (s :: S).
  Term s PProposalTimingConfig
  -&gt; Term s (PDataRecord (PFields PProposalTimingConfig)))
 -&gt; PDataFields PProposalTimingConfig
@@ -685,15 +685,15 @@ Term s PProposalTimingConfig
 </span><span id="line-155"></span><span>
 </span><span id="line-156"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PUnsafeLiftDecl</span></a></span><span> </span><span class="annot"><a href="Agora.Proposal.Time.html#PProposalTimingConfig"><span class="hs-identifier hs-type">PProposalTimingConfig</span></a></span><span> </span><span class="hs-keyword">where</span><span>
 </span><span id="line-157"></span><span>  </span><span class="hs-keyword">type</span><span> </span><span id="PLifted"><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">PLifted</span></a></span></span><span> </span><span class="annot"><a href="Agora.Proposal.Time.html#PProposalTimingConfig"><span class="hs-identifier hs-type">PProposalTimingConfig</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Agora.Proposal.Time.html#ProposalTimingConfig"><span class="hs-identifier hs-type">ProposalTimingConfig</span></a></span><span>
-</span><span id="line-158"></span><span id="local-6989586621679520674"><span id="local-6989586621679520684"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">via</span><span>
+</span><span id="line-158"></span><span id="local-6989586621679534644"><span id="local-6989586621679534654"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">via</span><span>
 </span><span id="line-159"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">DerivePConstantViaData</span></a></span><span> </span><span class="annot"><a href="Agora.Proposal.Time.html#ProposalTimingConfig"><span class="hs-identifier hs-type">ProposalTimingConfig</span></a></span><span> </span><span class="annot"><a href="Agora.Proposal.Time.html#PProposalTimingConfig"><span class="hs-identifier hs-type">PProposalTimingConfig</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-160"></span><span>  </span><span class="hs-keyword">instance</span><span>
 </span><span id="line-161"></span><span>    </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PConstantDecl</span></a></span><span> </span><span class="annot"><a href="Agora.Proposal.Time.html#ProposalTimingConfig"><span class="hs-identifier hs-type">ProposalTimingConfig</span></a></span><span class="hs-special">)</span></span></span><span>
 </span><span id="line-162"></span><span>
 </span><span id="line-163"></span><span class="hs-comment">-- | Plutarch-level version of 'MaxTimeRangeWidth'.</span><span>
-</span><span id="line-164"></span><span class="hs-keyword">newtype</span><span> </span><span id="PMaxTimeRangeWidth"><span class="annot"><a href="Agora.Proposal.Time.html#PMaxTimeRangeWidth"><span class="hs-identifier hs-var">PMaxTimeRangeWidth</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679520664"><span class="annot"><a href="#local-6989586621679520664"><span class="hs-identifier hs-type">s</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">S</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-165"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="PMaxTimeRangeWidth"><span class="annot"><a href="Agora.Proposal.Time.html#PMaxTimeRangeWidth"><span class="hs-identifier hs-var">PMaxTimeRangeWidth</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679520664"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PPOSIXTime</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-166"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679520649"><span id="local-6989586621679520655"><span class="annot"><span class="annottext">PCon PMaxTimeRangeWidth
+</span><span id="line-164"></span><span class="hs-keyword">newtype</span><span> </span><span id="PMaxTimeRangeWidth"><span class="annot"><a href="Agora.Proposal.Time.html#PMaxTimeRangeWidth"><span class="hs-identifier hs-var">PMaxTimeRangeWidth</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679534634"><span class="annot"><a href="#local-6989586621679534634"><span class="hs-identifier hs-type">s</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">S</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-165"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="PMaxTimeRangeWidth"><span class="annot"><a href="Agora.Proposal.Time.html#PMaxTimeRangeWidth"><span class="hs-identifier hs-var">PMaxTimeRangeWidth</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679534634"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PPOSIXTime</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-166"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679534619"><span id="local-6989586621679534625"><span class="annot"><span class="annottext">PCon PMaxTimeRangeWidth
 PMatch PMaxTimeRangeWidth
 PCon PMaxTimeRangeWidth
 -&gt; PMatch PMaxTimeRangeWidth
@@ -725,7 +725,7 @@ pcon' :: forall (s :: S) (b :: PType).
 PMaxTimeRangeWidth s -&gt; Term s (PInner PMaxTimeRangeWidth b)
 $cpcon' :: forall (s :: S) (b :: PType).
 PMaxTimeRangeWidth s -&gt; Term s (PInner PMaxTimeRangeWidth b)
-</span><a href="#local-6989586621679520649"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">PlutusType</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679520635"><span id="local-6989586621679520642"><span class="annot"><span class="annottext">(forall (s :: S).
+</span><a href="#local-6989586621679534619"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">PlutusType</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679534605"><span id="local-6989586621679534612"><span class="annot"><span class="annottext">(forall (s :: S).
  Term s (PAsData PMaxTimeRangeWidth) -&gt; Term s PMaxTimeRangeWidth)
 -&gt; (forall (s :: S). Term s PMaxTimeRangeWidth -&gt; Term s PData)
 -&gt; PIsData PMaxTimeRangeWidth
@@ -741,7 +741,7 @@ pfromDataImpl :: forall (s :: S).
 Term s (PAsData PMaxTimeRangeWidth) -&gt; Term s PMaxTimeRangeWidth
 $cpfromDataImpl :: forall (s :: S).
 Term s (PAsData PMaxTimeRangeWidth) -&gt; Term s PMaxTimeRangeWidth
-</span><a href="#local-6989586621679520635"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">PIsData</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679520625"><span class="annot"><span class="annottext">(forall (s :: S).
+</span><a href="#local-6989586621679534605"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">PIsData</span></a></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679534595"><span class="annot"><span class="annottext">(forall (s :: S).
  Term s PMaxTimeRangeWidth
  -&gt; Term s PMaxTimeRangeWidth -&gt; Term s PBool)
 -&gt; PEq PMaxTimeRangeWidth
@@ -756,7 +756,7 @@ Term s PMaxTimeRangeWidth
 $c#== :: forall (s :: S).
 Term s PMaxTimeRangeWidth
 -&gt; Term s PMaxTimeRangeWidth -&gt; Term s PBool
-</span><a href="#local-6989586621679520625"><span class="hs-identifier hs-var hs-var hs-var hs-var">PEq</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679520612"><span id="local-6989586621679520617"><span class="annot"><span class="annottext">PEq PMaxTimeRangeWidth
+</span><a href="#local-6989586621679534595"><span class="hs-identifier hs-var hs-var hs-var hs-var">PEq</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679534582"><span id="local-6989586621679534587"><span class="annot"><span class="annottext">PEq PMaxTimeRangeWidth
 PEq PMaxTimeRangeWidth
 -&gt; (forall (s :: S).
     Term s PMaxTimeRangeWidth
@@ -785,10 +785,10 @@ Term s PMaxTimeRangeWidth
 $c#&lt;= :: forall (s :: S).
 Term s PMaxTimeRangeWidth
 -&gt; Term s PMaxTimeRangeWidth -&gt; Term s PBool
-</span><a href="#local-6989586621679520612"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var">POrd</span></a></span></span></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">via</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">DerivePNewtype</span></a></span><span> </span><span class="annot"><a href="Agora.Proposal.Time.html#PMaxTimeRangeWidth"><span class="hs-identifier hs-type">PMaxTimeRangeWidth</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PPOSIXTime</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679534582"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var">POrd</span></a></span></span></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">via</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">DerivePNewtype</span></a></span><span> </span><span class="annot"><a href="Agora.Proposal.Time.html#PMaxTimeRangeWidth"><span class="hs-identifier hs-type">PMaxTimeRangeWidth</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PPOSIXTime</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-167"></span><span>
 </span><span id="line-168"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PUnsafeLiftDecl</span></a></span><span> </span><span class="annot"><a href="Agora.Proposal.Time.html#PMaxTimeRangeWidth"><span class="hs-identifier hs-type">PMaxTimeRangeWidth</span></a></span><span> </span><span class="hs-keyword">where</span><span> </span><span class="hs-keyword">type</span><span> </span><span id="PLifted"><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">PLifted</span></a></span></span><span> </span><span class="annot"><a href="Agora.Proposal.Time.html#PMaxTimeRangeWidth"><span class="hs-identifier hs-type">PMaxTimeRangeWidth</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Agora.Proposal.Time.html#MaxTimeRangeWidth"><span class="hs-identifier hs-type">MaxTimeRangeWidth</span></a></span><span>
-</span><span id="line-169"></span><span id="local-6989586621679520584"><span id="local-6989586621679520592"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">via</span><span>
+</span><span id="line-169"></span><span id="local-6989586621679534554"><span id="local-6989586621679534562"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">via</span><span>
 </span><span id="line-170"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">DerivePConstantViaNewtype</span></a></span><span> </span><span class="annot"><a href="Agora.Proposal.Time.html#MaxTimeRangeWidth"><span class="hs-identifier hs-type">MaxTimeRangeWidth</span></a></span><span> </span><span class="annot"><a href="Agora.Proposal.Time.html#PMaxTimeRangeWidth"><span class="hs-identifier hs-type">PMaxTimeRangeWidth</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PPOSIXTime</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-171"></span><span>  </span><span class="hs-keyword">instance</span><span>
 </span><span id="line-172"></span><span>    </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PConstantDecl</span></a></span><span> </span><span class="annot"><a href="Agora.Proposal.Time.html#MaxTimeRangeWidth"><span class="hs-identifier hs-type">MaxTimeRangeWidth</span></a></span><span class="hs-special">)</span></span></span><span>
@@ -796,29 +796,29 @@ Term s PMaxTimeRangeWidth
 </span><span id="line-174"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
 </span><span id="line-175"></span><span>
 </span><span id="line-176"></span><span class="hs-comment">-- FIXME: Orphan instance, move this to plutarch-extra.</span><span>
-</span><span id="line-177"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679521866"><span class="annot"><a href="../file:///nix/store/qll2jbd1sxmfr4ax0k9qbnpzlx64mp0f-plutarch-numeric-lib-plutarch-numeric-1.0.0-haddock-doc/share/doc/plutarch-numeric/html/src"><span class="hs-identifier hs-type">AdditiveSemigroup</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679521866"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PPOSIXTime</span></a></span><span class="hs-special">)</span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-177"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679535836"><span class="annot"><a href="../file:///nix/store/qll2jbd1sxmfr4ax0k9qbnpzlx64mp0f-plutarch-numeric-lib-plutarch-numeric-1.0.0-haddock-doc/share/doc/plutarch-numeric/html/src"><span class="hs-identifier hs-type">AdditiveSemigroup</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679535836"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PPOSIXTime</span></a></span><span class="hs-special">)</span></span><span> </span><span class="hs-keyword">where</span><span>
 </span><span id="line-178"></span><span>  </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall (s :: S) (a :: PType) (b :: PType). Term s a -&gt; Term s b
-</span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">punsafeCoerce</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PInteger</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span id="local-6989586621679520569"><span class="annot"><span class="annottext">Term s (PInteger @S)
-</span><a href="#local-6989586621679520569"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679520568"><span class="annot"><span class="annottext">+ :: Term s PPOSIXTime -&gt; Term s PPOSIXTime -&gt; Term s PPOSIXTime
-</span><a href="#local-6989586621679520568"><span class="hs-operator hs-var hs-var hs-var hs-var">+</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall (s :: S) (a :: PType) (b :: PType). Term s a -&gt; Term s b
-</span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">punsafeCoerce</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PInteger</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span id="local-6989586621679520567"><span class="annot"><span class="annottext">Term s (PInteger @S)
-</span><a href="#local-6989586621679520567"><span class="hs-identifier hs-var">y</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Term s (PInteger @S) -&gt; Term s PPOSIXTime
+</span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">punsafeCoerce</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PInteger</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span id="local-6989586621679534539"><span class="annot"><span class="annottext">Term s (PInteger @S)
+</span><a href="#local-6989586621679534539"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679534538"><span class="annot"><span class="annottext">+ :: Term s PPOSIXTime -&gt; Term s PPOSIXTime -&gt; Term s PPOSIXTime
+</span><a href="#local-6989586621679534538"><span class="hs-operator hs-var hs-var hs-var hs-var">+</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall (s :: S) (a :: PType) (b :: PType). Term s a -&gt; Term s b
+</span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">punsafeCoerce</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PInteger</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span id="local-6989586621679534537"><span class="annot"><span class="annottext">Term s (PInteger @S)
+</span><a href="#local-6989586621679534537"><span class="hs-identifier hs-var">y</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Term s (PInteger @S) -&gt; Term s PPOSIXTime
 forall (s :: S) (a :: PType) (b :: PType). Term s a -&gt; Term s b
 </span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">punsafeCoerce</span></a></span><span> </span><span class="annot"><span class="annottext">(Term s (PInteger @S) -&gt; Term s PPOSIXTime)
 -&gt; Term s (PInteger @S) -&gt; Term s PPOSIXTime
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Term s (PInteger @S)
-</span><a href="#local-6989586621679520569"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Term s (PInteger @S)
+</span><a href="#local-6989586621679534539"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Term s (PInteger @S)
 -&gt; Term s (PInteger @S) -&gt; Term s (PInteger @S)
 forall a. AdditiveSemigroup a =&gt; a -&gt; a -&gt; a
 </span><a href="../file:///nix/store/qll2jbd1sxmfr4ax0k9qbnpzlx64mp0f-plutarch-numeric-lib-plutarch-numeric-1.0.0-haddock-doc/share/doc/plutarch-numeric/html/src"><span class="hs-operator hs-var">+</span></a></span><span> </span><span class="annot"><span class="annottext">Term s (PInteger @S)
-</span><a href="#local-6989586621679520567"><span class="hs-identifier hs-var">y</span></a></span><span>
+</span><a href="#local-6989586621679534537"><span class="hs-identifier hs-var">y</span></a></span><span>
 </span><span id="line-179"></span><span>
 </span><span id="line-180"></span><span class="hs-comment">{- | Get the starting time of a proposal, from the 'PlutusLedgerApi.V1.txInfoValidPeriod' field.
      For every proposal, this is only meant to run once upon creation. Given time range should be
      tight enough, meaning that the width of the time range should be less than the maximum value.
 -}</span><span>
-</span><span id="line-184"></span><span class="annot"><a href="Agora.Proposal.Time.html#createProposalStartingTime"><span class="hs-identifier hs-type">createProposalStartingTime</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679521857"><span class="annot"><a href="#local-6989586621679521857"><span class="hs-identifier hs-type">s</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">S</span></a></span><span class="hs-special">)</span><span class="hs-operator">.</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679521857"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Agora.Proposal.Time.html#PMaxTimeRangeWidth"><span class="hs-identifier hs-type">PMaxTimeRangeWidth</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-type">:--&gt;</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PPOSIXTimeRange</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-type">:--&gt;</span></a></span><span> </span><span class="annot"><a href="Agora.Proposal.Time.html#PProposalStartingTime"><span class="hs-identifier hs-type">PProposalStartingTime</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-184"></span><span class="annot"><a href="Agora.Proposal.Time.html#createProposalStartingTime"><span class="hs-identifier hs-type">createProposalStartingTime</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679535827"><span class="annot"><a href="#local-6989586621679535827"><span class="hs-identifier hs-type">s</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">S</span></a></span><span class="hs-special">)</span><span class="hs-operator">.</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679535827"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Agora.Proposal.Time.html#PMaxTimeRangeWidth"><span class="hs-identifier hs-type">PMaxTimeRangeWidth</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-type">:--&gt;</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PPOSIXTimeRange</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-type">:--&gt;</span></a></span><span> </span><span class="annot"><a href="Agora.Proposal.Time.html#PProposalStartingTime"><span class="hs-identifier hs-type">PProposalStartingTime</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-185"></span><span id="createProposalStartingTime"><span class="annot"><span class="annottext">createProposalStartingTime :: forall (s :: S).
 Term
   s
@@ -882,9 +882,9 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 -&gt; forall (b :: PType). Term s (PInner PMaxTimeRangeWidth b)
 forall (s :: S) (a :: PType).
 Term s a -&gt; forall (b :: PType). Term s (PInner a b)
-</span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pto</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span id="local-6989586621679520533"><span class="annot"><span class="annottext">forall (b :: PType). Term s (PInner PMaxTimeRangeWidth b)
-</span><a href="#local-6989586621679520533"><span class="hs-identifier hs-var">maxDuration</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679520532"><span class="annot"><span class="annottext">Term s PPOSIXTimeRange
-</span><a href="#local-6989586621679520532"><span class="hs-identifier hs-var">iv</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">TermCont @PProposalStartingTime s (Term s PProposalStartingTime)
+</span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pto</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span id="local-6989586621679534503"><span class="annot"><span class="annottext">forall (b :: PType). Term s (PInner PMaxTimeRangeWidth b)
+</span><a href="#local-6989586621679534503"><span class="hs-identifier hs-var">maxDuration</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679534502"><span class="annot"><span class="annottext">Term s PPOSIXTimeRange
+</span><a href="#local-6989586621679534502"><span class="hs-identifier hs-var">iv</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">TermCont @PProposalStartingTime s (Term s PProposalStartingTime)
 -&gt; Term s PProposalStartingTime
 forall (a :: PType) (s :: S). TermCont @a s (Term s a) -&gt; Term s a
 </span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">unTermCont</span></a></span><span> </span><span class="annot"><span class="annottext">(TermCont @PProposalStartingTime s (Term s PProposalStartingTime)
@@ -893,8 +893,8 @@ forall (a :: PType) (s :: S). TermCont @a s (Term s a) -&gt; Term s a
 -&gt; Term s PProposalStartingTime
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-187"></span><span>    </span><span id="local-6989586621679520530"><span class="annot"><span class="annottext">PProposalTime s
-</span><a href="#local-6989586621679520530"><span class="hs-identifier hs-var">currentTimeF</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Term s PProposalTime
+</span><span id="line-187"></span><span>    </span><span id="local-6989586621679534500"><span class="annot"><span class="annottext">PProposalTime s
+</span><a href="#local-6989586621679534500"><span class="hs-identifier hs-var">currentTimeF</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Term s PProposalTime
 -&gt; TermCont @PProposalStartingTime s (PProposalTime s)
 forall {r :: PType} (a :: PType) (s :: S).
 PMatch a =&gt;
@@ -911,18 +911,18 @@ forall (s :: S). Term s (PPOSIXTimeRange :--&gt; PProposalTime)
 forall (s :: S) (a :: PType) (b :: PType).
 Term s (a :--&gt; b) -&gt; Term s a -&gt; Term s b
 </span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-var">#</span></a></span><span> </span><span class="annot"><span class="annottext">Term s PPOSIXTimeRange
-</span><a href="#local-6989586621679520532"><span class="hs-identifier hs-var">iv</span></a></span><span>
+</span><a href="#local-6989586621679534502"><span class="hs-identifier hs-var">iv</span></a></span><span>
 </span><span id="line-188"></span><span>
 </span><span id="line-189"></span><span>    </span><span class="hs-comment">-- Use the middle of the current time range as the starting time.</span><span>
-</span><span id="line-190"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679520528"><span class="annot"><span class="annottext">duration :: Term s PPOSIXTime
-</span><a href="#local-6989586621679520528"><span class="hs-identifier hs-var hs-var">duration</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PProposalTime s
-</span><a href="#local-6989586621679520530"><span class="hs-identifier hs-var">currentTimeF</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">upperBound</span><span> </span><span class="annot"><span class="annottext">Term s PPOSIXTime -&gt; Term s PPOSIXTime -&gt; Term s PPOSIXTime
+</span><span id="line-190"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679534498"><span class="annot"><span class="annottext">duration :: Term s PPOSIXTime
+</span><a href="#local-6989586621679534498"><span class="hs-identifier hs-var hs-var">duration</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PProposalTime s
+</span><a href="#local-6989586621679534500"><span class="hs-identifier hs-var">currentTimeF</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">upperBound</span><span> </span><span class="annot"><span class="annottext">Term s PPOSIXTime -&gt; Term s PPOSIXTime -&gt; Term s PPOSIXTime
 forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src"><span class="hs-glyph hs-var">-</span></a></span><span> </span><span class="annot"><span class="annottext">PProposalTime s
-</span><a href="#local-6989586621679520530"><span class="hs-identifier hs-var">currentTimeF</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">lowerBound</span><span>
+</span><a href="#local-6989586621679534500"><span class="hs-identifier hs-var">currentTimeF</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">lowerBound</span><span>
 </span><span id="line-191"></span><span>
-</span><span id="line-192"></span><span>        </span><span id="local-6989586621679520527"><span class="annot"><span class="annottext">startingTime :: Term s PPOSIXTime
-</span><a href="#local-6989586621679520527"><span class="hs-identifier hs-var hs-var">startingTime</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-192"></span><span>        </span><span id="local-6989586621679534497"><span class="annot"><span class="annottext">startingTime :: Term s PPOSIXTime
+</span><a href="#local-6989586621679534497"><span class="hs-identifier hs-var hs-var">startingTime</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-193"></span><span>          </span><span class="annot"><span class="annottext">Term s (PPOSIXTime :--&gt; (PPOSIXTime :--&gt; PPOSIXTime))
 forall (a :: PType) (s :: S).
 PIntegral a =&gt;
@@ -941,13 +941,13 @@ Term s (PString @S) -&gt; Term s PBool -&gt; TermCont @r s ()
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src"><span class="hs-operator hs-var">$</span></a></span><span>
 </span><span id="line-198"></span><span>      </span><span class="annot"><span class="annottext">Term s PPOSIXTime
-</span><a href="#local-6989586621679520528"><span class="hs-identifier hs-var">duration</span></a></span><span> </span><span class="annot"><span class="annottext">Term s PPOSIXTime -&gt; Term s PPOSIXTime -&gt; Term s PBool
+</span><a href="#local-6989586621679534498"><span class="hs-identifier hs-var">duration</span></a></span><span> </span><span class="annot"><span class="annottext">Term s PPOSIXTime -&gt; Term s PPOSIXTime -&gt; Term s PBool
 forall (t :: PType) (s :: S).
 POrd t =&gt;
 Term s t -&gt; Term s t -&gt; Term s PBool
 </span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-var">#&lt;=</span></a></span><span> </span><span class="annot"><span class="annottext">Term s PPOSIXTime
 forall (b :: PType). Term s (PInner PMaxTimeRangeWidth b)
-</span><a href="#local-6989586621679520533"><span class="hs-identifier hs-var">maxDuration</span></a></span><span>
+</span><a href="#local-6989586621679534503"><span class="hs-identifier hs-var">maxDuration</span></a></span><span>
 </span><span id="line-199"></span><span>
 </span><span id="line-200"></span><span>    </span><span class="annot"><span class="annottext">Term s PProposalStartingTime
 -&gt; TermCont @PProposalStartingTime s (Term s PProposalStartingTime)
@@ -966,14 +966,14 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Term s PPOSIXTime -&gt; PProposalStartingTime s
 forall (s :: S). Term s PPOSIXTime -&gt; PProposalStartingTime s
 </span><a href="Agora.Proposal.Time.html#PProposalStartingTime"><span class="hs-identifier hs-var">PProposalStartingTime</span></a></span><span> </span><span class="annot"><span class="annottext">Term s PPOSIXTime
-</span><a href="#local-6989586621679520527"><span class="hs-identifier hs-var">startingTime</span></a></span><span>
+</span><a href="#local-6989586621679534497"><span class="hs-identifier hs-var">startingTime</span></a></span><span>
 </span><span id="line-201"></span><span>
 </span><span id="line-202"></span><span class="hs-comment">{- | Get the current proposal time, from the 'PlutusLedgerApi.V1.txInfoValidPeriod' field.
 
  If it's impossible to get a fully-bounded time, (e.g. either end of the 'PPOSIXTimeRange' is
  an infinity) then we error out.
 -}</span><span>
-</span><span id="line-207"></span><span class="annot"><a href="Agora.Proposal.Time.html#currentProposalTime"><span class="hs-identifier hs-type">currentProposalTime</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679521819"><span class="annot"><a href="#local-6989586621679521819"><span class="hs-identifier hs-type">s</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">S</span></a></span><span class="hs-special">)</span><span class="hs-operator">.</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679521819"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PPOSIXTimeRange</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-type">:--&gt;</span></a></span><span> </span><span class="annot"><a href="Agora.Proposal.Time.html#PProposalTime"><span class="hs-identifier hs-type">PProposalTime</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-207"></span><span class="annot"><a href="Agora.Proposal.Time.html#currentProposalTime"><span class="hs-identifier hs-type">currentProposalTime</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679535789"><span class="annot"><a href="#local-6989586621679535789"><span class="hs-identifier hs-type">s</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">S</span></a></span><span class="hs-special">)</span><span class="hs-operator">.</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679535789"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PPOSIXTimeRange</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-type">:--&gt;</span></a></span><span> </span><span class="annot"><a href="Agora.Proposal.Time.html#PProposalTime"><span class="hs-identifier hs-type">PProposalTime</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-208"></span><span id="currentProposalTime"><span class="annot"><span class="annottext">currentProposalTime :: forall (s :: S). Term s (PPOSIXTimeRange :--&gt; PProposalTime)
 </span><a href="Agora.Proposal.Time.html#currentProposalTime"><span class="hs-identifier hs-var hs-var">currentProposalTime</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(forall (s :: S). Term s (PPOSIXTimeRange :--&gt; PProposalTime))
 -&gt; Term s (PPOSIXTimeRange :--&gt; PProposalTime)
@@ -996,8 +996,8 @@ PLamN a b s =&gt;
 -&gt; (Term s PPOSIXTimeRange -&gt; Term s PProposalTime)
 -&gt; Term s (PPOSIXTimeRange :--&gt; PProposalTime)
 forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679520410"><span class="annot"><span class="annottext">Term s PPOSIXTimeRange
-</span><a href="#local-6989586621679520410"><span class="hs-identifier hs-var">iv</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">TermCont @PProposalTime s (Term s PProposalTime)
+</span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679534380"><span class="annot"><span class="annottext">Term s PPOSIXTimeRange
+</span><a href="#local-6989586621679534380"><span class="hs-identifier hs-var">iv</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">TermCont @PProposalTime s (Term s PProposalTime)
 -&gt; Term s PProposalTime
 forall (a :: PType) (s :: S). TermCont @a s (Term s a) -&gt; Term s a
 </span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">unTermCont</span></a></span><span> </span><span class="annot"><span class="annottext">(TermCont @PProposalTime s (Term s PProposalTime)
@@ -1006,7 +1006,7 @@ forall (a :: PType) (s :: S). TermCont @a s (Term s a) -&gt; Term s a
 -&gt; Term s PProposalTime
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-210"></span><span>    </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PInterval</span></a></span><span> </span><span id="local-6989586621679520409"><span class="annot"><span class="annottext">Term
+</span><span id="line-210"></span><span>    </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PInterval</span></a></span><span> </span><span id="local-6989586621679534379"><span class="annot"><span class="annottext">Term
   s
   (PDataRecord
      ((':)
@@ -1016,14 +1016,14 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
            @PLabeledType
            (&quot;to&quot; ':= PUpperBound PPOSIXTime)
            ('[] @PLabeledType))))
-</span><a href="#local-6989586621679520409"><span class="hs-identifier hs-var">iv'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Term s PPOSIXTimeRange
+</span><a href="#local-6989586621679534379"><span class="hs-identifier hs-var">iv'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Term s PPOSIXTimeRange
 -&gt; TermCont @PProposalTime s (PInterval PPOSIXTime s)
 forall {r :: PType} (a :: PType) (s :: S).
 PMatch a =&gt;
 Term s a -&gt; TermCont @r s (a s)
 </span><a href="../file:///nix/store/x2hnvsjw6yhhcdfyc1lfi4f51izw6pvw-plutarch-extra-lib-plutarch-extra-1.1.0-haddock-doc/share/doc/plutarch-extra/html/src"><span class="hs-identifier hs-var">pmatchC</span></a></span><span> </span><span class="annot"><span class="annottext">Term s PPOSIXTimeRange
-</span><a href="#local-6989586621679520410"><span class="hs-identifier hs-var">iv</span></a></span><span>
-</span><span id="line-211"></span><span>    </span><span id="local-6989586621679520408"><span class="annot"><span class="annottext">HRec
+</span><a href="#local-6989586621679534380"><span class="hs-identifier hs-var">iv</span></a></span><span>
+</span><span id="line-211"></span><span>    </span><span id="local-6989586621679534378"><span class="annot"><span class="annottext">HRec
   ((':)
      @(Symbol, Type)
      '(&quot;from&quot;, Term s (PAsData (PLowerBound PPOSIXTime)))
@@ -1031,7 +1031,7 @@ Term s a -&gt; TermCont @r s (a s)
         @(Symbol, Type)
         '(&quot;to&quot;, Term s (PAsData (PUpperBound PPOSIXTime)))
         ('[] @(Symbol, Type))))
-</span><a href="#local-6989586621679520408"><span class="hs-identifier hs-var">ivf</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">((HRec
+</span><a href="#local-6989586621679534378"><span class="hs-identifier hs-var">ivf</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">((HRec
     ((':)
        @(Symbol, Type)
        '(&quot;from&quot;, Term s (PAsData (PLowerBound PPOSIXTime)))
@@ -1114,15 +1114,15 @@ Term s a -&gt; (HRecOf a fs s -&gt; Term s b) -&gt; Term s b
            @PLabeledType
            (&quot;to&quot; ':= PUpperBound PPOSIXTime)
            ('[] @PLabeledType))))
-</span><a href="#local-6989586621679520409"><span class="hs-identifier hs-var">iv'</span></a></span><span>
-</span><span id="line-212"></span><span>    </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PLowerBound</span></a></span><span> </span><span id="local-6989586621679520405"><span class="annot"><span class="annottext">Term
+</span><a href="#local-6989586621679534379"><span class="hs-identifier hs-var">iv'</span></a></span><span>
+</span><span id="line-212"></span><span>    </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PLowerBound</span></a></span><span> </span><span id="local-6989586621679534375"><span class="annot"><span class="annottext">Term
   s
   (PDataRecord
      ((':)
         @PLabeledType
         (&quot;_0&quot; ':= PExtended PPOSIXTime)
         ((':) @PLabeledType (&quot;_1&quot; ':= PBool) ('[] @PLabeledType))))
-</span><a href="#local-6989586621679520405"><span class="hs-identifier hs-var">lb</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Term s (PLowerBound PPOSIXTime)
+</span><a href="#local-6989586621679534375"><span class="hs-identifier hs-var">lb</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Term s (PLowerBound PPOSIXTime)
 -&gt; TermCont @PProposalTime s (PLowerBound PPOSIXTime s)
 forall {r :: PType} (a :: PType) (s :: S).
 PMatch a =&gt;
@@ -1135,15 +1135,15 @@ Term s a -&gt; TermCont @r s (a s)
         @(Symbol, Type)
         '(&quot;to&quot;, Term s (PAsData (PUpperBound PPOSIXTime)))
         ('[] @(Symbol, Type))))
-</span><a href="#local-6989586621679520408"><span class="hs-identifier hs-var">ivf</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">from</span><span>
-</span><span id="line-213"></span><span>    </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PUpperBound</span></a></span><span> </span><span id="local-6989586621679520404"><span class="annot"><span class="annottext">Term
+</span><a href="#local-6989586621679534378"><span class="hs-identifier hs-var">ivf</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">from</span><span>
+</span><span id="line-213"></span><span>    </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PUpperBound</span></a></span><span> </span><span id="local-6989586621679534374"><span class="annot"><span class="annottext">Term
   s
   (PDataRecord
      ((':)
         @PLabeledType
         (&quot;_0&quot; ':= PExtended PPOSIXTime)
         ((':) @PLabeledType (&quot;_1&quot; ':= PBool) ('[] @PLabeledType))))
-</span><a href="#local-6989586621679520404"><span class="hs-identifier hs-var">ub</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Term s (PUpperBound PPOSIXTime)
+</span><a href="#local-6989586621679534374"><span class="hs-identifier hs-var">ub</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Term s (PUpperBound PPOSIXTime)
 -&gt; TermCont @PProposalTime s (PUpperBound PPOSIXTime s)
 forall {r :: PType} (a :: PType) (s :: S).
 PMatch a =&gt;
@@ -1156,8 +1156,8 @@ Term s a -&gt; TermCont @r s (a s)
         @(Symbol, Type)
         '(&quot;to&quot;, Term s (PAsData (PUpperBound PPOSIXTime)))
         ('[] @(Symbol, Type))))
-</span><a href="#local-6989586621679520408"><span class="hs-identifier hs-var">ivf</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">to</span><span>
-</span><span id="line-214"></span><span>    </span><span id="local-6989586621679520403"><span class="annot"><span class="annottext">HRec
+</span><a href="#local-6989586621679534378"><span class="hs-identifier hs-var">ivf</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">to</span><span>
+</span><span id="line-214"></span><span>    </span><span id="local-6989586621679534373"><span class="annot"><span class="annottext">HRec
   ((':)
      @(Symbol, Type)
      '(&quot;_0&quot;, Term s (PAsData (PExtended PPOSIXTime)))
@@ -1165,7 +1165,7 @@ Term s a -&gt; TermCont @r s (a s)
         @(Symbol, Type)
         '(&quot;_1&quot;, Term s (PAsData PBool))
         ('[] @(Symbol, Type))))
-</span><a href="#local-6989586621679520403"><span class="hs-identifier hs-var">lbf</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">((HRec
+</span><a href="#local-6989586621679534373"><span class="hs-identifier hs-var">lbf</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">((HRec
     ((':)
        @(Symbol, Type)
        '(&quot;_0&quot;, Term s (PAsData (PExtended PPOSIXTime)))
@@ -1245,8 +1245,8 @@ Term s a -&gt; (HRecOf a fs s -&gt; Term s b) -&gt; Term s b
         @PLabeledType
         (&quot;_0&quot; ':= PExtended PPOSIXTime)
         ((':) @PLabeledType (&quot;_1&quot; ':= PBool) ('[] @PLabeledType))))
-</span><a href="#local-6989586621679520405"><span class="hs-identifier hs-var">lb</span></a></span><span>
-</span><span id="line-215"></span><span>    </span><span id="local-6989586621679520402"><span class="annot"><span class="annottext">HRec
+</span><a href="#local-6989586621679534375"><span class="hs-identifier hs-var">lb</span></a></span><span>
+</span><span id="line-215"></span><span>    </span><span id="local-6989586621679534372"><span class="annot"><span class="annottext">HRec
   ((':)
      @(Symbol, Type)
      '(&quot;_0&quot;, Term s (PAsData (PExtended PPOSIXTime)))
@@ -1254,7 +1254,7 @@ Term s a -&gt; (HRecOf a fs s -&gt; Term s b) -&gt; Term s b
         @(Symbol, Type)
         '(&quot;_1&quot;, Term s (PAsData PBool))
         ('[] @(Symbol, Type))))
-</span><a href="#local-6989586621679520402"><span class="hs-identifier hs-var">ubf</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">((HRec
+</span><a href="#local-6989586621679534372"><span class="hs-identifier hs-var">ubf</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">((HRec
     ((':)
        @(Symbol, Type)
        '(&quot;_0&quot;, Term s (PAsData (PExtended PPOSIXTime)))
@@ -1334,7 +1334,7 @@ Term s a -&gt; (HRecOf a fs s -&gt; Term s b) -&gt; Term s b
         @PLabeledType
         (&quot;_0&quot; ':= PExtended PPOSIXTime)
         ((':) @PLabeledType (&quot;_1&quot; ':= PBool) ('[] @PLabeledType))))
-</span><a href="#local-6989586621679520404"><span class="hs-identifier hs-var">ub</span></a></span><span>
+</span><a href="#local-6989586621679534374"><span class="hs-identifier hs-var">ub</span></a></span><span>
 </span><span id="line-216"></span><span>    </span><span class="annot"><span class="annottext">Term s PProposalTime
 -&gt; TermCont @PProposalTime s (Term s PProposalTime)
 forall (f :: Type -&gt; Type) a. Applicative f =&gt; a -&gt; f a
@@ -1368,7 +1368,7 @@ Term s a -&gt; (a s -&gt; Term s b) -&gt; Term s b
         @(Symbol, Type)
         '(&quot;_1&quot;, Term s (PAsData PBool))
         ('[] @(Symbol, Type))))
-</span><a href="#local-6989586621679520403"><span class="hs-identifier hs-var">lbf</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">_0</span><span>
+</span><a href="#local-6989586621679534373"><span class="hs-identifier hs-var">lbf</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">_0</span><span>
 </span><span id="line-222"></span><span>                </span><span class="hs-special">(</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
 </span><span id="line-223"></span><span>                    </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PFinite</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall (name :: Symbol) (p :: PType) (s :: S) (a :: PType)
        (as :: [PLabeledType]) (n :: Nat) (b :: PType).
@@ -1378,9 +1378,9 @@ Term s a -&gt; (a s -&gt; Term s b) -&gt; Term s b
  (a :: PType) ~ (PUnLabel (IndexList @PLabeledType n as) :: PType),
  PFromDataable a b) =&gt;
 Term s (p :--&gt; b)
-</span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pfield</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-string">&quot;_0&quot;</span></span><span> </span><span class="hs-operator">#</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span id="local-6989586621679520399"><span class="annot"><span class="annottext">Term s PPOSIXTime
-</span><a href="#local-6989586621679520399"><span class="hs-identifier hs-var">d</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Term s PPOSIXTime
-</span><a href="#local-6989586621679520399"><span class="hs-identifier hs-var">d</span></a></span><span>
+</span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pfield</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-string">&quot;_0&quot;</span></span><span> </span><span class="hs-operator">#</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span id="local-6989586621679534369"><span class="annot"><span class="annottext">Term s PPOSIXTime
+</span><a href="#local-6989586621679534369"><span class="hs-identifier hs-var">d</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Term s PPOSIXTime
+</span><a href="#local-6989586621679534369"><span class="hs-identifier hs-var">d</span></a></span><span>
 </span><span id="line-224"></span><span>                    </span><span class="annot"><span class="annottext">PExtended PPOSIXTime s
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Term s (PString @S) -&gt; Term s PPOSIXTime
 forall (s :: S) (a :: PType). Term s (PString @S) -&gt; Term s a
@@ -1404,7 +1404,7 @@ Term s a -&gt; (a s -&gt; Term s b) -&gt; Term s b
         @(Symbol, Type)
         '(&quot;_1&quot;, Term s (PAsData PBool))
         ('[] @(Symbol, Type))))
-</span><a href="#local-6989586621679520402"><span class="hs-identifier hs-var">ubf</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">_0</span><span>
+</span><a href="#local-6989586621679534372"><span class="hs-identifier hs-var">ubf</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">_0</span><span>
 </span><span id="line-229"></span><span>                </span><span class="hs-special">(</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
 </span><span id="line-230"></span><span>                    </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PFinite</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall (name :: Symbol) (p :: PType) (s :: S) (a :: PType)
        (as :: [PLabeledType]) (n :: Nat) (b :: PType).
@@ -1414,9 +1414,9 @@ Term s a -&gt; (a s -&gt; Term s b) -&gt; Term s b
  (a :: PType) ~ (PUnLabel (IndexList @PLabeledType n as) :: PType),
  PFromDataable a b) =&gt;
 Term s (p :--&gt; b)
-</span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pfield</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-string">&quot;_0&quot;</span></span><span> </span><span class="hs-operator">#</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span id="local-6989586621679520397"><span class="annot"><span class="annottext">Term s PPOSIXTime
-</span><a href="#local-6989586621679520397"><span class="hs-identifier hs-var">d</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Term s PPOSIXTime
-</span><a href="#local-6989586621679520397"><span class="hs-identifier hs-var">d</span></a></span><span>
+</span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pfield</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-string">&quot;_0&quot;</span></span><span> </span><span class="hs-operator">#</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span id="local-6989586621679534367"><span class="annot"><span class="annottext">Term s PPOSIXTime
+</span><a href="#local-6989586621679534367"><span class="hs-identifier hs-var">d</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Term s PPOSIXTime
+</span><a href="#local-6989586621679534367"><span class="hs-identifier hs-var">d</span></a></span><span>
 </span><span id="line-231"></span><span>                    </span><span class="annot"><span class="annottext">PExtended PPOSIXTime s
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Term s (PString @S) -&gt; Term s PPOSIXTime
 forall (s :: S) (a :: PType). Term s (PString @S) -&gt; Term s a
@@ -1426,9 +1426,9 @@ forall (s :: S) (a :: PType). Term s (PString @S) -&gt; Term s a
 </span><span id="line-233"></span><span>          </span><span class="hs-special">}</span><span>
 </span><span id="line-234"></span><span>
 </span><span id="line-235"></span><span class="hs-comment">-- | Check if 'PProposalTime' is within two 'PPOSIXTime'. Inclusive.</span><span>
-</span><span id="line-236"></span><span id="local-6989586621679521736"><span class="annot"><a href="Agora.Proposal.Time.html#proposalTimeWithin"><span class="hs-identifier hs-type">proposalTimeWithin</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-236"></span><span id="local-6989586621679535706"><span class="annot"><a href="Agora.Proposal.Time.html#proposalTimeWithin"><span class="hs-identifier hs-type">proposalTimeWithin</span></a></span><span> </span><span class="hs-glyph">::</span><span>
 </span><span id="line-237"></span><span>  </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span>
-</span><span id="line-238"></span><span>    </span><span class="annot"><a href="#local-6989586621679521736"><span class="hs-identifier hs-type">s</span></a></span><span>
+</span><span id="line-238"></span><span>    </span><span class="annot"><a href="#local-6989586621679535706"><span class="hs-identifier hs-type">s</span></a></span><span>
 </span><span id="line-239"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PPOSIXTime</span></a></span><span>
 </span><span id="line-240"></span><span>        </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-type">:--&gt;</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PPOSIXTime</span></a></span><span>
 </span><span id="line-241"></span><span>        </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-type">:--&gt;</span></a></span><span> </span><span class="annot"><a href="Agora.Proposal.Time.html#PProposalTime"><span class="hs-identifier hs-type">PProposalTime</span></a></span><span>
@@ -1473,23 +1473,23 @@ PLamN a b s =&gt;
 -&gt; Term
      s (PPOSIXTime :--&gt; (PPOSIXTime :--&gt; (PProposalTime :--&gt; PBool)))
 forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679520379"><span class="annot"><span class="annottext">Term s PPOSIXTime
-</span><a href="#local-6989586621679520379"><span class="hs-identifier hs-var">l</span></a></span></span><span> </span><span id="local-6989586621679520378"><span class="annot"><span class="annottext">Term s PPOSIXTime
-</span><a href="#local-6989586621679520378"><span class="hs-identifier hs-var">h</span></a></span></span><span> </span><span id="local-6989586621679520377"><span class="annot"><span class="annottext">Term s PProposalTime
-</span><a href="#local-6989586621679520377"><span class="hs-identifier hs-var">proposalTime'</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">TermCont @PBool s (Term s PBool) -&gt; Term s PBool
+</span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679534349"><span class="annot"><span class="annottext">Term s PPOSIXTime
+</span><a href="#local-6989586621679534349"><span class="hs-identifier hs-var">l</span></a></span></span><span> </span><span id="local-6989586621679534348"><span class="annot"><span class="annottext">Term s PPOSIXTime
+</span><a href="#local-6989586621679534348"><span class="hs-identifier hs-var">h</span></a></span></span><span> </span><span id="local-6989586621679534347"><span class="annot"><span class="annottext">Term s PProposalTime
+</span><a href="#local-6989586621679534347"><span class="hs-identifier hs-var">proposalTime'</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">TermCont @PBool s (Term s PBool) -&gt; Term s PBool
 forall (a :: PType) (s :: S). TermCont @a s (Term s a) -&gt; Term s a
 </span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">unTermCont</span></a></span><span> </span><span class="annot"><span class="annottext">(TermCont @PBool s (Term s PBool) -&gt; Term s PBool)
 -&gt; TermCont @PBool s (Term s PBool) -&gt; Term s PBool
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-246"></span><span>    </span><span class="annot"><a href="Agora.Proposal.Time.html#PProposalTime"><span class="hs-identifier hs-type">PProposalTime</span></a></span><span> </span><span id="local-6989586621679520376"><span class="annot"><span class="annottext">Term s PPOSIXTime
-</span><a href="#local-6989586621679520376"><span class="hs-identifier hs-var">ut</span></a></span></span><span> </span><span id="local-6989586621679520375"><span class="annot"><span class="annottext">Term s PPOSIXTime
-</span><a href="#local-6989586621679520375"><span class="hs-identifier hs-var">lt</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Term s PProposalTime -&gt; TermCont @PBool s (PProposalTime s)
+</span><span id="line-246"></span><span>    </span><span class="annot"><a href="Agora.Proposal.Time.html#PProposalTime"><span class="hs-identifier hs-type">PProposalTime</span></a></span><span> </span><span id="local-6989586621679534346"><span class="annot"><span class="annottext">Term s PPOSIXTime
+</span><a href="#local-6989586621679534346"><span class="hs-identifier hs-var">ut</span></a></span></span><span> </span><span id="local-6989586621679534345"><span class="annot"><span class="annottext">Term s PPOSIXTime
+</span><a href="#local-6989586621679534345"><span class="hs-identifier hs-var">lt</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Term s PProposalTime -&gt; TermCont @PBool s (PProposalTime s)
 forall {r :: PType} (a :: PType) (s :: S).
 PMatch a =&gt;
 Term s a -&gt; TermCont @r s (a s)
 </span><a href="../file:///nix/store/x2hnvsjw6yhhcdfyc1lfi4f51izw6pvw-plutarch-extra-lib-plutarch-extra-1.1.0-haddock-doc/share/doc/plutarch-extra/html/src"><span class="hs-identifier hs-var">pmatchC</span></a></span><span> </span><span class="annot"><span class="annottext">Term s PProposalTime
-</span><a href="#local-6989586621679520377"><span class="hs-identifier hs-var">proposalTime'</span></a></span><span>
+</span><a href="#local-6989586621679534347"><span class="hs-identifier hs-var">proposalTime'</span></a></span><span>
 </span><span id="line-247"></span><span>    </span><span class="annot"><span class="annottext">Term s PBool -&gt; TermCont @PBool s (Term s PBool)
 forall (f :: Type -&gt; Type) a. Applicative f =&gt; a -&gt; f a
 </span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src"><span class="hs-identifier hs-var">pure</span></a></span><span> </span><span class="annot"><span class="annottext">(Term s PBool -&gt; TermCont @PBool s (Term s PBool))
@@ -1506,26 +1506,26 @@ Foldable t =&gt;
 forall (s :: S). Term s PBool -&gt; Term s PBool -&gt; Term s PBool
 </span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-var">(#&amp;&amp;)</span></a></span><span>
 </span><span id="line-250"></span><span>        </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">Term s PPOSIXTime
-</span><a href="#local-6989586621679520379"><span class="hs-identifier hs-var">l</span></a></span><span> </span><span class="annot"><span class="annottext">Term s PPOSIXTime -&gt; Term s PPOSIXTime -&gt; Term s PBool
+</span><a href="#local-6989586621679534349"><span class="hs-identifier hs-var">l</span></a></span><span> </span><span class="annot"><span class="annottext">Term s PPOSIXTime -&gt; Term s PPOSIXTime -&gt; Term s PBool
 forall (t :: PType) (s :: S).
 POrd t =&gt;
 Term s t -&gt; Term s t -&gt; Term s PBool
 </span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-var">#&lt;=</span></a></span><span> </span><span class="annot"><span class="annottext">Term s PPOSIXTime
-</span><a href="#local-6989586621679520375"><span class="hs-identifier hs-var">lt</span></a></span><span>
+</span><a href="#local-6989586621679534345"><span class="hs-identifier hs-var">lt</span></a></span><span>
 </span><span id="line-251"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Term s PPOSIXTime
-</span><a href="#local-6989586621679520376"><span class="hs-identifier hs-var">ut</span></a></span><span> </span><span class="annot"><span class="annottext">Term s PPOSIXTime -&gt; Term s PPOSIXTime -&gt; Term s PBool
+</span><a href="#local-6989586621679534346"><span class="hs-identifier hs-var">ut</span></a></span><span> </span><span class="annot"><span class="annottext">Term s PPOSIXTime -&gt; Term s PPOSIXTime -&gt; Term s PBool
 forall (t :: PType) (s :: S).
 POrd t =&gt;
 Term s t -&gt; Term s t -&gt; Term s PBool
 </span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-var">#&lt;=</span></a></span><span> </span><span class="annot"><span class="annottext">Term s PPOSIXTime
-</span><a href="#local-6989586621679520378"><span class="hs-identifier hs-var">h</span></a></span><span>
+</span><a href="#local-6989586621679534348"><span class="hs-identifier hs-var">h</span></a></span><span>
 </span><span id="line-252"></span><span>        </span><span class="hs-special">]</span><span>
 </span><span id="line-253"></span><span>
 </span><span id="line-254"></span><span class="hs-comment">-- | True if the 'PProposalTime' is in the draft period.</span><span>
 </span><span id="line-255"></span><span class="annot"><a href="Agora.Proposal.Time.html#isDraftPeriod"><span class="hs-identifier hs-type">isDraftPeriod</span></a></span><span> </span><span class="hs-glyph">::</span><span>
-</span><span id="line-256"></span><span>  </span><span class="hs-keyword">forall</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679521730"><span class="annot"><a href="#local-6989586621679521730"><span class="hs-identifier hs-type">s</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">S</span></a></span><span class="hs-special">)</span><span class="hs-operator">.</span><span>
+</span><span id="line-256"></span><span>  </span><span class="hs-keyword">forall</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679535700"><span class="annot"><a href="#local-6989586621679535700"><span class="hs-identifier hs-type">s</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">S</span></a></span><span class="hs-special">)</span><span class="hs-operator">.</span><span>
 </span><span id="line-257"></span><span>  </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span>
-</span><span id="line-258"></span><span>    </span><span class="annot"><a href="#local-6989586621679521730"><span class="hs-identifier hs-type">s</span></a></span><span>
+</span><span id="line-258"></span><span>    </span><span class="annot"><a href="#local-6989586621679535700"><span class="hs-identifier hs-type">s</span></a></span><span>
 </span><span id="line-259"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Agora.Proposal.Time.html#PProposalTimingConfig"><span class="hs-identifier hs-type">PProposalTimingConfig</span></a></span><span>
 </span><span id="line-260"></span><span>        </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-type">:--&gt;</span></a></span><span> </span><span class="annot"><a href="Agora.Proposal.Time.html#PProposalStartingTime"><span class="hs-identifier hs-type">PProposalStartingTime</span></a></span><span>
 </span><span id="line-261"></span><span>        </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-type">:--&gt;</span></a></span><span> </span><span class="annot"><a href="Agora.Proposal.Time.html#PProposalTime"><span class="hs-identifier hs-type">PProposalTime</span></a></span><span>
@@ -1593,22 +1593,22 @@ PLamN a b s =&gt;
      (PProposalTimingConfig
       :--&gt; (PProposalStartingTime :--&gt; (PProposalTime :--&gt; PBool)))
 forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679520352"><span class="annot"><span class="annottext">Term s PProposalTimingConfig
-</span><a href="#local-6989586621679520352"><span class="hs-identifier hs-var">config</span></a></span></span><span> </span><span id="local-6989586621679520351"><span class="annot"><span class="annottext">Term s PProposalStartingTime
-</span><a href="#local-6989586621679520351"><span class="hs-identifier hs-var">s'</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Term s PProposalStartingTime
+</span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679534322"><span class="annot"><span class="annottext">Term s PProposalTimingConfig
+</span><a href="#local-6989586621679534322"><span class="hs-identifier hs-var">config</span></a></span></span><span> </span><span id="local-6989586621679534321"><span class="annot"><span class="annottext">Term s PProposalStartingTime
+</span><a href="#local-6989586621679534321"><span class="hs-identifier hs-var">s'</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Term s PProposalStartingTime
 -&gt; (PProposalStartingTime s -&gt; Term s (PProposalTime :--&gt; PBool))
 -&gt; Term s (PProposalTime :--&gt; PBool)
 forall (a :: PType) (s :: S) (b :: PType).
 PMatch a =&gt;
 Term s a -&gt; (a s -&gt; Term s b) -&gt; Term s b
 </span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pmatch</span></a></span><span> </span><span class="annot"><span class="annottext">Term s PProposalStartingTime
-</span><a href="#local-6989586621679520351"><span class="hs-identifier hs-var">s'</span></a></span><span> </span><span class="annot"><span class="annottext">((PProposalStartingTime s -&gt; Term s (PProposalTime :--&gt; PBool))
+</span><a href="#local-6989586621679534321"><span class="hs-identifier hs-var">s'</span></a></span><span> </span><span class="annot"><span class="annottext">((PProposalStartingTime s -&gt; Term s (PProposalTime :--&gt; PBool))
  -&gt; Term s (PProposalTime :--&gt; PBool))
 -&gt; (PProposalStartingTime s -&gt; Term s (PProposalTime :--&gt; PBool))
 -&gt; Term s (PProposalTime :--&gt; PBool)
 forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span class="hs-special">(</span><span class="annot"><a href="Agora.Proposal.Time.html#PProposalStartingTime"><span class="hs-identifier hs-type">PProposalStartingTime</span></a></span><span> </span><span id="local-6989586621679520350"><span class="annot"><span class="annottext">Term s PPOSIXTime
-</span><a href="#local-6989586621679520350"><span class="hs-identifier hs-var">s</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span class="hs-special">(</span><span class="annot"><a href="Agora.Proposal.Time.html#PProposalStartingTime"><span class="hs-identifier hs-type">PProposalStartingTime</span></a></span><span> </span><span id="local-6989586621679534320"><span class="annot"><span class="annottext">Term s PPOSIXTime
+</span><a href="#local-6989586621679534320"><span class="hs-identifier hs-var">s</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
 </span><span id="line-266"></span><span>    </span><span class="annot"><span class="annottext">Term
   s (PPOSIXTime :--&gt; (PPOSIXTime :--&gt; (PProposalTime :--&gt; PBool)))
 forall (s :: S).
@@ -1621,12 +1621,12 @@ Term
 forall (s :: S) (a :: PType) (b :: PType).
 Term s (a :--&gt; b) -&gt; Term s a -&gt; Term s b
 </span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-var">#</span></a></span><span> </span><span class="annot"><span class="annottext">Term s PPOSIXTime
-</span><a href="#local-6989586621679520350"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="annot"><span class="annottext">Term s (PPOSIXTime :--&gt; (PProposalTime :--&gt; PBool))
+</span><a href="#local-6989586621679534320"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="annot"><span class="annottext">Term s (PPOSIXTime :--&gt; (PProposalTime :--&gt; PBool))
 -&gt; Term s PPOSIXTime -&gt; Term s (PProposalTime :--&gt; PBool)
 forall (s :: S) (a :: PType) (b :: PType).
 Term s (a :--&gt; b) -&gt; Term s a -&gt; Term s b
 </span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-var">#</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Term s PPOSIXTime
-</span><a href="#local-6989586621679520350"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="annot"><span class="annottext">Term s PPOSIXTime -&gt; Term s PPOSIXTime -&gt; Term s PPOSIXTime
+</span><a href="#local-6989586621679534320"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="annot"><span class="annottext">Term s PPOSIXTime -&gt; Term s PPOSIXTime -&gt; Term s PPOSIXTime
 forall a. AdditiveSemigroup a =&gt; a -&gt; a -&gt; a
 </span><a href="../file:///nix/store/qll2jbd1sxmfr4ax0k9qbnpzlx64mp0f-plutarch-numeric-lib-plutarch-numeric-1.0.0-haddock-doc/share/doc/plutarch-numeric/html/src"><span class="hs-operator hs-var">+</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall (name :: Symbol) (p :: PType) (s :: S) (a :: PType)
        (as :: [PLabeledType]) (n :: Nat) (b :: PType).
@@ -1641,13 +1641,13 @@ Term s (p :--&gt; b)
 forall (s :: S) (a :: PType) (b :: PType).
 Term s (a :--&gt; b) -&gt; Term s a -&gt; Term s b
 </span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-var">#</span></a></span><span> </span><span class="annot"><span class="annottext">Term s PProposalTimingConfig
-</span><a href="#local-6989586621679520352"><span class="hs-identifier hs-var">config</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679534322"><span class="hs-identifier hs-var">config</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
 </span><span id="line-267"></span><span>
 </span><span id="line-268"></span><span class="hs-comment">-- | True if the 'PProposalTime' is in the voting period.</span><span>
 </span><span id="line-269"></span><span class="annot"><a href="Agora.Proposal.Time.html#isVotingPeriod"><span class="hs-identifier hs-type">isVotingPeriod</span></a></span><span> </span><span class="hs-glyph">::</span><span>
-</span><span id="line-270"></span><span>  </span><span class="hs-keyword">forall</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679520349"><span class="annot"><a href="#local-6989586621679520349"><span class="hs-identifier hs-type">s</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">S</span></a></span><span class="hs-special">)</span><span class="hs-operator">.</span><span>
+</span><span id="line-270"></span><span>  </span><span class="hs-keyword">forall</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679534319"><span class="annot"><a href="#local-6989586621679534319"><span class="hs-identifier hs-type">s</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">S</span></a></span><span class="hs-special">)</span><span class="hs-operator">.</span><span>
 </span><span id="line-271"></span><span>  </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span>
-</span><span id="line-272"></span><span>    </span><span class="annot"><a href="#local-6989586621679520349"><span class="hs-identifier hs-type">s</span></a></span><span>
+</span><span id="line-272"></span><span>    </span><span class="annot"><a href="#local-6989586621679534319"><span class="hs-identifier hs-type">s</span></a></span><span>
 </span><span id="line-273"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Agora.Proposal.Time.html#PProposalTimingConfig"><span class="hs-identifier hs-type">PProposalTimingConfig</span></a></span><span>
 </span><span id="line-274"></span><span>        </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-type">:--&gt;</span></a></span><span> </span><span class="annot"><a href="Agora.Proposal.Time.html#PProposalStartingTime"><span class="hs-identifier hs-type">PProposalStartingTime</span></a></span><span>
 </span><span id="line-275"></span><span>        </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-type">:--&gt;</span></a></span><span> </span><span class="annot"><a href="Agora.Proposal.Time.html#PProposalTime"><span class="hs-identifier hs-type">PProposalTime</span></a></span><span>
@@ -1715,22 +1715,22 @@ PLamN a b s =&gt;
      (PProposalTimingConfig
       :--&gt; (PProposalStartingTime :--&gt; (PProposalTime :--&gt; PBool)))
 forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679520314"><span class="annot"><span class="annottext">Term s PProposalTimingConfig
-</span><a href="#local-6989586621679520314"><span class="hs-identifier hs-var">config</span></a></span></span><span> </span><span id="local-6989586621679520313"><span class="annot"><span class="annottext">Term s PProposalStartingTime
-</span><a href="#local-6989586621679520313"><span class="hs-identifier hs-var">s'</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Term s PProposalStartingTime
+</span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679534284"><span class="annot"><span class="annottext">Term s PProposalTimingConfig
+</span><a href="#local-6989586621679534284"><span class="hs-identifier hs-var">config</span></a></span></span><span> </span><span id="local-6989586621679534283"><span class="annot"><span class="annottext">Term s PProposalStartingTime
+</span><a href="#local-6989586621679534283"><span class="hs-identifier hs-var">s'</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Term s PProposalStartingTime
 -&gt; (PProposalStartingTime s -&gt; Term s (PProposalTime :--&gt; PBool))
 -&gt; Term s (PProposalTime :--&gt; PBool)
 forall (a :: PType) (s :: S) (b :: PType).
 PMatch a =&gt;
 Term s a -&gt; (a s -&gt; Term s b) -&gt; Term s b
 </span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pmatch</span></a></span><span> </span><span class="annot"><span class="annottext">Term s PProposalStartingTime
-</span><a href="#local-6989586621679520313"><span class="hs-identifier hs-var">s'</span></a></span><span> </span><span class="annot"><span class="annottext">((PProposalStartingTime s -&gt; Term s (PProposalTime :--&gt; PBool))
+</span><a href="#local-6989586621679534283"><span class="hs-identifier hs-var">s'</span></a></span><span> </span><span class="annot"><span class="annottext">((PProposalStartingTime s -&gt; Term s (PProposalTime :--&gt; PBool))
  -&gt; Term s (PProposalTime :--&gt; PBool))
 -&gt; (PProposalStartingTime s -&gt; Term s (PProposalTime :--&gt; PBool))
 -&gt; Term s (PProposalTime :--&gt; PBool)
 forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span class="hs-special">(</span><span class="annot"><a href="Agora.Proposal.Time.html#PProposalStartingTime"><span class="hs-identifier hs-type">PProposalStartingTime</span></a></span><span> </span><span id="local-6989586621679520312"><span class="annot"><span class="annottext">Term s PPOSIXTime
-</span><a href="#local-6989586621679520312"><span class="hs-identifier hs-var">s</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span class="hs-special">(</span><span class="annot"><a href="Agora.Proposal.Time.html#PProposalStartingTime"><span class="hs-identifier hs-type">PProposalStartingTime</span></a></span><span> </span><span id="local-6989586621679534282"><span class="annot"><span class="annottext">Term s PPOSIXTime
+</span><a href="#local-6989586621679534282"><span class="hs-identifier hs-var">s</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
 </span><span id="line-280"></span><span>    </span><span class="annot"><span class="annottext">forall (fs :: [Symbol]) (a :: PType) (s :: S) (b :: PType)
        (ps :: [PLabeledType]) (bs :: [ToBind]).
 (PDataFields a,
@@ -1739,7 +1739,7 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
  BindFields ps bs) =&gt;
 Term s a -&gt; (HRecOf a fs s -&gt; Term s b) -&gt; Term s b
 </span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pletFields</span></a></span><span> </span><span class="hs-glyph">@</span><span class="hs-special">'</span><span class="hs-special">[</span><span class="annot"><span class="hs-string">&quot;draftTime&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-string">&quot;votingTime&quot;</span></span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">Term s PProposalTimingConfig
-</span><a href="#local-6989586621679520314"><span class="hs-identifier hs-var">config</span></a></span><span> </span><span class="annot"><span class="annottext">((HRecOf
+</span><a href="#local-6989586621679534284"><span class="hs-identifier hs-var">config</span></a></span><span> </span><span class="annot"><span class="annottext">((HRecOf
     PProposalTimingConfig
     ((':)
        @Symbol &quot;draftTime&quot; ((':) @Symbol &quot;votingTime&quot; ('[] @Symbol)))
@@ -1754,12 +1754,12 @@ Term s a -&gt; (HRecOf a fs s -&gt; Term s b) -&gt; Term s b
     -&gt; Term s (PProposalTime :--&gt; PBool))
 -&gt; Term s (PProposalTime :--&gt; PBool)
 forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679520311"><span class="annot"><span class="annottext">HRecOf
+</span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679534281"><span class="annot"><span class="annottext">HRecOf
   PProposalTimingConfig
   ((':)
      @Symbol &quot;draftTime&quot; ((':) @Symbol &quot;votingTime&quot; ('[] @Symbol)))
   s
-</span><a href="#local-6989586621679520311"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><a href="#local-6989586621679534281"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
 </span><span id="line-281"></span><span>      </span><span class="annot"><span class="annottext">Term
   s (PPOSIXTime :--&gt; (PPOSIXTime :--&gt; (PProposalTime :--&gt; PBool)))
 forall (s :: S).
@@ -1772,12 +1772,12 @@ Term
 forall (s :: S) (a :: PType) (b :: PType).
 Term s (a :--&gt; b) -&gt; Term s a -&gt; Term s b
 </span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-var">#</span></a></span><span> </span><span class="annot"><span class="annottext">Term s PPOSIXTime
-</span><a href="#local-6989586621679520312"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="annot"><span class="annottext">Term s (PPOSIXTime :--&gt; (PProposalTime :--&gt; PBool))
+</span><a href="#local-6989586621679534282"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="annot"><span class="annottext">Term s (PPOSIXTime :--&gt; (PProposalTime :--&gt; PBool))
 -&gt; Term s PPOSIXTime -&gt; Term s (PProposalTime :--&gt; PBool)
 forall (s :: S) (a :: PType) (b :: PType).
 Term s (a :--&gt; b) -&gt; Term s a -&gt; Term s b
 </span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-var">#</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Term s PPOSIXTime
-</span><a href="#local-6989586621679520312"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="annot"><span class="annottext">Term s PPOSIXTime -&gt; Term s PPOSIXTime -&gt; Term s PPOSIXTime
+</span><a href="#local-6989586621679534282"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="annot"><span class="annottext">Term s PPOSIXTime -&gt; Term s PPOSIXTime -&gt; Term s PPOSIXTime
 forall a. AdditiveSemigroup a =&gt; a -&gt; a -&gt; a
 </span><a href="../file:///nix/store/qll2jbd1sxmfr4ax0k9qbnpzlx64mp0f-plutarch-numeric-lib-plutarch-numeric-1.0.0-haddock-doc/share/doc/plutarch-numeric/html/src"><span class="hs-operator hs-var">+</span></a></span><span> </span><span class="annot"><span class="annottext">HRec
   ((':)
@@ -1792,7 +1792,7 @@ HRecOf
   ((':)
      @Symbol &quot;draftTime&quot; ((':) @Symbol &quot;votingTime&quot; ('[] @Symbol)))
   s
-</span><a href="#local-6989586621679520311"><span class="hs-identifier hs-var">f</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">draftTime</span><span> </span><span class="annot"><span class="annottext">Term s PPOSIXTime -&gt; Term s PPOSIXTime -&gt; Term s PPOSIXTime
+</span><a href="#local-6989586621679534281"><span class="hs-identifier hs-var">f</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">draftTime</span><span> </span><span class="annot"><span class="annottext">Term s PPOSIXTime -&gt; Term s PPOSIXTime -&gt; Term s PPOSIXTime
 forall a. AdditiveSemigroup a =&gt; a -&gt; a -&gt; a
 </span><a href="../file:///nix/store/qll2jbd1sxmfr4ax0k9qbnpzlx64mp0f-plutarch-numeric-lib-plutarch-numeric-1.0.0-haddock-doc/share/doc/plutarch-numeric/html/src"><span class="hs-operator hs-var">+</span></a></span><span> </span><span class="annot"><span class="annottext">HRec
   ((':)
@@ -1807,13 +1807,13 @@ HRecOf
   ((':)
      @Symbol &quot;draftTime&quot; ((':) @Symbol &quot;votingTime&quot; ('[] @Symbol)))
   s
-</span><a href="#local-6989586621679520311"><span class="hs-identifier hs-var">f</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">votingTime</span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679534281"><span class="hs-identifier hs-var">f</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">votingTime</span><span class="hs-special">)</span><span>
 </span><span id="line-282"></span><span>
 </span><span id="line-283"></span><span class="hs-comment">-- | True if the 'PProposalTime' is in the locking period.</span><span>
 </span><span id="line-284"></span><span class="annot"><a href="Agora.Proposal.Time.html#isLockingPeriod"><span class="hs-identifier hs-type">isLockingPeriod</span></a></span><span> </span><span class="hs-glyph">::</span><span>
-</span><span id="line-285"></span><span>  </span><span class="hs-keyword">forall</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679520310"><span class="annot"><a href="#local-6989586621679520310"><span class="hs-identifier hs-type">s</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">S</span></a></span><span class="hs-special">)</span><span class="hs-operator">.</span><span>
+</span><span id="line-285"></span><span>  </span><span class="hs-keyword">forall</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679534280"><span class="annot"><a href="#local-6989586621679534280"><span class="hs-identifier hs-type">s</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">S</span></a></span><span class="hs-special">)</span><span class="hs-operator">.</span><span>
 </span><span id="line-286"></span><span>  </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span>
-</span><span id="line-287"></span><span>    </span><span class="annot"><a href="#local-6989586621679520310"><span class="hs-identifier hs-type">s</span></a></span><span>
+</span><span id="line-287"></span><span>    </span><span class="annot"><a href="#local-6989586621679534280"><span class="hs-identifier hs-type">s</span></a></span><span>
 </span><span id="line-288"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Agora.Proposal.Time.html#PProposalTimingConfig"><span class="hs-identifier hs-type">PProposalTimingConfig</span></a></span><span>
 </span><span id="line-289"></span><span>        </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-type">:--&gt;</span></a></span><span> </span><span class="annot"><a href="Agora.Proposal.Time.html#PProposalStartingTime"><span class="hs-identifier hs-type">PProposalStartingTime</span></a></span><span>
 </span><span id="line-290"></span><span>        </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-type">:--&gt;</span></a></span><span> </span><span class="annot"><a href="Agora.Proposal.Time.html#PProposalTime"><span class="hs-identifier hs-type">PProposalTime</span></a></span><span>
@@ -1881,22 +1881,22 @@ PLamN a b s =&gt;
      (PProposalTimingConfig
       :--&gt; (PProposalStartingTime :--&gt; (PProposalTime :--&gt; PBool)))
 forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679520261"><span class="annot"><span class="annottext">Term s PProposalTimingConfig
-</span><a href="#local-6989586621679520261"><span class="hs-identifier hs-var">config</span></a></span></span><span> </span><span id="local-6989586621679520260"><span class="annot"><span class="annottext">Term s PProposalStartingTime
-</span><a href="#local-6989586621679520260"><span class="hs-identifier hs-var">s'</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Term s PProposalStartingTime
+</span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679534231"><span class="annot"><span class="annottext">Term s PProposalTimingConfig
+</span><a href="#local-6989586621679534231"><span class="hs-identifier hs-var">config</span></a></span></span><span> </span><span id="local-6989586621679534230"><span class="annot"><span class="annottext">Term s PProposalStartingTime
+</span><a href="#local-6989586621679534230"><span class="hs-identifier hs-var">s'</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Term s PProposalStartingTime
 -&gt; (PProposalStartingTime s -&gt; Term s (PProposalTime :--&gt; PBool))
 -&gt; Term s (PProposalTime :--&gt; PBool)
 forall (a :: PType) (s :: S) (b :: PType).
 PMatch a =&gt;
 Term s a -&gt; (a s -&gt; Term s b) -&gt; Term s b
 </span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pmatch</span></a></span><span> </span><span class="annot"><span class="annottext">Term s PProposalStartingTime
-</span><a href="#local-6989586621679520260"><span class="hs-identifier hs-var">s'</span></a></span><span> </span><span class="annot"><span class="annottext">((PProposalStartingTime s -&gt; Term s (PProposalTime :--&gt; PBool))
+</span><a href="#local-6989586621679534230"><span class="hs-identifier hs-var">s'</span></a></span><span> </span><span class="annot"><span class="annottext">((PProposalStartingTime s -&gt; Term s (PProposalTime :--&gt; PBool))
  -&gt; Term s (PProposalTime :--&gt; PBool))
 -&gt; (PProposalStartingTime s -&gt; Term s (PProposalTime :--&gt; PBool))
 -&gt; Term s (PProposalTime :--&gt; PBool)
 forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span class="hs-special">(</span><span class="annot"><a href="Agora.Proposal.Time.html#PProposalStartingTime"><span class="hs-identifier hs-type">PProposalStartingTime</span></a></span><span> </span><span id="local-6989586621679520259"><span class="annot"><span class="annottext">Term s PPOSIXTime
-</span><a href="#local-6989586621679520259"><span class="hs-identifier hs-var">s</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span class="hs-special">(</span><span class="annot"><a href="Agora.Proposal.Time.html#PProposalStartingTime"><span class="hs-identifier hs-type">PProposalStartingTime</span></a></span><span> </span><span id="local-6989586621679534229"><span class="annot"><span class="annottext">Term s PPOSIXTime
+</span><a href="#local-6989586621679534229"><span class="hs-identifier hs-var">s</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
 </span><span id="line-295"></span><span>    </span><span class="annot"><span class="annottext">forall (fs :: [Symbol]) (a :: PType) (s :: S) (b :: PType)
        (ps :: [PLabeledType]) (bs :: [ToBind]).
 (PDataFields a,
@@ -1905,7 +1905,7 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
  BindFields ps bs) =&gt;
 Term s a -&gt; (HRecOf a fs s -&gt; Term s b) -&gt; Term s b
 </span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pletFields</span></a></span><span> </span><span class="hs-glyph">@</span><span class="hs-special">'</span><span class="hs-special">[</span><span class="annot"><span class="hs-string">&quot;draftTime&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-string">&quot;votingTime&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-string">&quot;lockingTime&quot;</span></span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">Term s PProposalTimingConfig
-</span><a href="#local-6989586621679520261"><span class="hs-identifier hs-var">config</span></a></span><span> </span><span class="annot"><span class="annottext">((HRecOf
+</span><a href="#local-6989586621679534231"><span class="hs-identifier hs-var">config</span></a></span><span> </span><span class="annot"><span class="annottext">((HRecOf
     PProposalTimingConfig
     ((':)
        @Symbol
@@ -1926,7 +1926,7 @@ Term s a -&gt; (HRecOf a fs s -&gt; Term s b) -&gt; Term s b
     -&gt; Term s (PProposalTime :--&gt; PBool))
 -&gt; Term s (PProposalTime :--&gt; PBool)
 forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679520258"><span class="annot"><span class="annottext">HRecOf
+</span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679534228"><span class="annot"><span class="annottext">HRecOf
   PProposalTimingConfig
   ((':)
      @Symbol
@@ -1934,7 +1934,7 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
      ((':)
         @Symbol &quot;votingTime&quot; ((':) @Symbol &quot;lockingTime&quot; ('[] @Symbol))))
   s
-</span><a href="#local-6989586621679520258"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><a href="#local-6989586621679534228"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
 </span><span id="line-296"></span><span>      </span><span class="annot"><span class="annottext">Term
   s (PPOSIXTime :--&gt; (PPOSIXTime :--&gt; (PProposalTime :--&gt; PBool)))
 forall (s :: S).
@@ -1947,12 +1947,12 @@ Term
 forall (s :: S) (a :: PType) (b :: PType).
 Term s (a :--&gt; b) -&gt; Term s a -&gt; Term s b
 </span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-var">#</span></a></span><span> </span><span class="annot"><span class="annottext">Term s PPOSIXTime
-</span><a href="#local-6989586621679520259"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="annot"><span class="annottext">Term s (PPOSIXTime :--&gt; (PProposalTime :--&gt; PBool))
+</span><a href="#local-6989586621679534229"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="annot"><span class="annottext">Term s (PPOSIXTime :--&gt; (PProposalTime :--&gt; PBool))
 -&gt; Term s PPOSIXTime -&gt; Term s (PProposalTime :--&gt; PBool)
 forall (s :: S) (a :: PType) (b :: PType).
 Term s (a :--&gt; b) -&gt; Term s a -&gt; Term s b
 </span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-var">#</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Term s PPOSIXTime
-</span><a href="#local-6989586621679520259"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="annot"><span class="annottext">Term s PPOSIXTime -&gt; Term s PPOSIXTime -&gt; Term s PPOSIXTime
+</span><a href="#local-6989586621679534229"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="annot"><span class="annottext">Term s PPOSIXTime -&gt; Term s PPOSIXTime -&gt; Term s PPOSIXTime
 forall a. AdditiveSemigroup a =&gt; a -&gt; a -&gt; a
 </span><a href="../file:///nix/store/qll2jbd1sxmfr4ax0k9qbnpzlx64mp0f-plutarch-numeric-lib-plutarch-numeric-1.0.0-haddock-doc/share/doc/plutarch-numeric/html/src"><span class="hs-operator hs-var">+</span></a></span><span> </span><span class="annot"><span class="annottext">HRec
   ((':)
@@ -1973,7 +1973,7 @@ HRecOf
      ((':)
         @Symbol &quot;votingTime&quot; ((':) @Symbol &quot;lockingTime&quot; ('[] @Symbol))))
   s
-</span><a href="#local-6989586621679520258"><span class="hs-identifier hs-var">f</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">draftTime</span><span> </span><span class="annot"><span class="annottext">Term s PPOSIXTime -&gt; Term s PPOSIXTime -&gt; Term s PPOSIXTime
+</span><a href="#local-6989586621679534228"><span class="hs-identifier hs-var">f</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">draftTime</span><span> </span><span class="annot"><span class="annottext">Term s PPOSIXTime -&gt; Term s PPOSIXTime -&gt; Term s PPOSIXTime
 forall a. AdditiveSemigroup a =&gt; a -&gt; a -&gt; a
 </span><a href="../file:///nix/store/qll2jbd1sxmfr4ax0k9qbnpzlx64mp0f-plutarch-numeric-lib-plutarch-numeric-1.0.0-haddock-doc/share/doc/plutarch-numeric/html/src"><span class="hs-operator hs-var">+</span></a></span><span> </span><span class="annot"><span class="annottext">HRec
   ((':)
@@ -1994,7 +1994,7 @@ HRecOf
      ((':)
         @Symbol &quot;votingTime&quot; ((':) @Symbol &quot;lockingTime&quot; ('[] @Symbol))))
   s
-</span><a href="#local-6989586621679520258"><span class="hs-identifier hs-var">f</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">votingTime</span><span> </span><span class="annot"><span class="annottext">Term s PPOSIXTime -&gt; Term s PPOSIXTime -&gt; Term s PPOSIXTime
+</span><a href="#local-6989586621679534228"><span class="hs-identifier hs-var">f</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">votingTime</span><span> </span><span class="annot"><span class="annottext">Term s PPOSIXTime -&gt; Term s PPOSIXTime -&gt; Term s PPOSIXTime
 forall a. AdditiveSemigroup a =&gt; a -&gt; a -&gt; a
 </span><a href="../file:///nix/store/qll2jbd1sxmfr4ax0k9qbnpzlx64mp0f-plutarch-numeric-lib-plutarch-numeric-1.0.0-haddock-doc/share/doc/plutarch-numeric/html/src"><span class="hs-operator hs-var">+</span></a></span><span> </span><span class="annot"><span class="annottext">HRec
   ((':)
@@ -2015,13 +2015,13 @@ HRecOf
      ((':)
         @Symbol &quot;votingTime&quot; ((':) @Symbol &quot;lockingTime&quot; ('[] @Symbol))))
   s
-</span><a href="#local-6989586621679520258"><span class="hs-identifier hs-var">f</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">lockingTime</span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679534228"><span class="hs-identifier hs-var">f</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">lockingTime</span><span class="hs-special">)</span><span>
 </span><span id="line-297"></span><span>
 </span><span id="line-298"></span><span class="hs-comment">-- | True if the 'PProposalTime' is in the execution period.</span><span>
 </span><span id="line-299"></span><span class="annot"><a href="Agora.Proposal.Time.html#isExecutionPeriod"><span class="hs-identifier hs-type">isExecutionPeriod</span></a></span><span> </span><span class="hs-glyph">::</span><span>
-</span><span id="line-300"></span><span>  </span><span class="hs-keyword">forall</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679520257"><span class="annot"><a href="#local-6989586621679520257"><span class="hs-identifier hs-type">s</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">S</span></a></span><span class="hs-special">)</span><span class="hs-operator">.</span><span>
+</span><span id="line-300"></span><span>  </span><span class="hs-keyword">forall</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679534227"><span class="annot"><a href="#local-6989586621679534227"><span class="hs-identifier hs-type">s</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">S</span></a></span><span class="hs-special">)</span><span class="hs-operator">.</span><span>
 </span><span id="line-301"></span><span>  </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span>
-</span><span id="line-302"></span><span>    </span><span class="annot"><a href="#local-6989586621679520257"><span class="hs-identifier hs-type">s</span></a></span><span>
+</span><span id="line-302"></span><span>    </span><span class="annot"><a href="#local-6989586621679534227"><span class="hs-identifier hs-type">s</span></a></span><span>
 </span><span id="line-303"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Agora.Proposal.Time.html#PProposalTimingConfig"><span class="hs-identifier hs-type">PProposalTimingConfig</span></a></span><span>
 </span><span id="line-304"></span><span>        </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-type">:--&gt;</span></a></span><span> </span><span class="annot"><a href="Agora.Proposal.Time.html#PProposalStartingTime"><span class="hs-identifier hs-type">PProposalStartingTime</span></a></span><span>
 </span><span id="line-305"></span><span>        </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-type">:--&gt;</span></a></span><span> </span><span class="annot"><a href="Agora.Proposal.Time.html#PProposalTime"><span class="hs-identifier hs-type">PProposalTime</span></a></span><span>
@@ -2089,22 +2089,22 @@ PLamN a b s =&gt;
      (PProposalTimingConfig
       :--&gt; (PProposalStartingTime :--&gt; (PProposalTime :--&gt; PBool)))
 forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679520191"><span class="annot"><span class="annottext">Term s PProposalTimingConfig
-</span><a href="#local-6989586621679520191"><span class="hs-identifier hs-var">config</span></a></span></span><span> </span><span id="local-6989586621679520190"><span class="annot"><span class="annottext">Term s PProposalStartingTime
-</span><a href="#local-6989586621679520190"><span class="hs-identifier hs-var">s'</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Term s PProposalStartingTime
+</span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679534161"><span class="annot"><span class="annottext">Term s PProposalTimingConfig
+</span><a href="#local-6989586621679534161"><span class="hs-identifier hs-var">config</span></a></span></span><span> </span><span id="local-6989586621679534160"><span class="annot"><span class="annottext">Term s PProposalStartingTime
+</span><a href="#local-6989586621679534160"><span class="hs-identifier hs-var">s'</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Term s PProposalStartingTime
 -&gt; (PProposalStartingTime s -&gt; Term s (PProposalTime :--&gt; PBool))
 -&gt; Term s (PProposalTime :--&gt; PBool)
 forall (a :: PType) (s :: S) (b :: PType).
 PMatch a =&gt;
 Term s a -&gt; (a s -&gt; Term s b) -&gt; Term s b
 </span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pmatch</span></a></span><span> </span><span class="annot"><span class="annottext">Term s PProposalStartingTime
-</span><a href="#local-6989586621679520190"><span class="hs-identifier hs-var">s'</span></a></span><span> </span><span class="annot"><span class="annottext">((PProposalStartingTime s -&gt; Term s (PProposalTime :--&gt; PBool))
+</span><a href="#local-6989586621679534160"><span class="hs-identifier hs-var">s'</span></a></span><span> </span><span class="annot"><span class="annottext">((PProposalStartingTime s -&gt; Term s (PProposalTime :--&gt; PBool))
  -&gt; Term s (PProposalTime :--&gt; PBool))
 -&gt; (PProposalStartingTime s -&gt; Term s (PProposalTime :--&gt; PBool))
 -&gt; Term s (PProposalTime :--&gt; PBool)
 forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span class="hs-special">(</span><span class="annot"><a href="Agora.Proposal.Time.html#PProposalStartingTime"><span class="hs-identifier hs-type">PProposalStartingTime</span></a></span><span> </span><span id="local-6989586621679520189"><span class="annot"><span class="annottext">Term s PPOSIXTime
-</span><a href="#local-6989586621679520189"><span class="hs-identifier hs-var">s</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span class="hs-special">(</span><span class="annot"><a href="Agora.Proposal.Time.html#PProposalStartingTime"><span class="hs-identifier hs-type">PProposalStartingTime</span></a></span><span> </span><span id="local-6989586621679534159"><span class="annot"><span class="annottext">Term s PPOSIXTime
+</span><a href="#local-6989586621679534159"><span class="hs-identifier hs-var">s</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
 </span><span id="line-310"></span><span>    </span><span class="annot"><span class="annottext">forall (fs :: [Symbol]) (a :: PType) (s :: S) (b :: PType)
        (ps :: [PLabeledType]) (bs :: [ToBind]).
 (PDataFields a,
@@ -2113,7 +2113,7 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
  BindFields ps bs) =&gt;
 Term s a -&gt; (HRecOf a fs s -&gt; Term s b) -&gt; Term s b
 </span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pletFields</span></a></span><span> </span><span class="hs-glyph">@</span><span class="hs-special">'</span><span class="hs-special">[</span><span class="annot"><span class="hs-string">&quot;draftTime&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-string">&quot;votingTime&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-string">&quot;lockingTime&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-string">&quot;executingTime&quot;</span></span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">Term s PProposalTimingConfig
-</span><a href="#local-6989586621679520191"><span class="hs-identifier hs-var">config</span></a></span><span> </span><span class="annot"><span class="annottext">((HRecOf
+</span><a href="#local-6989586621679534161"><span class="hs-identifier hs-var">config</span></a></span><span> </span><span class="annot"><span class="annottext">((HRecOf
     PProposalTimingConfig
     ((':)
        @Symbol
@@ -2144,7 +2144,7 @@ Term s a -&gt; (HRecOf a fs s -&gt; Term s b) -&gt; Term s b
     -&gt; Term s (PProposalTime :--&gt; PBool))
 -&gt; Term s (PProposalTime :--&gt; PBool)
 forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679520188"><span class="annot"><span class="annottext">HRecOf
+</span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679534158"><span class="annot"><span class="annottext">HRecOf
   PProposalTimingConfig
   ((':)
      @Symbol
@@ -2157,7 +2157,7 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
            &quot;lockingTime&quot;
            ((':) @Symbol &quot;executingTime&quot; ('[] @Symbol)))))
   s
-</span><a href="#local-6989586621679520188"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><a href="#local-6989586621679534158"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
 </span><span id="line-311"></span><span>      </span><span class="annot"><span class="annottext">Term
   s (PPOSIXTime :--&gt; (PPOSIXTime :--&gt; (PProposalTime :--&gt; PBool)))
 forall (s :: S).
@@ -2170,6 +2170,6 @@ Term
 forall (s :: S) (a :: PType) (b :: PType).
 Term s (a :--&gt; b) -&gt; Term s a -&gt; Term s b
 </span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-var">#</span></a></span><span> </span><span class="annot"><span class="annottext">Term s PPOSIXTime
-</span><a href="#local-6989586621679520189"><span class="hs-identifier hs-var">s</span></a></span><span class="hs-cpp">
+</span><a href="#local-6989586621679534159"><span class="hs-identifier hs-var">s</span></a></span><span class="hs-cpp">
         # (s + f.draftTime + f.votingTime + f.lockingTime + f.executingTime)
 </span></pre></body></html>

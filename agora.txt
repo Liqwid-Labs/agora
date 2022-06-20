@@ -352,9 +352,6 @@ instance GHC.Classes.Eq Agora.Treasury.TreasuryRedeemer
 --   anywhere else.
 module Agora.Utils
 
--- | Finds the TxOut of an effect from TxInfo and TxOutRef
-findTxOutByTxOutRef :: Term s (PTxOutRef :--> (PBuiltinList (PAsData PTxInInfo) :--> PMaybe PTxOut))
-
 -- | Get script hash from an Address.
 scriptHashFromAddress :: Term s (PAddress :--> PMaybe PValidatorHash)
 
@@ -397,9 +394,6 @@ isScriptAddress :: Term s (PAddress :--> PBool)
 
 -- | Return true if the given credential is a pub-key-hash.
 isPubKey :: Term s (PCredential :--> PBool)
-
--- | Create a value with a single asset class.
-psingletonValue :: forall (keys :: KeyGuarantees) (amounts :: AmountGuarantees) (s :: S). Term s (PCurrencySymbol :--> (PTokenName :--> (PInteger :--> PValue keys amounts)))
 
 
 -- | Proposal scripts encoding effects that operate on the system.
@@ -662,6 +656,9 @@ pwinner :: Term s (PProposalVotes :--> (PInteger :--> (PResultTag :--> PResultTa
 -- | Find the "neutral" option (a dummy outcome with no effect) given the
 --   effects.
 pneutralOption :: Term s (PMap 'Unsorted PResultTag (PMap 'Unsorted PValidatorHash PDatumHash) :--> PResultTag)
+
+-- | Retract votes given the option and the amount of votes.
+pretractVotes :: Term s (PResultTag :--> (PInteger :--> (PProposalVotes :--> PProposalVotes)))
 instance GHC.Generics.Generic Agora.Proposal.Proposal
 instance GHC.Classes.Eq Agora.Proposal.Proposal
 instance GHC.Show.Show Agora.Proposal.Proposal
@@ -879,12 +876,23 @@ newtype PProposalLock (s :: S)
 PProposalLock :: Term s (PDataRecord '["vote" := PResultTag, "proposalTag" := PProposalId]) -> PProposalLock (s :: S)
 [getProposalLock] :: PProposalLock (s :: S) -> Term s (PDataRecord '["vote" := PResultTag, "proposalTag" := PProposalId])
 
+-- | Represent the usage of a stake on a particular proposal. A stake can
+--   be used to either create or vote on a proposal.
+data PStakeUsage (s :: S)
+PVotedFor :: Term s PResultTag -> PStakeUsage (s :: S)
+PCreated :: PStakeUsage (s :: S)
+PDidNothing :: PStakeUsage (s :: S)
+
 -- | Check whether a Stake is locked. If it is locked, various actions are
 --   unavailable.
 stakeLocked :: forall (s :: S). Term s (PStakeDatum :--> PBool)
 
 -- | Find a stake owned by a particular PK.
 findStakeOwnedBy :: Term s (PAssetClass :--> (PPubKeyHash :--> (PBuiltinList (PAsData (PTuple PDatumHash PDatum)) :--> (PBuiltinList (PAsData PTxInInfo) :--> PMaybe (PAsData PStakeDatum)))))
+
+-- | <i> O(n) </i>.Return the usage of a stake on a particular proposal,
+--   given the <a>lockedBy</a> field of a stake and the target proposal.
+pgetStakeUsage :: Term _ (PBuiltinList (PAsData PProposalLock) :--> (PProposalId :--> PStakeUsage))
 instance Plutarch.Bool.PEq Agora.Stake.PProposalLock
 instance Plutarch.DataRepr.Internal.Field.PDataFields Agora.Stake.PProposalLock
 instance Plutarch.Builtin.PIsData Agora.Stake.PProposalLock
@@ -904,6 +912,11 @@ instance Plutarch.Internal.PlutusType.PlutusType Agora.Stake.PStakeDatum
 instance Plutarch.DataRepr.Internal.PIsDataRepr Agora.Stake.PStakeDatum
 instance forall (s :: Plutarch.Internal.S). Generics.SOP.Universe.Generic (Agora.Stake.PStakeDatum s)
 instance forall (s :: Plutarch.Internal.S). GHC.Generics.Generic (Agora.Stake.PStakeDatum s)
+instance Plutarch.Bool.PEq Agora.Stake.PStakeUsage
+instance forall (s :: Plutarch.Internal.S). Generics.SOP.Universe.HasDatatypeInfo (Agora.Stake.PStakeUsage s)
+instance Plutarch.Internal.PlutusType.PlutusType Agora.Stake.PStakeUsage
+instance forall (s :: Plutarch.Internal.S). Generics.SOP.Universe.Generic (Agora.Stake.PStakeUsage s)
+instance forall (s :: Plutarch.Internal.S). GHC.Generics.Generic (Agora.Stake.PStakeUsage s)
 instance Plutarch.Lift.PConstantDecl Agora.Stake.StakeDatum
 instance Plutarch.TryFrom.PTryFrom Plutarch.Builtin.PData (Plutarch.Builtin.PAsData Agora.Stake.PStakeRedeemer)
 instance Plutarch.Lift.PConstantDecl Agora.Stake.StakeRedeemer
