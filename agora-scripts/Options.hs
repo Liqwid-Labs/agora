@@ -9,29 +9,22 @@ module Options (Options (..), parseOptions) where
 
 import Options.Applicative ((<**>))
 import Options.Applicative qualified as Opt
+import qualified Network.Wai.Handler.Warp as Warp
 
 data Options = Options
-  { config :: FilePath
-  , output :: FilePath
+  { port :: Warp.Port
   }
   deriving stock (Show, Eq)
 
 opt :: Opt.Parser Options
 opt =
   Options
-    <$> Opt.strOption
-      ( Opt.long "config"
-          <> Opt.short 'c'
-          <> Opt.metavar "CONFIG_PATH"
-          <> Opt.value "./agora-scripts/agora-params.json"
+    <$> Opt.option Opt.auto
+      ( Opt.long "port"
+          <> Opt.short 'p'
+          <> Opt.metavar "PORT"
+          <> Opt.value 3939
           <> Opt.help "The path where the script configuration is."
-      )
-    <*> Opt.strOption
-      ( Opt.long "output"
-          <> Opt.short 'o'
-          <> Opt.metavar "OUTPUT_PATH"
-          <> Opt.value "./agora-scripts/agora-scripts.json"
-          <> Opt.help "Output where generated scripts will be."
       )
 
 parseOptions :: IO Options

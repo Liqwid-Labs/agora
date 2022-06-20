@@ -234,11 +234,19 @@ executable agora-scripts
   import:         lang, deps, exe-opts
   main-is:        Scripts.hs
   hs-source-dirs: agora-scripts
-  other-modules:  Options
+  other-modules:
+    Options
+    API
   build-depends:
     , agora
     , gitrev
     , optparse-applicative
+    , servant
+    , servant-server
+    , warp
+    , wai
+    , http-types
+    , prettyprinter
 
 executable agora-purescript-bridge
   import:         lang, deps, exe-opts
