@@ -27,7 +27,7 @@ import Data.ByteString.Lazy qualified as ByteString.Lazy
 --------------------------------------------------------------------------------
 
 import Data.Bifunctor (second)
-import Data.List (sortBy)
+import Data.List (sortOn)
 import Plutarch.Crypto (pblake2b_256)
 import PlutusLedgerApi.V1.Interval qualified as PlutusTx
 import PlutusLedgerApi.V1.Scripts (Datum (Datum), DatumHash (DatumHash))
@@ -93,15 +93,16 @@ updateMap f k =
 --------------------------------------------------------------------------------
 
 sortMap :: forall k v. Ord k => AssocMap.Map k v -> AssocMap.Map k v
-sortMap (AssocMap.toList -> l) =
-  AssocMap.fromList $
-    sortBy
-      ( \(k1, _)
-         (k2, _) -> compare k1 k2
-      )
-      l
+sortMap =
+  AssocMap.fromList
+    . sortOn fst
+    . AssocMap.toList
 
 sortValue :: Value -> Value
-sortValue (AssocMap.toList . getValue -> l) =
-  let innerSorted = second sortMap <$> l
-   in Value $ sortMap $ AssocMap.fromList innerSorted
+sortValue =
+  Value
+    . sortMap
+    . AssocMap.fromList
+    . fmap (second sortMap)
+    . AssocMap.toList
+    . getValue

@@ -36,7 +36,6 @@ import Agora.Stake (
   StakeRedeemer (PermitVote, WitnessStake),
  )
 import Agora.Stake.Scripts (stakeValidator)
-import Control.Monad (join)
 import Data.Default.Class (Default (def))
 import Data.Tagged (Tagged (Tagged), untag)
 import PlutusLedgerApi.V1 (ScriptContext (..), ScriptPurpose (..))
@@ -341,112 +340,110 @@ specs =
                   (Spending Proposal.proposalRef)
               )
           ]
-      , group
-          "unlocking"
-          $ map
-            ( \pc ->
-                group
-                  (show pc <> " proposals")
-                  [ group
-                      "legal"
-                      [ group
-                          "retract votes and unlock stake while voting"
-                          [ UnlockStake.mkProposalValidatorTestCase
-                              ( UnlockStake.UnlockStakeParameters
-                                  pc
-                                  UnlockStake.Voter
-                                  True
-                                  VotingReady
-                              )
-                              True
-                          ]
-                      , group
-                          "unlock the stake that has been used to create the proposal"
-                          [ UnlockStake.mkProposalValidatorTestCase
-                              ( UnlockStake.UnlockStakeParameters
-                                  pc
-                                  UnlockStake.Creator
-                                  False
-                                  Finished
-                              )
-                              True
-                          ]
-                      , group "unlock stake after voting" $
-                          map
-                            ( \ps ->
-                                UnlockStake.mkProposalValidatorTestCase
-                                  ( UnlockStake.UnlockStakeParameters
-                                      pc
-                                      UnlockStake.Voter
-                                      False
-                                      ps
-                                  )
-                                  True
-                            )
-                            [Finished, Locked]
-                      ]
-                  , group
-                      "illegal"
-                      [ group "retract votes while the proposal is not voting ready" $
-                          map
-                            ( \ps ->
-                                UnlockStake.mkProposalValidatorTestCase
-                                  ( UnlockStake.UnlockStakeParameters
-                                      pc
-                                      UnlockStake.Voter
-                                      True
-                                      ps
-                                  )
-                                  False
-                            )
-                            [Draft, Locked, Finished]
-                      , group "irrelevant stake" $
-                          join $
-                            map
-                              ( \rv ->
-                                  map
-                                    ( \ps ->
-                                        UnlockStake.mkProposalValidatorTestCase
-                                          ( UnlockStake.UnlockStakeParameters
-                                              pc
-                                              UnlockStake.Irrelevant
-                                              rv
-                                              ps
-                                          )
-                                          False
-                                    )
-                                    [Draft, VotingReady, Locked, Finished]
-                              )
-                              [True, False]
-                      , group "unlock stake that has been used to create the proposal before finished" $
-                          map
-                            ( \ps ->
-                                UnlockStake.mkProposalValidatorTestCase
-                                  ( UnlockStake.UnlockStakeParameters
-                                      pc
-                                      UnlockStake.Creator
-                                      False
-                                      ps
-                                  )
-                                  False
-                            )
-                            [Draft, VotingReady, Locked]
-                      , group "creator stake retract votes" $
-                          map
-                            ( \ps ->
-                                UnlockStake.mkProposalValidatorTestCase
-                                  ( UnlockStake.UnlockStakeParameters
-                                      pc
-                                      UnlockStake.Creator
-                                      True
-                                      ps
-                                  )
-                                  False
-                            )
-                            [Draft, VotingReady, Locked, Finished]
-                      ]
+      , group "unlocking" $ do
+          proposalCount <- [1, 42]
+
+          let legalGroup = group "legal" $ do
+                let voterRetractVotesAndUnlockStakeWhileVoting =
+                      UnlockStake.mkProposalValidatorTestCase
+                        UnlockStake.UnlockStakeParameters
+                          { UnlockStake.proposalCount = proposalCount
+                          , UnlockStake.stakeUsage = UnlockStake.Voter
+                          , UnlockStake.retractVotes = True
+                          , UnlockStake.proposalStatus = VotingReady
+                          }
+                        True
+                    creatorUnlockStakeWhileFinished =
+                      UnlockStake.mkProposalValidatorTestCase
+                        UnlockStake.UnlockStakeParameters
+                          { UnlockStake.proposalCount = proposalCount
+                          , UnlockStake.stakeUsage = UnlockStake.Creator
+                          , UnlockStake.retractVotes = False
+                          , UnlockStake.proposalStatus = Finished
+                          }
+                        True
+
+                let voterUnlockStakeAfterVoting = group "voter unlocks stake after voting" $ do
+                      status <- [Finished, Locked]
+
+                      pure $
+                        UnlockStake.mkProposalValidatorTestCase
+                          UnlockStake.UnlockStakeParameters
+                            { UnlockStake.proposalCount = proposalCount
+                            , UnlockStake.stakeUsage = UnlockStake.Voter
+                            , UnlockStake.retractVotes = False
+                            , UnlockStake.proposalStatus = status
+                            }
+                          True
+
+                [ voterRetractVotesAndUnlockStakeWhileVoting
+                  , creatorUnlockStakeWhileFinished
+                  , voterUnlockStakeAfterVoting
                   ]
-            )
-            [1, 25]
+
+          let illegalGroup = group "illegal" $ do
+                let retractsVotesWhileNotVotingReady =
+                      group "voter retracts votes while not voting" $ do
+                        status <- [Draft, Locked, Finished]
+
+                        pure $
+                          UnlockStake.mkProposalValidatorTestCase
+                            UnlockStake.UnlockStakeParameters
+                              { UnlockStake.proposalCount = proposalCount
+                              , UnlockStake.stakeUsage = UnlockStake.Voter
+                              , UnlockStake.retractVotes = True
+                              , UnlockStake.proposalStatus = status
+                              }
+                            False
+
+                    unlockIrrelevantStake =
+                      group "unlock an irrelevant stake" $ do
+                        status <- [Draft, VotingReady, Locked, Finished]
+                        shouldRetractVotes <- [True, False]
+
+                        pure $
+                          UnlockStake.mkProposalValidatorTestCase
+                            UnlockStake.UnlockStakeParameters
+                              { UnlockStake.proposalCount = proposalCount
+                              , UnlockStake.stakeUsage = UnlockStake.Irrelevant
+                              , UnlockStake.retractVotes = shouldRetractVotes
+                              , UnlockStake.proposalStatus = status
+                              }
+                            False
+
+                    unlockCreatorStakeBeforeFinished =
+                      group "unlock creator stake before finished" $ do
+                        status <- [Draft, VotingReady, Locked]
+
+                        pure $
+                          UnlockStake.mkProposalValidatorTestCase
+                            UnlockStake.UnlockStakeParameters
+                              { UnlockStake.proposalCount = proposalCount
+                              , UnlockStake.stakeUsage = UnlockStake.Creator
+                              , UnlockStake.retractVotes = False
+                              , UnlockStake.proposalStatus = status
+                              }
+                            False
+                    retractVotesWithCreatorStake =
+                      group "creator stake retracts votes" $ do
+                        status <- [Draft, VotingReady, Locked, Finished]
+
+                        pure $
+                          UnlockStake.mkProposalValidatorTestCase
+                            UnlockStake.UnlockStakeParameters
+                              { UnlockStake.proposalCount = proposalCount
+                              , UnlockStake.stakeUsage = UnlockStake.Creator
+                              , UnlockStake.retractVotes = True
+                              , UnlockStake.proposalStatus = status
+                              }
+                            False
+
+                [ retractsVotesWhileNotVotingReady
+                  , unlockIrrelevantStake
+                  , unlockCreatorStakeBeforeFinished
+                  , retractVotesWithCreatorStake
+                  ]
+
+          [legalGroup, illegalGroup]
       ]
   ]
