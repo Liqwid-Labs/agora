@@ -12,14 +12,10 @@ module Sample.Proposal.UnlockStake (
 --------------------------------------------------------------------------------
 
 import PlutusLedgerApi.V1 (
-  Datum (Datum),
   DatumHash,
   ScriptContext (..),
   ScriptPurpose (Spending),
-  ToData (toBuiltinData),
-  TxInInfo (TxInInfo),
   TxInfo (..),
-  TxOut (TxOut, txOutAddress, txOutDatumHash, txOutValue),
   TxOutRef (..),
   ValidatorHash,
  )
@@ -41,19 +37,22 @@ import Agora.Stake (ProposalLock (ProposalLock), Stake (..), StakeDatum (..))
 import Sample.Shared (
   minAda,
   proposalPolicySymbol,
-  proposalValidatorAddress,
+  proposalValidatorHash,
   signer,
   stake,
   stakeAssetClass,
+  stakeValidatorHash,
  )
-import Test.Util (closedBoundedInterval, datumPair, sortValue, toDatumHash, updateMap)
+import Test.Util (sortValue, updateMap)
 
 --------------------------------------------------------------------------------
 
 import Agora.Proposal.Scripts (proposalValidator)
 import Control.Monad (join)
+import Data.Coerce (coerce)
 import Data.Default.Class (Default (def))
 import Data.Tagged (Tagged (..), untag)
+import Plutarch.Context (BaseBuilder, buildTxInfoUnsafe, input, output, script, txId, withDatum, withRefIndex, withTxId, withValue)
 import Sample.Proposal.Shared (proposalRef, stakeRef)
 import Sample.Shared qualified as Shared
 import Test.Specification (SpecificationTree, validatorFailsWith, validatorSucceedsWith)
@@ -124,24 +123,13 @@ instance Show UnlockStakeParameters where
      in mconcat [proposalInfo, ", ", role, ", ", action, ", ", while]
 
 -- | Generate some input proposals and their corresponding output proposals.
-mkProposals :: UnlockStakeParameters -> ([ProposalDatum], [ProposalDatum])
-mkProposals p = unzip $ forEachProposalId p.proposalCount $ mkProposalDatumPair p
+mkProposals :: UnlockStakeParameters -> [(ProposalDatum, ProposalDatum)]
+mkProposals p = forEachProposalId p.proposalCount $ mkProposalDatumPair p
 
 -- | Iterate over the proposal id of every proposal, given the number of proposals.
 forEachProposalId :: Integer -> (ProposalId -> a) -> [a]
 forEachProposalId 0 _ = error "zero proposal"
 forEachProposalId n f = f . ProposalId <$> [0 .. n - 1]
-
--- | Create a valid stake 'TxOut' given the stake datum.
-mkStakeTxOut :: StakeDatum -> TxOut
-mkStakeTxOut sd =
-  let sst = Value.assetClassValue stakeAssetClass 1
-      gts = Value.assetClassValue (untag stake.gtClassRef) (untag sd.stakedAmount)
-   in TxOut
-        { txOutAddress = proposalValidatorAddress
-        , txOutValue = sortValue $ sst <> minAda <> gts
-        , txOutDatumHash = Just $ toDatumHash sd
-        }
 
 -- | Create the input stake and its corresponding output stake.
 mkStakeDatumPair :: UnlockStakeParameters -> (StakeDatum, StakeDatum)
@@ -165,15 +153,13 @@ mkStakeDatumPair c =
         AssocMap.keys $ getProposalVotes votesTemplate
     mkStakeLocks _ _ = []
 
--- | Create a valid proposal 'TxOut' given the proposal datum.
-mkProposalTxOut :: ProposalDatum -> TxOut
-mkProposalTxOut pd =
-  let pst = Value.singleton proposalPolicySymbol "" 1
-   in TxOut
-        { txOutAddress = proposalValidatorAddress
-        , txOutValue = sortValue $ pst <> minAda
-        , txOutDatumHash = Just $ toDatumHash pd
-        }
+-- | Create the input proposal datum.
+mkProposalInputDatum :: UnlockStakeParameters -> ProposalId -> ProposalDatum
+mkProposalInputDatum p pid = fst $ mkProposalDatumPair p pid
+
+-- | Create the input stake datum.
+mkStakeInputDatum :: UnlockStakeParameters -> StakeDatum
+mkStakeInputDatum = fst . mkStakeDatumPair
 
 -- | Create a input proposal and its corresponding output proposal.
 mkProposalDatumPair ::
@@ -222,47 +208,62 @@ mkProposalDatumPair params pid =
 -- | Create a 'TxInfo' that tries to unlock a stake.
 unlockStake :: UnlockStakeParameters -> TxInfo
 unlockStake p =
-  let (pInDatums, pOutDatums) = mkProposals p
+  let pst = Value.singleton proposalPolicySymbol "" 1
+      sst = Value.assetClassValue stakeAssetClass 1
+
+      pIODatums = mkProposals p
       (sInDatum, sOutDatum) = mkStakeDatumPair p
 
-      pIns =
-        zipWith
-          ( \i d ->
-              ( let txOut = mkProposalTxOut d
-                    ref = proposalRef {txOutRefIdx = i}
-                 in TxInInfo ref txOut
-              )
+      proposals =
+        foldMap
+          ( \(i, o) ->
+              mconcat
+                @BaseBuilder
+                [ input $
+                    script proposalValidatorHash
+                      . withValue pst
+                      . withDatum i
+                      . withTxId (txOutRefId proposalRef)
+                      . withRefIndex (txOutRefIdx proposalRef + coerce i.proposalId)
+                , output $
+                    script proposalValidatorHash
+                      . withValue (sortValue $ pst <> minAda)
+                      . withDatum o
+                ]
           )
-          [1 ..]
-          pInDatums
-      pOuts = map mkProposalTxOut pOutDatums
+          pIODatums
 
-      sIn = TxInInfo stakeRef $ mkStakeTxOut sInDatum
-      sOut = mkStakeTxOut sOutDatum
+      stakeValue =
+        sortValue $
+          mconcat
+            [ Value.assetClassValue
+                (untag stake.gtClassRef)
+                (untag defaultStakedGTs)
+            , sst
+            , minAda
+            ]
 
-      mkDatum :: forall d. (ToData d) => d -> Datum
-      mkDatum = Datum . toBuiltinData
-   in TxInfo
-        { txInfoInputs = sIn : pIns
-        , txInfoOutputs = sOut : pOuts
-        , txInfoFee = Value.singleton "" "" 2
-        , txInfoMint = mempty
-        , txInfoDCert = []
-        , txInfoWdrl = []
-        , -- Time doesn't matter int this case.
-          txInfoValidRange = closedBoundedInterval 0 100
-        , txInfoSignatories = [signer]
-        , txInfoData = datumPair <$> (mkDatum <$> [sInDatum, sOutDatum]) <> (mkDatum <$> pInDatums <> pOutDatums)
-        , txInfoId = "95ba4015e30aef16a3461ea97a779f814aeea6b8009d99a94add4b8293be737a"
-        }
+      stakes =
+        mconcat @BaseBuilder
+          [ input $
+              script stakeValidatorHash
+                . withValue stakeValue
+                . withDatum sInDatum
+                . withTxId (txOutRefId stakeRef)
+                . withRefIndex (txOutRefIdx stakeRef)
+          , output $
+              script stakeValidatorHash
+                . withValue stakeValue
+                . withDatum sOutDatum
+          ]
 
--- | Create the input proposal datum.
-mkProposalInputDatum :: UnlockStakeParameters -> ProposalId -> ProposalDatum
-mkProposalInputDatum p pid = fst $ mkProposalDatumPair p pid
-
--- | Create the input stake datum.
-mkStakeInputDatum :: UnlockStakeParameters -> StakeDatum
-mkStakeInputDatum = fst . mkStakeDatumPair
+      builder =
+        mconcat @BaseBuilder
+          [ txId "388bc0b897b3dadcd479da4c88291de4113a50b72ddbed001faf7fc03f11bc52"
+          , proposals
+          , stakes
+          ]
+   in buildTxInfoUnsafe builder
 
 -- | Create a test case that tests the proposal validator's @'Unlock' _@ redeemer.
 mkProposalValidatorTestCase :: UnlockStakeParameters -> Bool -> SpecificationTree
