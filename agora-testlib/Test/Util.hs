@@ -11,6 +11,8 @@ module Test.Util (
   datumPair,
   closedBoundedInterval,
   updateMap,
+  sortMap,
+  sortValue,
 ) where
 
 --------------------------------------------------------------------------------
@@ -24,9 +26,12 @@ import Data.ByteString.Lazy qualified as ByteString.Lazy
 
 --------------------------------------------------------------------------------
 
+import Data.Bifunctor (second)
+import Data.List (sortOn)
 import Plutarch.Crypto (pblake2b_256)
-import PlutusLedgerApi.V1.Interval as PlutusTx
+import PlutusLedgerApi.V1.Interval qualified as PlutusTx
 import PlutusLedgerApi.V1.Scripts (Datum (Datum), DatumHash (DatumHash))
+import PlutusLedgerApi.V1.Value (Value (..))
 import PlutusTx.AssocMap qualified as AssocMap
 import PlutusTx.Builtins qualified as PlutusTx
 import PlutusTx.IsData qualified as PlutusTx
@@ -84,3 +89,20 @@ updateMap f k =
           then f v
           else Just v
     )
+
+--------------------------------------------------------------------------------
+
+sortMap :: forall k v. Ord k => AssocMap.Map k v -> AssocMap.Map k v
+sortMap =
+  AssocMap.fromList
+    . sortOn fst
+    . AssocMap.toList
+
+sortValue :: Value -> Value
+sortValue =
+  Value
+    . sortMap
+    . AssocMap.fromList
+    . fmap (second sortMap)
+    . AssocMap.toList
+    . getValue

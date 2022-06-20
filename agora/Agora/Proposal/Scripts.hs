@@ -17,6 +17,7 @@ import Agora.Proposal (
   PProposalVotes (PProposalVotes),
   Proposal (governorSTAssetClass, stakeSTAssetClass),
   ProposalStatus (..),
+  pretractVotes,
  )
 import Agora.Proposal.Time (
   currentProposalTime,
@@ -25,9 +26,14 @@ import Agora.Proposal.Time (
   isLockingPeriod,
   isVotingPeriod,
  )
-import Agora.Stake (PProposalLock (..), PStakeDatum (..), findStakeOwnedBy)
+import Agora.Stake (
+  PProposalLock (..),
+  PStakeDatum (..),
+  PStakeUsage (..),
+  findStakeOwnedBy,
+  pgetStakeUsage,
+ )
 import Agora.Utils (
-  findTxOutByTxOutRef,
   getMintingPolicySymbol,
   mustBePJust,
   mustFindDatum',
@@ -41,6 +47,7 @@ import Plutarch.Api.V1 (
  )
 import Plutarch.Api.V1.AssetClass (passetClass, passetClassValueOf)
 import Plutarch.Api.V1.ScriptContext (
+  pfindTxInByTxOutRef,
   pisTokenSpent,
   ptxSignedBy,
   pvalueSpent,
@@ -54,6 +61,7 @@ import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
 import Plutarch.Extra.TermCont (
   pguardC,
   pletC,
+  pletFieldsC,
   pmatchC,
   ptryFromC,
  )
@@ -155,7 +163,7 @@ proposalValidator proposal =
           txInfo'
     PSpending ((pfield @"_0" #) -> txOutRef) <- pmatchC $ pfromData ctx.purpose
 
-    PJust txOut <- pmatchC $ findTxOutByTxOutRef # txOutRef # txInfoF.inputs
+    PJust ((pfield @"resolved" #) -> txOut) <- pmatchC $ pfindTxInByTxOutRef # txOutRef # txInfoF.inputs
     txOutF <- tcont $ pletFields @'["address", "value"] $ txOut
 
     (pfromData -> proposalDatum, _) <-
@@ -182,31 +190,38 @@ proposalValidator proposal =
     let stCurrencySymbol =
           pconstant $ getMintingPolicySymbol (proposalPolicy proposal.governorSTAssetClass)
     valueSpent <- pletC $ pvalueSpent # txInfoF.inputs
-    spentST <- pletC $ psymbolValueOf # stCurrencySymbol #$ valueSpent
-
-    let AssetClass (stakeSym, stakeTn) = proposal.stakeSTAssetClass
-    stakeSTAssetClass <-
-      pletC $ passetClass # pconstant stakeSym # pconstant stakeTn
-    spentStakeST <-
-      pletC $ passetClassValueOf # valueSpent # stakeSTAssetClass
 
     signedBy <- pletC $ ptxSignedBy # txInfoF.signatories
 
-    pguardC "ST at inputs must be 1" (spentST #== 1)
-
     currentTime <- pletC $ currentProposalTime # txInfoF.validRange
 
-    -- Filter out own output with own address and PST.
-    -- Delay the evaluation cause in some cases there won't be any continuing output.
+    -- Own output is an output that
+    --  * is sent to the address of the proposal validator
+    --  * has an PST
+    --  * has the same proposal id as the proposal input
+    --
+    -- We match the proposal id here so that we can support multiple
+    --  proposal inputs in one thansaction.
     ownOutput <-
       pletC $
         mustBePJust # "Own output should be present" #$ pfind
           # plam
             ( \input -> unTermCont $ do
-                inputF <- tcont $ pletFields @'["address", "value"] input
+                inputF <- tcont $ pletFields @'["address", "value", "datumHash"] input
+
+                -- TODO: this is highly inefficient: O(n) for every output,
+                --       Maybe we can cache the sorted datum map?
+                let datum =
+                      mustFindDatum' @PProposalDatum
+                        # inputF.datumHash
+                        # txInfoF.datums
+
+                    proposalId = pfield @"proposalId" # datum
+
                 pure $
                   inputF.address #== ownAddress
                     #&& psymbolValueOf # stCurrencySymbol # inputF.value #== 1
+                    #&& proposalId #== proposalF.proposalId
             )
           # pfromData txInfoF.outputs
 
@@ -215,6 +230,45 @@ proposalValidator proposal =
         mustFindDatum' @PProposalDatum
           # (pfield @"datumHash" # ownOutput)
           # txInfoF.datums
+
+    proposalUnchanged <- pletC $ proposalOut #== proposalDatum
+    --------------------------------------------------------------------------
+    -- Find the stake input and stake output by SST.
+
+    let AssetClass (stakeSym, stakeTn) = proposal.stakeSTAssetClass
+    stakeSTAssetClass <-
+      pletC $ passetClass # pconstant stakeSym # pconstant stakeTn
+    spentStakeST <-
+      pletC $ passetClassValueOf # valueSpent # stakeSTAssetClass
+
+    let stakeInput =
+          pfield @"resolved"
+            #$ mustBePJust
+            # "Stake input should be present"
+              #$ pfind
+            # plam
+              ( \(pfromData . (pfield @"value" #) . (pfield @"resolved" #) -> value) ->
+                  passetClassValueOf # value # stakeSTAssetClass #== 1
+              )
+            # pfromData txInfoF.inputs
+
+    stakeIn <- pletC $ mustFindDatum' @PStakeDatum # (pfield @"datumHash" # stakeInput) # txInfoF.datums
+    stakeInF <- pletFieldsC @'["stakedAmount", "lockedBy", "owner"] stakeIn
+
+    let stakeOutput =
+          mustBePJust # "Stake output should be present"
+            #$ pfind
+            # plam
+              ( \(pfromData . (pfield @"value" #) -> value) ->
+                  passetClassValueOf # value # stakeSTAssetClass #== 1
+              )
+            # pfromData txInfoF.outputs
+
+    stakeOut <- pletC $ mustFindDatum' @PStakeDatum # (pfield @"datumHash" # stakeOutput) # txInfoF.datums
+
+    stakeUnchanged <- pletC $ stakeIn #== stakeOut
+
+    --------------------------------------------------------------------------
 
     pure $
       pmatch proposalRedeemer $ \case
@@ -232,25 +286,8 @@ proposalValidator proposal =
           pguardC "Vote option should be valid" $
             pisJust #$ plookup # voteFor # voteMap
 
-          -- Find the input stake, the amount of new votes should be the 'stakedAmount'.
-          let stakeInput =
-                pfield @"resolved"
-                  #$ mustBePJust
-                  # "Stake input should be present"
-                    #$ pfind
-                  # plam
-                    ( \(pfromData . (pfield @"value" #) . (pfield @"resolved" #) -> value) ->
-                        passetClassValueOf # value # stakeSTAssetClass #== 1
-                    )
-                  # pfromData txInfoF.inputs
-
-              stakeIn :: Term _ PStakeDatum
-              stakeIn = mustFindDatum' # (pfield @"datumHash" # stakeInput) # txInfoF.datums
-
-          stakeInF <- tcont $ pletFields @'["stakedAmount", "lockedBy", "owner"] stakeIn
-
           -- Ensure that no lock with the current proposal id has been put on the stake.
-          pguardC "Same stake shouldn't vote on the same propsoal twice" $
+          pguardC "Same stake shouldn't vote on the same proposal twice" $
             pnot #$ pany
               # plam
                 ( \((pfield @"proposalTag" #) . pfromData -> pid) ->
@@ -258,7 +295,8 @@ proposalValidator proposal =
                 )
               # pfromData stakeInF.lockedBy
 
-          let -- Update the vote counter of the proposal, and leave other stuff as is.
+          let -- The amount of new votes should be the 'stakedAmount'.
+              -- Update the vote counter of the proposal, and leave other stuff as is.
               expectedNewVotes = pmatch (pfromData proposalF.votes) $ \(PProposalVotes m) ->
                 pcon $
                   PProposalVotes $
@@ -289,18 +327,6 @@ proposalValidator proposal =
           -- to create a valid 'ProposalLock', however the vote option is encoded
           -- in the proposal redeemer, which is invisible for the stake validator.
 
-          let stakeOutput =
-                mustBePJust # "Stake output should be present"
-                  #$ pfind
-                  # plam
-                    ( \(pfromData . (pfield @"value" #) -> value) ->
-                        passetClassValueOf # value # stakeSTAssetClass #== 1
-                    )
-                  # pfromData txInfoF.outputs
-
-              stakeOut :: Term _ PStakeDatum
-              stakeOut = mustFindDatum' # (pfield @"datumHash" # stakeOutput) # txInfoF.datums
-
           let newProposalLock =
                 mkRecordConstr
                   PProposalLock
@@ -325,6 +351,8 @@ proposalValidator proposal =
           pure $ popaque (pconstant ())
         --------------------------------------------------------------------------
         PCosign r -> unTermCont $ do
+          pguardC "Stake should not change" stakeUnchanged
+
           newSigs <- pletC $ pfield @"newCosigners" # r
 
           pguardC "Cosigners are unique" $
@@ -374,13 +402,86 @@ proposalValidator proposal =
 
           pure $ popaque (pconstant ())
         --------------------------------------------------------------------------
-        PUnlock _r ->
-          popaque (pconstant ())
+        PUnlock r -> unTermCont $ do
+          -- At draft stage, the votes should be empty.
+          pguardC "Shouldn't retract votes from a draft proposal" $
+            pnot #$ proposalF.status #== pconstantData Draft
+
+          -- This is the vote option we're retracting from.
+          retractFrom <- pletC $ pfield @"resultTag" # r
+
+          -- Determine if the input stake is actually locked by this proposal.
+          stakeUsage <- pletC $ pgetStakeUsage # stakeInF.lockedBy # proposalF.proposalId
+
+          pguardC "Stake input relevant" $
+            pmatch stakeUsage $ \case
+              PDidNothing ->
+                ptraceIfFalse "Stake should be relevant" $
+                  pconstant False
+              PCreated ->
+                ptraceIfFalse "Removing creator's locks means status is Finished" $
+                  proposalF.status #== pconstantData Finished
+              PVotedFor rt ->
+                ptraceIfFalse "Result tag should match the one given in the redeemer" $
+                  rt #== retractFrom
+
+          -- The count of removing votes is equal to the 'stakeAmount' of input stake.
+          retractCount <-
+            pletC $
+              pmatch stakeInF.stakedAmount $ \(PDiscrete v) -> pextract # v
+
+          -- The votes can only change when the proposal still allows voting.
+          let shouldUpdateVotes =
+                proposalF.status #== pconstantData VotingReady
+                  #&& pnot # (pcon PCreated #== stakeUsage)
+
+          pguardC "Proposal output correct" $
+            pif
+              shouldUpdateVotes
+              ( let -- Remove votes and leave other parts of the proposal as it.
+                    expectedVotes = pretractVotes # retractFrom # retractCount # proposalF.votes
+
+                    expectedProposalOut =
+                      mkRecordConstr
+                        PProposalDatum
+                        ( #proposalId .= proposalF.proposalId
+                            .& #effects .= proposalF.effects
+                            .& #status .= proposalF.status
+                            .& #cosigners .= proposalF.cosigners
+                            .& #thresholds .= proposalF.thresholds
+                            .& #votes .= pdata expectedVotes
+                            .& #timingConfig .= proposalF.timingConfig
+                            .& #startingTime .= proposalF.startingTime
+                        )
+                 in ptraceIfFalse "Update votes" $
+                      expectedProposalOut #== proposalOut
+              )
+              -- No change to the proposal is allowed.
+              $ ptraceIfFalse "Proposal unchanged" proposalUnchanged
+
+          -- At last, we ensure that all locks belong to this proposal will be removed.
+          stakeOutputLocks <- pletC $ pfield @"lockedBy" # stakeOut
+
+          let templateStakeOut =
+                mkRecordConstr
+                  PStakeDatum
+                  ( #stakedAmount .= stakeInF.stakedAmount
+                      .& #owner .= stakeInF.owner
+                      .& #lockedBy .= stakeOutputLocks
+                  )
+
+          pguardC "Only locks updated in the output stake" $
+            templateStakeOut #== stakeOut
+
+          pguardC "All relevant locks removed from the stake" $
+            pgetStakeUsage # pfromData stakeOutputLocks
+              # proposalF.proposalId #== pcon PDidNothing
+
+          pure $ popaque (pconstant ())
         --------------------------------------------------------------------------
         PAdvanceProposal _r -> unTermCont $ do
-          pguardC "No stake input is allowed" $ spentStakeST #== 0
+          pguardC "Stake should not change" stakeUnchanged
 
-          currentTime <- pletC $ currentProposalTime # txInfoF.validRange
           proposalOutStatus <- pletC $ pfield @"status" # proposalOut
 
           let -- Only the status of proposals should be updated in this case.

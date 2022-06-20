@@ -16,9 +16,9 @@ module Sample.Proposal (
   advanceProposalSuccess,
   advanceProposalFailureTimeout,
   TransitionParameters (..),
-  advanceFinishedPropsoal,
+  advanceFinishedProposal,
   advanceProposalInsufficientVotes,
-  advancePropsoalWithsStake,
+  advanceProposalWithInvalidOutputStake,
 ) where
 
 import Agora.Governor (GovernorDatum (..))
@@ -78,11 +78,8 @@ import PlutusLedgerApi.V1.Value qualified as Value (
   assetClassValue,
   singleton,
  )
-import PlutusTx.AssocMap qualified as AssocMap (
-  Map,
-  empty,
-  fromList,
- )
+import PlutusTx.AssocMap qualified as AssocMap
+import Sample.Proposal.Shared (proposalRef, stakeRef)
 import Sample.Shared (
   govValidatorHash,
   minAda,
@@ -163,12 +160,6 @@ proposalCreation =
                 . withDatum govAfter
           ]
    in buildMintingUnsafe builder
-
-proposalRef :: TxOutRef
-proposalRef = TxOutRef "0b2086cbf8b6900f8cb65e012de4516cb66b5cb08a9aaba12a8b88be" 1
-
-stakeRef :: TxOutRef
-stakeRef = TxOutRef "0ca36f3a357bc69579ab2531aecd1e7d3714d993c7820f40b864be15" 0
 
 -- | This script context should be a valid transaction.
 cosignProposal :: [PubKeyHash] -> TxInfo
@@ -383,9 +374,9 @@ voteOnProposal params =
 
 -- | Parameters for state transition of proposals.
 data TransitionParameters = TransitionParameters
-  { -- The initial status of the propsoal.
+  { -- The initial status of the proposal.
     initialProposalStatus :: ProposalStatus
-  , -- The starting time of the propsoal.
+  , -- The starting time of the proposal.
     proposalStartingTime :: ProposalStartingTime
   }
 
@@ -403,9 +394,12 @@ mkTransitionTxInfo ::
   ProposalStartingTime ->
   -- | Valid time range of the transaction.
   POSIXTimeRange ->
+  -- | Whether to add an unchanged stake or not.
+  Bool ->
   TxInfo
-mkTransitionTxInfo from to effects votes startingTime validTime =
+mkTransitionTxInfo from to effects votes startingTime validTime shouldAddUnchangedStake =
   let pst = Value.singleton proposalPolicySymbol "" 1
+      sst = Value.assetClassValue stakeAssetClass 1
 
       proposalInputDatum :: ProposalDatum
       proposalInputDatum =
@@ -426,11 +420,48 @@ mkTransitionTxInfo from to effects votes startingTime validTime =
           { status = to
           }
 
+      stakeOwner = signer
+      stakedAmount = 200
+
+      existingLocks :: [ProposalLock]
+      existingLocks =
+        [ ProposalLock (ResultTag 0) (ProposalId 0)
+        , ProposalLock (ResultTag 2) (ProposalId 1)
+        ]
+
+      stakeInputDatum :: StakeDatum
+      stakeInputDatum =
+        StakeDatum
+          { stakedAmount = Tagged stakedAmount
+          , owner = stakeOwner
+          , lockedBy = existingLocks
+          }
+
+      stakeOutputDatum :: StakeDatum
+      stakeOutputDatum = stakeInputDatum
+
+      stakeBuilder :: BaseBuilder
+      stakeBuilder =
+        if shouldAddUnchangedStake
+          then
+            mconcat
+              [ input $
+                  script stakeValidatorHash
+                    . withValue sst
+                    . withDatum stakeInputDatum
+                    . withTxId (txOutRefId stakeRef)
+              , output $
+                  script stakeValidatorHash
+                    . withValue (sst <> minAda)
+                    . withDatum stakeOutputDatum
+              ]
+          else mempty
+
       builder :: BaseBuilder
       builder =
         mconcat
           [ txId "95ba4015e30aef16a3461ea97a779f814aeea6b8009d99a94add4b8293be737a"
-          , signedWith signer
+          , signedWith stakeOwner
           , timeRange validTime
           , input $
               script proposalValidatorHash
@@ -442,13 +473,19 @@ mkTransitionTxInfo from to effects votes startingTime validTime =
                 . withValue (pst <> minAda)
                 . withDatum proposalOutputDatum
           ]
-   in buildTxInfoUnsafe builder
+   in buildTxInfoUnsafe $ builder <> stakeBuilder
+
+-- | Wrapper around 'advanceProposalSuccess'', with valid stake.
+advanceProposalSuccess :: TransitionParameters -> TxInfo
+advanceProposalSuccess ps = advanceProposalSuccess' ps True
 
 {- | Create a valid 'TxInfo' that advances a proposal, given the parameters.
+     The second parameter determines wherther valid stake should be included.
+
      Note that 'TransitionParameters.initialProposalStatus' should not be 'Finished'.
 -}
-advanceProposalSuccess :: TransitionParameters -> TxInfo
-advanceProposalSuccess params =
+advanceProposalSuccess' :: TransitionParameters -> Bool -> TxInfo
+advanceProposalSuccess' params =
   let -- Status of the output proposal.
       toStatus :: ProposalStatus
       toStatus = case params.initialProposalStatus of
@@ -615,6 +652,7 @@ advanceProposalFailureTimeout params =
         votes
         params.proposalStartingTime
         timeRange
+        True
 
 -- | An invalid 'TxInfo' that tries to advance a 'VotingReady' proposal without sufficient votes.
 advanceProposalInsufficientVotes :: TxInfo
@@ -643,10 +681,11 @@ advanceProposalInsufficientVotes =
         votes
         (ProposalStartingTime proposalStartingTime)
         timeRange
+        True
 
 -- | An invalid 'TxInfo' that tries to advance a 'Finished' proposal.
-advanceFinishedPropsoal :: TxInfo
-advanceFinishedPropsoal =
+advanceFinishedProposal :: TxInfo
+advanceFinishedProposal =
   let effects =
         AssocMap.fromList
           [ (ResultTag 0, AssocMap.empty)
@@ -675,19 +714,21 @@ advanceFinishedPropsoal =
         outcome0WinningVotes
         (ProposalStartingTime 0)
         timeRange
+        True
 
-{- | An illegal 'TxInfo' that tries to use 'AdvanceProposal' with a stake.
-     From the perspective of stake validator, the transition is valid,
+{- | An illegal 'TxInfo' that tries to output a changed stake with 'AdvanceProposal'.
+     From the perspective of stake validator, the transition is totally valid,
        so the proposal validator should reject this.
 -}
-advancePropsoalWithsStake :: TxInfo
-advancePropsoalWithsStake =
+advanceProposalWithInvalidOutputStake :: TxInfo
+advanceProposalWithInvalidOutputStake =
   let templateTxInfo =
-        advanceProposalSuccess
+        advanceProposalSuccess'
           TransitionParameters
             { initialProposalStatus = VotingReady
             , proposalStartingTime = ProposalStartingTime 0
             }
+          False
 
       ---
       -- Now we create a new lock on an arbitrary stake
