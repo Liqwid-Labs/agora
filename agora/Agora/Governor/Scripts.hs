@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-orphans #-}
+
 {- |
 Module     : Agora.Governor.Scripts
 Maintainer : connor@mlabs.city
@@ -92,7 +94,10 @@ import Plutarch.Api.V1 (
   PMap,
   PMintingPolicy,
   PScriptPurpose (PMinting, PSpending),
+  PTxId,
+  PTxInInfo,
   PTxOut,
+  PTxOutRef,
   PValidator,
   PValidatorHash,
   PValue,
@@ -111,6 +116,7 @@ import Plutarch.Extra.Map (
   plookup',
  )
 import Plutarch.SafeMoney (PDiscrete (..), pvalueDiscrete')
+import Plutarch.Show (PShow (..))
 import Plutarch.TryFrom ()
 
 --------------------------------------------------------------------------------
@@ -118,7 +124,13 @@ import Plutarch.TryFrom ()
 import Plutarch.Api.V1.ScriptContext (pfindTxInByTxOutRef, pisUTXOSpent, ptryFindDatum, ptxSignedBy, pvalueSpent)
 import "liqwid-plutarch-extra" Plutarch.Api.V1.Value (psymbolValueOf)
 import Plutarch.Extra.Maybe (pisDJust)
-import Plutarch.Extra.TermCont
+import Plutarch.Extra.TermCont (
+  pguardC,
+  pguardShowC,
+  pletC,
+  pletFieldsC,
+  pmatchC,
+ )
 import PlutusLedgerApi.V1 (
   CurrencySymbol (..),
   MintingPolicy,
@@ -143,6 +155,20 @@ import PlutusLedgerApi.V1.Value (
 
 --------------------------------------------------------------------------------
 
+instance PShow PTxId where
+  pshow' True ((pfield @"_0" #) -> bs) = pshow bs
+  pshow' _ _ = ""
+
+instance PShow PTxOutRef where
+  pshow' True t' = unTermCont $ do
+    t <- pletFieldsC @'["id", "idx"] t'
+    return $ pshow t.id <> " " <> pshow t.idx
+  pshow' False _ = ""
+
+instance PShow PTxInInfo where
+  pshow' True ((pfield @"outRef" #) -> outRef) = pshow outRef
+  pshow' _ _ = ""
+
 {- | Policy for minting GSTs.
 
    This policy perform the following checks:
@@ -166,8 +192,10 @@ governorPolicy gov =
 
     txInfoF <- tcont $ pletFields @'["mint", "inputs", "outputs", "datums", "validRange"] txInfo
 
-    pguardC "Referenced utxo should be spent" $
-      pisUTXOSpent # oref # txInfoF.inputs
+    pguardShowC
+      "Referenced utxo should be spent"
+      (pisUTXOSpent # oref #)
+      txInfoF.inputs
 
     pguardC "Exactly one token should be minted" $
       psymbolValueOf # ownSymbol # txInfoF.mint #== 1
