@@ -31,7 +31,7 @@ import Plutarch.Api.V1.AssetClass (passetClass, passetClassValueOf, pvalueOf)
 import Plutarch.Api.V1.ScriptContext (pfindTxInByTxOutRef, pisTokenSpent, ptxSignedBy, pvalueSpent)
 import "liqwid-plutarch-extra" Plutarch.Api.V1.Value (pgeqByClass', pgeqBySymbol, psymbolValueOf)
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
-import Plutarch.Extra.TermCont (pguardC, pletC, pmatchC, ptryFromC)
+import Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC, ptryFromC)
 import Plutarch.Internal (punsafeCoerce)
 import Plutarch.Numeric.Additive (AdditiveMonoid (zero), AdditiveSemigroup ((+)))
 import Plutarch.SafeMoney (
@@ -64,11 +64,11 @@ stakePolicy ::
   ClosedTerm PMintingPolicy
 stakePolicy gtClassRef =
   plam $ \_redeemer ctx' -> unTermCont $ do
-    ctx <- tcont $ pletFields @'["txInfo", "purpose"] ctx'
+    ctx <- pletFieldsC @'["txInfo", "purpose"] ctx'
     txInfo <- pletC $ ctx.txInfo
     let _a :: Term _ PTxInfo
         _a = txInfo
-    txInfoF <- tcont $ pletFields @'["mint", "inputs", "outputs", "signatories", "datums"] txInfo
+    txInfoF <- pletFieldsC @'["mint", "inputs", "outputs", "signatories", "datums"] txInfo
 
     PMinting ownSymbol' <- pmatchC $ pfromData ctx.purpose
     ownSymbol <- pletC $ pfield @"_0" # ownSymbol'
@@ -86,7 +86,7 @@ stakePolicy gtClassRef =
             pany
               # plam
                 ( \((pfield @"resolved" #) -> txOut) -> unTermCont $ do
-                    txOutF <- tcont $ pletFields @'["value", "datumHash"] txOut
+                    txOutF <- pletFieldsC @'["value", "datumHash"] txOut
                     pure $
                       pif
                         (psymbolValueOf # ownSymbol # txOutF.value #== 1)
@@ -114,7 +114,7 @@ stakePolicy gtClassRef =
                         #$ pfind
                       # plam
                         ( \output -> unTermCont $ do
-                            outputF <- tcont $ pletFields @'["value", "address"] output
+                            outputF <- pletFieldsC @'["value", "address"] output
                             pure $
                               pmatch (pfromData $ pfield @"credential" # outputF.address) $ \case
                                 -- Should pay to a script address
@@ -204,16 +204,16 @@ this could use [CIP-31](https://cips.cardano.org/cips/cip31/) instead.
 stakeValidator :: Stake -> ClosedTerm PValidator
 stakeValidator stake =
   plam $ \datum redeemer ctx' -> unTermCont $ do
-    ctx <- tcont $ pletFields @'["txInfo", "purpose"] ctx'
+    ctx <- pletFieldsC @'["txInfo", "purpose"] ctx'
     txInfo <- pletC $ pfromData ctx.txInfo
-    txInfoF <- tcont $ pletFields @'["mint", "inputs", "outputs", "signatories", "datums"] txInfo
+    txInfoF <- pletFieldsC @'["mint", "inputs", "outputs", "signatories", "datums"] txInfo
 
     (pfromData -> stakeRedeemer, _) <- ptryFromC redeemer
 
     -- TODO: Use PTryFrom
     let stakeDatum' :: Term _ PStakeDatum
         stakeDatum' = pfromData $ punsafeCoerce datum
-    stakeDatum <- tcont $ pletFields @'["owner", "stakedAmount", "lockedBy"] stakeDatum'
+    stakeDatum <- pletFieldsC @'["owner", "stakedAmount", "lockedBy"] stakeDatum'
 
     PSpending txOutRef <- pmatchC $ pfromData ctx.purpose
 
@@ -260,7 +260,7 @@ stakeValidator stake =
               mustBePJust # "Own output should be present" #$ pfind
                 # plam
                   ( \input -> unTermCont $ do
-                      inputF <- tcont $ pletFields @'["address", "value"] input
+                      inputF <- pletFieldsC @'["address", "value"] input
                       pure $
                         inputF.address #== ownAddress
                           #&& psymbolValueOf # stCurrencySymbol # inputF.value #== 1

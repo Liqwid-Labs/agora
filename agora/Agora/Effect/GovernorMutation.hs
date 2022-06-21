@@ -38,7 +38,7 @@ import Plutarch.DataRepr (
   PDataFields,
   PIsDataReprInstances (PIsDataReprInstances),
  )
-import Plutarch.Extra.TermCont (pguardC)
+import Plutarch.Extra.TermCont (pguardC, pletFieldsC)
 import Plutarch.Lift (PConstantDecl, PLifted, PUnsafeLiftDecl)
 import Plutarch.TryFrom (PTryFrom (..))
 import Plutarch.Unsafe (punsafeCoerce)
@@ -139,8 +139,8 @@ instance PTryFrom PData (PAsData PMutateGovernorDatum) where
 mutateGovernorValidator :: Governor -> ClosedTerm PValidator
 mutateGovernorValidator gov = makeEffect (authorityTokenSymbolFromGovernor gov) $
   \_gatCs (datum :: Term _ PMutateGovernorDatum) _ txInfo -> unTermCont $ do
-    datumF <- tcont $ pletFields @'["newDatum", "governorRef"] datum
-    txInfoF <- tcont $ pletFields @'["mint", "inputs", "outputs", "datums"] txInfo
+    datumF <- pletFieldsC @'["newDatum", "governorRef"] datum
+    txInfoF <- pletFieldsC @'["mint", "inputs", "outputs", "datums"] txInfo
 
     let mint :: Term _ (PBuiltinList _)
         mint = pto $ pto $ pto $ pfromData txInfoF.mint
@@ -173,7 +173,7 @@ mutateGovernorValidator gov = makeEffect (authorityTokenSymbolFromGovernor gov) 
               )
             # pfromData txInfoF.inputs
 
-    govInInfo <- tcont $ pletFields @'["outRef", "resolved"] $ inputWithGST
+    govInInfo <- pletFieldsC @'["outRef", "resolved"] $ inputWithGST
 
     -- The effect can only modify the governor UTXO referenced in the datum.
     pguardC "Can only modify the pinned governor" $
@@ -186,7 +186,7 @@ mutateGovernorValidator gov = makeEffect (authorityTokenSymbolFromGovernor gov) 
     let govAddress = pfield @"address" #$ govInInfo.resolved
         govOutput' = pfromData $ phead # pfromData txInfoF.outputs
 
-    govOutput <- tcont $ pletFields @'["address", "value", "datumHash"] govOutput'
+    govOutput <- pletFieldsC @'["address", "value", "datumHash"] govOutput'
 
     pguardC "No output to the governor" $
       govOutput.address #== govAddress

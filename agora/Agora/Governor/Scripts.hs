@@ -81,7 +81,6 @@ import Agora.Utils (
   validatorHashToAddress,
   validatorHashToTokenName,
  )
-import Plutarch.Extra.Record
 
 --------------------------------------------------------------------------------
 
@@ -105,20 +104,26 @@ import Plutarch.Api.V1.AssetClass (
   passetClass,
   passetClassValueOf,
  )
+import Plutarch.Api.V1.ScriptContext (pfindTxInByTxOutRef, pisUTXOSpent, ptryFindDatum, ptxSignedBy, pvalueSpent)
+import "liqwid-plutarch-extra" Plutarch.Api.V1.Value (psymbolValueOf)
 import Plutarch.Extra.Map (
   pkeys,
   plookup,
   plookup',
+ )
+import Plutarch.Extra.Maybe (pisDJust)
+import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
+import Plutarch.Extra.TermCont (
+  pguardC,
+  pletC,
+  pletFieldsC,
+  pmatchC,
  )
 import Plutarch.SafeMoney (PDiscrete (..), pvalueDiscrete')
 import Plutarch.TryFrom ()
 
 --------------------------------------------------------------------------------
 
-import Plutarch.Api.V1.ScriptContext (pfindTxInByTxOutRef, pisUTXOSpent, ptryFindDatum, ptxSignedBy, pvalueSpent)
-import "liqwid-plutarch-extra" Plutarch.Api.V1.Value (psymbolValueOf)
-import Plutarch.Extra.Maybe (pisDJust)
-import Plutarch.Extra.TermCont
 import PlutusLedgerApi.V1 (
   CurrencySymbol (..),
   MintingPolicy,
@@ -164,7 +169,7 @@ governorPolicy gov =
     let ownAssetClass = passetClass # ownSymbol # pconstant ""
         txInfo = pfromData $ pfield @"txInfo" # ctx'
 
-    txInfoF <- tcont $ pletFields @'["mint", "inputs", "outputs", "datums", "validRange"] txInfo
+    txInfoF <- pletFieldsC @'["mint", "inputs", "outputs", "datums", "validRange"] txInfo
 
     pguardC "Referenced utxo should be spent" $
       pisUTXOSpent # oref # txInfoF.inputs
@@ -277,10 +282,10 @@ governorValidator :: Governor -> ClosedTerm PValidator
 governorValidator gov =
   plam $ \datum' redeemer' ctx' -> unTermCont $ do
     (pfromData -> redeemer, _) <- tcont $ ptryFrom redeemer'
-    ctxF <- tcont $ pletFields @'["txInfo", "purpose"] ctx'
+    ctxF <- pletFieldsC @'["txInfo", "purpose"] ctx'
 
     txInfo' <- pletC $ pfromData $ ctxF.txInfo
-    txInfoF <- tcont $ pletFields @'["mint", "inputs", "outputs", "datums", "signatories", "validRange"] txInfo'
+    txInfoF <- pletFieldsC @'["mint", "inputs", "outputs", "datums", "signatories", "validRange"] txInfo'
 
     PSpending (pfromData . (pfield @"_0" #) -> ownInputRef) <- pmatchC $ pfromData ctxF.purpose
 
@@ -288,7 +293,7 @@ governorValidator gov =
       pletC $
         mustBePJust # "Own input not found"
           #$ pfindTxInByTxOutRef # ownInputRef # txInfoF.inputs
-    ownInputF <- tcont $ pletFields @'["address", "value"] ownInput
+    ownInputF <- pletFieldsC @'["address", "value"] ownInput
     let ownAddress = pfromData $ ownInputF.address
 
     (pfromData -> (oldGovernorDatum :: Term _ PGovernorDatum), _) <- tcont $ ptryFrom datum'
@@ -311,7 +316,7 @@ governorValidator gov =
     pguardC "Exactly one utxo should be sent to the governor" $
       plength # ownOutputs #== 1
 
-    ownOutput <- tcont $ pletFields @'["value", "datumHash"] $ phead # ownOutputs
+    ownOutput <- pletFieldsC @'["value", "datumHash"] $ phead # ownOutputs
     let ownOuputGSTAmount = psymbolValueOf # pgstSymbol # ownOutput.value
     pguardC "State token should stay at governor's address" $
       ownOuputGSTAmount #== 1
@@ -358,7 +363,7 @@ governorValidator gov =
                 # phoistAcyclic
                   ( plam $
                       \((pfield @"resolved" #) -> txOut') -> unTermCont $ do
-                        txOut <- tcont $ pletFields @'["address", "value"] txOut'
+                        txOut <- pletFieldsC @'["address", "value"] txOut'
 
                         pure $
                           txOut.address #== pdata pstakeValidatorAddress
@@ -366,7 +371,7 @@ governorValidator gov =
                   )
                 # pfromData txInfoF.inputs
 
-          stakeInputF <- tcont $ pletFields @'["datumHash", "value"] $ pfield @"resolved" # stakeInput
+          stakeInputF <- pletFieldsC @'["datumHash", "value"] $ pfield @"resolved" # stakeInput
 
           pguardC "Stake input doesn't have datum" $
             pisDJust # stakeInputF.datumHash
@@ -374,7 +379,7 @@ governorValidator gov =
           let stakeInputDatum = mustFindDatum' @PStakeDatum # stakeInputF.datumHash # txInfoF.datums
 
           stakeInputDatumF <-
-            tcont $ pletFields @["stakedAmount", "owner", "lockedBy"] stakeInputDatum
+            pletFieldsC @["stakedAmount", "owner", "lockedBy"] stakeInputDatum
 
           pguardC "Required amount of stake GTs should be presented" $
             stakeInputDatumF.stakedAmount #== (pgtValueOf # stakeInputF.value)
@@ -392,7 +397,7 @@ governorValidator gov =
                 # phoistAcyclic
                   ( plam $
                       \txOut' -> unTermCont $ do
-                        txOut <- tcont $ pletFields @'["address", "value"] txOut'
+                        txOut <- pletFieldsC @'["address", "value"] txOut'
 
                         pure $
                           txOut.address #== pdata pproposalValidatorAddress
@@ -460,7 +465,7 @@ governorValidator gov =
                 # phoistAcyclic
                   ( plam $
                       \txOut' -> unTermCont $ do
-                        txOut <- tcont $ pletFields @'["address", "value"] txOut'
+                        txOut <- pletFieldsC @'["address", "value"] txOut'
 
                         pure $
                           txOut.address #== pdata pstakeValidatorAddress
@@ -468,7 +473,7 @@ governorValidator gov =
                   )
                 # pfromData txInfoF.outputs
 
-          stakeOutputF <- tcont $ pletFields @'["datumHash", "value"] $ stakeOutput
+          stakeOutputF <- pletFieldsC @'["datumHash", "value"] $ stakeOutput
 
           pguardC "Staked GTs should be sent back to stake validator" $
             stakeInputDatumF.stakedAmount #== (pgtValueOf # stakeOutputF.value)
@@ -532,7 +537,7 @@ governorValidator gov =
                       #$ pfind
                     # plam
                       ( \((pfield @"resolved" #) -> txOut) -> unTermCont $ do
-                          txOutF <- tcont $ pletFields @'["address", "value"] txOut
+                          txOutF <- pletFieldsC @'["address", "value"] txOut
 
                           pure $
                             psymbolValueOf # ppstSymbol # txOutF.value #== 1
@@ -547,7 +552,7 @@ governorValidator gov =
                   #$ pfind
                     # plam
                       ( \txOut -> unTermCont $ do
-                          txOutF <- tcont $ pletFields @'["address", "value"] txOut
+                          txOutF <- pletFieldsC @'["address", "value"] txOut
                           pure $
                             psymbolValueOf # ppstSymbol # txOutF.value #== 1
                               #&& txOutF.address #== pdata pproposalValidatorAddress
@@ -630,7 +635,7 @@ governorValidator gov =
                 phoistAcyclic $
                   plam
                     ( \effects (pfromData -> output') -> unTermCont $ do
-                        output <- tcont $ pletFields @'["address", "datumHash"] $ output'
+                        output <- pletFieldsC @'["address", "datumHash"] $ output'
 
                         let scriptHash =
                               mustBePJust # "GAT receiver is not a script"

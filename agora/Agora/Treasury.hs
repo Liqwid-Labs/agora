@@ -20,7 +20,7 @@ import Plutarch.DataRepr (
   DerivePConstantViaData (..),
   PIsDataReprInstances (PIsDataReprInstances),
  )
-import Plutarch.Extra.TermCont (pguardC, pletC, pmatchC, ptryFromC)
+import Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC, ptryFromC)
 import Plutarch.Lift (PConstantDecl (..), PLifted (..), PUnsafeLiftDecl)
 import Plutarch.TryFrom ()
 import PlutusLedgerApi.V1.Value (CurrencySymbol)
@@ -79,7 +79,7 @@ treasuryValidator gatCs' = plam $ \_datum redeemer ctx' -> unTermCont $ do
   (treasuryRedeemer, _) <- ptryFromC redeemer
 
   -- plet required fields from script context.
-  ctx <- tcont $ pletFields @["txInfo", "purpose"] ctx'
+  ctx <- pletFieldsC @["txInfo", "purpose"] ctx'
 
   -- Ensure that script is for burning i.e. minting a negative amount.
   PMinting _ <- pmatchC ctx.purpose
@@ -89,7 +89,7 @@ treasuryValidator gatCs' = plam $ \_datum redeemer ctx' -> unTermCont $ do
 
   -- Get the minted value from txInfo.
   txInfo' <- pletC ctx.txInfo
-  txInfo <- tcont $ pletFields @'["mint"] txInfo'
+  txInfo <- pletFieldsC @'["mint"] txInfo'
   let mint :: Term _ (PValue _ _)
       mint = txInfo.mint
 

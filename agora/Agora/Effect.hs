@@ -9,7 +9,7 @@ module Agora.Effect (makeEffect) where
 
 import Agora.AuthorityToken (singleAuthorityTokenBurned)
 import Plutarch.Api.V1 (PCurrencySymbol, PScriptPurpose (PSpending), PTxInfo, PTxOutRef, PValidator, PValue)
-import Plutarch.Extra.TermCont (pguardC, pletC, pmatchC, ptryFromC)
+import Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC, ptryFromC)
 import Plutarch.TryFrom ()
 import PlutusLedgerApi.V1.Value (CurrencySymbol)
 
@@ -29,7 +29,7 @@ makeEffect ::
   ClosedTerm PValidator
 makeEffect gatCs' f =
   plam $ \datum _redeemer ctx' -> unTermCont $ do
-    ctx <- tcont $ pletFields @'["txInfo", "purpose"] ctx'
+    ctx <- pletFieldsC @'["txInfo", "purpose"] ctx'
     txInfo' <- pletC ctx.txInfo
 
     -- convert input datum, PData, into desierable type
@@ -42,7 +42,7 @@ makeEffect gatCs' f =
     txOutRef' <- pletC (pfield @"_0" # txOutRef)
 
     -- fetch minted values to ensure single GAT is burned
-    txInfo <- tcont $ pletFields @'["mint"] txInfo'
+    txInfo <- pletFieldsC @'["mint"] txInfo'
     let mint :: Term _ (PValue _ _)
         mint = txInfo.mint
 

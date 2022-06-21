@@ -37,7 +37,7 @@ import Plutarch.DataRepr (
   PDataFields,
   PIsDataReprInstances (..),
  )
-import Plutarch.Extra.TermCont (pguardC, pletC, pmatchC)
+import Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC)
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (..))
 import Plutarch.TryFrom (PTryFrom (..))
 import PlutusLedgerApi.V1.Credential (Credential)
@@ -111,16 +111,16 @@ instance PTryFrom PData (PAsData PTreasuryWithdrawalDatum) where
 treasuryWithdrawalValidator :: forall {s :: S}. CurrencySymbol -> Term s PValidator
 treasuryWithdrawalValidator currSymbol = makeEffect currSymbol $
   \_cs (datum' :: Term _ PTreasuryWithdrawalDatum) txOutRef' txInfo' -> unTermCont $ do
-    datum <- tcont $ pletFields @'["receivers", "treasuries"] datum'
-    txInfo <- tcont $ pletFields @'["outputs", "inputs"] txInfo'
+    datum <- pletFieldsC @'["receivers", "treasuries"] datum'
+    txInfo <- pletFieldsC @'["outputs", "inputs"] txInfo'
     PJust ((pfield @"resolved" #) -> txOut) <- pmatchC $ pfindTxInByTxOutRef # txOutRef' # pfromData txInfo.inputs
-    effInput <- tcont $ pletFields @'["address", "value"] $ txOut
+    effInput <- pletFieldsC @'["address", "value"] $ txOut
     outputValues <-
       pletC $
         pmap
           # plam
             ( \(pfromData -> txOut') -> unTermCont $ do
-                txOut <- tcont $ pletFields @'["address", "value"] $ txOut'
+                txOut <- pletFieldsC @'["address", "value"] $ txOut'
                 let cred = pfield @"credential" # pfromData txOut.address
                 pure . pdata $ ptuple # cred # txOut.value
             )
@@ -130,7 +130,7 @@ treasuryWithdrawalValidator currSymbol = makeEffect currSymbol $
         pmap
           # plam
             ( \((pfield @"resolved" #) . pfromData -> txOut') -> unTermCont $ do
-                txOut <- tcont $ pletFields @'["address", "value"] $ txOut'
+                txOut <- pletFieldsC @'["address", "value"] $ txOut'
                 let cred = pfield @"credential" # pfromData txOut.address
                 pure . pdata $ ptuple # cred # txOut.value
             )
