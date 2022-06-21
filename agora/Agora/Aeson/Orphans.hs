@@ -110,6 +110,15 @@ deriving via
     (Aeson.FromJSON Plutus.ValidatorHash)
 
 deriving via
+  (AsBase16Bytes Plutus.BuiltinByteString)
+  instance
+    (Aeson.ToJSON Plutus.BuiltinByteString)
+deriving via
+  (AsBase16Bytes Plutus.BuiltinByteString)
+  instance
+    (Aeson.FromJSON Plutus.BuiltinByteString)
+
+deriving via
   (AsBase16Codec Plutus.Validator)
   instance
     (Aeson.ToJSON Plutus.Validator)

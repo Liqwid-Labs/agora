@@ -25,7 +25,9 @@ import Agora.Stake (Stake (..))
 import Agora.Stake.Scripts (stakePolicy, stakeValidator)
 import Agora.Treasury (treasuryValidator)
 import Codec.Serialise.Orphans ()
+import Data.Aeson qualified as Aeson
 import Data.Cache.Cached (cachedFor)
+import Data.Default.Class (Default (def))
 import Data.Function ((&))
 import Data.Proxy (Proxy (Proxy))
 import Development.GitRev (gitBranch, gitHash)
@@ -39,14 +41,16 @@ import PlutusLedgerApi.V1.Value (AssetClass, CurrencySymbol)
 import PlutusLedgerApi.V1.Value qualified as Value
 import Prettyprinter (defaultLayoutOptions, hsep, layoutPretty, viaShow, (<+>))
 import Prettyprinter.Render.String (renderString)
-import Servant.API (JSON, Post, ReqBody, type (:>))
+import Servant.API (JSON, Post, ReqBody, (:<|>) (..), type (:>))
 import Servant.Server qualified as Servant
 import System.Clock (TimeSpec (TimeSpec))
 import Text.Printf (printf)
-import Types (AgoraScripts (..), ScriptParams (..))
+import Types (AgoraScripts (..), Builders, ScriptParams (..), ScriptQuery, insertBuilder, runQuery)
 
 -- | Servant API type for script generation.
-type API = "generate-scripts" :> ReqBody '[JSON] ScriptParams :> Post '[JSON] AgoraScripts
+type API =
+  "generate-scripts" :> ReqBody '[JSON] ScriptParams :> Post '[JSON] AgoraScripts
+    :<|> "query-script" :> ReqBody '[JSON] ScriptQuery :> Post '[JSON] Aeson.Value
 
 -- | Run a Warp server that exposes a script generation endpoint.
 runServer :: Options -> IO ()
@@ -74,11 +78,26 @@ runServer options = do
 
   -- Scripts stay cached for five minutes
   agoraScripts' <- cachedFor (Just $ TimeSpec 300 0) agoraScripts
+  query <- cachedFor (Just $ TimeSpec 300 0) (`runQuery` agoraBuilders)
 
   printf "[info] Running 'agora-scripts' on :%d\n" (Warp.getPort settings)
-  Servant.serve (Proxy @API) agoraScripts'
+  Servant.serve
+    (Proxy @API)
+    (agoraScripts' :<|> query)
     & corsMiddleware
     & Warp.runSettings settings
+
+agoraBuilders :: Builders
+agoraBuilders =
+  def
+    & insertBuilder "governorPolicy" ((.governorPolicyInfo) . agoraScripts)
+    & insertBuilder "governorValidator" ((.governorValidatorInfo) . agoraScripts)
+    & insertBuilder "stakePolicyInfo" ((.stakePolicyInfo) . agoraScripts)
+    & insertBuilder "stakeValidatorInfo" ((.stakeValidatorInfo) . agoraScripts)
+    & insertBuilder "proposalPolicyInfo" ((.proposalPolicyInfo) . agoraScripts)
+    & insertBuilder "proposalValidatorInfo" ((.proposalValidatorInfo) . agoraScripts)
+    & insertBuilder "treasuryValidatorInfo" ((.treasuryValidatorInfo) . agoraScripts)
+    & insertBuilder "authorityTokenPolicyInfo" ((.authorityTokenPolicyInfo) . agoraScripts)
 
 -- | Create scripts from params.
 agoraScripts :: ScriptParams -> AgoraScripts

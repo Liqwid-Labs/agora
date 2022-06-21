@@ -28,6 +28,7 @@ common lang
     BinaryLiterals
     ConstrainedClassMethods
     ConstraintKinds
+    DuplicateRecordFields
     DataKinds
     DeriveAnyClass
     DeriveDataTypeable
@@ -255,6 +256,7 @@ executable agora-scripts
     , wai
     , wai-cors
     , warp
+    , containers
 
 executable agora-purescript-bridge
   import:         lang, deps, exe-opts

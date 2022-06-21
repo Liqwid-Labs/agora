@@ -9,6 +9,7 @@ module Agora.ScriptInfo (
   -- * Types
   PolicyInfo (..),
   ValidatorInfo (..),
+  ScriptInfo (..),
 
   -- * Introduction functions
   mkValidatorInfo,
@@ -19,8 +20,17 @@ import Agora.Aeson.Orphans ()
 import Data.Aeson qualified as Aeson
 import GHC.Generics qualified as GHC
 import Plutarch.Api.V1 (PMintingPolicy, PValidator, mintingPolicySymbol, mkMintingPolicy, mkValidator, validatorHash)
-import PlutusLedgerApi.V1 (MintingPolicy, Validator, ValidatorHash)
-import PlutusLedgerApi.V1.Value (CurrencySymbol)
+import PlutusLedgerApi.V1 (BuiltinByteString, CurrencySymbol (unCurrencySymbol), MintingPolicy, Script, Validator, ValidatorHash, unMintingPolicyScript)
+
+-- | Bundle containing a 'Script' and its hash.
+data ScriptInfo = ScriptInfo
+  { script :: Script
+  -- ^ The validator script.
+  , hash :: BuiltinByteString
+  -- ^ Hash of the script.
+  }
+  deriving stock (Show, Eq, GHC.Generic)
+  deriving anyclass (Aeson.ToJSON, Aeson.FromJSON)
 
 {- | Bundle containing a 'Validator' and its hash.
 
