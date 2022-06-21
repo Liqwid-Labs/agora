@@ -6339,11 +6339,11 @@
         "plutarch-quickcheck": "plutarch-quickcheck"
       },
       "locked": {
-        "lastModified": 1655492974,
-        "narHash": "sha256-FNshUKtfs8tbxAUlqhP3AgmkjKMiKyw+kEBULmg6bVM=",
+        "lastModified": 1655824848,
+        "narHash": "sha256-ZpQ/d+wIO18uE+h6cysPHNpog1f7Qlfy6ul1FSnm2Ek=",
         "owner": "Liqwid-Labs",
         "repo": "liqwid-plutarch-extra",
-        "rev": "4a9cdc642b85e16e487b789012bb8417c3e197d8",
+        "rev": "620072d639afd91c84e7347b35df4dfe247546a4",
         "type": "github"
       },
       "original": {
@@ -9286,11 +9286,11 @@
         "plutarch": "plutarch_4"
       },
       "locked": {
-        "lastModified": 1655492019,
-        "narHash": "sha256-ZwU9wjSaC1BCukLqx3swqD30mwppVr7Fg2Y8jEkQ2c8=",
+        "lastModified": 1655751255,
+        "narHash": "sha256-3Uk1v/V+qm/KBBwBPqzr4X7KiH9DyJ9vhNH2Pw08PkE=",
         "owner": "Liqwid-Labs",
         "repo": "plutarch-context-builder",
-        "rev": "fa0e90bf0cdb258c5be500d066d5698fb360cfc3",
+        "rev": "9e6c81a2e1762a5f8e38cb88b83e2996447e3003",
         "type": "github"
       },
       "original": {
@@ -9318,11 +9318,11 @@
         "plutarch": "plutarch_5"
       },
       "locked": {
-        "lastModified": 1654950823,
-        "narHash": "sha256-fq6Iyk1ygNs4sTS55jLjx0hWFAFQNKXBGrVHuzRXFls=",
+        "lastModified": 1655733533,
+        "narHash": "sha256-HRSJUEQYYwr0HvYn6GwLmyYY7TXwZcYPAW0U8t6nmok=",
         "owner": "Liqwid-Labs",
         "repo": "plutarch-numeric",
-        "rev": "11fdf47fdcbf19d51ed587b0b67618152098f442",
+        "rev": "ce2d39dc366d9453b0f5df328bbb78f11e3b2ed6",
         "type": "github"
       },
       "original": {

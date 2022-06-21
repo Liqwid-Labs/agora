@@ -17,15 +17,27 @@ module Property.Generator (
   genValue,
   genAssetClass,
   genSingletonValue,
+  genInput,
+  genOutput,
+  genOutRef,
 ) where
 
 import Control.Applicative (Applicative (liftA2))
 import Data.ByteString.Char8 qualified as C (ByteString, pack)
 import Data.ByteString.Hash (sha2_256)
+import Plutarch.Context (
+  Builder,
+  credential,
+  input,
+  output,
+  withValue,
+ )
 import PlutusLedgerApi.V1 (
   Address (Address),
   Credential (..),
   PubKeyHash (PubKeyHash),
+  TxId (..),
+  TxOutRef (..),
   ValidatorHash (ValidatorHash),
   Value,
   toBuiltin,
@@ -95,3 +107,27 @@ genAssetClass =
 -- | Random *singleton* value with random @AssetClass@.
 genSingletonValue :: Gen Value
 genSingletonValue = genAssetClass >>= genValue
+
+genInput :: Builder a => Gen a
+genInput = do
+  cred <- genCredential
+  val <- genSingletonValue
+  return $
+    input $
+      credential cred
+        . withValue val
+
+genOutput :: Builder a => Gen a
+genOutput = do
+  cred <- genCredential
+  val <- genSingletonValue
+  return $
+    output $
+      credential cred
+        . withValue val
+
+genOutRef :: Gen TxOutRef
+genOutRef = do
+  tid <- genHashByteString
+  idx <- arbitrary
+  return $ TxOutRef (TxId . toBuiltin $ tid) idx
