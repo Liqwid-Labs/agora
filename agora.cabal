@@ -235,18 +235,26 @@ executable agora-scripts
   main-is:        Scripts.hs
   hs-source-dirs: agora-scripts
   other-modules:
-    Options
     API
+    Codec.Serialise.Orphans
+    Data.Cache.Cached
+    Options
+    Types
+
   build-depends:
     , agora
+    , cache
+    , clock
     , gitrev
+    , hashable
+    , http-types
     , optparse-applicative
+    , prettyprinter
     , servant
     , servant-server
-    , warp
     , wai
-    , http-types
-    , prettyprinter
+    , wai-cors
+    , warp
 
 executable agora-purescript-bridge
   import:         lang, deps, exe-opts

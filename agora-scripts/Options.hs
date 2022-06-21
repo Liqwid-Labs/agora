@@ -7,9 +7,9 @@ Command line options for 'agora-scripts'.
 -}
 module Options (Options (..), parseOptions) where
 
+import Network.Wai.Handler.Warp qualified as Warp
 import Options.Applicative ((<**>))
 import Options.Applicative qualified as Opt
-import qualified Network.Wai.Handler.Warp as Warp
 
 data Options = Options
   { port :: Warp.Port
@@ -19,7 +19,8 @@ data Options = Options
 opt :: Opt.Parser Options
 opt =
   Options
-    <$> Opt.option Opt.auto
+    <$> Opt.option
+      Opt.auto
       ( Opt.long "port"
           <> Opt.short 'p'
           <> Opt.metavar "PORT"

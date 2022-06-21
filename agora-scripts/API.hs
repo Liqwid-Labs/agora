@@ -1,68 +1,49 @@
 {-# LANGUAGE TemplateHaskell #-}
-{- |
-Module     : API
-Maintainer : emi@haskell.fyi
-Description: API for script exporter.
 
-API for script exporter.
+{- | Module     : API
+   Maintainer : emi@haskell.fyi
+   Description: API for script exporter.
+
+   API for script exporter.
 -}
+module API (
+  AgoraScripts (..),
+  ScriptParams (..),
+  API,
+  agoraScripts,
+  runServer,
+) where
 
-module API (AgoraScripts(..), ScriptParams(..), API, agoraScripts, runServer) where
-
-import Servant.API (type (:>), ReqBody, JSON, Post)
-import PlutusLedgerApi.V1 (TxOutRef)
-import Data.Tagged (Tagged)
-import Agora.SafeMoney (GTTag)
-import PlutusLedgerApi.V1.Value (AssetClass, CurrencySymbol)
-import qualified Data.Aeson as Aeson
-import qualified GHC.Generics as GHC
-import Agora.ScriptInfo (PolicyInfo, ValidatorInfo, mkPolicyInfo, mkValidatorInfo)
-import Agora.Stake (Stake(..))
-import Agora.Proposal (Proposal(..))
-import Agora.AuthorityToken (AuthorityToken(..), authorityTokenPolicy)
-import Agora.Governor (Governor(..))
-import Development.GitRev (gitBranch, gitHash)
-import qualified Agora.Governor as Governor
-import qualified PlutusLedgerApi.V1.Value as Value
-import Plutarch.Api.V1 (mintingPolicySymbol, mkMintingPolicy)
-import Agora.Governor.Scripts (governorPolicy, authorityTokenSymbolFromGovernor, authorityTokenFromGovernor, proposalFromGovernor, stakeFromGovernor, governorValidator)
+import Agora.AuthorityToken (AuthorityToken (..), authorityTokenPolicy)
+import Agora.Governor (Governor (..))
+import Agora.Governor qualified as Governor
+import Agora.Governor.Scripts (authorityTokenFromGovernor, authorityTokenSymbolFromGovernor, governorPolicy, governorValidator, proposalFromGovernor, stakeFromGovernor)
+import Agora.Proposal (Proposal (..))
+import Agora.Proposal.Scripts (proposalPolicy, proposalValidator)
+import Agora.ScriptInfo (mkPolicyInfo, mkValidatorInfo)
+import Agora.Stake (Stake (..))
+import Agora.Stake.Scripts (stakePolicy, stakeValidator)
 import Agora.Treasury (treasuryValidator)
-import Agora.Proposal.Scripts (proposalValidator, proposalPolicy)
-import Agora.Stake.Scripts (stakeValidator, stakePolicy)
-import qualified Servant.Server as Servant
-import Data.Proxy (Proxy(Proxy))
-import qualified Network.Wai.Handler.Warp as Warp
+import Codec.Serialise.Orphans ()
+import Data.Cache.Cached (cachedFor)
 import Data.Function ((&))
-import qualified Network.Wai as Wai
-import qualified Network.HTTP.Types as Http
-import Prettyprinter (layoutPretty, defaultLayoutOptions, hsep, viaShow, (<+>))
+import Data.Proxy (Proxy (Proxy))
+import Development.GitRev (gitBranch, gitHash)
+import Network.HTTP.Types qualified as Http
+import Network.Wai qualified as Wai
+import Network.Wai.Handler.Warp qualified as Warp
+import Network.Wai.Middleware.Cors (CorsResourcePolicy (corsRequestHeaders), cors, simpleCorsResourcePolicy)
+import Options (Options (..))
+import Plutarch.Api.V1 (mintingPolicySymbol, mkMintingPolicy)
+import PlutusLedgerApi.V1.Value (AssetClass, CurrencySymbol)
+import PlutusLedgerApi.V1.Value qualified as Value
+import Prettyprinter (defaultLayoutOptions, hsep, layoutPretty, viaShow, (<+>))
 import Prettyprinter.Render.String (renderString)
-import Options (Options(..))
+import Servant.API (JSON, Post, ReqBody, type (:>))
+import Servant.Server qualified as Servant
+import System.Clock (TimeSpec (TimeSpec))
 import Text.Printf (printf)
-
--- | Params required for creating script export.
-data ScriptParams = ScriptParams
-  { governorInitialSpend :: TxOutRef
-  , gtClassRef :: Tagged GTTag AssetClass
-  , maximumCosigners :: Integer
-  }
-  deriving anyclass (Aeson.ToJSON, Aeson.FromJSON)
-  deriving stock (Show, Eq, GHC.Generic)
-
--- | Scripts that get exported.
-data AgoraScripts = AgoraScripts
-  { gitRev :: String
-  , governorPolicyInfo :: PolicyInfo
-  , governorValidatorInfo :: ValidatorInfo
-  , stakePolicyInfo :: PolicyInfo
-  , stakeValidatorInfo :: ValidatorInfo
-  , proposalPolicyInfo :: PolicyInfo
-  , proposalValidatorInfo :: ValidatorInfo
-  , treasuryValidatorInfo :: ValidatorInfo
-  , authorityTokenPolicyInfo :: PolicyInfo
-  }
-  deriving anyclass (Aeson.ToJSON, Aeson.FromJSON)
-  deriving stock (Show, Eq, GHC.Generic)
+import Types (AgoraScripts (..), ScriptParams (..))
 
 -- | Servant API type for script generation.
 type API = "generate-scripts" :> ReqBody '[JSON] ScriptParams :> Post '[JSON] AgoraScripts
@@ -84,8 +65,20 @@ runServer options = do
                     ]
             )
 
+      corsPolicy =
+        simpleCorsResourcePolicy
+          { -- NOTE: Webpack dev server requires this for CORS workaround.
+            corsRequestHeaders = "content-type" : corsRequestHeaders simpleCorsResourcePolicy
+          }
+      corsMiddleware = cors . const $ Just corsPolicy
+
+  -- Scripts stay cached for five minutes
+  agoraScripts' <- cachedFor (Just $ TimeSpec 300 0) agoraScripts
+
   printf "[info] Running 'agora-scripts' on :%d\n" (Warp.getPort settings)
-  Warp.runSettings settings $ Servant.serve (Proxy @API) (pure . agoraScripts)
+  Servant.serve (Proxy @API) agoraScripts'
+    & corsMiddleware
+    & Warp.runSettings settings
 
 -- | Create scripts from params.
 agoraScripts :: ScriptParams -> AgoraScripts
@@ -102,6 +95,8 @@ agoraScripts params =
     , authorityTokenPolicyInfo = mkPolicyInfo (authorityTokenPolicy authorityToken)
     }
   where
+    -- This encodes the git revision of the server. It's useful for the caller
+    -- to be able to ensure they are compatible with it.
     revision :: String
     revision = $(gitBranch) <> "@" <> $(gitHash)
 

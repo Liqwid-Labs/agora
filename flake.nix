@@ -140,11 +140,15 @@
       );
 
       applyDep = pkgs: o:
-        let h = myhackage pkgs.system o.compiler-nix-name; in
-        (plutarch.applyPlutarchDep pkgs o) // {
-          modules = haskellModules ++ [ h.module ] ++ (o.modules or [ ]);
-          extra-hackages = [ (import h.hackageNix) ] ++ (o.extra-hackages or [ ]);
-          extra-hackage-tarballs = { _xNJUd_plutarch-hackage = h.hackageTarball; } // (o.extra-hackage-tarballs or { });
+        let
+          h = myhackage pkgs.system o.compiler-nix-name;
+          o' = (plutarch.applyPlutarchDep pkgs o);
+        in
+        o' // rec {
+          modules = haskellModules ++ [ h.module ] ++ (o'.modules or [ ]);
+          extra-hackages = [ (import h.hackageNix) ] ++ (o'.extra-hackages or [ ]);
+          extra-hackage-tarballs = { _xNJUd_plutarch-hackage = h.hackageTarball; };
+          cabalProjectLocal = (o'.cabalProjectLocal or "") + "  , cache >= 0.1.3.0";
         };
 
       projectForGhc = compiler-nix-name: system:

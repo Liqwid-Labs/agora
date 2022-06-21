@@ -1,19 +1,14 @@
-{-# LANGUAGE TemplateHaskell #-}
+{- | Module     : Scripts
+     Maintainer : emi@haskell.fyi
+     Description: Export scripts given configuration.
 
-{- |
-Module     : Scripts
-Maintainer : emi@haskell.fyi
-Description: Export scripts given configuration.
-
-Export scripts given configuration.
+     Export scripts given configuration.
 -}
-module Main (main) where
+module Scripts (main) where
 
-import Options (parseOptions)
 import API (runServer)
+import Options (parseOptions)
 
 main :: IO ()
-main = do
-  options <- parseOptions
-
-  runServer options
+main =
+  parseOptions >>= runServer
