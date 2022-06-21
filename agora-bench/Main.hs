@@ -1,7 +1,7 @@
 module Main (main) where
 
 import Bench (specificationTreeToBenchmarks)
-import Data.Csv (encodeDefaultOrderedByName)
+import Data.Csv (EncodeOptions (encUseCrLf), defaultEncodeOptions, encodeDefaultOrderedByNameWith)
 import Data.Text.Lazy.Encoding (decodeUtf8)
 import Data.Text.Lazy.IO as I (writeFile)
 import Options (Options (..), parseOptions)
@@ -24,10 +24,15 @@ main = do
   options <- parseOptions
 
   I.writeFile options.output $
-    (decodeUtf8 . encodeDefaultOrderedByName) res
+    (decodeUtf8 . encodeDefaultOrderedByNameWith encodeOptions) res
 
   mapM_ (putStrLn . renderString . layoutPretty defaultLayoutOptions . pretty) res
   where
+    encodeOptions =
+      defaultEncodeOptions
+        { encUseCrLf = False
+        }
+
     res =
       specificationTreeToBenchmarks $
         group
