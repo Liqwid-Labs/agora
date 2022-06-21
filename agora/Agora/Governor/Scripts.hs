@@ -39,8 +39,8 @@ import Agora.AuthorityToken (
  )
 import Agora.Governor (
   Governor (gstOutRef, gtClassRef, maximumCosigners),
+  GovernorRedeemer (..),
   PGovernorDatum (PGovernorDatum),
-  PGovernorRedeemer (PCreateProposal, PMintGATs, PMutateGovernor),
   governorDatumValid,
   pgetNextProposalId,
  )
@@ -106,6 +106,8 @@ import Plutarch.Api.V1.AssetClass (
  )
 import Plutarch.Api.V1.ScriptContext (pfindTxInByTxOutRef, pisUTXOSpent, ptryFindDatum, ptxSignedBy, pvalueSpent)
 import "liqwid-plutarch-extra" Plutarch.Api.V1.Value (psymbolValueOf)
+import Plutarch.Builtin (pasInt)
+import Plutarch.Extra.IsData (pmatchEnum)
 import Plutarch.Extra.Map (
   pkeys,
   plookup,
@@ -281,7 +283,7 @@ governorPolicy gov =
 governorValidator :: Governor -> ClosedTerm PValidator
 governorValidator gov =
   plam $ \datum' redeemer' ctx' -> unTermCont $ do
-    (pfromData -> redeemer, _) <- tcont $ ptryFrom redeemer'
+    redeemer <- pletC $ pasInt # redeemer'
     ctxF <- pletFieldsC @'["txInfo", "purpose"] ctx'
 
     txInfo' <- pletC $ pfromData $ ctxF.txInfo
@@ -332,8 +334,8 @@ governorValidator gov =
     pguardC "New datum is not valid" $ governorDatumValid # newGovernorDatum
 
     pure $
-      pmatch redeemer $ \case
-        PCreateProposal _ -> unTermCont $ do
+      pmatchEnum redeemer $ \case
+        CreateProposal -> unTermCont $ do
           -- Check that the transaction advances proposal id.
 
           let expectedNextProposalId = pgetNextProposalId # oldGovernorDatumF.nextProposalId
@@ -519,7 +521,7 @@ governorValidator gov =
 
         --------------------------------------------------------------------------
 
-        PMintGATs _ -> unTermCont $ do
+        MintGATs -> unTermCont $ do
           pguardC "Governor state should not be changed" $ newGovernorDatum #== oldGovernorDatum
 
           -- Filter out proposal inputs and ouputs using PST and the address of proposal validator.
@@ -673,7 +675,7 @@ governorValidator gov =
 
         --------------------------------------------------------------------------
 
-        PMutateGovernor _ -> unTermCont $ do
+        MutateGovernor -> unTermCont $ do
           -- Check that a GAT is burnt.
           pure $ popaque $ singleAuthorityTokenBurned patSymbol ctxF.txInfo txInfoF.mint
   where

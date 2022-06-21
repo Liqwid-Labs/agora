@@ -62,6 +62,7 @@ import Plutarch.Unsafe (punsafeCoerce)
 
 --------------------------------------------------------------------------------
 
+import Plutarch.Extra.IsData (DerivePConstantViaEnum (..), EnumIsData (..))
 import PlutusLedgerApi.V1 (TxOutRef)
 import PlutusLedgerApi.V1.Value (AssetClass (..))
 import PlutusTx qualified
@@ -91,6 +92,8 @@ PlutusTx.makeIsDataIndexed ''GovernorDatum [('GovernorDatum, 0)]
      2. The gating of minting authority tokens.
 
      Parameters of the governor can also be mutated by an effect.
+
+     Note that this redeemer is encoded as an 'Integer' on-chain.
 -}
 data GovernorRedeemer
   = -- | Checks that a proposal was created lawfully, and allows it.
@@ -100,14 +103,10 @@ data GovernorRedeemer
     MintGATs
   | -- | Allows effects to mutate the parameters.
     MutateGovernor
-  deriving stock (Show, GHC.Generic)
-
-PlutusTx.makeIsDataIndexed
-  ''GovernorRedeemer
-  [ ('CreateProposal, 0)
-  , ('MintGATs, 1)
-  , ('MutateGovernor, 2)
-  ]
+  deriving stock (GHC.Generic)
+  deriving anyclass (Generic)
+  deriving stock (Show, Enum, Bounded)
+  deriving (PlutusTx.ToData, PlutusTx.FromData) via (EnumIsData GovernorRedeemer)
 
 -- | Parameters for creating Governor scripts.
 data Governor = Governor
@@ -153,22 +152,14 @@ instance PTryFrom PData (PAsData PGovernorDatum) where
 
   ptryFrom' d k = k (punsafeCoerce d, ())
 
--- | Plutarch-level version of 'GovernorRedeemer'.
-data PGovernorRedeemer (s :: S)
-  = PCreateProposal (Term s (PDataRecord '[]))
-  | PMintGATs (Term s (PDataRecord '[]))
-  | PMutateGovernor (Term s (PDataRecord '[]))
+-- | Plutarch version of `GovernorRedeemer`.
+newtype PGovernorRedeemer (s :: S) = PGovernorRedeemer (Term s PInteger)
   deriving stock (GHC.Generic)
   deriving anyclass (Generic)
-  deriving anyclass (PIsDataRepr)
-  deriving
-    (PlutusType, PIsData)
-    via PIsDataReprInstances PGovernorRedeemer
+  deriving (PlutusType, PIsData) via (DerivePNewtype PGovernorRedeemer PInteger)
 
 instance PUnsafeLiftDecl PGovernorRedeemer where type PLifted PGovernorRedeemer = GovernorRedeemer
-deriving via (DerivePConstantViaData GovernorRedeemer PGovernorRedeemer) instance (PConstantDecl GovernorRedeemer)
-
-deriving via PAsData (PIsDataReprInstances PGovernorRedeemer) instance PTryFrom PData (PAsData PGovernorRedeemer)
+deriving via (DerivePConstantViaEnum GovernorRedeemer PGovernorRedeemer) instance (PConstantDecl GovernorRedeemer)
 
 --------------------------------------------------------------------------------
 

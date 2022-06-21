@@ -16,11 +16,8 @@ import Generics.SOP
 import Plutarch.Api.V1 (PValidator)
 import Plutarch.Api.V1.Contexts (PScriptPurpose (PMinting))
 import "plutarch" Plutarch.Api.V1.Value (PValue)
-import Plutarch.DataRepr (
-  DerivePConstantViaData (..),
-  PIsDataReprInstances (PIsDataReprInstances),
- )
-import Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC, ptryFromC)
+import Plutarch.Extra.IsData (DerivePConstantViaEnum (..), EnumIsData (..), pmatchEnumFromData)
+import Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC)
 import Plutarch.Lift (PConstantDecl (..), PLifted (..), PUnsafeLiftDecl)
 import Plutarch.TryFrom ()
 import PlutusLedgerApi.V1.Value (CurrencySymbol)
@@ -28,16 +25,14 @@ import PlutusTx qualified
 
 --------------------------------------------------------------------------------
 
--- | Redeemer for Treasury actions.
+{- | Redeemer for Treasury actions.
+ Note that this redeemer is encoded as an 'Integer' on-chain.
+-}
 data TreasuryRedeemer
   = -- | Allow transaction to pass by delegating to GAT burn.
     SpendTreasuryGAT
-  deriving stock (Eq, Show, GHC.Generic)
-
-PlutusTx.makeIsDataIndexed
-  ''TreasuryRedeemer
-  [ ('SpendTreasuryGAT, 0)
-  ]
+  deriving stock (Eq, Show, GHC.Generic, Enum, Bounded)
+  deriving (PlutusTx.ToData, PlutusTx.FromData) via (EnumIsData TreasuryRedeemer)
 
 --------------------------------------------------------------------------------
 
@@ -45,24 +40,15 @@ PlutusTx.makeIsDataIndexed
      treasury.
 -}
 newtype PTreasuryRedeemer (s :: S)
-  = -- | Alters treasury parameters, subject to the burning of a
-    --   governance authority token.
-    PSpendTreasuryGAT (Term s (PDataRecord '[]))
+  = PTreasuryRedeemer (Term s PInteger)
   deriving stock (GHC.Generic)
-  deriving anyclass (Generic, PIsDataRepr)
-  deriving
-    (PlutusType, PIsData)
-    via PIsDataReprInstances PTreasuryRedeemer
-
-deriving via
-  PAsData (PIsDataReprInstances PTreasuryRedeemer)
-  instance
-    PTryFrom PData (PAsData PTreasuryRedeemer)
+  deriving anyclass (Generic)
+  deriving (PlutusType, PIsData) via (DerivePNewtype PTreasuryRedeemer PInteger)
 
 instance PUnsafeLiftDecl PTreasuryRedeemer where
   type PLifted PTreasuryRedeemer = TreasuryRedeemer
 deriving via
-  (DerivePConstantViaData TreasuryRedeemer PTreasuryRedeemer)
+  (DerivePConstantViaEnum TreasuryRedeemer PTreasuryRedeemer)
   instance
     (PConstantDecl TreasuryRedeemer)
 
@@ -76,8 +62,6 @@ treasuryValidator ::
   CurrencySymbol ->
   ClosedTerm PValidator
 treasuryValidator gatCs' = plam $ \_datum redeemer ctx' -> unTermCont $ do
-  (treasuryRedeemer, _) <- ptryFromC redeemer
-
   -- plet required fields from script context.
   ctx <- pletFieldsC @["txInfo", "purpose"] ctx'
 
@@ -85,7 +69,12 @@ treasuryValidator gatCs' = plam $ \_datum redeemer ctx' -> unTermCont $ do
   PMinting _ <- pmatchC ctx.purpose
 
   -- Ensure redeemer type is valid.
-  PSpendTreasuryGAT _ <- pmatchC $ pfromData treasuryRedeemer
+  let isRedeemerValid =
+        pmatchEnumFromData redeemer $ \case
+          Just SpendTreasuryGAT -> pconstant True
+          _ -> pconstant False
+
+  pguardC "Redeemer is valid" isRedeemerValid
 
   -- Get the minted value from txInfo.
   txInfo' <- pletC ctx.txInfo
