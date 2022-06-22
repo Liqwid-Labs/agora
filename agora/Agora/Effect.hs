@@ -13,13 +13,13 @@ import Plutarch.Extra.TermCont (pguardC, pletC, pmatchC, ptryFromC)
 import Plutarch.TryFrom ()
 import PlutusLedgerApi.V1.Value (CurrencySymbol)
 
---------------------------------------------------------------------------------
-
 {- | Helper "template" for creating effect validator.
 
      In some situations, it may be the case that we need more control over how
      an effect is implemented. In such situations, it's okay to not use this
      helper.
+
+     @since 0.1.0
 -}
 makeEffect ::
   forall (datum :: PType).

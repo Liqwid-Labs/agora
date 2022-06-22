@@ -57,6 +57,8 @@ import Prelude hiding (Num (..))
 
    - Check that exactly one state thread is burned.
    - Check that datum at state thread is valid and not locked.
+
+   @since 0.1.0
 -}
 stakePolicy ::
   -- | The (governance) token that a Stake can store.
@@ -153,53 +155,55 @@ stakePolicy gtClassRef =
 
 {- | Validator intended for Stake UTXOs to be locked by.
 
-== What this Validator does:
+     == What this Validator does:
 
-=== 'DepositWithdraw'
+     === 'DepositWithdraw'
 
-Deposit or withdraw some GT to the stake.
+     Deposit or withdraw some GT to the stake.
 
-- Tx must be signed by the owner.
-- The 'stakedAmount' field must be updated.
-- The stake must not be locked.
-- The new UTXO must have the previous value plus the difference
-  as stated by the redeemer.
+     - Tx must be signed by the owner.
+     - The 'stakedAmount' field must be updated.
+     - The stake must not be locked.
+     - The new UTXO must have the previous value plus the difference
+       as stated by the redeemer.
 
-=== 'PermitVote'
+     === 'PermitVote'
 
-Allow a 'ProposalLock' to be put on the stake in order to vote
-on a proposal.
+     Allow a 'ProposalLock' to be put on the stake in order to vote
+     on a proposal.
 
-- A proposal token must be spent alongside the stake.
+     - A proposal token must be spent alongside the stake.
 
-  * Its total votes must be correctly updated to include this stake's
-    contribution.
+       * Its total votes must be correctly updated to include this stake's
+         contribution.
 
-- Tx must be signed by the owner.
+     - Tx must be signed by the owner.
 
-=== 'RetractVotes'
+     === 'RetractVotes'
 
-Remove a 'ProposalLock' set when voting on a proposal.
+     Remove a 'ProposalLock' set when voting on a proposal.
 
-- A proposal token must be spent alongside the stake.
-- Tx must be signed by the owner.
+     - A proposal token must be spent alongside the stake.
+     - Tx must be signed by the owner.
 
-=== 'Destroy'
+     === 'Destroy'
 
-Destroy the stake in order to reclaim the min ADA.
+     Destroy the stake in order to reclaim the min ADA.
 
-- The stake must not be locked.
-- Tx must be signed by the owner.
+     - The stake must not be locked.
+     - Tx must be signed by the owner.
 
-=== 'WitnessStake'
+     === 'WitnessStake'
 
-Allow this Stake to be included in a transaction without making
-any changes to it. In the future,
-this could use [CIP-31](https://cips.cardano.org/cips/cip31/) instead.
+     Allow this Stake to be included in a transaction without making
+     any changes to it. In the future,
+     this could use [CIP-31](https://cips.cardano.org/cips/cip31/) instead.
 
-- Tx must be signed by the owner __or__ a proposal ST token must be spent
-  alongside the stake.
-- The datum and value must remain unchanged.
+     - Tx must be signed by the owner __or__ a proposal ST token must be spent
+       alongside the stake.
+     - The datum and value must remain unchanged.
+
+     @since 0.1.0
 -}
 stakeValidator :: Stake -> ClosedTerm PValidator
 stakeValidator stake =

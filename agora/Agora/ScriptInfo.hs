@@ -22,17 +22,35 @@ import Plutarch.Api.V1 (PMintingPolicy, PValidator, mintingPolicySymbol, mkMinti
 import PlutusLedgerApi.V1 (MintingPolicy, Validator, ValidatorHash)
 import PlutusLedgerApi.V1.Value (CurrencySymbol)
 
--- | Bundle containing a 'Validator' and its hash.
+{- | Bundle containing a 'Validator' and its hash.
+
+     @since 0.1.0
+-}
 data ValidatorInfo = ValidatorInfo
   { script :: Validator
   -- ^ The validator script.
   , hash :: ValidatorHash
   -- ^ Hash of the validator.
   }
-  deriving stock (Show, Eq, GHC.Generic)
-  deriving anyclass (Aeson.ToJSON, Aeson.FromJSON)
+  deriving stock
+    ( -- | @since 0.1.0
+      Show
+    , -- | @since 0.1.0
+      Eq
+    , -- | @since 0.1.0
+      GHC.Generic
+    )
+  deriving anyclass
+    ( -- | @since 0.1.0
+      Aeson.ToJSON
+    , -- | @since 0.1.0
+      Aeson.FromJSON
+    )
 
--- | Create a 'ValidatorInfo' given a Plutarch term.
+{- | Create a 'ValidatorInfo' given a Plutarch term.
+
+     @since 0.1.0
+-}
 mkValidatorInfo :: ClosedTerm PValidator -> ValidatorInfo
 mkValidatorInfo term =
   ValidatorInfo
@@ -42,17 +60,35 @@ mkValidatorInfo term =
   where
     validator = mkValidator term
 
--- | Bundle containing a 'MintingPolicy' and its symbol.
+{- | Bundle containing a 'MintingPolicy' and its symbol.
+
+     @since 0.1.0
+-}
 data PolicyInfo = PolicyInfo
   { policy :: MintingPolicy
   -- ^ The minting policy.
   , currencySymbol :: CurrencySymbol
   -- ^ The symbol given by the minting policy.
   }
-  deriving stock (Show, Eq, GHC.Generic)
-  deriving anyclass (Aeson.ToJSON, Aeson.FromJSON)
+  deriving stock
+    ( -- | @since 0.1.0
+      Show
+    , -- | @since 0.1.0
+      Eq
+    , -- | @since 0.1.0
+      GHC.Generic
+    )
+  deriving anyclass
+    ( -- | @since 0.1.0
+      Aeson.ToJSON
+    , -- | @since 0.1.0
+      Aeson.FromJSON
+    )
 
--- | Create a 'PolicyInfo' given a Plutarch term.
+{- | Create a 'PolicyInfo' given a Plutarch term.
+
+     @since 0.1.0
+-}
 mkPolicyInfo :: ClosedTerm PMintingPolicy -> PolicyInfo
 mkPolicyInfo term =
   PolicyInfo

@@ -14,10 +14,20 @@ import Plutarch.Api.V1 (PValidator)
 import Plutarch.TryFrom (PTryFrom (..))
 import PlutusLedgerApi.V1.Value (CurrencySymbol)
 
--- | Dummy datum for NoOp effect.
-newtype PNoOp (s :: S) = PNoOp (Term s PUnit)
-  deriving (PlutusType, PIsData) via (DerivePNewtype PNoOp PUnit)
+{- | Dummy datum for NoOp effect.
 
+     @since 0.1.0
+-}
+newtype PNoOp (s :: S) = PNoOp (Term s PUnit)
+  deriving
+    ( -- | @since 0.1.0
+      PlutusType
+    , -- | @since 0.1.0
+      PIsData
+    )
+    via (DerivePNewtype PNoOp PUnit)
+
+-- | @since 0.1.0
 instance PTryFrom PData (PAsData PNoOp) where
   type PTryFromExcess PData (PAsData PNoOp) = Const ()
   ptryFrom' _ cont =
@@ -26,7 +36,10 @@ instance PTryFrom PData (PAsData PNoOp) where
     -- It should always be reduced to Unit.
     cont (pdata $ pcon $ PNoOp (pconstant ()), ())
 
--- | Dummy effect which can only burn its GAT.
+{- | Dummy effect which can only burn its GAT.
+
+     @since 0.1.0
+-}
 noOpValidator :: CurrencySymbol -> ClosedTerm PValidator
 noOpValidator curr = makeEffect curr $
   \_ (_datum :: Term s PNoOp) _ _ -> popaque (pconstant ())

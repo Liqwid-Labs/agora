@@ -70,21 +70,23 @@ import PlutusLedgerApi.V1.Value (AssetClass (AssetClass))
 
 {- | Policy for Proposals.
 
-   == What this policy does
+     == What this policy does
 
-   === For minting:
+     === For minting:
 
-   - Governor is happy with mint.
+     - Governor is happy with mint.
 
-     * The governor must do most of the checking for the validity of the
-       transaction. For example, the governor must check that the datum
-       is correct, and that the ST is correctly paid to the right validator.
+       * The governor must do most of the checking for the validity of the
+         transaction. For example, the governor must check that the datum
+         is correct, and that the ST is correctly paid to the right validator.
 
-   - Exactly 1 token is minted.
+     - Exactly 1 token is minted.
 
-   === For burning:
+     === For burning:
 
-   - This policy cannot be burned.
+     - This policy cannot be burned.
+
+     @since 0.1.0
 -}
 proposalPolicy ::
   -- | The assetclass of GST, see 'Agora.Governor.Scripts.governorPolicy'.
@@ -119,29 +121,31 @@ proposalPolicy (AssetClass (govCs, govTn)) =
 
 {- | The validator for Proposals.
 
-The documentation for various of the redeemers lives at 'Agora.Proposal.ProposalRedeemer'.
+     The documentation for various of the redeemers lives at 'Agora.Proposal.ProposalRedeemer'.
 
-== What this validator does
+     == What this validator does
 
-=== Voting/unlocking
+     === Voting/unlocking
 
-When voting and unlocking, the proposal must witness a state transition
-occuring in the relevant Stake. This transition must place a lock on
-the stake that is tagged with the right 'Agora.Proposal.ResultTag', and 'Agora.Proposal.ProposalId'.
+     When voting and unlocking, the proposal must witness a state transition
+     occuring in the relevant Stake. This transition must place a lock on
+     the stake that is tagged with the right 'Agora.Proposal.ResultTag', and 'Agora.Proposal.ProposalId'.
 
-=== Periods
+     === Periods
 
-Most redeemers are time-sensitive.
+     Most redeemers are time-sensitive.
 
-A list of all time-sensitive redeemers and their requirements:
+     A list of all time-sensitive redeemers and their requirements:
 
-- 'Agora.Proposal.Vote' can only be used when both the status is in 'Agora.Proposal.VotingReady',
-  and 'Agora.Proposal.Time.isVotingPeriod' is true.
-- 'Agora.Proposal.Cosign' can only be used when both the status is in 'Agora.Proposal.Draft',
-  and 'Agora.Proposal.Time.isDraftPeriod' is true.
-- 'Agora.Proposal.AdvanceProposal' can only be used when the status can be advanced
-  (see 'Agora.Proposal.AdvanceProposal' docs).
-- 'Agora.Proposal.Unlock' is always valid.
+     - 'Agora.Proposal.Vote' can only be used when both the status is in 'Agora.Proposal.VotingReady',
+       and 'Agora.Proposal.Time.isVotingPeriod' is true.
+     - 'Agora.Proposal.Cosign' can only be used when both the status is in 'Agora.Proposal.Draft',
+       and 'Agora.Proposal.Time.isDraftPeriod' is true.
+     - 'Agora.Proposal.AdvanceProposal' can only be used when the status can be advanced
+       (see 'Agora.Proposal.AdvanceProposal' docs).
+     - 'Agora.Proposal.Unlock' is always valid.
+
+     @since 0.1.0
 -}
 proposalValidator :: Proposal -> ClosedTerm PValidator
 proposalValidator proposal =
