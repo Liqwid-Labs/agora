@@ -21,18 +21,6 @@ module Agora.Utils (
   isPubKey,
 ) where
 
---------------------------------------------------------------------------------
-
-import PlutusLedgerApi.V1 (
-  Address (..),
-  Credential (..),
-  CurrencySymbol,
-  TokenName (..),
-  ValidatorHash (..),
- )
-
---------------------------------------------------------------------------------
-
 import Plutarch.Api.V1 (
   AmountGuarantees,
   KeyGuarantees,
@@ -56,12 +44,22 @@ import "liqwid-plutarch-extra" Plutarch.Api.V1.Value (psymbolValueOf)
 import Plutarch.Builtin (pforgetData)
 import Plutarch.Extra.List (plookupTuple)
 import Plutarch.Extra.TermCont (pletC, pmatchC)
+import PlutusLedgerApi.V1 (
+  Address (..),
+  Credential (..),
+  CurrencySymbol,
+  TokenName (..),
+  ValidatorHash (..),
+ )
 
 {- Functions which should (probably) not be upstreamed
    All of these functions are quite inefficient.
 -}
 
--- | Get script hash from an Address.
+{- | Get script hash from an Address.
+
+     @since 0.1.0
+-}
 scriptHashFromAddress :: Term s (PAddress :--> PMaybe PValidatorHash)
 scriptHashFromAddress = phoistAcyclic $
   plam $ \addr ->
@@ -69,12 +67,18 @@ scriptHashFromAddress = phoistAcyclic $
       PScriptCredential ((pfield @"_0" #) -> h) -> pcon $ PJust h
       _ -> pcon PNothing
 
--- | Return true if the given address is a script address.
+{- | Return true if the given address is a script address.
+
+     @since 0.1.0
+-}
 isScriptAddress :: Term s (PAddress :--> PBool)
 isScriptAddress = phoistAcyclic $
   plam $ \addr -> pnot #$ isPubKey #$ pfromData $ pfield @"credential" # addr
 
--- | Return true if the given credential is a pub-key-hash.
+{- | Return true if the given credential is a pub-key-hash.
+
+     @since 0.1.0
+-}
 isPubKey :: Term s (PCredential :--> PBool)
 isPubKey = phoistAcyclic $
   plam $ \cred ->
@@ -82,7 +86,10 @@ isPubKey = phoistAcyclic $
       PScriptCredential _ -> pconstant False
       _ -> pconstant True
 
--- | Find all TxOuts sent to an Address
+{- | Find all TxOuts sent to an Address
+
+     @since 0.1.0
+-}
 findOutputsToAddress :: Term s (PBuiltinList (PAsData PTxOut) :--> PAddress :--> PBuiltinList (PAsData PTxOut))
 findOutputsToAddress = phoistAcyclic $
   plam $ \outputs address' -> unTermCont $ do
@@ -91,7 +98,10 @@ findOutputsToAddress = phoistAcyclic $
       pfilter # plam (\(pfromData -> txOut) -> pfield @"address" # txOut #== address)
         # outputs
 
--- | Find the data corresponding to a TxOut, if there is one
+{- | Find the data corresponding to a TxOut, if there is one
+
+     @since 0.1.0
+-}
 findTxOutDatum :: Term s (PBuiltinList (PAsData (PTuple PDatumHash PDatum)) :--> PTxOut :--> PMaybe PDatum)
 findTxOutDatum = phoistAcyclic $
   plam $ \datums out -> unTermCont $ do
@@ -102,19 +112,30 @@ findTxOutDatum = phoistAcyclic $
 
 {- | Safely convert a 'PValidatorHash' into a 'PTokenName'. This can be useful for tagging
      tokens for extra safety.
+
+     @since 0.1.0
 -}
 validatorHashToTokenName :: ValidatorHash -> TokenName
 validatorHashToTokenName (ValidatorHash hash) = TokenName hash
 
--- | Plutarch level 'validatorHashToTokenName'.
+{- | Plutarch level 'validatorHashToTokenName'.
+
+     @since 0.1.0
+-}
 pvalidatorHashToTokenName :: forall (s :: S). Term s PValidatorHash -> Term s PTokenName
 pvalidatorHashToTokenName vh = pcon (PTokenName (pto vh))
 
--- | Get the CurrencySymbol of a PMintingPolicy.
+{- | Get the CurrencySymbol of a PMintingPolicy.
+
+     @since 0.1.0
+-}
 getMintingPolicySymbol :: ClosedTerm PMintingPolicy -> CurrencySymbol
 getMintingPolicySymbol v = mintingPolicySymbol $ mkMintingPolicy v
 
--- | The entire value only contains one token of the given currency symbol.
+{- | The entire value only contains one token of the given currency symbol.
+
+     @since 0.1.0
+-}
 hasOnlyOneTokenOfCurrencySymbol ::
   forall (keys :: KeyGuarantees) (amounts :: AmountGuarantees) (s :: S).
   Term s (PCurrencySymbol :--> PValue keys amounts :--> PBool)
@@ -123,7 +144,10 @@ hasOnlyOneTokenOfCurrencySymbol = phoistAcyclic $
     psymbolValueOf # cs # vs #== 1
       #&& (plength #$ pto $ pto $ pto vs) #== 1
 
--- | Find datum given a maybe datum hash
+{- | Find datum given a maybe datum hash
+
+     @since 0.1.0
+-}
 mustFindDatum' ::
   forall (datum :: PType).
   (PIsData datum, PTryFrom PData (PAsData datum)) =>
@@ -143,6 +167,8 @@ mustFindDatum' = phoistAcyclic $
 
 {- | Extract the value stored in a PMaybe container.
      If there's no value, throw an error with the given message.
+
+     @since 0.1.0
 -}
 mustBePJust :: forall a s. Term s (PString :--> PMaybe a :--> a)
 mustBePJust = phoistAcyclic $
@@ -152,6 +178,8 @@ mustBePJust = phoistAcyclic $
 
 {- | Extract the value stored in a PMaybeData container.
      If there's no value, throw an error with the given message.
+
+     @since 0.1.0
 -}
 mustBePDJust :: forall a s. (PIsData a) => Term s (PString :--> PMaybeData a :--> a)
 mustBePDJust = phoistAcyclic $
@@ -159,6 +187,9 @@ mustBePDJust = phoistAcyclic $
     PDJust ((pfield @"_0" #) -> v) -> v
     _ -> ptraceError emsg
 
--- | Create an 'Address' from a given 'ValidatorHash' with no 'PlutusLedgerApi.V1.Credential.StakingCredential'.
+{- | Create an 'Address' from a given 'ValidatorHash' with no 'PlutusLedgerApi.V1.Credential.StakingCredential'.
+
+     @since 0.1.0
+-}
 validatorHashToAddress :: ValidatorHash -> Address
 validatorHashToAddress vh = Address (ScriptCredential vh) Nothing

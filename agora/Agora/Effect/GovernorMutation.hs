@@ -18,14 +18,25 @@ module Agora.Effect.GovernorMutation (
   mutateGovernorValidator,
 ) where
 
---------------------------------------------------------------------------------
-
-import Control.Applicative (Const)
+import Agora.Effect (makeEffect)
+import Agora.Governor (
+  Governor,
+  GovernorDatum,
+  PGovernorDatum,
+  governorDatumValid,
+ )
+import Agora.Governor.Scripts (
+  authorityTokenSymbolFromGovernor,
+  governorSTAssetClassFromGovernor,
+ )
+import Agora.Plutarch.Orphans ()
+import Agora.Utils (
+  isScriptAddress,
+  mustBePDJust,
+  mustBePJust,
+ )
 import GHC.Generics qualified as GHC
 import Generics.SOP (Generic, I (I))
-
---------------------------------------------------------------------------------
-
 import Plutarch.Api.V1 (
   PTxOutRef,
   PValidator,
@@ -40,37 +51,16 @@ import Plutarch.DataRepr (
  )
 import Plutarch.Extra.TermCont (pguardC)
 import Plutarch.Lift (PConstantDecl, PLifted, PUnsafeLiftDecl)
-import Plutarch.TryFrom (PTryFrom (..))
-import Plutarch.Unsafe (punsafeCoerce)
-
---------------------------------------------------------------------------------
-
 import PlutusLedgerApi.V1 (TxOutRef)
 import PlutusLedgerApi.V1.Value (AssetClass (..))
 import PlutusTx qualified
 
 --------------------------------------------------------------------------------
 
-import Agora.Effect (makeEffect)
-import Agora.Governor (
-  Governor,
-  GovernorDatum,
-  PGovernorDatum,
-  governorDatumValid,
- )
-import Agora.Governor.Scripts (
-  authorityTokenSymbolFromGovernor,
-  governorSTAssetClassFromGovernor,
- )
-import Agora.Utils (
-  isScriptAddress,
-  mustBePDJust,
-  mustBePJust,
- )
+{- | Haskell-level datum for the governor mutation effect script.
 
---------------------------------------------------------------------------------
-
--- | Haskell-level datum for the governor mutation effect script.
+     @since 0.1.0
+-}
 data MutateGovernorDatum = MutateGovernorDatum
   { governorRef :: TxOutRef
   -- ^ Referenced governor state UTXO should be updated by the effect.
@@ -84,7 +74,10 @@ PlutusTx.makeIsDataIndexed ''MutateGovernorDatum [('MutateGovernorDatum, 0)]
 
 --------------------------------------------------------------------------------
 
--- | Plutarch-level version of 'MutateGovernorDatum'.
+{- | Plutarch-level version of 'MutateGovernorDatum'.
+
+     @since 0.1.0
+-}
 newtype PMutateGovernorDatum (s :: S)
   = PMutateGovernorDatum
       ( Term
@@ -95,46 +88,65 @@ newtype PMutateGovernorDatum (s :: S)
                ]
           )
       )
-  deriving stock (GHC.Generic)
-  deriving anyclass (Generic)
-  deriving anyclass (PIsDataRepr)
+  deriving stock
+    ( -- | @since 0.1.0
+      GHC.Generic
+    )
+  deriving anyclass
+    ( -- | @since 0.1.0
+      Generic
+    )
+  deriving anyclass
+    ( -- | @since 0.1.0
+      PIsDataRepr
+    )
   deriving
-    (PlutusType, PIsData, PDataFields, PEq)
+    ( -- | @since 0.1.0
+      PlutusType
+    , -- | @since 0.1.0
+      PIsData
+    , -- | @since 0.1.0
+      PDataFields
+    , -- | @since 0.1.0
+      PEq
+    )
     via (PIsDataReprInstances PMutateGovernorDatum)
 
+-- | @since 0.1.0
 instance PUnsafeLiftDecl PMutateGovernorDatum where type PLifted PMutateGovernorDatum = MutateGovernorDatum
+
+-- | @since 0.1.0
 deriving via (DerivePConstantViaData MutateGovernorDatum PMutateGovernorDatum) instance (PConstantDecl MutateGovernorDatum)
 
--- TODO: Derive this.
-instance PTryFrom PData (PAsData PMutateGovernorDatum) where
-  type PTryFromExcess PData (PAsData PMutateGovernorDatum) = Const ()
-  ptryFrom' d k =
-    k (punsafeCoerce d, ())
+-- | @since 0.1.0
+deriving via PAsData (PIsDataReprInstances PMutateGovernorDatum) instance PTryFrom PData (PAsData PMutateGovernorDatum)
 
 --------------------------------------------------------------------------------
 
 {- | Validator for the governor mutation effect.
 
-  This effect is implemented using the 'Agora.Effect.makeEffect' wrapper,
-   meaning that the burning of GAT is checked in said wrapper.
+     This effect is implemented using the 'Agora.Effect.makeEffect' wrapper,
+     meaning that the burning of GAT is checked in said wrapper.
 
-  In order to locate the governor, the validator is parametrized with a 'Agora.Governor.Governor'.
+     In order to locate the governor, the validator is parametrized with a 'Agora.Governor.Governor'.
 
-  All the information it needs to validate the effect is encoded in the 'MutateGovernorDatum',
-   so regardless what redeemer it's given, it will check:
+     All the information it needs to validate the effect is encoded in the 'MutateGovernorDatum',
+      so regardless what redeemer it's given, it will check:
 
-  - No token is minted/burnt other than GAT.
-  - Nothing is being paid to the the effect validator.
-  - The governor's state UTXO must be spent:
+     - No token is minted/burnt other than GAT.
+     - Nothing is being paid to the the effect validator.
+     - The governor's state UTXO must be spent:
 
-      * It carries exactly one GST.
-      * It's referenced by 'governorRef' in the effect's datum.
+         * It carries exactly one GST.
+         * It's referenced by 'governorRef' in the effect's datum.
 
-  - A new state UTXO is paid to the governor:
+     - A new state UTXO is paid to the governor:
 
-      * It contains the GST.
-      * It has valid governor state datum.
-      * The datum is exactly the same as the 'newDatum'.
+         * It contains the GST.
+         * It has valid governor state datum.
+         * The datum is exactly the same as the 'newDatum'.
+
+     @since 0.1.0
 -}
 mutateGovernorValidator :: Governor -> ClosedTerm PValidator
 mutateGovernorValidator gov = makeEffect (authorityTokenSymbolFromGovernor gov) $

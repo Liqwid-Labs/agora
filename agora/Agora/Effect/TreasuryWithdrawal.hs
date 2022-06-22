@@ -13,12 +13,11 @@ module Agora.Effect.TreasuryWithdrawal (
   treasuryWithdrawalValidator,
 ) where
 
-import Control.Applicative (Const)
+import Agora.Effect (makeEffect)
+import Agora.Plutarch.Orphans ()
+import Agora.Utils (isPubKey)
 import GHC.Generics qualified as GHC
 import Generics.SOP (Generic, I (I))
-
-import Agora.Effect (makeEffect)
-import Agora.Utils (isPubKey)
 import Plutarch.Api.V1 (
   AmountGuarantees (Positive),
   KeyGuarantees (Sorted),
@@ -28,8 +27,6 @@ import Plutarch.Api.V1 (
   PValue,
   ptuple,
  )
-import Plutarch.Internal (punsafeCoerce)
-
 import Plutarch.Api.V1.ScriptContext (pfindTxInByTxOutRef)
 import "plutarch" Plutarch.Api.V1.Value (pnormalize)
 import Plutarch.DataRepr (
@@ -39,16 +36,17 @@ import Plutarch.DataRepr (
  )
 import Plutarch.Extra.TermCont (pguardC, pletC, pmatchC)
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (..))
-import Plutarch.TryFrom (PTryFrom (..))
 import PlutusLedgerApi.V1.Credential (Credential)
 import PlutusLedgerApi.V1.Value (CurrencySymbol, Value)
 import PlutusTx qualified
 
 {- | Datum that encodes behavior of Treasury Withdrawal effect.
 
-Note: This Datum acts like a "predefined redeemer". Which is to say that
-it encodes the properties a redeemer would, but is locked in-place until
-spend.
+     Note: This Datum acts like a "predefined redeemer". Which is to say that
+     it encodes the properties a redeemer would, but is locked in-place until
+     spend.
+
+     @since 0.1.0
 -}
 data TreasuryWithdrawalDatum = TreasuryWithdrawalDatum
   { receivers :: [(Credential, Value)]
@@ -56,13 +54,27 @@ data TreasuryWithdrawalDatum = TreasuryWithdrawalDatum
   , treasuries :: [Credential]
   -- ^ What Credentials is spending from legal.
   }
-  deriving stock (Show, GHC.Generic)
-  deriving anyclass (Generic)
+  deriving stock
+    ( -- | @since 0.1.0
+      Show
+    , -- | @since 0.1.0
+      GHC.Generic
+    )
+  deriving anyclass
+    ( -- | @since 0.1.0
+      Generic
+    )
 
+-- | @since 0.1.0
 PlutusTx.makeLift ''TreasuryWithdrawalDatum
+
+-- | @since 0.1.0
 PlutusTx.makeIsDataIndexed ''TreasuryWithdrawalDatum [('TreasuryWithdrawalDatum, 0)]
 
--- | Haskell-level version of 'TreasuryWithdrawalDatum'.
+{- | Haskell-level version of 'TreasuryWithdrawalDatum'.
+
+     @since 0.1.0
+-}
 newtype PTreasuryWithdrawalDatum (s :: S)
   = PTreasuryWithdrawalDatum
       ( Term
@@ -73,26 +85,41 @@ newtype PTreasuryWithdrawalDatum (s :: S)
                ]
           )
       )
-  deriving stock (GHC.Generic)
-  deriving anyclass (Generic, PIsDataRepr)
+  deriving stock
+    ( -- | @since 0.1.0
+      GHC.Generic
+    )
+  deriving anyclass
+    ( -- | @since 0.1.0
+      Generic
+    , -- | @since 0.1.0
+      PIsDataRepr
+    )
   deriving
-    (PlutusType, PIsData, PDataFields)
+    ( -- | @since 0.1.0
+      PlutusType
+    , -- | @since 0.1.0
+      PIsData
+    , -- | @since 0.1.0
+      PDataFields
+    )
     via PIsDataReprInstances PTreasuryWithdrawalDatum
 
+-- | @since 0.1.0
 instance PUnsafeLiftDecl PTreasuryWithdrawalDatum where
   type PLifted PTreasuryWithdrawalDatum = TreasuryWithdrawalDatum
 
+-- | @since 0.1.0
 deriving via
   (DerivePConstantViaData TreasuryWithdrawalDatum PTreasuryWithdrawalDatum)
   instance
     (PConstantDecl TreasuryWithdrawalDatum)
 
-instance PTryFrom PData (PAsData PTreasuryWithdrawalDatum) where
-  type PTryFromExcess PData (PAsData PTreasuryWithdrawalDatum) = Const ()
-  ptryFrom' opq cont =
-    -- TODO: This should not use 'punsafeCoerce'.
-    -- Blocked by 'PCredential', and 'PTuple'.
-    cont (punsafeCoerce opq, ())
+-- | @since 0.1.0
+deriving via
+  PAsData (PIsDataReprInstances PTreasuryWithdrawalDatum)
+  instance
+    PTryFrom PData (PAsData PTreasuryWithdrawalDatum)
 
 {- | Withdraws given list of values to specific target addresses.
      It can be evoked by burning GAT. The transaction should have correct
@@ -101,12 +128,17 @@ instance PTryFrom PData (PAsData PTreasuryWithdrawalDatum) where
      The validator does not accept any Redeemer as all "parameters" are provided
      via encoded Datum.
 
-     Note:
-     It should check...
-     1. Transaction outputs should contain all of what Datum specified
-     2. Left over assets should be redirected back to Treasury
+     NOTE: It should check...
+
+       1. Transaction outputs should contain all of what Datum specified
+
+       2. Left over assets should be redirected back to Treasury
+
      It can be more flexiable over...
+
      - The number of outputs themselves
+
+     @since 0.1.0
 -}
 treasuryWithdrawalValidator :: forall {s :: S}. CurrencySymbol -> Term s PValidator
 treasuryWithdrawalValidator currSymbol = makeEffect currSymbol $

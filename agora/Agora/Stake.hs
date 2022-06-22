@@ -26,22 +26,12 @@ module Agora.Stake (
   pgetStakeUsage,
 ) where
 
---------------------------------------------------------------------------------
-
-import Control.Applicative (Const)
+import Agora.Plutarch.Orphans ()
+import Agora.Proposal (PProposalId, PResultTag, ProposalId (..), ResultTag (..))
+import Agora.SafeMoney (GTTag)
 import Data.Tagged (Tagged (..))
 import GHC.Generics qualified as GHC
 import Generics.SOP (Generic, HasDatatypeInfo, I (I))
-import Prelude hiding (Num (..))
-
---------------------------------------------------------------------------------
-
-import PlutusLedgerApi.V1 (PubKeyHash)
-import PlutusLedgerApi.V1.Value (AssetClass)
-import PlutusTx qualified
-
---------------------------------------------------------------------------------
-
 import Plutarch.Api.V1 (
   PDatum,
   PDatumHash,
@@ -63,22 +53,26 @@ import Plutarch.Extra.TermCont (pletC, pletFieldsC, pmatchC)
 import Plutarch.Internal (punsafeCoerce)
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (..))
 import Plutarch.SafeMoney (PDiscrete)
-import Plutarch.TryFrom (PTryFrom (PTryFromExcess, ptryFrom'))
+import PlutusLedgerApi.V1 (PubKeyHash)
+import PlutusLedgerApi.V1.Value (AssetClass)
+import PlutusTx qualified
+import Prelude hiding (Num (..))
 
 --------------------------------------------------------------------------------
 
-import Agora.Proposal (PProposalId, PResultTag, ProposalId (..), ResultTag (..))
-import Agora.SafeMoney (GTTag)
+{- | Parameters for creating Stake scripts.
 
---------------------------------------------------------------------------------
-
--- | Parameters for creating Stake scripts.
+     @since 0.1.0
+-}
 data Stake = Stake
   { gtClassRef :: Tagged GTTag AssetClass
   -- ^ Used when inlining the AssetClass of a 'PDiscrete' in the script code.
   , proposalSTClass :: AssetClass
   }
-  deriving stock (GHC.Generic)
+  deriving stock
+    ( -- | @since 0.1.0
+      GHC.Generic
+    )
 
 {- | A lock placed on a Stake datum in order to prevent
      depositing and withdrawing when votes are in place.
@@ -105,6 +99,8 @@ data Stake = Stake
      │ Stake Policy │◄─┘ └►│ Proposal Policy │
      └──────────────┘      └─────────────────┘
      @
+
+     @since 0.1.0
 -}
 data ProposalLock = ProposalLock
   { vote :: ResultTag
@@ -114,11 +110,19 @@ data ProposalLock = ProposalLock
   -- ^ Identifies the proposal. See 'ProposalId' for further
   -- comments on its significance.
   }
-  deriving stock (Show, GHC.Generic)
+  deriving stock
+    ( -- | @since 0.1.0
+      Show
+    , -- | @since 0.1.0
+      GHC.Generic
+    )
 
 PlutusTx.makeIsDataIndexed ''ProposalLock [('ProposalLock, 0)]
 
--- | Haskell-level redeemer for Stake scripts.
+{- | Haskell-level redeemer for Stake scripts.
+
+     @since 0.1.0
+-}
 data StakeRedeemer
   = -- | Deposit or withdraw a discrete amount of the staked governance token.
     --   Stake must be unlocked.
@@ -151,7 +155,10 @@ PlutusTx.makeIsDataIndexed
   , ('WitnessStake, 4)
   ]
 
--- | Haskell-level datum for Stake scripts.
+{- | Haskell-level datum for Stake scripts.
+
+     @since 0.1.0
+-}
 data StakeDatum = StakeDatum
   { stakedAmount :: Tagged GTTag Integer
   -- ^ Tracks the amount of governance token staked in the datum.
@@ -171,7 +178,10 @@ PlutusTx.makeIsDataIndexed ''StakeDatum [('StakeDatum, 0)]
 
 --------------------------------------------------------------------------------
 
--- | Plutarch-level datum for Stake scripts.
+{- | Plutarch-level datum for Stake scripts.
+
+     @since 0.1.0
+-}
 newtype PStakeDatum (s :: S) = PStakeDatum
   { getStakeDatum ::
       Term
@@ -183,22 +193,43 @@ newtype PStakeDatum (s :: S) = PStakeDatum
              ]
         )
   }
-  deriving stock (GHC.Generic)
-  deriving anyclass (Generic)
-  deriving anyclass (PIsDataRepr)
+  deriving stock
+    ( -- | @since 0.1.0
+      GHC.Generic
+    )
+  deriving anyclass
+    ( -- | @since 0.1.0
+      Generic
+    )
+  deriving anyclass
+    ( -- | @since 0.1.0
+      PIsDataRepr
+    )
   deriving
-    (PlutusType, PIsData, PDataFields, PEq)
+    ( -- | @since 0.1.0
+      PlutusType
+    , -- | @since 0.1.0
+      PIsData
+    , -- | @since 0.1.0
+      PDataFields
+    , -- | @since 0.1.0
+      PEq
+    )
     via (PIsDataReprInstances PStakeDatum)
 
-instance PTryFrom PData (PAsData PStakeDatum) where
-  type PTryFromExcess PData (PAsData PStakeDatum) = Const ()
-  ptryFrom' d k =
-    k (punsafeCoerce d, ())
+-- | @since 0.1.0
+instance Plutarch.Lift.PUnsafeLiftDecl PStakeDatum where type PLifted PStakeDatum = StakeDatum
 
-instance PUnsafeLiftDecl PStakeDatum where type PLifted PStakeDatum = StakeDatum
-deriving via (DerivePConstantViaData StakeDatum PStakeDatum) instance (PConstantDecl StakeDatum)
+-- | @since 0.1.0
+deriving via (DerivePConstantViaData StakeDatum PStakeDatum) instance (Plutarch.Lift.PConstantDecl StakeDatum)
 
--- | Plutarch-level redeemer for Stake scripts.
+-- | @since 0.1.0
+deriving via PAsData (PIsDataReprInstances PStakeDatum) instance PTryFrom PData (PAsData PStakeDatum)
+
+{- | Plutarch-level redeemer for Stake scripts.
+
+     @since 0.1.0
+-}
 data PStakeRedeemer (s :: S)
   = -- | Deposit or withdraw a discrete amount of the staked governance token.
     PDepositWithdraw (Term s (PDataRecord '["delta" ':= PDiscrete GTTag]))
@@ -207,11 +238,24 @@ data PStakeRedeemer (s :: S)
   | PPermitVote (Term s (PDataRecord '["lock" ':= PProposalLock]))
   | PRetractVotes (Term s (PDataRecord '["locks" ':= PBuiltinList (PAsData PProposalLock)]))
   | PWitnessStake (Term s (PDataRecord '[]))
-  deriving stock (GHC.Generic)
-  deriving anyclass (Generic)
-  deriving anyclass (PIsDataRepr)
+  deriving stock
+    ( -- | @since 0.1.0
+      GHC.Generic
+    )
+  deriving anyclass
+    ( -- | @since 0.1.0
+      Generic
+    )
+  deriving anyclass
+    ( -- | @since 0.1.0
+      PIsDataRepr
+    )
   deriving
-    (PlutusType, PIsData)
+    ( -- | @since 0.1.0
+      PlutusType
+    , -- | @since 0.1.0
+      PIsData
+    )
     via PIsDataReprInstances PStakeRedeemer
 
 deriving via
@@ -219,10 +263,13 @@ deriving via
   instance
     PTryFrom PData (PAsData PStakeRedeemer)
 
-instance PUnsafeLiftDecl PStakeRedeemer where type PLifted PStakeRedeemer = StakeRedeemer
-deriving via (DerivePConstantViaData StakeRedeemer PStakeRedeemer) instance (PConstantDecl StakeRedeemer)
+instance Plutarch.Lift.PUnsafeLiftDecl PStakeRedeemer where type PLifted PStakeRedeemer = StakeRedeemer
+deriving via (DerivePConstantViaData StakeRedeemer PStakeRedeemer) instance (Plutarch.Lift.PConstantDecl StakeRedeemer)
 
--- | Plutarch-level version of 'ProposalLock'.
+{- | Plutarch-level version of 'ProposalLock'.
+
+     @since 0.1.0
+-}
 newtype PProposalLock (s :: S) = PProposalLock
   { getProposalLock ::
       Term
@@ -245,12 +292,15 @@ deriving via
   instance
     PTryFrom PData (PAsData PProposalLock)
 
-instance PUnsafeLiftDecl PProposalLock where type PLifted PProposalLock = ProposalLock
-deriving via (DerivePConstantViaData ProposalLock PProposalLock) instance (PConstantDecl ProposalLock)
+instance Plutarch.Lift.PUnsafeLiftDecl PProposalLock where type PLifted PProposalLock = ProposalLock
+deriving via (DerivePConstantViaData ProposalLock PProposalLock) instance (Plutarch.Lift.PConstantDecl ProposalLock)
 
 --------------------------------------------------------------------------------
 
--- | Check whether a Stake is locked. If it is locked, various actions are unavailable.
+{- | Check whether a Stake is locked. If it is locked, various actions are unavailable.
+
+     @since 0.1.0
+-}
 stakeLocked :: forall (s :: S). Term s (PStakeDatum :--> PBool)
 stakeLocked = phoistAcyclic $
   plam $ \stakeDatum ->
@@ -258,7 +308,10 @@ stakeLocked = phoistAcyclic $
         locks = pfield @"lockedBy" # stakeDatum
      in pnotNull # locks
 
--- | Find a stake owned by a particular PK.
+{- | Find a stake owned by a particular PK.
+
+     @since 0.1.0
+-}
 findStakeOwnedBy ::
   Term
     s
@@ -281,6 +334,10 @@ findStakeOwnedBy = phoistAcyclic $
             PDJust ((pfield @"_0" #) -> dh) ->
               ptryFindDatum @(PAsData PStakeDatum) # dh # datums
 
+{- | Check if a StakeDatum  is owned by a particular public key.
+
+   @since 0.1.0
+-}
 stakeDatumOwnedBy :: Term _ (PPubKeyHash :--> PStakeDatum :--> PBool)
 stakeDatumOwnedBy =
   phoistAcyclic $
@@ -288,7 +345,10 @@ stakeDatumOwnedBy =
       pletFields @'["owner"] (pto stakeDatum) $ \stakeDatumF ->
         stakeDatumF.owner #== pdata pk
 
--- | Does the input have a `Stake` owned by a particular PK?
+{- | Does the input have a `Stake` owned by a particular PK?
+
+     @since 0.1.0
+-}
 isInputStakeOwnedBy ::
   Term
     _
@@ -317,16 +377,32 @@ isInputStakeOwnedBy =
 
 {- | Represent the usage of a stake on a particular proposal.
      A stake can be used to either create or vote on a proposal.
+
+     @since 0.1.0
 -}
 data PStakeUsage (s :: S)
   = PVotedFor (Term s PResultTag)
   | PCreated
   | PDidNothing
-  deriving stock (GHC.Generic)
-  deriving anyclass (Generic, PlutusType, HasDatatypeInfo, PEq)
+  deriving stock
+    ( -- | @since 0.1.0
+      GHC.Generic
+    )
+  deriving anyclass
+    ( -- | @since 0.1.0
+      Generic
+    , -- | @since 0.1.0
+      PlutusType
+    , -- | @since 0.1.0
+      HasDatatypeInfo
+    , -- | @since 0.1.0
+      PEq
+    )
 
 {- | / O(n) /.Return the usage of a stake on a particular proposal,
-      given the 'lockedBy' field of a stake and the target proposal.
+     given the 'lockedBy' field of a stake and the target proposal.
+
+     @since 0.1.0
 -}
 pgetStakeUsage ::
   Term

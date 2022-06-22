@@ -1,6 +1,6 @@
 cabal-version:      3.0
 name:               agora
-version:            0.1
+version:            0.1.0
 extra-source-files: CHANGELOG.md
 author:             Emily Martins <emi@haskell.fyi>
 license:            Apache-2.0
@@ -153,7 +153,10 @@ library
     Agora.Treasury
     Agora.Utils
 
-  other-modules:   Agora.Aeson.Orphans
+  other-modules:
+    Agora.Aeson.Orphans
+    Agora.Plutarch.Orphans
+
   hs-source-dirs:  agora
 
 library pprelude

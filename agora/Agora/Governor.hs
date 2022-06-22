@@ -23,15 +23,6 @@ module Agora.Governor (
   governorDatumValid,
 ) where
 
---------------------------------------------------------------------------------
-
-import Control.Applicative (Const)
-import Data.Tagged (Tagged (..))
-import GHC.Generics qualified as GHC
-import Generics.SOP (Generic, I (I))
-
---------------------------------------------------------------------------------
-
 import Agora.Proposal (
   PProposalId (..),
   PProposalThresholds (..),
@@ -45,9 +36,9 @@ import Agora.Proposal.Time (
   ProposalTimingConfig,
  )
 import Agora.SafeMoney (GTTag)
-
---------------------------------------------------------------------------------
-
+import Data.Tagged (Tagged (..))
+import GHC.Generics qualified as GHC
+import Generics.SOP (Generic, I (I))
 import Plutarch.DataRepr (
   DerivePConstantViaData (..),
   PDataFields,
@@ -57,18 +48,16 @@ import Plutarch.Extra.Comonad (pextract)
 import Plutarch.Extra.TermCont (pletC, pmatchC)
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (..))
 import Plutarch.SafeMoney (PDiscrete (..))
-import Plutarch.TryFrom (PTryFrom (..))
-import Plutarch.Unsafe (punsafeCoerce)
-
---------------------------------------------------------------------------------
-
 import PlutusLedgerApi.V1 (TxOutRef)
 import PlutusLedgerApi.V1.Value (AssetClass (..))
 import PlutusTx qualified
 
 --------------------------------------------------------------------------------
 
--- | Datum for the Governor script.
+{- | Datum for the Governor script.
+
+     @since 0.1.0
+-}
 data GovernorDatum = GovernorDatum
   { proposalThresholds :: ProposalThresholds
   -- ^ Gets copied over upon creation of a 'Agora.Proposal.ProposalDatum'.
@@ -82,6 +71,7 @@ data GovernorDatum = GovernorDatum
   }
   deriving stock (Show, GHC.Generic)
 
+-- | @since 0.1.0
 PlutusTx.makeIsDataIndexed ''GovernorDatum [('GovernorDatum, 0)]
 
 {- | Redeemer for Governor script. The governor has two primary
@@ -91,6 +81,8 @@ PlutusTx.makeIsDataIndexed ''GovernorDatum [('GovernorDatum, 0)]
      2. The gating of minting authority tokens.
 
      Parameters of the governor can also be mutated by an effect.
+
+     @since 0.1.0
 -}
 data GovernorRedeemer
   = -- | Checks that a proposal was created lawfully, and allows it.
@@ -102,6 +94,7 @@ data GovernorRedeemer
     MutateGovernor
   deriving stock (Show, GHC.Generic)
 
+-- | @since 0.1.0
 PlutusTx.makeIsDataIndexed
   ''GovernorRedeemer
   [ ('CreateProposal, 0)
@@ -109,7 +102,10 @@ PlutusTx.makeIsDataIndexed
   , ('MutateGovernor, 2)
   ]
 
--- | Parameters for creating Governor scripts.
+{- | Parameters for creating Governor scripts.
+
+     @since 0.1.0
+-}
 data Governor = Governor
   { gstOutRef :: TxOutRef
   -- ^ Referenced utxo will be spent to mint the GST.
@@ -123,7 +119,10 @@ data Governor = Governor
 
 --------------------------------------------------------------------------------
 
--- | Plutarch-level datum for the Governor script.
+{- | Plutarch-level datum for the Governor script.
+
+     @since 0.1.0
+-}
 newtype PGovernorDatum (s :: S) = PGovernorDatum
   { getGovernorDatum ::
       Term
@@ -136,53 +135,98 @@ newtype PGovernorDatum (s :: S) = PGovernorDatum
              ]
         )
   }
-  deriving stock (GHC.Generic)
-  deriving anyclass (Generic)
-  deriving anyclass (PIsDataRepr)
+  deriving stock
+    ( -- | @since 0.1.0
+      GHC.Generic
+    )
+  deriving anyclass
+    ( -- | @since 0.1.0
+      Generic
+    )
+  deriving anyclass
+    ( -- | @since 0.1.0
+      PIsDataRepr
+    )
   deriving
-    (PlutusType, PIsData, PDataFields, PEq)
+    ( -- | @since 0.1.0
+      PlutusType
+    , -- | @since 0.1.0
+      PIsData
+    , -- | @since 0.1.0
+      PDataFields
+    , -- | @since 0.1.0
+      PEq
+    )
     via PIsDataReprInstances PGovernorDatum
 
+-- | @since 0.1.0
 instance PUnsafeLiftDecl PGovernorDatum where type PLifted PGovernorDatum = GovernorDatum
+
+-- | @since 0.1.0
 deriving via (DerivePConstantViaData GovernorDatum PGovernorDatum) instance (PConstantDecl GovernorDatum)
 
--- FIXME: derive this via 'PIsDataReprInstances'
--- Blocked by: PProposalThresholds
-instance PTryFrom PData (PAsData PGovernorDatum) where
-  type PTryFromExcess PData (PAsData PGovernorDatum) = Const ()
+-- | @since 0.1.0
+deriving via PAsData (PIsDataReprInstances PGovernorDatum) instance PTryFrom PData (PAsData PGovernorDatum)
 
-  ptryFrom' d k = k (punsafeCoerce d, ())
+{- | Plutarch-level version of 'GovernorRedeemer'.
 
--- | Plutarch-level version of 'GovernorRedeemer'.
+     @since 0.1.0
+-}
 data PGovernorRedeemer (s :: S)
   = PCreateProposal (Term s (PDataRecord '[]))
   | PMintGATs (Term s (PDataRecord '[]))
   | PMutateGovernor (Term s (PDataRecord '[]))
-  deriving stock (GHC.Generic)
-  deriving anyclass (Generic)
-  deriving anyclass (PIsDataRepr)
+  deriving stock
+    ( -- | @since 0.1.0
+      GHC.Generic
+    )
+  deriving anyclass
+    ( -- | @since 0.1.0
+      Generic
+    )
+  deriving anyclass
+    ( -- | @since 0.1.0
+      PIsDataRepr
+    )
   deriving
-    (PlutusType, PIsData)
+    ( -- | @since 0.1.0
+      PlutusType
+    , -- | @since 0.1.0
+      PIsData
+    )
     via PIsDataReprInstances PGovernorRedeemer
 
+-- | @since 0.1.0
 instance PUnsafeLiftDecl PGovernorRedeemer where type PLifted PGovernorRedeemer = GovernorRedeemer
+
+-- | @since 0.1.0
 deriving via (DerivePConstantViaData GovernorRedeemer PGovernorRedeemer) instance (PConstantDecl GovernorRedeemer)
 
+-- | @since 0.1.0
 deriving via PAsData (PIsDataReprInstances PGovernorRedeemer) instance PTryFrom PData (PAsData PGovernorRedeemer)
 
 --------------------------------------------------------------------------------
 
--- | Plutrach version of 'getNextProposalId'.
+{- | Plutrach version of 'getNextProposalId'.
+
+     @since 0.1.0
+-}
 pgetNextProposalId :: Term s (PProposalId :--> PProposalId)
 pgetNextProposalId = phoistAcyclic $ plam $ \(pto -> pid) -> pcon $ PProposalId $ pid + 1
 
--- | Get next proposal id.
+{- | Get next proposal id.
+
+     @since 0.1.0
+-}
 getNextProposalId :: ProposalId -> ProposalId
 getNextProposalId (ProposalId pid) = ProposalId $ pid + 1
 
 --------------------------------------------------------------------------------
 
--- | Check whether a particular 'PGovernorDatum' is well-formed.
+{- | Check whether a particular 'PGovernorDatum' is well-formed.
+
+     @since 0.1.0
+-}
 governorDatumValid :: Term s (PGovernorDatum :--> PBool)
 governorDatumValid = phoistAcyclic $
   plam $ \datum -> unTermCont $ do

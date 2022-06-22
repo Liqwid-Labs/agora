@@ -154,6 +154,8 @@ import PlutusLedgerApi.V1.Value (
 
   NOTE: It's user's responsibility to make sure the token is sent to the corresponding governor validator.
         We /can't/ really check this in the policy, otherwise we create a cyclic reference issue.
+
+  @since 0.1.0
 -}
 governorPolicy :: Governor -> ClosedTerm PMintingPolicy
 governorPolicy gov =
@@ -191,87 +193,89 @@ governorPolicy gov =
 
 {- | Validator for Governors.
 
-  == Common checks
+     == Common checks
 
-  The validator always ensures:
+     The validator always ensures:
 
-    - The UTXO which holds the GST must be spent.
-    - The GST always stays at the validator's address.
-    - The new state UTXO has a valid datum of type 'Agora.Governor.GovernorDatum'.
+       - The UTXO which holds the GST must be spent.
+       - The GST always stays at the validator's address.
+       - The new state UTXO has a valid datum of type 'Agora.Governor.GovernorDatum'.
 
-  == Creating a Proposal
+     == Creating a Proposal
 
-  When the redeemer is 'Agora.Governor.CreateProposal', the script will check:
+     When the redeemer is 'Agora.Governor.CreateProposal', the script will check:
 
-  - For governor's state datum:
+     - For governor's state datum:
 
-      * 'Agora.Governor.nextProposalId' is advanced.
-      * Nothing is changed other that that.
+         * 'Agora.Governor.nextProposalId' is advanced.
+         * Nothing is changed other that that.
 
-  - Exactly one stake (the "input stake") must be provided in the input:
-      * At least 'Agora.Stake.stackedAmount' of GT must be spent in the transaction.
-      * The transaction must be signed by the stake owner.
+     - Exactly one stake (the "input stake") must be provided in the input:
+         * At least 'Agora.Stake.stackedAmount' of GT must be spent in the transaction.
+         * The transaction must be signed by the stake owner.
 
-  - Exactly one new proposal state token is minted.
-  - An UTXO which holds the newly minted proposal state token is sent to the proposal validator.
-    This UTXO must have a valid datum of type 'Agora.Proposal.ProposalDatum', the datum must:
+     - Exactly one new proposal state token is minted.
+     - An UTXO which holds the newly minted proposal state token is sent to the proposal validator.
+       This UTXO must have a valid datum of type 'Agora.Proposal.ProposalDatum', the datum must:
 
-      * Copy its id and thresholds from the governor's state.
-      * Have status set to 'Proposal.Draft'.
-      * Have zero votes.
-      * Have exactly one cosigner - the stake owner
+         * Copy its id and thresholds from the governor's state.
+         * Have status set to 'Proposal.Draft'.
+         * Have zero votes.
+         * Have exactly one cosigner - the stake owner
 
-  - An UTXO which holds the stake state token is sent back to the stake validator.
-    This UTXO must have a valid datum of type 'Agora.Stake.StakeDatum':
+     - An UTXO which holds the stake state token is sent back to the stake validator.
+       This UTXO must have a valid datum of type 'Agora.Stake.StakeDatum':
 
-      * The 'Agora.Stake.stakedAmount' and 'Agora.Stake.owner' should not be changed,
-         comparing to the input stake.
-      * The new proposal locks must be appended to the 'Agora.Stake.lockedBy'.
+         * The 'Agora.Stake.stakedAmount' and 'Agora.Stake.owner' should not be changed,
+            comparing to the input stake.
+         * The new proposal locks must be appended to the 'Agora.Stake.lockedBy'.
 
-  == Minting GATs
+     == Minting GATs
 
-  When the redeemer is 'Agora.Governor.MintGATs', the script will check:
+     When the redeemer is 'Agora.Governor.MintGATs', the script will check:
 
-  - Governor's state is not changed.
-  - Exactly only one proposal is in the inputs. Let's call this the /input proposal/.
-  - The proposal is in the 'Proposal.Executable' state.
+     - Governor's state is not changed.
+     - Exactly only one proposal is in the inputs. Let's call this the /input proposal/.
+     - The proposal is in the 'Proposal.Executable' state.
 
-  NOTE: The input proposal is found by looking for the UTXO with a proposal state token in the inputs.
+     NOTE: The input proposal is found by looking for the UTXO with a proposal state token in the inputs.
 
-  === Effect Group Selection
+     === Effect Group Selection
 
-  Currently a proposal can have two or more than two options to vote on,
-    meaning that it can contains two or more effect groups,
-    according to [#39](https://github.com/Liqwid-Labs/agora/issues/39).
+     Currently a proposal can have two or more than two options to vote on,
+       meaning that it can contains two or more effect groups,
+       according to [#39](https://github.com/Liqwid-Labs/agora/issues/39).
 
-  Either way, the shapes of 'Proposal.votes' and 'Proposal.effects' should be the same.
-    This is checked by 'Proposal.proposalDatumValid'.
+     Either way, the shapes of 'Proposal.votes' and 'Proposal.effects' should be the same.
+       This is checked by 'Proposal.proposalDatumValid'.
 
-  The script will look at the the 'Proposal.votes' to determine which group has the highest votes,
-    said group shoud be executed.
+     The script will look at the the 'Proposal.votes' to determine which group has the highest votes,
+       said group shoud be executed.
 
-  During the process, minimum votes requirement will also be enforced.
+     During the process, minimum votes requirement will also be enforced.
 
-  Next, the script will:
+     Next, the script will:
 
-  - Ensure that for every effect in the said effect group,
-    exactly one valid GAT is minted and sent to the effect.
-  - The amount of GAT minted in the transaction should be equal to the number of effects.
-  - A new UTXO is sent to the proposal validator, this UTXO should:
+     - Ensure that for every effect in the said effect group,
+       exactly one valid GAT is minted and sent to the effect.
+     - The amount of GAT minted in the transaction should be equal to the number of effects.
+     - A new UTXO is sent to the proposal validator, this UTXO should:
 
-      * Include the one proposal state token.
-      * Have a valid datum of type 'Proposal.ProposalDatum'.
-        This datum should be as same as the one of the input proposal,
-        except its status should be 'Proposal.Finished'.
+         * Include the one proposal state token.
+         * Have a valid datum of type 'Proposal.ProposalDatum'.
+           This datum should be as same as the one of the input proposal,
+           except its status should be 'Proposal.Finished'.
 
-  == Changing the State
+     == Changing the State
 
-  Redeemer 'Agora.Governor.MutateGovernor' allows the state datum to be changed by an external effect.
+     Redeemer 'Agora.Governor.MutateGovernor' allows the state datum to be changed by an external effect.
 
-  In this case, the script will check
+     In this case, the script will check
 
-  - Exactly one GAT is burnt in the transaction.
-  - Said GAT is tagged by the effect.
+     - Exactly one GAT is burnt in the transaction.
+     - Said GAT is tagged by the effect.
+
+     @since 0.1.0
 -}
 governorValidator :: Governor -> ClosedTerm PValidator
 governorValidator gov =
@@ -718,21 +722,30 @@ governorValidator gov =
 
 --------------------------------------------------------------------------------
 
--- | Get the 'CurrencySymbol' of GST.
+{- | Get the 'CurrencySymbol' of GST.
+
+     @since 0.1.0
+-}
 governorSTSymbolFromGovernor :: Governor -> CurrencySymbol
 governorSTSymbolFromGovernor gov = mintingPolicySymbol policy
   where
     policy :: MintingPolicy
     policy = mkMintingPolicy $ governorPolicy gov
 
--- | Get the 'AssetClass' of GST.
+{- | Get the 'AssetClass' of GST.
+
+     @since 0.1.0
+-}
 governorSTAssetClassFromGovernor :: Governor -> AssetClass
 governorSTAssetClassFromGovernor gov = AssetClass (symbol, "")
   where
     symbol :: CurrencySymbol
     symbol = governorSTSymbolFromGovernor gov
 
--- | Get the 'CurrencySymbol' of the proposal state token.
+{- | Get the 'CurrencySymbol' of the proposal state token.
+
+     @since 0.1.0
+-}
 proposalSTSymbolFromGovernor :: Governor -> CurrencySymbol
 proposalSTSymbolFromGovernor gov = symbol
   where
@@ -740,13 +753,19 @@ proposalSTSymbolFromGovernor gov = symbol
     policy = mkMintingPolicy $ proposalPolicy gstAC
     symbol = mintingPolicySymbol policy
 
--- | Get the 'AssetClass' of the proposal state token.
+{- | Get the 'AssetClass' of the proposal state token.
+
+     @since 0.1.0
+-}
 proposalSTAssetClassFromGovernor :: Governor -> AssetClass
 proposalSTAssetClassFromGovernor gov = AssetClass (symbol, "")
   where
     symbol = proposalSTSymbolFromGovernor gov
 
--- | Get the 'CurrencySymbol' of the stake token/
+{- | Get the 'CurrencySymbol' of the stake token/
+
+     @since 0.1.0
+-}
 stakeSTSymbolFromGovernor :: Governor -> CurrencySymbol
 stakeSTSymbolFromGovernor gov = mintingPolicySymbol policy
   where
@@ -756,6 +775,8 @@ stakeSTSymbolFromGovernor gov = mintingPolicySymbol policy
 
    Note that the token is tagged with the hash of the stake validator.
    See 'Agora.Stake.Script.stakePolicy'.
+
+    @since 0.1.0
 -}
 stakeSTAssetClassFromGovernor :: Governor -> AssetClass
 stakeSTAssetClassFromGovernor gov = AssetClass (symbol, tokenName)
@@ -765,20 +786,29 @@ stakeSTAssetClassFromGovernor gov = AssetClass (symbol, tokenName)
     -- Tag with the address where the token is being sent to.
     tokenName = validatorHashToTokenName $ stakeValidatorHashFromGovernor gov
 
--- | Get the 'Stake' parameter, given the 'Governor' parameter.
+{- | Get the 'Stake' parameter, given the 'Governor' parameter.
+
+     @since 0.1.0
+-}
 stakeFromGovernor :: Governor -> Stake
 stakeFromGovernor gov =
   Stake gov.gtClassRef $
     proposalSTAssetClassFromGovernor gov
 
--- | Get the hash of 'Agora.Stake.Script.stakePolicy'.
+{- | Get the hash of 'Agora.Stake.Script.stakePolicy'.
+
+     @since 0.1.0
+-}
 stakeValidatorHashFromGovernor :: Governor -> ValidatorHash
 stakeValidatorHashFromGovernor gov = validatorHash validator
   where
     params = stakeFromGovernor gov
     validator = mkValidator $ stakeValidator params
 
--- | Get the 'Proposal' parameter, given the 'Governor' parameter.
+{- | Get the 'Proposal' parameter, given the 'Governor' parameter.
+
+     @since 0.1.0
+-}
 proposalFromGovernor :: Governor -> Proposal
 proposalFromGovernor gov = Proposal gstAC sstAC mc
   where
@@ -786,24 +816,36 @@ proposalFromGovernor gov = Proposal gstAC sstAC mc
     mc = gov.maximumCosigners
     sstAC = stakeSTAssetClassFromGovernor gov
 
--- | Get the hash of 'Agora.Proposal.proposalPolicy'.
+{- | Get the hash of 'Agora.Proposal.proposalPolicy'.
+
+     @since 0.1.0
+-}
 proposalValidatorHashFromGovernor :: Governor -> ValidatorHash
 proposalValidatorHashFromGovernor gov = validatorHash validator
   where
     params = proposalFromGovernor gov
     validator = mkValidator $ proposalValidator params
 
--- | Get the hash of 'Agora.Proposal.proposalValidator'.
+{- | Get the hash of 'Agora.Proposal.proposalValidator'.
+
+     @since 0.1.0
+-}
 governorValidatorHash :: Governor -> ValidatorHash
 governorValidatorHash gov = validatorHash validator
   where
     validator = mkValidator $ governorValidator gov
 
--- | Get the 'AuthorityToken' parameter given the 'Governor' parameter.
+{- | Get the 'AuthorityToken' parameter given the 'Governor' parameter.
+
+     @since 0.1.0
+-}
 authorityTokenFromGovernor :: Governor -> AuthorityToken
 authorityTokenFromGovernor gov = AuthorityToken $ governorSTAssetClassFromGovernor gov
 
--- | Get the 'CurrencySymbol' of the authority token.
+{- | Get the 'CurrencySymbol' of the authority token.
+
+     @since 0.1.0
+-}
 authorityTokenSymbolFromGovernor :: Governor -> CurrencySymbol
 authorityTokenSymbolFromGovernor gov = mintingPolicySymbol policy
   where
