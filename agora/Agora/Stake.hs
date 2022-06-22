@@ -26,22 +26,12 @@ module Agora.Stake (
   pgetStakeUsage,
 ) where
 
---------------------------------------------------------------------------------
-
-import Control.Applicative (Const)
+import Agora.Plutarch.Orphans ()
+import Agora.Proposal (PProposalId, PResultTag, ProposalId (..), ResultTag (..))
+import Agora.SafeMoney (GTTag)
 import Data.Tagged (Tagged (..))
 import GHC.Generics qualified as GHC
 import Generics.SOP (Generic, HasDatatypeInfo, I (I))
-import Prelude hiding (Num (..))
-
---------------------------------------------------------------------------------
-
-import PlutusLedgerApi.V1 (PubKeyHash)
-import PlutusLedgerApi.V1.Value (AssetClass)
-import PlutusTx qualified
-
---------------------------------------------------------------------------------
-
 import Plutarch.Api.V1 (
   PDatum,
   PDatumHash,
@@ -63,12 +53,10 @@ import Plutarch.Extra.TermCont (pletC, pletFieldsC, pmatchC)
 import Plutarch.Internal (punsafeCoerce)
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (..))
 import Plutarch.SafeMoney (PDiscrete)
-import Plutarch.TryFrom (PTryFrom (PTryFromExcess, ptryFrom'))
-
---------------------------------------------------------------------------------
-
-import Agora.Proposal (PProposalId, PResultTag, ProposalId (..), ResultTag (..))
-import Agora.SafeMoney (GTTag)
+import PlutusLedgerApi.V1 (PubKeyHash)
+import PlutusLedgerApi.V1.Value (AssetClass)
+import PlutusTx qualified
+import Prelude hiding (Num (..))
 
 --------------------------------------------------------------------------------
 
@@ -229,13 +217,14 @@ newtype PStakeDatum (s :: S) = PStakeDatum
     )
     via (PIsDataReprInstances PStakeDatum)
 
-instance PTryFrom PData (PAsData PStakeDatum) where
-  type PTryFromExcess PData (PAsData PStakeDatum) = Const ()
-  ptryFrom' d k =
-    k (punsafeCoerce d, ())
+-- | @since 0.1.0
+instance Plutarch.Lift.PUnsafeLiftDecl PStakeDatum where type PLifted PStakeDatum = StakeDatum
 
-instance PUnsafeLiftDecl PStakeDatum where type PLifted PStakeDatum = StakeDatum
-deriving via (DerivePConstantViaData StakeDatum PStakeDatum) instance (PConstantDecl StakeDatum)
+-- | @since 0.1.0
+deriving via (DerivePConstantViaData StakeDatum PStakeDatum) instance (Plutarch.Lift.PConstantDecl StakeDatum)
+
+-- | @since 0.1.0
+deriving via PAsData (PIsDataReprInstances PStakeDatum) instance PTryFrom PData (PAsData PStakeDatum)
 
 {- | Plutarch-level redeemer for Stake scripts.
 
@@ -274,8 +263,8 @@ deriving via
   instance
     PTryFrom PData (PAsData PStakeRedeemer)
 
-instance PUnsafeLiftDecl PStakeRedeemer where type PLifted PStakeRedeemer = StakeRedeemer
-deriving via (DerivePConstantViaData StakeRedeemer PStakeRedeemer) instance (PConstantDecl StakeRedeemer)
+instance Plutarch.Lift.PUnsafeLiftDecl PStakeRedeemer where type PLifted PStakeRedeemer = StakeRedeemer
+deriving via (DerivePConstantViaData StakeRedeemer PStakeRedeemer) instance (Plutarch.Lift.PConstantDecl StakeRedeemer)
 
 {- | Plutarch-level version of 'ProposalLock'.
 
@@ -303,8 +292,8 @@ deriving via
   instance
     PTryFrom PData (PAsData PProposalLock)
 
-instance PUnsafeLiftDecl PProposalLock where type PLifted PProposalLock = ProposalLock
-deriving via (DerivePConstantViaData ProposalLock PProposalLock) instance (PConstantDecl ProposalLock)
+instance Plutarch.Lift.PUnsafeLiftDecl PProposalLock where type PLifted PProposalLock = ProposalLock
+deriving via (DerivePConstantViaData ProposalLock PProposalLock) instance (Plutarch.Lift.PConstantDecl ProposalLock)
 
 --------------------------------------------------------------------------------
 

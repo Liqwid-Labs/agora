@@ -29,12 +29,12 @@ import Agora.Governor.Scripts (
   authorityTokenSymbolFromGovernor,
   governorSTAssetClassFromGovernor,
  )
+import Agora.Plutarch.Orphans ()
 import Agora.Utils (
   isScriptAddress,
   mustBePDJust,
   mustBePJust,
  )
-import Control.Applicative (Const)
 import GHC.Generics qualified as GHC
 import Generics.SOP (Generic, I (I))
 import Plutarch.Api.V1 (
@@ -51,8 +51,6 @@ import Plutarch.DataRepr (
  )
 import Plutarch.Extra.TermCont (pguardC)
 import Plutarch.Lift (PConstantDecl, PLifted, PUnsafeLiftDecl)
-import Plutarch.TryFrom (PTryFrom (..))
-import Plutarch.Unsafe (punsafeCoerce)
 import PlutusLedgerApi.V1 (TxOutRef)
 import PlutusLedgerApi.V1.Value (AssetClass (..))
 import PlutusTx qualified
@@ -120,13 +118,8 @@ instance PUnsafeLiftDecl PMutateGovernorDatum where type PLifted PMutateGovernor
 -- | @since 0.1.0
 deriving via (DerivePConstantViaData MutateGovernorDatum PMutateGovernorDatum) instance (PConstantDecl MutateGovernorDatum)
 
--- TODO: Derive this.
-
 -- | @since 0.1.0
-instance PTryFrom PData (PAsData PMutateGovernorDatum) where
-  type PTryFromExcess PData (PAsData PMutateGovernorDatum) = Const ()
-  ptryFrom' d k =
-    k (punsafeCoerce d, ())
+deriving via PAsData (PIsDataReprInstances PMutateGovernorDatum) instance PTryFrom PData (PAsData PMutateGovernorDatum)
 
 --------------------------------------------------------------------------------
 

@@ -36,7 +36,6 @@ import Agora.Proposal.Time (
   ProposalTimingConfig,
  )
 import Agora.SafeMoney (GTTag)
-import Control.Applicative (Const)
 import Data.Tagged (Tagged (..))
 import GHC.Generics qualified as GHC
 import Generics.SOP (Generic, I (I))
@@ -49,8 +48,6 @@ import Plutarch.Extra.Comonad (pextract)
 import Plutarch.Extra.TermCont (pletC, pmatchC)
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (..))
 import Plutarch.SafeMoney (PDiscrete (..))
-import Plutarch.TryFrom (PTryFrom (..))
-import Plutarch.Unsafe (punsafeCoerce)
 import PlutusLedgerApi.V1 (TxOutRef)
 import PlutusLedgerApi.V1.Value (AssetClass (..))
 import PlutusTx qualified
@@ -168,14 +165,8 @@ instance PUnsafeLiftDecl PGovernorDatum where type PLifted PGovernorDatum = Gove
 -- | @since 0.1.0
 deriving via (DerivePConstantViaData GovernorDatum PGovernorDatum) instance (PConstantDecl GovernorDatum)
 
--- FIXME: derive this via 'PIsDataReprInstances'
--- Blocked by: PProposalThresholds
-
 -- | @since 0.1.0
-instance PTryFrom PData (PAsData PGovernorDatum) where
-  type PTryFromExcess PData (PAsData PGovernorDatum) = Const ()
-
-  ptryFrom' d k = k (punsafeCoerce d, ())
+deriving via PAsData (PIsDataReprInstances PGovernorDatum) instance PTryFrom PData (PAsData PGovernorDatum)
 
 {- | Plutarch-level version of 'GovernorRedeemer'.
 

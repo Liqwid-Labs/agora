@@ -1,5 +1,4 @@
 {-# LANGUAGE TemplateHaskell #-}
-{-# OPTIONS_GHC -Wno-orphans #-}
 
 {- |
 Module     : Agora.Proposal.Time
@@ -29,6 +28,7 @@ module Agora.Proposal.Time (
   isExecutionPeriod,
 ) where
 
+import Agora.Plutarch.Orphans ()
 import GHC.Generics qualified as GHC
 import Generics.SOP (Generic, HasDatatypeInfo, I (I))
 import Plutarch.Api.V1 (
@@ -51,7 +51,6 @@ import Plutarch.Lift (
   PUnsafeLiftDecl (..),
  )
 import Plutarch.Numeric.Additive (AdditiveSemigroup ((+)))
-import Plutarch.Unsafe (punsafeCoerce)
 import PlutusLedgerApi.V1.Time (POSIXTime)
 import PlutusTx qualified
 import Prelude hiding ((+))
@@ -183,6 +182,11 @@ newtype PProposalStartingTime (s :: S) = PProposalStartingTime (Term s PPOSIXTim
 instance PUnsafeLiftDecl PProposalStartingTime where
   type PLifted PProposalStartingTime = ProposalStartingTime
 
+deriving via
+  PAsData (DerivePNewtype PProposalStartingTime PPOSIXTime)
+  instance
+    PTryFrom PData (PAsData PProposalStartingTime)
+
 -- | @since 0.1.0
 deriving via
   (DerivePConstantViaNewtype ProposalStartingTime PProposalStartingTime PPOSIXTime)
@@ -228,6 +232,9 @@ newtype PProposalTimingConfig (s :: S) = PProposalTimingConfig
     via (PIsDataReprInstances PProposalTimingConfig)
 
 -- | @since 0.1.0
+deriving via PAsData (PIsDataReprInstances PProposalTimingConfig) instance PTryFrom PData (PAsData PProposalTimingConfig)
+
+-- | @since 0.1.0
 instance PUnsafeLiftDecl PProposalTimingConfig where
   type PLifted PProposalTimingConfig = ProposalTimingConfig
 
@@ -253,6 +260,9 @@ newtype PMaxTimeRangeWidth (s :: S)
     via (DerivePNewtype PMaxTimeRangeWidth PPOSIXTime)
 
 -- | @since 0.1.0
+deriving via PAsData (DerivePNewtype PMaxTimeRangeWidth PPOSIXTime) instance PTryFrom PData (PAsData PMaxTimeRangeWidth)
+
+-- | @since 0.1.0
 instance PUnsafeLiftDecl PMaxTimeRangeWidth where type PLifted PMaxTimeRangeWidth = MaxTimeRangeWidth
 
 -- | @since 0.1.0
@@ -262,12 +272,6 @@ deriving via
     (PConstantDecl MaxTimeRangeWidth)
 
 --------------------------------------------------------------------------------
-
--- FIXME: Orphan instance, move this to plutarch-extra.
-
--- | @since 0.1.0
-instance AdditiveSemigroup (Term s PPOSIXTime) where
-  (punsafeCoerce @_ @_ @PInteger -> x) + (punsafeCoerce @_ @_ @PInteger -> y) = punsafeCoerce $ x + y
 
 {- | Get the starting time of a proposal, from the 'PlutusLedgerApi.V1.txInfoValidPeriod' field.
      For every proposal, this is only meant to run once upon creation. Given time range should be
