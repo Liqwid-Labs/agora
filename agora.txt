@@ -3,7 +3,7 @@
 
 
 @package agora
-@version 0.1
+@version 0.1.0
 
 
 -- | Tokens acting as redeemable proofs of DAO authority.
@@ -25,11 +25,12 @@ authorityTokensValidIn :: Term s (PCurrencySymbol :--> (PTxOut :--> PBool))
 -- | Assert that a single authority token has been burned.
 singleAuthorityTokenBurned :: forall (keys :: KeyGuarantees) (amounts :: AmountGuarantees) (s :: S). Term s PCurrencySymbol -> Term s (PAsData PTxInfo) -> Term s (PValue keys amounts) -> Term s PBool
 
--- | An AuthorityToken represents a proof that a particular token moved
---   while this token was minted. In effect, this means that the validator
---   that locked such a token must have approved said transaction. Said
---   validator should be made aware of *this* token's existence in order to
---   prevent incorrect minting.
+-- | An AuthorityToken represents a proof that a particular token spent in
+--   the same transaction the AuthorityToken was minted. In effect, this
+--   means that the validator that locked such a token must have approved
+--   the transaction in which an AuthorityToken is minted. Said validator
+--   should be made aware of an AuthorityToken token's existence in order
+--   to prevent incorrect minting.
 newtype AuthorityToken
 AuthorityToken :: AssetClass -> AuthorityToken
 
@@ -109,7 +110,7 @@ module Agora.Proposal.Time
 -- | Configuration of proposal timings.
 --   
 --   See:
---   <a>https://github.com/Liqwid-Labs/agora/blob/master/docs/tech-design/proposals.md#when-may-interactions-occur</a>
+--   <a>https://liqwid.notion.site/Proposals-589853145a994057aa77f397079f75e4#d25ea378768d4c76b52dd4c1b6bc0fcd</a>
 data ProposalTimingConfig
 ProposalTimingConfig :: POSIXTime -> POSIXTime -> POSIXTime -> POSIXTime -> ProposalTimingConfig
 
@@ -229,8 +230,11 @@ instance Plutarch.Bool.POrd Agora.Proposal.Time.PMaxTimeRangeWidth
 instance Plutarch.Bool.PEq Agora.Proposal.Time.PMaxTimeRangeWidth
 instance Plutarch.Builtin.PIsData Agora.Proposal.Time.PMaxTimeRangeWidth
 instance Plutarch.Internal.PlutusType.PlutusType Agora.Proposal.Time.PMaxTimeRangeWidth
+instance Plutarch.TryFrom.PTryFrom Plutarch.Builtin.PData (Plutarch.Builtin.PAsData Agora.Proposal.Time.PProposalStartingTime)
 instance Plutarch.Lift.PConstantDecl Agora.Proposal.Time.ProposalStartingTime
+instance Plutarch.TryFrom.PTryFrom Plutarch.Builtin.PData (Plutarch.Builtin.PAsData Agora.Proposal.Time.PProposalTimingConfig)
 instance Plutarch.Lift.PConstantDecl Agora.Proposal.Time.ProposalTimingConfig
+instance Plutarch.TryFrom.PTryFrom Plutarch.Builtin.PData (Plutarch.Builtin.PAsData Agora.Proposal.Time.PMaxTimeRangeWidth)
 instance Plutarch.Lift.PConstantDecl Agora.Proposal.Time.MaxTimeRangeWidth
 instance Plutarch.Lift.PUnsafeLiftDecl Agora.Proposal.Time.PMaxTimeRangeWidth
 instance Plutarch.Lift.PUnsafeLiftDecl Agora.Proposal.Time.PProposalTimingConfig
@@ -238,7 +242,6 @@ instance Plutarch.Lift.PUnsafeLiftDecl Agora.Proposal.Time.PProposalStartingTime
 instance PlutusTx.IsData.Class.ToData Agora.Proposal.Time.ProposalTimingConfig
 instance PlutusTx.IsData.Class.FromData Agora.Proposal.Time.ProposalTimingConfig
 instance PlutusTx.IsData.Class.UnsafeFromData Agora.Proposal.Time.ProposalTimingConfig
-instance forall (s :: Plutarch.Internal.S). Plutarch.Numeric.Additive.AdditiveSemigroup (Plutarch.Internal.Term s Plutarch.Api.V1.Time.PPOSIXTime)
 instance GHC.Generics.Generic Agora.Proposal.Time.ProposalStartingTime
 instance GHC.Show.Show Agora.Proposal.Time.ProposalStartingTime
 instance GHC.Classes.Eq Agora.Proposal.Time.ProposalStartingTime
@@ -593,6 +596,7 @@ ProposalId :: Integer -> ProposalId
 --   <pre>
 --   <a>No</a>  ~ <a>ResultTag</a> 0
 --   <a>Yes</a> ~ <a>ResultTag</a> 1
+--   
 --   </pre>
 newtype ResultTag
 ResultTag :: Integer -> ResultTag
@@ -697,23 +701,26 @@ instance Plutarch.DataRepr.Internal.PIsDataRepr Agora.Proposal.PProposalRedeemer
 instance forall (s :: Plutarch.Internal.S). Generics.SOP.Universe.Generic (Agora.Proposal.PProposalRedeemer s)
 instance forall (s :: Plutarch.Internal.S). GHC.Generics.Generic (Agora.Proposal.PProposalRedeemer s)
 instance Plutarch.Lift.PConstantDecl Agora.Proposal.ResultTag
+instance Plutarch.TryFrom.PTryFrom Plutarch.Builtin.PData (Plutarch.Builtin.PAsData Agora.Proposal.PResultTag)
+instance Plutarch.TryFrom.PTryFrom Plutarch.Builtin.PData (Plutarch.Builtin.PAsData Agora.Proposal.PProposalId)
 instance Plutarch.Lift.PConstantDecl Agora.Proposal.ProposalId
+instance Plutarch.TryFrom.PTryFrom Plutarch.Builtin.PData (Plutarch.Builtin.PAsData Agora.Proposal.PProposalStatus)
 instance Plutarch.Lift.PConstantDecl Agora.Proposal.ProposalStatus
+instance Plutarch.TryFrom.PTryFrom Plutarch.Builtin.PData (Plutarch.Builtin.PAsData Agora.Proposal.PProposalThresholds)
 instance Plutarch.Lift.PConstantDecl Agora.Proposal.ProposalThresholds
+instance Plutarch.TryFrom.PTryFrom Plutarch.Builtin.PData (Plutarch.Builtin.PAsData Agora.Proposal.PProposalVotes)
 instance Plutarch.Lift.PConstantDecl Agora.Proposal.ProposalVotes
-instance Plutarch.Lift.PConstantDecl Agora.Proposal.ProposalDatum
-instance Plutarch.Lift.PConstantDecl Agora.Proposal.ProposalRedeemer
-instance Plutarch.TryFrom.PTryFrom Plutarch.Builtin.PData (Plutarch.Builtin.PAsData Agora.Proposal.PProposalRedeemer)
-instance Plutarch.Lift.PUnsafeLiftDecl Agora.Proposal.PProposalRedeemer
 instance Plutarch.TryFrom.PTryFrom Plutarch.Builtin.PData (Plutarch.Builtin.PAsData Agora.Proposal.PProposalDatum)
+instance Plutarch.Lift.PConstantDecl Agora.Proposal.ProposalDatum
+instance Plutarch.TryFrom.PTryFrom Plutarch.Builtin.PData (Plutarch.Builtin.PAsData Agora.Proposal.PProposalRedeemer)
+instance Plutarch.Lift.PConstantDecl Agora.Proposal.ProposalRedeemer
+instance Plutarch.Lift.PUnsafeLiftDecl Agora.Proposal.PProposalRedeemer
 instance Plutarch.Lift.PUnsafeLiftDecl Agora.Proposal.PProposalDatum
 instance Plutarch.Lift.PUnsafeLiftDecl Agora.Proposal.PProposalVotes
 instance Plutarch.Lift.PUnsafeLiftDecl Agora.Proposal.PProposalThresholds
 instance Plutarch.Lift.PUnsafeLiftDecl Agora.Proposal.PProposalStatus
-instance Plutarch.TryFrom.PTryFrom Plutarch.Builtin.PData (Plutarch.Builtin.PAsData Agora.Proposal.PProposalId)
 instance Plutarch.Lift.PUnsafeLiftDecl Agora.Proposal.PProposalId
 instance Plutarch.Lift.PUnsafeLiftDecl Agora.Proposal.PResultTag
-instance Plutarch.TryFrom.PTryFrom Plutarch.Builtin.PData (Plutarch.Builtin.PAsData Agora.Proposal.PResultTag)
 instance PlutusTx.IsData.Class.ToData Agora.Proposal.ProposalRedeemer
 instance PlutusTx.IsData.Class.FromData Agora.Proposal.ProposalRedeemer
 instance PlutusTx.IsData.Class.UnsafeFromData Agora.Proposal.ProposalRedeemer
@@ -918,11 +925,11 @@ instance Plutarch.Internal.PlutusType.PlutusType Agora.Stake.PStakeUsage
 instance forall (s :: Plutarch.Internal.S). Generics.SOP.Universe.Generic (Agora.Stake.PStakeUsage s)
 instance forall (s :: Plutarch.Internal.S). GHC.Generics.Generic (Agora.Stake.PStakeUsage s)
 instance Plutarch.Lift.PConstantDecl Agora.Stake.StakeDatum
+instance Plutarch.TryFrom.PTryFrom Plutarch.Builtin.PData (Plutarch.Builtin.PAsData Agora.Stake.PStakeDatum)
 instance Plutarch.TryFrom.PTryFrom Plutarch.Builtin.PData (Plutarch.Builtin.PAsData Agora.Stake.PStakeRedeemer)
 instance Plutarch.Lift.PConstantDecl Agora.Stake.StakeRedeemer
 instance Plutarch.TryFrom.PTryFrom Plutarch.Builtin.PData (Plutarch.Builtin.PAsData Agora.Stake.PProposalLock)
 instance Plutarch.Lift.PConstantDecl Agora.Stake.ProposalLock
-instance Plutarch.TryFrom.PTryFrom Plutarch.Builtin.PData (Plutarch.Builtin.PAsData Agora.Stake.PStakeDatum)
 instance Plutarch.Lift.PUnsafeLiftDecl Agora.Stake.PStakeDatum
 instance Plutarch.Lift.PUnsafeLiftDecl Agora.Stake.PStakeRedeemer
 instance Plutarch.Lift.PUnsafeLiftDecl Agora.Stake.PProposalLock
@@ -1177,11 +1184,11 @@ instance Plutarch.DataRepr.Internal.PIsDataRepr Agora.Governor.PGovernorRedeemer
 instance forall (s :: Plutarch.Internal.S). Generics.SOP.Universe.Generic (Agora.Governor.PGovernorRedeemer s)
 instance forall (s :: Plutarch.Internal.S). GHC.Generics.Generic (Agora.Governor.PGovernorRedeemer s)
 instance Plutarch.Lift.PConstantDecl Agora.Governor.GovernorDatum
+instance Plutarch.TryFrom.PTryFrom Plutarch.Builtin.PData (Plutarch.Builtin.PAsData Agora.Governor.PGovernorDatum)
 instance Plutarch.Lift.PConstantDecl Agora.Governor.GovernorRedeemer
 instance Plutarch.TryFrom.PTryFrom Plutarch.Builtin.PData (Plutarch.Builtin.PAsData Agora.Governor.PGovernorRedeemer)
 instance Plutarch.Lift.PUnsafeLiftDecl Agora.Governor.PGovernorRedeemer
 instance Plutarch.Lift.PUnsafeLiftDecl Agora.Governor.PGovernorDatum
-instance Plutarch.TryFrom.PTryFrom Plutarch.Builtin.PData (Plutarch.Builtin.PAsData Agora.Governor.PGovernorDatum)
 instance PlutusTx.IsData.Class.ToData Agora.Governor.GovernorRedeemer
 instance PlutusTx.IsData.Class.FromData Agora.Governor.GovernorRedeemer
 instance PlutusTx.IsData.Class.UnsafeFromData Agora.Governor.GovernorRedeemer
@@ -1381,10 +1388,19 @@ PTreasuryWithdrawalDatum :: Term s (PDataRecord '["receivers" := PBuiltinList (P
 --   The validator does not accept any Redeemer as all "parameters" are
 --   provided via encoded Datum.
 --   
---   Note: It should check... 1. Transaction outputs should contain all of
---   what Datum specified 2. Left over assets should be redirected back to
---   Treasury It can be more flexiable over... - The number of outputs
---   themselves
+--   NOTE: It should check...
+--   
+--   <ol>
+--   <li>Transaction outputs should contain all of what Datum
+--   specified</li>
+--   <li>Left over assets should be redirected back to Treasury</li>
+--   </ol>
+--   
+--   It can be more flexiable over...
+--   
+--   <ul>
+--   <li>The number of outputs themselves</li>
+--   </ul>
 treasuryWithdrawalValidator :: forall {s :: S}. CurrencySymbol -> Term s PValidator
 instance Plutarch.DataRepr.Internal.Field.PDataFields Agora.Effect.TreasuryWithdrawal.PTreasuryWithdrawalDatum
 instance Plutarch.Builtin.PIsData Agora.Effect.TreasuryWithdrawal.PTreasuryWithdrawalDatum
@@ -1393,8 +1409,8 @@ instance Plutarch.DataRepr.Internal.PIsDataRepr Agora.Effect.TreasuryWithdrawal.
 instance forall (s :: Plutarch.Internal.S). Generics.SOP.Universe.Generic (Agora.Effect.TreasuryWithdrawal.PTreasuryWithdrawalDatum s)
 instance forall (s :: Plutarch.Internal.S). GHC.Generics.Generic (Agora.Effect.TreasuryWithdrawal.PTreasuryWithdrawalDatum s)
 instance Plutarch.Lift.PConstantDecl Agora.Effect.TreasuryWithdrawal.TreasuryWithdrawalDatum
-instance Plutarch.Lift.PUnsafeLiftDecl Agora.Effect.TreasuryWithdrawal.PTreasuryWithdrawalDatum
 instance Plutarch.TryFrom.PTryFrom Plutarch.Builtin.PData (Plutarch.Builtin.PAsData Agora.Effect.TreasuryWithdrawal.PTreasuryWithdrawalDatum)
+instance Plutarch.Lift.PUnsafeLiftDecl Agora.Effect.TreasuryWithdrawal.PTreasuryWithdrawalDatum
 instance PlutusTx.IsData.Class.ToData Agora.Effect.TreasuryWithdrawal.TreasuryWithdrawalDatum
 instance PlutusTx.IsData.Class.FromData Agora.Effect.TreasuryWithdrawal.TreasuryWithdrawalDatum
 instance PlutusTx.IsData.Class.UnsafeFromData Agora.Effect.TreasuryWithdrawal.TreasuryWithdrawalDatum
@@ -1453,8 +1469,8 @@ instance Plutarch.DataRepr.Internal.PIsDataRepr Agora.Effect.GovernorMutation.PM
 instance forall (s :: Plutarch.Internal.S). Generics.SOP.Universe.Generic (Agora.Effect.GovernorMutation.PMutateGovernorDatum s)
 instance forall (s :: Plutarch.Internal.S). GHC.Generics.Generic (Agora.Effect.GovernorMutation.PMutateGovernorDatum s)
 instance Plutarch.Lift.PConstantDecl Agora.Effect.GovernorMutation.MutateGovernorDatum
-instance Plutarch.Lift.PUnsafeLiftDecl Agora.Effect.GovernorMutation.PMutateGovernorDatum
 instance Plutarch.TryFrom.PTryFrom Plutarch.Builtin.PData (Plutarch.Builtin.PAsData Agora.Effect.GovernorMutation.PMutateGovernorDatum)
+instance Plutarch.Lift.PUnsafeLiftDecl Agora.Effect.GovernorMutation.PMutateGovernorDatum
 instance PlutusTx.IsData.Class.ToData Agora.Effect.GovernorMutation.MutateGovernorDatum
 instance PlutusTx.IsData.Class.FromData Agora.Effect.GovernorMutation.MutateGovernorDatum
 instance PlutusTx.IsData.Class.UnsafeFromData Agora.Effect.GovernorMutation.MutateGovernorDatum
