@@ -2,6 +2,7 @@
 Module     : Agora.AuthorityToken
 Maintainer : emi@haskell.fyi
 Description: Tokens acting as redeemable proofs of DAO authority.
+
 Tokens acting as redeemable proofs of DAO authority.
 -}
 module Agora.AuthorityToken (
@@ -11,8 +12,7 @@ module Agora.AuthorityToken (
   AuthorityToken (..),
 ) where
 
---------------------------------------------------------------------------------
-
+import GHC.Generics qualified as GHC
 import Plutarch.Api.V1 (
   AmountGuarantees,
   KeyGuarantees,
@@ -38,21 +38,23 @@ import PlutusLedgerApi.V1.Value (AssetClass (AssetClass))
 
 --------------------------------------------------------------------------------
 
-import GHC.Generics qualified as GHC
-
---------------------------------------------------------------------------------
-
 {- | An AuthorityToken represents a proof that a particular token
-     moved while this token was minted. In effect, this means that
-     the validator that locked such a token must have approved
-     said transaction. Said validator should be made aware of
-     *this* token's existence in order to prevent incorrect minting.
+     spent in the same transaction the AuthorityToken was minted.
+     In effect, this means that the validator that locked such a token
+     must have approved the transaction in which an AuthorityToken is minted.
+     Said validator should be made aware of an AuthorityToken token's existence
+     in order to prevent incorrect minting.
+
+     @since 0.1.0
 -}
 newtype AuthorityToken = AuthorityToken
   { authority :: AssetClass
   -- ^ Token that must move in order for minting this to be valid.
   }
-  deriving stock (GHC.Generic)
+  deriving stock
+    ( -- | @since 0.1.0
+      GHC.Generic
+    )
 
 --------------------------------------------------------------------------------
 
@@ -64,6 +66,8 @@ newtype AuthorityToken = AuthorityToken
      it was sent to, this is enough to prove validity.
      In other words, check that all assets of a particular currency symbol
      are tagged with a TokenName that matches where they live.
+
+     @since 0.1.0
 -}
 authorityTokensValidIn :: Term s (PCurrencySymbol :--> PTxOut :--> PBool)
 authorityTokensValidIn = phoistAcyclic $
@@ -94,7 +98,10 @@ authorityTokensValidIn = phoistAcyclic $
           -- No GATs exist at this output!
           pconstant True
 
--- | Assert that a single authority token has been burned.
+{- | Assert that a single authority token has been burned.
+
+     @since 0.1.0
+-}
 singleAuthorityTokenBurned ::
   forall (keys :: KeyGuarantees) (amounts :: AmountGuarantees) (s :: S).
   Term s PCurrencySymbol ->
@@ -122,7 +129,10 @@ singleAuthorityTokenBurned gatCs txInfo mint = unTermCont $ do
             # txInfoF.inputs
       ]
 
--- | Policy given 'AuthorityToken' params.
+{- | Policy given 'AuthorityToken' params.
+
+     @since 0.1.0
+-}
 authorityTokenPolicy :: AuthorityToken -> ClosedTerm PMintingPolicy
 authorityTokenPolicy params =
   plam $ \_redeemer ctx' ->

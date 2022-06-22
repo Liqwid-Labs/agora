@@ -36,23 +36,14 @@ module Agora.Proposal (
   pretractVotes,
 ) where
 
---------------------------------------------------------------------------------
-
+import Agora.Proposal.Time (PProposalStartingTime, PProposalTimingConfig, ProposalStartingTime, ProposalTimingConfig)
+import Agora.SafeMoney (GTTag)
+import Agora.Utils (mustBePJust)
 import Control.Applicative (Const)
 import Control.Arrow (first)
 import Data.Tagged (Tagged)
 import GHC.Generics qualified as GHC
 import Generics.SOP (Generic, I (I))
-
---------------------------------------------------------------------------------
-
-import PlutusLedgerApi.V1 (DatumHash, PubKeyHash, ValidatorHash)
-import PlutusLedgerApi.V1.Value (AssetClass)
-import PlutusTx qualified
-import PlutusTx.AssocMap qualified as AssocMap
-
---------------------------------------------------------------------------------
-
 import Plutarch.Api.V1 (
   KeyGuarantees (Unsorted),
   PDatumHash,
@@ -73,12 +64,10 @@ import Plutarch.Lift (
 import Plutarch.SafeMoney (PDiscrete)
 import Plutarch.TryFrom (PTryFrom (PTryFromExcess, ptryFrom'))
 import Plutarch.Unsafe (punsafeCoerce)
-
---------------------------------------------------------------------------------
-
-import Agora.Proposal.Time (PProposalStartingTime, PProposalTimingConfig, ProposalStartingTime, ProposalTimingConfig)
-import Agora.SafeMoney (GTTag)
-import Agora.Utils (mustBePJust)
+import PlutusLedgerApi.V1 (DatumHash, PubKeyHash, ValidatorHash)
+import PlutusLedgerApi.V1.Value (AssetClass)
+import PlutusTx qualified
+import PlutusTx.AssocMap qualified as AssocMap
 
 --------------------------------------------------------------------------------
 -- Haskell-land
@@ -88,21 +77,55 @@ import Agora.Utils (mustBePJust)
      The 100th proposal will be @'ProposalId' 99@. This counter lives
      in the 'Agora.Governor.Governor'. See 'Agora.Governor.nextProposalId', and
      'Agora.Governor.pgetNextProposalId'.
+
+     @since 0.1.0
 -}
 newtype ProposalId = ProposalId {proposalTag :: Integer}
-  deriving newtype (PlutusTx.ToData, PlutusTx.FromData, PlutusTx.UnsafeFromData)
-  deriving stock (Eq, Show, GHC.Generic)
+  deriving newtype
+    ( -- | @since 0.1.0
+      PlutusTx.ToData
+    , -- | @since 0.1.0
+      PlutusTx.FromData
+    , -- | @since 0.1.0
+      PlutusTx.UnsafeFromData
+    )
+  deriving stock
+    ( -- | @since 0.1.0
+      Eq
+    , -- | @since 0.1.0
+      Show
+    , -- | @since 0.1.0
+      GHC.Generic
+    )
 
 {- | Encodes a result. Typically, for a Yes/No proposal, we encode it like this:
 
-@
-"No"  ~ 'ResultTag' 0
-"Yes" ~ 'ResultTag' 1
-@
+     @
+     "No"  ~ 'ResultTag' 0
+     "Yes" ~ 'ResultTag' 1
+     @
+
+     @since 0.1.0
 -}
 newtype ResultTag = ResultTag {getResultTag :: Integer}
-  deriving stock (Eq, Show, Ord, GHC.Generic)
-  deriving newtype (PlutusTx.ToData, PlutusTx.FromData, PlutusTx.UnsafeFromData)
+  deriving stock
+    ( -- | @since 0.1.0
+      Eq
+    , -- | @since 0.1.0
+      Show
+    , -- | @since 0.1.0
+      Ord
+    , -- | @since 0.1.0
+      GHC.Generic
+    )
+  deriving newtype
+    ( -- | @since 0.1.0
+      PlutusTx.ToData
+    , -- | @since 0.1.0
+      PlutusTx.FromData
+    , -- | @since 0.1.0
+      PlutusTx.UnsafeFromData
+    )
 
 {- | The "status" of the proposal. This is only useful for state transitions that
      need to happen as a result of a transaction as opposed to time-based "periods".
@@ -111,6 +134,8 @@ newtype ResultTag = ResultTag {getResultTag :: Integer}
 
      If the proposal is 'VotingReady', for instance, that doesn't necessarily
      mean that voting is possible, as this also requires the timing to be right.
+
+     @since 0.1.0
 -}
 data ProposalStatus
   = -- | A draft proposal represents a proposal that has yet to be realized.
@@ -144,13 +169,23 @@ data ProposalStatus
     --
     --   TODO: The owner of the proposal may choose to reclaim their proposal.
     Finished
-  deriving stock (Eq, Show, GHC.Generic)
+  deriving stock
+    ( -- | @since 0.1.0
+      Eq
+    , -- | @since 0.1.0
+      Show
+    , -- | @since 0.1.0
+      GHC.Generic
+    )
 
+-- | @since 0.1.0
 PlutusTx.makeIsDataIndexed ''ProposalStatus [('Draft, 0), ('VotingReady, 1), ('Locked, 2), ('Finished, 3)]
 
 {- | The threshold values for various state transitions to happen.
      This data is stored centrally (in the 'Agora.Governor.Governor') and copied over
      to 'Proposal's when they are created.
+
+     @since 0.1.0
 -}
 data ProposalThresholds = ProposalThresholds
   { execute :: Tagged GTTag Integer
@@ -164,32 +199,62 @@ data ProposalThresholds = ProposalThresholds
   -- ^ How much GT required to allow voting to happen.
   -- (i.e. to move into 'VotingReady')
   }
-  deriving stock (Eq, Show, GHC.Generic)
+  deriving stock
+    ( -- | @since 0.1.0
+      Eq
+    , -- | @since 0.1.0
+      Show
+    , -- | @since 0.1.0
+      GHC.Generic
+    )
 
+-- | @since 0.1.0
 PlutusTx.makeIsDataIndexed ''ProposalThresholds [('ProposalThresholds, 0)]
 
 {- | Map which encodes the total tally for each result.
-   It's important that the "shape" is consistent with the shape of 'effects'.
+     It's important that the "shape" is consistent with the shape of 'effects'.
 
-   e.g. if the 'effects' field looks like the following:
+     e.g. if the 'effects' field looks like the following:
 
-   @[('ResultTag' 0, []), ('ResultTag' 1, [(vh, dh)])]@
+     @[('ResultTag' 0, []), ('ResultTag' 1, [(vh, dh)])]@
 
-   Then 'ProposalVotes' needs be of the shape:
+     Then 'ProposalVotes' needs be of the shape:
 
-   @[('ResultTag' 0, n), ('ResultTag' 1, m)]@
+     @[('ResultTag' 0, n), ('ResultTag' 1, m)]@
+
+     @since 0.1.0
 -}
 newtype ProposalVotes = ProposalVotes
   { getProposalVotes :: AssocMap.Map ResultTag Integer
   }
-  deriving newtype (PlutusTx.ToData, PlutusTx.FromData, PlutusTx.UnsafeFromData)
-  deriving stock (Eq, Show, GHC.Generic)
+  deriving newtype
+    ( -- | @since 0.1.0
+      PlutusTx.ToData
+    , -- | @since 0.1.0
+      PlutusTx.FromData
+    , -- | @since 0.1.0
+      PlutusTx.UnsafeFromData
+    )
+  deriving stock
+    ( -- | @since 0.1.0
+      Eq
+    , -- | @since 0.1.0
+      Show
+    , -- | @since 0.1.0
+      GHC.Generic
+    )
 
--- | Create a 'ProposalVotes' that has the same shape as the 'effects' field.
+{- | Create a 'ProposalVotes' that has the same shape as the 'effects' field.
+
+     @since 0.1.0
+-}
 emptyVotesFor :: forall a. AssocMap.Map ResultTag a -> ProposalVotes
 emptyVotesFor = ProposalVotes . AssocMap.mapWithKey (const . const 0)
 
--- | Haskell-level datum for Proposal scripts.
+{- | Haskell-level datum for Proposal scripts.
+
+     @since 0.1.0
+-}
 data ProposalDatum = ProposalDatum
   { proposalId :: ProposalId
   -- ^ Identification of the proposal.
@@ -211,11 +276,21 @@ data ProposalDatum = ProposalDatum
   , startingTime :: ProposalStartingTime
   -- ^ The time upon the creation of the proposal.
   }
-  deriving stock (Eq, Show, GHC.Generic)
+  deriving stock
+    ( -- | @since 0.1.0
+      Eq
+    , -- | @since 0.1.0
+      Show
+    , -- | @since 0.1.0
+      GHC.Generic
+    )
 
 PlutusTx.makeIsDataIndexed ''ProposalDatum [('ProposalDatum, 0)]
 
--- | Haskell-level redeemer for Proposal scripts.
+{- | Haskell-level redeemer for Proposal scripts.
+
+     @since 0.1.0
+-}
 data ProposalRedeemer
   = -- | Cast one or more votes towards a particular 'ResultTag'.
     Vote ResultTag
@@ -253,8 +328,16 @@ data ProposalRedeemer
     --     If the proposal has run out of time for the current 'ProposalStatus', it will always be possible
     --     to transition into 'Finished' status, because it has expired (and failed).
     AdvanceProposal
-  deriving stock (Eq, Show, GHC.Generic)
+  deriving stock
+    ( -- | @since 0.1.0
+      Eq
+    , -- | @since 0.1.0
+      Show
+    , -- | @since 0.1.0
+      GHC.Generic
+    )
 
+-- | @since 0.1.0
 PlutusTx.makeIsDataIndexed
   ''ProposalRedeemer
   [ ('Vote, 0)
@@ -263,23 +346,49 @@ PlutusTx.makeIsDataIndexed
   , ('AdvanceProposal, 3)
   ]
 
--- | Parameters that identify the Proposal validator script.
+{- | Parameters that identify the Proposal validator script.
+
+     @since 0.1.0
+-}
 data Proposal = Proposal
   { governorSTAssetClass :: AssetClass
   , stakeSTAssetClass :: AssetClass
   , maximumCosigners :: Integer
   -- ^ Arbitrary limit for maximum amount of cosigners on a proposal.
   }
-  deriving stock (Show, Eq, GHC.Generic)
+  deriving stock
+    ( -- | @since 0.1.0
+      Show
+    , -- | @since 0.1.0
+      Eq
+    , -- | @since 0.1.0
+      GHC.Generic
+    )
 
 --------------------------------------------------------------------------------
 -- Plutarch-land
 
--- | Plutarch-level version of 'ResultTag'.
-newtype PResultTag (s :: S) = PResultTag (Term s PInteger)
-  deriving (PlutusType, PIsData, PEq, POrd) via (DerivePNewtype PResultTag PInteger)
+{- | Plutarch-level version of 'ResultTag'.
 
+     @since 0.1.0
+-}
+newtype PResultTag (s :: S) = PResultTag (Term s PInteger)
+  deriving
+    ( -- | @since 0.1.0
+      PlutusType
+    , -- | @since 0.1.0
+      PIsData
+    , -- | @since 0.1.0
+      PEq
+    , -- | @since 0.1.0
+      POrd
+    )
+    via (DerivePNewtype PResultTag PInteger)
+
+-- | @since 0.1.0
 instance PUnsafeLiftDecl PResultTag where type PLifted PResultTag = ResultTag
+
+-- | @since 0.1.0
 deriving via
   (DerivePConstantViaNewtype ResultTag PResultTag PInteger)
   instance
@@ -287,6 +396,8 @@ deriving via
 
 -- FIXME: This instance and the one below, for 'PProposalId', should be derived.
 -- Soon this will be possible through 'DerivePNewtype'.
+
+-- | @since 0.1.0
 instance PTryFrom PData (PAsData PResultTag) where
   type PTryFromExcess PData (PAsData PResultTag) = PTryFromExcess PData (PAsData PInteger)
   ptryFrom' d k =
@@ -300,10 +411,24 @@ instance PTryFrom PData (PAsData PResultTag) where
       -- Since 'PResultTag' is a simple newtype, their shape is the same.
       k . first punsafeCoerce
 
--- | Plutarch-level version of 'PProposalId'.
-newtype PProposalId (s :: S) = PProposalId (Term s PInteger)
-  deriving (PlutusType, PIsData, PEq, POrd) via (DerivePNewtype PProposalId PInteger)
+{- | Plutarch-level version of 'PProposalId'.
 
+     @since 0.1.0
+-}
+newtype PProposalId (s :: S) = PProposalId (Term s PInteger)
+  deriving
+    ( -- | @since 0.1.0
+      PlutusType
+    , -- | @since 0.1.0
+      PIsData
+    , -- | @since 0.1.0
+      PEq
+    , -- | @since 0.1.0
+      POrd
+    )
+    via (DerivePNewtype PProposalId PInteger)
+
+-- | @since 0.1.0
 instance PTryFrom PData (PAsData PProposalId) where
   type PTryFromExcess PData (PAsData PProposalId) = PTryFromExcess PData (PAsData PInteger)
   ptryFrom' d k =
@@ -317,13 +442,19 @@ instance PTryFrom PData (PAsData PProposalId) where
       -- Since 'PProposalId' is a simple newtype, their shape is the same.
       k . first punsafeCoerce
 
+-- | @since 0.1.0
 instance PUnsafeLiftDecl PProposalId where type PLifted PProposalId = ProposalId
+
+-- | @since 0.1.0
 deriving via
   (DerivePConstantViaNewtype ProposalId PProposalId PInteger)
   instance
     (PConstantDecl ProposalId)
 
--- | Plutarch-level version of 'ProposalStatus'.
+{- | Plutarch-level version of 'ProposalStatus'.
+
+     @since 0.1.0
+-}
 data PProposalStatus (s :: S)
   = -- TODO: 'PProposalStatus' ought te be encoded as 'PInteger'.
     -- e.g. like Tilde used 'pmatchEnum'.
@@ -331,17 +462,38 @@ data PProposalStatus (s :: S)
   | PVotingReady (Term s (PDataRecord '[]))
   | PLocked (Term s (PDataRecord '[]))
   | PFinished (Term s (PDataRecord '[]))
-  deriving stock (GHC.Generic)
-  deriving anyclass (Generic)
-  deriving anyclass (PIsDataRepr)
+  deriving stock
+    ( -- | @since 0.1.0
+      GHC.Generic
+    )
+  deriving anyclass
+    ( -- | @since 0.1.0
+      Generic
+    )
+  deriving anyclass
+    ( -- | @since 0.1.0
+      PIsDataRepr
+    )
   deriving
-    (PlutusType, PIsData, PEq)
+    ( -- | @since 0.1.0
+      PlutusType
+    , -- | @since 0.1.0
+      PIsData
+    , -- | @since 0.1.0
+      PEq
+    )
     via PIsDataReprInstances PProposalStatus
 
+-- | @since 0.1.0
 instance PUnsafeLiftDecl PProposalStatus where type PLifted PProposalStatus = ProposalStatus
+
+-- | @since 0.1.0
 deriving via (DerivePConstantViaData ProposalStatus PProposalStatus) instance (PConstantDecl ProposalStatus)
 
--- | Plutarch-level version of 'ProposalThresholds'.
+{- | Plutarch-level version of 'ProposalThresholds'.
+
+     @since 0.1.0
+-}
 newtype PProposalThresholds (s :: S) = PProposalThresholds
   { getProposalThresholds ::
       Term
@@ -353,22 +505,52 @@ newtype PProposalThresholds (s :: S) = PProposalThresholds
              ]
         )
   }
-  deriving stock (GHC.Generic)
-  deriving anyclass (Generic)
-  deriving anyclass (PIsDataRepr)
+  deriving stock
+    ( -- | @since 0.1.0
+      GHC.Generic
+    )
+  deriving anyclass
+    ( -- | @since 0.1.0
+      Generic
+    )
+  deriving anyclass
+    ( -- | @since 0.1.0
+      PIsDataRepr
+    )
   deriving
-    (PlutusType, PIsData, PDataFields)
+    ( -- | @since 0.1.0
+      PlutusType
+    , -- | @since 0.1.0
+      PIsData
+    , -- | @since 0.1.0
+      PDataFields
+    )
     via (PIsDataReprInstances PProposalThresholds)
 
+-- | @since 0.1.0
 instance PUnsafeLiftDecl PProposalThresholds where type PLifted PProposalThresholds = ProposalThresholds
+
+-- | @since 0.1.0
 deriving via (DerivePConstantViaData ProposalThresholds PProposalThresholds) instance (PConstantDecl ProposalThresholds)
 
--- | Plutarch-level version of 'ProposalVotes'.
+{- | Plutarch-level version of 'ProposalVotes'.
+
+     @since 0.1.0
+-}
 newtype PProposalVotes (s :: S)
   = PProposalVotes (Term s (PMap 'Unsorted PResultTag PInteger))
-  deriving (PlutusType, PIsData) via (DerivePNewtype PProposalVotes (PMap 'Unsorted PResultTag PInteger))
+  deriving
+    ( -- | @since 0.1.0
+      PlutusType
+    , -- | @since 0.1.0
+      PIsData
+    )
+    via (DerivePNewtype PProposalVotes (PMap 'Unsorted PResultTag PInteger))
 
--- | Retract votes given the option and the amount of votes.
+{- | Retract votes given the option and the amount of votes.
+
+     @since 0.1.0
+-}
 pretractVotes :: Term s (PResultTag :--> PInteger :--> PProposalVotes :--> PProposalVotes)
 pretractVotes = phoistAcyclic $
   plam $ \rt count votes ->
@@ -386,13 +568,19 @@ pretractVotes = phoistAcyclic $
               # rt
               # voteMap
 
+-- | @since 0.1.0
 instance PUnsafeLiftDecl PProposalVotes where type PLifted PProposalVotes = ProposalVotes
+
+-- | @since 0.1.0
 deriving via
   (DerivePConstantViaNewtype ProposalVotes PProposalVotes (PMap 'Unsorted PResultTag PInteger))
   instance
     (PConstantDecl ProposalVotes)
 
--- | Plutarch-level version of 'emptyVotesFor'.
+{- | Plutarch-level version of 'emptyVotesFor'.
+
+     @since 0.1.0
+-}
 pemptyVotesFor :: forall s a. (PIsData a) => Term s (PMap 'Unsorted PResultTag a :--> PProposalVotes)
 pemptyVotesFor =
   phoistAcyclic $
@@ -402,7 +590,10 @@ pemptyVotesFor =
             PProposalVotes $ PM.pmap # plam (const $ pconstant 0) # m
       )
 
--- | Plutarch-level version of 'ProposalDatum'.
+{- | Plutarch-level version of 'ProposalDatum'.
+
+     @since 0.1.0
+-}
 newtype PProposalDatum (s :: S) = PProposalDatum
   { getProposalDatum ::
       Term
@@ -419,36 +610,76 @@ newtype PProposalDatum (s :: S) = PProposalDatum
              ]
         )
   }
-  deriving stock (GHC.Generic)
-  deriving anyclass (Generic)
-  deriving anyclass (PIsDataRepr)
+  deriving stock
+    ( -- | @since 0.1.0
+      GHC.Generic
+    )
+  deriving anyclass
+    ( -- | @since 0.1.0
+      Generic
+    )
+  deriving anyclass
+    ( -- | @since 0.1.0
+      PIsDataRepr
+    )
   deriving
-    (PlutusType, PIsData, PDataFields, PEq)
+    ( -- | @since 0.1.0
+      PlutusType
+    , -- | @since 0.1.0
+      PIsData
+    , -- | @since 0.1.0
+      PDataFields
+    , -- | @since 0.1.0
+      PEq
+    )
     via (PIsDataReprInstances PProposalDatum)
 
 -- TODO: Derive this.
+
+-- | @since 0.1.0
 instance PTryFrom PData (PAsData PProposalDatum) where
   type PTryFromExcess PData (PAsData PProposalDatum) = Const ()
   ptryFrom' d k =
     k (punsafeCoerce d, ())
 
+-- | @since 0.1.0
 instance PUnsafeLiftDecl PProposalDatum where type PLifted PProposalDatum = ProposalDatum
+
+-- | @since 0.1.0
 deriving via (DerivePConstantViaData ProposalDatum PProposalDatum) instance (PConstantDecl ProposalDatum)
 
--- | Plutarch-level version of 'ProposalRedeemer'.
+{- | Plutarch-level version of 'ProposalRedeemer'.
+
+     @since 0.1.0
+-}
 data PProposalRedeemer (s :: S)
   = PVote (Term s (PDataRecord '["resultTag" ':= PResultTag]))
   | PCosign (Term s (PDataRecord '["newCosigners" ':= PBuiltinList (PAsData PPubKeyHash)]))
   | PUnlock (Term s (PDataRecord '["resultTag" ':= PResultTag]))
   | PAdvanceProposal (Term s (PDataRecord '[]))
-  deriving stock (GHC.Generic)
-  deriving anyclass (Generic)
-  deriving anyclass (PIsDataRepr)
+  deriving stock
+    ( -- | @since 0.1.0
+      GHC.Generic
+    )
+  deriving anyclass
+    ( -- | @since 0.1.0
+      Generic
+    )
+  deriving anyclass
+    ( -- | @since 0.1.0
+      PIsDataRepr
+    )
   deriving
-    (PlutusType, PIsData)
+    ( -- | @since 0.1.0
+      PlutusType
+    , -- | @since 0.1.0
+      PIsData
+    )
     via PIsDataReprInstances PProposalRedeemer
 
 -- See below.
+
+-- | @since 0.1.0
 instance PTryFrom PData (PAsData PProposalRedeemer) where
   type PTryFromExcess PData (PAsData PProposalRedeemer) = Const ()
   ptryFrom' d k =
@@ -460,7 +691,10 @@ instance PTryFrom PData (PAsData PProposalRedeemer) where
 --   instance
 --     PTryFrom PData (PAsData PProposalRedeemer)
 
+-- | @since 0.1.0
 instance PUnsafeLiftDecl PProposalRedeemer where type PLifted PProposalRedeemer = ProposalRedeemer
+
+-- | @since 0.1.0
 deriving via (DerivePConstantViaData ProposalRedeemer PProposalRedeemer) instance (PConstantDecl ProposalRedeemer)
 
 --------------------------------------------------------------------------------
@@ -468,6 +702,8 @@ deriving via (DerivePConstantViaData ProposalRedeemer PProposalRedeemer) instanc
 {- | Check for various invariants a proposal must uphold.
      This can be used to check both upon creation and
      upon any following state transitions in the proposal.
+
+     @since 0.1.0
 -}
 proposalDatumValid :: Proposal -> Term s (Agora.Proposal.PProposalDatum :--> PBool)
 proposalDatumValid proposal =
@@ -493,8 +729,10 @@ proposalDatumValid proposal =
 
 {- | Find the winner result tag, given the votes, the quorum the "neutral" result tag.
 
-   The winner should be unambiguous, meaning that if two options have the same highest votes,
-     the "neutral" option will be the winner.
+     The winner should be unambiguous, meaning that if two options have the same highest votes,
+       the "neutral" option will be the winner.
+
+     @since 0.1.0
 -}
 pwinner ::
   Term
@@ -540,7 +778,10 @@ pwinner = phoistAcyclic $
         winnerResultTag
         neutral
 
--- | Find the winning outcome (and the corresponding vote count) given the votes.
+{- | Find the winning outcome (and the corresponding vote count) given the votes.
+
+     @since 0.1.0
+-}
 phighestVotes ::
   Term
     s
@@ -566,7 +807,10 @@ phighestVotes = phoistAcyclic $
              in pif (lastVotes #< thisVotes) this last
      in pfoldr # f # (phead # l) # l
 
--- | Find the "neutral" option (a dummy outcome with no effect) given the effects.
+{- | Find the "neutral" option (a dummy outcome with no effect) given the effects.
+
+     @since 0.1.0
+-}
 pneutralOption ::
   Term
     s
