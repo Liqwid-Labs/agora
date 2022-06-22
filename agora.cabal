@@ -153,7 +153,10 @@ library
     Agora.Treasury
     Agora.Utils
 
-  other-modules:   Agora.Aeson.Orphans
+  other-modules:
+    Agora.Aeson.Orphans
+    Agora.Plutarch.Orphans
+
   hs-source-dirs:  agora
 
 library pprelude

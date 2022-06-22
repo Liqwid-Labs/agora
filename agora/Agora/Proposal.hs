@@ -39,8 +39,6 @@ module Agora.Proposal (
 import Agora.Proposal.Time (PProposalStartingTime, PProposalTimingConfig, ProposalStartingTime, ProposalTimingConfig)
 import Agora.SafeMoney (GTTag)
 import Agora.Utils (mustBePJust)
-import Control.Applicative (Const)
-import Control.Arrow (first)
 import Data.Tagged (Tagged)
 import GHC.Generics qualified as GHC
 import Generics.SOP (Generic, I (I))
@@ -62,8 +60,6 @@ import Plutarch.Lift (
   PUnsafeLiftDecl (..),
  )
 import Plutarch.SafeMoney (PDiscrete)
-import Plutarch.TryFrom (PTryFrom (PTryFromExcess, ptryFrom'))
-import Plutarch.Unsafe (punsafeCoerce)
 import PlutusLedgerApi.V1 (DatumHash, PubKeyHash, ValidatorHash)
 import PlutusLedgerApi.V1.Value (AssetClass)
 import PlutusTx qualified
@@ -394,22 +390,11 @@ deriving via
   instance
     (PConstantDecl ResultTag)
 
--- FIXME: This instance and the one below, for 'PProposalId', should be derived.
--- Soon this will be possible through 'DerivePNewtype'.
-
 -- | @since 0.1.0
-instance PTryFrom PData (PAsData PResultTag) where
-  type PTryFromExcess PData (PAsData PResultTag) = PTryFromExcess PData (PAsData PInteger)
-  ptryFrom' d k =
-    ptryFrom' @_ @(PAsData PInteger) d $
-      -- JUSTIFICATION:
-      -- We are coercing from @PAsData PInteger@ to @PAsData PResultTag@.
-      -- Since 'PResultTag' is a simple newtype, their shape is the same.
-
-      -- JUSTIFICATION:
-      -- We are coercing from @PAsData PInteger@ to @PAsData PResultTag@.
-      -- Since 'PResultTag' is a simple newtype, their shape is the same.
-      k . first punsafeCoerce
+deriving via
+  PAsData (DerivePNewtype PResultTag PInteger)
+  instance
+    PTryFrom PData (PAsData PResultTag)
 
 {- | Plutarch-level version of 'PProposalId'.
 
@@ -429,18 +414,10 @@ newtype PProposalId (s :: S) = PProposalId (Term s PInteger)
     via (DerivePNewtype PProposalId PInteger)
 
 -- | @since 0.1.0
-instance PTryFrom PData (PAsData PProposalId) where
-  type PTryFromExcess PData (PAsData PProposalId) = PTryFromExcess PData (PAsData PInteger)
-  ptryFrom' d k =
-    ptryFrom' @_ @(PAsData PInteger) d $
-      -- JUSTIFICATION:
-      -- We are coercing from @PAsData PInteger@ to @PAsData PProposalId@.
-      -- Since 'PProposalId' is a simple newtype, their shape is the same.
-
-      -- JUSTIFICATION:
-      -- We are coercing from @PAsData PInteger@ to @PAsData PProposalId@.
-      -- Since 'PProposalId' is a simple newtype, their shape is the same.
-      k . first punsafeCoerce
+deriving via
+  PAsData (DerivePNewtype PProposalId PInteger)
+  instance
+    PTryFrom PData (PAsData PProposalId)
 
 -- | @since 0.1.0
 instance PUnsafeLiftDecl PProposalId where type PLifted PProposalId = ProposalId
@@ -488,6 +465,9 @@ data PProposalStatus (s :: S)
 instance PUnsafeLiftDecl PProposalStatus where type PLifted PProposalStatus = ProposalStatus
 
 -- | @since 0.1.0
+deriving via PAsData (PIsDataReprInstances PProposalStatus) instance PTryFrom PData (PAsData PProposalStatus)
+
+-- | @since 0.1.0
 deriving via (DerivePConstantViaData ProposalStatus PProposalStatus) instance (PConstantDecl ProposalStatus)
 
 {- | Plutarch-level version of 'ProposalThresholds'.
@@ -528,10 +508,19 @@ newtype PProposalThresholds (s :: S) = PProposalThresholds
     via (PIsDataReprInstances PProposalThresholds)
 
 -- | @since 0.1.0
+deriving via
+  PAsData (PIsDataReprInstances PProposalThresholds)
+  instance
+    PTryFrom PData (PAsData PProposalThresholds)
+
+-- | @since 0.1.0
 instance PUnsafeLiftDecl PProposalThresholds where type PLifted PProposalThresholds = ProposalThresholds
 
 -- | @since 0.1.0
-deriving via (DerivePConstantViaData ProposalThresholds PProposalThresholds) instance (PConstantDecl ProposalThresholds)
+deriving via
+  (DerivePConstantViaData ProposalThresholds PProposalThresholds)
+  instance
+    (PConstantDecl ProposalThresholds)
 
 {- | Plutarch-level version of 'ProposalVotes'.
 
@@ -546,6 +535,12 @@ newtype PProposalVotes (s :: S)
       PIsData
     )
     via (DerivePNewtype PProposalVotes (PMap 'Unsorted PResultTag PInteger))
+
+-- | @since 0.1.0
+deriving via
+  PAsData (DerivePNewtype PProposalVotes (PMap 'Unsorted PResultTag PInteger))
+  instance
+    PTryFrom PData (PAsData PProposalVotes)
 
 {- | Retract votes given the option and the amount of votes.
 
@@ -634,13 +629,8 @@ newtype PProposalDatum (s :: S) = PProposalDatum
     )
     via (PIsDataReprInstances PProposalDatum)
 
--- TODO: Derive this.
-
 -- | @since 0.1.0
-instance PTryFrom PData (PAsData PProposalDatum) where
-  type PTryFromExcess PData (PAsData PProposalDatum) = Const ()
-  ptryFrom' d k =
-    k (punsafeCoerce d, ())
+deriving via PAsData (PIsDataReprInstances PProposalDatum) instance PTryFrom PData (PAsData PProposalDatum)
 
 -- | @since 0.1.0
 instance PUnsafeLiftDecl PProposalDatum where type PLifted PProposalDatum = ProposalDatum
@@ -677,19 +667,11 @@ data PProposalRedeemer (s :: S)
     )
     via PIsDataReprInstances PProposalRedeemer
 
--- See below.
-
 -- | @since 0.1.0
-instance PTryFrom PData (PAsData PProposalRedeemer) where
-  type PTryFromExcess PData (PAsData PProposalRedeemer) = Const ()
-  ptryFrom' d k =
-    k (punsafeCoerce d, ())
-
--- TODO: Waiting on PTryFrom for 'PPubKeyHash'
--- deriving via
---   PAsData (PIsDataReprInstances PProposalRedeemer)
---   instance
---     PTryFrom PData (PAsData PProposalRedeemer)
+deriving via
+  PAsData (PIsDataReprInstances PProposalRedeemer)
+  instance
+    PTryFrom PData (PAsData PProposalRedeemer)
 
 -- | @since 0.1.0
 instance PUnsafeLiftDecl PProposalRedeemer where type PLifted PProposalRedeemer = ProposalRedeemer
