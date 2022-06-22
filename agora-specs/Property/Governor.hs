@@ -7,10 +7,8 @@ Property model and tests for 'Governor' related functions
 -}
 module Property.Governor (props) where
 
-import Agora.Governor (
-  GovernorDatum (GovernorDatum, proposalThresholds),
-  governorDatumValid,
- )
+import Agora.Governor (GovernorDatum (..), governorDatumValid)
+import Agora.Governor.Scripts (governorPolicy)
 import Agora.Proposal (
   ProposalId (ProposalId),
   ProposalThresholds (ProposalThresholds),
@@ -19,14 +17,44 @@ import Agora.Proposal.Time (
   MaxTimeRangeWidth (MaxTimeRangeWidth),
   ProposalTimingConfig (ProposalTimingConfig),
  )
+import Data.Default.Class (Default (def))
 import Data.Tagged (Tagged (Tagged), untag)
 import Data.Universe (Finite (..), Universe (..))
+import Plutarch.Api.V1 (PScriptContext)
+import Plutarch.Builtin (pforgetData)
+import Plutarch.Context (
+  MintingBuilder,
+  buildMintingUnsafe,
+  input,
+  mint,
+  output,
+  script,
+  withDatum,
+  withOutRef,
+  withValue,
+ )
+import PlutusLedgerApi.V1 (
+  ScriptContext (scriptContextTxInfo),
+  TxInInfo (txInInfoOutRef),
+  TxInfo (txInfoInputs, txInfoMint, txInfoOutputs),
+  TxOut (txOutValue),
+ )
+import PlutusLedgerApi.V1.Value (assetClassValue)
+import Property.Generator (genInput, genOutput)
+import Sample.Shared (
+  govAssetClass,
+  govValidatorHash,
+  governor,
+  gstUTXORef,
+ )
 import Test.Tasty (TestTree)
 import Test.Tasty.Plutarch.Property (classifiedPropertyNative)
 import Test.Tasty.QuickCheck (
   Gen,
   Property,
+  choose,
   chooseInteger,
+  listOf1,
   testProperty,
  )
 
@@ -115,7 +143,87 @@ governorDatumValidProperty =
               nc <- taggedInteger (0, untag nv)
               return $ ProposalThresholds execute nc nv
 
+data GovernorPolicyCases
+  = ReferenceUTXONotSpent
+  | IncorrectAmountOfTokenMinted
+  | GovernorOutputNotFound
+  | GovernorPolicyCorrect
+  deriving stock (Eq, Show)
+
+instance Universe GovernorPolicyCases where
+  universe =
+    [ ReferenceUTXONotSpent
+    , IncorrectAmountOfTokenMinted
+    , GovernorOutputNotFound
+    , GovernorPolicyCorrect
+    ]
+
+instance Finite GovernorPolicyCases where
+  universeF = universe
+  cardinality = Tagged 4
+
+governorMintingProperty :: Property
+governorMintingProperty =
+  classifiedPropertyNative gen (const []) expected classifier actual
+  where
+    {- Note:
+    I don't think it's easily possible to randomize orefs. We can't really pass pass `Governor` type to `actual` function.
+    -}
+    gst = assetClassValue govAssetClass 1
+    mintAmount x = mint . mconcat $ replicate x gst
+    outputToGov = output $ script govValidatorHash . withValue gst . withDatum govDatum
+    referencedInput = input $ withOutRef gstUTXORef
+
+    govDatum :: GovernorDatum
+    govDatum =
+      GovernorDatum
+        { proposalThresholds = def
+        , nextProposalId = ProposalId 0
+        , proposalTimings = def
+        , createProposalTimeRangeMaxWidth = def
+        }
+
+    gen :: GovernorPolicyCases -> Gen ScriptContext
+    gen c = do
+      inputs <- fmap mconcat . listOf1 $ genInput @MintingBuilder
+      outputs <- fmap mconcat . listOf1 $ genOutput @MintingBuilder
+      toks <- choose (2, 100)
+
+      let comp =
+            case c of
+              ReferenceUTXONotSpent -> outputToGov <> mintAmount 1
+              IncorrectAmountOfTokenMinted -> referencedInput <> outputToGov <> mintAmount toks
+              GovernorOutputNotFound -> referencedInput <> mintAmount 1
+              GovernorPolicyCorrect -> referencedInput <> outputToGov <> mintAmount 1
+
+      return . buildMintingUnsafe $ inputs <> outputs <> comp
+
+    expected :: ScriptContext -> Maybe ()
+    expected sc =
+      case classifier sc of
+        GovernorPolicyCorrect -> Just ()
+        _ -> Nothing
+
+    opaqueToUnit :: Term s (POpaque :--> PUnit)
+    opaqueToUnit = plam $ \_ -> pconstant ()
+
+    actual :: Term s (PScriptContext :--> PUnit)
+    actual = plam $ \sc -> opaqueToUnit #$ governorPolicy governor # pforgetData (pconstantData ()) # sc
+
+    classifier :: ScriptContext -> GovernorPolicyCases
+    classifier sc
+      | minted /= gst = IncorrectAmountOfTokenMinted
+      | refInputNotExists = ReferenceUTXONotSpent
+      | govOutputNotExists = GovernorOutputNotFound
+      | otherwise = GovernorPolicyCorrect
+      where
+        txinfo = scriptContextTxInfo sc
+        minted = txInfoMint txinfo
+        refInputNotExists = gstUTXORef `notElem` (txInInfoOutRef <$> txInfoInputs txinfo)
+        govOutputNotExists = gst `notElem` (txOutValue <$> txInfoOutputs txinfo)
+
 props :: [TestTree]
 props =
   [ testProperty "governorDatumValid" governorDatumValidProperty
+  , testProperty "governorPolicy" governorMintingProperty
   ]
