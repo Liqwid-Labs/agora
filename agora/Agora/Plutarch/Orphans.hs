@@ -40,7 +40,7 @@ instance PTryFrom PData (PAsData PPubKeyHash) where
     (wrapped :: Term _ (PAsData PByteString), unwrapped :: Term _ PByteString) <-
       tcont $ ptryFrom @(PAsData PByteString) opq
     tcont $ \f -> pif (plengthBS # unwrapped #== 28) (f ()) (ptraceError "a PubKeyHash should be 28 bytes long")
-    pure (punsafeCoerce wrapped, punsafeCoerce $ unwrapped)
+    pure (punsafeCoerce wrapped, punsafeCoerce unwrapped)
 
 -- | @since 0.1.0
 instance AdditiveSemigroup (Term s PPOSIXTime) where
@@ -88,7 +88,7 @@ instance PTryFrom PData (PAsData PDatumHash) where
   ptryFrom' opq = runTermCont $ do
     (wrapped :: Term _ (PAsData PByteString), unwrapped :: Term _ PByteString) <-
       tcont $ ptryFrom @(PAsData PByteString) opq
-    tcont $ \f -> pif (plengthBS # unwrapped #== 28) (f ()) (ptraceError "a DatumHash should be 28 bytes long")
+    tcont $ \f -> pif (plengthBS # unwrapped #== 64) (f ()) (ptraceError "a DatumHash should be 64 bytes long")
     pure (punsafeCoerce wrapped, punsafeCoerce unwrapped)
 
 -- | @since 0.1.0
