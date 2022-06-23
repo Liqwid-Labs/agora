@@ -45,6 +45,11 @@ import Plutarch.DataRepr (
   PIsDataReprInstances (PIsDataReprInstances),
  )
 import Plutarch.Extra.Comonad (pextract)
+import Plutarch.Extra.IsData (
+  DerivePConstantViaEnum (..),
+  EnumIsData (..),
+ )
+import Plutarch.Extra.Other (DerivePNewtype' (..))
 import Plutarch.Extra.TermCont (pletC, pletFieldsC, pmatchC)
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (..))
 import Plutarch.SafeMoney (PDiscrete (..))
@@ -92,15 +97,27 @@ data GovernorRedeemer
     MintGATs
   | -- | Allows effects to mutate the parameters.
     MutateGovernor
-  deriving stock (Show, GHC.Generic)
-
--- | @since 0.1.0
-PlutusTx.makeIsDataIndexed
-  ''GovernorRedeemer
-  [ ('CreateProposal, 0)
-  , ('MintGATs, 1)
-  , ('MutateGovernor, 2)
-  ]
+  deriving stock
+    ( -- | @since 0.1.0
+      Show
+    , -- | @since 0.1.0
+      GHC.Generic
+    , -- | @since 0.2.0
+      Enum
+    , -- | @since 0.2.0
+      Bounded
+    )
+  deriving anyclass
+    ( -- | @since 0.2.0
+      Generic
+    )
+  deriving
+    ( -- | @since 0.1.0
+      PlutusTx.ToData
+    , -- | @since 0.1.0
+      PlutusTx.FromData
+    )
+    via (EnumIsData GovernorRedeemer)
 
 {- | Parameters for creating Governor scripts.
 
@@ -172,10 +189,8 @@ deriving via PAsData (PIsDataReprInstances PGovernorDatum) instance PTryFrom PDa
 
      @since 0.1.0
 -}
-data PGovernorRedeemer (s :: S)
-  = PCreateProposal (Term s (PDataRecord '[]))
-  | PMintGATs (Term s (PDataRecord '[]))
-  | PMutateGovernor (Term s (PDataRecord '[]))
+newtype PGovernorRedeemer (s :: S)
+  = PGovernorRedeemer (Term s PInteger)
   deriving stock
     ( -- | @since 0.1.0
       GHC.Generic
@@ -184,26 +199,19 @@ data PGovernorRedeemer (s :: S)
     ( -- | @since 0.1.0
       Generic
     )
-  deriving anyclass
-    ( -- | @since 0.1.0
-      PIsDataRepr
-    )
   deriving
     ( -- | @since 0.1.0
       PlutusType
     , -- | @since 0.1.0
       PIsData
     )
-    via PIsDataReprInstances PGovernorRedeemer
+    via (DerivePNewtype' PGovernorRedeemer)
 
 -- | @since 0.1.0
 instance PUnsafeLiftDecl PGovernorRedeemer where type PLifted PGovernorRedeemer = GovernorRedeemer
 
 -- | @since 0.1.0
-deriving via (DerivePConstantViaData GovernorRedeemer PGovernorRedeemer) instance (PConstantDecl GovernorRedeemer)
-
--- | @since 0.1.0
-deriving via PAsData (PIsDataReprInstances PGovernorRedeemer) instance PTryFrom PData (PAsData PGovernorRedeemer)
+deriving via (DerivePConstantViaEnum GovernorRedeemer PGovernorRedeemer) instance (PConstantDecl GovernorRedeemer)
 
 --------------------------------------------------------------------------------
 
