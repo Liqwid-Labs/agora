@@ -16,7 +16,8 @@ import Generics.SOP (Generic)
 import Plutarch.Api.V1 (PValidator)
 import Plutarch.Api.V1.Contexts (PScriptPurpose (PMinting))
 import "plutarch" Plutarch.Api.V1.Value (PValue)
-import Plutarch.Extra.IsData (DerivePConstantViaEnum (..), EnumIsData (..), pmatchEnumFromData)
+import Plutarch.Builtin (pforgetData)
+import Plutarch.Extra.IsData (DerivePConstantViaEnum (..), EnumIsData (..))
 import Plutarch.Extra.Other (DerivePNewtype' (..))
 import Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC)
 import Plutarch.Lift (PConstantDecl (..), PLifted (..), PUnsafeLiftDecl)
@@ -109,15 +110,8 @@ treasuryValidator gatCs' = plam $ \_datum redeemer ctx' -> unTermCont $ do
   PMinting _ <- pmatchC ctx.purpose
 
   -- Ensure redeemer type is valid.
-  let redeemerValid =
-        pmatchEnumFromData
-          redeemer
-          ( \case
-              Just SpendTreasuryGAT -> pconstant True
-              _ -> pconstant False
-          )
-
-  pguardC "Redeemer should be SpendTreasuryGAT" redeemerValid
+  pguardC "Redeemer should be SpendTreasuryGAT" $
+    redeemer #== pforgetData (pconstantData SpendTreasuryGAT)
 
   -- Get the minted value from txInfo.
   txInfo' <- pletC ctx.txInfo
