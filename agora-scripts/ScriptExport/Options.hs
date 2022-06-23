@@ -1,11 +1,11 @@
 {- |
-Module     : Options
+Module     : ScriptExport.Options
 Maintainer : emi@haskell.fyi
 Description: Command line options for 'agora-scripts'.
 
 Command line options for 'agora-scripts'.
 -}
-module Options (Options (..), parseOptions) where
+module ScriptExport.Options (Options (..), parseOptions) where
 
 import Network.Wai.Handler.Warp qualified as Warp
 import Options.Applicative ((<**>))

@@ -232,14 +232,14 @@ benchmark agora-bench
 
 executable agora-scripts
   import:         lang, deps, exe-opts
-  main-is:        Scripts.hs
+  main-is:        Main.hs
   hs-source-dirs: agora-scripts
   other-modules:
-    API
     Codec.Serialise.Orphans
     Data.Cache.Cached
-    Options
-    Types
+    ScriptExport.API
+    ScriptExport.Options
+    ScriptExport.Types
 
   build-depends:
     , agora
