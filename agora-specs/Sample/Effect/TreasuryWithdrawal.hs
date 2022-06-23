@@ -23,8 +23,10 @@ import Agora.Effect.TreasuryWithdrawal (
   TreasuryWithdrawalDatum (TreasuryWithdrawalDatum),
   treasuryWithdrawalValidator,
  )
+import Crypto.Hash qualified as Crypto
+import Data.ByteArray qualified as BA
+import Data.ByteString qualified as BS
 import Data.ByteString.Char8 qualified as C (pack)
-import Data.ByteString.Hash (sha2_256)
 import Plutarch.Api.V1 (mkValidator, validatorHash)
 import PlutusLedgerApi.V1 (
   Address (Address),
@@ -67,13 +69,16 @@ currSymbol = CurrencySymbol "12312099"
 signer :: PubKeyHash
 signer = "8a30896c4fd5e79843e4ca1bd2cdbaa36f8c0bc3be7401214142019c"
 
+blake2b_224 :: BS.ByteString -> BS.ByteString
+blake2b_224 = BS.pack . BA.unpack . Crypto.hashWith Crypto.Blake2b_224
+
 -- | List of users who the effect will pay to.
 users :: [Credential]
-users = PubKeyCredential . PubKeyHash . toBuiltin . sha2_256 . C.pack . show <$> ([1 ..] :: [Integer])
+users = PubKeyCredential . PubKeyHash . toBuiltin . blake2b_224 . C.pack . show <$> ([1 ..] :: [Integer])
 
 -- | List of users who the effect will pay to.
 treasuries :: [Credential]
-treasuries = ScriptCredential . ValidatorHash . toBuiltin . sha2_256 . C.pack . show <$> ([1 ..] :: [Integer])
+treasuries = ScriptCredential . ValidatorHash . toBuiltin . blake2b_224 . C.pack . show <$> ([1 ..] :: [Integer])
 
 inputGAT :: TxInInfo
 inputGAT =

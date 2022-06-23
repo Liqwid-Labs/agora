@@ -88,7 +88,7 @@ instance PTryFrom PData (PAsData PDatumHash) where
   ptryFrom' opq = runTermCont $ do
     (wrapped :: Term _ (PAsData PByteString), unwrapped :: Term _ PByteString) <-
       tcont $ ptryFrom @(PAsData PByteString) opq
-    tcont $ \f -> pif (plengthBS # unwrapped #== 64) (f ()) (ptraceError "a DatumHash should be 64 bytes long")
+    tcont $ \f -> pif (plengthBS # unwrapped #== 32) (f ()) (ptraceError "a DatumHash should be 32 bytes long")
     pure (punsafeCoerce wrapped, punsafeCoerce unwrapped)
 
 -- | @since 0.1.0
