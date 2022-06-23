@@ -28,7 +28,7 @@ Agora/Proposal/validator/advancing/successfully advance to failed state: timeout
 "Agora/Proposal/validator/unlocking/legal/voter unlocks stake after voting/42 proposals, voter, unlock stake, Locked",2465055872,6938449,30042
 Agora/AuthorityToken/singleAuthorityTokenBurned/Correct simple,21017788,55883,806
 Agora/AuthorityToken/singleAuthorityTokenBurned/Correct many inputs,33204186,88241,900
-Agora/Treasury/Validator/Positive/Allows for effect changes,30996258,82579,1462
+Agora/Treasury/Validator/Positive/Allows for effect changes,31556709,81546,1452
 Agora/AuthorityToken/singleAuthorityTokenBurned/Correct simple,21017788,55883,806
 Agora/AuthorityToken/singleAuthorityTokenBurned/Correct many inputs,33204186,88241,900
 Agora/Governor/policy/GST minting,51007235,144191,2034
