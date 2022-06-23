@@ -11,7 +11,7 @@ import Network.Wai.Handler.Warp qualified as Warp
 import Options.Applicative ((<**>))
 import Options.Applicative qualified as Opt
 
-data Options = Options
+newtype Options = Options
   { port :: Warp.Port
   }
   deriving stock (Show, Eq)

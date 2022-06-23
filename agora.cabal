@@ -12,11 +12,11 @@ license:            Apache-2.0
 
 common lang
   ghc-options:
-    -Wall -Wcompat -Wincomplete-uni-patterns -Wno-unused-do-bind
-    -Wno-partial-type-signatures -Wmissing-export-lists
-    -Wincomplete-record-updates -Wmissing-deriving-strategies
-    -Wno-name-shadowing -Wunused-foralls -fprint-explicit-foralls
-    -fprint-explicit-kinds -Werror
+    -Werror -Wall -Wcompat -Wincomplete-uni-patterns
+    -Wno-unused-do-bind -Wno-partial-type-signatures
+    -Wmissing-export-lists -Wincomplete-record-updates
+    -Wmissing-deriving-strategies -Wno-name-shadowing -Wunused-foralls
+    -fprint-explicit-foralls -fprint-explicit-kinds
 
   mixins:
     base hiding (Prelude),
@@ -28,7 +28,6 @@ common lang
     BinaryLiterals
     ConstrainedClassMethods
     ConstraintKinds
-    DuplicateRecordFields
     DataKinds
     DeriveAnyClass
     DeriveDataTypeable
@@ -40,6 +39,7 @@ common lang
     DerivingStrategies
     DerivingVia
     DoAndIfThenElse
+    DuplicateRecordFields
     EmptyCase
     EmptyDataDecls
     EmptyDataDeriving
@@ -138,6 +138,7 @@ common exe-opts
 library
   import:          lang, deps
   exposed-modules:
+    Agora.Aeson.Orphans
     Agora.AuthorityToken
     Agora.Effect
     Agora.Effect.GovernorMutation
@@ -146,6 +147,7 @@ library
     Agora.Governor
     Agora.Governor.Scripts
     Agora.MultiSig
+    Agora.Plutarch.Orphans
     Agora.Proposal
     Agora.Proposal.Scripts
     Agora.Proposal.Time
@@ -157,9 +159,6 @@ library
     Agora.Utils
 
   other-modules:
-    Agora.Aeson.Orphans
-    Agora.Plutarch.Orphans
-
   hs-source-dirs:  agora
 
 library pprelude
@@ -246,6 +245,7 @@ executable agora-scripts
     , agora
     , cache
     , clock
+    , containers
     , gitrev
     , hashable
     , http-types
@@ -256,7 +256,6 @@ executable agora-scripts
     , wai
     , wai-cors
     , warp
-    , containers
 
 executable agora-purescript-bridge
   import:         lang, deps, exe-opts

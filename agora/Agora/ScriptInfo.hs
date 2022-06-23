@@ -20,7 +20,14 @@ import Agora.Aeson.Orphans ()
 import Data.Aeson qualified as Aeson
 import GHC.Generics qualified as GHC
 import Plutarch.Api.V1 (PMintingPolicy, PValidator, mintingPolicySymbol, mkMintingPolicy, mkValidator, validatorHash)
-import PlutusLedgerApi.V1 (BuiltinByteString, CurrencySymbol (unCurrencySymbol), MintingPolicy, Script, Validator, ValidatorHash, unMintingPolicyScript)
+import PlutusLedgerApi.V1 (
+  BuiltinByteString,
+  CurrencySymbol,
+  MintingPolicy,
+  Script,
+  Validator,
+  ValidatorHash,
+ )
 
 -- | Bundle containing a 'Script' and its hash.
 data ScriptInfo = ScriptInfo
