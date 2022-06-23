@@ -45,7 +45,7 @@ import Plutarch.DataRepr (
   PIsDataReprInstances (PIsDataReprInstances),
  )
 import Plutarch.Extra.Comonad (pextract)
-import Plutarch.Extra.TermCont (pletC, pmatchC)
+import Plutarch.Extra.TermCont (pletC, pletFieldsC, pmatchC)
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (..))
 import Plutarch.SafeMoney (PDiscrete (..))
 import PlutusLedgerApi.V1 (TxOutRef)
@@ -231,9 +231,8 @@ governorDatumValid :: Term s (PGovernorDatum :--> PBool)
 governorDatumValid = phoistAcyclic $
   plam $ \datum -> unTermCont $ do
     thresholds <-
-      tcont $
-        pletFields @'["execute", "create", "vote"] $
-          pfield @"proposalThresholds" # datum
+      pletFieldsC @'["execute", "create", "vote"] $
+        pfield @"proposalThresholds" # datum
 
     PDiscrete execute' <- pmatchC thresholds.execute
     PDiscrete draft' <- pmatchC thresholds.create

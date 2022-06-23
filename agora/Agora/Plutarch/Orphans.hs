@@ -14,6 +14,7 @@ import Control.Arrow (first)
 import Plutarch.Api.V1 (PAddress, PCredential, PCurrencySymbol, PDatumHash, PMap, PMaybeData, PPOSIXTime, PPubKeyHash, PStakingCredential, PTokenName, PTxId, PTxOutRef, PValidatorHash, PValue)
 import Plutarch.Builtin (PBuiltinMap)
 import Plutarch.DataRepr (PIsDataReprInstances (..))
+import Plutarch.Extra.TermCont (ptryFromC)
 import Plutarch.Numeric.Additive (AdditiveSemigroup ((+)))
 import Plutarch.Reducible (Reduce, Reducible)
 import Plutarch.TryFrom (PTryFrom (PTryFromExcess, ptryFrom'))
@@ -38,7 +39,7 @@ instance PTryFrom PData (PAsData PPubKeyHash) where
   type PTryFromExcess PData (PAsData PPubKeyHash) = Flip Term PPubKeyHash
   ptryFrom' opq = runTermCont $ do
     (wrapped :: Term _ (PAsData PByteString), unwrapped :: Term _ PByteString) <-
-      tcont $ ptryFrom @(PAsData PByteString) opq
+      ptryFromC @(PAsData PByteString) opq
     tcont $ \f -> pif (plengthBS # unwrapped #== 28) (f ()) (ptraceError "a PubKeyHash should be 28 bytes long")
     pure (punsafeCoerce wrapped, punsafeCoerce unwrapped)
 
@@ -78,7 +79,7 @@ instance PTryFrom PData (PAsData PValidatorHash) where
   type PTryFromExcess PData (PAsData PValidatorHash) = Flip Term PValidatorHash
   ptryFrom' opq = runTermCont $ do
     (wrapped :: Term _ (PAsData PByteString), unwrapped :: Term _ PByteString) <-
-      tcont $ ptryFrom @(PAsData PByteString) opq
+      ptryFromC @(PAsData PByteString) opq
     tcont $ \f -> pif (plengthBS # unwrapped #== 28) (f ()) (ptraceError "a ValidatorHash should be 28 bytes long")
     pure (punsafeCoerce wrapped, punsafeCoerce unwrapped)
 
@@ -87,7 +88,7 @@ instance PTryFrom PData (PAsData PDatumHash) where
   type PTryFromExcess PData (PAsData PDatumHash) = Flip Term PDatumHash
   ptryFrom' opq = runTermCont $ do
     (wrapped :: Term _ (PAsData PByteString), unwrapped :: Term _ PByteString) <-
-      tcont $ ptryFrom @(PAsData PByteString) opq
+      ptryFromC @(PAsData PByteString) opq
     tcont $ \f -> pif (plengthBS # unwrapped #== 64) (f ()) (ptraceError "a DatumHash should be 64 bytes long")
     pure (punsafeCoerce wrapped, punsafeCoerce unwrapped)
 

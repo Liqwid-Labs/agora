@@ -327,7 +327,7 @@ findStakeOwnedBy = phoistAcyclic $
       PNothing -> pcon PNothing
       PJust (pfromData -> v) -> unTermCont $ do
         let txOut = pfield @"resolved" # pto v
-        txOutF <- tcont $ pletFields @'["datumHash"] $ txOut
+        txOutF <- pletFieldsC @'["datumHash"] $ txOut
         pure $
           pmatch txOutF.datumHash $ \case
             PDNothing _ -> pcon PNothing
