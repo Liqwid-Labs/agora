@@ -23,6 +23,7 @@ import Agora.Effect.TreasuryWithdrawal (
   TreasuryWithdrawalDatum (TreasuryWithdrawalDatum),
   treasuryWithdrawalValidator,
  )
+import Data.ByteString qualified as BS
 import Data.ByteString.Char8 qualified as C (pack)
 import Data.ByteString.Hash (sha2_256)
 import Plutarch.Api.V1 (mkValidator, validatorHash)
@@ -69,11 +70,11 @@ signer = "8a30896c4fd5e79843e4ca1bd2cdbaa36f8c0bc3be7401214142019c"
 
 -- | List of users who the effect will pay to.
 users :: [Credential]
-users = PubKeyCredential . PubKeyHash . toBuiltin . sha2_256 . C.pack . show <$> ([1 ..] :: [Integer])
+users = PubKeyCredential . PubKeyHash . toBuiltin . BS.take 28 . sha2_256 . C.pack . show <$> ([1 ..] :: [Integer])
 
 -- | List of users who the effect will pay to.
 treasuries :: [Credential]
-treasuries = ScriptCredential . ValidatorHash . toBuiltin . sha2_256 . C.pack . show <$> ([1 ..] :: [Integer])
+treasuries = ScriptCredential . ValidatorHash . toBuiltin . BS.take 28 . sha2_256 . C.pack . show <$> ([1 ..] :: [Integer])
 
 inputGAT :: TxInInfo
 inputGAT =
