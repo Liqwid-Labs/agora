@@ -39,18 +39,17 @@ import Agora.AuthorityToken (
  )
 import Agora.Governor (
   Governor (gstOutRef, gtClassRef, maximumCosigners),
+  GovernorRedeemer (..),
   PGovernorDatum (PGovernorDatum),
-  PGovernorRedeemer (PCreateProposal, PMintGATs, PMutateGovernor),
   governorDatumValid,
   pgetNextProposalId,
  )
 import Agora.Proposal (
   PProposalDatum (..),
   PProposalId (..),
-  PProposalStatus (PFinished),
   PResultTag,
   Proposal (..),
-  ProposalStatus (Draft, Locked),
+  ProposalStatus (Draft, Finished, Locked),
   pemptyVotesFor,
   pneutralOption,
   proposalDatumValid,
@@ -105,20 +104,20 @@ import Plutarch.Api.V1.AssetClass (
   passetClass,
   passetClassValueOf,
  )
+import Plutarch.Api.V1.ScriptContext (pfindTxInByTxOutRef, pisUTXOSpent, ptryFindDatum, ptxSignedBy, pvalueSpent)
+import "liqwid-plutarch-extra" Plutarch.Api.V1.Value (psymbolValueOf)
+import Plutarch.Extra.IsData (pmatchEnumFromData)
 import Plutarch.Extra.Map (
   pkeys,
   plookup,
   plookup',
  )
+import Plutarch.Extra.Maybe (pisDJust)
+import Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC, ptryFromC)
 import Plutarch.SafeMoney (PDiscrete (..), pvalueDiscrete')
-import Plutarch.TryFrom ()
 
 --------------------------------------------------------------------------------
 
-import Plutarch.Api.V1.ScriptContext (pfindTxInByTxOutRef, pisUTXOSpent, ptryFindDatum, ptxSignedBy, pvalueSpent)
-import "liqwid-plutarch-extra" Plutarch.Api.V1.Value (psymbolValueOf)
-import Plutarch.Extra.Maybe (pisDJust)
-import Plutarch.Extra.TermCont
 import PlutusLedgerApi.V1 (
   CurrencySymbol (..),
   MintingPolicy,
@@ -280,7 +279,6 @@ governorPolicy gov =
 governorValidator :: Governor -> ClosedTerm PValidator
 governorValidator gov =
   plam $ \datum' redeemer' ctx' -> unTermCont $ do
-    (pfromData -> redeemer, _) <- ptryFromC redeemer'
     ctxF <- pletFieldsC @'["txInfo", "purpose"] ctx'
 
     txInfo' <- pletC $ pfromData $ ctxF.txInfo
@@ -330,8 +328,8 @@ governorValidator gov =
     pguardC "New datum is not valid" $ governorDatumValid # newGovernorDatum
 
     pure $
-      pmatch redeemer $ \case
-        PCreateProposal _ -> unTermCont $ do
+      pmatchEnumFromData redeemer' $ \case
+        Just CreateProposal -> unTermCont $ do
           -- Check that the transaction advances proposal id.
 
           let expectedNextProposalId = pgetNextProposalId # oldGovernorDatumF.nextProposalId
@@ -516,7 +514,7 @@ governorValidator gov =
 
         --------------------------------------------------------------------------
 
-        PMintGATs _ -> unTermCont $ do
+        Just MintGATs -> unTermCont $ do
           pguardC "Governor state should not be changed" $ newGovernorDatum #== oldGovernorDatum
 
           -- Filter out proposal inputs and ouputs using PST and the address of proposal validator.
@@ -583,7 +581,7 @@ governorValidator gov =
                   PProposalDatum
                   ( #proposalId .= proposalInputDatumF.proposalId
                       .& #effects .= proposalInputDatumF.effects
-                      .& #status .= pdata (pcon $ PFinished pdnil)
+                      .& #status .= pconstantData Finished
                       .& #cosigners .= proposalInputDatumF.cosigners
                       .& #thresholds .= proposalInputDatumF.thresholds
                       .& #votes .= proposalInputDatumF.votes
@@ -667,9 +665,12 @@ governorValidator gov =
 
         --------------------------------------------------------------------------
 
-        PMutateGovernor _ -> unTermCont $ do
+        Just MutateGovernor -> unTermCont $ do
           -- Check that a GAT is burnt.
           pure $ popaque $ singleAuthorityTokenBurned patSymbol ctxF.txInfo txInfoF.mint
+
+        --------------------------------------------------------------------------
+        Nothing -> ptraceError "Unknown redeemer"
   where
     -- Get th amount of governance tokens in a value.
     pgtValueOf :: Term s (PValue _ _ :--> PDiscrete GTTag)

@@ -13,7 +13,6 @@ module Agora.Proposal.Scripts (
 import Agora.Proposal (
   PProposalDatum (PProposalDatum),
   PProposalRedeemer (..),
-  PProposalStatus (..),
   PProposalVotes (PProposalVotes),
   Proposal (governorSTAssetClass, stakeSTAssetClass),
   ProposalStatus (..),
@@ -55,6 +54,7 @@ import Plutarch.Api.V1.ScriptContext (
  )
 import "liqwid-plutarch-extra" Plutarch.Api.V1.Value (psymbolValueOf)
 import Plutarch.Extra.Comonad (pextract)
+import Plutarch.Extra.IsData (pmatchEnum)
 import Plutarch.Extra.List (pisUniqBy)
 import Plutarch.Extra.Map (plookup, pupdate)
 import Plutarch.Extra.Maybe (pisJust)
@@ -510,19 +510,21 @@ proposalValidator proposal =
           inLockedPeriod <- pletC $ isLockingPeriod # proposalF.timingConfig # proposalF.startingTime # currentTime
           inExecutionPeriod <- pletC $ isExecutionPeriod # proposalF.timingConfig # proposalF.startingTime # currentTime
 
+          proposalStatus <- pletC $ pto $ pfromData proposalF.status
+
           -- Check the timings.
           let isFinished = proposalF.status #== pconstantData Finished
 
-              notTooLate = pmatch (pfromData proposalF.status) $ \case
-                PDraft _ -> inDraftPeriod
+              notTooLate = pmatchEnum proposalStatus $ \case
+                Draft -> inDraftPeriod
                 -- Can only advance after the voting period is over.
-                PVotingReady _ -> inLockedPeriod
-                PLocked _ -> inExecutionPeriod
+                VotingReady -> inLockedPeriod
+                Locked -> inExecutionPeriod
                 _ -> pconstant False
 
-              notTooEarly = pmatch (pfromData proposalF.status) $ \case
-                PVotingReady _ -> pnot # inVotingPeriod
-                PLocked _ -> pnot # inLockedPeriod
+              notTooEarly = pmatchEnum (pto $ pfromData proposalF.status) $ \case
+                VotingReady -> pnot # inVotingPeriod
+                Locked -> pnot # inLockedPeriod
                 _ -> pconstant True
 
           pguardC "Cannot advance ahead of time" notTooEarly
@@ -534,8 +536,8 @@ proposalValidator proposal =
             pif
               notTooLate
               -- On time: advance to next status.
-              ( pmatch (pfromData proposalF.status) $ \case
-                  PDraft _ -> unTermCont $ do
+              ( pmatchEnum proposalStatus $ \case
+                  Draft -> unTermCont $ do
                     -- TODO: Perform other necessary checks.
 
                     -- 'Draft' -> 'VotingReady'
@@ -543,7 +545,7 @@ proposalValidator proposal =
                       proposalOutStatus #== pconstantData VotingReady
 
                     pure $ popaque (pconstant ())
-                  PVotingReady _ -> unTermCont $ do
+                  VotingReady -> unTermCont $ do
                     -- 'VotingReady' -> 'Locked'
                     pguardC "Proposal status set to Locked" $
                       proposalOutStatus #== pconstantData Locked
@@ -554,7 +556,7 @@ proposalValidator proposal =
                         $ pfromData thresholdsF.execute
 
                     pure $ popaque (pconstant ())
-                  PLocked _ -> unTermCont $ do
+                  Locked -> unTermCont $ do
                     -- 'Locked' -> 'Finished'
                     pguardC "Proposal status set to Finished" $
                       proposalOutStatus #== pconstantData Finished
