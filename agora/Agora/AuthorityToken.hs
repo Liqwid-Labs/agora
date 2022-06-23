@@ -33,7 +33,7 @@ import "liqwid-plutarch-extra" Plutarch.Api.V1.Value (psymbolValueOf)
 import "plutarch" Plutarch.Api.V1.Value (PValue (PValue))
 import Plutarch.Builtin (pforgetData)
 import Plutarch.Extra.List (plookup)
-import Plutarch.Extra.TermCont (pguardC, pmatchC)
+import Plutarch.Extra.TermCont (pguardC, pletFieldsC, pmatchC)
 import PlutusLedgerApi.V1.Value (AssetClass (AssetClass))
 
 --------------------------------------------------------------------------------
@@ -73,7 +73,7 @@ authorityTokensValidIn :: Term s (PCurrencySymbol :--> PTxOut :--> PBool)
 authorityTokensValidIn = phoistAcyclic $
   plam $ \authorityTokenSym txOut'' -> unTermCont $ do
     PTxOut txOut' <- pmatchC txOut''
-    txOut <- tcont $ pletFields @'["address", "value"] $ txOut'
+    txOut <- pletFieldsC @'["address", "value"] $ txOut'
     PAddress address <- pmatchC txOut.address
     PValue value' <- pmatchC txOut.value
     PMap value <- pmatchC value'
@@ -112,7 +112,7 @@ singleAuthorityTokenBurned gatCs txInfo mint = unTermCont $ do
   let gatAmountMinted :: Term _ PInteger
       gatAmountMinted = psymbolValueOf # gatCs # mint
 
-  txInfoF <- tcont $ pletFields @'["inputs"] $ txInfo
+  txInfoF <- pletFieldsC @'["inputs"] $ txInfo
 
   pure $
     foldr1
@@ -137,9 +137,9 @@ authorityTokenPolicy :: AuthorityToken -> ClosedTerm PMintingPolicy
 authorityTokenPolicy params =
   plam $ \_redeemer ctx' ->
     pmatch ctx' $ \(PScriptContext ctx') -> unTermCont $ do
-      ctx <- tcont $ pletFields @'["txInfo", "purpose"] ctx'
+      ctx <- pletFieldsC @'["txInfo", "purpose"] ctx'
       PTxInfo txInfo' <- pmatchC $ pfromData ctx.txInfo
-      txInfo <- tcont $ pletFields @'["inputs", "mint", "outputs"] txInfo'
+      txInfo <- pletFieldsC @'["inputs", "mint", "outputs"] txInfo'
       let inputs = txInfo.inputs
           mintedValue = pfromData txInfo.mint
           AssetClass (govCs, govTn) = params.authority
