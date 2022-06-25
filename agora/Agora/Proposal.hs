@@ -52,8 +52,10 @@ import Plutarch.Api.V1 (
  )
 import Plutarch.DataRepr (DerivePConstantViaData (..), PDataFields, PIsDataReprInstances (..))
 import Plutarch.Extra.IsData (
+  DerivePConstantViaDataList (..),
   DerivePConstantViaEnum (..),
   EnumIsData (..),
+  ProductIsData (ProductIsData),
  )
 import Plutarch.Extra.List (pnotNull)
 import Plutarch.Extra.Map qualified as PM
@@ -223,9 +225,16 @@ data ProposalThresholds = ProposalThresholds
     , -- | @since 0.1.0
       GHC.Generic
     )
-
--- | @since 0.1.0
-PlutusTx.makeIsDataIndexed ''ProposalThresholds [('ProposalThresholds, 0)]
+  deriving anyclass (Generic)
+  deriving
+    ( -- | @since 0.1.0
+      PlutusTx.ToData
+    , -- | @since 0.1.0
+      PlutusTx.FromData
+    , -- | @since 0.1.0
+      PlutusTx.UnsafeFromData
+    )
+    via (ProductIsData ProposalThresholds)
 
 {- | Map which encodes the total tally for each result.
      It's important that the "shape" is consistent with the shape of 'effects'.
@@ -248,8 +257,6 @@ newtype ProposalVotes = ProposalVotes
       PlutusTx.ToData
     , -- | @since 0.1.0
       PlutusTx.FromData
-    , -- | @since 0.1.0
-      PlutusTx.UnsafeFromData
     )
   deriving stock
     ( -- | @since 0.1.0
@@ -300,8 +307,14 @@ data ProposalDatum = ProposalDatum
     , -- | @since 0.1.0
       GHC.Generic
     )
-
-PlutusTx.makeIsDataIndexed ''ProposalDatum [('ProposalDatum, 0)]
+  deriving anyclass (Generic)
+  deriving
+    ( -- | @since 0.1.0
+      PlutusTx.ToData
+    , -- | @since 0.1.0
+      PlutusTx.FromData
+    )
+    via (ProductIsData ProposalDatum)
 
 {- | Haskell-level redeemer for Proposal scripts.
 
@@ -515,11 +528,11 @@ newtype PProposalThresholds (s :: S) = PProposalThresholds
     , -- | @since 0.1.0
       PDataFields
     )
-    via (PIsDataReprInstances PProposalThresholds)
+    via (DerivePNewtype' PProposalThresholds)
 
 -- | @since 0.1.0
 deriving via
-  PAsData (PIsDataReprInstances PProposalThresholds)
+  PAsData (DerivePNewtype' PProposalThresholds)
   instance
     PTryFrom PData (PAsData PProposalThresholds)
 
@@ -528,7 +541,7 @@ instance PUnsafeLiftDecl PProposalThresholds where type PLifted PProposalThresho
 
 -- | @since 0.1.0
 deriving via
-  (DerivePConstantViaData ProposalThresholds PProposalThresholds)
+  (DerivePConstantViaDataList ProposalThresholds PProposalThresholds)
   instance
     (PConstantDecl ProposalThresholds)
 
@@ -637,16 +650,16 @@ newtype PProposalDatum (s :: S) = PProposalDatum
     , -- | @since 0.1.0
       PEq
     )
-    via (PIsDataReprInstances PProposalDatum)
+    via (DerivePNewtype' PProposalDatum)
 
 -- | @since 0.1.0
-deriving via PAsData (PIsDataReprInstances PProposalDatum) instance PTryFrom PData (PAsData PProposalDatum)
+deriving via PAsData (DerivePNewtype' PProposalDatum) instance PTryFrom PData (PAsData PProposalDatum)
 
 -- | @since 0.1.0
 instance PUnsafeLiftDecl PProposalDatum where type PLifted PProposalDatum = ProposalDatum
 
 -- | @since 0.1.0
-deriving via (DerivePConstantViaData ProposalDatum PProposalDatum) instance (PConstantDecl ProposalDatum)
+deriving via (DerivePConstantViaDataList ProposalDatum PProposalDatum) instance (PConstantDecl ProposalDatum)
 
 {- | Plutarch-level version of 'ProposalRedeemer'.
 

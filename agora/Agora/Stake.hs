@@ -48,7 +48,12 @@ import Plutarch.DataRepr (
   PDataFields,
   PIsDataReprInstances (PIsDataReprInstances),
  )
+import Plutarch.Extra.IsData (
+  DerivePConstantViaDataList (..),
+  ProductIsData (ProductIsData),
+ )
 import Plutarch.Extra.List (pmapMaybe, pnotNull)
+import Plutarch.Extra.Other (DerivePNewtype' (..))
 import Plutarch.Extra.TermCont (pletC, pletFieldsC, pmatchC)
 import Plutarch.Internal (punsafeCoerce)
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (..))
@@ -116,8 +121,16 @@ data ProposalLock = ProposalLock
     , -- | @since 0.1.0
       GHC.Generic
     )
-
-PlutusTx.makeIsDataIndexed ''ProposalLock [('ProposalLock, 0)]
+  deriving anyclass (Generic)
+  deriving
+    ( -- | @since 0.1.0
+      PlutusTx.ToData
+    , -- | @since 0.1.0
+      PlutusTx.FromData
+    , -- | @since 0.1.0
+      PlutusTx.UnsafeFromData
+    )
+    via (ProductIsData ProposalLock)
 
 {- | Haskell-level redeemer for Stake scripts.
 
@@ -173,8 +186,14 @@ data StakeDatum = StakeDatum
   -- for the stake to be usable for deposits and withdrawals.
   }
   deriving stock (Show, GHC.Generic)
-
-PlutusTx.makeIsDataIndexed ''StakeDatum [('StakeDatum, 0)]
+  deriving anyclass (Generic)
+  deriving
+    ( -- | @since 0.1.0
+      PlutusTx.ToData
+    , -- | @since 0.1.0
+      PlutusTx.FromData
+    )
+    via (ProductIsData StakeDatum)
 
 --------------------------------------------------------------------------------
 
@@ -215,16 +234,16 @@ newtype PStakeDatum (s :: S) = PStakeDatum
     , -- | @since 0.1.0
       PEq
     )
-    via (PIsDataReprInstances PStakeDatum)
+    via (DerivePNewtype' PStakeDatum)
 
 -- | @since 0.1.0
 instance Plutarch.Lift.PUnsafeLiftDecl PStakeDatum where type PLifted PStakeDatum = StakeDatum
 
 -- | @since 0.1.0
-deriving via (DerivePConstantViaData StakeDatum PStakeDatum) instance (Plutarch.Lift.PConstantDecl StakeDatum)
+deriving via (DerivePConstantViaDataList StakeDatum PStakeDatum) instance (Plutarch.Lift.PConstantDecl StakeDatum)
 
 -- | @since 0.1.0
-deriving via PAsData (PIsDataReprInstances PStakeDatum) instance PTryFrom PData (PAsData PStakeDatum)
+deriving via PAsData (DerivePNewtype' PStakeDatum) instance PTryFrom PData (PAsData PStakeDatum)
 
 {- | Plutarch-level redeemer for Stake scripts.
 
@@ -285,15 +304,15 @@ newtype PProposalLock (s :: S) = PProposalLock
   deriving anyclass (PIsDataRepr)
   deriving
     (PlutusType, PIsData, PDataFields, PEq)
-    via (PIsDataReprInstances PProposalLock)
+    via (DerivePNewtype' PProposalLock)
 
 deriving via
-  PAsData (PIsDataReprInstances PProposalLock)
+  PAsData (DerivePNewtype' PProposalLock)
   instance
     PTryFrom PData (PAsData PProposalLock)
 
 instance Plutarch.Lift.PUnsafeLiftDecl PProposalLock where type PLifted PProposalLock = ProposalLock
-deriving via (DerivePConstantViaData ProposalLock PProposalLock) instance (Plutarch.Lift.PConstantDecl ProposalLock)
+deriving via (DerivePConstantViaDataList ProposalLock PProposalLock) instance (Plutarch.Lift.PConstantDecl ProposalLock)
 
 --------------------------------------------------------------------------------
 
