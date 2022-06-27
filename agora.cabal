@@ -181,6 +181,7 @@ library agora-specs
     Property.Generator
     Property.Governor
     Property.MultiSig
+    Property.Utility
     Sample.Effect.GovernorMutation
     Sample.Effect.TreasuryWithdrawal
     Sample.Governor

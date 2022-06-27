@@ -3,12 +3,14 @@ import Prelude
 --------------------------------------------------------------------------------
 
 import GHC.IO.Encoding (setLocaleEncoding, utf8)
-import Test.Tasty (defaultMain, testGroup)
+import Test.Tasty (defaultMain, localOption, testGroup)
+import Test.Tasty.QuickCheck (QuickCheckTests)
 
 --------------------------------------------------------------------------------
 
 import Property.Governor qualified as Governer
 import Property.MultiSig qualified as MultiSig
+import Property.Utility qualified as UtilProp
 import Spec.AuthorityToken qualified as AuthorityToken
 import Spec.Effect.GovernorMutation qualified as GovernorMutation
 import Spec.Effect.TreasuryWithdrawal qualified as TreasuryWithdrawal
@@ -45,4 +47,8 @@ main = do
       , testGroup
           "Multisig tests"
           MultiSig.props
+      , localOption (10000 :: QuickCheckTests) $
+          testGroup
+            "Utility tests"
+            UtilProp.props
       ]
