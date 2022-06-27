@@ -91,7 +91,9 @@ common deps
     , ansi-terminal
     , base                   >=4.14 && <5
     , base-compat
+    , base16
     , bytestring
+    , cardano-binary
     , cardano-prelude
     , containers
     , data-default

@@ -14,6 +14,7 @@ module ScriptExport.Types (
 ) where
 
 import Data.Aeson qualified as Aeson
+import Data.ByteString.Lazy.Char8 qualified as LBS
 import Data.Coerce (coerce)
 import Data.Default.Class (Default (def))
 import Data.Hashable (Hashable)
@@ -21,6 +22,7 @@ import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
 import Data.Text (Text)
 import GHC.Generics qualified as GHC
+import Servant qualified
 
 {- | Query data for getting script info.
 
@@ -55,16 +57,20 @@ data ScriptQuery = ScriptQuery
 
      @since 0.2.0
 -}
-runQuery :: ScriptQuery -> Builders -> Aeson.Value
+runQuery :: ScriptQuery -> Builders -> Servant.Handler Aeson.Value
 runQuery s =
-  maybe Aeson.Null ($ s.paramsPayload) . Map.lookup s.name . getBuilders
+  maybe
+    (Servant.throwError Servant.err404 {Servant.errBody = "Builder not found"})
+    ($ s.paramsPayload)
+    . Map.lookup s.name
+    . getBuilders
 
 {- | Represents a list of named pure functions.
 
      @since 0.2.0
 -}
 newtype Builders = Builders
-  { getBuilders :: Map Text (Aeson.Value -> Aeson.Value)
+  { getBuilders :: Map Text (Aeson.Value -> Servant.Handler Aeson.Value)
   }
 
 -- | @since 0.2.0
@@ -84,7 +90,19 @@ insertBuilder ::
   Builders
 insertBuilder k = coerce . Map.insert k . throughJSON
   where
-    throughJSON f = Aeson.toJSON . \case { Aeson.Error _ -> Nothing; Aeson.Success v -> Just (f v) } . Aeson.fromJSON
+    throughJSON ::
+      forall p s.
+      (Aeson.FromJSON p, Aeson.ToJSON s) =>
+      (p -> s) ->
+      (Aeson.Value -> Servant.Handler Aeson.Value)
+    throughJSON f v =
+      case Aeson.fromJSON v of
+        Aeson.Error e ->
+          Servant.throwError $
+            Servant.err400
+              { Servant.errBody = LBS.pack e
+              }
+        Aeson.Success v' -> pure . Aeson.toJSON $ f v'
 
 {- | Get a list of the available builders.
 

@@ -11,7 +11,7 @@ module ScriptExport.API (
 
 import Codec.Serialise.Orphans ()
 import Data.Aeson qualified as Aeson
-import Data.Cache.Cached (cachedFor)
+import Data.Cache.Cached (cachedForM)
 import Data.Function ((&))
 import Data.Proxy (Proxy (Proxy))
 import Data.Text (Text)
@@ -35,8 +35,11 @@ import Text.Printf (printf)
      @since 0.2.0
 -}
 type API =
-  "query-script" :> ReqBody '[JSON] ScriptQuery :> Post '[JSON] Aeson.Value
-    :<|> "info" :> Get '[JSON] ServerInfo
+  "query-script"
+    :> ReqBody '[JSON] ScriptQuery
+    :> Post '[JSON] Aeson.Value
+    :<|> "info"
+    :> Get '[JSON] ServerInfo
 
 {- | Information about the server.
 
@@ -86,7 +89,7 @@ runServer revision builders options = do
       corsMiddleware = cors . const $ Just corsPolicy
 
   -- Scripts stay cached for five minutes
-  query <- cachedFor (Just $ TimeSpec 300 0) (`runQuery` builders)
+  query <- cachedForM (Just $ TimeSpec 300 0) (`runQuery` builders)
 
   let serverInfo =
         ServerInfo

@@ -15,7 +15,7 @@ import Agora.Governor.Scripts (authorityTokenFromGovernor, authorityTokenSymbolF
 import Agora.Proposal (Proposal)
 import Agora.Proposal.Scripts (proposalPolicy, proposalValidator)
 import Agora.SafeMoney (GTTag)
-import Agora.ScriptInfo (PolicyInfo, ValidatorInfo, mkPolicyInfo, mkValidatorInfo)
+import Agora.ScriptInfo (ScriptInfo, mkPolicyInfo, mkValidatorInfo)
 import Agora.Stake (Stake)
 import Agora.Stake.Scripts (stakePolicy, stakeValidator)
 import Agora.Treasury (treasuryValidator)
@@ -119,14 +119,14 @@ data ScriptParams where
      @since 0.2.0
 -}
 data AgoraScripts = AgoraScripts
-  { governorPolicyInfo :: PolicyInfo
-  , governorValidatorInfo :: ValidatorInfo
-  , stakePolicyInfo :: PolicyInfo
-  , stakeValidatorInfo :: ValidatorInfo
-  , proposalPolicyInfo :: PolicyInfo
-  , proposalValidatorInfo :: ValidatorInfo
-  , treasuryValidatorInfo :: ValidatorInfo
-  , authorityTokenPolicyInfo :: PolicyInfo
+  { governorPolicyInfo :: ScriptInfo
+  , governorValidatorInfo :: ScriptInfo
+  , stakePolicyInfo :: ScriptInfo
+  , stakeValidatorInfo :: ScriptInfo
+  , proposalPolicyInfo :: ScriptInfo
+  , proposalValidatorInfo :: ScriptInfo
+  , treasuryValidatorInfo :: ScriptInfo
+  , authorityTokenPolicyInfo :: ScriptInfo
   }
   deriving anyclass
     ( -- | @since 0.2.0
