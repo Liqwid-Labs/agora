@@ -55,3 +55,10 @@ Please read [CONTRIBUTING.md](./CONTRIBUTING.md). Additionally, please follow th
 
 -   [ ] Rewards distribution
 -   [ ] Escrow staking pool solution
+
+### Available support channels info
+
+You can find help, more information and ongoing discusion about the project here:
+- [link] - short description
+- [link] - short description
+
