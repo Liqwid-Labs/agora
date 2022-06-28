@@ -43,7 +43,7 @@ import Plutarch.Api.V1.ScriptContext (pfindDatum)
 import "liqwid-plutarch-extra" Plutarch.Api.V1.Value (psymbolValueOf)
 import Plutarch.Builtin (pforgetData)
 import Plutarch.Extra.List (plookupTuple)
-import Plutarch.Extra.TermCont (pletC, pmatchC)
+import Plutarch.Extra.TermCont (pletC, pmatchC, ptryFromC)
 import PlutusLedgerApi.V1 (
   Address (..),
   Credential (..),
@@ -162,7 +162,7 @@ mustFindDatum' = phoistAcyclic $
   plam $ \mdh datums -> unTermCont $ do
     let dh = mustBePDJust # "Given TxOut dones't have a datum" # mdh
         dt = mustBePJust # "Datum not found in the transaction" #$ plookupTuple # dh # datums
-    (d, _) <- tcont $ ptryFrom $ pforgetData $ pdata dt
+    (d, _) <- ptryFromC $ pforgetData $ pdata dt
     pure $ pfromData d
 
 {- | Extract the value stored in a PMaybe container.

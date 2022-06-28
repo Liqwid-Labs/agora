@@ -54,7 +54,7 @@ import Plutarch.DataRepr (DerivePConstantViaData (..), PDataFields, PIsDataReprI
 import Plutarch.Extra.List (pnotNull)
 import Plutarch.Extra.Map qualified as PM
 import Plutarch.Extra.Map.Unsorted qualified as PUM
-import Plutarch.Extra.TermCont (pguardC, pletC)
+import Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC)
 import Plutarch.Lift (
   DerivePConstantViaNewtype (..),
   PConstantDecl,
@@ -692,7 +692,7 @@ proposalDatumValid :: Proposal -> Term s (Agora.Proposal.PProposalDatum :--> PBo
 proposalDatumValid proposal =
   phoistAcyclic $
     plam $ \datum' -> unTermCont $ do
-      datum <- tcont $ pletFields @'["effects", "cosigners", "votes"] $ datum'
+      datum <- pletFieldsC @'["effects", "cosigners", "votes"] $ datum'
 
       let atLeastOneNegativeResult =
             pany

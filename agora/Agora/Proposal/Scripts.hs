@@ -97,9 +97,9 @@ proposalPolicy ::
 proposalPolicy (AssetClass (govCs, govTn)) =
   plam $ \_redeemer ctx' -> unTermCont $ do
     PScriptContext ctx' <- pmatchC ctx'
-    ctx <- tcont $ pletFields @'["txInfo", "purpose"] ctx'
+    ctx <- pletFieldsC @'["txInfo", "purpose"] ctx'
     PTxInfo txInfo' <- pmatchC $ pfromData ctx.txInfo
-    txInfo <- tcont $ pletFields @'["inputs", "mint"] txInfo'
+    txInfo <- pletFieldsC @'["inputs", "mint"] txInfo'
     PMinting _ownSymbol <- pmatchC $ pfromData ctx.purpose
 
     let inputs = txInfo.inputs
@@ -153,24 +153,23 @@ proposalValidator :: Proposal -> ClosedTerm PValidator
 proposalValidator proposal =
   plam $ \datum redeemer ctx' -> unTermCont $ do
     PScriptContext ctx' <- pmatchC ctx'
-    ctx <- tcont $ pletFields @'["txInfo", "purpose"] ctx'
+    ctx <- pletFieldsC @'["txInfo", "purpose"] ctx'
     txInfo <- pletC $ pfromData ctx.txInfo
     PTxInfo txInfo' <- pmatchC txInfo
     txInfoF <-
-      tcont $
-        pletFields
-          @'[ "inputs"
-            , "outputs"
-            , "mint"
-            , "datums"
-            , "signatories"
-            , "validRange"
-            ]
-          txInfo'
+      pletFieldsC
+        @'[ "inputs"
+          , "outputs"
+          , "mint"
+          , "datums"
+          , "signatories"
+          , "validRange"
+          ]
+        txInfo'
     PSpending ((pfield @"_0" #) -> txOutRef) <- pmatchC $ pfromData ctx.purpose
 
     PJust ((pfield @"resolved" #) -> txOut) <- pmatchC $ pfindTxInByTxOutRef # txOutRef # txInfoF.inputs
-    txOutF <- tcont $ pletFields @'["address", "value"] $ txOut
+    txOutF <- pletFieldsC @'["address", "value"] $ txOut
 
     (pfromData -> proposalDatum, _) <-
       ptryFromC @(PAsData PProposalDatum) datum
@@ -178,18 +177,17 @@ proposalValidator proposal =
       ptryFromC @(PAsData PProposalRedeemer) redeemer
 
     proposalF <-
-      tcont $
-        pletFields
-          @'[ "proposalId"
-            , "effects"
-            , "status"
-            , "cosigners"
-            , "thresholds"
-            , "votes"
-            , "timingConfig"
-            , "startingTime"
-            ]
-          proposalDatum
+      pletFieldsC
+        @'[ "proposalId"
+          , "effects"
+          , "status"
+          , "cosigners"
+          , "thresholds"
+          , "votes"
+          , "timingConfig"
+          , "startingTime"
+          ]
+        proposalDatum
 
     ownAddress <- pletC $ txOutF.address
 
@@ -213,7 +211,7 @@ proposalValidator proposal =
         mustBePJust # "Own output should be present" #$ pfind
           # plam
             ( \input -> unTermCont $ do
-                inputF <- tcont $ pletFields @'["address", "value", "datumHash"] input
+                inputF <- pletFieldsC @'["address", "value", "datumHash"] input
 
                 -- TODO: this is highly inefficient: O(n) for every output,
                 --       Maybe we can cache the sorted datum map?

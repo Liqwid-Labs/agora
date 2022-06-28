@@ -25,6 +25,7 @@ import Plutarch.DataRepr (
   PDataFields,
   PIsDataReprInstances (PIsDataReprInstances),
  )
+import Plutarch.Extra.TermCont (pletFieldsC)
 import Plutarch.Lift (
   PConstantDecl,
   PLifted,
@@ -123,7 +124,7 @@ pvalidatedByMultisig :: Term s (PMultiSig :--> PTxInfo :--> PBool)
 pvalidatedByMultisig =
   phoistAcyclic $
     plam $ \multi' txInfo -> unTermCont $ do
-      multi <- tcont $ pletFields @'["keys", "minSigs"] multi'
+      multi <- pletFieldsC @'["keys", "minSigs"] multi'
       let signatories = pfield @"signatories" # txInfo
       pure $
         pfromData multi.minSigs
