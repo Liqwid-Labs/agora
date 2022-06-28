@@ -23,9 +23,9 @@ import Network.Wai.Middleware.Cors (CorsResourcePolicy (corsRequestHeaders), cor
 import Prettyprinter (Pretty (pretty), defaultLayoutOptions, hsep, layoutPretty, viaShow)
 import Prettyprinter.Render.String (renderString)
 import ScriptExport.Options (Options (..))
-import ScriptExport.Types (Builders, ScriptQuery, runQuery)
+import ScriptExport.Types (Builders, ScriptQuery (ScriptQuery), runQuery)
 import ScriptExport.Types qualified as Builders
-import Servant.API (Get, JSON, Post, ReqBody, (:<|>) (..), type (:>))
+import Servant.API (Capture, Get, JSON, Post, ReqBody, (:<|>) (..), type (:>))
 import Servant.Server qualified as Servant
 import System.Clock (TimeSpec (TimeSpec))
 import Text.Printf (printf)
@@ -35,11 +35,14 @@ import Text.Printf (printf)
      @since 0.2.0
 -}
 type API =
+  -- /query-script/:name
   "query-script"
-    :> ReqBody '[JSON] ScriptQuery
+    :> Capture "name" Text
+    :> ReqBody '[JSON] Aeson.Value
     :> Post '[JSON] Aeson.Value
+    -- /info
     :<|> "info"
-    :> Get '[JSON] ServerInfo
+      :> Get '[JSON] ServerInfo
 
 {- | Information about the server.
 
@@ -67,37 +70,41 @@ data ServerInfo = ServerInfo
 -- | Run a Warp server that exposes a script generation endpoint.
 runServer :: Text -> Builders -> Options -> IO ()
 runServer revision builders options = do
-  let settings =
+  let logger req status _maybeFileSize =
+        putStrLn . renderString . layoutPretty defaultLayoutOptions $
+          hsep
+            [ "[info]"
+            , viaShow $ Wai.requestMethod req
+            , viaShow $ Wai.rawPathInfo req
+            , "(" <> pretty (Http.statusCode status) <> ")"
+            ]
+
+      settings =
         Warp.defaultSettings
           & Warp.setPort options.port
-          & Warp.setLogger
-            ( \req status _maybeFileSize ->
-                putStrLn . renderString . layoutPretty defaultLayoutOptions $
-                  hsep
-                    [ "[info]"
-                    , viaShow $ Wai.requestMethod req
-                    , viaShow $ Wai.rawPathInfo req
-                    , "(" <> pretty (Http.statusCode status) <> ")"
-                    ]
-            )
+          & Warp.setLogger logger
 
       corsPolicy =
         simpleCorsResourcePolicy
           { -- NOTE: Webpack dev server requires this for CORS workaround.
             corsRequestHeaders = "content-type" : corsRequestHeaders simpleCorsResourcePolicy
           }
+
       corsMiddleware = cors . const $ Just corsPolicy
 
-  -- Scripts stay cached for five minutes
-  query <- cachedForM (Just $ TimeSpec 300 0) (`runQuery` builders)
-
-  let serverInfo =
+      serverInfo =
         ServerInfo
           { revision = revision
           , exposedBuilders = Builders.toList builders
           }
 
+  -- Scripts stay cached for five minutes
+  query <- cachedForM (Just $ TimeSpec 300 0) (`runQuery` builders)
+
+  let handler = (\name -> query . ScriptQuery name) :<|> pure serverInfo
+
   printf "[info] Running 'agora-scripts' on :%d\n" (Warp.getPort settings)
-  Servant.serve (Proxy @API) (query :<|> pure serverInfo)
+
+  Servant.serve (Proxy @API) handler
     & corsMiddleware
     & Warp.runSettings settings

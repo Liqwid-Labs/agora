@@ -52,12 +52,12 @@ builders =
   def
     & insertBuilder "governorPolicy" ((.governorPolicyInfo) . agoraScripts)
     & insertBuilder "governorValidator" ((.governorValidatorInfo) . agoraScripts)
-    & insertBuilder "stakePolicyInfo" ((.stakePolicyInfo) . agoraScripts)
-    & insertBuilder "stakeValidatorInfo" ((.stakeValidatorInfo) . agoraScripts)
-    & insertBuilder "proposalPolicyInfo" ((.proposalPolicyInfo) . agoraScripts)
-    & insertBuilder "proposalValidatorInfo" ((.proposalValidatorInfo) . agoraScripts)
-    & insertBuilder "treasuryValidatorInfo" ((.treasuryValidatorInfo) . agoraScripts)
-    & insertBuilder "authorityTokenPolicyInfo" ((.authorityTokenPolicyInfo) . agoraScripts)
+    & insertBuilder "stakePolicy" ((.stakePolicyInfo) . agoraScripts)
+    & insertBuilder "stakeValidator" ((.stakeValidatorInfo) . agoraScripts)
+    & insertBuilder "proposalPolicy" ((.proposalPolicyInfo) . agoraScripts)
+    & insertBuilder "proposalValidator" ((.proposalValidatorInfo) . agoraScripts)
+    & insertBuilder "treasuryValidator" ((.treasuryValidatorInfo) . agoraScripts)
+    & insertBuilder "authorityTokenPolicy" ((.authorityTokenPolicyInfo) . agoraScripts)
 
 {- | Create scripts from params.
 
