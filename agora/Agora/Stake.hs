@@ -22,7 +22,6 @@ module Agora.Stake (
 
   -- * Utility functions
   stakeLocked,
-  findStakeOwnedBy,
   pgetStakeUsage,
 ) where
 
@@ -33,16 +32,8 @@ import Data.Tagged (Tagged (..))
 import GHC.Generics qualified as GHC
 import Generics.SOP (Generic, HasDatatypeInfo, I (I))
 import Plutarch.Api.V1 (
-  PDatum,
-  PDatumHash,
-  PMaybeData (PDJust, PDNothing),
   PPubKeyHash,
-  PTuple,
-  PTxInInfo (PTxInInfo),
-  PTxOut (PTxOut),
  )
-import Plutarch.Api.V1.AssetClass (PAssetClass, passetClassValueOf)
-import Plutarch.Api.V1.ScriptContext (ptryFindDatum)
 import Plutarch.DataRepr (
   DerivePConstantViaData (..),
   PDataFields,
@@ -54,8 +45,7 @@ import Plutarch.Extra.IsData (
  )
 import Plutarch.Extra.List (pmapMaybe, pnotNull)
 import Plutarch.Extra.Other (DerivePNewtype' (..))
-import Plutarch.Extra.TermCont (pletC, pletFieldsC, pmatchC)
-import Plutarch.Internal (punsafeCoerce)
+import Plutarch.Extra.TermCont (pletFieldsC)
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (..))
 import Plutarch.SafeMoney (PDiscrete)
 import PlutusLedgerApi.V1 (PubKeyHash)
@@ -326,73 +316,6 @@ stakeLocked = phoistAcyclic $
     let locks :: Term _ (PBuiltinList (PAsData PProposalLock))
         locks = pfield @"lockedBy" # stakeDatum
      in pnotNull # locks
-
-{- | Find a stake owned by a particular PK.
-
-     @since 0.1.0
--}
-findStakeOwnedBy ::
-  Term
-    s
-    ( PAssetClass
-        :--> PPubKeyHash
-        :--> PBuiltinList (PAsData (PTuple PDatumHash PDatum))
-        :--> PBuiltinList (PAsData PTxInInfo)
-        :--> PMaybe (PAsData PStakeDatum)
-    )
-findStakeOwnedBy = phoistAcyclic $
-  plam $ \ac pk datums inputs ->
-    pmatch (pfind # (isInputStakeOwnedBy # ac # pk # datums) # inputs) $ \case
-      PNothing -> pcon PNothing
-      PJust (pfromData -> v) -> unTermCont $ do
-        let txOut = pfield @"resolved" # pto v
-        txOutF <- pletFieldsC @'["datumHash"] $ txOut
-        pure $
-          pmatch txOutF.datumHash $ \case
-            PDNothing _ -> pcon PNothing
-            PDJust ((pfield @"_0" #) -> dh) ->
-              ptryFindDatum @(PAsData PStakeDatum) # dh # datums
-
-{- | Check if a StakeDatum  is owned by a particular public key.
-
-   @since 0.1.0
--}
-stakeDatumOwnedBy :: Term _ (PPubKeyHash :--> PStakeDatum :--> PBool)
-stakeDatumOwnedBy =
-  phoistAcyclic $
-    plam $ \pk stakeDatum ->
-      pletFields @'["owner"] (pto stakeDatum) $ \stakeDatumF ->
-        stakeDatumF.owner #== pdata pk
-
-{- | Does the input have a `Stake` owned by a particular PK?
-
-     @since 0.1.0
--}
-isInputStakeOwnedBy ::
-  Term
-    _
-    ( PAssetClass :--> PPubKeyHash
-        :--> PBuiltinList (PAsData (PTuple PDatumHash PDatum))
-        :--> PAsData PTxInInfo
-        :--> PBool
-    )
-isInputStakeOwnedBy =
-  plam $ \ac ss datums txInInfo' -> unTermCont $ do
-    PTxInInfo ((pfield @"resolved" #) -> txOut) <- pmatchC $ pfromData txInInfo'
-    PTxOut txOut' <- pmatchC txOut
-    txOutF <- pletFieldsC @'["value", "datumHash"] txOut'
-    outStakeST <- pletC $ passetClassValueOf # txOutF.value # ac
-    pure $
-      pmatch txOutF.datumHash $ \case
-        PDNothing _ -> pcon PFalse
-        PDJust ((pfield @"_0" #) -> datumHash) ->
-          pif
-            (outStakeST #== 1)
-            ( pmatch (ptryFindDatum @(PAsData PStakeDatum) # datumHash # datums) $ \case
-                PNothing -> pcon PFalse
-                PJust v -> stakeDatumOwnedBy # ss # pfromData (punsafeCoerce v)
-            )
-            (pcon PFalse)
 
 {- | Represent the usage of a stake on a particular proposal.
      A stake can be used to either create or vote on a proposal.
