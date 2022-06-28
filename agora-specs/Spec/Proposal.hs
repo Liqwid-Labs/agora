@@ -181,7 +181,7 @@ specs =
                                       ( ResultTag 0
                                       , case initialState of
                                           Draft -> 0
-                                          _ -> untag (def :: ProposalThresholds).vote + 1
+                                          _ -> untag (def :: ProposalThresholds).execute + 1
                                       )
                                     , (ResultTag 1, 0)
                                     ]
@@ -268,7 +268,7 @@ specs =
                   , votes =
                       ProposalVotes
                         ( AssocMap.fromList
-                            [ (ResultTag 0, 0)
+                            [ (ResultTag 0, 1)
                             , (ResultTag 1, 0)
                             ]
                         )
