@@ -507,7 +507,7 @@ advanceProposalSuccess' params =
       outcome0WinningVotes =
         ProposalVotes $
           updateMap
-            (\_ -> Just $ untag (def :: ProposalThresholds).vote + 1)
+            (\_ -> Just $ untag (def :: ProposalThresholds).execute + 1)
             (ResultTag 0)
             emptyVotes'
 
@@ -664,16 +664,30 @@ advanceProposalInsufficientVotes =
           ]
 
       -- Insufficient votes.
-      votes = emptyVotesFor effects
+      votes =
+        ProposalVotes
+          ( AssocMap.fromList
+              [ (ResultTag 0, 1)
+              , (ResultTag 1, 0)
+              ]
+          )
 
       proposalStartingTime = 0
 
       -- Valid time range.
-      -- [S + D + 1, S + V - 1]
+      -- [S + D + 1, S + V + 10]
       timeRange =
         closedBoundedInterval
-          (proposalStartingTime + (def :: ProposalTimingConfig).draftTime + 1)
-          (proposalStartingTime + (def :: ProposalTimingConfig).votingTime - 1)
+          ( proposalStartingTime
+              + (def :: ProposalTimingConfig).draftTime
+              + (def :: ProposalTimingConfig).votingTime
+              + 1
+          )
+          ( proposalStartingTime
+              + (def :: ProposalTimingConfig).draftTime
+              + (def :: ProposalTimingConfig).votingTime
+              + 10
+          )
    in mkTransitionTxInfo
         VotingReady
         Locked
