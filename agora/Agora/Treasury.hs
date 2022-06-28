@@ -12,15 +12,14 @@ module Agora.Treasury (module Agora.Treasury) where
 
 import Agora.AuthorityToken (singleAuthorityTokenBurned)
 import GHC.Generics qualified as GHC
-import Generics.SOP (Generic, I (I))
+import Generics.SOP (Generic)
 import Plutarch.Api.V1 (PValidator)
 import Plutarch.Api.V1.Contexts (PScriptPurpose (PMinting))
 import "plutarch" Plutarch.Api.V1.Value (PValue)
-import Plutarch.DataRepr (
-  DerivePConstantViaData (..),
-  PIsDataReprInstances (PIsDataReprInstances),
- )
-import Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC, ptryFromC)
+import Plutarch.Builtin (pforgetData)
+import Plutarch.Extra.IsData (DerivePConstantViaEnum (..), EnumIsData (..))
+import Plutarch.Extra.Other (DerivePNewtype' (..))
+import Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC)
 import Plutarch.Lift (PConstantDecl (..), PLifted (..), PUnsafeLiftDecl)
 import Plutarch.TryFrom ()
 import PlutusLedgerApi.V1.Value (CurrencySymbol)
@@ -40,13 +39,22 @@ data TreasuryRedeemer
       Show
     , -- | @since 0.1.0
       GHC.Generic
+    , -- | @since 0.2.0
+      Enum
+    , -- | @since 0.2.0
+      Bounded
     )
-
--- | @since 0.1.0
-PlutusTx.makeIsDataIndexed
-  ''TreasuryRedeemer
-  [ ('SpendTreasuryGAT, 0)
-  ]
+  deriving anyclass
+    ( -- | @since 0.2.0
+      Generic
+    )
+  deriving
+    ( -- | @since 0.1.0
+      PlutusTx.ToData
+    , -- | @since 0.1.0
+      PlutusTx.FromData
+    )
+    via (EnumIsData TreasuryRedeemer)
 
 --------------------------------------------------------------------------------
 
@@ -56,9 +64,7 @@ PlutusTx.makeIsDataIndexed
      @since 0.1.0
 -}
 newtype PTreasuryRedeemer (s :: S)
-  = -- | Alters treasury parameters, subject to the burning of a
-    --   governance authority token.
-    PSpendTreasuryGAT (Term s (PDataRecord '[]))
+  = PTreasuryRedeemer (Term s PInteger)
   deriving stock
     ( -- | @since 0.1.0
       GHC.Generic
@@ -66,8 +72,6 @@ newtype PTreasuryRedeemer (s :: S)
   deriving anyclass
     ( -- | @since 0.1.0
       Generic
-    , -- | @since 0.1.0
-      PIsDataRepr
     )
   deriving
     ( -- | @since 0.1.0
@@ -75,13 +79,7 @@ newtype PTreasuryRedeemer (s :: S)
     , -- | @since 0.1.0
       PIsData
     )
-    via PIsDataReprInstances PTreasuryRedeemer
-
--- | @since 0.1.0
-deriving via
-  PAsData (PIsDataReprInstances PTreasuryRedeemer)
-  instance
-    PTryFrom PData (PAsData PTreasuryRedeemer)
+    via (DerivePNewtype' PTreasuryRedeemer)
 
 -- | @since 0.1.0
 instance PUnsafeLiftDecl PTreasuryRedeemer where
@@ -89,7 +87,7 @@ instance PUnsafeLiftDecl PTreasuryRedeemer where
 
 -- | @since 0.1.0
 deriving via
-  (DerivePConstantViaData TreasuryRedeemer PTreasuryRedeemer)
+  (DerivePConstantViaEnum TreasuryRedeemer PTreasuryRedeemer)
   instance
     (PConstantDecl TreasuryRedeemer)
 
@@ -105,8 +103,6 @@ treasuryValidator ::
   CurrencySymbol ->
   ClosedTerm PValidator
 treasuryValidator gatCs' = plam $ \_datum redeemer ctx' -> unTermCont $ do
-  (treasuryRedeemer, _) <- ptryFromC redeemer
-
   -- plet required fields from script context.
   ctx <- pletFieldsC @["txInfo", "purpose"] ctx'
 
@@ -114,7 +110,8 @@ treasuryValidator gatCs' = plam $ \_datum redeemer ctx' -> unTermCont $ do
   PMinting _ <- pmatchC ctx.purpose
 
   -- Ensure redeemer type is valid.
-  PSpendTreasuryGAT _ <- pmatchC $ pfromData treasuryRedeemer
+  pguardC "Redeemer should be SpendTreasuryGAT" $
+    redeemer #== pforgetData (pconstantData SpendTreasuryGAT)
 
   -- Get the minted value from txInfo.
   txInfo' <- pletC ctx.txInfo
