@@ -32,6 +32,7 @@ module Agora.Proposal (
   proposalDatumValid,
   pemptyVotesFor,
   pwinner,
+  pwinner',
   pneutralOption,
   pretractVotes,
 ) where
@@ -709,10 +710,8 @@ proposalDatumValid proposal =
           , ptraceIfFalse "Proposal votes and effects are compatible with each other" $ PUM.pkeysEqual # datum.effects # pto (pfromData datum.votes)
           ]
 
-{- | Find the winner result tag, given the votes, the quorum the "neutral" result tag.
-
-     The winner should be unambiguous, meaning that if two options have the same highest votes,
-       the "neutral" option will be the winner.
+{- | Wrapper for 'pwinner''. When the winner cannot be found,
+      the 'neutral' option will be returned.
 
      @since 0.1.0
 -}
@@ -725,7 +724,26 @@ pwinner ::
         :--> PResultTag
     )
 pwinner = phoistAcyclic $
-  plam $ \votes quorum neutral -> unTermCont $ do
+  plam $ \votes quorum neutral -> pmatch (pwinner' # votes # quorum) $ \case
+    PNothing -> neutral
+    PJust winner -> winner
+
+{- | Find the winner result tag, given the votes and the quorum.
+
+     The winner should be unambiguous, meaning that if two options have the same highest votes,
+       the function will return 'PNothing'.
+
+     @since 0.1.0
+-}
+pwinner' ::
+  Term
+    s
+    ( PProposalVotes
+        :--> PInteger
+        :--> PMaybe PResultTag
+    )
+pwinner' = phoistAcyclic $
+  plam $ \votes quorum -> unTermCont $ do
     winner <- pletC $ phighestVotes # votes
     winnerResultTag <- pletC $ pfromData $ pfstBuiltin # winner
     highestVotes <- pletC $ pfromData $ psndBuiltin # winner
@@ -757,10 +775,10 @@ pwinner = phoistAcyclic $
     pure $
       pif
         (noDuplicateHighestVotes #&& exceedQuorum)
-        winnerResultTag
-        neutral
+        (pcon $ PJust winnerResultTag)
+        (pcon PNothing)
 
-{- | Find the winning outcome (and the corresponding vote count) given the votes.
+{- | Find the outcome with the highest vote count given the votes.
 
      @since 0.1.0
 -}

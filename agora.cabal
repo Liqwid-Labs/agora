@@ -116,7 +116,9 @@ common deps
 common test-deps
   build-depends:
     , agora
+    , cryptonite
     , data-default-class
+    , memory
     , mtl
     , plutarch-context-builder
     , plutarch-quickcheck

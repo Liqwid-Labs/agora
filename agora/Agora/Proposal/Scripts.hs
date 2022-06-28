@@ -18,6 +18,7 @@ import Agora.Proposal (
   Proposal (governorSTAssetClass, stakeSTAssetClass),
   ProposalStatus (..),
   pretractVotes,
+  pwinner',
  )
 import Agora.Proposal.Time (
   currentProposalTime,
@@ -66,6 +67,7 @@ import Plutarch.Extra.TermCont (
   ptryFromC,
  )
 import Plutarch.SafeMoney (PDiscrete (..))
+import Plutarch.Unsafe (punsafeCoerce)
 import PlutusLedgerApi.V1.Value (AssetClass (AssetClass))
 
 {- | Policy for Proposals.
@@ -528,6 +530,8 @@ proposalValidator proposal =
           pguardC "Cannot advance ahead of time" notTooEarly
           pguardC "Finished proposals cannot be advanced" $ pnot # isFinished
 
+          thresholdsF <- pletFieldsC @'["execute"] proposalF.thresholds
+
           pure $
             pif
               notTooLate
@@ -545,6 +549,11 @@ proposalValidator proposal =
                     -- 'VotingReady' -> 'Locked'
                     pguardC "Proposal status set to Locked" $
                       proposalOutStatus #== pconstantData Locked
+
+                    pguardC "Winner outcome not found" $
+                      pisJust #$ pwinner' # proposalF.votes
+                        #$ punsafeCoerce
+                        $ pfromData thresholdsF.execute
 
                     pure $ popaque (pconstant ())
                   PLocked _ -> unTermCont $ do
