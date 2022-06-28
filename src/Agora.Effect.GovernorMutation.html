@@ -61,7 +61,7 @@ An effect for mutating governor settings.
 
      @since 0.1.0
 -}</span><span>
-</span><span id="line-64"></span><span id="local-6989586621679563062"><span id="local-6989586621679563063"></span></span><span class="hs-keyword">data</span><span> </span><span id="MutateGovernorDatum"><span class="annot"><a href="Agora.Effect.GovernorMutation.html#MutateGovernorDatum"><span class="hs-identifier hs-var">MutateGovernorDatum</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="MutateGovernorDatum"><span class="annot"><a href="Agora.Effect.GovernorMutation.html#MutateGovernorDatum"><span class="hs-identifier hs-var">MutateGovernorDatum</span></a></span></span><span>
+</span><span id="line-64"></span><span id="local-6989586621679564292"><span id="local-6989586621679564293"></span></span><span class="hs-keyword">data</span><span> </span><span id="MutateGovernorDatum"><span class="annot"><a href="Agora.Effect.GovernorMutation.html#MutateGovernorDatum"><span class="hs-identifier hs-var">MutateGovernorDatum</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="MutateGovernorDatum"><span class="annot"><a href="Agora.Effect.GovernorMutation.html#MutateGovernorDatum"><span class="hs-identifier hs-var">MutateGovernorDatum</span></a></span></span><span>
 </span><span id="line-65"></span><span>  </span><span class="hs-special">{</span><span> </span><span id="governorRef"><span class="annot"><span class="annottext">MutateGovernorDatum -&gt; TxOutRef
 </span><a href="Agora.Effect.GovernorMutation.html#governorRef"><span class="hs-identifier hs-var hs-var">governorRef</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/6ilca7icmqibgfqmnsl33jwlfyzd55gp-plutus-ledger-api-lib-plutus-ledger-api-1.0.0.0-haddock-doc/share/doc/plutus-ledger-api/html/src"><span class="hs-identifier hs-type">TxOutRef</span></a></span><span>
 </span><span id="line-66"></span><span>  </span><span class="hs-comment">-- ^ Referenced governor state UTXO should be updated by the effect.</span><span>
@@ -69,7 +69,7 @@ An effect for mutating governor settings.
 </span><a href="Agora.Effect.GovernorMutation.html#newDatum"><span class="hs-identifier hs-var hs-var">newDatum</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Agora.Governor.html#GovernorDatum"><span class="hs-identifier hs-type">GovernorDatum</span></a></span><span>
 </span><span id="line-68"></span><span>  </span><span class="hs-comment">-- ^ The new settings for the governor.</span><span>
 </span><span id="line-69"></span><span>  </span><span class="hs-special">}</span><span>
-</span><span id="line-70"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">stock</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679563047"><span id="local-6989586621679563049"><span id="local-6989586621679563057"><span class="annot"><span class="annottext">Int -&gt; MutateGovernorDatum -&gt; ShowS
+</span><span id="line-70"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">stock</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679564277"><span id="local-6989586621679564279"><span id="local-6989586621679564287"><span class="annot"><span class="annottext">Int -&gt; MutateGovernorDatum -&gt; ShowS
 [MutateGovernorDatum] -&gt; ShowS
 MutateGovernorDatum -&gt; String
 (Int -&gt; MutateGovernorDatum -&gt; ShowS)
@@ -94,7 +94,7 @@ forall a.
 $cto :: forall x. Rep MutateGovernorDatum x -&gt; MutateGovernorDatum
 $cfrom :: forall x. MutateGovernorDatum -&gt; Rep MutateGovernorDatum x
 </span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">GHC.Generic</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-71"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">anyclass</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679563036"><span id="local-6989586621679563038"><span class="annot"><span class="annottext">All @[Type] (SListI @Type) (Code MutateGovernorDatum)
+</span><span id="line-71"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">anyclass</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679564266"><span id="local-6989586621679564268"><span class="annot"><span class="annottext">All @[Type] (SListI @Type) (Code MutateGovernorDatum)
 All @[Type] (SListI @Type) (Code MutateGovernorDatum)
 -&gt; (MutateGovernorDatum -&gt; Rep MutateGovernorDatum)
 -&gt; (Rep MutateGovernorDatum -&gt; MutateGovernorDatum)
@@ -110,7 +110,7 @@ from :: MutateGovernorDatum -&gt; Rep MutateGovernorDatum
 $cfrom :: MutateGovernorDatum -&gt; Rep MutateGovernorDatum
 </span><a href="../file:///nix/store/3m16k3x671sq04j9i42i5m85z4hc6yix-generics-sop-lib-generics-sop-0.5.1.2-haddock-doc/share/doc/generics-sop/html/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></a></span></span></span><span class="hs-special">)</span><span>
 </span><span id="line-72"></span><span>
-</span><span id="line-73"></span><span id="local-6989586621679563019"><span id="local-6989586621679563021"><span id="local-6989586621679563027"><span class="hs-identifier">PlutusTx.makeIsDataIndexed</span><span> </span><span class="hs-special">''</span><span class="hs-identifier">MutateGovernorDatum</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="hs-special">'</span><span class="hs-identifier">MutateGovernorDatum</span><span class="hs-special">,</span><span> </span><span class="hs-number">0</span><span class="hs-special">)</span><span class="hs-special">]</span></span></span></span><span>
+</span><span id="line-73"></span><span id="local-6989586621679564249"><span id="local-6989586621679564251"><span id="local-6989586621679564257"><span class="hs-identifier">PlutusTx.makeIsDataIndexed</span><span> </span><span class="hs-special">''</span><span class="hs-identifier">MutateGovernorDatum</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="hs-special">'</span><span class="hs-identifier">MutateGovernorDatum</span><span class="hs-special">,</span><span> </span><span class="hs-number">0</span><span class="hs-special">)</span><span class="hs-special">]</span></span></span></span><span>
 </span><span id="line-74"></span><span>
 </span><span id="line-75"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
 </span><span id="line-76"></span><span>
@@ -118,10 +118,10 @@ $cfrom :: MutateGovernorDatum -&gt; Rep MutateGovernorDatum
 
      @since 0.1.0
 -}</span><span>
-</span><span id="line-81"></span><span id="local-6989586621679562955"><span id="local-6989586621679562956"></span></span><span class="hs-keyword">newtype</span><span> </span><span id="PMutateGovernorDatum"><span class="annot"><a href="Agora.Effect.GovernorMutation.html#PMutateGovernorDatum"><span class="hs-identifier hs-var">PMutateGovernorDatum</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679563582"><span class="annot"><a href="#local-6989586621679563582"><span class="hs-identifier hs-type">s</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">S</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-81"></span><span id="local-6989586621679564185"><span id="local-6989586621679564186"></span></span><span class="hs-keyword">newtype</span><span> </span><span id="PMutateGovernorDatum"><span class="annot"><a href="Agora.Effect.GovernorMutation.html#PMutateGovernorDatum"><span class="hs-identifier hs-var">PMutateGovernorDatum</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679564812"><span class="annot"><a href="#local-6989586621679564812"><span class="hs-identifier hs-type">s</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">S</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-82"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="PMutateGovernorDatum"><span class="annot"><a href="Agora.Effect.GovernorMutation.html#PMutateGovernorDatum"><span class="hs-identifier hs-var">PMutateGovernorDatum</span></a></span></span><span>
 </span><span id="line-83"></span><span>      </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span>
-</span><span id="line-84"></span><span>          </span><span class="annot"><a href="#local-6989586621679563582"><span class="hs-identifier hs-type">s</span></a></span><span>
+</span><span id="line-84"></span><span>          </span><span class="annot"><a href="#local-6989586621679564812"><span class="hs-identifier hs-type">s</span></a></span><span>
 </span><span id="line-85"></span><span>          </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PDataRecord</span></a></span><span>
 </span><span id="line-86"></span><span>              </span><span class="hs-special">'</span><span class="hs-special">[</span><span> </span><span class="annot"><span class="hs-string">&quot;governorRef&quot;</span></span><span> </span><span class="hs-special">'</span><span class="hs-operator">:=</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PTxOutRef</span></a></span><span>
 </span><span id="line-87"></span><span>               </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-string">&quot;newDatum&quot;</span></span><span> </span><span class="hs-special">'</span><span class="hs-operator">:=</span><span> </span><span class="annot"><a href="Agora.Governor.html#PGovernorDatum"><span class="hs-identifier hs-type">PGovernorDatum</span></a></span><span>
@@ -151,7 +151,7 @@ PMutateGovernorDatum s -&gt; Rep (PMutateGovernorDatum s) x
 </span><span id="line-94"></span><span>    </span><span class="hs-special">)</span><span>
 </span><span id="line-95"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">anyclass</span></span><span>
 </span><span id="line-96"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="hs-comment">-- | @since 0.1.0</span><span>
-</span><span id="line-97"></span><span>      </span><span id="local-6989586621679562945"><span id="local-6989586621679562947"><span class="annot"><span class="annottext">All @[Type] (SListI @Type) (Code (PMutateGovernorDatum s))
+</span><span id="line-97"></span><span>      </span><span id="local-6989586621679564175"><span id="local-6989586621679564177"><span class="annot"><span class="annottext">All @[Type] (SListI @Type) (Code (PMutateGovernorDatum s))
 All @[Type] (SListI @Type) (Code (PMutateGovernorDatum s))
 -&gt; (PMutateGovernorDatum s -&gt; Rep (PMutateGovernorDatum s))
 -&gt; (Rep (PMutateGovernorDatum s) -&gt; PMutateGovernorDatum s)
@@ -173,11 +173,11 @@ Rep (PMutateGovernorDatum s) -&gt; PMutateGovernorDatum s
 from :: PMutateGovernorDatum s -&gt; Rep (PMutateGovernorDatum s)
 $cfrom :: forall (s :: S).
 PMutateGovernorDatum s -&gt; Rep (PMutateGovernorDatum s)
-</span><a href="#local-6989586621679562945"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></a></span></span></span><span>
+</span><a href="#local-6989586621679564175"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></a></span></span></span><span>
 </span><span id="line-98"></span><span>    </span><span class="hs-special">)</span><span>
 </span><span id="line-99"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">anyclass</span></span><span>
 </span><span id="line-100"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="hs-comment">-- | @since 0.1.0</span><span>
-</span><span id="line-101"></span><span>      </span><span id="local-6989586621679562931"><span id="local-6989586621679562933"><span class="annot"><span class="annottext">PIsData PMutateGovernorDatum
+</span><span id="line-101"></span><span>      </span><span id="local-6989586621679564161"><span id="local-6989586621679564163"><span class="annot"><span class="annottext">PIsData PMutateGovernorDatum
 PlutusType PMutateGovernorDatum
 PlutusType PMutateGovernorDatum
 -&gt; PIsData PMutateGovernorDatum
@@ -218,7 +218,7 @@ PMutateGovernorDatum s
 </span><span id="line-102"></span><span>    </span><span class="hs-special">)</span><span>
 </span><span id="line-103"></span><span>  </span><span class="hs-keyword">deriving</span><span>
 </span><span id="line-104"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="hs-comment">-- | @since 0.1.0</span><span>
-</span><span id="line-105"></span><span>      </span><span id="local-6989586621679562913"><span id="local-6989586621679562920"><span class="annot"><span class="annottext">PCon PMutateGovernorDatum
+</span><span id="line-105"></span><span>      </span><span id="local-6989586621679564143"><span id="local-6989586621679564150"><span class="annot"><span class="annottext">PCon PMutateGovernorDatum
 PMatch PMutateGovernorDatum
 PCon PMutateGovernorDatum
 -&gt; PMatch PMutateGovernorDatum
@@ -252,7 +252,7 @@ $cpcon' :: forall (s :: S) (b :: PType).
 PMutateGovernorDatum s -&gt; Term s (PInner PMutateGovernorDatum b)
 </span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">PlutusType</span></a></span></span></span><span>
 </span><span id="line-106"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="hs-comment">-- | @since 0.1.0</span><span>
-</span><span id="line-107"></span><span>      </span><span id="local-6989586621679562900"><span id="local-6989586621679562906"><span class="annot"><span class="annottext">(forall (s :: S).
+</span><span id="line-107"></span><span>      </span><span id="local-6989586621679564130"><span id="local-6989586621679564136"><span class="annot"><span class="annottext">(forall (s :: S).
  Term s (PAsData PMutateGovernorDatum)
  -&gt; Term s PMutateGovernorDatum)
 -&gt; (forall (s :: S). Term s PMutateGovernorDatum -&gt; Term s PData)
@@ -274,7 +274,7 @@ Term s (PAsData PMutateGovernorDatum)
 -&gt; Term s PMutateGovernorDatum
 </span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">PIsData</span></a></span></span></span><span>
 </span><span id="line-108"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="hs-comment">-- | @since 0.1.0</span><span>
-</span><span id="line-109"></span><span>      </span><span id="local-6989586621679562894"><span class="annot"><span class="annottext">(forall (s :: S).
+</span><span id="line-109"></span><span>      </span><span id="local-6989586621679564124"><span class="annot"><span class="annottext">(forall (s :: S).
  Term s PMutateGovernorDatum
  -&gt; Term s (PDataRecord (PFields PMutateGovernorDatum)))
 -&gt; PDataFields PMutateGovernorDatum
@@ -292,7 +292,7 @@ Term s PMutateGovernorDatum
 -&gt; Term s (PDataRecord (PFields PMutateGovernorDatum))
 </span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">PDataFields</span></a></span></span><span>
 </span><span id="line-110"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="hs-comment">-- | @since 0.1.0</span><span>
-</span><span id="line-111"></span><span>      </span><span id="local-6989586621679562881"><span class="annot"><span class="annottext">(forall (s :: S).
+</span><span id="line-111"></span><span>      </span><span id="local-6989586621679564111"><span class="annot"><span class="annottext">(forall (s :: S).
  Term s PMutateGovernorDatum
  -&gt; Term s PMutateGovernorDatum -&gt; Term s PBool)
 -&gt; PEq PMutateGovernorDatum
@@ -315,10 +315,10 @@ Term s PMutateGovernorDatum
 </span><span id="line-116"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PUnsafeLiftDecl</span></a></span><span> </span><span class="annot"><a href="Agora.Effect.GovernorMutation.html#PMutateGovernorDatum"><span class="hs-identifier hs-type">PMutateGovernorDatum</span></a></span><span> </span><span class="hs-keyword">where</span><span> </span><span class="hs-keyword">type</span><span> </span><span id="PLifted"><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">PLifted</span></a></span></span><span> </span><span class="annot"><a href="Agora.Effect.GovernorMutation.html#PMutateGovernorDatum"><span class="hs-identifier hs-type">PMutateGovernorDatum</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Agora.Effect.GovernorMutation.html#MutateGovernorDatum"><span class="hs-identifier hs-type">MutateGovernorDatum</span></a></span><span>
 </span><span id="line-117"></span><span>
 </span><span id="line-118"></span><span class="hs-comment">-- | @since 0.1.0</span><span>
-</span><span id="line-119"></span><span id="local-6989586621679562848"><span id="local-6989586621679562858"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">via</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">DerivePConstantViaData</span></a></span><span> </span><span class="annot"><a href="Agora.Effect.GovernorMutation.html#MutateGovernorDatum"><span class="hs-identifier hs-type">MutateGovernorDatum</span></a></span><span> </span><span class="annot"><a href="Agora.Effect.GovernorMutation.html#PMutateGovernorDatum"><span class="hs-identifier hs-type">PMutateGovernorDatum</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PConstantDecl</span></a></span><span> </span><span class="annot"><a href="Agora.Effect.GovernorMutation.html#MutateGovernorDatum"><span class="hs-identifier hs-type">MutateGovernorDatum</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-119"></span><span id="local-6989586621679564078"><span id="local-6989586621679564088"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">via</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">DerivePConstantViaData</span></a></span><span> </span><span class="annot"><a href="Agora.Effect.GovernorMutation.html#MutateGovernorDatum"><span class="hs-identifier hs-type">MutateGovernorDatum</span></a></span><span> </span><span class="annot"><a href="Agora.Effect.GovernorMutation.html#PMutateGovernorDatum"><span class="hs-identifier hs-type">PMutateGovernorDatum</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PConstantDecl</span></a></span><span> </span><span class="annot"><a href="Agora.Effect.GovernorMutation.html#MutateGovernorDatum"><span class="hs-identifier hs-type">MutateGovernorDatum</span></a></span><span class="hs-special">)</span></span></span><span>
 </span><span id="line-120"></span><span>
 </span><span id="line-121"></span><span class="hs-comment">-- | @since 0.1.0</span><span>
-</span><span id="line-122"></span><span id="local-6989586621679562830"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">via</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PAsData</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PIsDataReprInstances</span></a></span><span> </span><span class="annot"><a href="Agora.Effect.GovernorMutation.html#PMutateGovernorDatum"><span class="hs-identifier hs-type">PMutateGovernorDatum</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PTryFrom</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PData</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PAsData</span></a></span><span> </span><span class="annot"><a href="Agora.Effect.GovernorMutation.html#PMutateGovernorDatum"><span class="hs-identifier hs-type">PMutateGovernorDatum</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-122"></span><span id="local-6989586621679564060"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">via</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PAsData</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PIsDataReprInstances</span></a></span><span> </span><span class="annot"><a href="Agora.Effect.GovernorMutation.html#PMutateGovernorDatum"><span class="hs-identifier hs-type">PMutateGovernorDatum</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PTryFrom</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PData</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PAsData</span></a></span><span> </span><span class="annot"><a href="Agora.Effect.GovernorMutation.html#PMutateGovernorDatum"><span class="hs-identifier hs-type">PMutateGovernorDatum</span></a></span><span class="hs-special">)</span></span><span>
 </span><span id="line-123"></span><span>
 </span><span id="line-124"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
 </span><span id="line-125"></span><span>
@@ -349,8 +349,8 @@ Term s PMutateGovernorDatum
 -}</span><span>
 </span><span id="line-151"></span><span class="annot"><a href="Agora.Effect.GovernorMutation.html#mutateGovernorValidator"><span class="hs-identifier hs-type">mutateGovernorValidator</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Agora.Governor.html#Governor"><span class="hs-identifier hs-type">Governor</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">ClosedTerm</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PValidator</span></a></span><span>
 </span><span id="line-152"></span><span id="mutateGovernorValidator"><span class="annot"><span class="annottext">mutateGovernorValidator :: Governor -&gt; ClosedTerm PValidator
-</span><a href="Agora.Effect.GovernorMutation.html#mutateGovernorValidator"><span class="hs-identifier hs-var hs-var">mutateGovernorValidator</span></a></span></span><span> </span><span id="local-6989586621679562796"><span class="annot"><span class="annottext">Governor
-</span><a href="#local-6989586621679562796"><span class="hs-identifier hs-var">gov</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">CurrencySymbol
+</span><a href="Agora.Effect.GovernorMutation.html#mutateGovernorValidator"><span class="hs-identifier hs-var hs-var">mutateGovernorValidator</span></a></span></span><span> </span><span id="local-6989586621679564026"><span class="annot"><span class="annottext">Governor
+</span><a href="#local-6989586621679564026"><span class="hs-identifier hs-var">gov</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">CurrencySymbol
 -&gt; (forall (s :: S).
     Term s PCurrencySymbol
     -&gt; Term s PMutateGovernorDatum
@@ -370,7 +370,7 @@ CurrencySymbol
 -&gt; ClosedTerm PValidator
 </span><a href="Agora.Effect.html#makeEffect"><span class="hs-identifier hs-var">makeEffect</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Governor -&gt; CurrencySymbol
 </span><a href="Agora.Governor.Scripts.html#authorityTokenSymbolFromGovernor"><span class="hs-identifier hs-var">authorityTokenSymbolFromGovernor</span></a></span><span> </span><span class="annot"><span class="annottext">Governor
-</span><a href="#local-6989586621679562796"><span class="hs-identifier hs-var">gov</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">((forall (s :: S).
+</span><a href="#local-6989586621679564026"><span class="hs-identifier hs-var">gov</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">((forall (s :: S).
   Term s PCurrencySymbol
   -&gt; Term s PMutateGovernorDatum
   -&gt; Term s PTxOutRef
@@ -386,17 +386,17 @@ CurrencySymbol
 -&gt; ClosedTerm PValidator
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src"><span class="hs-operator hs-var">$</span></a></span><span>
-</span><span id="line-153"></span><span>  </span><span class="hs-glyph">\</span><span id="local-6989586621679562539"><span class="annot"><span class="annottext">Term s PCurrencySymbol
-</span><a href="#local-6989586621679562539"><span class="hs-identifier hs-var">_gatCs</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679562538"><span class="annot"><span class="annottext">Term s PMutateGovernorDatum
-</span><a href="#local-6989586621679562538"><span class="hs-identifier hs-var">datum</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span> </span><span class="annot"><span class="hs-identifier">_</span></span><span> </span><span class="annot"><a href="Agora.Effect.GovernorMutation.html#PMutateGovernorDatum"><span class="hs-identifier hs-type">PMutateGovernorDatum</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Term s PTxOutRef
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679562537"><span class="annot"><span class="annottext">Term s (PAsData PTxInfo)
-</span><a href="#local-6989586621679562537"><span class="hs-identifier hs-var">txInfo</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">TermCont @POpaque s (Term s POpaque) -&gt; Term s POpaque
+</span><span id="line-153"></span><span>  </span><span class="hs-glyph">\</span><span id="local-6989586621679563769"><span class="annot"><span class="annottext">Term s PCurrencySymbol
+</span><a href="#local-6989586621679563769"><span class="hs-identifier hs-var">_gatCs</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679563768"><span class="annot"><span class="annottext">Term s PMutateGovernorDatum
+</span><a href="#local-6989586621679563768"><span class="hs-identifier hs-var">datum</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span> </span><span class="annot"><span class="hs-identifier">_</span></span><span> </span><span class="annot"><a href="Agora.Effect.GovernorMutation.html#PMutateGovernorDatum"><span class="hs-identifier hs-type">PMutateGovernorDatum</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Term s PTxOutRef
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679563767"><span class="annot"><span class="annottext">Term s (PAsData PTxInfo)
+</span><a href="#local-6989586621679563767"><span class="hs-identifier hs-var">txInfo</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">TermCont @POpaque s (Term s POpaque) -&gt; Term s POpaque
 forall (a :: PType) (s :: S). TermCont @a s (Term s a) -&gt; Term s a
 </span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">unTermCont</span></a></span><span> </span><span class="annot"><span class="annottext">(TermCont @POpaque s (Term s POpaque) -&gt; Term s POpaque)
 -&gt; TermCont @POpaque s (Term s POpaque) -&gt; Term s POpaque
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-154"></span><span>    </span><span id="local-6989586621679562535"><span class="annot"><span class="annottext">HRec
+</span><span id="line-154"></span><span>    </span><span id="local-6989586621679563765"><span class="annot"><span class="annottext">HRec
   ((':)
      @(Symbol, Type)
      '(&quot;governorRef&quot;, Term s (PAsData PTxOutRef))
@@ -404,7 +404,7 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
         @(Symbol, Type)
         '(&quot;newDatum&quot;, Term s (PAsData PGovernorDatum))
         ('[] @(Symbol, Type))))
-</span><a href="#local-6989586621679562535"><span class="hs-identifier hs-var">datumF</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">((HRec
+</span><a href="#local-6989586621679563765"><span class="hs-identifier hs-var">datumF</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">((HRec
     ((':)
        @(Symbol, Type)
        '(&quot;governorRef&quot;, Term s (PAsData PTxOutRef))
@@ -478,8 +478,8 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
  BindFields ps bs) =&gt;
 Term s a -&gt; (HRecOf a fs s -&gt; Term s b) -&gt; Term s b
 </span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pletFields</span></a></span><span> </span><span class="hs-glyph">@</span><span class="hs-special">'</span><span class="hs-special">[</span><span class="annot"><span class="hs-string">&quot;newDatum&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-string">&quot;governorRef&quot;</span></span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">Term s PMutateGovernorDatum
-</span><a href="#local-6989586621679562538"><span class="hs-identifier hs-var">datum</span></a></span><span>
-</span><span id="line-155"></span><span>    </span><span id="local-6989586621679562532"><span class="annot"><span class="annottext">HRec
+</span><a href="#local-6989586621679563768"><span class="hs-identifier hs-var">datum</span></a></span><span>
+</span><span id="line-155"></span><span>    </span><span id="local-6989586621679563762"><span class="annot"><span class="annottext">HRec
   ((':)
      @(Symbol, Type)
      '(&quot;inputs&quot;, Term s (PAsData (PBuiltinList (PAsData PTxInInfo))))
@@ -495,7 +495,7 @@ Term s a -&gt; (HRecOf a fs s -&gt; Term s b) -&gt; Term s b
                 Term
                   s (PAsData (PBuiltinList (PAsData (PTuple PDatumHash PDatum)))))
               ('[] @(Symbol, Type))))))
-</span><a href="#local-6989586621679562532"><span class="hs-identifier hs-var">txInfoF</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">((HRec
+</span><a href="#local-6989586621679563762"><span class="hs-identifier hs-var">txInfoF</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">((HRec
     ((':)
        @(Symbol, Type)
        '(&quot;inputs&quot;, Term s (PAsData (PBuiltinList (PAsData PTxInInfo))))
@@ -617,16 +617,16 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
  BindFields ps bs) =&gt;
 Term s a -&gt; (HRecOf a fs s -&gt; Term s b) -&gt; Term s b
 </span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pletFields</span></a></span><span> </span><span class="hs-glyph">@</span><span class="hs-special">'</span><span class="hs-special">[</span><span class="annot"><span class="hs-string">&quot;mint&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-string">&quot;inputs&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-string">&quot;outputs&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-string">&quot;datums&quot;</span></span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">Term s (PAsData PTxInfo)
-</span><a href="#local-6989586621679562537"><span class="hs-identifier hs-var">txInfo</span></a></span><span>
+</span><a href="#local-6989586621679563767"><span class="hs-identifier hs-var">txInfo</span></a></span><span>
 </span><span id="line-156"></span><span>
-</span><span id="line-157"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span class="annot"><a href="#local-6989586621679562531"><span class="hs-identifier hs-type">mint</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span> </span><span class="annot"><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PBuiltinList</span></a></span><span> </span><span class="annot"><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span>
-</span><span id="line-158"></span><span>        </span><span id="local-6989586621679562531"><span class="annot"><span class="annottext">mint :: Term
+</span><span id="line-157"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span class="annot"><a href="#local-6989586621679563761"><span class="hs-identifier hs-type">mint</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span> </span><span class="annot"><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PBuiltinList</span></a></span><span> </span><span class="annot"><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span>
+</span><span id="line-158"></span><span>        </span><span id="local-6989586621679563761"><span class="annot"><span class="annottext">mint :: Term
   s
   (PBuiltinList
      (PBuiltinPair
         (PAsData PCurrencySymbol)
         (PAsData (PMap 'Sorted PTokenName (PInteger @S)))))
-</span><a href="#local-6989586621679562531"><span class="hs-identifier hs-var hs-var">mint</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Term
+</span><a href="#local-6989586621679563761"><span class="hs-identifier hs-var hs-var">mint</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Term
   s
   (PInner
      (PInner (PValue 'Sorted 'NoGuarantees) (Any @PType)) (Any @PType))
@@ -710,7 +710,7 @@ Term s (PAsData a) -&gt; Term s a
                 Term
                   s (PAsData (PBuiltinList (PAsData (PTuple PDatumHash PDatum)))))
               ('[] @(Symbol, Type))))))
-</span><a href="#local-6989586621679562532"><span class="hs-identifier hs-var">txInfoF</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">mint</span><span>
+</span><a href="#local-6989586621679563762"><span class="hs-identifier hs-var">txInfoF</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">mint</span><span>
 </span><span id="line-159"></span><span>
 </span><span id="line-160"></span><span>    </span><span class="annot"><span class="annottext">Term s (PString @S) -&gt; Term s PBool -&gt; TermCont @POpaque s ()
 forall {r :: PType} (s :: S).
@@ -752,7 +752,7 @@ Term s (a :--&gt; b) -&gt; Term s a -&gt; Term s b
      (PBuiltinPair
         (PAsData PCurrencySymbol)
         (PAsData (PMap 'Sorted PTokenName (PInteger @S)))))
-</span><a href="#local-6989586621679562531"><span class="hs-identifier hs-var">mint</span></a></span><span> </span><span class="annot"><span class="annottext">Term s (PInteger @S) -&gt; Term s (PInteger @S) -&gt; Term s PBool
+</span><a href="#local-6989586621679563761"><span class="hs-identifier hs-var">mint</span></a></span><span> </span><span class="annot"><span class="annottext">Term s (PInteger @S) -&gt; Term s (PInteger @S) -&gt; Term s PBool
 forall (t :: PType) (s :: S).
 PEq t =&gt;
 Term s t -&gt; Term s t -&gt; Term s PBool
@@ -790,8 +790,8 @@ Term s ((a :--&gt; (b :--&gt; b)) :--&gt; (b :--&gt; (list a :--&gt; b)))
 </span><span class="hs-cpp">        #== 2
 </span><span>
 </span><span id="line-178"></span><span>    </span><span class="hs-comment">-- Find the governor input by looking for GST.</span><span>
-</span><span id="line-179"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679562474"><span class="annot"><span class="annottext">inputWithGST :: Term s (PAsData PTxInInfo)
-</span><a href="#local-6989586621679562474"><span class="hs-identifier hs-var hs-var">inputWithGST</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-179"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679563704"><span class="annot"><span class="annottext">inputWithGST :: Term s (PAsData PTxInInfo)
+</span><a href="#local-6989586621679563704"><span class="hs-identifier hs-var hs-var">inputWithGST</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-180"></span><span>          </span><span class="annot"><span class="annottext">Term
   s
   (PString @S
@@ -828,14 +828,14 @@ Term s ((a :--&gt; PBool) :--&gt; (l a :--&gt; PMaybe a))
 </span><span id="line-185"></span><span>              </span><span class="hs-special">)</span><span class="hs-cpp">
             # pfromData txInfoF.inputs
 </span><span>
-</span><span id="line-188"></span><span>    </span><span id="local-6989586621679562448"><span class="annot"><span class="annottext">HRec
+</span><span id="line-188"></span><span>    </span><span id="local-6989586621679563678"><span class="annot"><span class="annottext">HRec
   (BoundTerms
      (PFields (PAsData PTxInInfo))
      (Bindings
         (PFields (PAsData PTxInInfo))
         ((':) @Symbol &quot;outRef&quot; ((':) @Symbol &quot;resolved&quot; ('[] @Symbol))))
      s)
-</span><a href="#local-6989586621679562448"><span class="hs-identifier hs-var">govInInfo</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">((HRec
+</span><a href="#local-6989586621679563678"><span class="hs-identifier hs-var">govInInfo</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">((HRec
     (BoundTerms
        (PFields (PAsData PTxInInfo))
        (Bindings
@@ -924,7 +924,7 @@ Term s a -&gt; (HRecOf a fs s -&gt; Term s b) -&gt; Term s b
 -&gt; Term s POpaque
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Term s (PAsData PTxInInfo)
-</span><a href="#local-6989586621679562474"><span class="hs-identifier hs-var">inputWithGST</span></a></span><span>
+</span><a href="#local-6989586621679563704"><span class="hs-identifier hs-var">inputWithGST</span></a></span><span>
 </span><span id="line-189"></span><span>
 </span><span id="line-190"></span><span>    </span><span class="hs-comment">-- The effect can only modify the governor UTXO referenced in the datum.</span><span>
 </span><span id="line-191"></span><span>    </span><span class="annot"><span class="annottext">Term s (PString @S) -&gt; Term s PBool -&gt; TermCont @POpaque s ()
@@ -942,7 +942,7 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
         (PFields (PAsData PTxInInfo))
         ((':) @Symbol &quot;outRef&quot; ((':) @Symbol &quot;resolved&quot; ('[] @Symbol))))
      s)
-</span><a href="#local-6989586621679562448"><span class="hs-identifier hs-var">govInInfo</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">outRef</span><span> </span><span class="annot"><span class="annottext">Term s (PAsData PTxOutRef)
+</span><a href="#local-6989586621679563678"><span class="hs-identifier hs-var">govInInfo</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">outRef</span><span> </span><span class="annot"><span class="annottext">Term s (PAsData PTxOutRef)
 -&gt; Term s (PAsData PTxOutRef) -&gt; Term s PBool
 forall (t :: PType) (s :: S).
 PEq t =&gt;
@@ -955,7 +955,7 @@ Term s t -&gt; Term s t -&gt; Term s PBool
         @(Symbol, Type)
         '(&quot;newDatum&quot;, Term s (PAsData PGovernorDatum))
         ('[] @(Symbol, Type))))
-</span><a href="#local-6989586621679562535"><span class="hs-identifier hs-var">datumF</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">governorRef</span><span>
+</span><a href="#local-6989586621679563765"><span class="hs-identifier hs-var">datumF</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">governorRef</span><span>
 </span><span id="line-193"></span><span>
 </span><span id="line-194"></span><span>    </span><span class="hs-comment">-- The transaction can only have one output, which should be sent to the governor.</span><span>
 </span><span id="line-195"></span><span>    </span><span class="annot"><span class="annottext">Term s (PString @S) -&gt; Term s PBool -&gt; TermCont @POpaque s ()
@@ -995,14 +995,14 @@ Term s (PAsData a) -&gt; Term s a
                 Term
                   s (PAsData (PBuiltinList (PAsData (PTuple PDatumHash PDatum)))))
               ('[] @(Symbol, Type))))))
-</span><a href="#local-6989586621679562532"><span class="hs-identifier hs-var">txInfoF</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">outputs</span><span> </span><span class="annot"><span class="annottext">Term s (PInteger @S) -&gt; Term s (PInteger @S) -&gt; Term s PBool
+</span><a href="#local-6989586621679563762"><span class="hs-identifier hs-var">txInfoF</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">outputs</span><span> </span><span class="annot"><span class="annottext">Term s (PInteger @S) -&gt; Term s (PInteger @S) -&gt; Term s PBool
 forall (t :: PType) (s :: S).
 PEq t =&gt;
 Term s t -&gt; Term s t -&gt; Term s PBool
 </span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-var">#==</span></a></span><span> </span><span class="annot"><span class="annottext">Term s (PInteger @S)
 </span><span class="hs-number">1</span></span><span>
 </span><span id="line-197"></span><span>
-</span><span id="line-198"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679562447"><span class="annot"><span class="annottext">govAddress :: Term
+</span><span id="line-198"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679563677"><span class="annot"><span class="annottext">govAddress :: Term
   s
   (PAsData
      (PUnLabel
@@ -1010,7 +1010,7 @@ Term s t -&gt; Term s t -&gt; Term s PBool
            @PLabeledType
            (PLabelIndex &quot;address&quot; (PFields (PAsData PTxOut)))
            (PFields (PAsData PTxOut)))))
-</span><a href="#local-6989586621679562447"><span class="hs-identifier hs-var hs-var">govAddress</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">forall (name :: Symbol) (p :: PType) (s :: S) (a :: PType)
+</span><a href="#local-6989586621679563677"><span class="hs-identifier hs-var hs-var">govAddress</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">forall (name :: Symbol) (p :: PType) (s :: S) (a :: PType)
        (as :: [PLabeledType]) (n :: Nat) (b :: PType).
 (PDataFields p,
  (as :: [PLabeledType]) ~ (PFields p :: [PLabeledType]),
@@ -1045,9 +1045,9 @@ Term s (a :--&gt; b) -&gt; Term s a -&gt; Term s b
         (PFields (PAsData PTxInInfo))
         ((':) @Symbol &quot;outRef&quot; ((':) @Symbol &quot;resolved&quot; ('[] @Symbol))))
      s)
-</span><a href="#local-6989586621679562448"><span class="hs-identifier hs-var">govInInfo</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">resolved</span><span>
-</span><span id="line-199"></span><span>        </span><span id="local-6989586621679562446"><span class="annot"><span class="annottext">govOutput' :: Term s PTxOut
-</span><a href="#local-6989586621679562446"><span class="hs-identifier hs-var hs-var">govOutput'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Term s (PAsData PTxOut) -&gt; Term s PTxOut
+</span><a href="#local-6989586621679563678"><span class="hs-identifier hs-var">govInInfo</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">resolved</span><span>
+</span><span id="line-199"></span><span>        </span><span id="local-6989586621679563676"><span class="annot"><span class="annottext">govOutput' :: Term s PTxOut
+</span><a href="#local-6989586621679563676"><span class="hs-identifier hs-var hs-var">govOutput'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Term s (PAsData PTxOut) -&gt; Term s PTxOut
 forall (a :: PType) (s :: S).
 PIsData a =&gt;
 Term s (PAsData a) -&gt; Term s a
@@ -1084,9 +1084,9 @@ Term s (PAsData a) -&gt; Term s a
                 Term
                   s (PAsData (PBuiltinList (PAsData (PTuple PDatumHash PDatum)))))
               ('[] @(Symbol, Type))))))
-</span><a href="#local-6989586621679562532"><span class="hs-identifier hs-var">txInfoF</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">outputs</span><span>
+</span><a href="#local-6989586621679563762"><span class="hs-identifier hs-var">txInfoF</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">outputs</span><span>
 </span><span id="line-200"></span><span>
-</span><span id="line-201"></span><span>    </span><span id="local-6989586621679562444"><span class="annot"><span class="annottext">HRec
+</span><span id="line-201"></span><span>    </span><span id="local-6989586621679563674"><span class="annot"><span class="annottext">HRec
   (BoundTerms
      (PFields PTxOut)
      (Bindings
@@ -1096,7 +1096,7 @@ Term s (PAsData a) -&gt; Term s a
            &quot;address&quot;
            ((':) @Symbol &quot;value&quot; ((':) @Symbol &quot;datumHash&quot; ('[] @Symbol)))))
      s)
-</span><a href="#local-6989586621679562444"><span class="hs-identifier hs-var">govOutput</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">((HRec
+</span><a href="#local-6989586621679563674"><span class="hs-identifier hs-var">govOutput</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">((HRec
     (BoundTerms
        (PFields PTxOut)
        (Bindings
@@ -1182,7 +1182,7 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
  BindFields ps bs) =&gt;
 Term s a -&gt; (HRecOf a fs s -&gt; Term s b) -&gt; Term s b
 </span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pletFields</span></a></span><span> </span><span class="hs-glyph">@</span><span class="hs-special">'</span><span class="hs-special">[</span><span class="annot"><span class="hs-string">&quot;address&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-string">&quot;value&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-string">&quot;datumHash&quot;</span></span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">Term s PTxOut
-</span><a href="#local-6989586621679562446"><span class="hs-identifier hs-var">govOutput'</span></a></span><span>
+</span><a href="#local-6989586621679563676"><span class="hs-identifier hs-var">govOutput'</span></a></span><span>
 </span><span id="line-202"></span><span>
 </span><span id="line-203"></span><span>    </span><span class="annot"><span class="annottext">Term s (PString @S) -&gt; Term s PBool -&gt; TermCont @POpaque s ()
 forall {r :: PType} (s :: S).
@@ -1202,7 +1202,7 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
            &quot;address&quot;
            ((':) @Symbol &quot;value&quot; ((':) @Symbol &quot;datumHash&quot; ('[] @Symbol)))))
      s)
-</span><a href="#local-6989586621679562444"><span class="hs-identifier hs-var">govOutput</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">address</span><span> </span><span class="annot"><span class="annottext">Term
+</span><a href="#local-6989586621679563674"><span class="hs-identifier hs-var">govOutput</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">address</span><span> </span><span class="annot"><span class="annottext">Term
   s
   (PAsData
      (PUnLabel
@@ -1230,7 +1230,7 @@ Term s t -&gt; Term s t -&gt; Term s PBool
            @PLabeledType
            (PLabelIndex &quot;address&quot; (PFields (PAsData PTxOut)))
            (PFields (PAsData PTxOut)))))
-</span><a href="#local-6989586621679562447"><span class="hs-identifier hs-var">govAddress</span></a></span><span>
+</span><a href="#local-6989586621679563677"><span class="hs-identifier hs-var">govAddress</span></a></span><span>
 </span><span id="line-205"></span><span>
 </span><span id="line-206"></span><span>    </span><span class="annot"><span class="annottext">Term s (PString @S) -&gt; Term s PBool -&gt; TermCont @POpaque s ()
 forall {r :: PType} (s :: S).
@@ -1243,7 +1243,7 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span id="line-207"></span><span>      </span><span class="annot"><span class="annottext">Term s (PValue 'Sorted 'Positive :--&gt; PInteger @S)
 forall (s :: S) {w :: KeyGuarantees} {w :: AmountGuarantees}.
 Term s (PValue w w :--&gt; PInteger @S)
-</span><a href="#local-6989586621679562449"><span class="hs-identifier hs-var">gstValueOf</span></a></span><span> </span><span class="annot"><span class="annottext">Term s (PValue 'Sorted 'Positive :--&gt; PInteger @S)
+</span><a href="#local-6989586621679563679"><span class="hs-identifier hs-var">gstValueOf</span></a></span><span> </span><span class="annot"><span class="annottext">Term s (PValue 'Sorted 'Positive :--&gt; PInteger @S)
 -&gt; Term s (PValue 'Sorted 'Positive) -&gt; Term s (PInteger @S)
 forall (s :: S) (a :: PType) (b :: PType).
 Term s (a :--&gt; b) -&gt; Term s a -&gt; Term s b
@@ -1257,15 +1257,15 @@ Term s (a :--&gt; b) -&gt; Term s a -&gt; Term s b
            &quot;address&quot;
            ((':) @Symbol &quot;value&quot; ((':) @Symbol &quot;datumHash&quot; ('[] @Symbol)))))
      s)
-</span><a href="#local-6989586621679562444"><span class="hs-identifier hs-var">govOutput</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">value</span><span> </span><span class="annot"><span class="annottext">Term s (PInteger @S) -&gt; Term s (PInteger @S) -&gt; Term s PBool
+</span><a href="#local-6989586621679563674"><span class="hs-identifier hs-var">govOutput</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">value</span><span> </span><span class="annot"><span class="annottext">Term s (PInteger @S) -&gt; Term s (PInteger @S) -&gt; Term s PBool
 forall (t :: PType) (s :: S).
 PEq t =&gt;
 Term s t -&gt; Term s t -&gt; Term s PBool
 </span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-var">#==</span></a></span><span> </span><span class="annot"><span class="annottext">Term s (PInteger @S)
 </span><span class="hs-number">1</span></span><span>
 </span><span id="line-208"></span><span>
-</span><span id="line-209"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679562443"><span class="annot"><span class="annottext">governorOutputDatumHash :: Term s PDatumHash
-</span><a href="#local-6989586621679562443"><span class="hs-identifier hs-var hs-var">governorOutputDatumHash</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-209"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679563673"><span class="annot"><span class="annottext">governorOutputDatumHash :: Term s PDatumHash
+</span><a href="#local-6989586621679563673"><span class="hs-identifier hs-var hs-var">governorOutputDatumHash</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-210"></span><span>          </span><span class="annot"><span class="annottext">Term s (PString @S :--&gt; (PMaybeData PDatumHash :--&gt; PDatumHash))
 forall (a :: PType) (s :: S).
 PIsData a =&gt;
@@ -1290,9 +1290,9 @@ Term s (a :--&gt; b) -&gt; Term s a -&gt; Term s b
            &quot;address&quot;
            ((':) @Symbol &quot;value&quot; ((':) @Symbol &quot;datumHash&quot; ('[] @Symbol)))))
      s)
-</span><a href="#local-6989586621679562444"><span class="hs-identifier hs-var">govOutput</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">datumHash</span><span>
-</span><span id="line-211"></span><span>        </span><span id="local-6989586621679562442"><span class="annot"><span class="annottext">governorOutputDatum :: Term s PGovernorDatum
-</span><a href="#local-6989586621679562442"><span class="hs-identifier hs-var hs-var">governorOutputDatum</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="#local-6989586621679563674"><span class="hs-identifier hs-var">govOutput</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">datumHash</span><span>
+</span><span id="line-211"></span><span>        </span><span id="local-6989586621679563672"><span class="annot"><span class="annottext">governorOutputDatum :: Term s PGovernorDatum
+</span><a href="#local-6989586621679563672"><span class="hs-identifier hs-var hs-var">governorOutputDatum</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-212"></span><span>          </span><span class="annot"><span class="annottext">forall (a :: PType) (s :: S).
 PIsData a =&gt;
 Term s (PAsData a) -&gt; Term s a
@@ -1335,12 +1335,12 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
         @(Symbol, Type)
         '(&quot;newDatum&quot;, Term s (PAsData PGovernorDatum))
         ('[] @(Symbol, Type))))
-</span><a href="#local-6989586621679562535"><span class="hs-identifier hs-var">datumF</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">newDatum</span><span> </span><span class="annot"><span class="annottext">Term s PGovernorDatum -&gt; Term s PGovernorDatum -&gt; Term s PBool
+</span><a href="#local-6989586621679563765"><span class="hs-identifier hs-var">datumF</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">newDatum</span><span> </span><span class="annot"><span class="annottext">Term s PGovernorDatum -&gt; Term s PGovernorDatum -&gt; Term s PBool
 forall (t :: PType) (s :: S).
 PEq t =&gt;
 Term s t -&gt; Term s t -&gt; Term s PBool
 </span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-var">#==</span></a></span><span> </span><span class="annot"><span class="annottext">Term s PGovernorDatum
-</span><a href="#local-6989586621679562442"><span class="hs-identifier hs-var">governorOutputDatum</span></a></span><span>
+</span><a href="#local-6989586621679563672"><span class="hs-identifier hs-var">governorOutputDatum</span></a></span><span>
 </span><span id="line-218"></span><span>    </span><span class="annot"><span class="annottext">Term s (PString @S) -&gt; Term s PBool -&gt; TermCont @POpaque s ()
 forall {r :: PType} (s :: S).
 Term s (PString @S) -&gt; Term s PBool -&gt; TermCont @r s ()
@@ -1355,7 +1355,7 @@ forall (s :: S). Term s (PGovernorDatum :--&gt; PBool)
 forall (s :: S) (a :: PType) (b :: PType).
 Term s (a :--&gt; b) -&gt; Term s a -&gt; Term s b
 </span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-var">#</span></a></span><span> </span><span class="annot"><span class="annottext">Term s PGovernorDatum
-</span><a href="#local-6989586621679562442"><span class="hs-identifier hs-var">governorOutputDatum</span></a></span><span>
+</span><a href="#local-6989586621679563672"><span class="hs-identifier hs-var">governorOutputDatum</span></a></span><span>
 </span><span id="line-219"></span><span>
 </span><span id="line-220"></span><span>    </span><span class="annot"><span class="annottext">Term s POpaque -&gt; TermCont @POpaque s (Term s POpaque)
 forall (m :: Type -&gt; Type) a. Monad m =&gt; a -&gt; m a
@@ -1372,9 +1372,9 @@ forall (p :: PType) (s :: S). PLift p =&gt; PLifted p -&gt; Term s p
 </span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pconstant</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
 </span><span id="line-221"></span><span>  </span><span class="hs-keyword">where</span><span>
 </span><span id="line-222"></span><span>    </span><span class="hs-comment">-- Get the amount of GST in the a given value.</span><span>
-</span><span id="line-223"></span><span>    </span><span id="local-6989586621679562439"><span class="annot"><a href="#local-6989586621679562449"><span class="hs-identifier hs-type">gstValueOf</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679562439"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PValue</span></a></span><span> </span><span class="annot"><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="hs-identifier">_</span></span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-type">:--&gt;</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PInteger</span></a></span><span class="hs-special">)</span></span><span>
-</span><span id="line-224"></span><span>    </span><span id="local-6989586621679562449"><span class="annot"><span class="annottext">gstValueOf :: Term s (PValue w w :--&gt; PInteger @S)
-</span><a href="#local-6989586621679562449"><span class="hs-identifier hs-var hs-var">gstValueOf</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ClosedTerm (PValue w w :--&gt; PInteger @S)
+</span><span id="line-223"></span><span>    </span><span id="local-6989586621679563669"><span class="annot"><a href="#local-6989586621679563679"><span class="hs-identifier hs-type">gstValueOf</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679563669"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PValue</span></a></span><span> </span><span class="annot"><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="hs-identifier">_</span></span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-type">:--&gt;</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PInteger</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-224"></span><span>    </span><span id="local-6989586621679563679"><span class="annot"><span class="annottext">gstValueOf :: Term s (PValue w w :--&gt; PInteger @S)
+</span><a href="#local-6989586621679563679"><span class="hs-identifier hs-var hs-var">gstValueOf</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ClosedTerm (PValue w w :--&gt; PInteger @S)
 -&gt; Term s (PValue w w :--&gt; PInteger @S)
 forall (a :: PType) (s :: S).
 HasCallStack =&gt;
@@ -1394,8 +1394,8 @@ PLamN a b s =&gt;
 -&gt; (Term s (PValue w w) -&gt; Term s (PInteger @S))
 -&gt; Term s (PValue w w :--&gt; PInteger @S)
 forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679562430"><span class="annot"><span class="annottext">Term s (PValue w w)
-</span><a href="#local-6989586621679562430"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Term
+</span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679563660"><span class="annot"><span class="annottext">Term s (PValue w w)
+</span><a href="#local-6989586621679563660"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Term
   s
   (PValue w w
    :--&gt; (PCurrencySymbol :--&gt; (PTokenName :--&gt; PInteger @S)))
@@ -1414,7 +1414,7 @@ Term
 forall (s :: S) (a :: PType) (b :: PType).
 Term s (a :--&gt; b) -&gt; Term s a -&gt; Term s b
 </span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-var">#</span></a></span><span> </span><span class="annot"><span class="annottext">Term s (PValue w w)
-</span><a href="#local-6989586621679562430"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">Term s (PCurrencySymbol :--&gt; (PTokenName :--&gt; PInteger @S))
+</span><a href="#local-6989586621679563660"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">Term s (PCurrencySymbol :--&gt; (PTokenName :--&gt; PInteger @S))
 -&gt; Term s PCurrencySymbol -&gt; Term s (PTokenName :--&gt; PInteger @S)
 forall (s :: S) (a :: PType) (b :: PType).
 Term s (a :--&gt; b) -&gt; Term s a -&gt; Term s b
@@ -1422,7 +1422,7 @@ Term s (a :--&gt; b) -&gt; Term s a -&gt; Term s b
 forall (p :: PType) (s :: S). PLift p =&gt; PLifted p -&gt; Term s p
 </span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pconstant</span></a></span><span> </span><span class="annot"><span class="annottext">PLifted PCurrencySymbol
 CurrencySymbol
-</span><a href="#local-6989586621679562429"><span class="hs-identifier hs-var">cs</span></a></span><span> </span><span class="annot"><span class="annottext">Term s (PTokenName :--&gt; PInteger @S)
+</span><a href="#local-6989586621679563659"><span class="hs-identifier hs-var">cs</span></a></span><span> </span><span class="annot"><span class="annottext">Term s (PTokenName :--&gt; PInteger @S)
 -&gt; Term s PTokenName -&gt; Term s (PInteger @S)
 forall (s :: S) (a :: PType) (b :: PType).
 Term s (a :--&gt; b) -&gt; Term s a -&gt; Term s b
@@ -1430,11 +1430,11 @@ Term s (a :--&gt; b) -&gt; Term s a -&gt; Term s b
 forall (p :: PType) (s :: S). PLift p =&gt; PLifted p -&gt; Term s p
 </span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pconstant</span></a></span><span> </span><span class="annot"><span class="annottext">PLifted PTokenName
 TokenName
-</span><a href="#local-6989586621679562428"><span class="hs-identifier hs-var">tn</span></a></span><span>
+</span><a href="#local-6989586621679563658"><span class="hs-identifier hs-var">tn</span></a></span><span>
 </span><span id="line-225"></span><span>      </span><span class="hs-keyword">where</span><span>
-</span><span id="line-226"></span><span>        </span><span class="annot"><a href="../file:///nix/store/6ilca7icmqibgfqmnsl33jwlfyzd55gp-plutus-ledger-api-lib-plutus-ledger-api-1.0.0.0-haddock-doc/share/doc/plutus-ledger-api/html/src"><span class="hs-identifier hs-type">AssetClass</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679562429"><span class="annot"><span class="annottext">CurrencySymbol
-</span><a href="#local-6989586621679562429"><span class="hs-identifier hs-var">cs</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679562428"><span class="annot"><span class="annottext">TokenName
-</span><a href="#local-6989586621679562428"><span class="hs-identifier hs-var">tn</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Governor -&gt; AssetClass
+</span><span id="line-226"></span><span>        </span><span class="annot"><a href="../file:///nix/store/6ilca7icmqibgfqmnsl33jwlfyzd55gp-plutus-ledger-api-lib-plutus-ledger-api-1.0.0.0-haddock-doc/share/doc/plutus-ledger-api/html/src"><span class="hs-identifier hs-type">AssetClass</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679563659"><span class="annot"><span class="annottext">CurrencySymbol
+</span><a href="#local-6989586621679563659"><span class="hs-identifier hs-var">cs</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679563658"><span class="annot"><span class="annottext">TokenName
+</span><a href="#local-6989586621679563658"><span class="hs-identifier hs-var">tn</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Governor -&gt; AssetClass
 </span><a href="Agora.Governor.Scripts.html#governorSTAssetClassFromGovernor"><span class="hs-identifier hs-var">governorSTAssetClassFromGovernor</span></a></span><span> </span><span class="annot"><span class="annottext">Governor
-</span><a href="#local-6989586621679562796"><span class="hs-identifier hs-var">gov</span></a></span><span>
+</span><a href="#local-6989586621679564026"><span class="hs-identifier hs-var">gov</span></a></span><span>
 </span><span id="line-227"></span></pre></body></html>

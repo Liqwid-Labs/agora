@@ -650,12 +650,15 @@ proposalDatumValid :: Proposal -> Term s (PProposalDatum :--> PBool)
 -- | Plutarch-level version of <a>emptyVotesFor</a>.
 pemptyVotesFor :: forall s a. PIsData a => Term s (PMap 'Unsorted PResultTag a :--> PProposalVotes)
 
--- | Find the winner result tag, given the votes, the quorum the "neutral"
---   result tag.
+-- | Wrapper for <a>pwinner'</a>. When the winner cannot be found, the
+--   <tt>neutral</tt> option will be returned.
+pwinner :: Term s (PProposalVotes :--> (PInteger :--> (PResultTag :--> PResultTag)))
+
+-- | Find the winner result tag, given the votes and the quorum.
 --   
 --   The winner should be unambiguous, meaning that if two options have the
---   same highest votes, the "neutral" option will be the winner.
-pwinner :: Term s (PProposalVotes :--> (PInteger :--> (PResultTag :--> PResultTag)))
+--   same highest votes, the function will return <a>PNothing</a>.
+pwinner' :: Term s (PProposalVotes :--> (PInteger :--> PMaybe PResultTag))
 
 -- | Find the "neutral" option (a dummy outcome with no effect) given the
 --   effects.

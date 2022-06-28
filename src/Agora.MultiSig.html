@@ -41,7 +41,7 @@ A basic N of M multisignature validation function.
 
      @since 0.1.0
 -}</span><span>
-</span><span id="line-44"></span><span id="local-6989586621679541929"><span id="local-6989586621679541930"></span></span><span class="hs-keyword">data</span><span> </span><span id="MultiSig"><span class="annot"><a href="Agora.MultiSig.html#MultiSig"><span class="hs-identifier hs-var">MultiSig</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="MultiSig"><span class="annot"><a href="Agora.MultiSig.html#MultiSig"><span class="hs-identifier hs-var">MultiSig</span></a></span></span><span>
+</span><span id="line-44"></span><span id="local-6989586621679543102"><span id="local-6989586621679543103"></span></span><span class="hs-keyword">data</span><span> </span><span id="MultiSig"><span class="annot"><a href="Agora.MultiSig.html#MultiSig"><span class="hs-identifier hs-var">MultiSig</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="MultiSig"><span class="annot"><a href="Agora.MultiSig.html#MultiSig"><span class="hs-identifier hs-var">MultiSig</span></a></span></span><span>
 </span><span id="line-45"></span><span>  </span><span class="hs-special">{</span><span> </span><span id="keys"><span class="annot"><span class="annottext">MultiSig -&gt; [PubKeyHash]
 </span><a href="Agora.MultiSig.html#keys"><span class="hs-identifier hs-var hs-var">keys</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="../file:///nix/store/6ilca7icmqibgfqmnsl33jwlfyzd55gp-plutus-ledger-api-lib-plutus-ledger-api-1.0.0.0-haddock-doc/share/doc/plutus-ledger-api/html/src"><span class="hs-identifier hs-type">PubKeyHash</span></a></span><span class="hs-special">]</span><span>
 </span><span id="line-46"></span><span>  </span><span class="hs-comment">-- ^ List of PubKeyHashes that must be present in the list of signatories.</span><span>
@@ -60,7 +60,7 @@ $cto :: forall x. Rep MultiSig x -&gt; MultiSig
 $cfrom :: forall x. MultiSig -&gt; Rep MultiSig x
 </span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var">GHC.Generic</span></a></span><span>
 </span><span id="line-52"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="hs-comment">-- | @since 0.1.0</span><span>
-</span><span id="line-53"></span><span>      </span><span id="local-6989586621679541914"><span id="local-6989586621679541921"><span class="annot"><span class="annottext">MultiSig -&gt; MultiSig -&gt; Bool
+</span><span id="line-53"></span><span>      </span><span id="local-6989586621679543087"><span id="local-6989586621679543094"><span class="annot"><span class="annottext">MultiSig -&gt; MultiSig -&gt; Bool
 (MultiSig -&gt; MultiSig -&gt; Bool)
 -&gt; (MultiSig -&gt; MultiSig -&gt; Bool) -&gt; Eq MultiSig
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
@@ -70,7 +70,7 @@ $c/= :: MultiSig -&gt; MultiSig -&gt; Bool
 $c== :: MultiSig -&gt; MultiSig -&gt; Bool
 </span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.8.0/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span>
 </span><span id="line-54"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="hs-comment">-- | @since 0.1.0</span><span>
-</span><span id="line-55"></span><span>      </span><span id="local-6989586621679541899"><span id="local-6989586621679541901"><span id="local-6989586621679541910"><span class="annot"><span class="annottext">Int -&gt; MultiSig -&gt; ShowS
+</span><span id="line-55"></span><span>      </span><span id="local-6989586621679543072"><span id="local-6989586621679543074"><span id="local-6989586621679543083"><span class="annot"><span class="annottext">Int -&gt; MultiSig -&gt; ShowS
 [MultiSig] -&gt; ShowS
 MultiSig -&gt; String
 (Int -&gt; MultiSig -&gt; ShowS)
@@ -87,7 +87,7 @@ $cshowsPrec :: Int -&gt; MultiSig -&gt; ShowS
 </span><span id="line-56"></span><span>    </span><span class="hs-special">)</span><span>
 </span><span id="line-57"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">anyclass</span></span><span>
 </span><span id="line-58"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="hs-comment">-- | @since 0.1.0</span><span>
-</span><span id="line-59"></span><span>      </span><span id="local-6989586621679541890"><span id="local-6989586621679541892"><span class="annot"><span class="annottext">All @[Type] (SListI @Type) (Code MultiSig)
+</span><span id="line-59"></span><span>      </span><span id="local-6989586621679543063"><span id="local-6989586621679543065"><span class="annot"><span class="annottext">All @[Type] (SListI @Type) (Code MultiSig)
 All @[Type] (SListI @Type) (Code MultiSig)
 -&gt; (MultiSig -&gt; Rep MultiSig)
 -&gt; (Rep MultiSig -&gt; MultiSig)
@@ -104,14 +104,14 @@ $cfrom :: MultiSig -&gt; Rep MultiSig
 </span><a href="../file:///nix/store/3m16k3x671sq04j9i42i5m85z4hc6yix-generics-sop-lib-generics-sop-0.5.1.2-haddock-doc/share/doc/generics-sop/html/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></a></span></span></span><span>
 </span><span id="line-60"></span><span>    </span><span class="hs-special">)</span><span>
 </span><span id="line-61"></span><span>
-</span><span id="line-62"></span><span id="local-6989586621679541851"><span id="local-6989586621679541881"><span class="hs-identifier">PlutusTx.makeLift</span><span> </span><span class="hs-special">''</span><span class="hs-identifier">MultiSig</span></span></span><span>
-</span><span id="line-63"></span><span id="local-6989586621679541617"><span id="local-6989586621679541619"><span id="local-6989586621679541626"><span class="hs-identifier">PlutusTx.unstableMakeIsData</span><span> </span><span class="hs-special">''</span><span class="hs-identifier">MultiSig</span></span></span></span><span>
+</span><span id="line-62"></span><span id="local-6989586621679543024"><span id="local-6989586621679543054"><span class="hs-identifier">PlutusTx.makeLift</span><span> </span><span class="hs-special">''</span><span class="hs-identifier">MultiSig</span></span></span><span>
+</span><span id="line-63"></span><span id="local-6989586621679542790"><span id="local-6989586621679542792"><span id="local-6989586621679542799"><span class="hs-identifier">PlutusTx.unstableMakeIsData</span><span> </span><span class="hs-special">''</span><span class="hs-identifier">MultiSig</span></span></span></span><span>
 </span><span id="line-64"></span><span>
 </span><span id="line-65"></span><span class="hs-comment">{- | Plutarch-level MultiSig
 
      @since 0.1.0
 -}</span><span>
-</span><span id="line-69"></span><span id="local-6989586621679541548"><span id="local-6989586621679541549"></span></span><span class="hs-keyword">newtype</span><span> </span><span id="PMultiSig"><span class="annot"><a href="Agora.MultiSig.html#PMultiSig"><span class="hs-identifier hs-var">PMultiSig</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679542322"><span class="annot"><a href="#local-6989586621679542322"><span class="hs-identifier hs-type">s</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">S</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span id="PMultiSig"><span class="annot"><a href="Agora.MultiSig.html#PMultiSig"><span class="hs-identifier hs-var">PMultiSig</span></a></span></span><span>
+</span><span id="line-69"></span><span id="local-6989586621679542721"><span id="local-6989586621679542722"></span></span><span class="hs-keyword">newtype</span><span> </span><span id="PMultiSig"><span class="annot"><a href="Agora.MultiSig.html#PMultiSig"><span class="hs-identifier hs-var">PMultiSig</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679543495"><span class="annot"><a href="#local-6989586621679543495"><span class="hs-identifier hs-type">s</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">S</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span id="PMultiSig"><span class="annot"><a href="Agora.MultiSig.html#PMultiSig"><span class="hs-identifier hs-var">PMultiSig</span></a></span></span><span>
 </span><span id="line-70"></span><span>  </span><span class="hs-special">{</span><span> </span><span id="getMultiSig"><span class="annot"><span class="annottext">forall (s :: S).
 PMultiSig s
 -&gt; Term
@@ -124,7 +124,7 @@ PMultiSig s
               @PLabeledType (&quot;minSigs&quot; ':= PInteger @S) ('[] @PLabeledType))))
 </span><a href="Agora.MultiSig.html#getMultiSig"><span class="hs-identifier hs-var hs-var">getMultiSig</span></a></span></span><span> </span><span class="hs-glyph">::</span><span>
 </span><span id="line-71"></span><span>      </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span>
-</span><span id="line-72"></span><span>        </span><span class="annot"><a href="#local-6989586621679542322"><span class="hs-identifier hs-type">s</span></a></span><span>
+</span><span id="line-72"></span><span>        </span><span class="annot"><a href="#local-6989586621679543495"><span class="hs-identifier hs-type">s</span></a></span><span>
 </span><span id="line-73"></span><span>        </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PDataRecord</span></a></span><span>
 </span><span id="line-74"></span><span>            </span><span class="hs-special">'</span><span class="hs-special">[</span><span> </span><span class="annot"><span class="hs-string">&quot;keys&quot;</span></span><span> </span><span class="hs-special">'</span><span class="hs-operator">:=</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PBuiltinList</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PAsData</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PPubKeyHash</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-75"></span><span>             </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-string">&quot;minSigs&quot;</span></span><span> </span><span class="hs-special">'</span><span class="hs-operator">:=</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PInteger</span></a></span><span>
@@ -148,7 +148,7 @@ $cfrom :: forall (s :: S) x. PMultiSig s -&gt; Rep (PMultiSig s) x
 </span><span id="line-82"></span><span>    </span><span class="hs-special">)</span><span>
 </span><span id="line-83"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">anyclass</span></span><span>
 </span><span id="line-84"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="hs-comment">-- | @since 0.1.0</span><span>
-</span><span id="line-85"></span><span>      </span><span id="local-6989586621679541537"><span id="local-6989586621679541539"><span class="annot"><span class="annottext">All @[Type] (SListI @Type) (Code (PMultiSig s))
+</span><span id="line-85"></span><span>      </span><span id="local-6989586621679542710"><span id="local-6989586621679542712"><span class="annot"><span class="annottext">All @[Type] (SListI @Type) (Code (PMultiSig s))
 All @[Type] (SListI @Type) (Code (PMultiSig s))
 -&gt; (PMultiSig s -&gt; Rep (PMultiSig s))
 -&gt; (Rep (PMultiSig s) -&gt; PMultiSig s)
@@ -165,11 +165,11 @@ to :: Rep (PMultiSig s) -&gt; PMultiSig s
 $cto :: forall (s :: S). Rep (PMultiSig s) -&gt; PMultiSig s
 from :: PMultiSig s -&gt; Rep (PMultiSig s)
 $cfrom :: forall (s :: S). PMultiSig s -&gt; Rep (PMultiSig s)
-</span><a href="#local-6989586621679541537"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></a></span></span></span><span>
+</span><a href="#local-6989586621679542710"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></a></span></span></span><span>
 </span><span id="line-86"></span><span>    </span><span class="hs-special">)</span><span>
 </span><span id="line-87"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">anyclass</span></span><span>
 </span><span id="line-88"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="hs-comment">-- | @since 0.1.0</span><span>
-</span><span id="line-89"></span><span>      </span><span id="local-6989586621679541523"><span id="local-6989586621679541525"><span class="annot"><span class="annottext">PIsData PMultiSig
+</span><span id="line-89"></span><span>      </span><span id="local-6989586621679542696"><span id="local-6989586621679542698"><span class="annot"><span class="annottext">PIsData PMultiSig
 PlutusType PMultiSig
 PlutusType PMultiSig
 -&gt; PIsData PMultiSig
@@ -206,7 +206,7 @@ PMultiSig s -&gt; Term s (PDataSum (PIsDataReprRepr PMultiSig))
 </span><span id="line-90"></span><span>    </span><span class="hs-special">)</span><span>
 </span><span id="line-91"></span><span>  </span><span class="hs-keyword">deriving</span><span>
 </span><span id="line-92"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="hs-comment">-- | @since 0.1.0</span><span>
-</span><span id="line-93"></span><span>      </span><span id="local-6989586621679541505"><span id="local-6989586621679541512"><span class="annot"><span class="annottext">PCon PMultiSig
+</span><span id="line-93"></span><span>      </span><span id="local-6989586621679542678"><span id="local-6989586621679542685"><span class="annot"><span class="annottext">PCon PMultiSig
 PMatch PMultiSig
 PCon PMultiSig
 -&gt; PMatch PMultiSig
@@ -240,7 +240,7 @@ $cpcon' :: forall (s :: S) (b :: PType).
 PMultiSig s -&gt; Term s (PInner PMultiSig b)
 </span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">PlutusType</span></a></span></span></span><span>
 </span><span id="line-94"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="hs-comment">-- | @since 0.1.0</span><span>
-</span><span id="line-95"></span><span>      </span><span id="local-6989586621679541492"><span id="local-6989586621679541498"><span class="annot"><span class="annottext">(forall (s :: S). Term s (PAsData PMultiSig) -&gt; Term s PMultiSig)
+</span><span id="line-95"></span><span>      </span><span id="local-6989586621679542665"><span id="local-6989586621679542671"><span class="annot"><span class="annottext">(forall (s :: S). Term s (PAsData PMultiSig) -&gt; Term s PMultiSig)
 -&gt; (forall (s :: S). Term s PMultiSig -&gt; Term s PData)
 -&gt; PIsData PMultiSig
 forall (s :: S). Term s (PAsData PMultiSig) -&gt; Term s PMultiSig
@@ -254,7 +254,7 @@ pfromDataImpl :: forall (s :: S). Term s (PAsData PMultiSig) -&gt; Term s PMulti
 $cpfromDataImpl :: forall (s :: S). Term s (PAsData PMultiSig) -&gt; Term s PMultiSig
 </span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">PIsData</span></a></span></span></span><span>
 </span><span id="line-96"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="hs-comment">-- | @since 0.1.0</span><span>
-</span><span id="line-97"></span><span>      </span><span id="local-6989586621679541486"><span class="annot"><span class="annottext">(forall (s :: S).
+</span><span id="line-97"></span><span>      </span><span id="local-6989586621679542659"><span class="annot"><span class="annottext">(forall (s :: S).
  Term s PMultiSig -&gt; Term s (PDataRecord (PFields PMultiSig)))
 -&gt; PDataFields PMultiSig
 forall (s :: S).
@@ -274,7 +274,7 @@ Term s PMultiSig -&gt; Term s (PDataRecord (PFields PMultiSig))
 </span><span id="line-102"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PUnsafeLiftDecl</span></a></span><span> </span><span class="annot"><a href="Agora.MultiSig.html#PMultiSig"><span class="hs-identifier hs-type">PMultiSig</span></a></span><span> </span><span class="hs-keyword">where</span><span> </span><span class="hs-keyword">type</span><span> </span><span id="PLifted"><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">PLifted</span></a></span></span><span> </span><span class="annot"><a href="Agora.MultiSig.html#PMultiSig"><span class="hs-identifier hs-type">PMultiSig</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Agora.MultiSig.html#MultiSig"><span class="hs-identifier hs-type">MultiSig</span></a></span><span>
 </span><span id="line-103"></span><span>
 </span><span id="line-104"></span><span class="hs-comment">-- | @since 0.1.0</span><span>
-</span><span id="line-105"></span><span id="local-6989586621679541448"><span id="local-6989586621679541458"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">via</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">DerivePConstantViaData</span></a></span><span> </span><span class="annot"><a href="Agora.MultiSig.html#MultiSig"><span class="hs-identifier hs-type">MultiSig</span></a></span><span> </span><span class="annot"><a href="Agora.MultiSig.html#PMultiSig"><span class="hs-identifier hs-type">PMultiSig</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PConstantDecl</span></a></span><span> </span><span class="annot"><a href="Agora.MultiSig.html#MultiSig"><span class="hs-identifier hs-type">MultiSig</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-105"></span><span id="local-6989586621679542621"><span id="local-6989586621679542631"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">via</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">DerivePConstantViaData</span></a></span><span> </span><span class="annot"><a href="Agora.MultiSig.html#MultiSig"><span class="hs-identifier hs-type">MultiSig</span></a></span><span> </span><span class="annot"><a href="Agora.MultiSig.html#PMultiSig"><span class="hs-identifier hs-type">PMultiSig</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PConstantDecl</span></a></span><span> </span><span class="annot"><a href="Agora.MultiSig.html#MultiSig"><span class="hs-identifier hs-type">MultiSig</span></a></span><span class="hs-special">)</span></span></span><span>
 </span><span id="line-106"></span><span>
 </span><span id="line-107"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
 </span><span id="line-108"></span><span>
@@ -282,10 +282,10 @@ Term s PMultiSig -&gt; Term s (PDataRecord (PFields PMultiSig))
 
      @since 0.1.0
 -}</span><span>
-</span><span id="line-113"></span><span id="local-6989586621679542270"><span class="annot"><a href="Agora.MultiSig.html#validatedByMultisig"><span class="hs-identifier hs-type">validatedByMultisig</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Agora.MultiSig.html#MultiSig"><span class="hs-identifier hs-type">MultiSig</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679542270"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PTxInfo</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-type">:--&gt;</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PBool</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-113"></span><span id="local-6989586621679543443"><span class="annot"><a href="Agora.MultiSig.html#validatedByMultisig"><span class="hs-identifier hs-type">validatedByMultisig</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Agora.MultiSig.html#MultiSig"><span class="hs-identifier hs-type">MultiSig</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679543443"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PTxInfo</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-type">:--&gt;</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PBool</span></a></span><span class="hs-special">)</span></span><span>
 </span><span id="line-114"></span><span id="validatedByMultisig"><span class="annot"><span class="annottext">validatedByMultisig :: forall (s :: S). MultiSig -&gt; Term s (PTxInfo :--&gt; PBool)
-</span><a href="Agora.MultiSig.html#validatedByMultisig"><span class="hs-identifier hs-var hs-var">validatedByMultisig</span></a></span></span><span> </span><span id="local-6989586621679541435"><span class="annot"><span class="annottext">MultiSig
-</span><a href="#local-6989586621679541435"><span class="hs-identifier hs-var">params</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="Agora.MultiSig.html#validatedByMultisig"><span class="hs-identifier hs-var hs-var">validatedByMultisig</span></a></span></span><span> </span><span id="local-6989586621679542608"><span class="annot"><span class="annottext">MultiSig
+</span><a href="#local-6989586621679542608"><span class="hs-identifier hs-var">params</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-115"></span><span>  </span><span class="annot"><span class="annottext">ClosedTerm (PTxInfo :--&gt; PBool) -&gt; Term s (PTxInfo :--&gt; PBool)
 forall (a :: PType) (s :: S).
 HasCallStack =&gt;
@@ -304,13 +304,13 @@ Term s (a :--&gt; b) -&gt; Term s a -&gt; Term s b
 forall (p :: PType) (s :: S). PLift p =&gt; PLifted p -&gt; Term s p
 </span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pconstant</span></a></span><span> </span><span class="annot"><span class="annottext">PLifted PMultiSig
 MultiSig
-</span><a href="#local-6989586621679541435"><span class="hs-identifier hs-var">params</span></a></span><span>
+</span><a href="#local-6989586621679542608"><span class="hs-identifier hs-var">params</span></a></span><span>
 </span><span id="line-117"></span><span>
 </span><span id="line-118"></span><span class="hs-comment">{- | Check if a Plutarch-level MultiSig signs this transaction.
 
      @since 0.1.0
 -}</span><span>
-</span><span id="line-122"></span><span id="local-6989586621679542260"><span class="annot"><a href="Agora.MultiSig.html#pvalidatedByMultisig"><span class="hs-identifier hs-type">pvalidatedByMultisig</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679542260"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Agora.MultiSig.html#PMultiSig"><span class="hs-identifier hs-type">PMultiSig</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-type">:--&gt;</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PTxInfo</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-type">:--&gt;</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PBool</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-122"></span><span id="local-6989586621679543433"><span class="annot"><a href="Agora.MultiSig.html#pvalidatedByMultisig"><span class="hs-identifier hs-type">pvalidatedByMultisig</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">Term</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679543433"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Agora.MultiSig.html#PMultiSig"><span class="hs-identifier hs-type">PMultiSig</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-type">:--&gt;</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PTxInfo</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-type">:--&gt;</span></a></span><span> </span><span class="annot"><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-type">PBool</span></a></span><span class="hs-special">)</span></span><span>
 </span><span id="line-123"></span><span id="pvalidatedByMultisig"><span class="annot"><span class="annottext">pvalidatedByMultisig :: forall (s :: S). Term s (PMultiSig :--&gt; (PTxInfo :--&gt; PBool))
 </span><a href="Agora.MultiSig.html#pvalidatedByMultisig"><span class="hs-identifier hs-var hs-var">pvalidatedByMultisig</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-124"></span><span>  </span><span class="annot"><span class="annottext">(forall (s :: S). Term s (PMultiSig :--&gt; (PTxInfo :--&gt; PBool)))
@@ -334,15 +334,15 @@ PLamN a b s =&gt;
 -&gt; (Term s PMultiSig -&gt; Term s PTxInfo -&gt; Term s PBool)
 -&gt; Term s (PMultiSig :--&gt; (PTxInfo :--&gt; PBool))
 forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679541357"><span class="annot"><span class="annottext">Term s PMultiSig
-</span><a href="#local-6989586621679541357"><span class="hs-identifier hs-var">multi'</span></a></span></span><span> </span><span id="local-6989586621679541356"><span class="annot"><span class="annottext">Term s PTxInfo
-</span><a href="#local-6989586621679541356"><span class="hs-identifier hs-var">txInfo</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">TermCont @PBool s (Term s PBool) -&gt; Term s PBool
+</span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679542530"><span class="annot"><span class="annottext">Term s PMultiSig
+</span><a href="#local-6989586621679542530"><span class="hs-identifier hs-var">multi'</span></a></span></span><span> </span><span id="local-6989586621679542529"><span class="annot"><span class="annottext">Term s PTxInfo
+</span><a href="#local-6989586621679542529"><span class="hs-identifier hs-var">txInfo</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">TermCont @PBool s (Term s PBool) -&gt; Term s PBool
 forall (a :: PType) (s :: S). TermCont @a s (Term s a) -&gt; Term s a
 </span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">unTermCont</span></a></span><span> </span><span class="annot"><span class="annottext">(TermCont @PBool s (Term s PBool) -&gt; Term s PBool)
 -&gt; TermCont @PBool s (Term s PBool) -&gt; Term s PBool
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-126"></span><span>      </span><span id="local-6989586621679541354"><span class="annot"><span class="annottext">HRec
+</span><span id="line-126"></span><span>      </span><span id="local-6989586621679542527"><span class="annot"><span class="annottext">HRec
   ((':)
      @(Symbol, Type)
      '(&quot;keys&quot;, Term s (PAsData (PBuiltinList (PAsData PPubKeyHash))))
@@ -350,7 +350,7 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
         @(Symbol, Type)
         '(&quot;minSigs&quot;, Term s (PAsData (PInteger @S)))
         ('[] @(Symbol, Type))))
-</span><a href="#local-6989586621679541354"><span class="hs-identifier hs-var">multi</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">((HRec
+</span><a href="#local-6989586621679542527"><span class="hs-identifier hs-var">multi</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">((HRec
     ((':)
        @(Symbol, Type)
        '(&quot;keys&quot;, Term s (PAsData (PBuiltinList (PAsData PPubKeyHash))))
@@ -424,9 +424,9 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
  BindFields ps bs) =&gt;
 Term s a -&gt; (HRecOf a fs s -&gt; Term s b) -&gt; Term s b
 </span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-identifier hs-var">pletFields</span></a></span><span> </span><span class="hs-glyph">@</span><span class="hs-special">'</span><span class="hs-special">[</span><span class="annot"><span class="hs-string">&quot;keys&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-string">&quot;minSigs&quot;</span></span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">Term s PMultiSig
-</span><a href="#local-6989586621679541357"><span class="hs-identifier hs-var">multi'</span></a></span><span>
-</span><span id="line-127"></span><span>      </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679541351"><span class="annot"><span class="annottext">signatories :: Term s (PAsData (PBuiltinList (PAsData PPubKeyHash)))
-</span><a href="#local-6989586621679541351"><span class="hs-identifier hs-var hs-var">signatories</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">forall (name :: Symbol) (p :: PType) (s :: S) (a :: PType)
+</span><a href="#local-6989586621679542530"><span class="hs-identifier hs-var">multi'</span></a></span><span>
+</span><span id="line-127"></span><span>      </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679542524"><span class="annot"><span class="annottext">signatories :: Term s (PAsData (PBuiltinList (PAsData PPubKeyHash)))
+</span><a href="#local-6989586621679542524"><span class="hs-identifier hs-var hs-var">signatories</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">forall (name :: Symbol) (p :: PType) (s :: S) (a :: PType)
        (as :: [PLabeledType]) (n :: Nat) (b :: PType).
 (PDataFields p,
  (as :: [PLabeledType]) ~ (PFields p :: [PLabeledType]),
@@ -440,7 +440,7 @@ Term s (p :--&gt; b)
 forall (s :: S) (a :: PType) (b :: PType).
 Term s (a :--&gt; b) -&gt; Term s a -&gt; Term s b
 </span><a href="../file:///nix/store/bhji90x2v2q0fi8ya6w3sbvwcyh0r0lb-plutarch-lib-plutarch-1.1.0-haddock-doc/share/doc/plutarch/html/src"><span class="hs-operator hs-var">#</span></a></span><span> </span><span class="annot"><span class="annottext">Term s PTxInfo
-</span><a href="#local-6989586621679541356"><span class="hs-identifier hs-var">txInfo</span></a></span><span>
+</span><a href="#local-6989586621679542529"><span class="hs-identifier hs-var">txInfo</span></a></span><span>
 </span><span id="line-128"></span><span>      </span><span class="annot"><span class="annottext">Term s PBool -&gt; TermCont @PBool s (Term s PBool)
 forall (f :: Type -&gt; Type) a. Applicative f =&gt; a -&gt; f a
 </span><a href="../file:///nix/store/r4n325d4bya4i1cviz6zrwmhm4j55yz4-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src"><span class="hs-identifier hs-var">pure</span></a></span><span> </span><span class="annot"><span class="annottext">(Term s PBool -&gt; TermCont @PBool s (Term s PBool))
@@ -459,7 +459,7 @@ Term s (PAsData a) -&gt; Term s a
         @(Symbol, Type)
         '(&quot;minSigs&quot;, Term s (PAsData (PInteger @S)))
         ('[] @(Symbol, Type))))
-</span><a href="#local-6989586621679541354"><span class="hs-identifier hs-var">multi</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">minSigs</span><span class="hs-cpp">
+</span><a href="#local-6989586621679542527"><span class="hs-identifier hs-var">multi</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">minSigs</span><span class="hs-cpp">
           #&lt;= ( plength #$ pfilter
 </span><span class="hs-cpp">                  # plam
 </span><span>                    </span><span class="hs-special">(</span><span> </span><span class="hs-glyph">\</span><span class="hs-identifier">a</span><span> </span><span class="hs-glyph">-&gt;</span><span>
