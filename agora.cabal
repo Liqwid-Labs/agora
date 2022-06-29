@@ -12,11 +12,11 @@ license:            Apache-2.0
 
 common lang
   ghc-options:
-    -Wall -Wcompat -Wincomplete-uni-patterns -Wno-unused-do-bind
-    -Wno-partial-type-signatures -Wmissing-export-lists
-    -Wincomplete-record-updates -Wmissing-deriving-strategies
-    -Wno-name-shadowing -Wunused-foralls -fprint-explicit-foralls
-    -fprint-explicit-kinds -Werror
+    -Werror -Wall -Wcompat -Wincomplete-uni-patterns
+    -Wno-unused-do-bind -Wno-partial-type-signatures
+    -Wmissing-export-lists -Wincomplete-record-updates
+    -Wmissing-deriving-strategies -Wno-name-shadowing -Wunused-foralls
+    -fprint-explicit-foralls -fprint-explicit-kinds
 
   mixins:
     base hiding (Prelude),
@@ -39,6 +39,7 @@ common lang
     DerivingStrategies
     DerivingVia
     DoAndIfThenElse
+    DuplicateRecordFields
     EmptyCase
     EmptyDataDecls
     EmptyDataDeriving
@@ -90,7 +91,9 @@ common deps
     , ansi-terminal
     , base                   >=4.14 && <5
     , base-compat
+    , base16
     , bytestring
+    , cardano-binary
     , cardano-prelude
     , containers
     , data-default
@@ -137,6 +140,7 @@ common exe-opts
 library
   import:          lang, deps
   exposed-modules:
+    Agora.Aeson.Orphans
     Agora.AuthorityToken
     Agora.Effect
     Agora.Effect.GovernorMutation
@@ -145,6 +149,7 @@ library
     Agora.Governor
     Agora.Governor.Scripts
     Agora.MultiSig
+    Agora.Plutarch.Orphans
     Agora.Proposal
     Agora.Proposal.Scripts
     Agora.Proposal.Time
@@ -156,9 +161,6 @@ library
     Agora.Utils
 
   other-modules:
-    Agora.Aeson.Orphans
-    Agora.Plutarch.Orphans
-
   hs-source-dirs:  agora
 
 library pprelude
@@ -232,13 +234,30 @@ benchmark agora-bench
 
 executable agora-scripts
   import:         lang, deps, exe-opts
-  main-is:        Scripts.hs
+  main-is:        Main.hs
   hs-source-dirs: agora-scripts
-  other-modules:  Options
+  other-modules:
+    Codec.Serialise.Orphans
+    Data.Cache.Cached
+    ScriptExport.API
+    ScriptExport.Options
+    ScriptExport.Types
+
   build-depends:
     , agora
+    , cache
+    , clock
+    , containers
     , gitrev
+    , hashable
+    , http-types
     , optparse-applicative
+    , prettyprinter
+    , servant
+    , servant-server
+    , wai
+    , wai-cors
+    , warp
 
 executable agora-purescript-bridge
   import:         lang, deps, exe-opts
