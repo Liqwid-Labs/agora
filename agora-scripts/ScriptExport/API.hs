@@ -35,12 +35,12 @@ import Text.Printf (printf)
      @since 0.2.0
 -}
 type API =
-  -- /query-script/:name
+  -- POST /query-script/:name
   "query-script"
     :> Capture "name" Text
     :> ReqBody '[JSON] Aeson.Value
     :> Post '[JSON] Aeson.Value
-    -- /info
+    -- GET /info
     :<|> "info"
       :> Get '[JSON] ServerInfo
 
@@ -106,5 +106,5 @@ runServer revision builders options = do
   printf "[info] Running 'agora-scripts' on :%d\n" (Warp.getPort settings)
 
   Servant.serve (Proxy @API) handler
-    & corsMiddleware
+    & (if options.enableCorsMiddleware then corsMiddleware else id)
     & Warp.runSettings settings
