@@ -226,15 +226,8 @@ data ProposalThresholds = ProposalThresholds
       GHC.Generic
     )
   deriving anyclass (Generic)
-  deriving
-    ( -- | @since 0.1.0
-      PlutusTx.ToData
-    , -- | @since 0.1.0
-      PlutusTx.FromData
-    , -- | @since 0.1.0
-      PlutusTx.UnsafeFromData
-    )
-    via (ProductIsData ProposalThresholds)
+
+PlutusTx.makeIsDataIndexed 'ProposalThresholds [('ProposalThresholds, 0)]
 
 {- | Map which encodes the total tally for each result.
      It's important that the "shape" is consistent with the shape of 'effects'.
@@ -528,11 +521,11 @@ newtype PProposalThresholds (s :: S) = PProposalThresholds
     , -- | @since 0.1.0
       PDataFields
     )
-    via (DerivePNewtype' PProposalThresholds)
+    via (PIsDataReprInstances PProposalThresholds)
 
 -- | @since 0.1.0
 deriving via
-  PAsData (DerivePNewtype' PProposalThresholds)
+  PAsData (PIsDataReprInstances PProposalThresholds)
   instance
     PTryFrom PData (PAsData PProposalThresholds)
 
@@ -541,7 +534,7 @@ instance PUnsafeLiftDecl PProposalThresholds where type PLifted PProposalThresho
 
 -- | @since 0.1.0
 deriving via
-  (DerivePConstantViaDataList ProposalThresholds PProposalThresholds)
+  (DerivePConstantViaData ProposalThresholds PProposalThresholds)
   instance
     (PConstantDecl ProposalThresholds)
 

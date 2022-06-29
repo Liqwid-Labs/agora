@@ -20,7 +20,7 @@ usage:
 	@echo "  ps_bridge -- Generate purescript bridge files"
 	@echo "  bench -- Generate bench report bench.csv"
 	@echo "  bench_check -- Check if bench report is up-to-date"
-	@echo "  scripts -- Export scripts to json files"
+	@echo "  scripts -- Run the agora script server (dev mode)"
 
 hoogle:
 	pkill hoogle || true
@@ -71,4 +71,4 @@ bench_check:
 	rm -rf $(BENCH_TMPDIR)
 
 scripts:
-	cabal run agora-scripts
+	cabal run agora-scripts -- -c
