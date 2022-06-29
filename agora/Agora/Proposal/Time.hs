@@ -40,13 +40,10 @@ import Plutarch.Api.V1 (
   PUpperBound (PUpperBound),
  )
 import Plutarch.DataRepr (
+  DerivePConstantViaData (..),
   PDataFields,
+  PIsDataReprInstances (..),
  )
-import Plutarch.Extra.IsData (
-  DerivePConstantViaDataList (..),
-  ProductIsData (ProductIsData),
- )
-import Plutarch.Extra.Other (DerivePNewtype' (..))
 import Plutarch.Extra.TermCont (pguardC, pletFieldsC, pmatchC)
 import Plutarch.Lift (
   DerivePConstantViaNewtype (..),
@@ -95,15 +92,8 @@ data ProposalTimingConfig = ProposalTimingConfig
       GHC.Generic
     )
   deriving anyclass (Generic)
-  deriving
-    ( -- | @since 0.1.0
-      PlutusTx.ToData
-    , -- | @since 0.1.0
-      PlutusTx.FromData
-    , -- | @since 0.1.0
-      PlutusTx.UnsafeFromData
-    )
-    via (ProductIsData ProposalTimingConfig)
+
+PlutusTx.makeIsDataIndexed 'ProposalTimingConfig [('ProposalTimingConfig, 0)]
 
 -- | Represents the maximum width of a 'PlutusLedgerApi.V1.Time.POSIXTimeRange'.
 newtype MaxTimeRangeWidth = MaxTimeRangeWidth {getMaxWidth :: POSIXTime}
@@ -239,10 +229,10 @@ newtype PProposalTimingConfig (s :: S) = PProposalTimingConfig
     , -- | @since 0.1.0
       PDataFields
     )
-    via (DerivePNewtype' PProposalTimingConfig)
+    via (PIsDataReprInstances PProposalTimingConfig)
 
 -- | @since 0.1.0
-deriving via PAsData (DerivePNewtype' PProposalTimingConfig) instance PTryFrom PData (PAsData PProposalTimingConfig)
+deriving via PAsData (PIsDataReprInstances PProposalTimingConfig) instance PTryFrom PData (PAsData PProposalTimingConfig)
 
 -- | @since 0.1.0
 instance PUnsafeLiftDecl PProposalTimingConfig where
@@ -250,7 +240,7 @@ instance PUnsafeLiftDecl PProposalTimingConfig where
 
 -- | @since 0.1.0
 deriving via
-  (DerivePConstantViaDataList ProposalTimingConfig PProposalTimingConfig)
+  (DerivePConstantViaData ProposalTimingConfig PProposalTimingConfig)
   instance
     (PConstantDecl ProposalTimingConfig)
 
