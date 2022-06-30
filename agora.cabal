@@ -89,7 +89,7 @@ common deps
   build-depends:
     , aeson
     , ansi-terminal
-    , base                   >=4.14 && <5
+    , base                    >=4.14 && <5
     , base-compat
     , base16
     , bytestring
@@ -103,6 +103,7 @@ common deps
     , plutarch
     , plutarch-numeric
     , plutarch-safe-money
+    , plutarch-script-export
     , plutus-core
     , plutus-ledger-api
     , plutus-tx
@@ -154,7 +155,6 @@ library
     Agora.Proposal.Scripts
     Agora.Proposal.Time
     Agora.SafeMoney
-    Agora.ScriptInfo
     Agora.Stake
     Agora.Stake.Scripts
     Agora.Treasury
@@ -237,27 +237,9 @@ executable agora-scripts
   main-is:        Main.hs
   hs-source-dirs: agora-scripts
   other-modules:
-    Codec.Serialise.Orphans
-    Data.Cache.Cached
-    ScriptExport.API
-    ScriptExport.Options
-    ScriptExport.Types
-
   build-depends:
     , agora
-    , cache
-    , clock
-    , containers
     , gitrev
-    , hashable
-    , http-types
-    , optparse-applicative
-    , prettyprinter
-    , servant
-    , servant-server
-    , wai
-    , wai-cors
-    , warp
 
 executable agora-purescript-bridge
   import:         lang, deps, exe-opts

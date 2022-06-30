@@ -23,6 +23,9 @@
   inputs.plutarch-safe-money.url =
     "github:Liqwid-Labs/plutarch-safe-money?rev=9f968b80189c7e4b335527cd5b103dc26952f667";
 
+  inputs.plutarch-script-export.url =
+    "github:Liqwid-Labs/plutarch-script-export?ref=main";
+
   # Testing
   inputs.plutarch-quickcheck.url =
     "github:liqwid-labs/plutarch-quickcheck?ref=staging";
@@ -136,6 +139,7 @@
           "${inputs.plutarch-safe-money}"
           "${inputs.plutarch-quickcheck}"
           "${inputs.plutarch-context-builder}"
+          "${inputs.plutarch-script-export}"
         ]
       );
 
@@ -148,7 +152,7 @@
           modules = haskellModules ++ [ h.module ] ++ (o'.modules or [ ]);
           extra-hackages = [ (import h.hackageNix) ] ++ (o'.extra-hackages or [ ]);
           extra-hackage-tarballs = { _xNJUd_plutarch-hackage = h.hackageTarball; };
-          cabalProjectLocal = (o'.cabalProjectLocal or "") + "  , cache >= 0.1.3.0";
+          cabalProjectLocal = (o'.cabalProjectLocal or "") + "  , cache >= 0.1.3.0 ";
         };
 
       projectForGhc = compiler-nix-name: system:
