@@ -15,7 +15,6 @@ import Agora.Governor.Scripts (authorityTokenFromGovernor, authorityTokenSymbolF
 import Agora.Proposal (Proposal)
 import Agora.Proposal.Scripts (proposalPolicy, proposalValidator)
 import Agora.SafeMoney (GTTag)
-import Agora.ScriptInfo (ScriptInfo, mkPolicyInfo, mkValidatorInfo)
 import Agora.Stake (Stake)
 import Agora.Stake.Scripts (stakePolicy, stakeValidator)
 import Agora.Treasury (treasuryValidator)
@@ -32,6 +31,7 @@ import PlutusLedgerApi.V1.Value (AssetClass, CurrencySymbol)
 import PlutusLedgerApi.V1.Value qualified as Value
 import ScriptExport.API (runServer)
 import ScriptExport.Options (parseOptions)
+import ScriptExport.ScriptInfo (ScriptInfo, mkPolicyInfo, mkValidatorInfo)
 import ScriptExport.Types (Builders, insertBuilder)
 
 main :: IO ()
