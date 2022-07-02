@@ -19,6 +19,9 @@ module Agora.Utils (
   validatorHashToAddress,
   isScriptAddress,
   isPubKey,
+  pltAsData,
+  pisUniqBy',
+  pisUniq',
 ) where
 
 import Plutarch.Api.V1 (
@@ -193,3 +196,48 @@ mustBePDJust = phoistAcyclic $
 -}
 validatorHashToAddress :: ValidatorHash -> Address
 validatorHashToAddress vh = Address (ScriptCredential vh) Nothing
+
+{- | Compare two 'PAsData' value, return true if the first one is less than the second one.
+
+ @since 0.2.0
+-}
+pltAsData ::
+  forall (a :: PType) (s :: S).
+  (POrd a, PIsData a) =>
+  Term s (PAsData a :--> PAsData a :--> PBool)
+pltAsData = phoistAcyclic $
+  plam $
+    \(pfromData -> l) (pfromData -> r) -> l #< r
+
+{- | Special version of 'pisUniq'', the list elements should have 'PEq' instance.
+
+ @since 0.2.0
+-}
+pisUniq' ::
+  forall (l :: PType -> PType) (a :: PType) (s :: S).
+  (PEq a, PIsListLike l a) =>
+  Term s (l a :--> PBool)
+pisUniq' = phoistAcyclic $ pisUniqBy' # phoistAcyclic (plam (#==))
+
+{- | Return true if all the elements in the given list are unique, given the equalator function.
+   The list is assumed to be ordered.
+
+ @since 0.2.0
+-}
+pisUniqBy' ::
+  forall (l :: PType -> PType) (a :: PType) (s :: S).
+  (PIsListLike l a) =>
+  Term s ((a :--> a :--> PBool) :--> l a :--> PBool)
+pisUniqBy' = phoistAcyclic $
+  plam $ \eq l ->
+    pif (pnull # l) (pconstant True) $
+      go # eq # (phead # l) # (ptail # l)
+  where
+    go :: Term _ ((a :--> a :--> PBool) :--> a :--> l a :--> PBool)
+    go = phoistAcyclic $
+      pfix #$ plam $ \self' eq x xs ->
+        plet (self' # eq) $ \self ->
+          pif (pnull # xs) (pconstant True) $
+            plet (phead # xs) $ \x' ->
+              pif (eq # x # x') (pconstant False) $
+                self # x' #$ ptail # xs
