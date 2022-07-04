@@ -313,13 +313,13 @@ stakeValidator stake =
                 --
                 -- Validation strategy I have tried/considered so far:
                 -- 1. Check that the number of input stakes equals to the number of output stakes, and verify
-                --     that every input stake has an output stake with the exact same value and datum hash.
-                --     However this approach has a fatal vulnerability: let's say we have two totally identical stakes,
-                --     a malicious user can comsume these two stakes and remove GTs from one of them.
+                --     that there's an output stake with the exact same value and datum hash as the stake being
+                --     validated , However this approach has a fatal vulnerability: let's say we have two totally
+                --     identical stakes, a malicious user can comsume these two stakes and remove GTs from one of them.
                 -- 2. Perform the same checks as the last approch does, while also checking that every output stake is
                 --     valid(stakedAmount == actual value). However this requires that all the output stake datum are
                 --     included in the transaction, and we have to find and go through them one by one to access the
-                --     'stakedAmount' fields, meaning that computationally this approach is *very* expensive.
+                --      'stakedAmount' fields, meaning that computationally this approach is *very* expensive.
                 -- 3. The one implemented below. Find all the continuous input/output, sort them by 'datumHash', and
                 --     ensure that the two sorted lists are equal.
                 let ownInputs =

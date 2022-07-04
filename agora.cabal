@@ -189,8 +189,11 @@ library agora-specs
     Sample.Effect.TreasuryWithdrawal
     Sample.Governor
     Sample.Proposal
+    Sample.Proposal.Advance
+    Sample.Proposal.Cosign
     Sample.Proposal.Shared
     Sample.Proposal.UnlockStake
+    Sample.Proposal.Vote
     Sample.Shared
     Sample.Stake
     Sample.Treasury

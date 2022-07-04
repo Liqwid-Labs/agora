@@ -11,6 +11,33 @@ module Sample.Proposal.UnlockStake (
 
 --------------------------------------------------------------------------------
 
+import Agora.Proposal (
+  ProposalDatum (..),
+  ProposalId (..),
+  ProposalRedeemer (Unlock),
+  ProposalStatus (..),
+  ProposalVotes (..),
+  ResultTag (..),
+ )
+import Agora.Proposal.Scripts (proposalValidator)
+import Agora.Proposal.Time (ProposalStartingTime (ProposalStartingTime))
+import Agora.Stake (ProposalLock (ProposalLock), Stake (..), StakeDatum (..))
+import Control.Monad (join)
+import Data.Coerce (coerce)
+import Data.Default.Class (Default (def))
+import Data.Tagged (Tagged (..), untag)
+import Plutarch.Context (
+  BaseBuilder,
+  buildTxInfoUnsafe,
+  input,
+  output,
+  script,
+  txId,
+  withDatum,
+  withRefIndex,
+  withTxId,
+  withValue,
+ )
 import PlutusLedgerApi.V1 (
   DatumHash,
   ScriptContext (..),
@@ -21,19 +48,7 @@ import PlutusLedgerApi.V1 (
  )
 import PlutusLedgerApi.V1.Value qualified as Value
 import PlutusTx.AssocMap qualified as AssocMap
-
---------------------------------------------------------------------------------
-
-import Agora.Proposal (
-  ProposalDatum (..),
-  ProposalId (..),
-  ProposalRedeemer (Unlock),
-  ProposalStatus (..),
-  ProposalVotes (..),
-  ResultTag (..),
- )
-import Agora.Proposal.Time (ProposalStartingTime (ProposalStartingTime))
-import Agora.Stake (ProposalLock (ProposalLock), Stake (..), StakeDatum (..))
+import Sample.Proposal.Shared (proposalTxRef, stakeTxRef, testFunc)
 import Sample.Shared (
   minAda,
   proposalPolicySymbol,
@@ -43,19 +58,9 @@ import Sample.Shared (
   stakeAssetClass,
   stakeValidatorHash,
  )
-import Test.Util (sortValue, updateMap)
-
---------------------------------------------------------------------------------
-
-import Agora.Proposal.Scripts (proposalValidator)
-import Control.Monad (join)
-import Data.Coerce (coerce)
-import Data.Default.Class (Default (def))
-import Data.Tagged (Tagged (..), untag)
-import Plutarch.Context (BaseBuilder, buildTxInfoUnsafe, input, output, script, txId, withDatum, withRefIndex, withTxId, withValue)
-import Sample.Proposal.Shared (proposalRef, stakeRef)
 import Sample.Shared qualified as Shared
-import Test.Specification (SpecificationTree, validatorFailsWith, validatorSucceedsWith)
+import Test.Specification (SpecificationTree)
+import Test.Util (sortValue, updateMap)
 
 --------------------------------------------------------------------------------
 
@@ -223,8 +228,8 @@ unlockStake p =
                     script proposalValidatorHash
                       . withValue pst
                       . withDatum i
-                      . withTxId (txOutRefId proposalRef)
-                      . withRefIndex (txOutRefIdx proposalRef + coerce i.proposalId)
+                      . withTxId proposalTxRef
+                      . withRefIndex (coerce i.proposalId + 2)
                 , output $
                     script proposalValidatorHash
                       . withValue (sortValue $ pst <> minAda)
@@ -249,8 +254,8 @@ unlockStake p =
               script stakeValidatorHash
                 . withValue stakeValue
                 . withDatum sInDatum
-                . withTxId (txOutRefId stakeRef)
-                . withRefIndex (txOutRefIdx stakeRef)
+                . withTxId stakeTxRef
+                . withRefIndex 1
           , output $
               script stakeValidatorHash
                 . withValue stakeValue
@@ -271,6 +276,14 @@ mkProposalValidatorTestCase p shouldSucceed =
   let datum = mkProposalInputDatum p $ ProposalId 0
       redeemer = Unlock (ResultTag 0)
       name = show p
-      scriptContext = ScriptContext (unlockStake p) (Spending proposalRef)
-      f = if shouldSucceed then validatorSucceedsWith else validatorFailsWith
-   in f name (proposalValidator Shared.proposal) datum redeemer scriptContext
+      scriptContext =
+        ScriptContext
+          (unlockStake p)
+          (Spending (TxOutRef proposalTxRef 2))
+   in testFunc
+        shouldSucceed
+        name
+        (proposalValidator Shared.proposal)
+        datum
+        redeemer
+        scriptContext
