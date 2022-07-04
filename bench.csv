@@ -5,13 +5,13 @@ Agora/Effects/Treasury Withdrawal Effect/effect/Mixed Assets,456007605,1104500,3
 Agora/Effects/Governor Mutation Effect/validator/valid new governor datum/governor validator should pass,87839169,243032,8561
 Agora/Effects/Governor Mutation Effect/validator/valid new governor datum/effect validator should pass,106082031,292993,3609
 Agora/Stake/policy/stakeCreation,50939580,148729,2387
-Agora/Stake/validator/stakeDepositWithdraw deposit,181581435,493259,4413
-Agora/Stake/validator/stakeDepositWithdraw withdraw,181581435,493259,4401
+Agora/Stake/validator/stakeDepositWithdraw deposit,180222751,492217,5003
+Agora/Stake/validator/stakeDepositWithdraw withdraw,180222751,492217,4991
 Agora/Proposal/policy/proposalCreation,23140177,69194,1515
 Agora/Proposal/validator/cosignature/proposal,240482868,674626,8525
-Agora/Proposal/validator/cosignature/stake,125315872,312659,4942
+Agora/Proposal/validator/cosignature/stake,136781411,336612,5528
 Agora/Proposal/validator/voting/proposal,243946100,678901,8443
-Agora/Proposal/validator/voting/stake,120122971,320497,4899
+Agora/Proposal/validator/voting/stake,128972262,348186,5489
 Agora/Proposal/validator/advancing/successfully advance to next state/Draft -> VotringReady,219342631,620576,8350
 Agora/Proposal/validator/advancing/successfully advance to next state/VotingReady -> Locked,247748475,699343,8359
 Agora/Proposal/validator/advancing/successfully advance to next state/Locked -> Finished,236509366,666512,8359
