@@ -16,7 +16,7 @@ common lang
     -Wno-unused-do-bind -Wno-partial-type-signatures
     -Wmissing-export-lists -Wincomplete-record-updates
     -Wmissing-deriving-strategies -Wno-name-shadowing -Wunused-foralls
-    -fprint-explicit-foralls -fprint-explicit-kinds
+    -fprint-explicit-foralls -fprint-explicit-kinds -Wunused-do-bind
 
   mixins:
     base hiding (Prelude),
@@ -189,8 +189,11 @@ library agora-specs
     Sample.Effect.TreasuryWithdrawal
     Sample.Governor
     Sample.Proposal
+    Sample.Proposal.Advance
+    Sample.Proposal.Cosign
     Sample.Proposal.Shared
     Sample.Proposal.UnlockStake
+    Sample.Proposal.Vote
     Sample.Shared
     Sample.Stake
     Sample.Treasury

@@ -283,6 +283,8 @@ data ProposalDatum = ProposalDatum
   -- ^ The status the proposal is in.
   , cosigners :: [PubKeyHash]
   -- ^ Who created the proposal initially, and who cosigned it later.
+  --
+  -- This list should be sorted in **ascending** order.
   , thresholds :: ProposalThresholds
   -- ^ Thresholds copied over on initialization.
   , votes :: ProposalVotes
@@ -321,7 +323,9 @@ data ProposalRedeemer
     --
     --   This is particularly used in the 'Draft' 'ProposalStatus',
     --   where matching 'Agora.Stake.Stake's can be called to advance the proposal,
-    --   provided enough GT is shared  among them.
+    --   provided enough GT is shared among them.
+    --
+    --   This list should be sorted in ascending order.
     Cosign [PubKeyHash]
   | -- | Allow unlocking one or more stakes with votes towards particular 'ResultTag'.
     Unlock ResultTag

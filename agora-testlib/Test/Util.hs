@@ -13,22 +13,24 @@ module Test.Util (
   updateMap,
   sortMap,
   sortValue,
+  blake2b_224,
+  pubKeyHashes,
+  userCredentials,
+  scriptCredentials,
 ) where
 
 --------------------------------------------------------------------------------
 
-import Prelude
-
---------------------------------------------------------------------------------
-
 import Codec.Serialise (serialise)
-import Data.ByteString.Lazy qualified as ByteString.Lazy
-
---------------------------------------------------------------------------------
-
+import Crypto.Hash qualified as Crypto
 import Data.Bifunctor (second)
+import Data.ByteArray qualified as BA
+import Data.ByteString qualified as BS
+import Data.ByteString.Char8 qualified as C
+import Data.ByteString.Lazy qualified as ByteString.Lazy
 import Data.List (sortOn)
 import Plutarch.Crypto (pblake2b_256)
+import PlutusLedgerApi.V1 (Credential (PubKeyCredential, ScriptCredential), PubKeyHash (..), ValidatorHash (ValidatorHash))
 import PlutusLedgerApi.V1.Interval qualified as PlutusTx
 import PlutusLedgerApi.V1.Scripts (Datum (Datum), DatumHash (DatumHash))
 import PlutusLedgerApi.V1.Value (Value (..))
@@ -36,6 +38,7 @@ import PlutusTx.AssocMap qualified as AssocMap
 import PlutusTx.Builtins qualified as PlutusTx
 import PlutusTx.IsData qualified as PlutusTx
 import PlutusTx.Ord qualified as PlutusTx
+import Prelude
 
 --------------------------------------------------------------------------------
 
@@ -106,3 +109,25 @@ sortValue =
     . fmap (second sortMap)
     . AssocMap.toList
     . getValue
+
+--------------------------------------------------------------------------------
+
+-- | Compute the hash of a given byte string using blake2b_224 algorithm.
+blake2b_224 :: BS.ByteString -> BS.ByteString
+blake2b_224 = BS.pack . BA.unpack . Crypto.hashWith Crypto.Blake2b_224
+
+-- | An infinite list of blake2b_224 hashes.
+blake2b_224Hashes :: [BS.ByteString]
+blake2b_224Hashes = blake2b_224 . C.pack . show @Integer <$> [0 ..]
+
+-- | An infinite list of *valid* 'PubKeyHash'.
+pubKeyHashes :: [PubKeyHash]
+pubKeyHashes = PubKeyHash . PlutusTx.toBuiltin <$> blake2b_224Hashes
+
+-- | An infinite list of *valid* user credentials.
+userCredentials :: [Credential]
+userCredentials = PubKeyCredential <$> pubKeyHashes
+
+-- | An infinite list of *valid* script credentials.
+scriptCredentials :: [Credential]
+scriptCredentials = ScriptCredential . ValidatorHash . PlutusTx.toBuiltin <$> blake2b_224Hashes
