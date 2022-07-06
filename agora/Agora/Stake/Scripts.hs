@@ -25,6 +25,7 @@ import Agora.Utils (
   mustFindDatum',
   pvalidatorHashToTokenName,
  )
+import Data.Function (on)
 import Data.Tagged (Tagged (..), untag)
 import Plutarch.Api.V1 (
   AmountGuarantees (Positive),
@@ -303,10 +304,10 @@ stakeValidator stake =
                 # pfromData txInfoF.outputs
 
           let witnessStake = unTermCont $ do
-                pguardC "Either owner signs the transaction or propsoal token moved" $
+                pguardC "Either owner signs the transaction or proposal token moved" $
                   ownerSignsTransaction #|| proposalTokenMoved
 
-                -- FIXME: refactor this with reference input, once it's supported by plutarch.
+                -- FIXME: remove this once we have reference input.
                 --
                 -- Our goal here is to allow multiple input stakes, and also ensure that every the input stakes has a
                 --   corresponding output stake, which carries the same value and the same datum as the input stake.
@@ -335,15 +336,7 @@ stakeValidator stake =
                         # pfromData txInfoF.inputs
 
                     sortTxOuts :: Term _ (PBuiltinList (PAsData PTxOut) :--> PBuiltinList (PAsData PTxOut))
-                    sortTxOuts =
-                      plam
-                        ( pmsortBy
-                            # plam
-                              ( \((getDatumHash #) -> dhX)
-                                 ((getDatumHash #) -> dhY) -> dhX #< dhY
-                              )
-                            #
-                        )
+                    sortTxOuts = phoistAcyclic $ plam (pmsortBy # plam ((#<) `on` (getDatumHash #)) #)
                       where
                         getDatumHash :: Term _ (PAsData PTxOut :--> PDatumHash)
                         getDatumHash = phoistAcyclic $ plam ((pfromDJust #) . pfromData . (pfield @"datumHash" #))
@@ -464,7 +457,7 @@ stakeValidator stake =
 
                           newStakedAmount <- pletC $ oldStakedAmount + delta
 
-                          pguardC "New staked amount shoudl be greater than or equal to 0" $
+                          pguardC "New staked amount should be greater than or equal to 0" $
                             zero #<= newStakedAmount
 
                           let expectedDatum =
