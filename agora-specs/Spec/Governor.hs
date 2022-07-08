@@ -47,6 +47,7 @@ specs =
               (ProposalId 0)
               def
               def
+              3
           )
           CreateProposal
           createProposal
@@ -58,6 +59,7 @@ specs =
               (ProposalId 5)
               def
               def
+              3
           )
           MintGATs
           mintGATs
@@ -69,6 +71,7 @@ specs =
               (ProposalId 5)
               def
               def
+              3
           )
           MutateGovernor
           mutateState

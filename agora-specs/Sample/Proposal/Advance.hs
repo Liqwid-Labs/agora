@@ -31,7 +31,7 @@ import Agora.Proposal.Time (
  )
 import Agora.SafeMoney (GTTag)
 import Agora.Stake (
-  ProposalLock (ProposalLock),
+  ProposalLock (..),
   Stake (gtClassRef),
   StakeDatum (..),
   StakeRedeemer (WitnessStake),
@@ -99,19 +99,24 @@ data Parameters = Parameters
   , stakeCount :: Integer
   -- ^ The number of stakes.
   , signByAllCosigners :: Bool
+  -- ^ Whether the transaction is signed by all the cosigners.
   , perStakeGTs :: Tagged GTTag Integer
+  -- ^ The staked amount of each stake.
   }
 
 ---
 
+-- | Reference to the proposal UTXO.
 proposalRef :: TxOutRef
 proposalRef = TxOutRef proposalTxRef 1
 
+-- | Create the reference to a particular stake UTXO.
 mkStakeRef :: Int -> TxOutRef
 mkStakeRef = TxOutRef stakeTxRef . (+ 2) . fromIntegral
 
 ---
 
+-- | Default effects of the propsoal.
 defEffects :: AssocMap.Map ResultTag (AssocMap.Map ValidatorHash DatumHash)
 defEffects =
   AssocMap.fromList
@@ -119,14 +124,19 @@ defEffects =
     , (ResultTag 1, AssocMap.empty)
     ]
 
+-- | Empty votes for the default effects.
 emptyVotes :: ProposalVotes
 emptyVotes = emptyVotesFor defEffects
 
+{- | The default proposal statring time, which doesn't really matter in this
+     case.
+-}
 proposalStartingTime :: POSIXTime
 proposalStartingTime = 0
 
 ---
 
+-- | Create the input proposal datum given the parameters.
 mkProposalInputDatum :: Parameters -> ProposalDatum
 mkProposalInputDatum ps =
   ProposalDatum
@@ -140,6 +150,7 @@ mkProposalInputDatum ps =
     , startingTime = ProposalStartingTime proposalStartingTime
     }
 
+-- | Create the input stake datums given the parameters.
 mkStakeInputDatums :: Parameters -> [StakeDatum]
 mkStakeInputDatums ps =
   map
@@ -154,28 +165,37 @@ mkStakeInputDatums ps =
   where
     existingLocks :: [ProposalLock]
     existingLocks =
-      [ ProposalLock (ResultTag 0) (ProposalId 0)
-      , ProposalLock (ResultTag 2) (ProposalId 1)
+      [ Voted (ProposalId 0) (ResultTag 0)
+      , Voted (ProposalId 1) (ResultTag 2)
       ]
 
 ---
 
+-- | Script purpose of the proposal validator.
 proposalScriptPurpose :: ScriptPurpose
 proposalScriptPurpose = Spending proposalRef
 
+-- | Script purpose of the stake validator, given which stake we want to spend.
 mkStakeScriptPurpose :: Int -> ScriptPurpose
 mkStakeScriptPurpose = Spending . mkStakeRef
 
 ---
 
+{- | The propsoal redeemer used to spend the proposal UTXO, which is always
+      'AdvanceProposal' in this case.
+-}
 proposalRedeemer :: ProposalRedeemer
 proposalRedeemer = AdvanceProposal
 
+{- | The propsoal redeemer used to spend the stake UTXO, which is always
+      'WitnessStake' in this case.
+-}
 stakeRedeemer :: StakeRedeemer
 stakeRedeemer = WitnessStake
 
 ---
 
+-- | Create some valid stake owners.
 mkStakeOwners :: Parameters -> [PubKeyHash]
 mkStakeOwners ps =
   sort $
@@ -276,6 +296,9 @@ advance ps =
 
 ---
 
+{- | Given the proposal status, create a time range that is in time for
+      advacing to the next state.
+-}
 mkInTimeTimeRange :: ProposalStatus -> POSIXTimeRange
 mkInTimeTimeRange advanceFrom =
   case advanceFrom of
@@ -315,6 +338,9 @@ mkInTimeTimeRange advanceFrom =
         )
     Finished -> error "Cannot advance 'Finished' proposal"
 
+{- | Given the proposal status, create a time range that is too time for
+      advacing to the next state.
+-}
 mkTooLateTimeRange :: ProposalStatus -> POSIXTimeRange
 mkTooLateTimeRange advanceFrom =
   case advanceFrom of
@@ -363,6 +389,7 @@ mkTooLateTimeRange advanceFrom =
 
 ---
 
+-- | Next state of the given proposal status.
 getNextState :: ProposalStatus -> ProposalStatus
 getNextState = \case
   Draft -> VotingReady
@@ -475,6 +502,9 @@ invalidOutputStakeParameters nCosigners =
 
 ---
 
+{- | Create a test tree that runs the stake validator and proposal validator to
+      test the advancing functionalities.
+-}
 mkTestTree :: String -> Parameters -> Bool -> SpecificationTree
 mkTestTree name ps isValidForProposalValidator = group name [proposal, stake]
   where

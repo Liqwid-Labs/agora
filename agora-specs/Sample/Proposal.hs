@@ -81,6 +81,7 @@ proposalCreation =
           , nextProposalId = ProposalId 0
           , proposalTimings = def
           , createProposalTimeRangeMaxWidth = def
+          , maximumProposalsPerStake = 3
           }
 
       govAfter :: GovernorDatum

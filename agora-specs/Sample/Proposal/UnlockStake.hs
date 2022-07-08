@@ -21,7 +21,7 @@ import Agora.Proposal (
  )
 import Agora.Proposal.Scripts (proposalValidator)
 import Agora.Proposal.Time (ProposalStartingTime (ProposalStartingTime))
-import Agora.Stake (ProposalLock (ProposalLock), Stake (..), StakeDatum (..))
+import Agora.Stake (ProposalLock (..), Stake (..), StakeDatum (..))
 import Control.Monad (join)
 import Data.Coerce (coerce)
 import Data.Default.Class (Default (def))
@@ -152,10 +152,8 @@ mkStakeDatumPair c =
    in (input, output)
   where
     mkStakeLocks :: StakeRole -> ProposalId -> [ProposalLock]
-    mkStakeLocks Voter pid = [ProposalLock defaultVoteFor pid]
-    mkStakeLocks Creator pid =
-      map (`ProposalLock` pid) $
-        AssocMap.keys $ getProposalVotes votesTemplate
+    mkStakeLocks Voter pid = [Voted pid defaultVoteFor]
+    mkStakeLocks Creator pid = [Created pid]
     mkStakeLocks _ _ = []
 
 -- | Create the input proposal datum.
@@ -274,7 +272,7 @@ unlockStake p =
 mkProposalValidatorTestCase :: UnlockStakeParameters -> Bool -> SpecificationTree
 mkProposalValidatorTestCase p shouldSucceed =
   let datum = mkProposalInputDatum p $ ProposalId 0
-      redeemer = Unlock (ResultTag 0)
+      redeemer = Unlock
       name = show p
       scriptContext =
         ScriptContext
