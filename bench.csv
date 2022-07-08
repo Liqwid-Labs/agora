@@ -7,7 +7,27 @@ Agora/Effects/Governor Mutation Effect/validator/valid new governor datum/effect
 Agora/Stake/policy/stakeCreation,51008580,149029,2522
 Agora/Stake/validator/stakeDepositWithdraw deposit,183506412,498838,4745
 Agora/Stake/validator/stakeDepositWithdraw withdraw,183506412,498838,4733
-Agora/Proposal/policy/proposalCreation,23140177,69194,1517
+Agora/Proposal/policy (proposal creation)/legal/proposal,34975627,103548,2117
+Agora/Proposal/policy (proposal creation)/legal/governor,327971301,871386,9322
+Agora/Proposal/policy (proposal creation)/legal/stake,152415805,398403,5404
+Agora/Proposal/policy (proposal creation)/illegal/invalid next proposal id/proposal,34975627,103548,2117
+Agora/Proposal/policy (proposal creation)/illegal/invalid next proposal id/stake,152415805,398403,5404
+Agora/Proposal/policy (proposal creation)/illegal/use other's stake/proposal,34975627,103548,2086
+Agora/Proposal/policy (proposal creation)/illegal/altered stake/proposal,34975627,103548,2117
+Agora/Proposal/policy (proposal creation)/illegal/invalid stake locks/proposal,34975627,103548,2125
+Agora/Proposal/policy (proposal creation)/illegal/invalid stake locks/stake,157849465,413053,5412
+Agora/Proposal/policy (proposal creation)/illegal/has reached maximum proposals limit/proposal,34975627,103548,2137
+Agora/Proposal/policy (proposal creation)/illegal/has reached maximum proposals limit/stake,158878297,416511,5434
+Agora/Proposal/policy (proposal creation)/illegal/loose time range/proposal,34975627,103548,2117
+Agora/Proposal/policy (proposal creation)/illegal/loose time range/stake,152415805,398403,5404
+Agora/Proposal/policy (proposal creation)/illegal/open time range/proposal,34975627,103548,2113
+Agora/Proposal/policy (proposal creation)/illegal/open time range/stake,152415805,398403,5400
+Agora/Proposal/policy (proposal creation)/illegal/invalid proposal status/VotingReady/proposal,34975627,103548,2117
+Agora/Proposal/policy (proposal creation)/illegal/invalid proposal status/VotingReady/stake,152415805,398403,5404
+Agora/Proposal/policy (proposal creation)/illegal/invalid proposal status/Locked/proposal,34975627,103548,2117
+Agora/Proposal/policy (proposal creation)/illegal/invalid proposal status/Locked/stake,152415805,398403,5404
+Agora/Proposal/policy (proposal creation)/illegal/invalid proposal status/Finished/proposal,34975627,103548,2117
+Agora/Proposal/policy (proposal creation)/illegal/invalid proposal status/Finished/stake,152415805,398403,5404
 Agora/Proposal/validator/cosignature/legal/with 1 cosigners/propsoal,231665387,648239,8164
 Agora/Proposal/validator/cosignature/legal/with 1 cosigners/stake,122255811,317464,5213
 Agora/Proposal/validator/cosignature/legal/with 5 cosigners/propsoal,662329378,1846986,10794

@@ -69,7 +69,7 @@ import PlutusLedgerApi.V1 (
  )
 import PlutusLedgerApi.V1.Value qualified as Value
 import PlutusTx.AssocMap qualified as AssocMap
-import Sample.Proposal.Shared (proposalTxRef, stakeTxRef, testFunc)
+import Sample.Proposal.Shared (proposalTxRef, stakeTxRef)
 import Sample.Shared (
   minAda,
   proposalPolicySymbol,
@@ -79,7 +79,7 @@ import Sample.Shared (
   stakeValidatorHash,
  )
 import Sample.Shared qualified as Shared
-import Test.Specification (SpecificationTree, group)
+import Test.Specification (SpecificationTree, group, testValidator)
 import Test.Util (closedBoundedInterval, pubKeyHashes, sortValue, updateMap)
 
 -- | Parameters for state transition of proposals.
@@ -512,7 +512,7 @@ mkTestTree name ps isValidForProposalValidator = group name [proposal, stake]
 
     proposal =
       let proposalInputDatum = mkProposalInputDatum ps
-       in testFunc
+       in testValidator
             isValidForProposalValidator
             "propsoal"
             (proposalValidator Shared.proposal)
@@ -527,7 +527,7 @@ mkTestTree name ps isValidForProposalValidator = group name [proposal, stake]
       let idx = 0
           stakeInputDatum = mkStakeInputDatums ps !! idx
           isValid = not $ ps.alterOutputStakes
-       in testFunc
+       in testValidator
             isValid
             "stake"
             (stakeValidator Shared.stake)

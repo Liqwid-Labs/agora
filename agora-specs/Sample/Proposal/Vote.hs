@@ -47,7 +47,7 @@ import PlutusLedgerApi.V1 (
  )
 import PlutusLedgerApi.V1.Value qualified as Value
 import PlutusTx.AssocMap qualified as AssocMap
-import Sample.Proposal.Shared (proposalTxRef, stakeTxRef, testFunc)
+import Sample.Proposal.Shared (proposalTxRef, stakeTxRef)
 import Sample.Shared (
   minAda,
   proposalPolicySymbol,
@@ -61,6 +61,7 @@ import Sample.Shared qualified as Shared
 import Test.Specification (
   SpecificationTree,
   group,
+  testValidator,
   validatorSucceedsWith,
  )
 import Test.Util (closedBoundedInterval, sortValue, updateMap)
@@ -243,7 +244,7 @@ mkTestTree name ps isValid = group name [proposal, stake]
     txInfo = vote ps
 
     proposal =
-      testFunc
+      testValidator
         isValid
         "propsoal"
         (proposalValidator Shared.proposal)

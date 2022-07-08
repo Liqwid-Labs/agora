@@ -7,32 +7,83 @@ Tests for Proposal policy and validator
 -}
 module Spec.Proposal (specs) where
 
-import Agora.Proposal (
-  Proposal (..),
- )
-import Agora.Proposal.Scripts (proposalPolicy)
-import Sample.Proposal qualified as Proposal
 import Sample.Proposal.Advance qualified as Advance
 import Sample.Proposal.Cosign qualified as Cosign
+import Sample.Proposal.Create qualified as Create
 import Sample.Proposal.UnlockStake qualified as UnlockStake
 import Sample.Proposal.Vote qualified as Vote
-import Sample.Shared qualified as Shared (proposal)
 import Test.Specification (
   SpecificationTree,
   group,
-  policySucceedsWith,
  )
 
 -- | Stake specs.
 specs :: [SpecificationTree]
 specs =
   [ group
-      "policy"
-      [ policySucceedsWith
-          "proposalCreation"
-          (proposalPolicy Shared.proposal.governorSTAssetClass)
-          ()
-          Proposal.proposalCreation
+      "policy (proposal creation)"
+      [ Create.mkTestTree
+          "legal"
+          Create.totallyValidParameters
+          True
+          True
+          True
+      , group
+          "illegal"
+          [ Create.mkTestTree
+              "invalid next proposal id"
+              Create.invalidOutputGovernorDatumParameters
+              True
+              False
+              True
+          , Create.mkTestTree
+              "use other's stake"
+              Create.useStakeOwnBySomeoneElseParameters
+              True
+              False
+              False
+          , Create.mkTestTree
+              "altered stake"
+              Create.invalidOutputStakeParameters
+              True
+              False
+              False
+          , Create.mkTestTree
+              "invalid stake locks"
+              Create.addInvalidLocksParameters
+              True
+              False
+              True
+          , Create.mkTestTree
+              "has reached maximum proposals limit"
+              Create.exceedMaximumProposalsParameters
+              True
+              False
+              True
+          , Create.mkTestTree
+              "loose time range"
+              Create.timeRangeNotTightParameters
+              True
+              False
+              True
+          , Create.mkTestTree
+              "open time range"
+              Create.timeRangeNotClosedParameters
+              True
+              False
+              True
+          , group "invalid proposal status" $
+              map
+                ( \ps ->
+                    Create.mkTestTree
+                      (show ps.proposalStatus)
+                      ps
+                      True
+                      False
+                      True
+                )
+                Create.invalidProposalStatusParameters
+          ]
       ]
   , group
       "validator"
