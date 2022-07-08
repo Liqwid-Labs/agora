@@ -51,14 +51,158 @@ Agora/Proposal/validator/advancing/legal/advance to failed state/from: Locked/pr
 Agora/Proposal/validator/advancing/legal/advance to failed state/from: Locked/stake,122255811,317464,5225
 Agora/Proposal/validator/advancing/illegal/insufficient votes/stake,122255811,317464,5225
 Agora/Proposal/validator/advancing/illegal/initial state is Finished/stake,122255811,317464,5217
-"Agora/Proposal/validator/unlocking/legal/1 proposals, voter, unlock stake + retract votes, VotingReady",236724208,665425,8096
-"Agora/Proposal/validator/unlocking/legal/1 proposals, creator, unlock stake, Finished",204516343,585280,8093
-"Agora/Proposal/validator/unlocking/legal/voter unlocks stake after voting/1 proposals, voter, unlock stake, Finished",205832495,589164,8100
-"Agora/Proposal/validator/unlocking/legal/voter unlocks stake after voting/1 proposals, voter, unlock stake, Locked",205832495,589164,8100
-"Agora/Proposal/validator/unlocking/legal/42 proposals, voter, unlock stake + retract votes, VotingReady",1698797000,4895231,29286
-"Agora/Proposal/validator/unlocking/legal/42 proposals, creator, unlock stake, Finished",1312344666,3843304,29242
-"Agora/Proposal/validator/unlocking/legal/voter unlocks stake after voting/42 proposals, voter, unlock stake, Finished",1356230175,3961906,29455
-"Agora/Proposal/validator/unlocking/legal/voter unlocks stake after voting/42 proposals, voter, unlock stake, Locked",1356230175,3961906,29455
+Agora/Proposal/validator/unlocking/legal/with 1 proposals/voter: retract votes while voting/stake,128424052,334368,5219
+Agora/Proposal/validator/unlocking/legal/with 1 proposals/voter: retract votes while voting/propsoal,236724208,665425,8127
+Agora/Proposal/validator/unlocking/legal/with 1 proposals/voter/creator: retract votes while voting/stake,131655298,343422,5235
+Agora/Proposal/validator/unlocking/legal/with 1 proposals/voter/creator: retract votes while voting/propsoal,250196415,705367,8138
+Agora/Proposal/validator/unlocking/legal/with 1 proposals/creator: remove creator locks when finished/stake,128424052,334368,5217
+Agora/Proposal/validator/unlocking/legal/with 1 proposals/creator: remove creator locks when finished/propsoal,204516343,585280,8124
+Agora/Proposal/validator/unlocking/legal/with 1 proposals/voter/creator: remove all locks when finished/stake,128424052,334368,5233
+Agora/Proposal/validator/unlocking/legal/with 1 proposals/voter/creator: remove all locks when finished/propsoal,212950600,610184,8136
+Agora/Proposal/validator/unlocking/legal/with 1 proposals/voter: unlock after voting/Locked/stake,128424052,334368,5223
+Agora/Proposal/validator/unlocking/legal/with 1 proposals/voter: unlock after voting/Locked/propsoal,205832495,589164,8131
+Agora/Proposal/validator/unlocking/legal/with 1 proposals/voter: unlock after voting/Finished/stake,128424052,334368,5223
+Agora/Proposal/validator/unlocking/legal/with 1 proposals/voter: unlock after voting/Finished/propsoal,205832495,589164,8131
+Agora/Proposal/validator/unlocking/legal/with 1 proposals/voter/creator: remove vote locks when locked/stake,131655298,343422,5239
+Agora/Proposal/validator/unlocking/legal/with 1 proposals/voter/creator: remove vote locks when locked/propsoal,219836278,630498,8142
+Agora/Proposal/validator/unlocking/legal/with 5 proposals/voter: retract votes while voting/stake,279213296,711004,7303
+Agora/Proposal/validator/unlocking/legal/with 5 proposals/voter: retract votes while voting/propsoal,379365456,1078089,10187
+Agora/Proposal/validator/unlocking/legal/with 5 proposals/voter/creator: retract votes while voting/stake,295369526,756274,7380
+Agora/Proposal/validator/unlocking/legal/with 5 proposals/voter/creator: retract votes while voting/propsoal,444893991,1269343,10239
+Agora/Proposal/validator/unlocking/legal/with 5 proposals/creator: remove creator locks when finished/stake,279213296,711004,7293
+Agora/Proposal/validator/unlocking/legal/with 5 proposals/creator: remove creator locks when finished/propsoal,312597155,903136,10180
+Agora/Proposal/validator/unlocking/legal/with 5 proposals/voter/creator: remove all locks when finished/stake,279213296,711004,7374
+Agora/Proposal/validator/unlocking/legal/with 5 proposals/voter/creator: remove all locks when finished/propsoal,350986136,1014888,10233
+Agora/Proposal/validator/unlocking/legal/with 5 proposals/voter: unlock after voting/Locked/stake,279213296,711004,7324
+Agora/Proposal/validator/unlocking/legal/with 5 proposals/voter: unlock after voting/Locked/propsoal,318066415,918212,10208
+Agora/Proposal/validator/unlocking/legal/with 5 proposals/voter: unlock after voting/Finished/stake,279213296,711004,7324
+Agora/Proposal/validator/unlocking/legal/with 5 proposals/voter: unlock after voting/Finished/propsoal,318066415,918212,10208
+Agora/Proposal/validator/unlocking/legal/with 5 proposals/voter/creator: remove vote locks when locked/stake,295369526,756274,7400
+Agora/Proposal/validator/unlocking/legal/with 5 proposals/voter/creator: remove vote locks when locked/propsoal,384126526,1110858,10259
+Agora/Proposal/validator/unlocking/legal/with 10 proposals/voter: retract votes while voting/stake,467699851,1181799,9909
+Agora/Proposal/validator/unlocking/legal/with 10 proposals/voter: retract votes while voting/propsoal,557667016,1593919,12763
+Agora/Proposal/validator/unlocking/legal/with 10 proposals/voter/creator: retract votes while voting/stake,500012311,1272339,10060
+Agora/Proposal/validator/unlocking/legal/with 10 proposals/voter/creator: retract votes while voting/propsoal,688265961,1974313,12864
+Agora/Proposal/validator/unlocking/legal/with 10 proposals/creator: remove creator locks when finished/stake,467699851,1181799,9888
+Agora/Proposal/validator/unlocking/legal/with 10 proposals/creator: remove creator locks when finished/propsoal,447698170,1300456,12750
+Agora/Proposal/validator/unlocking/legal/with 10 proposals/voter/creator: remove all locks when finished/stake,467699851,1181799,10049
+Agora/Proposal/validator/unlocking/legal/with 10 proposals/voter/creator: remove all locks when finished/propsoal,523530556,1520768,12853
+Agora/Proposal/validator/unlocking/legal/with 10 proposals/voter: unlock after voting/Locked/stake,467699851,1181799,9949
+Agora/Proposal/validator/unlocking/legal/with 10 proposals/voter: unlock after voting/Locked/propsoal,458358815,1329522,12803
+Agora/Proposal/validator/unlocking/legal/with 10 proposals/voter: unlock after voting/Finished/stake,467699851,1181799,9949
+Agora/Proposal/validator/unlocking/legal/with 10 proposals/voter: unlock after voting/Finished/propsoal,458358815,1329522,12803
+Agora/Proposal/validator/unlocking/legal/with 10 proposals/voter/creator: remove vote locks when locked/stake,500012311,1272339,10100
+Agora/Proposal/validator/unlocking/legal/with 10 proposals/voter/creator: remove vote locks when locked/propsoal,589489336,1711308,12904
+Agora/Proposal/validator/unlocking/legal/with 42 proposals/voter: retract votes while voting/stake,1674013803,4194887,26674
+Agora/Proposal/validator/unlocking/legal/with 42 proposals/voter: retract votes while voting/propsoal,1698797000,4895231,29317
+Agora/Proposal/validator/unlocking/legal/with 42 proposals/voter/creator: retract votes while voting/stake,1809726135,4575155,27362
+Agora/Proposal/validator/unlocking/legal/with 42 proposals/voter/creator: retract votes while voting/propsoal,2245846569,6486121,29776
+Agora/Proposal/validator/unlocking/legal/with 42 proposals/creator: remove creator locks when finished/stake,1674013803,4194887,26590
+Agora/Proposal/validator/unlocking/legal/with 42 proposals/creator: remove creator locks when finished/propsoal,1312344666,3843304,29273
+Agora/Proposal/validator/unlocking/legal/with 42 proposals/voter/creator: remove all locks when finished/stake,1674013803,4194887,27301
+Agora/Proposal/validator/unlocking/legal/with 42 proposals/voter/creator: remove all locks when finished/propsoal,1627814844,4758400,29715
+Agora/Proposal/validator/unlocking/legal/with 42 proposals/voter: unlock after voting/Locked/stake,1674013803,4194887,26843
+Agora/Proposal/validator/unlocking/legal/with 42 proposals/voter: unlock after voting/Locked/propsoal,1356230175,3961906,29486
+Agora/Proposal/validator/unlocking/legal/with 42 proposals/voter: unlock after voting/Finished/stake,1674013803,4194887,26843
+Agora/Proposal/validator/unlocking/legal/with 42 proposals/voter: unlock after voting/Finished/propsoal,1356230175,3961906,29486
+Agora/Proposal/validator/unlocking/legal/with 42 proposals/voter/creator: remove vote locks when locked/stake,1809726135,4575155,27531
+Agora/Proposal/validator/unlocking/legal/with 42 proposals/voter/creator: remove vote locks when locked/propsoal,1903811320,5554188,29945
+"Agora/Proposal/validator/unlocking/illegal/with 1 proposals/retract votes while not voting/role: Voter, status: Draft/stake",128424052,334368,5219
+"Agora/Proposal/validator/unlocking/illegal/with 1 proposals/retract votes while not voting/role: Voter, status: Locked/stake",128424052,334368,5219
+"Agora/Proposal/validator/unlocking/illegal/with 1 proposals/retract votes while not voting/role: Voter, status: Finished/stake",128424052,334368,5219
+"Agora/Proposal/validator/unlocking/illegal/with 1 proposals/retract votes while not voting/role: Creator, status: Draft/stake",124053466,322518,5221
+"Agora/Proposal/validator/unlocking/illegal/with 1 proposals/retract votes while not voting/role: Creator, status: Locked/stake",124053466,322518,5221
+"Agora/Proposal/validator/unlocking/illegal/with 1 proposals/retract votes while not voting/role: Creator, status: Finished/stake",124053466,322518,5221
+"Agora/Proposal/validator/unlocking/illegal/with 1 proposals/retract votes while not voting/role: Both, status: Draft/stake",131655298,343422,5235
+"Agora/Proposal/validator/unlocking/illegal/with 1 proposals/retract votes while not voting/role: Both, status: Locked/stake",131655298,343422,5235
+"Agora/Proposal/validator/unlocking/illegal/with 1 proposals/retract votes while not voting/role: Both, status: Finished/stake",131655298,343422,5235
+"Agora/Proposal/validator/unlocking/illegal/with 1 proposals/retract votes while not voting/role: Irrelevant, status: Draft/stake",120822220,313464,5201
+"Agora/Proposal/validator/unlocking/illegal/with 1 proposals/retract votes while not voting/role: Irrelevant, status: Locked/stake",120822220,313464,5201
+"Agora/Proposal/validator/unlocking/illegal/with 1 proposals/retract votes while not voting/role: Irrelevant, status: Finished/stake",120822220,313464,5201
+Agora/Proposal/validator/unlocking/illegal/with 1 proposals/unlock an irrelevant stake/status: Draftretract votes: True/stake,120822220,313464,5201
+Agora/Proposal/validator/unlocking/illegal/with 1 proposals/unlock an irrelevant stake/status: Draftretract votes: False/stake,120822220,313464,5201
+Agora/Proposal/validator/unlocking/illegal/with 1 proposals/unlock an irrelevant stake/status: VotingReadyretract votes: True/stake,120822220,313464,5201
+Agora/Proposal/validator/unlocking/illegal/with 1 proposals/unlock an irrelevant stake/status: VotingReadyretract votes: False/stake,120822220,313464,5201
+Agora/Proposal/validator/unlocking/illegal/with 1 proposals/unlock an irrelevant stake/status: Lockedretract votes: True/stake,120822220,313464,5201
+Agora/Proposal/validator/unlocking/illegal/with 1 proposals/unlock an irrelevant stake/status: Lockedretract votes: False/stake,120822220,313464,5201
+Agora/Proposal/validator/unlocking/illegal/with 1 proposals/unlock an irrelevant stake/status: Finishedretract votes: True/stake,120822220,313464,5201
+Agora/Proposal/validator/unlocking/illegal/with 1 proposals/unlock an irrelevant stake/status: Finishedretract votes: False/stake,120822220,313464,5201
+Agora/Proposal/validator/unlocking/illegal/with 1 proposals/remove creator too early/status: Draft/stake,128424052,334368,5217
+Agora/Proposal/validator/unlocking/illegal/with 1 proposals/remove creator too early/status: VotingReady/stake,128424052,334368,5217
+Agora/Proposal/validator/unlocking/illegal/with 1 proposals/remove creator too early/status: Locked/stake,128424052,334368,5217
+Agora/Proposal/validator/unlocking/illegal/with 1 proposals/creator: retract votes/stake,128424052,334368,5215
+"Agora/Proposal/validator/unlocking/illegal/with 5 proposals/retract votes while not voting/role: Voter, status: Draft/stake",279213296,711004,7303
+"Agora/Proposal/validator/unlocking/illegal/with 5 proposals/retract votes while not voting/role: Voter, status: Locked/stake",279213296,711004,7303
+"Agora/Proposal/validator/unlocking/illegal/with 5 proposals/retract votes while not voting/role: Voter, status: Finished/stake",279213296,711004,7303
+"Agora/Proposal/validator/unlocking/illegal/with 5 proposals/retract votes while not voting/role: Creator, status: Draft/stake",272564030,693562,7309
+"Agora/Proposal/validator/unlocking/illegal/with 5 proposals/retract votes while not voting/role: Creator, status: Locked/stake",272564030,693562,7309
+"Agora/Proposal/validator/unlocking/illegal/with 5 proposals/retract votes while not voting/role: Creator, status: Finished/stake",272564030,693562,7309
+"Agora/Proposal/validator/unlocking/illegal/with 5 proposals/retract votes while not voting/role: Both, status: Draft/stake",295369526,756274,7380
+"Agora/Proposal/validator/unlocking/illegal/with 5 proposals/retract votes while not voting/role: Both, status: Locked/stake",295369526,756274,7380
+"Agora/Proposal/validator/unlocking/illegal/with 5 proposals/retract votes while not voting/role: Both, status: Finished/stake",295369526,756274,7380
+"Agora/Proposal/validator/unlocking/illegal/with 5 proposals/retract votes while not voting/role: Irrelevant, status: Draft/stake",256407800,648292,7221
+"Agora/Proposal/validator/unlocking/illegal/with 5 proposals/retract votes while not voting/role: Irrelevant, status: Locked/stake",256407800,648292,7221
+"Agora/Proposal/validator/unlocking/illegal/with 5 proposals/retract votes while not voting/role: Irrelevant, status: Finished/stake",256407800,648292,7221
+Agora/Proposal/validator/unlocking/illegal/with 5 proposals/unlock an irrelevant stake/status: Draftretract votes: True/stake,256407800,648292,7221
+Agora/Proposal/validator/unlocking/illegal/with 5 proposals/unlock an irrelevant stake/status: Draftretract votes: False/stake,256407800,648292,7221
+Agora/Proposal/validator/unlocking/illegal/with 5 proposals/unlock an irrelevant stake/status: VotingReadyretract votes: True/stake,256407800,648292,7221
+Agora/Proposal/validator/unlocking/illegal/with 5 proposals/unlock an irrelevant stake/status: VotingReadyretract votes: False/stake,256407800,648292,7221
+Agora/Proposal/validator/unlocking/illegal/with 5 proposals/unlock an irrelevant stake/status: Lockedretract votes: True/stake,256407800,648292,7221
+Agora/Proposal/validator/unlocking/illegal/with 5 proposals/unlock an irrelevant stake/status: Lockedretract votes: False/stake,256407800,648292,7221
+Agora/Proposal/validator/unlocking/illegal/with 5 proposals/unlock an irrelevant stake/status: Finishedretract votes: True/stake,256407800,648292,7221
+Agora/Proposal/validator/unlocking/illegal/with 5 proposals/unlock an irrelevant stake/status: Finishedretract votes: False/stake,256407800,648292,7221
+Agora/Proposal/validator/unlocking/illegal/with 5 proposals/remove creator too early/status: Draft/stake,279213296,711004,7293
+Agora/Proposal/validator/unlocking/illegal/with 5 proposals/remove creator too early/status: VotingReady/stake,279213296,711004,7293
+Agora/Proposal/validator/unlocking/illegal/with 5 proposals/remove creator too early/status: Locked/stake,279213296,711004,7293
+Agora/Proposal/validator/unlocking/illegal/with 5 proposals/creator: retract votes/stake,279213296,711004,7283
+"Agora/Proposal/validator/unlocking/illegal/with 10 proposals/retract votes while not voting/role: Voter, status: Draft/stake",467699851,1181799,9909
+"Agora/Proposal/validator/unlocking/illegal/with 10 proposals/retract votes while not voting/role: Voter, status: Locked/stake",467699851,1181799,9909
+"Agora/Proposal/validator/unlocking/illegal/with 10 proposals/retract votes while not voting/role: Voter, status: Finished/stake",467699851,1181799,9909
+"Agora/Proposal/validator/unlocking/illegal/with 10 proposals/retract votes while not voting/role: Creator, status: Draft/stake",458202235,1157367,9920
+"Agora/Proposal/validator/unlocking/illegal/with 10 proposals/retract votes while not voting/role: Creator, status: Locked/stake",458202235,1157367,9920
+"Agora/Proposal/validator/unlocking/illegal/with 10 proposals/retract votes while not voting/role: Creator, status: Finished/stake",458202235,1157367,9920
+"Agora/Proposal/validator/unlocking/illegal/with 10 proposals/retract votes while not voting/role: Both, status: Draft/stake",500012311,1272339,10060
+"Agora/Proposal/validator/unlocking/illegal/with 10 proposals/retract votes while not voting/role: Both, status: Locked/stake",500012311,1272339,10060
+"Agora/Proposal/validator/unlocking/illegal/with 10 proposals/retract votes while not voting/role: Both, status: Finished/stake",500012311,1272339,10060
+"Agora/Proposal/validator/unlocking/illegal/with 10 proposals/retract votes while not voting/role: Irrelevant, status: Draft/stake",425889775,1066827,9746
+"Agora/Proposal/validator/unlocking/illegal/with 10 proposals/retract votes while not voting/role: Irrelevant, status: Locked/stake",425889775,1066827,9746
+"Agora/Proposal/validator/unlocking/illegal/with 10 proposals/retract votes while not voting/role: Irrelevant, status: Finished/stake",425889775,1066827,9746
+Agora/Proposal/validator/unlocking/illegal/with 10 proposals/unlock an irrelevant stake/status: Draftretract votes: True/stake,425889775,1066827,9746
+Agora/Proposal/validator/unlocking/illegal/with 10 proposals/unlock an irrelevant stake/status: Draftretract votes: False/stake,425889775,1066827,9746
+Agora/Proposal/validator/unlocking/illegal/with 10 proposals/unlock an irrelevant stake/status: VotingReadyretract votes: True/stake,425889775,1066827,9746
+Agora/Proposal/validator/unlocking/illegal/with 10 proposals/unlock an irrelevant stake/status: VotingReadyretract votes: False/stake,425889775,1066827,9746
+Agora/Proposal/validator/unlocking/illegal/with 10 proposals/unlock an irrelevant stake/status: Lockedretract votes: True/stake,425889775,1066827,9746
+Agora/Proposal/validator/unlocking/illegal/with 10 proposals/unlock an irrelevant stake/status: Lockedretract votes: False/stake,425889775,1066827,9746
+Agora/Proposal/validator/unlocking/illegal/with 10 proposals/unlock an irrelevant stake/status: Finishedretract votes: True/stake,425889775,1066827,9746
+Agora/Proposal/validator/unlocking/illegal/with 10 proposals/unlock an irrelevant stake/status: Finishedretract votes: False/stake,425889775,1066827,9746
+Agora/Proposal/validator/unlocking/illegal/with 10 proposals/remove creator too early/status: Draft/stake,467699851,1181799,9888
+Agora/Proposal/validator/unlocking/illegal/with 10 proposals/remove creator too early/status: VotingReady/stake,467699851,1181799,9888
+Agora/Proposal/validator/unlocking/illegal/with 10 proposals/remove creator too early/status: Locked/stake,467699851,1181799,9888
+Agora/Proposal/validator/unlocking/illegal/with 10 proposals/creator: retract votes/stake,467699851,1181799,9868
+"Agora/Proposal/validator/unlocking/illegal/with 42 proposals/retract votes while not voting/role: Voter, status: Draft/stake",1674013803,4194887,26674
+"Agora/Proposal/validator/unlocking/illegal/with 42 proposals/retract votes while not voting/role: Voter, status: Locked/stake",1674013803,4194887,26674
+"Agora/Proposal/validator/unlocking/illegal/with 42 proposals/retract votes while not voting/role: Voter, status: Finished/stake",1674013803,4194887,26674
+"Agora/Proposal/validator/unlocking/illegal/with 42 proposals/retract votes while not voting/role: Creator, status: Draft/stake",1646286747,4125719,26736
+"Agora/Proposal/validator/unlocking/illegal/with 42 proposals/retract votes while not voting/role: Creator, status: Locked/stake",1646286747,4125719,26736
+"Agora/Proposal/validator/unlocking/illegal/with 42 proposals/retract votes while not voting/role: Creator, status: Finished/stake",1646286747,4125719,26736
+"Agora/Proposal/validator/unlocking/illegal/with 42 proposals/retract votes while not voting/role: Both, status: Draft/stake",1809726135,4575155,27362
+"Agora/Proposal/validator/unlocking/illegal/with 42 proposals/retract votes while not voting/role: Both, status: Locked/stake",1809726135,4575155,27362
+"Agora/Proposal/validator/unlocking/illegal/with 42 proposals/retract votes while not voting/role: Both, status: Finished/stake",1809726135,4575155,27362
+"Agora/Proposal/validator/unlocking/illegal/with 42 proposals/retract votes while not voting/role: Irrelevant, status: Draft/stake",1510574415,3745451,25961
+"Agora/Proposal/validator/unlocking/illegal/with 42 proposals/retract votes while not voting/role: Irrelevant, status: Locked/stake",1510574415,3745451,25961
+"Agora/Proposal/validator/unlocking/illegal/with 42 proposals/retract votes while not voting/role: Irrelevant, status: Finished/stake",1510574415,3745451,25961
+Agora/Proposal/validator/unlocking/illegal/with 42 proposals/unlock an irrelevant stake/status: Draftretract votes: True/stake,1510574415,3745451,25961
+Agora/Proposal/validator/unlocking/illegal/with 42 proposals/unlock an irrelevant stake/status: Draftretract votes: False/stake,1510574415,3745451,25961
+Agora/Proposal/validator/unlocking/illegal/with 42 proposals/unlock an irrelevant stake/status: VotingReadyretract votes: True/stake,1510574415,3745451,25961
+Agora/Proposal/validator/unlocking/illegal/with 42 proposals/unlock an irrelevant stake/status: VotingReadyretract votes: False/stake,1510574415,3745451,25961
+Agora/Proposal/validator/unlocking/illegal/with 42 proposals/unlock an irrelevant stake/status: Lockedretract votes: True/stake,1510574415,3745451,25961
+Agora/Proposal/validator/unlocking/illegal/with 42 proposals/unlock an irrelevant stake/status: Lockedretract votes: False/stake,1510574415,3745451,25961
+Agora/Proposal/validator/unlocking/illegal/with 42 proposals/unlock an irrelevant stake/status: Finishedretract votes: True/stake,1510574415,3745451,25961
+Agora/Proposal/validator/unlocking/illegal/with 42 proposals/unlock an irrelevant stake/status: Finishedretract votes: False/stake,1510574415,3745451,25961
+Agora/Proposal/validator/unlocking/illegal/with 42 proposals/remove creator too early/status: Draft/stake,1674013803,4194887,26590
+Agora/Proposal/validator/unlocking/illegal/with 42 proposals/remove creator too early/status: VotingReady/stake,1674013803,4194887,26590
+Agora/Proposal/validator/unlocking/illegal/with 42 proposals/remove creator too early/status: Locked/stake,1674013803,4194887,26590
+Agora/Proposal/validator/unlocking/illegal/with 42 proposals/creator: retract votes/stake,1674013803,4194887,26506
 Agora/AuthorityToken/singleAuthorityTokenBurned/Correct simple,21017788,55883,806
 Agora/AuthorityToken/singleAuthorityTokenBurned/Correct many inputs,33204186,88241,900
 Agora/Treasury/Validator/Positive/Allows for effect changes,31556709,81546,1452

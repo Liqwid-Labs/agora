@@ -9,7 +9,6 @@ module Spec.Proposal (specs) where
 
 import Agora.Proposal (
   Proposal (..),
-  ProposalStatus (..),
  )
 import Agora.Proposal.Scripts (proposalPolicy)
 import Sample.Proposal qualified as Proposal
@@ -166,110 +165,92 @@ specs =
                         pure $ Advance.mkTestTree name ps False
                   ]
            in [draftGroup, legalGroup, illegalGroup]
-      , group "unlocking" $ do
-          proposalCount <- [1, 42]
+      , group "unlocking" $
+          let proposalCountCases = [1, 5, 10, 42]
 
-          let legalGroup = group "legal" $ do
-                let voterRetractVotesAndUnlockStakeWhileVoting =
-                      UnlockStake.mkProposalValidatorTestCase
-                        UnlockStake.UnlockStakeParameters
-                          { UnlockStake.proposalCount = proposalCount
-                          , UnlockStake.stakeUsage = UnlockStake.Voter
-                          , UnlockStake.retractVotes = True
-                          , UnlockStake.proposalStatus = VotingReady
-                          }
-                        True
-                    creatorUnlockStakeWhileFinished =
-                      UnlockStake.mkProposalValidatorTestCase
-                        UnlockStake.UnlockStakeParameters
-                          { UnlockStake.proposalCount = proposalCount
-                          , UnlockStake.stakeUsage = UnlockStake.Creator
-                          , UnlockStake.retractVotes = False
-                          , UnlockStake.proposalStatus = Finished
-                          }
-                        True
+              mkSubgroupName nProposals = "with " <> show nProposals <> " proposals"
 
-                let voterUnlockStakeAfterVoting = group "voter unlocks stake after voting" $ do
-                      status <- [Finished, Locked]
-
-                      pure $
-                        UnlockStake.mkProposalValidatorTestCase
-                          UnlockStake.UnlockStakeParameters
-                            { UnlockStake.proposalCount = proposalCount
-                            , UnlockStake.stakeUsage = UnlockStake.Voter
-                            , UnlockStake.retractVotes = False
-                            , UnlockStake.proposalStatus = status
-                            }
-                          True
-
-                [ voterRetractVotesAndUnlockStakeWhileVoting
-                  , creatorUnlockStakeWhileFinished
-                  , voterUnlockStakeAfterVoting
+              mkLegalGroup nProposals =
+                group
+                  (mkSubgroupName nProposals)
+                  [ UnlockStake.mkTestTree
+                      "voter: retract votes while voting"
+                      (UnlockStake.mkVoterRetractVotesWhileVotingParameters nProposals)
+                      True
+                  , UnlockStake.mkTestTree
+                      "voter/creator: retract votes while voting"
+                      (UnlockStake.mkVoterCreatorRetractVotesWhileVotingParameters nProposals)
+                      True
+                  , UnlockStake.mkTestTree
+                      "creator: remove creator locks when finished"
+                      (UnlockStake.mkCreatorRemoveCreatorLocksWhenFinishedParameters nProposals)
+                      True
+                  , UnlockStake.mkTestTree
+                      "voter/creator: remove all locks when finished"
+                      (UnlockStake.mkVoterCreatorRemoveAllLocksWhenFinishedParameters nProposals)
+                      True
+                  , group "voter: unlock after voting" $
+                      map
+                        ( \ps ->
+                            let name = show ps.proposalStatus
+                             in UnlockStake.mkTestTree name ps True
+                        )
+                        (UnlockStake.mkVoterUnlockStakeAfterVotingParameters nProposals)
+                  , UnlockStake.mkTestTree
+                      "voter/creator: remove vote locks when locked"
+                      (UnlockStake.mkVoterCreatorRemoveVoteLocksWhenLockedParameters nProposals)
+                      True
                   ]
 
-          let illegalGroup = group "illegal" $ do
-                let retractsVotesWhileNotVotingReady =
-                      group "voter retracts votes while not voting" $ do
-                        status <- [Draft, Locked, Finished]
-
-                        pure $
-                          UnlockStake.mkProposalValidatorTestCase
-                            UnlockStake.UnlockStakeParameters
-                              { UnlockStake.proposalCount = proposalCount
-                              , UnlockStake.stakeUsage = UnlockStake.Voter
-                              , UnlockStake.retractVotes = True
-                              , UnlockStake.proposalStatus = status
-                              }
-                            False
-
-                    unlockIrrelevantStake =
-                      group "unlock an irrelevant stake" $ do
-                        status <- [Draft, VotingReady, Locked, Finished]
-                        shouldRetractVotes <- [True, False]
-
-                        pure $
-                          UnlockStake.mkProposalValidatorTestCase
-                            UnlockStake.UnlockStakeParameters
-                              { UnlockStake.proposalCount = proposalCount
-                              , UnlockStake.stakeUsage = UnlockStake.Irrelevant
-                              , UnlockStake.retractVotes = shouldRetractVotes
-                              , UnlockStake.proposalStatus = status
-                              }
-                            False
-
-                    unlockCreatorStakeBeforeFinished =
-                      group "unlock creator stake before finished" $ do
-                        status <- [Draft, VotingReady, Locked]
-
-                        pure $
-                          UnlockStake.mkProposalValidatorTestCase
-                            UnlockStake.UnlockStakeParameters
-                              { UnlockStake.proposalCount = proposalCount
-                              , UnlockStake.stakeUsage = UnlockStake.Creator
-                              , UnlockStake.retractVotes = False
-                              , UnlockStake.proposalStatus = status
-                              }
-                            False
-                    retractVotesWithCreatorStake =
-                      group "creator stake retracts votes" $ do
-                        status <- [Draft, VotingReady, Locked, Finished]
-
-                        pure $
-                          UnlockStake.mkProposalValidatorTestCase
-                            UnlockStake.UnlockStakeParameters
-                              { UnlockStake.proposalCount = proposalCount
-                              , UnlockStake.stakeUsage = UnlockStake.Creator
-                              , UnlockStake.retractVotes = True
-                              , UnlockStake.proposalStatus = status
-                              }
-                            False
-
-                [ retractsVotesWhileNotVotingReady
-                  , unlockIrrelevantStake
-                  , unlockCreatorStakeBeforeFinished
-                  , retractVotesWithCreatorStake
+              mkIllegalGroup nProposals =
+                group
+                  (mkSubgroupName nProposals)
+                  [ group "retract votes while not voting" $
+                      map
+                        ( \ps ->
+                            let name =
+                                  "role: " <> show ps.stakeRole
+                                    <> ", status: "
+                                    <> show ps.proposalStatus
+                             in UnlockStake.mkTestTree name ps False
+                        )
+                        (UnlockStake.mkRetractVotesWhileNotVoting nProposals)
+                  , group "unlock an irrelevant stake" $
+                      map
+                        ( \ps ->
+                            let name =
+                                  "status: " <> show ps.proposalStatus
+                                    <> "retract votes: "
+                                    <> show ps.retractVotes
+                             in UnlockStake.mkTestTree name ps False
+                        )
+                        (UnlockStake.mkUnockIrrelevantStakeParameters nProposals)
+                  , group "remove creator too early" $
+                      map
+                        ( \ps ->
+                            let name =
+                                  "status: " <> show ps.proposalStatus
+                             in UnlockStake.mkTestTree name ps False
+                        )
+                        (UnlockStake.mkRemoveCreatorLockBeforeFinishedParameters nProposals)
+                  , UnlockStake.mkTestTree
+                      "creator: retract votes"
+                      (UnlockStake.mkRetractVotesWithCreatorStakeParamaters nProposals)
+                      False
+                  , group "alter output stake datum" $
+                      map
+                        ( \ps ->
+                            let name =
+                                  "role: " <> show ps.stakeRole
+                                    <> ", status: "
+                                    <> show ps.proposalStatus
+                             in UnlockStake.mkTestTree name ps False
+                        )
+                        (UnlockStake.mkAlterStakeParameters nProposals)
                   ]
 
-          [legalGroup, illegalGroup]
+              legalGroup = group "legal" $ map mkLegalGroup proposalCountCases
+              illegalGroup = group "illegal" $ map mkIllegalGroup proposalCountCases
+           in [legalGroup, illegalGroup]
       ]
   ]
