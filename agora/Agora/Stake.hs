@@ -18,11 +18,17 @@ module Agora.Stake (
   PStakeDatum (..),
   PStakeRedeemer (..),
   PProposalLock (..),
-  PStakeUsage (..),
+  PStakeRole (..),
 
   -- * Utility functions
-  stakeLocked,
-  pgetStakeUsage,
+  pstakeLocked,
+  pnumCreatedProposals,
+  pextractVoteOption,
+  pgetStakeRole,
+  pisVoter,
+  pisCreator,
+  pisPureCreator,
+  pisIrrelevant,
 ) where
 
 import Agora.Plutarch.Orphans ()
@@ -43,14 +49,15 @@ import Plutarch.Extra.IsData (
   DerivePConstantViaDataList (..),
   ProductIsData (ProductIsData),
  )
-import Plutarch.Extra.List (pmapMaybe, pnotNull)
+import Plutarch.Extra.List (pnotNull)
 import Plutarch.Extra.Other (DerivePNewtype' (..))
-import Plutarch.Extra.TermCont (pletFieldsC)
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (..))
 import Plutarch.SafeMoney (PDiscrete)
+import Plutarch.Show (PShow (..))
 import PlutusLedgerApi.V1 (PubKeyHash)
 import PlutusLedgerApi.V1.Value (AssetClass)
 import PlutusTx qualified
+import Prelude ((+))
 import Prelude hiding (Num (..))
 
 --------------------------------------------------------------------------------
@@ -69,8 +76,7 @@ data Stake = Stake
       GHC.Generic
     )
 
-{- | A lock placed on a Stake datum in order to prevent
-     depositing and withdrawing when votes are in place.
+{- | Locks that are stored in the stake datums for various purposes.
 
      NOTE: Due to retracting votes always being possible,
      this lock will only lock with contention on the proposal.
@@ -97,30 +103,47 @@ data Stake = Stake
 
      @since 0.1.0
 -}
-data ProposalLock = ProposalLock
-  { vote :: ResultTag
-  -- ^ What was voted on. This allows retracting votes to
-  --   undo their vote.
-  , proposalId :: ProposalId
-  -- ^ Identifies the proposal. See 'ProposalId' for further
-  -- comments on its significance.
-  }
+data ProposalLock
+  = -- | The stake was used to create a proposal.
+    --
+    --   This kind of lock is placed upon the creation of a proposal, in order
+    --    to limit creation of proposals per stake.
+    --
+    --   See also: https://github.com/Liqwid-Labs/agora/issues/68
+    --
+    --   @since 0.2.0
+    Created
+      { craeted :: ProposalId
+      -- ^ The identifier of the proposal.
+      }
+  | -- | The stake was used to vote on a proposal.
+    --
+    --   This kind of lock is placed while voting on a propsoal, in order to
+    --    prevent depositing and withdrawing when votes are in place.
+    --
+    --   @since 0.2.0
+    Voted
+      { votedOn :: ProposalId
+      -- ^ The identifier of the proposal.
+      , votedFor :: ResultTag
+      -- ^ The option which was voted on. This allows votes to be retracted.
+      }
   deriving stock
     ( -- | @since 0.1.0
       Show
     , -- | @since 0.1.0
       GHC.Generic
     )
-  deriving anyclass (Generic)
-  deriving
+  deriving anyclass
     ( -- | @since 0.1.0
-      PlutusTx.ToData
-    , -- | @since 0.1.0
-      PlutusTx.FromData
-    , -- | @since 0.1.0
-      PlutusTx.UnsafeFromData
+      Generic
     )
-    via (ProductIsData ProposalLock)
+
+PlutusTx.makeIsDataIndexed
+  ''ProposalLock
+  [ ('Created, 0)
+  , ('Voted, 1)
+  ]
 
 {- | Haskell-level redeemer for Stake scripts.
 
@@ -138,12 +161,12 @@ data StakeRedeemer
     --   This needs to be done in sync with casting a vote, otherwise
     --   it's possible for a lock to be permanently placed on the stake,
     --   and then the funds are lost.
-    PermitVote ProposalLock
+    PermitVote
   | -- | Retract a vote, removing it from the 'lockedBy' field. See 'ProposalLock'.
     --   This action checks for permission of the 'Agora.Proposal.Proposal'. Finished proposals are
     --   always allowed to have votes retracted and won't affect the Proposal datum,
     --   allowing 'Stake's to be unlocked.
-    RetractVotes [ProposalLock]
+    RetractVotes
   | -- | The owner can consume stake if nothing is changed about it.
     --   If the proposal token moves, this is equivalent to the owner consuming it.
     WitnessStake
@@ -165,7 +188,7 @@ PlutusTx.makeIsDataIndexed
 data StakeDatum = StakeDatum
   { stakedAmount :: Tagged GTTag Integer
   -- ^ Tracks the amount of governance token staked in the datum.
-  -- This also acts as the voting weight for 'Agora.Proposal.Proposal's.
+  --   This also acts as the voting weight for 'Agora.Proposal.Proposal's.
   , owner :: PubKeyHash
   -- ^ The hash of the public key this stake belongs to.
   --
@@ -173,7 +196,7 @@ data StakeDatum = StakeDatum
   --      https://github.com/Liqwid-Labs/agora/issues/45
   , lockedBy :: [ProposalLock]
   -- ^ The current proposals locking this stake. This field must be empty
-  -- for the stake to be usable for deposits and withdrawals.
+  --   for the stake to be usable for deposits and withdrawals.
   }
   deriving stock (Show, GHC.Generic)
   deriving anyclass (Generic)
@@ -227,13 +250,20 @@ newtype PStakeDatum (s :: S) = PStakeDatum
     via (DerivePNewtype' PStakeDatum)
 
 -- | @since 0.1.0
-instance Plutarch.Lift.PUnsafeLiftDecl PStakeDatum where type PLifted PStakeDatum = StakeDatum
+instance Plutarch.Lift.PUnsafeLiftDecl PStakeDatum where
+  type PLifted PStakeDatum = StakeDatum
 
 -- | @since 0.1.0
-deriving via (DerivePConstantViaDataList StakeDatum PStakeDatum) instance (Plutarch.Lift.PConstantDecl StakeDatum)
+deriving via
+  (DerivePConstantViaDataList StakeDatum PStakeDatum)
+  instance
+    (Plutarch.Lift.PConstantDecl StakeDatum)
 
 -- | @since 0.1.0
-deriving via PAsData (DerivePNewtype' PStakeDatum) instance PTryFrom PData (PAsData PStakeDatum)
+deriving via
+  PAsData (DerivePNewtype' PStakeDatum)
+  instance
+    PTryFrom PData (PAsData PStakeDatum)
 
 {- | Plutarch-level redeemer for Stake scripts.
 
@@ -244,8 +274,8 @@ data PStakeRedeemer (s :: S)
     PDepositWithdraw (Term s (PDataRecord '["delta" ':= PDiscrete GTTag]))
   | -- | Destroy a stake, retrieving its LQ, the minimum ADA and any other assets.
     PDestroy (Term s (PDataRecord '[]))
-  | PPermitVote (Term s (PDataRecord '["lock" ':= PProposalLock]))
-  | PRetractVotes (Term s (PDataRecord '["locks" ':= PBuiltinList (PAsData PProposalLock)]))
+  | PPermitVote (Term s (PDataRecord '[]))
+  | PRetractVotes (Term s (PDataRecord '[]))
   | PWitnessStake (Term s (PDataRecord '[]))
   deriving stock
     ( -- | @since 0.1.0
@@ -267,65 +297,37 @@ data PStakeRedeemer (s :: S)
     )
     via PIsDataReprInstances PStakeRedeemer
 
+-- | @since 0.1.0
 deriving via
   PAsData (PIsDataReprInstances PStakeRedeemer)
   instance
     PTryFrom PData (PAsData PStakeRedeemer)
 
-instance Plutarch.Lift.PUnsafeLiftDecl PStakeRedeemer where type PLifted PStakeRedeemer = StakeRedeemer
-deriving via (DerivePConstantViaData StakeRedeemer PStakeRedeemer) instance (Plutarch.Lift.PConstantDecl StakeRedeemer)
+-- | @since 0.1.0
+instance Plutarch.Lift.PUnsafeLiftDecl PStakeRedeemer where
+  type PLifted PStakeRedeemer = StakeRedeemer
+
+-- | @since 0.1.0
+deriving via
+  (DerivePConstantViaData StakeRedeemer PStakeRedeemer)
+  instance
+    (Plutarch.Lift.PConstantDecl StakeRedeemer)
 
 {- | Plutarch-level version of 'ProposalLock'.
 
-     @since 0.1.0
+     @since 0.2.0
 -}
-newtype PProposalLock (s :: S) = PProposalLock
-  { getProposalLock ::
-      Term
-        s
-        ( PDataRecord
-            '[ "vote" ':= PResultTag
-             , "proposalTag" ':= PProposalId
-             ]
-        )
-  }
-  deriving stock (GHC.Generic)
-  deriving anyclass (Generic)
-  deriving anyclass (PIsDataRepr)
-  deriving
-    (PlutusType, PIsData, PDataFields, PEq)
-    via (DerivePNewtype' PProposalLock)
-
-deriving via
-  PAsData (DerivePNewtype' PProposalLock)
-  instance
-    PTryFrom PData (PAsData PProposalLock)
-
-instance Plutarch.Lift.PUnsafeLiftDecl PProposalLock where type PLifted PProposalLock = ProposalLock
-deriving via (DerivePConstantViaDataList ProposalLock PProposalLock) instance (Plutarch.Lift.PConstantDecl ProposalLock)
-
---------------------------------------------------------------------------------
-
-{- | Check whether a Stake is locked. If it is locked, various actions are unavailable.
-
-     @since 0.1.0
--}
-stakeLocked :: forall (s :: S). Term s (PStakeDatum :--> PBool)
-stakeLocked = phoistAcyclic $
-  plam $ \stakeDatum ->
-    let locks :: Term _ (PBuiltinList (PAsData PProposalLock))
-        locks = pfield @"lockedBy" # stakeDatum
-     in pnotNull # locks
-
-{- | Represent the usage of a stake on a particular proposal.
-     A stake can be used to either create or vote on a proposal.
-
-     @since 0.1.0
--}
-data PStakeUsage (s :: S)
-  = PVotedFor (Term s PResultTag)
-  | PCreated
-  | PDidNothing
+data PProposalLock (s :: S)
+  = PCreated (Term s (PDataRecord '["created" ':= PProposalId]))
+  | PVoted
+      ( Term
+          s
+          ( PDataRecord
+              '[ "votedOn" ':= PProposalId
+               , "votedFor" ':= PResultTag
+               ]
+          )
+      )
   deriving stock
     ( -- | @since 0.1.0
       GHC.Generic
@@ -334,51 +336,212 @@ data PStakeUsage (s :: S)
     ( -- | @since 0.1.0
       Generic
     , -- | @since 0.1.0
+      HasDatatypeInfo
+    )
+  deriving anyclass
+    ( -- | @since 0.1.0
+      PIsDataRepr
+    )
+  deriving
+    ( -- | @since 0.1.0
       PlutusType
     , -- | @since 0.1.0
-      HasDatatypeInfo
+      PIsData
     , -- | @since 0.1.0
       PEq
     )
+    via (PIsDataReprInstances PProposalLock)
 
-{- | / O(n) /.Return the usage of a stake on a particular proposal,
-     given the 'lockedBy' field of a stake and the target proposal.
+-- | @since 0.1.0
+deriving via
+  PAsData (PIsDataReprInstances PProposalLock)
+  instance
+    PTryFrom PData (PAsData PProposalLock)
 
-     @since 0.1.0
+-- | @since 0.1.0
+instance Plutarch.Lift.PUnsafeLiftDecl PProposalLock where
+  type PLifted PProposalLock = ProposalLock
+
+-- | @since 0.1.0
+deriving via
+  (DerivePConstantViaData ProposalLock PProposalLock)
+  instance
+    (Plutarch.Lift.PConstantDecl ProposalLock)
+
+-- | @since 0.2.0
+instance PShow PProposalLock where
+  pshow' :: Bool -> Term s PProposalLock -> Term s PString
+  pshow' True _ = "(..)"
+  pshow' False lock = pmatch lock $ \case
+    PCreated ((pfield @"created" #) -> pid) -> "Created " <> pshow pid
+    PVoted x -> pletFields @'["votedOn", "votedFor"] x $ \xF ->
+      "Voted on " <> pshow xF.votedOn <> " for " <> pshow xF.votedFor
+
+--------------------------------------------------------------------------------
+
+{- | Check whether a Stake is locked. If it is locked, various actions are unavailable.
+
+     @since 0.2.0
 -}
-pgetStakeUsage ::
-  Term
-    _
-    ( PBuiltinList (PAsData PProposalLock)
-        :--> PProposalId
-        :--> PStakeUsage
+pstakeLocked :: forall (s :: S). Term s (PStakeDatum :--> PBool)
+pstakeLocked = phoistAcyclic $
+  plam $ \stakeDatum ->
+    let locks :: Term _ (PBuiltinList (PAsData PProposalLock))
+        locks = pfield @"lockedBy" # stakeDatum
+     in pnotNull # locks
+
+{- | Get the number of *alive* proposals that were created by the given stake.
+
+     @since 0.2.0
+-}
+pnumCreatedProposals :: Term s (PBuiltinList (PAsData PProposalLock) :--> PInteger)
+pnumCreatedProposals =
+  phoistAcyclic $
+    plam $ \l ->
+      pfoldl
+        # phoistAcyclic
+          ( plam
+              ( \c (pfromData -> lock) ->
+                  c
+                    + pmatch
+                      lock
+                      ( \case
+                          PCreated _ -> 1
+                          _ -> 0
+                      )
+              )
+          )
+        # 0
+        # l
+
+{- | The role of a stake for a particular proposal. Scott-encoded.
+
+     @since 0.2.0
+-}
+data PStakeRole (s :: S)
+  = -- | The stake was used to vote on the proposal.
+    PVoter
+      (Term s PResultTag)
+      -- ^ The option which was voted for.
+  | -- | The stake was used to create the propsoal.
+    PCreator
+  | -- | The stake was used to both create and vote on the proposal.
+    PBoth
+      (Term s PResultTag)
+      -- ^ The option which was voted for.
+  | -- | The stake has nothing to do with the given propsoal.
+    PIrrelevant
+  deriving stock
+    ( -- | @since 0.2.0
+      GHC.Generic
     )
-pgetStakeUsage = phoistAcyclic $
-  plam $ \locks pid ->
-    let -- All locks from the given proposal.
-        filteredLocks =
-          pmapMaybe
-            # plam
-              ( \lock'@(pfromData -> lock) -> unTermCont $ do
-                  lockF <- pletFieldsC @'["proposalTag"] lock
+  deriving anyclass
+    ( -- | @since 0.2.0
+      Generic
+    , -- | @since 0.2.0
+      PlutusType
+    , -- | @since 0.2.0
+      HasDatatypeInfo
+    , -- | @since 0.2.0
+      PEq
+    )
 
-                  pure $
+{- | Retutn true if the stake was used to voted on the proposal.
+
+     @since 0.2.0
+-}
+pisVoter :: Term s (PStakeRole :--> PBool)
+pisVoter = phoistAcyclic $
+  plam $ \sr -> pmatch sr $ \case
+    PVoter _ -> pconstant True
+    PBoth _ -> pconstant True
+    _ -> pconstant False
+
+{- | Retutn true if the stake was used to create the proposal.
+
+     @since 0.2.0
+-}
+pisCreator :: Term s (PStakeRole :--> PBool)
+pisCreator = phoistAcyclic $
+  plam $ \sr -> pmatch sr $ \case
+    PCreator -> pconstant True
+    PBoth _ -> pconstant True
+    _ -> pconstant False
+
+{- | Retutn true if the stake was used to create the proposal, but not vote on
+     the proposal.
+
+     @since 0.2.0
+-}
+pisPureCreator :: Term s (PStakeRole :--> PBool)
+pisPureCreator = phoistAcyclic $
+  plam $ \sr -> pmatch sr $ \case
+    PCreator -> pconstant True
+    _ -> pconstant False
+
+{- | Return true if the stake isn't related to the proposal.
+
+     @since 0.2.0
+-}
+pisIrrelevant :: Term s (PStakeRole :--> PBool)
+pisIrrelevant = phoistAcyclic $
+  plam $ \sr -> pmatch sr $ \case
+    PIrrelevant -> pconstant True
+    _ -> pconstant False
+
+{- | Get the role of a stake for the proposal specified by the poroposal id,
+      given the 'StakeDatum.lockedBy' field of the stake.
+
+     Note that the list of locks is cosidered valid only if it contains at most
+      two locks from the given proposal: one voter lock and one creator lock.
+
+     @since 0.2.0
+-}
+pgetStakeRole :: Term s (PProposalId :--> PBuiltinList (PAsData PProposalLock) :--> PStakeRole)
+pgetStakeRole = phoistAcyclic $
+  plam $ \pid locks ->
+    pfoldl
+      # plam
+        ( \role (pfromData -> lock) ->
+            let thisRole = pmatch lock $ \case
+                  PCreated ((pfield @"created" #) -> pid') ->
                     pif
-                      (lockF.proposalTag #== pid)
-                      (pcon $ PJust lock')
-                      (pcon PNothing)
-              )
-            # locks
+                      (pid' #== pid)
+                      (pcon PCreator)
+                      (pcon PIrrelevant)
+                  PVoted lock' -> pletFields @'["votedOn", "votedFor"] lock' $ \lockF ->
+                    pif
+                      (lockF.votedOn #== pid)
+                      (pcon $ PVoter lockF.votedFor)
+                      (pcon PIrrelevant)
+             in pcombineStakeRole # thisRole # role
+        )
+      # pcon PIrrelevant
+      # locks
+  where
+    pcombineStakeRole :: Term s (PStakeRole :--> PStakeRole :--> PStakeRole)
+    pcombineStakeRole = phoistAcyclic $
+      plam $ \x y ->
+        let cannotCombine = ptraceError "duplicate roles"
+         in pmatch x $ \case
+              PVoter r -> pmatch y $ \case
+                PCreator -> pcon $ PBoth r
+                PIrrelevant -> x
+                _ -> cannotCombine
+              PCreator -> pmatch y $ \case
+                PVoter r -> pcon $ PBoth r
+                PIrrelevant -> x
+                _ -> cannotCombine
+              PBoth _ -> cannotCombine
+              PIrrelevant -> y
 
-        lockCount' = plength # filteredLocks
-     in plet lockCount' $ \lockCount ->
-          pif (lockCount #== 0) (pcon PDidNothing) $
-            pif
-              (lockCount #== 1)
-              ( pcon $
-                  PVotedFor $
-                    pfromData $
-                      pfield @"vote" #$ phead # filteredLocks
-              )
-              -- Note: see the implementation of the governor.
-              (pcon PCreated)
+{- | Get the outcome that was voted for.
+
+     @since 0.2.0
+-}
+pextractVoteOption :: Term s (PStakeRole :--> PResultTag)
+pextractVoteOption = phoistAcyclic $
+  plam $ \sr -> pmatch sr $ \case
+    PVoter r -> r
+    PBoth r -> r
+    _ -> ptraceError "not voter"

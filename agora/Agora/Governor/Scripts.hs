@@ -46,8 +46,6 @@ import Agora.Governor (
  )
 import Agora.Proposal (
   PProposalDatum (..),
-  PProposalId (..),
-  PResultTag,
   Proposal (..),
   ProposalStatus (Draft, Finished, Locked),
   pemptyVotesFor,
@@ -65,6 +63,7 @@ import Agora.Stake (
   PProposalLock (..),
   PStakeDatum (..),
   Stake (..),
+  pnumCreatedProposals,
  )
 import Agora.Stake.Scripts (
   stakePolicy,
@@ -108,7 +107,6 @@ import Plutarch.Api.V1.ScriptContext (pfindTxInByTxOutRef, pisUTXOSpent, ptryFin
 import "liqwid-plutarch-extra" Plutarch.Api.V1.Value (psymbolValueOf)
 import Plutarch.Extra.IsData (pmatchEnumFromData)
 import Plutarch.Extra.Map (
-  pkeys,
   plookup,
   plookup',
  )
@@ -300,6 +298,7 @@ governorValidator gov =
           , "nextProposalId"
           , "proposalTimings"
           , "createProposalTimeRangeMaxWidth"
+          , "maximumProposalsPerStake"
           ]
         oldGovernorDatum
 
@@ -341,6 +340,8 @@ governorValidator gov =
                       .& #proposalTimings .= oldGovernorDatumF.proposalTimings
                       .& #createProposalTimeRangeMaxWidth
                         .= oldGovernorDatumF.createProposalTimeRangeMaxWidth
+                      .& #maximumProposalsPerStake
+                        .= oldGovernorDatumF.maximumProposalsPerStake
                   )
           pguardC "Unexpected governor state datum" $
             newGovernorDatum #== expectedNewDatum
@@ -376,6 +377,10 @@ governorValidator gov =
 
           stakeInputDatumF <-
             pletFieldsC @["stakedAmount", "owner", "lockedBy"] stakeInputDatum
+
+          pguardC "Didn't created too many proposals" $
+            pnumCreatedProposals # stakeInputDatumF.lockedBy
+              #< oldGovernorDatumF.maximumProposalsPerStake
 
           pguardC "Required amount of stake GTs should be presented" $
             stakeInputDatumF.stakedAmount #== (pgtValueOf # stakeInputF.value)
@@ -479,25 +484,14 @@ governorValidator gov =
                 mustBePJust # "Stake output not found" #$ ptryFindDatum # stakeOutputDatumHash # txInfoF.datums
 
           -- The stake should be locked by the newly created proposal.
-
-          let possibleVoteResults = pkeys #$ pto $ pfromData proposalOutputDatum.votes
-
-              mkProposalLock :: Term _ (PProposalId :--> PAsData PResultTag :--> PAsData PProposalLock)
-              mkProposalLock =
-                phoistAcyclic $
-                  plam
-                    ( \pid rt' ->
-                        pdata $
-                          mkRecordConstr
-                            PProposalLock
-                            ( #vote .= rt' .& #proposalTag .= pdata pid
-                            )
-                    )
+          let newLock =
+                mkRecordConstr
+                  PCreated
+                  ( #created .= oldGovernorDatumF.nextProposalId
+                  )
 
               -- Append new locks to existing locks
-              expectedProposalLocks =
-                pconcat # stakeInputDatumF.lockedBy
-                  #$ pmap # (mkProposalLock # proposalOutputDatum.proposalId) # possibleVoteResults
+              expectedProposalLocks = pcons # pdata newLock # stakeInputDatumF.lockedBy
 
               expectedStakeOutputDatum =
                 pdata $

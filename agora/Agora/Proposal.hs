@@ -68,6 +68,7 @@ import Plutarch.Lift (
   PUnsafeLiftDecl (..),
  )
 import Plutarch.SafeMoney (PDiscrete)
+import Plutarch.Show (PShow (..))
 import PlutusLedgerApi.V1 (DatumHash, PubKeyHash, ValidatorHash)
 import PlutusLedgerApi.V1.Value (AssetClass)
 import PlutusTx qualified
@@ -328,7 +329,7 @@ data ProposalRedeemer
     --   This list should be sorted in ascending order.
     Cosign [PubKeyHash]
   | -- | Allow unlocking one or more stakes with votes towards particular 'ResultTag'.
-    Unlock ResultTag
+    Unlock
   | -- | Advance the proposal, performing the required checks for whether that is legal.
     --
     --   These are roughly the checks for each possible transition:
@@ -426,6 +427,11 @@ deriving via
   instance
     PTryFrom PData (PAsData PResultTag)
 
+-- | @since 0.2.0
+instance PShow PResultTag where
+  pshow' :: Bool -> Term s PResultTag -> Term s PString
+  pshow' _ x = pshow @PInteger $ pto x
+
 {- | Plutarch-level version of 'PProposalId'.
 
      @since 0.1.0
@@ -457,6 +463,11 @@ deriving via
   (DerivePConstantViaNewtype ProposalId PProposalId PInteger)
   instance
     (PConstantDecl ProposalId)
+
+-- | @since 0.2.0
+instance PShow PProposalId where
+  pshow' :: Bool -> Term s PProposalId -> Term s PString
+  pshow' _ x = pshow @PInteger $ pto x
 
 {- | Plutarch-level version of 'ProposalStatus'.
 
@@ -665,7 +676,7 @@ deriving via (DerivePConstantViaDataList ProposalDatum PProposalDatum) instance 
 data PProposalRedeemer (s :: S)
   = PVote (Term s (PDataRecord '["resultTag" ':= PResultTag]))
   | PCosign (Term s (PDataRecord '["newCosigners" ':= PBuiltinList (PAsData PPubKeyHash)]))
-  | PUnlock (Term s (PDataRecord '["resultTag" ':= PResultTag]))
+  | PUnlock (Term s (PDataRecord '[]))
   | PAdvanceProposal (Term s (PDataRecord '[]))
   deriving stock
     ( -- | @since 0.1.0

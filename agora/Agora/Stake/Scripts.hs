@@ -18,7 +18,7 @@ import Agora.Stake (
   ),
   Stake (gtClassRef, proposalSTClass),
   StakeRedeemer (WitnessStake),
-  stakeLocked,
+  pstakeLocked,
  )
 import Agora.Utils (
   mustBePJust,
@@ -109,7 +109,7 @@ stakePolicy gtClassRef =
                       pif
                         (psymbolValueOf # ownSymbol # txOutF.value #== 1)
                         ( let datum = mustFindDatum' @PStakeDatum # txOutF.datumHash # txInfoF.datums
-                           in pnot # (stakeLocked # datum)
+                           in pnot # (pstakeLocked # datum)
                         )
                         (pconstant False)
                 )
@@ -263,7 +263,7 @@ stakeValidator stake =
     spentST <- pletC $ psymbolValueOf # stCurrencySymbol #$ valueSpent
 
     -- Is the stake currently locked?
-    stakeIsLocked <- pletC $ stakeLocked # stakeDatum'
+    stakeIsLocked <- pletC $ pstakeLocked # stakeDatum'
 
     pure $
       pmatch stakeRedeemer $ \case
@@ -287,7 +287,7 @@ stakeValidator stake =
               proposalSTClass = passetClass # pconstant propCs # pconstant propTn
               spentProposalST = passetClassValueOf # valueSpent # proposalSTClass
 
-          proposalTokenMoved <- pletC $ spentProposalST #== 1
+          proposalTokenMoved <- pletC $ 1 #<= spentProposalST
 
           -- Filter out own outputs using own address and ST.
           ownOutputs <-
@@ -371,9 +371,20 @@ stakeValidator stake =
                   pletC $
                     pdata resolvedF.value #== pdata ownOutputValue
 
+                onlyLocksUpdated <-
+                  pletC $
+                    let templateStakeDatum =
+                          mkRecordConstr
+                            PStakeDatum
+                            ( #stakedAmount .= stakeDatum.stakedAmount
+                                .& #owner .= stakeDatum.owner
+                                .& #lockedBy .= pfield @"lockedBy" # stakeOut
+                            )
+                     in stakeOut #== templateStakeDatum
+
                 pure $
                   pmatch stakeRedeemer $ \case
-                    PRetractVotes l -> unTermCont $ do
+                    PRetractVotes _ -> unTermCont $ do
                       pguardC
                         "Owner signs this transaction"
                         ownerSignsTransaction
@@ -383,18 +394,8 @@ stakeValidator stake =
                       pguardC "Proposal ST spent" proposalTokenMoved
 
                       pguardC "A UTXO must exist with the correct output" $
-                        let expectedLocks = pfield @"locks" # l
-
-                            expectedDatum =
-                              mkRecordConstr
-                                PStakeDatum
-                                ( #stakedAmount .= stakeDatum.stakedAmount
-                                    .& #owner .= stakeDatum.owner
-                                    .& #lockedBy .= expectedLocks
-                                )
-
-                            valueCorrect = ownOutputValueUnchanged
-                            outputDatumCorrect = stakeOut #== expectedDatum
+                        let valueCorrect = ownOutputValueUnchanged
+                            outputDatumCorrect = onlyLocksUpdated
                          in foldl1
                               (#&&)
                               [ ptraceIfFalse "valueCorrect" valueCorrect
@@ -405,34 +406,21 @@ stakeValidator stake =
 
                     ------------------------------------------------------------
 
-                    PPermitVote l -> unTermCont $ do
+                    PPermitVote _ -> unTermCont $ do
                       pguardC
                         "Owner signs this transaction"
                         ownerSignsTransaction
 
+                      let proposalTokenMinted =
+                            passetClassValueOf # txInfoF.mint # proposalSTClass #== 1
+
                       -- This puts trust into the Proposal. The Proposal must necessarily check
                       -- that this is not abused.
-                      pguardC "Proposal ST spent" proposalTokenMoved
-
-                      -- Update the stake datum, but only the 'lockedBy' field.
-
-                      let -- We actually don't know whether the given lock is valid or not.
-                          -- This is checked in the proposal validator.
-                          newLock = pfield @"lock" # l
-                          -- Prepend the new lock to the existing locks.
-                          expectedLocks = pcons # newLock # stakeDatum.lockedBy
-
-                      expectedDatum <-
-                        pletC $
-                          mkRecordConstr
-                            PStakeDatum
-                            ( #stakedAmount .= stakeDatum.stakedAmount
-                                .& #owner .= stakeDatum.owner
-                                .& #lockedBy .= pdata expectedLocks
-                            )
+                      pguardC "Proposal ST spent or minted" $
+                        proposalTokenMoved #|| proposalTokenMinted
 
                       pguardC "A UTXO must exist with the correct output" $
-                        let correctOutputDatum = stakeOut #== expectedDatum
+                        let correctOutputDatum = onlyLocksUpdated
                             valueCorrect = ownOutputValueUnchanged
                          in foldl1
                               (#&&)
