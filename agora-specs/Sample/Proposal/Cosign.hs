@@ -1,3 +1,10 @@
+{- |
+Module     : Sample.Proposal.Cosign
+Maintainer : connor@mlabs.city
+Description: Generate sample data for testing the functionalities of cosigning proposals
+
+Sample and utilities for testing the functionalities of cosigning proposals.
+-}
 module Sample.Proposal.Cosign (
   Parameters (..),
   validCosignNParameters,

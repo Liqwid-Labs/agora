@@ -1,3 +1,10 @@
+{- |
+Module     : Sample.Proposal.Shared
+Maintainer : connor@mlabs.city
+Description: Shared constants for propsoal samples
+
+Shared constants for propsoal samples.
+-}
 module Sample.Proposal.Shared (proposalTxRef, stakeTxRef) where
 
 import PlutusLedgerApi.V1 (TxId)

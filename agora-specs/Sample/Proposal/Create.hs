@@ -1,3 +1,10 @@
+{- |
+Module     : Sample.Proposal.Create
+Maintainer : connor@mlabs.city
+Description: Generate sample data for testing the functionalities of creating proposals
+
+Sample and utilities for testing the functionalities of creating proposals.
+-}
 module Sample.Proposal.Create (
   Parameters (..),
   mkTestTree,

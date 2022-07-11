@@ -1,3 +1,10 @@
+{- |
+Module     : Sample.Proposal.Vote
+Maintainer : connor@mlabs.city
+Description: Generate sample data for testing the functionalities of voting on proposals.
+
+Sample and utilities for testing the functionalities of voting on proposals.
+-}
 module Sample.Proposal.Vote (
   validVoteParameters,
   mkTestTree,

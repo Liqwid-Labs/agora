@@ -1,3 +1,10 @@
+{- |
+Module     : Sample.Proposal.UnlockStake
+Maintainer : connor@mlabs.city
+Description: Generate sample data for testing the functionalities of unlocking stake and retracting votes
+
+Sample and utilities for testing the functionalities of unlocking stake and retracting votes
+-}
 module Sample.Proposal.UnlockStake (
   StakeRole (..),
   Parameters (..),

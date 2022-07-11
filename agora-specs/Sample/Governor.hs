@@ -1,5 +1,5 @@
 {- |
-Module     : Spec.Sample.Governor
+Module     : Sample.Governor
 Maintainer : connor@mlabs.city
 Description: Sample based testing for Governor utxos
 
