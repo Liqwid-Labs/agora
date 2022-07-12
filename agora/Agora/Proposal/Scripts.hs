@@ -533,10 +533,6 @@ proposalValidator proposal =
           ----------------------------------------------------------------------
 
           PUnlock _ -> withSingleStake $ \stakeInF stakeOut _ -> do
-            -- At draft stage, the votes should be empty.
-            pguardC "Shouldn't retract votes from a draft proposal" $
-              pnot #$ currentStatus #== pconstant Draft
-
             stakeRole <- pletC $ pgetStakeRole # proposalF.proposalId # stakeInF.lockedBy
 
             pguardC "Stake input should be relevant" $
@@ -556,6 +552,12 @@ proposalValidator proposal =
 
                 isCreator = pisCreator # stakeRole
 
+                -- If the stake has been used for creating the proposal,
+                --  the creator lock can only be removed when the proposal
+                --  is finished.
+                --
+                -- In other cases, all the locks related to this
+                --   proposal should be removed.
                 validateOutputLocks = plam $ \locks ->
                   plet
                     ( pgetStakeRole # proposalF.proposalId # locks

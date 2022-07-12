@@ -378,7 +378,7 @@ governorValidator gov =
           stakeInputDatumF <-
             pletFieldsC @["stakedAmount", "owner", "lockedBy"] stakeInputDatum
 
-          pguardC "Didn't created too many proposals" $
+          pguardC "Proposals created by the stake must not exceed the number stored in the governor." $
             pnumCreatedProposals # stakeInputDatumF.lockedBy
               #< oldGovernorDatumF.maximumProposalsPerStake
 

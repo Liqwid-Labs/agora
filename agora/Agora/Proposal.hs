@@ -409,6 +409,8 @@ newtype PResultTag (s :: S) = PResultTag (Term s PInteger)
       PEq
     , -- | @since 0.1.0
       POrd
+    , -- | @since 0.2.0
+      PShow
     )
     via (DerivePNewtype PResultTag PInteger)
 
@@ -427,11 +429,6 @@ deriving via
   instance
     PTryFrom PData (PAsData PResultTag)
 
--- | @since 0.2.0
-instance PShow PResultTag where
-  pshow' :: Bool -> Term s PResultTag -> Term s PString
-  pshow' _ x = pshow @PInteger $ pto x
-
 {- | Plutarch-level version of 'PProposalId'.
 
      @since 0.1.0
@@ -446,6 +443,8 @@ newtype PProposalId (s :: S) = PProposalId (Term s PInteger)
       PEq
     , -- | @since 0.1.0
       POrd
+    , -- | @since 0.2.0
+      PShow
     )
     via (DerivePNewtype PProposalId PInteger)
 
@@ -463,11 +462,6 @@ deriving via
   (DerivePConstantViaNewtype ProposalId PProposalId PInteger)
   instance
     (PConstantDecl ProposalId)
-
--- | @since 0.2.0
-instance PShow PProposalId where
-  pshow' :: Bool -> Term s PProposalId -> Term s PString
-  pshow' _ x = pshow @PInteger $ pto x
 
 {- | Plutarch-level version of 'ProposalStatus'.
 

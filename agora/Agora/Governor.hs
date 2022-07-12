@@ -74,7 +74,8 @@ data GovernorDatum = GovernorDatum
   , createProposalTimeRangeMaxWidth :: MaxTimeRangeWidth
   -- ^ The maximum valid duration of a transaction that creats a proposal.
   , maximumProposalsPerStake :: Integer
-  -- ^ The maximum number of *alive* proposals which were careated by a stake.
+  -- ^ The maximum number of unfinished proposals that a stake is allowed to be
+  --   associated to.
   }
   deriving stock (Show, GHC.Generic)
 

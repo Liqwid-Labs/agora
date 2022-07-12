@@ -371,11 +371,11 @@ deriving via
 -- | @since 0.2.0
 instance PShow PProposalLock where
   pshow' :: Bool -> Term s PProposalLock -> Term s PString
-  pshow' True _ = "(..)"
+  pshow' True x = "(" <> pshow' False x <> ")"
   pshow' False lock = pmatch lock $ \case
-    PCreated ((pfield @"created" #) -> pid) -> "Created " <> pshow pid
+    PCreated ((pfield @"created" #) -> pid) -> "PCreated " <> pshow' True pid
     PVoted x -> pletFields @'["votedOn", "votedFor"] x $ \xF ->
-      "Voted on " <> pshow xF.votedOn <> " for " <> pshow xF.votedFor
+      "PVoted " <> pshow' True xF.votedOn <> " " <> pshow' True xF.votedFor
 
 --------------------------------------------------------------------------------
 
