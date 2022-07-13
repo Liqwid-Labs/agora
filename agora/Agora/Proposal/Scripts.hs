@@ -14,7 +14,7 @@ import Agora.Proposal (
   PProposalDatum (PProposalDatum),
   PProposalRedeemer (..),
   PProposalVotes (PProposalVotes),
-  Proposal (governorSTAssetClass, stakeSTAssetClass),
+  Proposal (..),
   ProposalStatus (..),
   pretractVotes,
   pwinner',
@@ -428,6 +428,9 @@ proposalValidator proposal =
                 pmergeBy # pltAsData
                   # newSigs
                   # proposalF.cosigners
+
+            pguardC "Less cosigners than maximum limit" $
+              plength # updatedSigs #< pconstant proposal.maximumCosigners
 
             pguardC "Cosigners are unique" $
               pisUniq' # updatedSigs

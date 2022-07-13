@@ -138,7 +138,7 @@ governor = Governor oref gt mc
         Value.assetClass
           "da8c30857834c6ae7203935b89278c532b3995245295456f993e1d24"
           "LQ"
-    mc = 6
+    mc = 20
 
 govPolicy :: MintingPolicy
 govPolicy = mkMintingPolicy (governorPolicy governor)
