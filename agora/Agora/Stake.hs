@@ -113,9 +113,8 @@ data ProposalLock
     --
     --   @since 0.2.0
     Created
-      { craeted :: ProposalId
+      ProposalId
       -- ^ The identifier of the proposal.
-      }
   | -- | The stake was used to vote on a proposal.
     --
     --   This kind of lock is placed while voting on a propsoal, in order to
@@ -123,11 +122,10 @@ data ProposalLock
     --
     --   @since 0.2.0
     Voted
-      { votedOn :: ProposalId
+      ProposalId
       -- ^ The identifier of the proposal.
-      , votedFor :: ResultTag
+      ResultTag
       -- ^ The option which was voted on. This allows votes to be retracted.
-      }
   deriving stock
     ( -- | @since 0.1.0
       Show
