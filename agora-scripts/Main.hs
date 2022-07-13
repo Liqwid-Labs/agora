@@ -50,6 +50,7 @@ main =
 builders :: Builders
 builders =
   def
+    -- Agora scripts
     & insertBuilder "governorPolicy" ((.governorPolicyInfo) . agoraScripts)
     & insertBuilder "governorValidator" ((.governorValidatorInfo) . agoraScripts)
     & insertBuilder "stakePolicy" ((.stakePolicyInfo) . agoraScripts)
@@ -58,6 +59,20 @@ builders =
     & insertBuilder "proposalValidator" ((.proposalValidatorInfo) . agoraScripts)
     & insertBuilder "treasuryValidator" ((.treasuryValidatorInfo) . agoraScripts)
     & insertBuilder "authorityTokenPolicy" ((.authorityTokenPolicyInfo) . agoraScripts)
+    -- Trivial scripts. These are useful for testing, but they likely aren't useful
+    -- to you if you are actually interested in deploying to mainnet.
+    & insertBuilder
+      "alwaysSucceedsPolicy"
+      (\() -> mkPolicyInfo $ plam $ \_ _ -> popaque (pconstant ()))
+    & insertBuilder
+      "alwaysSucceedsValidator"
+      (\() -> mkValidatorInfo $ plam $ \_ _ _ -> popaque (pconstant ()))
+    & insertBuilder
+      "neverSucceedsPolicy"
+      (\() -> mkPolicyInfo $ plam $ \_ _ -> perror)
+    & insertBuilder
+      "neverSucceedsValidator"
+      (\() -> mkValidatorInfo $ plam $ \_ _ _ -> perror)
 
 {- | Create scripts from params.
 
