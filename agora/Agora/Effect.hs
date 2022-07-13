@@ -30,7 +30,6 @@ makeEffect ::
 makeEffect gatCs' f =
   plam $ \datum _redeemer ctx' -> unTermCont $ do
     ctx <- pletFieldsC @'["txInfo", "purpose"] ctx'
-    txInfo' <- pletC ctx.txInfo
 
     -- convert input datum, PData, into desierable type
     -- the way this conversion is performed should be defined
@@ -42,14 +41,14 @@ makeEffect gatCs' f =
     txOutRef' <- pletC (pfield @"_0" # txOutRef)
 
     -- fetch minted values to ensure single GAT is burned
-    txInfo <- pletFieldsC @'["mint"] txInfo'
+    txInfo <- pletFieldsC @'["mint", "inputs"] ctx.txInfo
     let mint :: Term _ (PValue _ _)
         mint = txInfo.mint
 
     -- fetch script context
     gatCs <- pletC $ pconstant gatCs'
 
-    pguardC "A single authority token has been burned" $ singleAuthorityTokenBurned gatCs txInfo' mint
+    pguardC "A single authority token has been burned" $ singleAuthorityTokenBurned gatCs txInfo.inputs mint
 
     -- run effect function
-    pure $ f gatCs datum' txOutRef' txInfo'
+    pure $ f gatCs datum' txOutRef' ctx.txInfo

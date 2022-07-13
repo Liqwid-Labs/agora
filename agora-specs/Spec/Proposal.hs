@@ -40,7 +40,7 @@ specs =
               "use other's stake"
               Create.useStakeOwnBySomeoneElseParameters
               True
-              False
+              True
               False
           , Create.mkTestTree
               "altered stake"

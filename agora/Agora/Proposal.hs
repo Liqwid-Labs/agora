@@ -29,8 +29,9 @@ module Agora.Proposal (
   PResultTag (..),
 
   -- * Plutarch helpers
-  proposalDatumValid,
-  pemptyVotesFor,
+  phasNeutralEffect,
+  pisEffectsVotesCompatible,
+  pisVotesEmpty,
   pwinner,
   pwinner',
   pneutralOption,
@@ -50,6 +51,7 @@ import Plutarch.Api.V1 (
   PPubKeyHash,
   PValidatorHash,
  )
+import Plutarch.Api.V1.AssocMap qualified as PAssocMap
 import Plutarch.DataRepr (DerivePConstantViaData (..), PDataFields, PIsDataReprInstances (..))
 import Plutarch.Extra.IsData (
   DerivePConstantViaDataList (..),
@@ -57,11 +59,10 @@ import Plutarch.Extra.IsData (
   EnumIsData (..),
   ProductIsData (ProductIsData),
  )
-import Plutarch.Extra.List (pnotNull)
 import Plutarch.Extra.Map qualified as PM
 import Plutarch.Extra.Map.Unsorted qualified as PUM
 import Plutarch.Extra.Other (DerivePNewtype' (..))
-import Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC)
+import Plutarch.Extra.TermCont (pguardC, pletC)
 import Plutarch.Lift (
   DerivePConstantViaNewtype (..),
   PConstantDecl,
@@ -597,19 +598,6 @@ deriving via
   instance
     (PConstantDecl ProposalVotes)
 
-{- | Plutarch-level version of 'emptyVotesFor'.
-
-     @since 0.1.0
--}
-pemptyVotesFor :: forall s a. (PIsData a) => Term s (PMap 'Unsorted PResultTag a :--> PProposalVotes)
-pemptyVotesFor =
-  phoistAcyclic $
-    plam
-      ( \m ->
-          pcon $
-            PProposalVotes $ PM.pmap # plam (const $ pconstant 0) # m
-      )
-
 {- | Plutarch-level version of 'ProposalDatum'.
 
      @since 0.1.0
@@ -712,27 +700,50 @@ deriving via (DerivePConstantViaData ProposalRedeemer PProposalRedeemer) instanc
 
      @since 0.1.0
 -}
-proposalDatumValid :: Proposal -> Term s (Agora.Proposal.PProposalDatum :--> PBool)
-proposalDatumValid proposal =
-  phoistAcyclic $
-    plam $ \datum' -> unTermCont $ do
-      datum <- pletFieldsC @'["effects", "cosigners", "votes"] $ datum'
 
-      let atLeastOneNegativeResult =
-            pany
-              # phoistAcyclic
-                (plam $ \m -> pnull #$ pto $ pfromData $ psndBuiltin # m)
-              #$ pto
-              $ pfromData datum.effects
+{- | Return true if the effect list contains at least one neutral outcome.
 
-      pure $
-        foldr1
-          (#&&)
-          [ ptraceIfFalse "Proposal has at least one ResultTag has no effects" atLeastOneNegativeResult
-          , ptraceIfFalse "Proposal has at least one cosigner" $ pnotNull # pfromData datum.cosigners
-          , ptraceIfFalse "Proposal has fewer cosigners than the limit" $ plength # pfromData datum.cosigners #<= pconstant proposal.maximumCosigners
-          , ptraceIfFalse "Proposal votes and effects are compatible with each other" $ PUM.pkeysEqual # datum.effects # pto (pfromData datum.votes)
-          ]
+     @since 0.2.0
+-}
+phasNeutralEffect ::
+  forall (s :: S).
+  Term
+    s
+    ( PMap 'Unsorted PResultTag (PMap 'Unsorted PValidatorHash PDatumHash)
+        :--> PBool
+    )
+phasNeutralEffect = phoistAcyclic $ PAssocMap.pany # PAssocMap.pnull
+
+{- | Return true if votes and effects of the proposal have the same key set.
+
+     @since 0.2.0
+-}
+pisEffectsVotesCompatible ::
+  forall (s :: S).
+  Term
+    s
+    ( PMap 'Unsorted PResultTag (PMap 'Unsorted PValidatorHash PDatumHash)
+        :--> PProposalVotes
+        :--> PBool
+    )
+pisEffectsVotesCompatible = phoistAcyclic $
+  plam $ \m (pto -> v :: Term _ (PMap _ _ _)) ->
+    PUM.pkeysEqual # m # v
+
+{- | Retutns true if vote counts of /all/ the options are zero.
+
+   @since 0.2.0
+-}
+pisVotesEmpty ::
+  forall (s :: S).
+  Term
+    s
+    ( PProposalVotes
+        :--> PBool
+    )
+pisVotesEmpty = phoistAcyclic $
+  plam $ \(pto -> m :: Term _ (PMap _ _ _)) ->
+    PAssocMap.pall # plam (#== 0) # m
 
 {- | Wrapper for 'pwinner''. When the winner cannot be found,
       the 'neutral' option will be returned.

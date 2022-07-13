@@ -47,10 +47,11 @@ import Agora.Governor (
 import Agora.Proposal (
   PProposalDatum (..),
   Proposal (..),
-  ProposalStatus (Draft, Finished, Locked),
-  pemptyVotesFor,
+  ProposalStatus (Draft, Locked),
+  phasNeutralEffect,
+  pisEffectsVotesCompatible,
+  pisVotesEmpty,
   pneutralOption,
-  proposalDatumValid,
   pwinner,
  )
 import Agora.Proposal.Scripts (
@@ -58,7 +59,6 @@ import Agora.Proposal.Scripts (
   proposalValidator,
  )
 import Agora.Proposal.Time (createProposalStartingTime)
-import Agora.SafeMoney (GTTag)
 import Agora.Stake (
   PProposalLock (..),
   PStakeDatum (..),
@@ -79,10 +79,6 @@ import Agora.Utils (
   validatorHashToAddress,
   validatorHashToTokenName,
  )
-import Plutarch.Extra.Record
-
---------------------------------------------------------------------------------
-
 import Plutarch.Api.V1 (
   PAddress,
   PCurrencySymbol,
@@ -93,7 +89,6 @@ import Plutarch.Api.V1 (
   PTxOut,
   PValidator,
   PValidatorHash,
-  PValue,
   mintingPolicySymbol,
   mkMintingPolicy,
   mkValidator,
@@ -103,19 +98,18 @@ import Plutarch.Api.V1.AssetClass (
   passetClass,
   passetClassValueOf,
  )
-import Plutarch.Api.V1.ScriptContext (pfindTxInByTxOutRef, pisUTXOSpent, ptryFindDatum, ptxSignedBy, pvalueSpent)
+import Plutarch.Api.V1.ScriptContext (pfindTxInByTxOutRef, pisUTXOSpent, ptryFindDatum, pvalueSpent)
 import "liqwid-plutarch-extra" Plutarch.Api.V1.Value (psymbolValueOf)
+import Plutarch.Extra.Field (pletAllC)
 import Plutarch.Extra.IsData (pmatchEnumFromData)
+import Plutarch.Extra.List (pfirstJust)
 import Plutarch.Extra.Map (
   plookup,
   plookup',
  )
 import Plutarch.Extra.Maybe (pisDJust)
+import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
 import Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC, ptryFromC)
-import Plutarch.SafeMoney (PDiscrete (..), pvalueDiscrete')
-
---------------------------------------------------------------------------------
-
 import PlutusLedgerApi.V1 (
   CurrencySymbol (..),
   MintingPolicy,
@@ -277,7 +271,7 @@ governorPolicy gov =
 governorValidator :: Governor -> ClosedTerm PValidator
 governorValidator gov =
   plam $ \datum' redeemer' ctx' -> unTermCont $ do
-    ctxF <- pletFieldsC @'["txInfo", "purpose"] ctx'
+    ctxF <- pletAllC ctx'
 
     txInfo' <- pletC $ pfromData $ ctxF.txInfo
     txInfoF <- pletFieldsC @'["mint", "inputs", "outputs", "datums", "signatories", "validRange"] txInfo'
@@ -292,15 +286,7 @@ governorValidator gov =
     let ownAddress = pfromData $ ownInputF.address
 
     (pfromData -> (oldGovernorDatum :: Term _ PGovernorDatum), _) <- ptryFromC datum'
-    oldGovernorDatumF <-
-      pletFieldsC
-        @'[ "proposalThresholds"
-          , "nextProposalId"
-          , "proposalTimings"
-          , "createProposalTimeRangeMaxWidth"
-          , "maximumProposalsPerStake"
-          ]
-        oldGovernorDatum
+    oldGovernorDatumF <- pletAllC oldGovernorDatum
 
     -- Check that GST will be returned to the governor.
     let ownInputGSTAmount = psymbolValueOf # pgstSymbol # ownInputF.value
@@ -354,19 +340,20 @@ governorValidator gov =
           -- Check that a stake is spent to create the propsal,
           --   and the value it contains meets the requirement.
 
-          stakeInput <-
+          stakeInputs <-
             pletC $
-              mustBePJust # "Stake input not found" #$ pfind
+              pfilter
                 # phoistAcyclic
                   ( plam $
-                      \((pfield @"resolved" #) -> txOut') -> unTermCont $ do
-                        txOut <- pletFieldsC @'["address", "value"] txOut'
-
-                        pure $
-                          txOut.address #== pdata pstakeValidatorAddress
-                            #&& psymbolValueOf # psstSymbol # txOut.value #== 1
+                      \((pfield @"value" #) . (pfield @"resolved" #) -> value) ->
+                        psymbolValueOf # psstSymbol # value #== 1
                   )
                 # pfromData txInfoF.inputs
+
+          pguardC "Can process only one stake" $
+            plength # stakeInputs #== 1
+
+          stakeInput <- pletC $ phead # stakeInputs
 
           stakeInputF <- pletFieldsC @'["datumHash", "value"] $ pfield @"resolved" # stakeInput
 
@@ -375,19 +362,11 @@ governorValidator gov =
 
           let stakeInputDatum = mustFindDatum' @PStakeDatum # stakeInputF.datumHash # txInfoF.datums
 
-          stakeInputDatumF <-
-            pletFieldsC @["stakedAmount", "owner", "lockedBy"] stakeInputDatum
+          stakeInputDatumF <- pletAllC stakeInputDatum
 
           pguardC "Proposals created by the stake must not exceed the number stored in the governor." $
             pnumCreatedProposals # stakeInputDatumF.lockedBy
               #< oldGovernorDatumF.maximumProposalsPerStake
-
-          pguardC "Required amount of stake GTs should be presented" $
-            stakeInputDatumF.stakedAmount #== (pgtValueOf # stakeInputF.value)
-
-          -- TODO: Is this required?
-          pguardC "Tx should be signed by the stake owner" $
-            ptxSignedBy # txInfoF.signatories # stakeInputDatumF.owner
 
           -- Check that the newly minted PST is sent to the proposal validator,
           --   and the datum it carries is legal.
@@ -417,92 +396,79 @@ governorValidator gov =
                 # outputDatumHash
                 # txInfoF.datums
 
-          pguardC "Proposal datum must be valid" $
-            proposalDatumValid' # proposalOutputDatum'
+          proposalOutputDatum <- pletAllC proposalOutputDatum'
 
-          proposalOutputDatum <-
-            pletFieldsC
-              @'["effects", "cosigners", "proposalId", "votes"]
-              proposalOutputDatum'
-
-          pguardC "Proposal should have only one cosigner" $
-            plength # pfromData proposalOutputDatum.cosigners #== 1
-
-          let -- Votes should be empty at this point
-              expectedVotes = pemptyVotesFor # pfromData proposalOutputDatum.effects
-              expectedStartingTime =
+          let expectedStartingTime =
                 createProposalStartingTime
                   # oldGovernorDatumF.createProposalTimeRangeMaxWidth
                   # txInfoF.validRange
-              -- Id, thresholds and timings should be copied from the old governor state datum.
-              expectedProposalOut =
-                mkRecordConstr
-                  PProposalDatum
-                  ( #proposalId .= oldGovernorDatumF.nextProposalId
-                      .& #effects .= proposalOutputDatum.effects
-                      .& #status .= pconstantData Draft
-                      .& #cosigners .= proposalOutputDatum.cosigners
-                      .& #thresholds .= oldGovernorDatumF.proposalThresholds
-                      .& #votes .= pdata expectedVotes
-                      .& #timingConfig .= oldGovernorDatumF.proposalTimings
-                      .& #startingTime .= pdata expectedStartingTime
-                  )
 
-          pguardC "Datum correct" $ expectedProposalOut #== proposalOutputDatum'
+              expectedCosigners = psingleton @PBuiltinList # stakeInputDatumF.owner
 
-          let cosigner = phead # pfromData proposalOutputDatum.cosigners
-
-          pguardC "Cosigner should be the stake owner" $
-            pdata stakeInputDatumF.owner #== cosigner
+          pguardC "Proposal datum correct" $
+            foldl1
+              (#&&)
+              [ ptraceIfFalse "has neutral effect" $
+                  phasNeutralEffect # proposalOutputDatum.effects
+              , ptraceIfFalse "votes have valid shape" $
+                  pisEffectsVotesCompatible # proposalOutputDatum.effects # proposalOutputDatum.votes
+              , ptraceIfFalse "votes are empty" $
+                  pisVotesEmpty # proposalOutputDatum.votes
+              , ptraceIfFalse "id correct" $
+                  proposalOutputDatum.proposalId #== oldGovernorDatumF.nextProposalId
+              , ptraceIfFalse "status is Draft" $
+                  proposalOutputDatum.status #== pconstantData Draft
+              , ptraceIfFalse "cosigners correct" $
+                  plistEquals # pfromData proposalOutputDatum.cosigners # expectedCosigners
+              , ptraceIfFalse "starting time correct" $
+                  proposalOutputDatum.startingTime #== expectedStartingTime
+              , ptraceIfFalse "copy over configurations" $
+                  proposalOutputDatum.thresholds #== oldGovernorDatumF.proposalThresholds
+                    #&& proposalOutputDatum.timingConfig #== oldGovernorDatumF.proposalTimings
+              ]
 
           -- Check the output stake has been proposly updated.
+          let stakeOutputDatumHash =
+                mustBePJust # "Output stake should be presented"
+                  #$ pfirstJust
+                    # phoistAcyclic
+                      ( plam
+                          ( \txOut -> unTermCont $ do
+                              txOutF <- pletFieldsC @'["datumHash", "value"] txOut
 
-          stakeOutput <-
-            pletC $
-              mustBePJust
-                # "Stake output not found"
-                  #$ pfind
-                # phoistAcyclic
-                  ( plam $
-                      \txOut' -> unTermCont $ do
-                        txOut <- pletFieldsC @'["address", "value"] txOut'
-
-                        pure $
-                          txOut.address #== pdata pstakeValidatorAddress
-                            #&& psymbolValueOf # psstSymbol # txOut.value #== 1
-                  )
-                # pfromData txInfoF.outputs
-
-          stakeOutputF <- pletFieldsC @'["datumHash", "value"] $ stakeOutput
-
-          pguardC "Staked GTs should be sent back to stake validator" $
-            stakeInputDatumF.stakedAmount #== (pgtValueOf # stakeOutputF.value)
-
-          let stakeOutputDatumHash = mustBePDJust # "Stake output should have datum" # stakeOutputF.datumHash
+                              pure $
+                                pif
+                                  (psymbolValueOf # psstSymbol # txOutF.value #== 1)
+                                  ( pcon $
+                                      PJust $
+                                        mustBePDJust # "Output stake datum should be presented"
+                                          # txOutF.datumHash
+                                  )
+                                  (pcon PNothing)
+                          )
+                      )
+                    # pfromData txInfoF.outputs
 
               stakeOutputDatum =
-                mustBePJust # "Stake output not found" #$ ptryFindDatum # stakeOutputDatumHash # txInfoF.datums
+                mustBePJust @(PAsData PStakeDatum) # "Stake output datum presented"
+                  #$ ptryFindDatum # stakeOutputDatumHash # txInfoF.datums
 
-          -- The stake should be locked by the newly created proposal.
-          let newLock =
+              stakeOutputLocks =
+                pfromData $ pfield @"lockedBy" # stakeOutputDatum
+
+              -- The stake should be locked by the newly created proposal.
+              newLock =
                 mkRecordConstr
                   PCreated
                   ( #created .= oldGovernorDatumF.nextProposalId
                   )
 
               -- Append new locks to existing locks
-              expectedProposalLocks = pcons # pdata newLock # stakeInputDatumF.lockedBy
+              expectedProposalLocks =
+                pcons # pdata newLock # stakeInputDatumF.lockedBy
 
-              expectedStakeOutputDatum =
-                pdata $
-                  mkRecordConstr
-                    PStakeDatum
-                    ( #stakedAmount .= stakeInputDatumF.stakedAmount
-                        .& #owner .= stakeInputDatumF.owner
-                        .& #lockedBy .= pdata expectedProposalLocks
-                    )
-
-          pguardC "Unexpected stake output datum" $ expectedStakeOutputDatum #== stakeOutputDatum
+          pguardC "Stake output locks correct" $
+            plistEquals # stakeOutputLocks # expectedProposalLocks
 
           pure $ popaque $ pconstant ()
 
@@ -533,58 +499,20 @@ governorValidator gov =
                     )
                   # pfromData txInfoF.inputs
 
-          proposalOutputF <-
-            pletFieldsC @'["datumHash"] $
-              mustBePJust # "Proposal output not found"
-                #$ pfind
-                  # plam
-                    ( \txOut -> unTermCont $ do
-                        txOutF <- pletFieldsC @'["address", "value"] txOut
-                        pure $
-                          psymbolValueOf # ppstSymbol # txOutF.value #== 1
-                            #&& txOutF.address #== pdata pproposalValidatorAddress
-                    )
-                  # pfromData txInfoF.outputs
-
           proposalInputDatum <-
             pletC $
               mustFindDatum' @PProposalDatum
                 # proposalInputF.datumHash
                 # txInfoF.datums
-          proposalOutputDatum <-
-            pletC $
-              mustFindDatum' @PProposalDatum
-                # proposalOutputF.datumHash
-                # txInfoF.datums
-
-          pguardC "Proposal datum must be valid" $
-            proposalDatumValid' # proposalInputDatum
-              #&& proposalDatumValid' # proposalOutputDatum
 
           proposalInputDatumF <-
-            pletFieldsC @'["proposalId", "effects", "status", "cosigners", "thresholds", "votes", "timingConfig", "startingTime"]
+            pletFieldsC @'["effects", "status", "thresholds", "votes"]
               proposalInputDatum
 
           -- Check that the proposal state is advanced so that a proposal cannot be executed twice.
 
           pguardC "Proposal must be in locked(executable) state in order to execute effects" $
             proposalInputDatumF.status #== pconstantData Locked
-
-          let expectedOutputProposalDatum =
-                mkRecordConstr
-                  PProposalDatum
-                  ( #proposalId .= proposalInputDatumF.proposalId
-                      .& #effects .= proposalInputDatumF.effects
-                      .& #status .= pconstantData Finished
-                      .& #cosigners .= proposalInputDatumF.cosigners
-                      .& #thresholds .= proposalInputDatumF.thresholds
-                      .& #votes .= proposalInputDatumF.votes
-                      .& #timingConfig .= proposalInputDatumF.timingConfig
-                      .& #startingTime .= proposalInputDatumF.startingTime
-                  )
-
-          pguardC "Unexpected output proposal datum" $
-            pdata proposalOutputDatum #== pdata expectedOutputProposalDatum
 
           -- TODO: anything else to check here?
 
@@ -661,15 +589,11 @@ governorValidator gov =
 
         Just MutateGovernor -> unTermCont $ do
           -- Check that a GAT is burnt.
-          pure $ popaque $ singleAuthorityTokenBurned patSymbol ctxF.txInfo txInfoF.mint
+          pure $ popaque $ singleAuthorityTokenBurned patSymbol txInfoF.inputs txInfoF.mint
 
         --------------------------------------------------------------------------
         Nothing -> ptraceError "Unknown redeemer"
   where
-    -- Get th amount of governance tokens in a value.
-    pgtValueOf :: Term s (PValue _ _ :--> PDiscrete GTTag)
-    pgtValueOf = phoistAcyclic $ pvalueDiscrete' gov.gtClassRef
-
     -- The currency symbol of authority token.
     patSymbol :: Term s PCurrencySymbol
     patSymbol = phoistAcyclic $ pconstant $ authorityTokenSymbolFromGovernor gov
@@ -680,22 +604,10 @@ governorValidator gov =
       let AssetClass (sym, _) = proposalSTAssetClassFromGovernor gov
        in phoistAcyclic $ pconstant sym
 
-    -- Is a proposal state datum valid?
-    proposalDatumValid' :: Term s (PProposalDatum :--> PBool)
-    proposalDatumValid' =
-      let params = proposalFromGovernor gov
-       in phoistAcyclic $ proposalDatumValid params
-
     -- The address of the proposal validator.
     pproposalValidatorAddress :: Term s PAddress
     pproposalValidatorAddress =
       let vh = proposalValidatorHashFromGovernor gov
-       in phoistAcyclic $ pconstant $ validatorHashToAddress vh
-
-    -- The address of the stake validator.
-    pstakeValidatorAddress :: Term s PAddress
-    pstakeValidatorAddress =
-      let vh = stakeValidatorHashFromGovernor gov
        in phoistAcyclic $ pconstant $ validatorHashToAddress vh
 
     -- The currency symbol of the stake state token.

@@ -260,6 +260,4 @@ governorDatumValid = phoistAcyclic $
         [ ptraceIfFalse "Execute threshold is less than or equal to" $ 0 #<= execute
         , ptraceIfFalse "Draft threshold is less than or equal to " $ 0 #<= draft
         , ptraceIfFalse "Vote threshold is less than or equal to " $ 0 #<= vote
-        , ptraceIfFalse "Draft threshold is less than vote threshold" $ draft #<= vote
-        , ptraceIfFalse "Execute threshold is less than vote threshold" $ vote #< execute
         ]

@@ -51,13 +51,14 @@ import Plutarch.Extra.IsData (
  )
 import Plutarch.Extra.List (pnotNull)
 import Plutarch.Extra.Other (DerivePNewtype' (..))
+import Plutarch.Extra.Sum (PSum (..))
+import Plutarch.Extra.Traversable (pfoldMap)
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (..))
 import Plutarch.SafeMoney (PDiscrete)
 import Plutarch.Show (PShow (..))
 import PlutusLedgerApi.V1 (PubKeyHash)
 import PlutusLedgerApi.V1.Value (AssetClass)
 import PlutusTx qualified
-import Prelude ((+))
 import Prelude hiding (Num (..))
 
 --------------------------------------------------------------------------------
@@ -396,21 +397,14 @@ pnumCreatedProposals :: Term s (PBuiltinList (PAsData PProposalLock) :--> PInteg
 pnumCreatedProposals =
   phoistAcyclic $
     plam $ \l ->
-      pfoldl
-        # phoistAcyclic
-          ( plam
-              ( \c (pfromData -> lock) ->
-                  c
-                    + pmatch
-                      lock
-                      ( \case
-                          PCreated _ -> 1
-                          _ -> 0
-                      )
-              )
-          )
-        # 0
-        # l
+      pto $
+        pfoldMap
+          # plam
+            ( \(pfromData -> lock) -> pmatch lock $ \case
+                PCreated _ -> pcon $ PSum 1
+                _ -> mempty
+            )
+          # l
 
 {- | The role of a stake for a particular proposal. Scott-encoded.
 

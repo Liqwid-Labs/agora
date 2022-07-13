@@ -40,7 +40,6 @@ import Agora.Utils (
   getMintingPolicySymbol,
   mustBePJust,
   mustFindDatum',
-  pisUniq',
   pltAsData,
  )
 import Plutarch.Api.V1 (
@@ -63,7 +62,7 @@ import Plutarch.Api.V1.ScriptContext (
 import "liqwid-plutarch-extra" Plutarch.Api.V1.Value (psymbolValueOf)
 import Plutarch.Extra.Comonad (pextract)
 import Plutarch.Extra.IsData (pmatchEnum)
-import Plutarch.Extra.List (pmapMaybe, pmergeBy, pmsortBy)
+import Plutarch.Extra.List (pisUniq', pmapMaybe, pmergeBy, pmsortBy)
 import Plutarch.Extra.Map (plookup, pupdate)
 import Plutarch.Extra.Maybe (pfromDJust, pfromJust, pisJust)
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))

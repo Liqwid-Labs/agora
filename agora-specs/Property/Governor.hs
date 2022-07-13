@@ -62,8 +62,6 @@ data GovernorDatumCases
   = ExecuteLE0
   | CreateLE0
   | VoteLE0
-  | CreateLEVote
-  | ExecuteLVote
   | Correct
   deriving stock (Eq, Show)
 
@@ -72,8 +70,6 @@ instance Universe GovernorDatumCases where
     [ ExecuteLE0
     , CreateLE0
     , VoteLE0
-    , CreateLEVote
-    , ExecuteLVote
     , Correct
     ]
 
@@ -94,8 +90,6 @@ governorDatumValidProperty =
       | e < 0 = ExecuteLE0
       | c < 0 = CreateLE0
       | v < 0 = VoteLE0
-      | c > v = CreateLEVote
-      | v >= e = ExecuteLVote
       | otherwise = Correct
 
     expected :: GovernorDatum -> Maybe Bool
@@ -127,16 +121,6 @@ governorDatumValidProperty =
             VoteLE0 ->
               -- vote < 0
               return $ ProposalThresholds execute create le0
-            CreateLEVote -> do
-              -- c > vote
-              nv <- taggedInteger (0, untag create - 1)
-              ne <- taggedInteger (untag nv + 1, 1000000000)
-              return $ ProposalThresholds ne create nv
-            ExecuteLVote -> do
-              -- vote >= execute
-              ne <- taggedInteger (0, untag vote)
-              nc <- taggedInteger (0, untag vote)
-              return $ ProposalThresholds ne nc vote
             Correct -> do
               -- c <= vote < execute
               nv <- taggedInteger (0, untag execute - 1)

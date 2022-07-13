@@ -1,18 +1,19 @@
 name,cpu,mem,size
-Agora/Effects/Treasury Withdrawal Effect/effect/Simple,333327612,830203,3674
-Agora/Effects/Treasury Withdrawal Effect/effect/Simple with multiple treasuries ,492387542,1197315,3986
-Agora/Effects/Treasury Withdrawal Effect/effect/Mixed Assets,456007605,1104500,3859
-Agora/Effects/Governor Mutation Effect/validator/valid new governor datum/governor validator should pass,88940927,246756,8891
-Agora/Effects/Governor Mutation Effect/validator/valid new governor datum/effect validator should pass,107090537,296185,3627
+Agora/Effects/Treasury Withdrawal Effect/effect/Simple,333137234,829671,3674
+Agora/Effects/Treasury Withdrawal Effect/effect/Simple with multiple treasuries ,492197164,1196783,3986
+Agora/Effects/Treasury Withdrawal Effect/effect/Mixed Assets,455817227,1103968,3859
+Agora/Effects/Governor Mutation Effect/validator/valid new governor datum/governor validator should pass,84914023,233054,7949
+Agora/Effects/Governor Mutation Effect/validator/valid new governor datum/effect validator should pass,104760131,289547,3491
 Agora/Stake/policy/stakeCreation,51008580,149029,2522
 Agora/Stake/validator/stakeDepositWithdraw deposit,183506412,498838,4745
 Agora/Stake/validator/stakeDepositWithdraw withdraw,183506412,498838,4733
 Agora/Proposal/policy (proposal creation)/legal/proposal,34975627,103548,2117
-Agora/Proposal/policy (proposal creation)/legal/governor,327971301,871386,9370
+Agora/Proposal/policy (proposal creation)/legal/governor,316600184,838411,8429
 Agora/Proposal/policy (proposal creation)/legal/stake,152415805,398403,5404
 Agora/Proposal/policy (proposal creation)/illegal/invalid next proposal id/proposal,34975627,103548,2117
 Agora/Proposal/policy (proposal creation)/illegal/invalid next proposal id/stake,152415805,398403,5404
 Agora/Proposal/policy (proposal creation)/illegal/use other's stake/proposal,34975627,103548,2086
+Agora/Proposal/policy (proposal creation)/illegal/use other's stake/governor,316600184,838411,8398
 Agora/Proposal/policy (proposal creation)/illegal/altered stake/proposal,34975627,103548,2117
 Agora/Proposal/policy (proposal creation)/illegal/invalid stake locks/proposal,34975627,103548,2125
 Agora/Proposal/policy (proposal creation)/illegal/invalid stake locks/stake,157849465,413053,5412
@@ -223,12 +224,12 @@ Agora/Proposal/validator/unlocking/illegal/with 42 proposals/remove creator too 
 Agora/Proposal/validator/unlocking/illegal/with 42 proposals/remove creator too early/status: VotingReady/stake,1674013803,4194887,26590
 Agora/Proposal/validator/unlocking/illegal/with 42 proposals/remove creator too early/status: Locked/stake,1674013803,4194887,26590
 Agora/Proposal/validator/unlocking/illegal/with 42 proposals/creator: retract votes/stake,1674013803,4194887,26506
-Agora/AuthorityToken/singleAuthorityTokenBurned/Correct simple,21017788,55883,806
-Agora/AuthorityToken/singleAuthorityTokenBurned/Correct many inputs,33204186,88241,900
-Agora/Treasury/Validator/Positive/Allows for effect changes,31556709,81546,1452
-Agora/AuthorityToken/singleAuthorityTokenBurned/Correct simple,21017788,55883,806
-Agora/AuthorityToken/singleAuthorityTokenBurned/Correct many inputs,33204186,88241,900
-Agora/Governor/policy/GST minting,51480023,145787,2048
-Agora/Governor/validator/proposal creation,303114849,813451,9390
-Agora/Governor/validator/GATs minting,422654153,1147158,9516
-Agora/Governor/validator/mutate governor state,90087778,252215,8991
+Agora/AuthorityToken/singleAuthorityTokenBurned/Correct simple,20570665,54655,725
+Agora/AuthorityToken/singleAuthorityTokenBurned/Correct many inputs,32757063,87013,825
+Agora/Treasury/Validator/Positive/Allows for effect changes,31277082,80782,1450
+Agora/AuthorityToken/singleAuthorityTokenBurned/Correct simple,20570665,54655,725
+Agora/AuthorityToken/singleAuthorityTokenBurned/Correct many inputs,32757063,87013,825
+Agora/Governor/policy/GST minting,49408995,139981,1910
+Agora/Governor/validator/proposal creation,294638205,791763,8449
+Agora/Governor/validator/GATs minting,249873031,663031,8575
+Agora/Governor/validator/mutate governor state,86060874,238513,8049
