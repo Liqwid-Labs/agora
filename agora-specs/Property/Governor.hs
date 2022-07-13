@@ -106,7 +106,7 @@ governorDatumValidProperty =
       thres <- genProposalThresholds c
 
       let timing = ProposalTimingConfig 0 0 0 0
-      return $ GovernorDatum thres (ProposalId 0) timing (MaxTimeRangeWidth 0)
+      return $ GovernorDatum thres (ProposalId 0) timing (MaxTimeRangeWidth 0) 3
       where
         taggedInteger p = Tagged <$> chooseInteger p
         genProposalThresholds :: GovernorDatumCases -> Gen ProposalThresholds
@@ -181,6 +181,7 @@ governorMintingProperty =
         , nextProposalId = ProposalId 0
         , proposalTimings = def
         , createProposalTimeRangeMaxWidth = def
+        , maximumProposalsPerStake = 3
         }
 
     gen :: GovernorPolicyCases -> Gen ScriptContext

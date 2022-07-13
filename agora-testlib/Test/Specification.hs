@@ -42,6 +42,8 @@ module Test.Specification (
   validatorFailsWith,
   effectSucceedsWith,
   effectFailsWith,
+  testValidator,
+  testPolicy,
 
   -- * Converters
   toTestTree,
@@ -253,3 +255,37 @@ effectFailsWith ::
   ScriptContext ->
   SpecificationTree
 effectFailsWith tag eff datum = validatorFailsWith tag eff datum ()
+
+testValidator ::
+  ( PLift datum
+  , PlutusTx.ToData (PLifted datum)
+  , PLift redeemer
+  , PlutusTx.ToData (PLifted redeemer)
+  ) =>
+  -- | Should the validator pass?
+  Bool ->
+  String ->
+  ClosedTerm PValidator ->
+  PLifted datum ->
+  PLifted redeemer ->
+  ScriptContext ->
+  SpecificationTree
+testValidator isValid =
+  if isValid
+    then validatorSucceedsWith
+    else validatorFailsWith
+
+testPolicy ::
+  ( PLift redeemer
+  , PlutusTx.ToData (PLifted redeemer)
+  ) =>
+  Bool ->
+  String ->
+  ClosedTerm PMintingPolicy ->
+  PLifted redeemer ->
+  ScriptContext ->
+  SpecificationTree
+testPolicy isValid =
+  if isValid
+    then policySucceedsWith
+    else policyFailsWith

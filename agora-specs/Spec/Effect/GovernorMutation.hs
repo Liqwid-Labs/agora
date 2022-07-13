@@ -38,6 +38,7 @@ specs =
                   (ProposalId 0)
                   def
                   def
+                  3
               )
               MutateGovernor
               ( ScriptContext
@@ -60,6 +61,7 @@ specs =
                   (ProposalId 0)
                   def
                   def
+                  3
               )
               MutateGovernor
               ( ScriptContext

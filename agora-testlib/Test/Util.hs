@@ -95,12 +95,16 @@ updateMap f k =
 
 --------------------------------------------------------------------------------
 
+-- | Sort the given 'AssocMap.Map' by keys in ascending order.
 sortMap :: forall k v. Ord k => AssocMap.Map k v -> AssocMap.Map k v
 sortMap =
   AssocMap.fromList
     . sortOn fst
     . AssocMap.toList
 
+{- | Sort the given 'Value' in ascending order. Some plutarch functions that
+   work with plutarch's 'Sorted' 'PMap' require this to work correctly.
+-}
 sortValue :: Value -> Value
 sortValue =
   Value

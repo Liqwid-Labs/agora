@@ -73,6 +73,9 @@ data GovernorDatum = GovernorDatum
   --   Will get copied over upon the creation of proposals.
   , createProposalTimeRangeMaxWidth :: MaxTimeRangeWidth
   -- ^ The maximum valid duration of a transaction that creats a proposal.
+  , maximumProposalsPerStake :: Integer
+  -- ^ The maximum number of unfinished proposals that a stake is allowed to be
+  --   associated to.
   }
   deriving stock (Show, GHC.Generic)
 
@@ -149,6 +152,7 @@ newtype PGovernorDatum (s :: S) = PGovernorDatum
              , "nextProposalId" ':= PProposalId
              , "proposalTimings" ':= PProposalTimingConfig
              , "createProposalTimeRangeMaxWidth" ':= PMaxTimeRangeWidth
+             , "maximumProposalsPerStake" ':= PInteger
              ]
         )
   }

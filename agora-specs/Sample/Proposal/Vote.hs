@@ -1,3 +1,10 @@
+{- |
+Module     : Sample.Proposal.Vote
+Maintainer : connor@mlabs.city
+Description: Generate sample data for testing the functionalities of voting on proposals.
+
+Sample and utilities for testing the functionalities of voting on proposals.
+-}
 module Sample.Proposal.Vote (
   validVoteParameters,
   mkTestTree,
@@ -17,7 +24,7 @@ import Agora.Proposal.Time (
   ProposalTimingConfig (draftTime, votingTime),
  )
 import Agora.Stake (
-  ProposalLock (ProposalLock),
+  ProposalLock (..),
   Stake (gtClassRef),
   StakeDatum (..),
   StakeRedeemer (PermitVote),
@@ -47,7 +54,7 @@ import PlutusLedgerApi.V1 (
  )
 import PlutusLedgerApi.V1.Value qualified as Value
 import PlutusTx.AssocMap qualified as AssocMap
-import Sample.Proposal.Shared (proposalTxRef, stakeTxRef, testFunc)
+import Sample.Proposal.Shared (proposalTxRef, stakeTxRef)
 import Sample.Shared (
   minAda,
   proposalPolicySymbol,
@@ -61,13 +68,16 @@ import Sample.Shared qualified as Shared
 import Test.Specification (
   SpecificationTree,
   group,
+  testValidator,
   validatorSucceedsWith,
  )
 import Test.Util (closedBoundedInterval, sortValue, updateMap)
 
+-- | Reference to the proposal UTXO.
 proposalRef :: TxOutRef
 proposalRef = TxOutRef proposalTxRef 0
 
+-- | Reference to the stake UTXO.
 stakeRef :: TxOutRef
 stakeRef = TxOutRef stakeTxRef 1
 
@@ -79,9 +89,11 @@ data Parameters = Parameters
   -- ^ The count of votes.
   }
 
+-- | The public key hash of the stake owner.
 stakeOwner :: PubKeyHash
 stakeOwner = signer
 
+-- | The votes of the input proposals.
 initialVotes :: AssocMap.Map ResultTag Integer
 initialVotes =
   AssocMap.fromList
@@ -89,6 +101,7 @@ initialVotes =
     , (ResultTag 1, 4242)
     ]
 
+-- | The input proposal datum.
 proposalInputDatum :: ProposalDatum
 proposalInputDatum =
   ProposalDatum
@@ -106,12 +119,16 @@ proposalInputDatum =
     , startingTime = ProposalStartingTime 0
     }
 
+-- | The locks of the input stake.
 existingLocks :: [ProposalLock]
 existingLocks =
-  [ ProposalLock (ResultTag 0) (ProposalId 0)
-  , ProposalLock (ResultTag 2) (ProposalId 1)
+  [ Voted (ProposalId 0) (ResultTag 0)
+  , Voted (ProposalId 1) (ResultTag 2)
   ]
 
+{- | Set the 'StakeDatum.stakedAmount' according to the number of votes being
+      casted.
+-}
 mkStakeInputDatum :: Parameters -> StakeDatum
 mkStakeInputDatum params =
   StakeDatum
@@ -120,14 +137,19 @@ mkStakeInputDatum params =
     , lockedBy = existingLocks
     }
 
+-- | Create the proposal redeemer. In this case @'Vote' _@ will always be used.
 mkProposalRedeemer :: Parameters -> ProposalRedeemer
 mkProposalRedeemer = Vote . voteFor
 
+-- | Place new proposal locks on the stake.
 mkNewLock :: Parameters -> ProposalLock
-mkNewLock ps = ProposalLock ps.voteFor proposalInputDatum.proposalId
+mkNewLock = Voted proposalInputDatum.proposalId . voteFor
 
-mkStakeRedeemer :: Parameters -> StakeRedeemer
-mkStakeRedeemer = PermitVote . mkNewLock
+{- | The stake redeemer that is used in 'mkTestTree'. In this case it'll always be
+      'PermitVote'.
+-}
+stakeRedeemer :: StakeRedeemer
+stakeRedeemer = PermitVote
 
 -- | Create a valid transaction that votes on a propsal, given the parameters.
 vote :: Parameters -> TxInfo
@@ -210,6 +232,7 @@ vote params =
 
 ---
 
+-- | Valida parameters that vote on the proposal.
 validVoteParameters :: Parameters
 validVoteParameters =
   Parameters
@@ -219,13 +242,16 @@ validVoteParameters =
 
 ---
 
+{- | Create a test tree that runs the stake validator and proposal validator to
+      test the voting functionalities.
+-}
 mkTestTree :: String -> Parameters -> Bool -> SpecificationTree
 mkTestTree name ps isValid = group name [proposal, stake]
   where
     txInfo = vote ps
 
     proposal =
-      testFunc
+      testValidator
         isValid
         "propsoal"
         (proposalValidator Shared.proposal)
@@ -242,7 +268,7 @@ mkTestTree name ps isValid = group name [proposal, stake]
             "stake"
             (stakeValidator Shared.stake)
             stakeInputDatum
-            (mkStakeRedeemer ps)
+            stakeRedeemer
             ( ScriptContext
                 txInfo
                 (Spending stakeRef)

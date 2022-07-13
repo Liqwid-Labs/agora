@@ -1,5 +1,5 @@
 {- |
-Module     : Spec.Sample.Governor
+Module     : Sample.Governor
 Maintainer : connor@mlabs.city
 Description: Sample based testing for Governor utxos
 
@@ -119,6 +119,7 @@ mintGST =
           , nextProposalId = ProposalId 0
           , proposalTimings = def
           , createProposalTimeRangeMaxWidth = def
+          , maximumProposalsPerStake = 3
           }
 
       witness :: ValidatorHash
@@ -183,6 +184,7 @@ createProposal =
           , nextProposalId = thisProposalId
           , proposalTimings = def
           , createProposalTimeRangeMaxWidth = def
+          , maximumProposalsPerStake = 3
           }
 
       effects =
@@ -216,8 +218,7 @@ createProposal =
 
       proposalLocks :: [ProposalLock]
       proposalLocks =
-        [ ProposalLock (ResultTag 0) thisProposalId
-        , ProposalLock (ResultTag 1) thisProposalId
+        [ Created thisProposalId
         ]
       stakeOutputDatum :: StakeDatum
       stakeOutputDatum = stakeInputDatum {lockedBy = proposalLocks}
@@ -304,6 +305,7 @@ mintGATs =
           , nextProposalId = ProposalId 5
           , proposalTimings = def
           , createProposalTimeRangeMaxWidth = def
+          , maximumProposalsPerStake = 3
           }
 
       effects =
@@ -423,6 +425,7 @@ mutateState =
           , nextProposalId = ProposalId 5
           , proposalTimings = def
           , createProposalTimeRangeMaxWidth = def
+          , maximumProposalsPerStake = 3
           }
 
       governorOutputDatum :: GovernorDatum

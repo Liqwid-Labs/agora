@@ -29,8 +29,12 @@ import Agora.Proposal.Time (
 import Agora.Stake (
   PProposalLock (..),
   PStakeDatum (..),
-  PStakeUsage (..),
-  pgetStakeUsage,
+  pextractVoteOption,
+  pgetStakeRole,
+  pisCreator,
+  pisIrrelevant,
+  pisPureCreator,
+  pisVoter,
  )
 import Agora.Utils (
   getMintingPolicySymbol,
@@ -469,12 +473,7 @@ proposalValidator proposal =
 
             -- Ensure that no lock with the current proposal id has been put on the stake.
             pguardC "Same stake shouldn't vote on the same proposal twice" $
-              pnot #$ pany
-                # plam
-                  ( \((pfield @"proposalTag" #) . pfromData -> pid) ->
-                      pid #== proposalF.proposalId
-                  )
-                # pfromData stakeInF.lockedBy
+              pnot #$ pisVoter #$ pgetStakeRole # proposalF.proposalId # pfromData stakeInF.lockedBy
 
             let -- The amount of new votes should be the 'stakedAmount'.
                 -- Update the vote counter of the proposal, and leave other stuff as is.
@@ -510,9 +509,9 @@ proposalValidator proposal =
 
             let newProposalLock =
                   mkRecordConstr
-                    PProposalLock
-                    ( #vote .= pdata voteFor
-                        .& #proposalTag .= proposalF.proposalId
+                    PVoted
+                    ( #votedOn .= proposalF.proposalId
+                        .& #votedFor .= pdata voteFor
                     )
                 -- Prepend the new lock to existing locks
                 expectedProposalLocks =
@@ -533,30 +532,12 @@ proposalValidator proposal =
 
           ----------------------------------------------------------------------
 
-          PUnlock r -> withSingleStake $ \stakeInF stakeOut _ -> do
-            -- At draft stage, the votes should be empty.
-            pguardC "Shouldn't retract votes from a draft proposal" $
-              pnot #$ currentStatus #== pconstant Draft
+          PUnlock _ -> withSingleStake $ \stakeInF stakeOut _ -> do
+            stakeRole <- pletC $ pgetStakeRole # proposalF.proposalId # stakeInF.lockedBy
 
-            -- This is the vote option we're retracting from.
-            retractFrom <- pletC $ pfield @"resultTag" # r
+            pguardC "Stake input should be relevant" $
+              pnot #$ pisIrrelevant # stakeRole
 
-            -- Determine if the input stake is actually locked by this proposal.
-            stakeUsage <- pletC $ pgetStakeUsage # stakeInF.lockedBy # proposalF.proposalId
-
-            pguardC "Stake input relevant" $
-              pmatch stakeUsage $ \case
-                PDidNothing ->
-                  ptraceIfFalse "Stake should be relevant" $
-                    pconstant False
-                PCreated ->
-                  ptraceIfFalse "Removing creator's locks means status is Finished" $
-                    currentStatus #== pconstant Finished
-                PVotedFor rt ->
-                  ptraceIfFalse "Result tag should match the one given in the redeemer" $
-                    rt #== retractFrom
-
-            -- The count of removing votes is equal to the 'stakeAmount' of input stake.
             retractCount <-
               pletC $
                 pmatch stakeInF.stakedAmount $ \(PDiscrete v) -> pextract # v
@@ -564,13 +545,34 @@ proposalValidator proposal =
             -- The votes can only change when the proposal still allows voting.
             let shouldUpdateVotes =
                   currentStatus #== pconstant VotingReady
-                    #&& pnot # (pcon PCreated #== stakeUsage)
+                    #&& pnot # (pisPureCreator # stakeRole)
+
+                allowRemovingCreatorLock =
+                  currentStatus #== pconstant Finished
+
+                isCreator = pisCreator # stakeRole
+
+                -- If the stake has been used for creating the proposal,
+                --  the creator lock can only be removed when the proposal
+                --  is finished.
+                --
+                -- In other cases, all the locks related to this
+                --   proposal should be removed.
+                validateOutputLocks = plam $ \locks ->
+                  plet
+                    ( pgetStakeRole # proposalF.proposalId # locks
+                    )
+                    $ \newStakeRole ->
+                      pif
+                        (isCreator #&& pnot # allowRemovingCreatorLock)
+                        (pisPureCreator # newStakeRole)
+                        (pisIrrelevant # newStakeRole)
 
             pguardC "Proposal output correct" $
               pif
                 shouldUpdateVotes
                 ( let -- Remove votes and leave other parts of the proposal as it.
-                      expectedVotes = pretractVotes # retractFrom # retractCount # proposalF.votes
+                      expectedVotes = pretractVotes # (pextractVoteOption # stakeRole) # retractCount # proposalF.votes
 
                       expectedProposalOut =
                         mkRecordConstr
@@ -598,15 +600,14 @@ proposalValidator proposal =
                     PStakeDatum
                     ( #stakedAmount .= stakeInF.stakedAmount
                         .& #owner .= stakeInF.owner
-                        .& #lockedBy .= stakeOutputLocks
+                        .& #lockedBy .= pdata stakeOutputLocks
                     )
 
             pguardC "Only locks updated in the output stake" $
               templateStakeOut #== stakeOut
 
             pguardC "All relevant locks removed from the stake" $
-              pgetStakeUsage # pfromData stakeOutputLocks
-                # proposalF.proposalId #== pcon PDidNothing
+              validateOutputLocks # stakeOutputLocks
 
             pure $ pconstant ()
 
