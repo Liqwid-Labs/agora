@@ -36,6 +36,7 @@ module Agora.Proposal (
   pwinner',
   pneutralOption,
   pretractVotes,
+  pisProposalThresholdsValid,
 ) where
 
 import Agora.Proposal.Time (PProposalStartingTime, PProposalTimingConfig, ProposalStartingTime, ProposalTimingConfig)
@@ -53,6 +54,8 @@ import Plutarch.Api.V1 (
  )
 import Plutarch.Api.V1.AssocMap qualified as PAssocMap
 import Plutarch.DataRepr (DerivePConstantViaData (..), PDataFields, PIsDataReprInstances (..))
+import Plutarch.Extra.Comonad (pextract)
+import Plutarch.Extra.Field (pletAllC)
 import Plutarch.Extra.IsData (
   DerivePConstantViaDataList (..),
   DerivePConstantViaEnum (..),
@@ -62,13 +65,13 @@ import Plutarch.Extra.IsData (
 import Plutarch.Extra.Map qualified as PM
 import Plutarch.Extra.Map.Unsorted qualified as PUM
 import Plutarch.Extra.Other (DerivePNewtype' (..))
-import Plutarch.Extra.TermCont (pguardC, pletC)
+import Plutarch.Extra.TermCont (pguardC, pletC, pmatchC)
 import Plutarch.Lift (
   DerivePConstantViaNewtype (..),
   PConstantDecl,
   PUnsafeLiftDecl (..),
  )
-import Plutarch.SafeMoney (PDiscrete)
+import Plutarch.SafeMoney (PDiscrete (..))
 import Plutarch.Show (PShow (..))
 import PlutusLedgerApi.V1 (DatumHash, PubKeyHash, ValidatorHash)
 import PlutusLedgerApi.V1.Value (AssetClass)
@@ -568,27 +571,6 @@ deriving via
   instance
     PTryFrom PData (PAsData PProposalVotes)
 
-{- | Retract votes given the option and the amount of votes.
-
-     @since 0.1.0
--}
-pretractVotes :: Term s (PResultTag :--> PInteger :--> PProposalVotes :--> PProposalVotes)
-pretractVotes = phoistAcyclic $
-  plam $ \rt count votes ->
-    let voteMap :: Term _ (PMap 'Unsorted PResultTag PInteger)
-        voteMap = pto votes
-     in pcon $
-          PProposalVotes $
-            PM.pupdate
-              # plam
-                ( \oldCount -> unTermCont $ do
-                    newCount <- pletC $ oldCount - count
-                    pguardC "Resulting vote count greater or equal to 0" $ 0 #<= newCount
-                    pure $ pcon $ PJust newCount
-                )
-              # rt
-              # voteMap
-
 -- | @since 0.1.0
 instance PUnsafeLiftDecl PProposalVotes where type PLifted PProposalVotes = ProposalVotes
 
@@ -864,3 +846,49 @@ pneutralOption = phoistAcyclic $
                 el' = pto el
              in pnull # el'
      in pfromData $ pfstBuiltin #$ mustBePJust # "No neutral option" #$ pfind # f # l
+
+{- | Return true if the thresholds are valid.
+
+     @since 0.2.0
+-}
+pisProposalThresholdsValid :: forall (s :: S). Term s (PProposalThresholds :--> PBool)
+pisProposalThresholdsValid = phoistAcyclic $
+  plam $ \thresholds -> unTermCont $ do
+    thresholdsF <- pletAllC thresholds
+
+    PDiscrete execute' <- pmatchC thresholdsF.execute
+    PDiscrete draft' <- pmatchC thresholdsF.create
+    PDiscrete vote' <- pmatchC thresholdsF.vote
+
+    execute <- pletC $ pextract # execute'
+    draft <- pletC $ pextract # draft'
+    vote <- pletC $ pextract # vote'
+
+    pure $
+      foldr1
+        (#&&)
+        [ ptraceIfFalse "Execute threshold is less than or equal to 0" $ 0 #<= execute
+        , ptraceIfFalse "Draft threshold is less than or equal to 0" $ 0 #<= draft
+        , ptraceIfFalse "Vote threshold is less than or equal to 0" $ 0 #<= vote
+        ]
+
+{- | Retract votes given the option and the amount of votes.
+
+     @since 0.1.0
+-}
+pretractVotes :: Term s (PResultTag :--> PInteger :--> PProposalVotes :--> PProposalVotes)
+pretractVotes = phoistAcyclic $
+  plam $ \rt count votes ->
+    let voteMap :: Term _ (PMap 'Unsorted PResultTag PInteger)
+        voteMap = pto votes
+     in pcon $
+          PProposalVotes $
+            PM.pupdate
+              # plam
+                ( \oldCount -> unTermCont $ do
+                    newCount <- pletC $ oldCount - count
+                    pguardC "Resulting vote count greater or equal to 0" $ 0 #<= newCount
+                    pure $ pcon $ PJust newCount
+                )
+              # rt
+              # voteMap

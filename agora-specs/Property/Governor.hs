@@ -7,7 +7,7 @@ Property model and tests for 'Governor' related functions
 -}
 module Property.Governor (props) where
 
-import Agora.Governor (GovernorDatum (..), governorDatumValid)
+import Agora.Governor (GovernorDatum (..), pisGovernorDatumValid)
 import Agora.Governor.Scripts (governorPolicy)
 import Agora.Proposal (
   ProposalId (ProposalId),
@@ -83,7 +83,7 @@ instance Finite GovernorDatumCases where
 -}
 governorDatumValidProperty :: Property
 governorDatumValidProperty =
-  classifiedPropertyNative gen (const []) expected classifier governorDatumValid
+  classifiedPropertyNative gen (const []) expected classifier pisGovernorDatumValid
   where
     classifier :: GovernorDatum -> GovernorDatumCases
     classifier (proposalThresholds -> ProposalThresholds e c v)
@@ -100,7 +100,7 @@ governorDatumValidProperty =
       thres <- genProposalThresholds c
 
       let timing = ProposalTimingConfig 0 0 0 0
-      return $ GovernorDatum thres (ProposalId 0) timing (MaxTimeRangeWidth 0) 3
+      return $ GovernorDatum thres (ProposalId 0) timing (MaxTimeRangeWidth 1) 3
       where
         taggedInteger p = Tagged <$> chooseInteger p
         genProposalThresholds :: GovernorDatumCases -> Gen ProposalThresholds

@@ -26,6 +26,8 @@ module Agora.Proposal.Time (
   isVotingPeriod,
   isLockingPeriod,
   isExecutionPeriod,
+  pisProposalTimeingConfigValid,
+  pisMaxTimeRangeWidthValid,
 ) where
 
 import Agora.Plutarch.Orphans ()
@@ -44,6 +46,7 @@ import Plutarch.DataRepr (
   PDataFields,
   PIsDataReprInstances (..),
  )
+import Plutarch.Extra.Field (pletAllC)
 import Plutarch.Extra.TermCont (pguardC, pletFieldsC, pmatchC)
 import Plutarch.Lift (
   DerivePConstantViaNewtype (..),
@@ -272,6 +275,43 @@ deriving via
     (PConstantDecl MaxTimeRangeWidth)
 
 --------------------------------------------------------------------------------
+
+{- | Return true if the timing configuration is valid.
+
+     @since 0.2.0
+-}
+pisProposalTimeingConfigValid :: Term s (PProposalTimingConfig :--> PBool)
+pisProposalTimeingConfigValid = phoistAcyclic $
+  plam $ \conf -> unTermCont $ do
+    confF <- pletAllC conf
+
+    -- everything is greater or equal 0
+    pure $
+      ptraceIfFalse "ge 0" $
+        foldr
+          ( \t ->
+              (#&&)
+                ( pconstant 0
+                    #<= pfromData t
+                )
+          )
+          (pconstant True)
+          [ confF.draftTime
+          , confF.votingTime
+          , confF.lockingTime
+          , confF.executingTime
+          ]
+
+{- | Return true if the maximum time width is greater than 0.
+
+     @since 0.2.0
+-}
+pisMaxTimeRangeWidthValid :: Term s (PMaxTimeRangeWidth :--> PBool)
+pisMaxTimeRangeWidthValid =
+  phoistAcyclic $
+    plam $
+      ptraceIfFalse "greater than 0"
+        . (pconstant (MaxTimeRangeWidth 0) #<)
 
 {- | Get the starting time of a proposal, from the 'PlutusLedgerApi.V1.txInfoValidPeriod' field.
      For every proposal, this is only meant to run once upon creation. Given time range should be

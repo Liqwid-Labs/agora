@@ -23,7 +23,7 @@ import Agora.Governor (
   Governor,
   GovernorDatum,
   PGovernorDatum,
-  governorDatumValid,
+  pisGovernorDatumValid,
  )
 import Agora.Governor.Scripts (
   authorityTokenSymbolFromGovernor,
@@ -215,7 +215,7 @@ mutateGovernorValidator gov = makeEffect (authorityTokenSymbolFromGovernor gov) 
 
     -- Ensure the output governor datum is what we want.
     pguardC "Unexpected governor datum" $ datumF.newDatum #== governorOutputDatum
-    pguardC "New governor datum should be valid" $ governorDatumValid # governorOutputDatum
+    pguardC "New governor datum should be valid" $ pisGovernorDatumValid # governorOutputDatum
 
     return $ popaque $ pconstant ()
   where

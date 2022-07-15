@@ -41,8 +41,8 @@ import Agora.Governor (
   Governor (gstOutRef, gtClassRef, maximumCosigners),
   GovernorRedeemer (..),
   PGovernorDatum (PGovernorDatum),
-  governorDatumValid,
   pgetNextProposalId,
+  pisGovernorDatumValid,
  )
 import Agora.Proposal (
   PProposalDatum (..),
@@ -180,7 +180,9 @@ governorPolicy gov =
     let datumHash = pfield @"datumHash" # pfromData govOutput
         datum = mustFindDatum' @PGovernorDatum # datumHash # txInfoF.datums
 
-    pure $ popaque $ governorDatumValid # datum
+    pguardC "Governor output datum valid" $ pisGovernorDatumValid # datum
+
+    pure $ popaque $ pconstant ()
 
 {- | Validator for Governors.
 
@@ -310,7 +312,8 @@ governorValidator gov =
         pfromData $
           mustBePJust # "Ouput governor state datum not found"
             #$ ptryFindDatum # outputGovernorStateDatumHash # txInfoF.datums
-    pguardC "New datum is not valid" $ governorDatumValid # newGovernorDatum
+
+    pguardC "New datum is valid" $ pisGovernorDatumValid # newGovernorDatum
 
     pure $
       pmatchEnumFromData redeemer' $ \case
