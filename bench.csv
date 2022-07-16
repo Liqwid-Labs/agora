@@ -29,11 +29,11 @@ Agora/Proposal/policy (proposal creation)/illegal/invalid proposal status/Locked
 Agora/Proposal/policy (proposal creation)/illegal/invalid proposal status/Locked/stake,153960499,403133,5404
 Agora/Proposal/policy (proposal creation)/illegal/invalid proposal status/Finished/proposal,33689644,100286,2002
 Agora/Proposal/policy (proposal creation)/illegal/invalid proposal status/Finished/stake,153960499,403133,5404
-Agora/Proposal/validator/cosignature/legal/with 1 cosigners/propsoal,235405219,657707,8151
+Agora/Proposal/validator/cosignature/legal/with 1 cosigners/propsoal,235543219,658307,8360
 Agora/Proposal/validator/cosignature/legal/with 1 cosigners/stake,118915099,307672,5213
-Agora/Proposal/validator/cosignature/legal/with 5 cosigners/propsoal,670429262,1868318,10781
+Agora/Proposal/validator/cosignature/legal/with 5 cosigners/propsoal,670567262,1868918,10990
 Agora/Proposal/validator/cosignature/legal/with 5 cosigners/stake,549710287,1450080,7723
-Agora/Proposal/validator/cosignature/legal/with 10 cosigners/propsoal,1328551536,3641835,14069
+Agora/Proposal/validator/cosignature/legal/with 10 cosigners/propsoal,1328689536,3642435,14278
 Agora/Proposal/validator/cosignature/legal/with 10 cosigners/stake,1097682628,2902865,10860
 Agora/Proposal/validator/cosignature/illegal/duplicate cosigners/stake,118915099,307672,5213
 Agora/Proposal/validator/cosignature/illegal/proposal status not Draft/with 1 cosigners/status: VotingReady/stake,118915099,307672,5213
@@ -45,89 +45,92 @@ Agora/Proposal/validator/cosignature/illegal/proposal status not Draft/with 5 co
 Agora/Proposal/validator/cosignature/illegal/proposal status not Draft/with 10 cosigners/status: VotingReady/stake,1097682628,2902865,10860
 Agora/Proposal/validator/cosignature/illegal/proposal status not Draft/with 10 cosigners/status: Locked/stake,1097682628,2902865,10860
 Agora/Proposal/validator/cosignature/illegal/proposal status not Draft/with 10 cosigners/status: Finished/stake,1097682628,2902865,10860
-Agora/Proposal/validator/voting/legal/propsoal,253541830,711367,8133
+Agora/Proposal/validator/voting/legal/propsoal,253679830,711967,8342
 Agora/Proposal/validator/voting/legal/stake,136152299,356425,5239
-Agora/Proposal/validator/advancing/from draft/with 1 cosigner(s)/legal/to next state/propsoal,222392288,630302,8114
+Agora/Proposal/validator/advancing/from draft/with 1 cosigner(s)/legal/to next state/propsoal,222530288,630902,8323
 Agora/Proposal/validator/advancing/from draft/with 1 cosigner(s)/legal/to next state/stake,118915099,307672,5222
-Agora/Proposal/validator/advancing/from draft/with 1 cosigner(s)/legal/to failed state/propsoal,217337596,619581,8116
+Agora/Proposal/validator/advancing/from draft/with 1 cosigner(s)/legal/to failed state/propsoal,217475596,620181,8325
 Agora/Proposal/validator/advancing/from draft/with 1 cosigner(s)/legal/to failed state/stake,118915099,307672,5224
 Agora/Proposal/validator/advancing/from draft/with 1 cosigner(s)/illegal/insufficient cosigns/stake,118638207,307672,5152
-Agora/Proposal/validator/advancing/from draft/with 5 cosigner(s)/legal/to next state/propsoal,602596705,1722841,10969
+Agora/Proposal/validator/advancing/from draft/with 5 cosigner(s)/legal/to next state/propsoal,602734705,1723441,11178
 Agora/Proposal/validator/advancing/from draft/with 5 cosigner(s)/legal/to next state/stake,496218319,1294304,7957
-Agora/Proposal/validator/advancing/from draft/with 5 cosigner(s)/legal/to failed state/propsoal,239706944,681645,8477
+Agora/Proposal/validator/advancing/from draft/with 5 cosigner(s)/legal/to failed state/propsoal,239844944,682245,8686
 Agora/Proposal/validator/advancing/from draft/with 5 cosigner(s)/legal/to failed state/stake,118915099,307672,5465
 Agora/Proposal/validator/advancing/from draft/with 5 cosigner(s)/illegal/insufficient cosigns/stake,447610813,1171578,7606
-Agora/Proposal/validator/advancing/from draft/with 10 cosigner(s)/legal/to next state/propsoal,1183788938,3402248,14538
+Agora/Proposal/validator/advancing/from draft/with 10 cosigner(s)/legal/to next state/propsoal,1183926938,3402848,14747
 Agora/Proposal/validator/advancing/from draft/with 10 cosigner(s)/legal/to next state/stake,1125911200,2984885,11375
-Agora/Proposal/validator/advancing/from draft/with 10 cosigner(s)/legal/to failed state/propsoal,267668629,759225,8930
+Agora/Proposal/validator/advancing/from draft/with 10 cosigner(s)/legal/to failed state/propsoal,267806629,759825,9139
 Agora/Proposal/validator/advancing/from draft/with 10 cosigner(s)/legal/to failed state/stake,118915099,307672,5767
 Agora/Proposal/validator/advancing/from draft/with 10 cosigner(s)/illegal/insufficient cosigns/stake,1013739927,2699971,10673
-Agora/Proposal/validator/advancing/legal/advance to next state/from: VotingReady/propsoal,253438293,715975,8123
+Agora/Proposal/validator/advancing/legal/advance to next state/from: VotingReady/propsoal,272116829,760091,8332
 Agora/Proposal/validator/advancing/legal/advance to next state/from: VotingReady/stake,118915099,307672,5229
-Agora/Proposal/validator/advancing/legal/advance to next state/from: Locked/propsoal,242199184,683144,8123
-Agora/Proposal/validator/advancing/legal/advance to next state/from: Locked/stake,118915099,307672,5229
-Agora/Proposal/validator/advancing/legal/advance to failed state/from: VotingReady/propsoal,239371739,677134,8117
+Agora/Proposal/validator/advancing/legal/advance to next state/from: Locked/propsoal,295366820,822071,8771
+Agora/Proposal/validator/advancing/legal/advance to next state/from: Locked/stake,156324691,401372,5668
+Agora/Proposal/validator/advancing/legal/advance to next state/from: Locked/governor,258411069,667386,8946
+Agora/Proposal/validator/advancing/legal/advance to failed state/from: VotingReady/propsoal,258602387,722952,8326
 Agora/Proposal/validator/advancing/legal/advance to failed state/from: VotingReady/stake,118915099,307672,5225
-Agora/Proposal/validator/advancing/legal/advance to failed state/from: Locked/propsoal,240502717,679538,8117
+Agora/Proposal/validator/advancing/legal/advance to failed state/from: Locked/propsoal,259733365,725356,8326
 Agora/Proposal/validator/advancing/legal/advance to failed state/from: Locked/stake,118915099,307672,5225
 Agora/Proposal/validator/advancing/illegal/insufficient votes/stake,118915099,307672,5225
 Agora/Proposal/validator/advancing/illegal/initial state is Finished/stake,118915099,307672,5217
+Agora/Proposal/validator/advancing/illegal/invalid stake output/from Lockedwith 1 stakes/governor,258411069,667386,8946
+Agora/Proposal/validator/advancing/illegal/invalid stake output/from Lockedwith 5 stakes/governor,265599017,688074,9187
 Agora/Proposal/validator/unlocking/legal/with 1 proposals/voter: retract votes while voting/stake,125083340,324576,5219
-Agora/Proposal/validator/unlocking/legal/with 1 proposals/voter: retract votes while voting/propsoal,236436652,664524,8114
+Agora/Proposal/validator/unlocking/legal/with 1 proposals/voter: retract votes while voting/propsoal,236574652,665124,8323
 Agora/Proposal/validator/unlocking/legal/with 1 proposals/voter/creator: retract votes while voting/stake,128314586,333630,5235
-Agora/Proposal/validator/unlocking/legal/with 1 proposals/voter/creator: retract votes while voting/propsoal,249908859,704466,8125
+Agora/Proposal/validator/unlocking/legal/with 1 proposals/voter/creator: retract votes while voting/propsoal,250046859,705066,8334
 Agora/Proposal/validator/unlocking/legal/with 1 proposals/creator: remove creator locks when finished/stake,125083340,324576,5217
-Agora/Proposal/validator/unlocking/legal/with 1 proposals/creator: remove creator locks when finished/propsoal,204228787,584379,8111
+Agora/Proposal/validator/unlocking/legal/with 1 proposals/creator: remove creator locks when finished/propsoal,204366787,584979,8320
 Agora/Proposal/validator/unlocking/legal/with 1 proposals/voter/creator: remove all locks when finished/stake,125083340,324576,5233
-Agora/Proposal/validator/unlocking/legal/with 1 proposals/voter/creator: remove all locks when finished/propsoal,212663044,609283,8123
+Agora/Proposal/validator/unlocking/legal/with 1 proposals/voter/creator: remove all locks when finished/propsoal,212801044,609883,8332
 Agora/Proposal/validator/unlocking/legal/with 1 proposals/voter: unlock after voting/Locked/stake,125083340,324576,5223
-Agora/Proposal/validator/unlocking/legal/with 1 proposals/voter: unlock after voting/Locked/propsoal,205544939,588263,8118
+Agora/Proposal/validator/unlocking/legal/with 1 proposals/voter: unlock after voting/Locked/propsoal,205682939,588863,8327
 Agora/Proposal/validator/unlocking/legal/with 1 proposals/voter: unlock after voting/Finished/stake,125083340,324576,5223
-Agora/Proposal/validator/unlocking/legal/with 1 proposals/voter: unlock after voting/Finished/propsoal,205544939,588263,8118
+Agora/Proposal/validator/unlocking/legal/with 1 proposals/voter: unlock after voting/Finished/propsoal,205682939,588863,8327
 Agora/Proposal/validator/unlocking/legal/with 1 proposals/voter/creator: remove vote locks when locked/stake,128314586,333630,5239
-Agora/Proposal/validator/unlocking/legal/with 1 proposals/voter/creator: remove vote locks when locked/propsoal,219548722,629597,8129
+Agora/Proposal/validator/unlocking/legal/with 1 proposals/voter/creator: remove vote locks when locked/propsoal,219686722,630197,8338
 Agora/Proposal/validator/unlocking/legal/with 5 proposals/voter: retract votes while voting/stake,259870480,666572,7303
-Agora/Proposal/validator/unlocking/legal/with 5 proposals/voter: retract votes while voting/propsoal,379077900,1077188,10174
+Agora/Proposal/validator/unlocking/legal/with 5 proposals/voter: retract votes while voting/propsoal,379215900,1077788,10383
 Agora/Proposal/validator/unlocking/legal/with 5 proposals/voter/creator: retract votes while voting/stake,276026710,711842,7380
-Agora/Proposal/validator/unlocking/legal/with 5 proposals/voter/creator: retract votes while voting/propsoal,444606435,1268442,10226
+Agora/Proposal/validator/unlocking/legal/with 5 proposals/voter/creator: retract votes while voting/propsoal,444744435,1269042,10435
 Agora/Proposal/validator/unlocking/legal/with 5 proposals/creator: remove creator locks when finished/stake,259870480,666572,7293
-Agora/Proposal/validator/unlocking/legal/with 5 proposals/creator: remove creator locks when finished/propsoal,312309599,902235,10167
+Agora/Proposal/validator/unlocking/legal/with 5 proposals/creator: remove creator locks when finished/propsoal,312447599,902835,10376
 Agora/Proposal/validator/unlocking/legal/with 5 proposals/voter/creator: remove all locks when finished/stake,259870480,666572,7374
-Agora/Proposal/validator/unlocking/legal/with 5 proposals/voter/creator: remove all locks when finished/propsoal,350698580,1013987,10220
+Agora/Proposal/validator/unlocking/legal/with 5 proposals/voter/creator: remove all locks when finished/propsoal,350836580,1014587,10429
 Agora/Proposal/validator/unlocking/legal/with 5 proposals/voter: unlock after voting/Locked/stake,259870480,666572,7324
-Agora/Proposal/validator/unlocking/legal/with 5 proposals/voter: unlock after voting/Locked/propsoal,317778859,917311,10195
+Agora/Proposal/validator/unlocking/legal/with 5 proposals/voter: unlock after voting/Locked/propsoal,317916859,917911,10404
 Agora/Proposal/validator/unlocking/legal/with 5 proposals/voter: unlock after voting/Finished/stake,259870480,666572,7324
-Agora/Proposal/validator/unlocking/legal/with 5 proposals/voter: unlock after voting/Finished/propsoal,317778859,917311,10195
+Agora/Proposal/validator/unlocking/legal/with 5 proposals/voter: unlock after voting/Finished/propsoal,317916859,917911,10404
 Agora/Proposal/validator/unlocking/legal/with 5 proposals/voter/creator: remove vote locks when locked/stake,276026710,711842,7400
-Agora/Proposal/validator/unlocking/legal/with 5 proposals/voter/creator: remove vote locks when locked/propsoal,383838970,1109957,10246
+Agora/Proposal/validator/unlocking/legal/with 5 proposals/voter/creator: remove vote locks when locked/propsoal,383976970,1110557,10455
 Agora/Proposal/validator/unlocking/legal/with 10 proposals/voter: retract votes while voting/stake,428354405,1094067,9909
-Agora/Proposal/validator/unlocking/legal/with 10 proposals/voter: retract votes while voting/propsoal,557379460,1593018,12750
+Agora/Proposal/validator/unlocking/legal/with 10 proposals/voter: retract votes while voting/propsoal,557517460,1593618,12959
 Agora/Proposal/validator/unlocking/legal/with 10 proposals/voter/creator: retract votes while voting/stake,460666865,1184607,10060
-Agora/Proposal/validator/unlocking/legal/with 10 proposals/voter/creator: retract votes while voting/propsoal,687978405,1973412,12851
+Agora/Proposal/validator/unlocking/legal/with 10 proposals/voter/creator: retract votes while voting/propsoal,688116405,1974012,13060
 Agora/Proposal/validator/unlocking/legal/with 10 proposals/creator: remove creator locks when finished/stake,428354405,1094067,9888
-Agora/Proposal/validator/unlocking/legal/with 10 proposals/creator: remove creator locks when finished/propsoal,447410614,1299555,12737
+Agora/Proposal/validator/unlocking/legal/with 10 proposals/creator: remove creator locks when finished/propsoal,447548614,1300155,12946
 Agora/Proposal/validator/unlocking/legal/with 10 proposals/voter/creator: remove all locks when finished/stake,428354405,1094067,10049
-Agora/Proposal/validator/unlocking/legal/with 10 proposals/voter/creator: remove all locks when finished/propsoal,523243000,1519867,12840
+Agora/Proposal/validator/unlocking/legal/with 10 proposals/voter/creator: remove all locks when finished/propsoal,523381000,1520467,13049
 Agora/Proposal/validator/unlocking/legal/with 10 proposals/voter: unlock after voting/Locked/stake,428354405,1094067,9949
-Agora/Proposal/validator/unlocking/legal/with 10 proposals/voter: unlock after voting/Locked/propsoal,458071259,1328621,12790
+Agora/Proposal/validator/unlocking/legal/with 10 proposals/voter: unlock after voting/Locked/propsoal,458209259,1329221,12999
 Agora/Proposal/validator/unlocking/legal/with 10 proposals/voter: unlock after voting/Finished/stake,428354405,1094067,9949
-Agora/Proposal/validator/unlocking/legal/with 10 proposals/voter: unlock after voting/Finished/propsoal,458071259,1328621,12790
+Agora/Proposal/validator/unlocking/legal/with 10 proposals/voter: unlock after voting/Finished/propsoal,458209259,1329221,12999
 Agora/Proposal/validator/unlocking/legal/with 10 proposals/voter/creator: remove vote locks when locked/stake,460666865,1184607,10100
-Agora/Proposal/validator/unlocking/legal/with 10 proposals/voter/creator: remove vote locks when locked/propsoal,589201780,1710407,12891
+Agora/Proposal/validator/unlocking/legal/with 10 proposals/voter/creator: remove vote locks when locked/propsoal,589339780,1711007,13100
 Agora/Proposal/validator/unlocking/legal/with 42 proposals/voter: retract votes while voting/stake,1506651525,3830035,26674
-Agora/Proposal/validator/unlocking/legal/with 42 proposals/voter: retract votes while voting/propsoal,1698509444,4894330,29304
+Agora/Proposal/validator/unlocking/legal/with 42 proposals/voter: retract votes while voting/propsoal,1698647444,4894930,29513
 Agora/Proposal/validator/unlocking/legal/with 42 proposals/voter/creator: retract votes while voting/stake,1642363857,4210303,27362
-Agora/Proposal/validator/unlocking/legal/with 42 proposals/voter/creator: retract votes while voting/propsoal,2245559013,6485220,29763
+Agora/Proposal/validator/unlocking/legal/with 42 proposals/voter/creator: retract votes while voting/propsoal,2245697013,6485820,29972
 Agora/Proposal/validator/unlocking/legal/with 42 proposals/creator: remove creator locks when finished/stake,1506651525,3830035,26590
-Agora/Proposal/validator/unlocking/legal/with 42 proposals/creator: remove creator locks when finished/propsoal,1312057110,3842403,29260
+Agora/Proposal/validator/unlocking/legal/with 42 proposals/creator: remove creator locks when finished/propsoal,1312195110,3843003,29469
 Agora/Proposal/validator/unlocking/legal/with 42 proposals/voter/creator: remove all locks when finished/stake,1506651525,3830035,27301
-Agora/Proposal/validator/unlocking/legal/with 42 proposals/voter/creator: remove all locks when finished/propsoal,1627527288,4757499,29702
+Agora/Proposal/validator/unlocking/legal/with 42 proposals/voter/creator: remove all locks when finished/propsoal,1627665288,4758099,29911
 Agora/Proposal/validator/unlocking/legal/with 42 proposals/voter: unlock after voting/Locked/stake,1506651525,3830035,26843
-Agora/Proposal/validator/unlocking/legal/with 42 proposals/voter: unlock after voting/Locked/propsoal,1355942619,3961005,29473
+Agora/Proposal/validator/unlocking/legal/with 42 proposals/voter: unlock after voting/Locked/propsoal,1356080619,3961605,29682
 Agora/Proposal/validator/unlocking/legal/with 42 proposals/voter: unlock after voting/Finished/stake,1506651525,3830035,26843
-Agora/Proposal/validator/unlocking/legal/with 42 proposals/voter: unlock after voting/Finished/propsoal,1355942619,3961005,29473
+Agora/Proposal/validator/unlocking/legal/with 42 proposals/voter: unlock after voting/Finished/propsoal,1356080619,3961605,29682
 Agora/Proposal/validator/unlocking/legal/with 42 proposals/voter/creator: remove vote locks when locked/stake,1642363857,4210303,27531
-Agora/Proposal/validator/unlocking/legal/with 42 proposals/voter/creator: remove vote locks when locked/propsoal,1903523764,5553287,29932
+Agora/Proposal/validator/unlocking/legal/with 42 proposals/voter/creator: remove vote locks when locked/propsoal,1903661764,5553887,30141
 "Agora/Proposal/validator/unlocking/illegal/with 1 proposals/retract votes while not voting/role: Voter, status: Draft/stake",125083340,324576,5219
 "Agora/Proposal/validator/unlocking/illegal/with 1 proposals/retract votes while not voting/role: Voter, status: Locked/stake",125083340,324576,5219
 "Agora/Proposal/validator/unlocking/illegal/with 1 proposals/retract votes while not voting/role: Voter, status: Finished/stake",125083340,324576,5219

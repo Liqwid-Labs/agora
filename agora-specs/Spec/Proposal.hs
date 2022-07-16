@@ -147,6 +147,7 @@ specs =
                                   nCosigners
                             )
                             True
+                            Nothing
                         , Advance.mkTestTree
                             "to failed state"
                             ( head $
@@ -154,6 +155,7 @@ specs =
                                   nCosigners
                             )
                             True
+                            Nothing
                         ]
 
                     illegalGroup =
@@ -163,10 +165,12 @@ specs =
                             "insufficient cosigns"
                             (Advance.insufficientCosignsParameters nCosigners)
                             False
+                            Nothing
                         , Advance.mkTestTree
                             "invalid stake output"
                             (head $ Advance.invalidOutputStakeParameters nCosigners)
                             False
+                            Nothing
                         ]
                  in group name [legalGroup, illegalGroup]
 
@@ -179,14 +183,14 @@ specs =
                       map
                         ( \ps ->
                             let name = "from: " <> show ps.fromStatus
-                             in Advance.mkTestTree name ps True
+                             in Advance.mkTestTree name ps True (Just True)
                         )
                         (tail $ Advance.advanceToNextStateInTimeParameters 1)
                   , group "advance to failed state" $
                       map
                         ( \ps ->
                             let name = "from: " <> show ps.fromStatus
-                             in Advance.mkTestTree name ps True
+                             in Advance.mkTestTree name ps True (Just True)
                         )
                         (tail $ Advance.advanceToFailedStateDueToTimeoutParameters 1)
                   ]
@@ -198,10 +202,12 @@ specs =
                       "insufficient votes"
                       Advance.insufficientVotesParameters
                       False
+                      Nothing
                   , Advance.mkTestTree
                       "initial state is Finished"
                       Advance.advanceFromFinishedParameters
                       False
+                      Nothing
                   , group
                       "invalid stake output"
                       $ do
@@ -213,7 +219,7 @@ specs =
                                 <> show nStake
                                 <> " stakes"
 
-                        pure $ Advance.mkTestTree name ps False
+                        pure $ Advance.mkTestTree name ps False (Just True)
                   ]
            in [draftGroup, legalGroup, illegalGroup]
       , group "unlocking" $

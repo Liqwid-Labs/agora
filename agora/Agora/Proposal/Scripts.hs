@@ -76,7 +76,7 @@ import Plutarch.Extra.TermCont (
  )
 import Plutarch.SafeMoney (PDiscrete (..))
 import Plutarch.Unsafe (punsafeCoerce)
-import PlutusLedgerApi.V1.Value (AssetClass (AssetClass))
+import PlutusLedgerApi.V1.Value (AssetClass (AssetClass, unAssetClass))
 
 {- | Policy for Proposals.
 
@@ -651,12 +651,29 @@ proposalValidator proposal =
                   pguardC "Cannot advance ahead of time" notTooEarly
                   pguardC "Finished proposals cannot be advanced" $ pnot # isFinished
 
+                  let gstSymbol =
+                        pconstant $
+                          fst $
+                            unAssetClass proposal.governorSTAssetClass
+
+                  gstMoved <-
+                    pletC $
+                      pany
+                        # plam
+                          ( \( (pfield @"value" #)
+                                . (pfield @"resolved" #)
+                                . pfromData ->
+                                value
+                              ) ->
+                                psymbolValueOf # gstSymbol # value #== 1
+                          )
+                        # txInfoF.inputs
+
                   let toFailedState = unTermCont $ do
                         pguardC "Proposal should fail: not on time" $
                           proposalOutStatus #== pconstant Finished
 
-                        -- TODO: Should check that the GST is not moved
-                        --        if the proposal is in 'Locked' state.
+                        pguardC "GST not moved" $ pnot # gstMoved
 
                         pure $ pconstant ()
 
@@ -676,6 +693,8 @@ proposalValidator proposal =
                           -- 'Locked' -> 'Finished'
                           pguardC "Proposal status set to Finished" $
                             proposalOutStatus #== pconstant Finished
+
+                          pguardC "GST moved" gstMoved
 
                           -- TODO: Perform other necessary checks.
                           pure $ pconstant ()

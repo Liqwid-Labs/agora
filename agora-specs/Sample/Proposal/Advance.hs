@@ -16,6 +16,8 @@ module Sample.Proposal.Advance (
   Parameters (..),
 ) where
 
+import Agora.Governor
+import Agora.Governor.Scripts (governorValidator)
 import Agora.Proposal (
   ProposalDatum (..),
   ProposalId (ProposalId),
@@ -46,7 +48,8 @@ import Agora.Stake (
 import Agora.Stake.Scripts (stakeValidator)
 import Data.Coerce (coerce)
 import Data.Default (def)
-import Data.List (sort)
+import Data.List (singleton, sort)
+import Data.Maybe (fromJust)
 import Data.Tagged (Tagged (..), untag)
 import Plutarch.Context (
   BaseBuilder,
@@ -76,8 +79,10 @@ import PlutusLedgerApi.V1 (
  )
 import PlutusLedgerApi.V1.Value qualified as Value
 import PlutusTx.AssocMap qualified as AssocMap
-import Sample.Proposal.Shared (proposalTxRef, stakeTxRef)
+import Sample.Proposal.Shared (governorTxRef, proposalTxRef, stakeTxRef)
 import Sample.Shared (
+  govAssetClass,
+  govValidatorHash,
   minAda,
   proposalPolicySymbol,
   proposalValidatorHash,
@@ -109,6 +114,12 @@ data Parameters = Parameters
   -- ^ Whether the transaction is signed by all the cosigners.
   , perStakeGTs :: Tagged GTTag Integer
   -- ^ The staked amount of each stake.
+  , moveGovernorST :: Bool
+  -- ^ Whether the GST should be moved or not.
+  --   If this is set to true, the governor validator will be run in
+  --    the 'mkTestTree'.
+  , modifyGovernor :: Bool
+  -- ^ Whether to modify the governor output datum or not.
   }
 
 ---
@@ -117,9 +128,13 @@ data Parameters = Parameters
 proposalRef :: TxOutRef
 proposalRef = TxOutRef proposalTxRef 1
 
+-- | Reference to the governor UTXO.
+governorRef :: TxOutRef
+governorRef = TxOutRef governorTxRef 2
+
 -- | Create the reference to a particular stake UTXO.
 mkStakeRef :: Int -> TxOutRef
-mkStakeRef = TxOutRef stakeTxRef . (+ 2) . fromIntegral
+mkStakeRef = TxOutRef stakeTxRef . (+ 3) . fromIntegral
 
 ---
 
@@ -176,11 +191,24 @@ mkStakeInputDatums ps =
       , Voted (ProposalId 1) (ResultTag 2)
       ]
 
+governorInputDatum :: GovernorDatum
+governorInputDatum =
+  GovernorDatum
+    { proposalThresholds = def
+    , nextProposalId = ProposalId 42
+    , proposalTimings = def
+    , createProposalTimeRangeMaxWidth = def
+    , maximumProposalsPerStake = 3
+    }
+
 ---
 
 -- | Script purpose of the proposal validator.
 proposalScriptPurpose :: ScriptPurpose
 proposalScriptPurpose = Spending proposalRef
+
+governorScriptPurpose :: ScriptPurpose
+governorScriptPurpose = Spending governorRef
 
 -- | Script purpose of the stake validator, given which stake we want to spend.
 mkStakeScriptPurpose :: Int -> ScriptPurpose
@@ -193,6 +221,12 @@ mkStakeScriptPurpose = Spending . mkStakeRef
 -}
 proposalRedeemer :: ProposalRedeemer
 proposalRedeemer = AdvanceProposal
+
+{- | The propsoal redeemer used to spend the governor UTXO, which is always
+      'MintGATs' in this case.
+-}
+governorRedeemer :: GovernorRedeemer
+governorRedeemer = MintGATs
 
 {- | The propsoal redeemer used to spend the stake UTXO, which is always
       'WitnessStake' in this case.
@@ -219,6 +253,9 @@ advance ::
 advance ps =
   let pst = Value.singleton proposalPolicySymbol "" 1
       sst = Value.assetClassValue stakeAssetClass 1
+      gst = Value.assetClassValue govAssetClass 1
+
+      ---
 
       proposalInputDatum :: ProposalDatum
       proposalInputDatum =
@@ -229,6 +266,8 @@ advance ps =
         proposalInputDatum
           { status = ps.toStatus
           }
+
+      ---
 
       stakeInputDatums :: [StakeDatum]
       stakeInputDatums = mkStakeInputDatums ps
@@ -275,19 +314,50 @@ advance ps =
              in if ps.includeAllStakes
                   then withIds
                   else [head withIds]
+      ---
 
-      signBuilder :: BaseBuilder
-      signBuilder =
+      governorOutputDatum :: GovernorDatum
+      governorOutputDatum =
+        if ps.modifyGovernor
+          then
+            governorInputDatum
+              { nextProposalId = ProposalId 41
+              }
+          else governorInputDatum
+
+      governorBuilder :: BaseBuilder
+      governorBuilder =
+        if ps.moveGovernorST
+          then
+            mconcat
+              [ input $
+                  script govValidatorHash
+                    . withValue (sortValue $ gst <> minAda)
+                    . withDatum governorInputDatum
+                    . withOutRef governorRef
+              , output $
+                  script govValidatorHash
+                    . withValue (sortValue $ gst <> minAda)
+                    . withDatum governorOutputDatum
+              ]
+          else mempty
+
+      ---
+
+      sigBuilder :: BaseBuilder
+      sigBuilder =
         let sos = mkStakeOwners ps
          in if ps.signByAllCosigners
               then foldMap signedWith sos
               else signedWith $ head sos
 
+      ---
+
       builder :: BaseBuilder
       builder =
         mconcat
           [ txId "95ba4015e30aef16a3461ea97a779f814aeea6b8009d99a94add4b8293be737a"
-          , signBuilder
+          , sigBuilder
           , timeRange ps.validTimeRange
           , input $
               script proposalValidatorHash
@@ -299,7 +369,7 @@ advance ps =
                 . withValue (pst <> minAda)
                 . withDatum proposalOutputDatum
           ]
-   in buildTxInfoUnsafe $ builder <> stakeBuilder
+   in buildTxInfoUnsafe $ builder <> stakeBuilder <> governorBuilder
 
 ---
 
@@ -431,6 +501,8 @@ advanceToNextStateInTimeParameters nCosigners =
             signByAllCosigners = case from of
               Draft -> True
               _ -> False
+
+            shouldIncludeGovernor = from == Locked
          in Parameters
               { fromStatus = from
               , toStatus = getNextState from
@@ -443,6 +515,8 @@ advanceToNextStateInTimeParameters nCosigners =
               , perStakeGTs =
                   (def :: ProposalThresholds).vote
                     `div` fromIntegral nCosigners + 1
+              , moveGovernorST = shouldIncludeGovernor
+              , modifyGovernor = False
               }
     )
     [Draft, VotingReady, Locked]
@@ -461,6 +535,8 @@ advanceToFailedStateDueToTimeoutParameters nCosigners =
           , stakeCount = fromIntegral nCosigners
           , signByAllCosigners = False
           , perStakeGTs = 1
+          , moveGovernorST = False
+          , modifyGovernor = False
           }
     )
     [Draft, VotingReady, Locked]
@@ -480,6 +556,8 @@ insufficientVotesParameters =
         , stakeCount = 1
         , signByAllCosigners = True
         , perStakeGTs = 20
+        , moveGovernorST = False
+        , modifyGovernor = False
         }
 
 insufficientCosignsParameters :: Int -> Parameters
@@ -500,6 +578,8 @@ advanceFromFinishedParameters =
     , stakeCount = 1
     , signByAllCosigners = True
     , perStakeGTs = 20
+    , moveGovernorST = False
+    , modifyGovernor = False
     }
 
 invalidOutputStakeParameters :: Int -> [Parameters]
@@ -512,8 +592,8 @@ invalidOutputStakeParameters nCosigners =
 {- | Create a test tree that runs the stake validator and proposal validator to
       test the advancing functionalities.
 -}
-mkTestTree :: String -> Parameters -> Bool -> SpecificationTree
-mkTestTree name ps isValidForProposalValidator = group name [proposal, stake]
+mkTestTree :: String -> Parameters -> Bool -> Maybe Bool -> SpecificationTree
+mkTestTree name ps isValidForProposalValidator isValidForGovernorValidator = group name final
   where
     txInfo = advance ps
 
@@ -544,3 +624,20 @@ mkTestTree name ps isValidForProposalValidator = group name [proposal, stake]
                 txInfo
                 (mkStakeScriptPurpose idx)
             )
+
+    proposalAndStake = [proposal, stake]
+
+    governor =
+      if ps.moveGovernorST
+        then
+          singleton $
+            testValidator
+              (fromJust isValidForGovernorValidator)
+              "governor"
+              (governorValidator Shared.governor)
+              governorInputDatum
+              governorRedeemer
+              (ScriptContext txInfo governorScriptPurpose)
+        else mempty
+
+    final = proposalAndStake <> governor
