@@ -61,6 +61,7 @@ import Plutarch.Api.V1.ScriptContext (
  )
 import "liqwid-plutarch-extra" Plutarch.Api.V1.Value (psymbolValueOf)
 import Plutarch.Extra.Comonad (pextract)
+import Plutarch.Extra.Field (pletAllC)
 import Plutarch.Extra.IsData (pmatchEnum)
 import Plutarch.Extra.List (pisUniq', pmapMaybe, pmergeBy, pmsortBy)
 import Plutarch.Extra.Map (plookup, pupdate)
@@ -104,24 +105,20 @@ proposalPolicy ::
 proposalPolicy (AssetClass (govCs, govTn)) =
   plam $ \_redeemer ctx' -> unTermCont $ do
     PScriptContext ctx' <- pmatchC ctx'
-    ctx <- pletFieldsC @'["txInfo", "purpose"] ctx'
+    ctx <- pletAllC ctx'
     PTxInfo txInfo' <- pmatchC $ pfromData ctx.txInfo
     txInfo <- pletFieldsC @'["inputs", "mint"] txInfo'
-    PMinting _ownSymbol <- pmatchC $ pfromData ctx.purpose
-
-    let inputs = txInfo.inputs
-        mintedValue = pfromData txInfo.mint
 
     PMinting ownSymbol' <- pmatchC $ pfromData ctx.purpose
     let mintedProposalST =
           passetClassValueOf
-            # mintedValue
+            # pfromData txInfo.mint
             # (passetClass # (pfield @"_0" # ownSymbol') # pconstant "")
 
     pguardC "Governance state-thread token must move" $
       pisTokenSpent
         # (passetClass # pconstant govCs # pconstant govTn)
-        # inputs
+        # txInfo.inputs
 
     pguardC "Minted exactly one proposal ST" $
       mintedProposalST #== 1
@@ -183,22 +180,11 @@ proposalValidator proposal =
     (pfromData -> proposalRedeemer, _) <-
       ptryFromC @(PAsData PProposalRedeemer) redeemer
 
-    proposalF <-
-      pletFieldsC
-        @'[ "proposalId"
-          , "effects"
-          , "status"
-          , "cosigners"
-          , "thresholds"
-          , "votes"
-          , "timingConfig"
-          , "startingTime"
-          ]
-        proposalDatum
+    proposalF <- pletAllC proposalDatum
 
     ownAddress <- pletC $ txOutF.address
 
-    thresholdsF <- pletFieldsC @'["execute", "create", "vote"] proposalF.thresholds
+    thresholdsF <- pletAllC proposalF.thresholds
 
     currentStatus <- pletC $ pfromData $ proposalF.status
 
@@ -221,7 +207,7 @@ proposalValidator proposal =
         mustBePJust # "Own output should be present" #$ pfind
           # plam
             ( \input -> unTermCont $ do
-                inputF <- pletFieldsC @'["address", "value", "datumHash"] input
+                inputF <- pletAllC input
 
                 -- TODO: this is highly inefficient: O(n) for every output,
                 --       Maybe we can cache the sorted datum map?
@@ -406,7 +392,7 @@ proposalValidator proposal =
 
         withSingleStake val =
           withSingleStake' #$ plam $ \stakeIn stakeOut stakeUnchange -> unTermCont $ do
-            stakeInF <- pletFieldsC @'["stakedAmount", "lockedBy", "owner"] stakeIn
+            stakeInF <- pletAllC stakeIn
 
             val stakeInF stakeOut stakeUnchange
 

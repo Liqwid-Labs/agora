@@ -47,7 +47,7 @@ import Plutarch.DataRepr (
   PIsDataReprInstances (..),
  )
 import Plutarch.Extra.Field (pletAllC)
-import Plutarch.Extra.TermCont (pguardC, pletFieldsC, pmatchC)
+import Plutarch.Extra.TermCont (pguardC, pmatchC)
 import Plutarch.Lift (
   DerivePConstantViaNewtype (..),
   PConstantDecl,
@@ -348,11 +348,11 @@ currentProposalTime :: forall (s :: S). Term s (PPOSIXTimeRange :--> PProposalTi
 currentProposalTime = phoistAcyclic $
   plam $ \iv -> unTermCont $ do
     PInterval iv' <- pmatchC iv
-    ivf <- pletFieldsC @'["from", "to"] iv'
+    ivf <- pletAllC iv'
     PLowerBound lb <- pmatchC ivf.from
     PUpperBound ub <- pmatchC ivf.to
-    lbf <- pletFieldsC @'["_0", "_1"] lb
-    ubf <- pletFieldsC @'["_0", "_1"] ub
+    lbf <- pletAllC lb
+    ubf <- pletAllC ub
     pure $
       pcon $
         PProposalTime

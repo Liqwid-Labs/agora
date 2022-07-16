@@ -45,6 +45,7 @@ import Plutarch.DataRepr (
   PDataFields,
   PIsDataReprInstances (PIsDataReprInstances),
  )
+import Plutarch.Extra.Field (pletAll)
 import Plutarch.Extra.IsData (
   DerivePConstantViaDataList (..),
   ProductIsData (ProductIsData),
@@ -501,7 +502,7 @@ pgetStakeRole = phoistAcyclic $
                       (pid' #== pid)
                       (pcon PCreator)
                       (pcon PIrrelevant)
-                  PVoted lock' -> pletFields @'["votedOn", "votedFor"] lock' $ \lockF ->
+                  PVoted lock' -> pletAll lock' $ \lockF ->
                     pif
                       (lockF.votedOn #== pid)
                       (pcon $ PVoter lockF.votedFor)
