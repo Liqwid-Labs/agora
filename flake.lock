@@ -7429,17 +7429,17 @@
         "plutarch-quickcheck": "plutarch-quickcheck"
       },
       "locked": {
-        "lastModified": 1656396683,
-        "narHash": "sha256-Elk16j7kZcO9U9phqrY915rTEqkPchDZ9QydH+VmiC8=",
+        "lastModified": 1657959892,
+        "narHash": "sha256-DKIu0T87UjhaQ96NdibFiIfvnQLN/eJYuLMiPgQmmT8=",
         "owner": "Liqwid-Labs",
         "repo": "liqwid-plutarch-extra",
-        "rev": "6bcd6068593b00adc4a1afd59b127398ea37d770",
+        "rev": "a951b85d15e7cca1a03dd2a8e36b60fae561d74a",
         "type": "github"
       },
       "original": {
         "owner": "Liqwid-Labs",
         "repo": "liqwid-plutarch-extra",
-        "rev": "6bcd6068593b00adc4a1afd59b127398ea37d770",
+        "rev": "a951b85d15e7cca1a03dd2a8e36b60fae561d74a",
         "type": "github"
       }
     },
