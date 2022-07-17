@@ -232,7 +232,6 @@ Agora/AuthorityToken/singleAuthorityTokenBurned/Correct many inputs,32757063,870
 Agora/Treasury/Validator/Positive/Allows for effect changes,31277082,80782,1450
 Agora/AuthorityToken/singleAuthorityTokenBurned/Correct simple,20570665,54655,725
 Agora/AuthorityToken/singleAuthorityTokenBurned/Correct many inputs,32757063,87013,825
-Agora/Governor/policy/GST minting,57584660,163806,2205
-Agora/Governor/validator/proposal creation,302549314,814787,8701
+Agora/Governor/policy/totally legal,60002734,167736,2267
 Agora/Governor/validator/GATs minting,255328308,682125,8827
 Agora/Governor/validator/mutate governor state,93971983,261537,8301
