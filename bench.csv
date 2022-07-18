@@ -2,18 +2,18 @@ name,cpu,mem,size
 Agora/Effects/Treasury Withdrawal Effect/effect/Simple,333137234,829671,3674
 Agora/Effects/Treasury Withdrawal Effect/effect/Simple with multiple treasuries ,492197164,1196783,3986
 Agora/Effects/Treasury Withdrawal Effect/effect/Mixed Assets,455817227,1103968,3859
-Agora/Effects/Governor Mutation Effect/validator/valid new governor datum/governor validator should pass,92825132,256078,8201
+Agora/Effects/Governor Mutation Effect/validator/valid new governor datum/governor validator should pass,92825132,256078,8229
 Agora/Effects/Governor Mutation Effect/validator/valid new governor datum/effect validator should pass,112671240,312571,3747
 Agora/Stake/policy/stakeCreation,51008580,149029,2522
 Agora/Stake/validator/stakeDepositWithdraw deposit,183506412,498838,4745
 Agora/Stake/validator/stakeDepositWithdraw withdraw,183506412,498838,4733
 Agora/Proposal/policy (proposal creation)/legal/proposal,33689644,100286,2002
-Agora/Proposal/policy (proposal creation)/legal/governor,324511293,861435,8681
+Agora/Proposal/policy (proposal creation)/legal/governor,324511293,861435,8709
 Agora/Proposal/policy (proposal creation)/legal/stake,153960499,403133,5404
 Agora/Proposal/policy (proposal creation)/illegal/invalid next proposal id/proposal,33689644,100286,2002
 Agora/Proposal/policy (proposal creation)/illegal/invalid next proposal id/stake,153960499,403133,5404
 Agora/Proposal/policy (proposal creation)/illegal/use other's stake/proposal,33689644,100286,1971
-Agora/Proposal/policy (proposal creation)/illegal/use other's stake/governor,324511293,861435,8650
+Agora/Proposal/policy (proposal creation)/illegal/use other's stake/governor,324511293,861435,8678
 Agora/Proposal/policy (proposal creation)/illegal/altered stake/proposal,33689644,100286,2002
 Agora/Proposal/policy (proposal creation)/illegal/invalid stake locks/proposal,33689644,100286,2010
 Agora/Proposal/policy (proposal creation)/illegal/invalid stake locks/stake,159394159,417783,5412
@@ -66,15 +66,15 @@ Agora/Proposal/validator/advancing/legal/advance to next state/from: VotingReady
 Agora/Proposal/validator/advancing/legal/advance to next state/from: VotingReady/stake,118915099,307672,5229
 Agora/Proposal/validator/advancing/legal/advance to next state/from: Locked/propsoal,295366820,822071,8771
 Agora/Proposal/validator/advancing/legal/advance to next state/from: Locked/stake,156324691,401372,5668
-Agora/Proposal/validator/advancing/legal/advance to next state/from: Locked/governor,258411069,667386,8946
+Agora/Proposal/validator/advancing/legal/advance to next state/from: Locked/governor,258666820,668654,8974
 Agora/Proposal/validator/advancing/legal/advance to failed state/from: VotingReady/propsoal,258602387,722952,8326
 Agora/Proposal/validator/advancing/legal/advance to failed state/from: VotingReady/stake,118915099,307672,5225
 Agora/Proposal/validator/advancing/legal/advance to failed state/from: Locked/propsoal,259733365,725356,8326
 Agora/Proposal/validator/advancing/legal/advance to failed state/from: Locked/stake,118915099,307672,5225
 Agora/Proposal/validator/advancing/illegal/insufficient votes/stake,118915099,307672,5225
 Agora/Proposal/validator/advancing/illegal/initial state is Finished/stake,118915099,307672,5217
-Agora/Proposal/validator/advancing/illegal/invalid stake output/from Lockedwith 1 stakes/governor,258411069,667386,8946
-Agora/Proposal/validator/advancing/illegal/invalid stake output/from Lockedwith 5 stakes/governor,265599017,688074,9187
+Agora/Proposal/validator/advancing/illegal/invalid stake output/from Lockedwith 1 stakes/governor,258666820,668654,8974
+Agora/Proposal/validator/advancing/illegal/invalid stake output/from Lockedwith 5 stakes/governor,265854768,689342,9215
 Agora/Proposal/validator/unlocking/legal/with 1 proposals/voter: retract votes while voting/stake,125083340,324576,5219
 Agora/Proposal/validator/unlocking/legal/with 1 proposals/voter: retract votes while voting/propsoal,236574652,665124,8323
 Agora/Proposal/validator/unlocking/legal/with 1 proposals/voter/creator: retract votes while voting/stake,128314586,333630,5235
@@ -233,5 +233,5 @@ Agora/Treasury/Validator/Positive/Allows for effect changes,31277082,80782,1450
 Agora/AuthorityToken/singleAuthorityTokenBurned/Correct simple,20570665,54655,725
 Agora/AuthorityToken/singleAuthorityTokenBurned/Correct many inputs,32757063,87013,825
 Agora/Governor/policy/totally legal,60002734,167736,2267
-Agora/Governor/validator/GATs minting,255328308,682125,8827
-Agora/Governor/validator/mutate governor state,93971983,261537,8301
+Agora/Governor/validator/GATs minting,255584059,683393,8855
+Agora/Governor/validator/mutate governor state,93971983,261537,8329

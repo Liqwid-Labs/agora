@@ -41,7 +41,7 @@ module Agora.Proposal (
 
 import Agora.Proposal.Time (PProposalStartingTime, PProposalTimingConfig, ProposalStartingTime, ProposalTimingConfig)
 import Agora.SafeMoney (GTTag)
-import Agora.Utils (mustBePJust)
+import Agora.Utils (withBuiltinPairAsData)
 import Data.Tagged (Tagged)
 import GHC.Generics qualified as GHC
 import Generics.SOP (Generic, I (I))
@@ -62,8 +62,10 @@ import Plutarch.Extra.IsData (
   EnumIsData (..),
   ProductIsData (ProductIsData),
  )
+import Plutarch.Extra.List (pfirstJust)
 import Plutarch.Extra.Map qualified as PM
 import Plutarch.Extra.Map.Unsorted qualified as PUM
+import Plutarch.Extra.Maybe (pfromJust)
 import Plutarch.Extra.Other (DerivePNewtype' (..))
 import Plutarch.Extra.TermCont (pguardC, pletC, pmatchC)
 import Plutarch.Lift (
@@ -810,13 +812,6 @@ phighestVotes = phoistAcyclic $
     let l :: Term _ (PBuiltinList _)
         l = pto $ pto votes
 
-        f ::
-          Term
-            _
-            ( PBuiltinPair (PAsData PResultTag) (PAsData PInteger)
-                :--> PBuiltinPair (PAsData PResultTag) (PAsData PInteger)
-                :--> PBuiltinPair (PAsData PResultTag) (PAsData PInteger)
-            )
         f = phoistAcyclic $
           plam $ \this last ->
             let lastVotes = pfromData $ psndBuiltin # last
@@ -839,13 +834,14 @@ pneutralOption = phoistAcyclic $
     let l :: Term _ (PBuiltinList (PBuiltinPair (PAsData PResultTag) _))
         l = pto effects
 
-        f :: Term _ (PBuiltinPair (PAsData PResultTag) (PAsData (PMap 'Unsorted _ _)) :--> PBool)
         f = phoistAcyclic $
-          plam $ \((pfromData . (psndBuiltin #) -> el)) ->
-            let el' :: Term _ (PBuiltinList _)
-                el' = pto el
-             in pnull # el'
-     in pfromData $ pfstBuiltin #$ mustBePJust # "No neutral option" #$ pfind # f # l
+          plam $
+            withBuiltinPairAsData $ \rt el ->
+              pif
+                (PAssocMap.pnull # el)
+                (pcon $ PJust rt)
+                (pcon PNothing)
+     in pfromJust #$ pfirstJust # f # l
 
 {- | Return true if the thresholds are valid.
 
