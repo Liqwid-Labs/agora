@@ -253,7 +253,7 @@ mkTestTree name ps isValid = group name [proposal, stake]
     proposal =
       testValidator
         isValid
-        "propsoal"
+        "proposal"
         (proposalValidator Shared.proposal)
         proposalInputDatum
         (mkProposalRedeemer ps)

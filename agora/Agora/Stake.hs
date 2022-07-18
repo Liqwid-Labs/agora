@@ -119,7 +119,7 @@ data ProposalLock
       -- ^ The identifier of the proposal.
   | -- | The stake was used to vote on a proposal.
     --
-    --   This kind of lock is placed while voting on a propsoal, in order to
+    --   This kind of lock is placed while voting on a proposal, in order to
     --    prevent depositing and withdrawing when votes are in place.
     --
     --   @since 0.2.0
@@ -416,13 +416,13 @@ data PStakeRole (s :: S)
     PVoter
       (Term s PResultTag)
       -- ^ The option which was voted for.
-  | -- | The stake was used to create the propsoal.
+  | -- | The stake was used to create the proposal.
     PCreator
   | -- | The stake was used to both create and vote on the proposal.
     PBoth
       (Term s PResultTag)
       -- ^ The option which was voted for.
-  | -- | The stake has nothing to do with the given propsoal.
+  | -- | The stake has nothing to do with the given proposal.
     PIrrelevant
   deriving stock
     ( -- | @since 0.2.0

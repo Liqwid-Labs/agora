@@ -17,6 +17,8 @@ module Test.Util (
   pubKeyHashes,
   userCredentials,
   scriptCredentials,
+  validatorHashes,
+  groupsOfN,
 ) where
 
 --------------------------------------------------------------------------------
@@ -132,6 +134,25 @@ pubKeyHashes = PubKeyHash . PlutusTx.toBuiltin <$> blake2b_224Hashes
 userCredentials :: [Credential]
 userCredentials = PubKeyCredential <$> pubKeyHashes
 
+-- | An infinite list of *valid* validator hashes.
+validatorHashes :: [ValidatorHash]
+validatorHashes = ValidatorHash . PlutusTx.toBuiltin <$> blake2b_224Hashes
+
 -- | An infinite list of *valid* script credentials.
 scriptCredentials :: [Credential]
-scriptCredentials = ScriptCredential . ValidatorHash . PlutusTx.toBuiltin <$> blake2b_224Hashes
+scriptCredentials = ScriptCredential <$> validatorHashes
+
+--------------------------------------------------------------------------------
+
+groupsOfN :: Int -> [a] -> [[a]]
+groupsOfN _ [] = []
+groupsOfN n xs =
+  let (nextGroup, rest) = next n xs
+   in nextGroup : groupsOfN n rest
+  where
+    next :: Int -> [a] -> ([a], [a])
+    next _ [] = ([], [])
+    next 0 xs = ([], xs)
+    next n (x : xs) =
+      let (xs', rest) = next (n - 1) xs
+       in (x : xs', rest)

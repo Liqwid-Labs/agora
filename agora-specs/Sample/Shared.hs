@@ -186,7 +186,7 @@ instance Default ProposalThresholds where
     ProposalThresholds
       { execute = Tagged 1000
       , create = Tagged 1
-      , vote = Tagged 10
+      , vote = Tagged 100
       }
 
 authorityToken :: AuthorityToken

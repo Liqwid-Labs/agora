@@ -575,18 +575,19 @@ governorValidator gov =
 
               gatOutputValidator = gatOutputValidator' # effectGroup
 
-          pure $
-            popaque $
-              pfoldr
-                # plam
-                  ( \txOut r ->
-                      let value = pfield @"value" # txOut
-                          atValue = psymbolValueOf # patSymbol # value
-                       in pif (atValue #== 0) r $
-                            pif (atValue #== 1) (r #&& gatOutputValidator # txOut) $ pconstant False
-                  )
-                # pconstant True
-                # pfromData txInfoF.outputs
+          pguardC "GATs valid" $
+            pfoldr
+              # plam
+                ( \txOut r ->
+                    let value = pfield @"value" # txOut
+                        atValue = psymbolValueOf # patSymbol # value
+                     in pif (atValue #== 0) r $
+                          pif (atValue #== 1) (r #&& gatOutputValidator # txOut) $ pconstant False
+                )
+              # pconstant True
+              # pfromData txInfoF.outputs
+
+          pure $ popaque $ pconstant ()
 
         --------------------------------------------------------------------------
 

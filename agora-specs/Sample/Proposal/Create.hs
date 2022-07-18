@@ -242,7 +242,7 @@ mkTimeRange ps =
        in closedBoundedInterval s $ o + di
     else always
 
--- | Get the starting time of the propsoal.
+-- | Get the starting time of the proposal.
 mkProposalStartingTime :: Parameters -> ProposalStartingTime
 mkProposalStartingTime ps =
   if ps.timeRangeClosed
@@ -413,7 +413,7 @@ invalidProposalStatusParameters =
 
 --------------------------------------------------------------------------------
 
-{- | Create a test tree that runs the propsoal minting policy, the governor
+{- | Create a test tree that runs the proposal minting policy, the governor
       validator and the stake validator to test the functionalities of creting
       proposals
 -}

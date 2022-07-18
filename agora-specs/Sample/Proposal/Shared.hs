@@ -1,15 +1,15 @@
 {- |
 Module     : Sample.Proposal.Shared
 Maintainer : connor@mlabs.city
-Description: Shared constants for propsoal samples
+Description: Shared constants for proposal samples
 
-Shared constants for propsoal samples.
+Shared constants for proposal samples.
 -}
 module Sample.Proposal.Shared (proposalTxRef, stakeTxRef, governorTxRef) where
 
 import PlutusLedgerApi.V1 (TxId)
 
--- | 'TxId' of all the propsoal inputs in the samples.
+-- | 'TxId' of all the proposal inputs in the samples.
 proposalTxRef :: TxId
 proposalTxRef = "0b2086cbf8b6900f8cb65e012de4516cb66b5cb08a9aaba12a8b88be"
 
