@@ -187,7 +187,6 @@ library agora-specs
     Property.MultiSig
     Sample.Effect.GovernorMutation
     Sample.Effect.TreasuryWithdrawal
-    Sample.Governor
     Sample.Governor.Initialize
     Sample.Governor.Mutate
     Sample.Proposal.Advance
