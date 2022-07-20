@@ -19,6 +19,7 @@ module Test.Util (
   scriptCredentials,
   validatorHashes,
   groupsOfN,
+  withOptional,
 ) where
 
 --------------------------------------------------------------------------------
@@ -31,6 +32,7 @@ import Data.ByteString qualified as BS
 import Data.ByteString.Char8 qualified as C
 import Data.ByteString.Lazy qualified as ByteString.Lazy
 import Data.List (sortOn)
+import Plutarch.Context (UTXO)
 import Plutarch.Crypto (pblake2b_256)
 import PlutusLedgerApi.V1 (Credential (PubKeyCredential, ScriptCredential), PubKeyHash (..), ValidatorHash (ValidatorHash))
 import PlutusLedgerApi.V1.Interval qualified as PlutusTx
@@ -156,3 +158,13 @@ groupsOfN n xs =
     next n (x : xs) =
       let (xs', rest) = next (n - 1) xs
        in (x : xs', rest)
+
+--------------------------------------------------------------------------------
+
+withOptional ::
+  (a -> UTXO -> UTXO) ->
+  Maybe a ->
+  UTXO ->
+  UTXO
+withOptional f (Just b) = f b
+withOptional _ _ = id

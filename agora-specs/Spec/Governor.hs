@@ -13,17 +13,11 @@ TODO: Add negative test cases, see [#76](https://github.com/Liqwid-Labs/agora/is
 -}
 module Spec.Governor (specs) where
 
-import Agora.Governor (GovernorDatum (..), GovernorRedeemer (..))
-import Agora.Governor.Scripts (governorValidator)
-import Agora.Proposal (ProposalId (..))
-import Data.Default.Class (Default (def))
-import Sample.Governor (mintGATs, mutateState)
 import Sample.Governor.Initialize qualified as GST
-import Sample.Shared qualified as Shared
+import Sample.Governor.Mutate qualified as Mutate
 import Test.Specification (
   SpecificationTree,
   group,
-  validatorSucceedsWith,
  )
 
 -- | The SpecificationTree exported by this module.
@@ -48,29 +42,21 @@ specs =
       ]
   , group
       "validator"
-      [ validatorSucceedsWith
-          "GATs minting"
-          (governorValidator Shared.governor)
-          ( GovernorDatum
-              def
-              (ProposalId 5)
-              def
-              def
-              3
-          )
-          MintGATs
-          mintGATs
-      , validatorSucceedsWith
-          "mutate governor state"
-          (governorValidator Shared.governor)
-          ( GovernorDatum
-              def
-              (ProposalId 5)
-              def
-              def
-              3
-          )
-          MutateGovernor
-          mutateState
+      [ group
+          "mutate"
+          [ Mutate.mkTestCase
+              "legal"
+              Mutate.totallyValidBundle
+              (Mutate.Validity True)
+          , group "illegal" $
+              map
+                ( \b ->
+                    Mutate.mkTestCase
+                      "(negative test)"
+                      b
+                      (Mutate.Validity False)
+                )
+                Mutate.invalidBundles
+          ]
       ]
   ]

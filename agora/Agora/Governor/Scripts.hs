@@ -593,7 +593,10 @@ governorValidator gov =
 
         Just MutateGovernor -> unTermCont $ do
           -- Check that a GAT is burnt.
-          pure $ popaque $ singleAuthorityTokenBurned patSymbol txInfoF.inputs txInfoF.mint
+          pguardC "One valid GAT burnt" $
+            singleAuthorityTokenBurned patSymbol txInfoF.inputs txInfoF.mint
+
+          pure $ popaque $ pconstant ()
 
         --------------------------------------------------------------------------
         Nothing -> ptraceError "Unknown redeemer"
