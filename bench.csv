@@ -5,8 +5,8 @@ Agora/Effects/Treasury Withdrawal Effect/effect/Mixed Assets,455817227,1103968,3
 Agora/Effects/Governor Mutation Effect/validator/valid new governor datum/governor validator should pass,93089688,256879,8290
 Agora/Effects/Governor Mutation Effect/validator/valid new governor datum/effect validator should pass,112671240,312571,3751
 Agora/Stake/policy/stakeCreation,51008580,149029,2522
-Agora/Stake/validator/stakeDepositWithdraw deposit,183506412,498838,4745
-Agora/Stake/validator/stakeDepositWithdraw withdraw,183506412,498838,4733
+Agora/Stake/validator/stakeDepositWithdraw deposit,183506412,498838,4753
+Agora/Stake/validator/stakeDepositWithdraw withdraw,183506412,498838,4741
 Agora/Proposal/policy (proposal creation)/legal/proposal,33689644,100286,2005
 Agora/Proposal/policy (proposal creation)/legal/governor,324511293,861435,8769
 Agora/Proposal/policy (proposal creation)/legal/stake,153960499,403133,5407

@@ -24,8 +24,6 @@ import Agora.Utils (validatorHashToTokenName)
 import Data.Default (def)
 import Plutarch.Api.V1 (PValidator, mkValidator, validatorHash)
 import Plutarch.Context (
-  BaseBuilder,
-  buildTxInfoUnsafe,
   input,
   mint,
   output,
@@ -37,9 +35,6 @@ import Plutarch.Context (
  )
 import PlutusLedgerApi.V1 (
   Data,
-  ScriptContext (ScriptContext),
-  ScriptPurpose (Spending),
-  TxInfo,
   TxOutRef (TxOutRef),
   ValidatorHash,
   Value,
@@ -54,7 +49,7 @@ import Sample.Shared (
   minAda,
  )
 import Test.Specification (SpecificationTree, testValidator)
-import Test.Util (pubKeyHashes, sortValue, validatorHashes, withOptional)
+import Test.Util (CombinableBuilder, mkSpending, pubKeyHashes, sortValue, validatorHashes, withOptional)
 
 --------------------------------------------------------------------------------
 
@@ -131,13 +126,10 @@ governorRef =
     "6cce6dfbb697f9e2c4fe9786bb576eb7bd6cbcf7801a4ba13d596006c2d5b957"
     1
 
-governorScriptPurpose :: ScriptPurpose
-governorScriptPurpose = Spending governorRef
-
 governorRedeemer :: GovernorRedeemer
 governorRedeemer = MutateGovernor
 
-mkGovernorBuilder :: GovernorParameters -> BaseBuilder
+mkGovernorBuilder :: forall b. CombinableBuilder b => GovernorParameters -> b
 mkGovernorBuilder ps =
   let gst = Value.assetClassValue govAssetClass 1
       value = sortValue $ gst <> minAda
@@ -179,7 +171,7 @@ mkGATValue v q =
         (validatorHashToTokenName gatOwner)
         q
 
-mkMockEffectBuilder :: MockEffectParameters -> BaseBuilder
+mkMockEffectBuilder :: forall b. CombinableBuilder b => MockEffectParameters -> b
 mkMockEffectBuilder ps =
   let mkGATValue' = mkGATValue ps.gatValidity
       inputValue = mkGATValue' 1
@@ -200,13 +192,12 @@ mkMockEffectBuilder ps =
 
 --------------------------------------------------------------------------------
 
-mutate :: ParameterBundle -> TxInfo
+mutate :: forall b. CombinableBuilder b => ParameterBundle -> b
 mutate pb =
-  buildTxInfoUnsafe $
-    mconcat
-      [ mkGovernorBuilder pb.governorParameters
-      , mkMockEffectBuilder pb.mockEffectParameters
-      ]
+  mconcat
+    [ mkGovernorBuilder pb.governorParameters
+    , mkMockEffectBuilder pb.mockEffectParameters
+    ]
 
 --------------------------------------------------------------------------------
 
@@ -218,10 +209,7 @@ mkTestCase name pb (Validity forGov) =
     (governorValidator governor)
     governorInputDatum
     governorRedeemer
-    ( ScriptContext
-        (mutate pb)
-        governorScriptPurpose
-    )
+    (mkSpending mutate pb governorRef)
 
 --------------------------------------------------------------------------------
 

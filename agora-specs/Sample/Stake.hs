@@ -40,8 +40,9 @@ import Plutarch.Context (
   signedWith,
   txId,
   withDatum,
-  withSpending,
-  withTxId,
+  withMinting,
+  withOutRef,
+  withSpendingOutRef,
   withValue,
  )
 import PlutusLedgerApi.V1 (
@@ -53,6 +54,7 @@ import PlutusLedgerApi.V1 (
   TxInfo (txInfoData, txInfoSignatories),
   ValidatorHash (ValidatorHash),
  )
+import PlutusLedgerApi.V1.Contexts (TxOutRef (..))
 import PlutusLedgerApi.V1.Value qualified as Value (
   assetClassValue,
   singleton,
@@ -86,6 +88,7 @@ stakeCreation =
               script stakeValidatorHash
                 . withValue (st <> Value.singleton "da8c30857834c6ae7203935b89278c532b3995245295456f993e1d24" "LQ" 424242424242)
                 . withDatum datum
+          , withMinting stakeSymbol
           ]
    in buildMintingUnsafe builder
 
@@ -130,6 +133,9 @@ stakeDepositWithdraw config =
       stakeAfter :: StakeDatum
       stakeAfter = stakeBefore {stakedAmount = stakeBefore.stakedAmount + config.delta}
 
+      stakeRef :: TxOutRef
+      stakeRef = TxOutRef "0ffef57e30cc604342c738e31e0451593837b313e7bfb94b0922b142782f98e6" 1
+
       builder :: SpendingBuilder
       builder =
         mconcat
@@ -140,14 +146,11 @@ stakeDepositWithdraw config =
               script stakeValidatorHash
                 . withValue (st <> Value.assetClassValue (untag stake.gtClassRef) (untag stakeBefore.stakedAmount))
                 . withDatum stakeAfter
-                . withTxId "0b2086cbf8b6900f8cb65e012de4516cb66b5cb08a9aaba12a8b88be"
+                . withOutRef stakeRef
           , output $
               script stakeValidatorHash
                 . withValue (st <> Value.assetClassValue (untag stake.gtClassRef) (untag stakeAfter.stakedAmount))
                 . withDatum stakeAfter
-          , withSpending $
-              script stakeValidatorHash
-                . withValue (st <> Value.assetClassValue (untag stake.gtClassRef) (untag stakeBefore.stakedAmount))
-                . withDatum stakeAfter
+          , withSpendingOutRef stakeRef
           ]
    in buildSpendingUnsafe builder

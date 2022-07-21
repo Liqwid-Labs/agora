@@ -30,6 +30,7 @@ import Plutarch.Context (
   output,
   script,
   withDatum,
+  withMinting,
   withOutRef,
   withValue,
  )
@@ -43,6 +44,7 @@ import PlutusLedgerApi.V1.Value (assetClassValue)
 import Property.Generator (genInput, genOutput)
 import Sample.Shared (
   govAssetClass,
+  govSymbol,
   govValidatorHash,
   governor,
   gstUTXORef,
@@ -181,7 +183,7 @@ governorMintingProperty =
               GovernorOutputNotFound -> referencedInput <> mintAmount 1
               GovernorPolicyCorrect -> referencedInput <> outputToGov <> mintAmount 1
 
-      return . buildMintingUnsafe $ inputs <> outputs <> comp
+      return . buildMintingUnsafe $ inputs <> outputs <> comp <> withMinting govSymbol
 
     expected :: ScriptContext -> Maybe ()
     expected sc =

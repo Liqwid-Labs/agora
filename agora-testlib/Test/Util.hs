@@ -20,6 +20,9 @@ module Test.Util (
   validatorHashes,
   groupsOfN,
   withOptional,
+  mkSpending,
+  mkMinting,
+  CombinableBuilder,
 ) where
 
 --------------------------------------------------------------------------------
@@ -32,9 +35,26 @@ import Data.ByteString qualified as BS
 import Data.ByteString.Char8 qualified as C
 import Data.ByteString.Lazy qualified as ByteString.Lazy
 import Data.List (sortOn)
-import Plutarch.Context (UTXO)
+import Plutarch.Context (
+  Builder,
+  UTXO,
+  buildMintingUnsafe,
+  buildSpendingUnsafe,
+  withMinting,
+  withSpendingOutRef,
+ )
 import Plutarch.Crypto (pblake2b_256)
-import PlutusLedgerApi.V1 (Credential (PubKeyCredential, ScriptCredential), PubKeyHash (..), ValidatorHash (ValidatorHash))
+import PlutusLedgerApi.V1 (
+  Credential (
+    PubKeyCredential,
+    ScriptCredential
+  ),
+  CurrencySymbol,
+  PubKeyHash (..),
+  ScriptContext,
+  TxOutRef,
+  ValidatorHash (ValidatorHash),
+ )
 import PlutusLedgerApi.V1.Interval qualified as PlutusTx
 import PlutusLedgerApi.V1.Scripts (Datum (Datum), DatumHash (DatumHash))
 import PlutusLedgerApi.V1.Value (Value (..))
@@ -168,3 +188,25 @@ withOptional ::
   UTXO
 withOptional f (Just b) = f b
 withOptional _ _ = id
+
+mkSpending ::
+  forall ps.
+  (forall b. (Monoid b, Builder b) => ps -> b) ->
+  ps ->
+  TxOutRef ->
+  ScriptContext
+mkSpending mkBuilder ps oref =
+  buildSpendingUnsafe $
+    mkBuilder ps <> withSpendingOutRef oref
+
+mkMinting ::
+  forall ps.
+  (forall b. (Monoid b, Builder b) => ps -> b) ->
+  ps ->
+  CurrencySymbol ->
+  ScriptContext
+mkMinting mkBuilder ps cs =
+  buildMintingUnsafe $
+    mkBuilder ps <> withMinting cs
+
+type CombinableBuilder b = (Monoid b, Builder b)

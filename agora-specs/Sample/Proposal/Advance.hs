@@ -79,8 +79,6 @@ import Data.List (sort)
 import Data.Maybe (catMaybes, fromJust)
 import Data.Tagged (Tagged (..), untag)
 import Plutarch.Context (
-  BaseBuilder,
-  buildTxInfoUnsafe,
   input,
   mint,
   output,
@@ -97,9 +95,6 @@ import PlutusLedgerApi.V1 (
   POSIXTime,
   POSIXTimeRange,
   PubKeyHash,
-  ScriptContext (ScriptContext),
-  ScriptPurpose (Minting, Spending),
-  TxInfo,
   TxOutRef (TxOutRef),
   ValidatorHash,
  )
@@ -131,9 +126,12 @@ import Test.Specification (
   testValidator,
  )
 import Test.Util (
+  CombinableBuilder,
   closedBoundedInterval,
   datumHash,
   groupsOfN,
+  mkMinting,
+  mkSpending,
   pubKeyHashes,
   sortValue,
   toDatum,
@@ -264,7 +262,7 @@ mkProposalOutputDatum ps =
 proposalRef :: TxOutRef
 proposalRef = TxOutRef proposalTxRef 1
 
-mkProposalBuilder :: ProposalParameters -> BaseBuilder
+mkProposalBuilder :: forall b. CombinableBuilder b => ProposalParameters -> b
 mkProposalBuilder ps =
   let pst = Value.singleton proposalPolicySymbol "" 1
       value = sortValue $ minAda <> pst
@@ -279,10 +277,6 @@ mkProposalBuilder ps =
               . withDatum (mkProposalOutputDatum ps)
               . withValue value
         ]
-
--- | Script purpose of the proposal validator.
-proposalScriptPurpose :: ScriptPurpose
-proposalScriptPurpose = Spending proposalRef
 
 {- | The proposal redeemer used to spend the proposal UTXO, which is always
       'AdvanceProposal' in this case.
@@ -327,7 +321,7 @@ getStakeInputDatumAt ps = (!!) (mkStakeInputDatums ps)
 mkStakeRef :: Index -> TxOutRef
 mkStakeRef = TxOutRef stakeTxRef . (+ 3) . fromIntegral
 
-mkStakeBuilder :: StakeParameters -> BaseBuilder
+mkStakeBuilder :: forall b. CombinableBuilder b => StakeParameters -> b
 mkStakeBuilder ps =
   let perStakeValue =
         sortValue $
@@ -360,10 +354,6 @@ mkStakeBuilder ps =
           (mkStakeInputDatums ps)
           (mkStakeOutputDatums ps)
 
--- | Script purpose of the stake validator, given which stake we want to spend.
-getStakeScriptPurposeAt :: Index -> ScriptPurpose
-getStakeScriptPurposeAt = Spending . mkStakeRef
-
 {- | The proposal redeemer used to spend the stake UTXO, which is always
       'WitnessStake' in this case.
 -}
@@ -394,7 +384,7 @@ mkGovernorOutputDatum ps =
 governorRef :: TxOutRef
 governorRef = TxOutRef governorTxRef 2
 
-mkGovernorBuilder :: GovernorParameters -> BaseBuilder
+mkGovernorBuilder :: forall b. CombinableBuilder b => GovernorParameters -> b
 mkGovernorBuilder ps =
   let gst = Value.assetClassValue govAssetClass 1
       value = sortValue $ gst <> minAda
@@ -411,9 +401,6 @@ mkGovernorBuilder ps =
               . withDatum (mkGovernorOutputDatum ps)
         ]
 
-governorScriptPurpose :: ScriptPurpose
-governorScriptPurpose = Spending governorRef
-
 {- | The proposal redeemer used to spend the governor UTXO, which is always
       'MintGATs' in this case.
 -}
@@ -424,11 +411,11 @@ governorRedeemer = MintGATs
 
 -- * Authority Token
 
-mkAuthorityTokenBuilder :: AuthorityTokenParameters -> BaseBuilder
+mkAuthorityTokenBuilder :: forall b. CombinableBuilder b => AuthorityTokenParameters -> b
 mkAuthorityTokenBuilder (AuthorityTokenParameters es mdt invalidTokenName) =
   foldMap perEffect es
   where
-    perEffect :: ValidatorHash -> BaseBuilder
+    perEffect :: ValidatorHash -> b
     perEffect vh =
       let tn =
             if invalidTokenName
@@ -445,9 +432,6 @@ mkAuthorityTokenBuilder (AuthorityTokenParameters es mdt invalidTokenName) =
                   . withValue value
             ]
 
-authorityTokenScriptPurepose :: ScriptPurpose
-authorityTokenScriptPurepose = Minting authorityTokenSymbol
-
 authorityTokenRedeemer :: ()
 authorityTokenRedeemer = ()
 
@@ -455,19 +439,20 @@ authorityTokenRedeemer = ()
 
 -- | Create a 'TxInfo' that update the status of a proposal.
 advance ::
+  forall b.
+  CombinableBuilder b =>
   ParameterBundle ->
-  TxInfo
+  b
 advance pb =
   let mkBuilderMaybe = maybe mempty
-   in buildTxInfoUnsafe $
-        mconcat
-          [ mkProposalBuilder pb.proposalParameters
-          , mkStakeBuilder pb.stakeParameters
-          , mkBuilderMaybe mkGovernorBuilder pb.governorParameters
-          , mkBuilderMaybe mkAuthorityTokenBuilder pb.authorityTokenParameters
-          , timeRange pb.transactionTimeRange
-          , maybe mempty signedWith pb.extraSignature
-          ]
+   in mconcat
+        [ mkProposalBuilder pb.proposalParameters
+        , mkStakeBuilder pb.stakeParameters
+        , mkBuilderMaybe mkGovernorBuilder pb.governorParameters
+        , mkBuilderMaybe mkAuthorityTokenBuilder pb.authorityTokenParameters
+        , timeRange pb.transactionTimeRange
+        , maybe mempty signedWith pb.extraSignature
+        ]
 
 --------------------------------------------------------------------------------
 
@@ -479,13 +464,14 @@ mkTestTree ::
   ParameterBundle ->
   Validity ->
   SpecificationTree
-mkTestTree name params val =
+mkTestTree name pb val =
   group name $ catMaybes [proposal, stake, governor, authority]
   where
-    txInfo = advance params
+    spend = mkSpending advance pb
+    mint = mkMinting advance pb
 
     proposal =
-      let proposalInputDatum = mkProposalInputDatum params.proposalParameters
+      let proposalInputDatum = mkProposalInputDatum pb.proposalParameters
        in Just $
             testValidator
               val.forProposalValidator
@@ -493,10 +479,7 @@ mkTestTree name params val =
               (proposalValidator Shared.proposal)
               proposalInputDatum
               proposalRedeemer
-              ( ScriptContext
-                  txInfo
-                  proposalScriptPurpose
-              )
+              (spend proposalRef)
 
     stake =
       let idx = 0
@@ -505,11 +488,9 @@ mkTestTree name params val =
               val.forStakeValidator
               "stake"
               (stakeValidator Shared.stake)
-              (getStakeInputDatumAt params.stakeParameters idx)
+              (getStakeInputDatumAt pb.stakeParameters idx)
               stakeRedeemer
-              ( ScriptContext
-                  txInfo
-                  (getStakeScriptPurposeAt idx)
+              ( spend (mkStakeRef idx)
               )
 
     governor =
@@ -519,11 +500,8 @@ mkTestTree name params val =
         (governorValidator Shared.governor)
         governorInputDatum
         governorRedeemer
-        ( ScriptContext
-            txInfo
-            governorScriptPurpose
-        )
-        <$ params.governorParameters
+        (spend governorRef)
+        <$ pb.governorParameters
 
     authority =
       testPolicy
@@ -531,11 +509,8 @@ mkTestTree name params val =
         "authority"
         (authorityTokenPolicy $ AuthorityToken Shared.govAssetClass)
         authorityTokenRedeemer
-        ( ScriptContext
-            txInfo
-            authorityTokenScriptPurepose
-        )
-        <$ (params.authorityTokenParameters)
+        (mint authorityTokenSymbol)
+        <$ (pb.authorityTokenParameters)
 
 mkTestTree' ::
   String ->

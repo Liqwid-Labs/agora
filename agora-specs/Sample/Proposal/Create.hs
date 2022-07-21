@@ -45,8 +45,6 @@ import Data.Coerce (coerce)
 import Data.Default (Default (def))
 import Data.Tagged (Tagged, untag)
 import Plutarch.Context (
-  BaseBuilder,
-  buildTxInfoUnsafe,
   input,
   mint,
   output,
@@ -63,9 +61,6 @@ import PlutusLedgerApi.V1 (
   POSIXTime (POSIXTime),
   POSIXTimeRange,
   PubKeyHash,
-  ScriptContext (ScriptContext),
-  ScriptPurpose (Minting, Spending),
-  TxInfo,
   TxOutRef (TxOutRef),
   ValidatorHash,
   always,
@@ -88,7 +83,7 @@ import Sample.Shared (
  )
 import Sample.Shared qualified as Shared
 import Test.Specification (SpecificationTree, group, testPolicy, testValidator)
-import Test.Util (closedBoundedInterval, sortValue)
+import Test.Util (CombinableBuilder, closedBoundedInterval, mkMinting, mkSpending, sortValue)
 
 -- | Parameters for creating a proposal.
 data Parameters = Parameters
@@ -269,8 +264,8 @@ governorRef = TxOutRef "0b2086cbf8b6900f8cb65e012de4516cb66b5cb08a9aaba12a8b88be
 --------------------------------------------------------------------------------
 
 -- | Create a 'TxInfo' that spends a stake to create a new proposal.
-createProposal :: Parameters -> TxInfo
-createProposal ps = buildTxInfoUnsafe builder
+createProposal :: forall b. CombinableBuilder b => Parameters -> b
+createProposal ps = builder
   where
     pst = Value.singleton proposalPolicySymbol "" 1
     sst = Value.assetClassValue stakeAssetClass 1
@@ -296,7 +291,6 @@ createProposal ps = buildTxInfoUnsafe builder
 
     ---
 
-    builder :: BaseBuilder
     builder =
       mconcat
         [ txId "0b2086cbf8b6900f8cb65e012de4516cb66b5cb08a9aaba12a8b88be"
@@ -426,7 +420,8 @@ mkTestTree
   validForStakeValidator =
     group name [proposalTest, governorTest, stakeTest]
     where
-      txInfo = createProposal ps
+      mint = mkMinting createProposal ps
+      spend = mkSpending createProposal ps
 
       proposalTest =
         testPolicy
@@ -434,7 +429,7 @@ mkTestTree
           "proposal"
           (proposalPolicy Shared.proposal.governorSTAssetClass)
           proposalPolicyRedeemer
-          (ScriptContext txInfo (Minting proposalPolicySymbol))
+          (mint proposalPolicySymbol)
 
       governorTest =
         testValidator
@@ -443,11 +438,7 @@ mkTestTree
           (governorValidator Shared.governor)
           governorInputDatum
           governorRedeemer
-          ( ScriptContext
-              txInfo
-              (Spending governorRef)
-          )
-
+          (spend governorRef)
       stakeTest =
         testValidator
           validForStakeValidator
@@ -455,7 +446,4 @@ mkTestTree
           (stakeValidator Shared.stake)
           (mkStakeInputDatum ps)
           stakeRedeemer
-          ( ScriptContext
-              txInfo
-              (Spending stakeRef)
-          )
+          (spend stakeRef)

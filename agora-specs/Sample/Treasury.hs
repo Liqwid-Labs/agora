@@ -28,6 +28,7 @@ import Plutarch.Context (
   script,
   signedWith,
   txId,
+  withMinting,
   withTxId,
   withValue,
  )
@@ -67,6 +68,7 @@ baseCtxBuilder =
         , mint (Value.singleton gatCs gatTn (-1))
         , input treasury
         , output treasury
+        , withMinting gatCs
         ]
 
 {- | A `ScriptContext` that should be compatible with treasury

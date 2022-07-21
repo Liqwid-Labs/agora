@@ -30,8 +30,6 @@ import Agora.Proposal.Time (MaxTimeRangeWidth (MaxTimeRangeWidth), ProposalTimin
 import Data.Default (Default (..))
 import Plutarch.Api.V1 (mintingPolicySymbol, mkMintingPolicy)
 import Plutarch.Context (
-  BaseBuilder,
-  buildTxInfoUnsafe,
   input,
   mint,
   output,
@@ -46,9 +44,6 @@ import Plutarch.Context (
 import PlutusLedgerApi.V1 (
   CurrencySymbol,
   MintingPolicy,
-  ScriptContext (..),
-  ScriptPurpose (Minting),
-  TxInfo,
   TxOutRef (TxOutRef),
   ValidatorHash,
  )
@@ -59,7 +54,7 @@ import Sample.Shared (
  )
 import Sample.Shared qualified as Shared
 import Test.Specification (SpecificationTree, testPolicy)
-import Test.Util (pubKeyHashes, sortValue)
+import Test.Util (CombinableBuilder, mkMinting, pubKeyHashes, sortValue)
 
 data Parameters = Parameters
   { datumThresholdsValid :: Bool
@@ -115,8 +110,8 @@ govSymbol = mintingPolicySymbol govPolicy
 
 --------------------------------------------------------------------------------
 
-mintGST :: Parameters -> TxInfo
-mintGST ps = buildTxInfoUnsafe builder
+mintGST :: forall b. CombinableBuilder b => Parameters -> b
+mintGST ps = builder
   where
     gstAC =
       if ps.mintStateTokenWithName
@@ -149,7 +144,6 @@ mintGST ps = buildTxInfoUnsafe builder
 
     ---
 
-    witnessBuilder :: BaseBuilder
     witnessBuilder =
       if ps.presentWitness
         then
@@ -166,7 +160,6 @@ mintGST ps = buildTxInfoUnsafe builder
 
     ---
 
-    govBuilder :: BaseBuilder
     govBuilder =
       let datum =
             if ps.withGovernorDatum
@@ -177,8 +170,6 @@ mintGST ps = buildTxInfoUnsafe builder
               . withValue governorValue
               . datum
     --
-
-    builder :: BaseBuilder
     builder =
       mconcat
         [ txId "986b756ffb1c9839fc8d0b22a308ac91d5b5d0ebbfa683a47588c8a5cf70b5af"
@@ -247,17 +238,10 @@ mintGSTWithNoneEmptyNameParameters =
 --------------------------------------------------------------------------------
 
 mkTestCase :: String -> Parameters -> Bool -> SpecificationTree
-mkTestCase
-  name
-  ps
-  valid = policyTest
-    where
-      txInfo = mintGST ps
-
-      policyTest =
-        testPolicy
-          valid
-          name
-          (governorPolicy governor)
-          ()
-          (ScriptContext txInfo (Minting govSymbol))
+mkTestCase name ps valid =
+  testPolicy
+    valid
+    name
+    (governorPolicy governor)
+    ()
+    (mkMinting mintGST ps govSymbol)
