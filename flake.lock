@@ -10913,11 +10913,11 @@
         "plutarch": "plutarch_5"
       },
       "locked": {
-        "lastModified": 1655751255,
-        "narHash": "sha256-3Uk1v/V+qm/KBBwBPqzr4X7KiH9DyJ9vhNH2Pw08PkE=",
+        "lastModified": 1658368717,
+        "narHash": "sha256-GAneUtaxaJSZLNkIGOTByx/Auuq1g3MhzBhTiqZ13+s=",
         "owner": "Liqwid-Labs",
         "repo": "plutarch-context-builder",
-        "rev": "9e6c81a2e1762a5f8e38cb88b83e2996447e3003",
+        "rev": "2a2ca72ff310788e531cbbe379ef7b0c4cb42dc9",
         "type": "github"
       },
       "original": {
