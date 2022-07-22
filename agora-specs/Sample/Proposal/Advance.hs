@@ -139,19 +139,36 @@ import Test.Util (
   validatorHashes,
  )
 
+{- | A bunch of parameters that control the generation of the transaction
+    context.
+-}
 data ParameterBundle = ParameterBundle
   { proposalParameters :: ProposalParameters
+  -- ^ Parameters related to the the advancing proposal.
   , stakeParameters :: StakeParameters
+  -- ^ Parameters related to stakes.
   , governorParameters :: Maybe GovernorParameters
+  -- ^ Parameters related to GST moving. If set to 'Nothing', the GST won't
+  --   be moved, thus the governor validator won't be run in 'mkTestTree'.
   , authorityTokenParameters :: Maybe AuthorityTokenParameters
+  -- ^ Parameters related to GAT minting. If set to 'Nothing', no GAT will
+  --     be minted, thus the GAT minting policy won't be run in 'mkTestTree'.
   , transactionTimeRange :: POSIXTimeRange
+  -- ^ The value of 'TxInfo.txInfoValidRange', valid range of the generated
+  --    transaction.
   , extraSignature :: Maybe PubKeyHash
+  -- ^ An extra signator. Intended to be used when
+  --    'StakeParametersstakeParameters.transactionSignedByOwners' is set to
+  --    false.
   }
 
+-- | Everything about the generated governor stuff.
 newtype GovernorParameters = GovernorParameters
   { invalidGovernorOutputDatum :: Bool
+  -- ^ The output governor datum will be changed.
   }
 
+-- | Everything about the generated authority token stuff.
 data AuthorityTokenParameters = forall
     (datum :: Type)
     (pdatum :: S -> Type).
@@ -161,21 +178,40 @@ data AuthorityTokenParameters = forall
   ) =>
   AuthorityTokenParameters
   { mintGATsFor :: [ValidatorHash]
+  -- ^ GATs will be minted and sent to the given group of effects.
   , carryDatum :: Maybe datum
+  -- ^ The datum that GAT UTxOs will be carrying.
   , invalidTokenName :: Bool
+  -- ^ If set to true, GATs won't be tagged by their corresponding effect
+  --    hashes.
   }
 
-data Winner = EffectAt Index | All
+-- | Represent the winning effect group(s).
+data Winner
+  = -- | Only one effect at the given index has the highest votes.
+    EffectAt Index
+  | -- | All the effects have the same highest votes.
+    All
 
+-- | Everything about the generated proposal stuff.
 data ProposalParameters = ProposalParameters
   { fromStatus :: ProposalStatus
+  -- ^ What status is the proposal advancing from
   , toStatus :: ProposalStatus
+  -- ^ What status is the proposal advancing to
   , effectList :: [AssocMap.Map ValidatorHash DatumHash]
+  -- ^ The effect groups of the proposal. A neutral effect group is not
+  --    required here.
   , winnerAndVotes :: Maybe (Winner, Integer)
+  -- ^ Specify the effect group(s) that have the highest votes, and the value
+  --    of the highest votes.
   , numCosigners :: NumStake
+  -- ^ The number of cosigners.
   , invalidProposalOutputDatum :: Bool
+  -- ^ Whether to make the proposal output datum invalid or not.
   }
 
+-- | Everything about the generated stake stuff.
 data StakeParameters = StakeParameters
   { numStake :: NumStake
   , perStakeGTs :: Integer
@@ -183,9 +219,15 @@ data StakeParameters = StakeParameters
   , invalidStakeOutputDatum :: Bool
   }
 
+-- | Represent the number of stakes or the number of the cosigners.
 type NumStake = Int
+
+-- | Represent an index.
 type Index = Int
 
+{- | The validity of the generated transacrion for variuos componets.
+     'True' means valid, 'False' means invalid.
+-}
 data Validity = Validity
   { forProposalValidator :: Bool
   , forStakeValidator :: Bool
@@ -197,12 +239,15 @@ data Validity = Validity
 
 -- * Proposal
 
+-- | Mock cosigners.
 mkCosigners :: NumStake -> [PubKeyHash]
 mkCosigners = sort . flip take pubKeyHashes
 
+-- | Allocate the result tag for the effect at the given index.
 outcomeIdxToResultTag :: Index -> ResultTag
 outcomeIdxToResultTag = ResultTag . fromIntegral
 
+-- | Add a neutral effect group and allocate result tags for the effect groups.
 mkEffects ::
   ProposalParameters ->
   AssocMap.Map ResultTag (AssocMap.Map ValidatorHash DatumHash)
@@ -212,6 +257,7 @@ mkEffects ps =
       finalEffects = ps.effectList <> [neutralEffect]
    in AssocMap.fromList $ zip resultTags finalEffects
 
+-- | Set the votes of the winning group(s).
 setWinner :: (Winner, Integer) -> ProposalVotes -> ProposalVotes
 setWinner (All, votes) (ProposalVotes m) =
   ProposalVotes $ AssocMap.mapMaybe (const $ Just votes) m
@@ -219,6 +265,7 @@ setWinner (EffectAt winnerIdx, votes) (ProposalVotes m) =
   let winnerResultTag = outcomeIdxToResultTag winnerIdx
    in ProposalVotes $ updateMap (const $ Just votes) winnerResultTag m
 
+-- | Mock votes for the proposal, given the parameters.
 mkVotes ::
   ProposalParameters ->
   ProposalVotes
@@ -227,9 +274,11 @@ mkVotes ps =
       emptyVotes = emptyVotesFor effects
    in maybe emptyVotes (`setWinner` emptyVotes) (ps.winnerAndVotes)
 
+-- | The starting time of every generated proposal.
 proposalStartingTime :: POSIXTime
 proposalStartingTime = 0
 
+-- | Create the input proposal datum given the parameters.
 mkProposalInputDatum :: ProposalParameters -> ProposalDatum
 mkProposalInputDatum ps =
   let effects = mkEffects ps
@@ -246,6 +295,7 @@ mkProposalInputDatum ps =
         , startingTime = st
         }
 
+-- | Create the output proposal datum given the parameters.
 mkProposalOutputDatum :: ProposalParameters -> ProposalDatum
 mkProposalOutputDatum ps =
   let inputDatum = mkProposalInputDatum ps
@@ -262,6 +312,9 @@ mkProposalOutputDatum ps =
 proposalRef :: TxOutRef
 proposalRef = TxOutRef proposalTxRef 1
 
+{- | Create a context builder that contains all the information about the
+      input/output of the proposal validator, given the paramters.
+-}
 mkProposalBuilder :: forall b. CombinableBuilder b => ProposalParameters -> b
 mkProposalBuilder ps =
   let pst = Value.singleton proposalPolicySymbol "" 1
@@ -288,6 +341,7 @@ proposalRedeemer = AdvanceProposal
 
 -- * Stake
 
+-- Mock owners of the stakes.
 mkStakeOwners :: NumStake -> [PubKeyHash]
 mkStakeOwners = mkCosigners
 
@@ -303,6 +357,7 @@ mkStakeInputDatums ps =
    in (\owner -> template {owner = owner})
         <$> mkStakeOwners ps.numStake
 
+-- | Create the output stake datums given the parameters.
 mkStakeOutputDatums :: StakeParameters -> [StakeDatum]
 mkStakeOutputDatums ps =
   let inputDatums = mkStakeInputDatums ps
@@ -314,6 +369,9 @@ mkStakeOutputDatums ps =
       modify inp = inp {stakedAmount = outputStakedAmount}
    in modify <$> inputDatums
 
+{- | Get the input stake datum given the index. The range of the index is
+    @[0, 'StakeParameters.numStake - 1']@
+-}
 getStakeInputDatumAt :: StakeParameters -> Index -> StakeDatum
 getStakeInputDatumAt ps = (!!) (mkStakeInputDatums ps)
 
@@ -321,6 +379,9 @@ getStakeInputDatumAt ps = (!!) (mkStakeInputDatums ps)
 mkStakeRef :: Index -> TxOutRef
 mkStakeRef = TxOutRef stakeTxRef . (+ 3) . fromIntegral
 
+{- | Create a context builder that contains all the inputs/outputs of the
+      stake validator.
+-}
 mkStakeBuilder :: forall b. CombinableBuilder b => StakeParameters -> b
 mkStakeBuilder ps =
   let perStakeValue =
@@ -364,6 +425,7 @@ stakeRedeemer = WitnessStake
 
 -- * Governor
 
+-- | The input governor datum.
 governorInputDatum :: GovernorDatum
 governorInputDatum =
   GovernorDatum
@@ -374,6 +436,7 @@ governorInputDatum =
     , maximumProposalsPerStake = 3
     }
 
+-- | Create the output governor datum given the parameters.
 mkGovernorOutputDatum :: GovernorParameters -> GovernorDatum
 mkGovernorOutputDatum ps =
   if ps.invalidGovernorOutputDatum
@@ -384,6 +447,9 @@ mkGovernorOutputDatum ps =
 governorRef :: TxOutRef
 governorRef = TxOutRef governorTxRef 2
 
+{- | Create a context builder that contains the input and  the output of the
+      governor validator.
+-}
 mkGovernorBuilder :: forall b. CombinableBuilder b => GovernorParameters -> b
 mkGovernorBuilder ps =
   let gst = Value.assetClassValue govAssetClass 1
@@ -411,7 +477,14 @@ governorRedeemer = MintGATs
 
 -- * Authority Token
 
-mkAuthorityTokenBuilder :: forall b. CombinableBuilder b => AuthorityTokenParameters -> b
+{- | Create a context builder that contains the infomation about the minted
+      authority tokens and where they're sent to.
+-}
+mkAuthorityTokenBuilder ::
+  forall b.
+  CombinableBuilder b =>
+  AuthorityTokenParameters ->
+  b
 mkAuthorityTokenBuilder (AuthorityTokenParameters es mdt invalidTokenName) =
   foldMap perEffect es
   where
@@ -432,6 +505,7 @@ mkAuthorityTokenBuilder (AuthorityTokenParameters es mdt invalidTokenName) =
                   . withValue value
             ]
 
+-- | The redeemer used while running the authority token policy.
 authorityTokenRedeemer :: ()
 authorityTokenRedeemer = ()
 
@@ -456,8 +530,8 @@ advance pb =
 
 --------------------------------------------------------------------------------
 
-{- | Create a test tree that runs the stake validator and proposal validator to
-      test the advancing functionalities.
+{- | Create a test tree that runs the relavant componets to test the advancing
+      functionalities.
 -}
 mkTestTree ::
   String ->
@@ -512,6 +586,9 @@ mkTestTree name pb val =
         (mint authorityTokenSymbol)
         <$ (pb.authorityTokenParameters)
 
+{- | Create a test tree that runs a bunch of parameter bundles. These bundles
+      should have the same validity.
+-}
 mkTestTree' ::
   String ->
   (ParameterBundle -> String) ->
@@ -626,6 +703,7 @@ getNextState = \case
   Locked -> Finished
   Finished -> error "Cannot advance 'Finished' proposal"
 
+-- | Calculate the number of GTs per stake in order to exceed the minimum limit.
 compPerStakeGTsForDraft :: NumStake -> Integer
 compPerStakeGTsForDraft nCosigners =
   untag (def :: ProposalThresholds).vote
@@ -637,6 +715,7 @@ dummyDatum = ()
 dummyDatumHash :: DatumHash
 dummyDatumHash = datumHash $ toDatum dummyDatum
 
+-- | Create given number of effect groups. Each group will have 3 effects.
 mkMockEffects :: Int -> [AssocMap.Map ValidatorHash DatumHash]
 mkMockEffects =
   flip
@@ -646,11 +725,21 @@ mkMockEffects =
         <$> groupsOfN 3 validatorHashes
     )
 
+numberOfVotesThatExceedsTheMinimumRequirement :: Integer
+numberOfVotesThatExceedsTheMinimumRequirement =
+  untag (def @ProposalThresholds).execute + 1
+
 mkWinnerVotes :: Index -> (Winner, Integer)
-mkWinnerVotes idx = (EffectAt idx, untag (def @ProposalThresholds).execute + 1)
+mkWinnerVotes idx =
+  ( EffectAt idx
+  , numberOfVotesThatExceedsTheMinimumRequirement
+  )
 
 ambiguousWinnerVotes :: (Winner, Integer)
-ambiguousWinnerVotes = (All, untag (def @ProposalThresholds).execute + 1)
+ambiguousWinnerVotes =
+  ( All
+  , numberOfVotesThatExceedsTheMinimumRequirement
+  )
 
 --------------------------------------------------------------------------------
 
@@ -663,7 +752,19 @@ ambiguousWinnerVotes = (All, untag (def @ProposalThresholds).execute + 1)
 defaultWinnerIdx :: Index
 defaultWinnerIdx = 0
 
-mkValidToNextStateBundle :: Word -> Word -> ProposalStatus -> ParameterBundle
+{- | Advance a proposal to the next state, perfectly valid for all the
+    componets.
+-}
+mkValidToNextStateBundle ::
+  -- | Number of cosigners.
+  Word ->
+  -- | Number of effects
+  Word ->
+  -- | The initial proposal state, should not be 'Finished'.
+  ProposalStatus ->
+  ParameterBundle
+mkValidToNextStateBundle _ _ Finished =
+  error "Cannot advance from Finished"
 mkValidToNextStateBundle nCosigners nEffects from =
   let next = getNextState from
       effects = mkMockEffects $ fromIntegral nEffects
@@ -695,6 +796,7 @@ mkValidToNextStateBundle nCosigners nEffects from =
           , extraSignature = Just signer
           }
 
+      -- This is my favourite part of the test suite, lol.
       modifyTemplate = do
         when (from == Draft) $
           modify $ \b ->
@@ -889,7 +991,8 @@ mkAmbiguousWinnerBundle nCosigners nEffects =
 -- * From Locked
 
 mkValidFromLockedBundle :: Word -> Word -> ParameterBundle
-mkValidFromLockedBundle nCosigners nEffects = mkValidToNextStateBundle nCosigners nEffects Locked
+mkValidFromLockedBundle nCosigners nEffects =
+  mkValidToNextStateBundle nCosigners nEffects Locked
 
 mkMintGATsForWrongEffectsBundle ::
   Word ->

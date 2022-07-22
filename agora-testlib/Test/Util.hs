@@ -166,6 +166,7 @@ scriptCredentials = ScriptCredential <$> validatorHashes
 
 --------------------------------------------------------------------------------
 
+-- | Turn the given list in to groups which have the given length.
 groupsOfN :: Int -> [a] -> [[a]]
 groupsOfN _ [] = []
 groupsOfN n xs =
@@ -181,6 +182,7 @@ groupsOfN n xs =
 
 --------------------------------------------------------------------------------
 
+-- | Optionally apply a modifier to the given 'UTXO'.
 withOptional ::
   (a -> UTXO -> UTXO) ->
   Maybe a ->
@@ -189,6 +191,9 @@ withOptional ::
 withOptional f (Just b) = f b
 withOptional _ _ = id
 
+{- | Given the builder generator and the parameters, create a 'ScriptContext'
+    that spends the UTXO that referenced by the given 'TxOutRef'.
+-}
 mkSpending ::
   forall ps.
   (forall b. (Monoid b, Builder b) => ps -> b) ->
@@ -199,6 +204,9 @@ mkSpending mkBuilder ps oref =
   buildSpendingUnsafe $
     mkBuilder ps <> withSpendingOutRef oref
 
+{- | Given the builder generator and the parameters, create a 'ScriptContext'
+    that mints the token of the given currency symbol.
+-}
 mkMinting ::
   forall ps.
   (forall b. (Monoid b, Builder b) => ps -> b) ->

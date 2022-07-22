@@ -56,14 +56,25 @@ import Sample.Shared qualified as Shared
 import Test.Specification (SpecificationTree, testPolicy)
 import Test.Util (CombinableBuilder, mkMinting, pubKeyHashes, sortValue)
 
+-- | The parameters that control the generation of the transaction.
 data Parameters = Parameters
   { datumThresholdsValid :: Bool
+  -- ^ Whether the 'GovernorDatum.proposalThresholds' field of the output
+  --    governor datum is valid or not.
   , datumMaxTimeRangeWidthValid :: Bool
+  -- ^ Whether the 'GovernorDatum.maximumProposalsPerStake'field of the
+  --    output governor datum is valid or not.
   , datumTimingConfigValid :: Bool
+  -- ^ Whether the 'GovernorDatum.proposalTimings'field  of the output
+  --    governor datum is valid or not.
   , withGovernorDatum :: Bool
-  , presentWitness :: Bool
-  , mintMoreThanOneStateToken :: Bool
-  , mintStateTokenWithName :: Bool
+  , -- Whether the output GST UTxO will carry the governor datum.
+    presentWitness :: Bool
+  , -- Whether to spend the UTxO referenced by 'Governor.gstOutRef'.
+    mintMoreThanOneStateToken :: Bool
+  , -- More than one GST will be minted if this is set to true.
+    mintStateTokenWithName :: Bool
+    -- The token name of the GST won't be empty if this is set to true.
   }
 
 --------------------------------------------------------------------------------
@@ -126,9 +137,18 @@ mintGST ps = builder
     ---
 
     governorOutputDatum =
-      let th = if ps.datumThresholdsValid then def else invalidProposalThresholds
-          trw = if ps.datumMaxTimeRangeWidthValid then def else invalidMaxTimeRangeWidth
-          ptc = if ps.datumTimingConfigValid then def else invalidProposalTimings
+      let th =
+            if ps.datumThresholdsValid
+              then def
+              else invalidProposalThresholds
+          trw =
+            if ps.datumMaxTimeRangeWidthValid
+              then def
+              else invalidMaxTimeRangeWidth
+          ptc =
+            if ps.datumTimingConfigValid
+              then def
+              else invalidProposalTimings
        in validGovernorOutputDatum
             { proposalThresholds = th
             , proposalTimings = ptc
@@ -237,6 +257,9 @@ mintGSTWithNoneEmptyNameParameters =
 
 --------------------------------------------------------------------------------
 
+{- | Create a test tree that runs the governor policy to test the initialization
+      of the governor.
+-}
 mkTestCase :: String -> Parameters -> Bool -> SpecificationTree
 mkTestCase name ps valid =
   testPolicy

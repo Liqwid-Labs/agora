@@ -53,6 +53,7 @@ import Test.Util (CombinableBuilder, mkSpending, pubKeyHashes, sortValue, valida
 
 --------------------------------------------------------------------------------
 
+-- | Represent the validity property of the governor output datum.
 data GovernorOutputDatumValidity
   = DatumValid
   | ValueInvalid
@@ -60,6 +61,7 @@ data GovernorOutputDatumValidity
   | NoDatum
   deriving stock (Bounded, Enum)
 
+-- | Represent the validity property of the authority token UTxO.
 data GATValidity
   = GATValid
   | WrongTag
@@ -69,11 +71,13 @@ data GATValidity
 data GovernorParameters = GovernorParameters
   { governorOutputDatumValidity :: GovernorOutputDatumValidity
   , stealGST :: Bool
+  -- ^ Send the GST to somewhere else other than the govenor validator.
   }
 
 data MockEffectParameters = MockEffectParameters
   { gatValidity :: GATValidity
   , burnGAT :: Bool
+  -- ^ Whether to burn the GAT in the transaction or not.
   }
 
 data ParameterBundle = ParameterBundle
@@ -201,6 +205,7 @@ mutate pb =
 
 --------------------------------------------------------------------------------
 
+-- | Run the governor to test the mutation functionality.
 mkTestCase :: String -> ParameterBundle -> Validity -> SpecificationTree
 mkTestCase name pb (Validity forGov) =
   testValidator
@@ -213,6 +218,7 @@ mkTestCase name pb (Validity forGov) =
 
 --------------------------------------------------------------------------------
 
+-- | The only one valid combination of all the parameters.
 totallyValidBundle :: ParameterBundle
 totallyValidBundle =
   ParameterBundle
@@ -230,6 +236,9 @@ totallyValidBundle =
 
 --------------------------------------------------------------------------------
 
+{- | All the invalid combination of the parameters.
+   TODO: use 'Gen'?
+-}
 invalidBundles :: [ParameterBundle]
 invalidBundles = do
   gdv <- enumFrom ValueInvalid
