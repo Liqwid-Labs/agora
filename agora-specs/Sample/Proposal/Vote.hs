@@ -8,6 +8,7 @@ Sample and utilities for testing the functionalities of voting on proposals.
 module Sample.Proposal.Vote (
   validVoteParameters,
   mkTestTree,
+  validVoteAsDelegateParameters,
 ) where
 
 import Agora.Proposal (
@@ -66,7 +67,7 @@ import Test.Specification (
   testValidator,
   validatorSucceedsWith,
  )
-import Test.Util (CombinableBuilder, closedBoundedInterval, mkSpending, sortValue, updateMap)
+import Test.Util (CombinableBuilder, closedBoundedInterval, mkSpending, pubKeyHashes, sortValue, updateMap)
 
 -- | Reference to the proposal UTXO.
 proposalRef :: TxOutRef
@@ -82,6 +83,8 @@ data Parameters = Parameters
   -- ^ The outcome the transaction is voting for.
   , voteCount :: Integer
   -- ^ The count of votes.
+  , voteAsDelegate :: Bool
+  -- ^ Delegate the stake and use it to vote.
   }
 
 -- | The public key hash of the stake owner.
@@ -121,6 +124,9 @@ existingLocks =
   , Voted (ProposalId 1) (ResultTag 2)
   ]
 
+delegate :: PubKeyHash
+delegate = head pubKeyHashes
+
 {- | Set the 'StakeDatum.stakedAmount' according to the number of votes being
       casted.
 -}
@@ -129,7 +135,10 @@ mkStakeInputDatum params =
   StakeDatum
     { stakedAmount = Tagged params.voteCount
     , owner = stakeOwner
-    , delegatedTo = Nothing
+    , delegatedTo =
+        if params.voteAsDelegate
+          then Just delegate
+          else Nothing
     , lockedBy = existingLocks
     }
 
@@ -199,10 +208,15 @@ vote params =
             <> Value.assetClassValue (untag stake.gtClassRef) params.voteCount
             <> minAda
 
+      signer =
+        if params.voteAsDelegate
+          then delegate
+          else stakeOwner
+
       builder =
         mconcat
           [ txId "827598fb2d69a896bbd9e645bb14c307df907f422b39eecbe4d6329bc30b428c"
-          , signedWith stakeOwner
+          , signedWith signer
           , timeRange validTimeRange
           , input $
               script proposalValidatorHash
@@ -233,6 +247,13 @@ validVoteParameters =
   Parameters
     { voteFor = ResultTag 0
     , voteCount = 27
+    , voteAsDelegate = False
+    }
+
+validVoteAsDelegateParameters :: Parameters
+validVoteAsDelegateParameters =
+  validVoteParameters
+    { voteAsDelegate = True
     }
 
 ---
