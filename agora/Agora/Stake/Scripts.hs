@@ -522,7 +522,7 @@ stakeValidator stake =
 
                     PDelegateTo ((pfield @"pkh" #) -> pkh) -> unTermCont $ do
                       pguardC "Cannot delegate to the owner" $
-                        pnot #$ stakeDatum.owner  #== pfromData pkh 
+                        pnot #$ stakeDatum.owner #== pfromData pkh
 
                       pure $ setDelegate #$ pcon $ PDJust $ pdcons @"_0" # pkh #$ pdnil
                     ------------------------------------------------------------

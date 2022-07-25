@@ -7,6 +7,9 @@ Agora/Effects/Governor Mutation Effect/validator/valid new governor datum/effect
 Agora/Stake/policy/stakeCreation,51392011,150393,2536
 Agora/Stake/validator/stakeDepositWithdraw deposit,186634362,508256,5324
 Agora/Stake/validator/stakeDepositWithdraw withdraw,186634362,508256,5312
+Agora/Stake/validator/set delegate/override existing delegate,113448429,294926,5376
+Agora/Stake/validator/set delegate/remove existing delegate,110848776,287015,5313
+Agora/Stake/validator/set delegate/set delegate to something,110031522,287900,5313
 Agora/Proposal/policy (proposal creation)/legal/proposal,33689644,100286,2011
 Agora/Proposal/policy (proposal creation)/legal/governor,325452519,864627,8802
 Agora/Proposal/policy (proposal creation)/legal/stake,157124919,412988,5978
