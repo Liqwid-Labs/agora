@@ -185,6 +185,7 @@ mkStakeInputDatum ps =
    in StakeDatum
         { stakedAmount = stakedGTs
         , owner = stakeOwner
+        , delegatedTo = Nothing
         , lockedBy = locks
         }
 

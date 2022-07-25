@@ -38,6 +38,7 @@ import Data.Tagged (Tagged (..))
 import GHC.Generics qualified as GHC
 import Generics.SOP (Generic, HasDatatypeInfo, I (I))
 import Plutarch.Api.V1 (
+  PMaybeData,
   PPubKeyHash,
  )
 import Plutarch.DataRepr (
@@ -170,6 +171,11 @@ data StakeRedeemer
   | -- | The owner can consume stake if nothing is changed about it.
     --   If the proposal token moves, this is equivalent to the owner consuming it.
     WitnessStake
+  | -- | The owner can delegate the stake to another user, allowing the
+    --    delegate to vote on prooposals with the stake.
+    DelegateTo PubKeyHash
+  | -- | Revoke the existing delegation.
+    ClearDelegate
   deriving stock (Show, GHC.Generic)
 
 PlutusTx.makeIsDataIndexed
@@ -179,6 +185,8 @@ PlutusTx.makeIsDataIndexed
   , ('PermitVote, 2)
   , ('RetractVotes, 3)
   , ('WitnessStake, 4)
+  , ('DelegateTo, 5)
+  , ('ClearDelegate, 6)
   ]
 
 {- | Haskell-level datum for Stake scripts.
@@ -194,6 +202,8 @@ data StakeDatum = StakeDatum
   --
   -- TODO Support for MultiSig/Scripts is tracked here:
   --      https://github.com/Liqwid-Labs/agora/issues/45
+  , delegatedTo :: Maybe PubKeyHash
+  -- ^ To whom this stake has been delegated.
   , lockedBy :: [ProposalLock]
   -- ^ The current proposals locking this stake. This field must be empty
   --   for the stake to be usable for deposits and withdrawals.
@@ -221,6 +231,7 @@ newtype PStakeDatum (s :: S) = PStakeDatum
         ( PDataRecord
             '[ "stakedAmount" ':= PDiscrete GTTag
              , "owner" ':= PPubKeyHash
+             , "delegatedTo" ':= PMaybeData PPubKeyHash
              , "lockedBy" ':= PBuiltinList (PAsData PProposalLock)
              ]
         )
@@ -277,6 +288,8 @@ data PStakeRedeemer (s :: S)
   | PPermitVote (Term s (PDataRecord '[]))
   | PRetractVotes (Term s (PDataRecord '[]))
   | PWitnessStake (Term s (PDataRecord '[]))
+  | PDelegateTo (Term s (PDataRecord '["pkh" ':= PPubKeyHash]))
+  | PClearDelegate (Term s (PDataRecord '[]))
   deriving stock
     ( -- | @since 0.1.0
       GHC.Generic

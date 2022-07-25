@@ -10,12 +10,7 @@ module Agora.Stake.Scripts (stakePolicy, stakeValidator) where
 import Agora.SafeMoney (GTTag)
 import Agora.Stake (
   PStakeDatum (PStakeDatum),
-  PStakeRedeemer (
-    PDepositWithdraw,
-    PDestroy,
-    PPermitVote,
-    PRetractVotes
-  ),
+  PStakeRedeemer (..),
   Stake (gtClassRef, proposalSTClass),
   StakeRedeemer (WitnessStake),
   pstakeLocked,
@@ -23,6 +18,7 @@ import Agora.Stake (
 import Agora.Utils (
   mustBePJust,
   mustFindDatum',
+  pmaybeData,
   pvalidatorHashToTokenName,
  )
 import Data.Function (on)
@@ -31,6 +27,7 @@ import Plutarch.Api.V1 (
   AmountGuarantees (Positive),
   PCredential (PPubKeyCredential, PScriptCredential),
   PDatumHash,
+  PMaybeData (..),
   PMintingPolicy,
   PScriptPurpose (PMinting, PSpending),
   PTokenName,
@@ -44,6 +41,7 @@ import Plutarch.Api.V1 (
 import Plutarch.Api.V1.AssetClass (passetClass, passetClassValueOf, pvalueOf)
 import Plutarch.Api.V1.ScriptContext (pfindTxInByTxOutRef, ptxSignedBy, pvalueSpent)
 import "liqwid-plutarch-extra" Plutarch.Api.V1.Value (pgeqByClass', pgeqBySymbol, psymbolValueOf)
+import Plutarch.Extra.Field (pletAllC)
 import Plutarch.Extra.List (pmapMaybe, pmsortBy)
 import Plutarch.Extra.Maybe (pfromDJust)
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
@@ -239,7 +237,7 @@ stakeValidator stake =
     -- TODO: Use PTryFrom
     let stakeDatum' :: Term _ PStakeDatum
         stakeDatum' = pfromData $ punsafeCoerce datum
-    stakeDatum <- pletFieldsC @'["owner", "stakedAmount", "lockedBy"] stakeDatum'
+    stakeDatum <- pletAllC stakeDatum'
 
     PSpending txOutRef <- pmatchC $ pfromData ctx.purpose
 
@@ -251,7 +249,14 @@ stakeValidator stake =
     resolvedF <- pletFieldsC @'["address", "value", "datumHash"] resolved
 
     -- Whether the owner signs this transaction or not.
-    ownerSignsTransaction <- pletC $ ptxSignedBy # txInfoF.signatories # stakeDatum.owner
+    signedBy <- pletC $ ptxSignedBy # txInfoF.signatories
+
+    ownerSignsTransaction <- pletC $ signedBy # stakeDatum.owner
+    delegateSignsTransaction <-
+      pletC $
+        pmaybeData # pconstant False
+          # plam ((signedBy #) . pdata)
+          # stakeDatum.delegatedTo
 
     stCurrencySymbol <-
       pletC $
@@ -378,9 +383,35 @@ stakeValidator stake =
                             PStakeDatum
                             ( #stakedAmount .= stakeDatum.stakedAmount
                                 .& #owner .= stakeDatum.owner
+                                .& #delegatedTo .= stakeDatum.delegatedTo
                                 .& #lockedBy .= pfield @"lockedBy" # stakeOut
                             )
                      in stakeOut #== templateStakeDatum
+
+                setDelegate <- pletC $
+                  plam $ \maybePkh -> unTermCont $ do
+                    pguardC
+                      "Owner signs this transaction"
+                      ownerSignsTransaction
+
+                    pguardC "A UTXO must exist with the correct output" $
+                      let correctOutputDatum =
+                            stakeOut
+                              #== mkRecordConstr
+                                PStakeDatum
+                                ( #stakedAmount .= stakeDatum.stakedAmount
+                                    .& #owner .= stakeDatum.owner
+                                    .& #delegatedTo .= pdata maybePkh
+                                    .& #lockedBy .= stakeDatum.lockedBy
+                                )
+                          valueCorrect = ownOutputValueUnchanged
+                       in foldl1
+                            (#&&)
+                            [ ptraceIfFalse "valueCorrect" valueCorrect
+                            , ptraceIfFalse "datumCorrect" correctOutputDatum
+                            ]
+
+                    pure $ popaque (pconstant ())
 
                 pure $
                   pmatch stakeRedeemer $ \case
@@ -408,8 +439,8 @@ stakeValidator stake =
 
                     PPermitVote _ -> unTermCont $ do
                       pguardC
-                        "Owner signs this transaction"
-                        ownerSignsTransaction
+                        "Owner or delegate signs this transaction"
+                        $ ownerSignsTransaction #|| delegateSignsTransaction
 
                       let proposalTokenMinted =
                             passetClassValueOf # txInfoF.mint # proposalSTClass #== 1
@@ -418,7 +449,6 @@ stakeValidator stake =
                       -- that this is not abused.
                       pguardC "Proposal ST spent or minted" $
                         proposalTokenMoved #|| proposalTokenMinted
-
                       pguardC "A UTXO must exist with the correct output" $
                         let correctOutputDatum = onlyLocksUpdated
                             valueCorrect = ownOutputValueUnchanged
@@ -453,6 +483,7 @@ stakeValidator stake =
                                   PStakeDatum
                                   ( #stakedAmount .= pdata newStakedAmount
                                       .& #owner .= stakeDatum.owner
+                                      .& #delegatedTo .= stakeDatum.delegatedTo
                                       .& #lockedBy .= stakeDatum.lockedBy
                                   )
                               datumCorrect = stakeOut #== expectedDatum
@@ -486,6 +517,20 @@ stakeValidator stake =
                               ]
                       --
                       pure $ popaque (pconstant ())
+
+                    ------------------------------------------------------------
+
+                    PDelegateTo ((pfield @"pkh" #) -> pkh) -> unTermCont $ do
+                      pguardC "Cannot delegate to the owner" $
+                        pnot #$ stakeDatum.owner  #== pfromData pkh 
+
+                      pure $ setDelegate #$ pcon $ PDJust $ pdcons @"_0" # pkh #$ pdnil
+                    ------------------------------------------------------------
+
+                    PClearDelegate _ ->
+                      setDelegate #$ pcon $ PDNothing pdnil
+                    ------------------------------------------------------------
+
                     _ -> popaque (pconstant ())
 
           pure $

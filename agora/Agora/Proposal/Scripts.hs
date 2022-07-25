@@ -511,6 +511,7 @@ proposalValidator proposal =
                     PStakeDatum
                     ( #stakedAmount .= stakeInF.stakedAmount
                         .& #owner .= stakeInF.owner
+                        .& #delegatedTo .= stakeInF.delegatedTo
                         .& #lockedBy .= pdata expectedProposalLocks
                     )
 
@@ -588,6 +589,7 @@ proposalValidator proposal =
                     PStakeDatum
                     ( #stakedAmount .= stakeInF.stakedAmount
                         .& #owner .= stakeInF.owner
+                        .& #delegatedTo .= stakeInF.delegatedTo
                         .& #lockedBy .= pdata stakeOutputLocks
                     )
 

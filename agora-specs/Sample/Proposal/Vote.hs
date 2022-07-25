@@ -129,6 +129,7 @@ mkStakeInputDatum params =
   StakeDatum
     { stakedAmount = Tagged params.voteCount
     , owner = stakeOwner
+    , delegatedTo = Nothing
     , lockedBy = existingLocks
     }
 

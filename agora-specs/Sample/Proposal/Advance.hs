@@ -352,6 +352,7 @@ mkStakeInputDatums ps =
         StakeDatum
           { stakedAmount = Tagged ps.perStakeGTs
           , owner = ""
+          , delegatedTo = Nothing
           , lockedBy = []
           }
    in (\owner -> template {owner = owner})
