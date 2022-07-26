@@ -18,6 +18,8 @@ import Agora.Stake (
 import Agora.Utils (
   mustBePJust,
   mustFindDatum',
+  pdjust,
+  pdnothing,
   pmaybeData,
   pvalidatorHashToTokenName,
  )
@@ -27,7 +29,6 @@ import Plutarch.Api.V1 (
   AmountGuarantees (Positive),
   PCredential (PPubKeyCredential, PScriptCredential),
   PDatumHash,
-  PMaybeData (..),
   PMintingPolicy,
   PScriptPurpose (PMinting, PSpending),
   PTokenName,
@@ -520,15 +521,15 @@ stakeValidator stake =
 
                     ------------------------------------------------------------
 
-                    PDelegateTo ((pfield @"pkh" #) -> pkh) -> unTermCont $ do
+                    PDelegateTo ((pfromData . (pfield @"pkh" #)) -> pkh) -> unTermCont $ do
                       pguardC "Cannot delegate to the owner" $
-                        pnot #$ stakeDatum.owner #== pfromData pkh
+                        pnot #$ stakeDatum.owner #== pkh
 
-                      pure $ setDelegate #$ pcon $ PDJust $ pdcons @"_0" # pkh #$ pdnil
+                      pure $ setDelegate #$ pdjust # pkh
                     ------------------------------------------------------------
 
                     PClearDelegate _ ->
-                      setDelegate #$ pcon $ PDNothing pdnil
+                      setDelegate # pdnothing
                     ------------------------------------------------------------
 
                     _ -> popaque (pconstant ())

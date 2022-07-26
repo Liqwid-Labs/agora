@@ -26,6 +26,8 @@ module Agora.Utils (
   withBuiltinPairAsData,
   pmaybeData,
   pmaybe,
+  pdjust,
+  pdnothing,
 ) where
 
 import Plutarch.Api.V1 (
@@ -36,7 +38,7 @@ import Plutarch.Api.V1 (
   PCurrencySymbol,
   PDatum,
   PDatumHash,
-  PMaybeData (PDJust),
+  PMaybeData (PDJust, PDNothing),
   PMintingPolicy,
   PTokenName (PTokenName),
   PTuple,
@@ -269,3 +271,27 @@ pmaybeData = phoistAcyclic $
   plam $ \n f m -> pmatch m $ \case
     PDJust ((pfield @"_0" #) -> x) -> f # x
     _ -> n
+
+{- Construct a 'PDJust' value.
+
+    @since 0.2.0
+-}
+pdjust ::
+  forall (a :: PType) (s :: S).
+  (PIsData a) =>
+  Term s (a :--> PMaybeData a)
+pdjust = phoistAcyclic $
+  plam $ \x ->
+    pcon $
+      PDJust $
+        pdcons @"_0" # pdata x #$ pdnil
+
+{- Construct a 'PDNothing' value.
+
+    @since 0.2.0
+-}
+pdnothing ::
+  forall (a :: PType) (s :: S).
+  (PIsData a) =>
+  Term s (PMaybeData a)
+pdnothing = phoistAcyclic $ pcon $ PDNothing pdnil
