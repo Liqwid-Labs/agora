@@ -36,7 +36,7 @@ import Agora.Proposal.Time (
   PProposalTimingConfig,
   ProposalTimingConfig,
   pisMaxTimeRangeWidthValid,
-  pisProposalTimeingConfigValid,
+  pisProposalTimingConfigValid,
  )
 import Agora.SafeMoney (GTTag)
 import Data.Tagged (Tagged (..))
@@ -254,10 +254,10 @@ pisGovernorDatumValid = phoistAcyclic $
     pure $
       foldr1
         (#&&)
-        [ ptraceIfFalse "thersholds valid" $
+        [ ptraceIfFalse "thresholds valid" $
             pisProposalThresholdsValid # datumF.proposalThresholds
         , ptraceIfFalse "timings valid" $
-            pisProposalTimeingConfigValid # datumF.proposalTimings
+            pisProposalTimingConfigValid # datumF.proposalTimings
         , ptraceIfFalse "time range valid" $
             pisMaxTimeRangeWidthValid # datumF.createProposalTimeRangeMaxWidth
         ]

@@ -26,7 +26,7 @@ module Agora.Proposal.Time (
   isVotingPeriod,
   isLockingPeriod,
   isExecutionPeriod,
-  pisProposalTimeingConfigValid,
+  pisProposalTimingConfigValid,
   pisMaxTimeRangeWidthValid,
 ) where
 
@@ -280,8 +280,8 @@ deriving via
 
      @since 0.2.0
 -}
-pisProposalTimeingConfigValid :: Term s (PProposalTimingConfig :--> PBool)
-pisProposalTimeingConfigValid = phoistAcyclic $
+pisProposalTimingConfigValid :: Term s (PProposalTimingConfig :--> PBool)
+pisProposalTimingConfigValid = phoistAcyclic $
   plam $ \conf -> unTermCont $ do
     confF <- pletAllC conf
 
