@@ -33,8 +33,6 @@ import Agora.Stake.Scripts (stakeValidator)
 import Data.Default (Default (def))
 import Data.Tagged (Tagged (Tagged), untag)
 import Plutarch.Context (
-  BaseBuilder,
-  buildTxInfoUnsafe,
   input,
   output,
   script,
@@ -47,9 +45,6 @@ import Plutarch.Context (
  )
 import PlutusLedgerApi.V1 (
   PubKeyHash,
-  ScriptContext (..),
-  ScriptPurpose (Spending),
-  TxInfo,
   TxOutRef (TxOutRef),
  )
 import PlutusLedgerApi.V1.Value qualified as Value
@@ -71,7 +66,7 @@ import Test.Specification (
   testValidator,
   validatorSucceedsWith,
  )
-import Test.Util (closedBoundedInterval, sortValue, updateMap)
+import Test.Util (CombinableBuilder, closedBoundedInterval, mkSpending, sortValue, updateMap)
 
 -- | Reference to the proposal UTXO.
 proposalRef :: TxOutRef
@@ -152,7 +147,7 @@ stakeRedeemer :: StakeRedeemer
 stakeRedeemer = PermitVote
 
 -- | Create a valid transaction that votes on a propsal, given the parameters.
-vote :: Parameters -> TxInfo
+vote :: forall b. CombinableBuilder b => Parameters -> b
 vote params =
   let pst = Value.singleton proposalPolicySymbol "" 1
       sst = Value.assetClassValue stakeAssetClass 1
@@ -203,7 +198,6 @@ vote params =
             <> Value.assetClassValue (untag stake.gtClassRef) params.voteCount
             <> minAda
 
-      builder :: BaseBuilder
       builder =
         mconcat
           [ txId "827598fb2d69a896bbd9e645bb14c307df907f422b39eecbe4d6329bc30b428c"
@@ -228,7 +222,7 @@ vote params =
                 . withValue stakeValue
                 . withDatum stakeOutputDatum
           ]
-   in buildTxInfoUnsafe builder
+   in builder
 
 ---
 
@@ -248,19 +242,16 @@ validVoteParameters =
 mkTestTree :: String -> Parameters -> Bool -> SpecificationTree
 mkTestTree name ps isValid = group name [proposal, stake]
   where
-    txInfo = vote ps
+    spend = mkSpending vote ps
 
     proposal =
       testValidator
         isValid
-        "propsoal"
+        "proposal"
         (proposalValidator Shared.proposal)
         proposalInputDatum
         (mkProposalRedeemer ps)
-        ( ScriptContext
-            txInfo
-            (Spending proposalRef)
-        )
+        (spend proposalRef)
 
     stake =
       let stakeInputDatum = mkStakeInputDatum ps
@@ -269,7 +260,4 @@ mkTestTree name ps isValid = group name [proposal, stake]
             (stakeValidator Shared.stake)
             stakeInputDatum
             stakeRedeemer
-            ( ScriptContext
-                txInfo
-                (Spending stakeRef)
-            )
+            (spend stakeRef)

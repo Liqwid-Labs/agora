@@ -6,16 +6,46 @@ Description: Generate sample data for testing the functionalities of advancing p
 Sample and utilities for testing the functionalities of advancing proposals.
 -}
 module Sample.Proposal.Advance (
-  advanceToNextStateInTimeParameters,
-  advanceToFailedStateDueToTimeoutParameters,
-  insufficientVotesParameters,
-  insufficientCosignsParameters,
-  advanceFromFinishedParameters,
-  invalidOutputStakeParameters,
+  -- * Parameters
+  ParameterBundle (..),
+  GovernorParameters (..),
+  AuthorityTokenParameters (..),
+  ProposalParameters (..),
+  StakeParameters (..),
+  Winner (..),
+
+  -- * Testing Utilities
+  Validity (..),
+  advance,
   mkTestTree,
-  Parameters (..),
+  mkTestTree',
+
+  -- * Parameter Bundles
+  mkValidToNextStateBundle,
+  mkValidToNextStateBundles,
+  mkValidToFailedStateBundles,
+  mkInsufficientVotesBundle,
+  mkAmbiguousWinnerBundle,
+  mkFromFinishedBundles,
+  mkInsufficientCosignsBundle,
+  mkToNextStateTooLateBundles,
+  mkInvalidOutputStakeBundles,
+  mkMintGATsForWrongEffectsBundle,
+  mkNoGATMintedBundle,
+  mkGATsWithWrongDatumBundle,
+  mkMintGATsWithoutTagBundle,
+  mkBadGovernorOutputDatumBundle,
 ) where
 
+import Agora.AuthorityToken (
+  AuthorityToken (AuthorityToken),
+  authorityTokenPolicy,
+ )
+import Agora.Governor (
+  GovernorDatum (..),
+  GovernorRedeemer (MintGATs),
+ )
+import Agora.Governor.Scripts (governorValidator)
 import Agora.Proposal (
   ProposalDatum (..),
   ProposalId (ProposalId),
@@ -36,272 +66,543 @@ import Agora.Proposal.Time (
     votingTime
   ),
  )
-import Agora.SafeMoney (GTTag)
 import Agora.Stake (
-  ProposalLock (..),
   Stake (gtClassRef),
   StakeDatum (..),
   StakeRedeemer (WitnessStake),
  )
 import Agora.Stake.Scripts (stakeValidator)
-import Data.Coerce (coerce)
+import Agora.Utils (validatorHashToTokenName)
+import Control.Monad.State (execState, modify, when)
 import Data.Default (def)
 import Data.List (sort)
+import Data.Maybe (catMaybes, fromJust)
 import Data.Tagged (Tagged (..), untag)
 import Plutarch.Context (
-  BaseBuilder,
-  buildTxInfoUnsafe,
   input,
+  mint,
   output,
   script,
   signedWith,
   timeRange,
-  txId,
   withDatum,
   withOutRef,
-  withTxId,
   withValue,
  )
+import Plutarch.Lift (PLifted, PUnsafeLiftDecl)
 import PlutusLedgerApi.V1 (
   DatumHash,
   POSIXTime,
   POSIXTimeRange,
   PubKeyHash,
-  ScriptContext (ScriptContext),
-  ScriptPurpose (Spending),
-  TxInfo,
   TxOutRef (TxOutRef),
   ValidatorHash,
-  always,
  )
+import PlutusLedgerApi.V1.Value (AssetClass (..))
 import PlutusLedgerApi.V1.Value qualified as Value
 import PlutusTx.AssocMap qualified as AssocMap
-import Sample.Proposal.Shared (proposalTxRef, stakeTxRef)
+import Sample.Proposal.Shared (
+  governorTxRef,
+  proposalTxRef,
+  stakeTxRef,
+ )
 import Sample.Shared (
+  authorityTokenSymbol,
+  govAssetClass,
+  govValidatorHash,
   minAda,
   proposalPolicySymbol,
   proposalValidatorHash,
+  signer,
   stake,
   stakeAssetClass,
   stakeValidatorHash,
  )
 import Sample.Shared qualified as Shared
-import Test.Specification (SpecificationTree, group, testValidator)
-import Test.Util (closedBoundedInterval, pubKeyHashes, sortValue, updateMap)
+import Test.Specification (
+  SpecificationTree,
+  group,
+  testPolicy,
+  testValidator,
+ )
+import Test.Util (
+  CombinableBuilder,
+  closedBoundedInterval,
+  datumHash,
+  groupsOfN,
+  mkMinting,
+  mkSpending,
+  pubKeyHashes,
+  sortValue,
+  toDatum,
+  updateMap,
+  validatorHashes,
+ )
 
--- | Parameters for state transition of proposals.
-data Parameters = Parameters
-  { fromStatus :: ProposalStatus
-  -- ^ Initial state of the proposal.
-  , toStatus :: ProposalStatus
-  -- ^ Next state of the proposal.
-  , votes :: ProposalVotes
-  -- ^ Votes.
-  , includeAllStakes :: Bool
-  -- ^ Whether to add an extra cosigner without stake or not.
-  , validTimeRange :: POSIXTimeRange
-  -- ^ Valid time range of the transaction.
-  , alterOutputStakes :: Bool
-  -- ^ Whether to alter th output stakes or not.
-  , stakeCount :: Integer
-  -- ^ The number of stakes.
-  , signByAllCosigners :: Bool
-  -- ^ Whether the transaction is signed by all the cosigners.
-  , perStakeGTs :: Tagged GTTag Integer
-  -- ^ The staked amount of each stake.
+{- | A bunch of parameters that control the generation of the transaction
+    context.
+-}
+data ParameterBundle = ParameterBundle
+  { proposalParameters :: ProposalParameters
+  -- ^ Parameters related to the the advancing proposal.
+  , stakeParameters :: StakeParameters
+  -- ^ Parameters related to stakes.
+  , governorParameters :: Maybe GovernorParameters
+  -- ^ Parameters related to GST moving. If set to 'Nothing', the GST won't
+  --   be moved, thus the governor validator won't be run in 'mkTestTree'.
+  , authorityTokenParameters :: Maybe AuthorityTokenParameters
+  -- ^ Parameters related to GAT minting. If set to 'Nothing', no GAT will
+  --     be minted, thus the GAT minting policy won't be run in 'mkTestTree'.
+  , transactionTimeRange :: POSIXTimeRange
+  -- ^ The value of 'TxInfo.txInfoValidRange', valid range of the generated
+  --    transaction.
+  , extraSignature :: Maybe PubKeyHash
+  -- ^ An extra signator. Intended to be used when
+  --    'StakeParametersstakeParameters.transactionSignedByOwners' is set to
+  --    false.
   }
 
----
+-- | Everything about the generated governor stuff.
+newtype GovernorParameters = GovernorParameters
+  { invalidGovernorOutputDatum :: Bool
+  -- ^ The output governor datum will be changed.
+  }
+
+-- | Everything about the generated authority token stuff.
+data AuthorityTokenParameters = forall
+    (datum :: Type)
+    (pdatum :: S -> Type).
+  ( PUnsafeLiftDecl pdatum
+  , PLifted pdatum ~ datum
+  , PIsData pdatum
+  ) =>
+  AuthorityTokenParameters
+  { mintGATsFor :: [ValidatorHash]
+  -- ^ GATs will be minted and sent to the given group of effects.
+  , carryDatum :: Maybe datum
+  -- ^ The datum that GAT UTxOs will be carrying.
+  , invalidTokenName :: Bool
+  -- ^ If set to true, GATs won't be tagged by their corresponding effect
+  --    hashes.
+  }
+
+-- | Represent the winning effect group(s).
+data Winner
+  = -- | Only one effect at the given index has the highest votes.
+    EffectAt Index
+  | -- | All the effects have the same highest votes.
+    All
+
+-- | Everything about the generated proposal stuff.
+data ProposalParameters = ProposalParameters
+  { fromStatus :: ProposalStatus
+  -- ^ What status is the proposal advancing from
+  , toStatus :: ProposalStatus
+  -- ^ What status is the proposal advancing to
+  , effectList :: [AssocMap.Map ValidatorHash DatumHash]
+  -- ^ The effect groups of the proposal. A neutral effect group is not
+  --    required here.
+  , winnerAndVotes :: Maybe (Winner, Integer)
+  -- ^ Specify the effect group(s) that have the highest votes, and the value
+  --    of the highest votes.
+  , numCosigners :: NumStake
+  -- ^ The number of cosigners.
+  , invalidProposalOutputDatum :: Bool
+  -- ^ Whether to make the proposal output datum invalid or not.
+  }
+
+-- | Everything about the generated stake stuff.
+data StakeParameters = StakeParameters
+  { numStake :: NumStake
+  , perStakeGTs :: Integer
+  , transactionSignedByOwners :: Bool
+  , invalidStakeOutputDatum :: Bool
+  }
+
+-- | Represent the number of stakes or the number of the cosigners.
+type NumStake = Int
+
+-- | Represent an index.
+type Index = Int
+
+{- | The validity of the generated transacrion for variuos componets.
+     'True' means valid, 'False' means invalid.
+-}
+data Validity = Validity
+  { forProposalValidator :: Bool
+  , forStakeValidator :: Bool
+  , forGovernorValidator :: Maybe Bool
+  , forAuthorityTokenPolicy :: Maybe Bool
+  }
+
+--------------------------------------------------------------------------------
+
+-- * Proposal
+
+-- | Mock cosigners.
+mkCosigners :: NumStake -> [PubKeyHash]
+mkCosigners = sort . flip take pubKeyHashes
+
+-- | Allocate the result tag for the effect at the given index.
+outcomeIdxToResultTag :: Index -> ResultTag
+outcomeIdxToResultTag = ResultTag . fromIntegral
+
+-- | Add a neutral effect group and allocate result tags for the effect groups.
+mkEffects ::
+  ProposalParameters ->
+  AssocMap.Map ResultTag (AssocMap.Map ValidatorHash DatumHash)
+mkEffects ps =
+  let resultTags = map ResultTag [0 ..]
+      neutralEffect = AssocMap.empty
+      finalEffects = ps.effectList <> [neutralEffect]
+   in AssocMap.fromList $ zip resultTags finalEffects
+
+-- | Set the votes of the winning group(s).
+setWinner :: (Winner, Integer) -> ProposalVotes -> ProposalVotes
+setWinner (All, votes) (ProposalVotes m) =
+  ProposalVotes $ AssocMap.mapMaybe (const $ Just votes) m
+setWinner (EffectAt winnerIdx, votes) (ProposalVotes m) =
+  let winnerResultTag = outcomeIdxToResultTag winnerIdx
+   in ProposalVotes $ updateMap (const $ Just votes) winnerResultTag m
+
+-- | Mock votes for the proposal, given the parameters.
+mkVotes ::
+  ProposalParameters ->
+  ProposalVotes
+mkVotes ps =
+  let effects = mkEffects ps
+      emptyVotes = emptyVotesFor effects
+   in maybe emptyVotes (`setWinner` emptyVotes) (ps.winnerAndVotes)
+
+-- | The starting time of every generated proposal.
+proposalStartingTime :: POSIXTime
+proposalStartingTime = 0
+
+-- | Create the input proposal datum given the parameters.
+mkProposalInputDatum :: ProposalParameters -> ProposalDatum
+mkProposalInputDatum ps =
+  let effects = mkEffects ps
+      votes = mkVotes ps
+      st = ProposalStartingTime proposalStartingTime
+   in ProposalDatum
+        { proposalId = ProposalId 0
+        , effects = effects
+        , status = ps.fromStatus
+        , cosigners = mkCosigners ps.numCosigners
+        , thresholds = def
+        , votes = votes
+        , timingConfig = def
+        , startingTime = st
+        }
+
+-- | Create the output proposal datum given the parameters.
+mkProposalOutputDatum :: ProposalParameters -> ProposalDatum
+mkProposalOutputDatum ps =
+  let inputDatum = mkProposalInputDatum ps
+      outputCosigners =
+        if ps.invalidProposalOutputDatum
+          then []
+          else inputDatum.cosigners
+   in inputDatum
+        { status = ps.toStatus
+        , cosigners = outputCosigners
+        }
 
 -- | Reference to the proposal UTXO.
 proposalRef :: TxOutRef
 proposalRef = TxOutRef proposalTxRef 1
 
--- | Create the reference to a particular stake UTXO.
-mkStakeRef :: Int -> TxOutRef
-mkStakeRef = TxOutRef stakeTxRef . (+ 2) . fromIntegral
-
----
-
--- | Default effects of the propsoal.
-defEffects :: AssocMap.Map ResultTag (AssocMap.Map ValidatorHash DatumHash)
-defEffects =
-  AssocMap.fromList
-    [ (ResultTag 0, AssocMap.empty)
-    , (ResultTag 1, AssocMap.empty)
-    ]
-
--- | Empty votes for the default effects.
-emptyVotes :: ProposalVotes
-emptyVotes = emptyVotesFor defEffects
-
-{- | The default proposal statring time, which doesn't really matter in this
-     case.
+{- | Create a context builder that contains all the information about the
+      input/output of the proposal validator, given the paramters.
 -}
-proposalStartingTime :: POSIXTime
-proposalStartingTime = 0
+mkProposalBuilder :: forall b. CombinableBuilder b => ProposalParameters -> b
+mkProposalBuilder ps =
+  let pst = Value.singleton proposalPolicySymbol "" 1
+      value = sortValue $ minAda <> pst
+   in mconcat
+        [ input $
+            script proposalValidatorHash
+              . withOutRef proposalRef
+              . withDatum (mkProposalInputDatum ps)
+              . withValue value
+        , output $
+            script proposalValidatorHash
+              . withDatum (mkProposalOutputDatum ps)
+              . withValue value
+        ]
 
----
-
--- | Create the input proposal datum given the parameters.
-mkProposalInputDatum :: Parameters -> ProposalDatum
-mkProposalInputDatum ps =
-  ProposalDatum
-    { proposalId = ProposalId 0
-    , effects = defEffects
-    , status = ps.fromStatus
-    , cosigners = mkStakeOwners ps
-    , thresholds = def
-    , votes = ps.votes
-    , timingConfig = def
-    , startingTime = ProposalStartingTime proposalStartingTime
-    }
-
--- | Create the input stake datums given the parameters.
-mkStakeInputDatums :: Parameters -> [StakeDatum]
-mkStakeInputDatums ps =
-  map
-    ( \pk ->
-        StakeDatum
-          { stakedAmount = ps.perStakeGTs
-          , owner = pk
-          , lockedBy = existingLocks
-          }
-    )
-    $ mkStakeOwners ps
-  where
-    existingLocks :: [ProposalLock]
-    existingLocks =
-      [ Voted (ProposalId 0) (ResultTag 0)
-      , Voted (ProposalId 1) (ResultTag 2)
-      ]
-
----
-
--- | Script purpose of the proposal validator.
-proposalScriptPurpose :: ScriptPurpose
-proposalScriptPurpose = Spending proposalRef
-
--- | Script purpose of the stake validator, given which stake we want to spend.
-mkStakeScriptPurpose :: Int -> ScriptPurpose
-mkStakeScriptPurpose = Spending . mkStakeRef
-
----
-
-{- | The propsoal redeemer used to spend the proposal UTXO, which is always
+{- | The proposal redeemer used to spend the proposal UTXO, which is always
       'AdvanceProposal' in this case.
 -}
 proposalRedeemer :: ProposalRedeemer
 proposalRedeemer = AdvanceProposal
 
-{- | The propsoal redeemer used to spend the stake UTXO, which is always
+--------------------------------------------------------------------------------
+
+-- * Stake
+
+-- Mock owners of the stakes.
+mkStakeOwners :: NumStake -> [PubKeyHash]
+mkStakeOwners = mkCosigners
+
+-- | Create the input stake datums given the parameters.
+mkStakeInputDatums :: StakeParameters -> [StakeDatum]
+mkStakeInputDatums ps =
+  let template =
+        StakeDatum
+          { stakedAmount = Tagged ps.perStakeGTs
+          , owner = ""
+          , lockedBy = []
+          }
+   in (\owner -> template {owner = owner})
+        <$> mkStakeOwners ps.numStake
+
+-- | Create the output stake datums given the parameters.
+mkStakeOutputDatums :: StakeParameters -> [StakeDatum]
+mkStakeOutputDatums ps =
+  let inputDatums = mkStakeInputDatums ps
+      outputStakedAmount =
+        Tagged $
+          if ps.invalidStakeOutputDatum
+            then ps.perStakeGTs * 10
+            else ps.perStakeGTs
+      modify inp = inp {stakedAmount = outputStakedAmount}
+   in modify <$> inputDatums
+
+{- | Get the input stake datum given the index. The range of the index is
+    @[0, 'StakeParameters.numStake - 1']@
+-}
+getStakeInputDatumAt :: StakeParameters -> Index -> StakeDatum
+getStakeInputDatumAt ps = (!!) (mkStakeInputDatums ps)
+
+-- | Create the reference to a particular stake UTXO.
+mkStakeRef :: Index -> TxOutRef
+mkStakeRef = TxOutRef stakeTxRef . (+ 3) . fromIntegral
+
+{- | Create a context builder that contains all the inputs/outputs of the
+      stake validator.
+-}
+mkStakeBuilder :: forall b. CombinableBuilder b => StakeParameters -> b
+mkStakeBuilder ps =
+  let perStakeValue =
+        sortValue $
+          minAda
+            <> Value.assetClassValue stakeAssetClass 1
+            <> Value.assetClassValue
+              (untag stake.gtClassRef)
+              ps.perStakeGTs
+      perStake idx i o =
+        let withSig =
+              if ps.transactionSignedByOwners
+                then signedWith i.owner
+                else mempty
+         in mconcat
+              [ withSig
+              , input $
+                  script stakeValidatorHash
+                    . withOutRef (mkStakeRef idx)
+                    . withValue perStakeValue
+                    . withDatum i
+              , output $
+                  script stakeValidatorHash
+                    . withValue perStakeValue
+                    . withDatum o
+              ]
+   in mconcat $
+        zipWith3
+          perStake
+          [0 :: Index ..]
+          (mkStakeInputDatums ps)
+          (mkStakeOutputDatums ps)
+
+{- | The proposal redeemer used to spend the stake UTXO, which is always
       'WitnessStake' in this case.
 -}
 stakeRedeemer :: StakeRedeemer
 stakeRedeemer = WitnessStake
 
----
+--------------------------------------------------------------------------------
 
--- | Create some valid stake owners.
-mkStakeOwners :: Parameters -> [PubKeyHash]
-mkStakeOwners ps =
-  sort $
-    take
-      (fromIntegral ps.stakeCount)
-      pubKeyHashes
+-- * Governor
 
----
+-- | The input governor datum.
+governorInputDatum :: GovernorDatum
+governorInputDatum =
+  GovernorDatum
+    { proposalThresholds = def
+    , nextProposalId = ProposalId 42
+    , proposalTimings = def
+    , createProposalTimeRangeMaxWidth = def
+    , maximumProposalsPerStake = 3
+    }
+
+-- | Create the output governor datum given the parameters.
+mkGovernorOutputDatum :: GovernorParameters -> GovernorDatum
+mkGovernorOutputDatum ps =
+  if ps.invalidGovernorOutputDatum
+    then governorInputDatum {maximumProposalsPerStake = 15}
+    else governorInputDatum
+
+-- | Reference to the governor UTXO.
+governorRef :: TxOutRef
+governorRef = TxOutRef governorTxRef 2
+
+{- | Create a context builder that contains the input and  the output of the
+      governor validator.
+-}
+mkGovernorBuilder :: forall b. CombinableBuilder b => GovernorParameters -> b
+mkGovernorBuilder ps =
+  let gst = Value.assetClassValue govAssetClass 1
+      value = sortValue $ gst <> minAda
+   in mconcat
+        [ input $
+            script govValidatorHash
+              . withValue value
+              . withOutRef governorRef
+              . withDatum governorInputDatum
+        , output $
+            script govValidatorHash
+              . withValue value
+              . withOutRef governorRef
+              . withDatum (mkGovernorOutputDatum ps)
+        ]
+
+{- | The proposal redeemer used to spend the governor UTXO, which is always
+      'MintGATs' in this case.
+-}
+governorRedeemer :: GovernorRedeemer
+governorRedeemer = MintGATs
+
+--------------------------------------------------------------------------------
+
+-- * Authority Token
+
+{- | Create a context builder that contains the infomation about the minted
+      authority tokens and where they're sent to.
+-}
+mkAuthorityTokenBuilder ::
+  forall b.
+  CombinableBuilder b =>
+  AuthorityTokenParameters ->
+  b
+mkAuthorityTokenBuilder (AuthorityTokenParameters es mdt invalidTokenName) =
+  foldMap perEffect es
+  where
+    perEffect :: ValidatorHash -> b
+    perEffect vh =
+      let tn =
+            if invalidTokenName
+              then ""
+              else validatorHashToTokenName vh
+          ac = AssetClass (authorityTokenSymbol, tn)
+          minted = Value.assetClassValue ac 1
+          value = sortValue $ minAda <> minted
+       in mconcat
+            [ mint minted
+            , output $
+                script vh
+                  . maybe id withDatum mdt
+                  . withValue value
+            ]
+
+-- | The redeemer used while running the authority token policy.
+authorityTokenRedeemer :: ()
+authorityTokenRedeemer = ()
+
+--------------------------------------------------------------------------------
 
 -- | Create a 'TxInfo' that update the status of a proposal.
 advance ::
-  Parameters ->
-  TxInfo
-advance ps =
-  let pst = Value.singleton proposalPolicySymbol "" 1
-      sst = Value.assetClassValue stakeAssetClass 1
+  forall b.
+  CombinableBuilder b =>
+  ParameterBundle ->
+  b
+advance pb =
+  let mkBuilderMaybe = maybe mempty
+   in mconcat
+        [ mkProposalBuilder pb.proposalParameters
+        , mkStakeBuilder pb.stakeParameters
+        , mkBuilderMaybe mkGovernorBuilder pb.governorParameters
+        , mkBuilderMaybe mkAuthorityTokenBuilder pb.authorityTokenParameters
+        , timeRange pb.transactionTimeRange
+        , maybe mempty signedWith pb.extraSignature
+        ]
 
-      proposalInputDatum :: ProposalDatum
-      proposalInputDatum =
-        mkProposalInputDatum ps
+--------------------------------------------------------------------------------
 
-      proposalOutputDatum :: ProposalDatum
-      proposalOutputDatum =
-        proposalInputDatum
-          { status = ps.toStatus
-          }
+{- | Create a test tree that runs the relavant componets to test the advancing
+      functionalities.
+-}
+mkTestTree ::
+  String ->
+  ParameterBundle ->
+  Validity ->
+  SpecificationTree
+mkTestTree name pb val =
+  group name $ catMaybes [proposal, stake, governor, authority]
+  where
+    spend = mkSpending advance pb
+    mint = mkMinting advance pb
 
-      stakeInputDatums :: [StakeDatum]
-      stakeInputDatums = mkStakeInputDatums ps
+    proposal =
+      let proposalInputDatum = mkProposalInputDatum pb.proposalParameters
+       in Just $
+            testValidator
+              val.forProposalValidator
+              "proposal"
+              (proposalValidator Shared.proposal)
+              proposalInputDatum
+              proposalRedeemer
+              (spend proposalRef)
 
-      mkStakeOutputDatum :: StakeDatum -> StakeDatum
-      mkStakeOutputDatum si =
-        if ps.alterOutputStakes
-          then
-            si
-              { stakedAmount = ps.perStakeGTs + 1
-              }
-          else si
+    stake =
+      let idx = 0
+       in Just $
+            testValidator
+              val.forStakeValidator
+              "stake"
+              (stakeValidator Shared.stake)
+              (getStakeInputDatumAt pb.stakeParameters idx)
+              stakeRedeemer
+              ( spend (mkStakeRef idx)
+              )
 
-      stakeValue =
-        let gts =
-              if ps.perStakeGTs == 0
-                then mempty
-                else
-                  Value.assetClassValue
-                    (untag stake.gtClassRef)
-                    (untag ps.perStakeGTs)
-         in sortValue $
-              sst <> minAda
-                <> gts
+    governor =
+      testValidator
+        (fromJust val.forGovernorValidator)
+        "governor"
+        (governorValidator Shared.governor)
+        governorInputDatum
+        governorRedeemer
+        (spend governorRef)
+        <$ pb.governorParameters
 
-      stakeBuilder :: BaseBuilder
-      stakeBuilder =
-        foldMap
-          ( \(si, idx) ->
-              let so = mkStakeOutputDatum si
-               in mconcat @BaseBuilder
-                    [ input $
-                        script stakeValidatorHash
-                          . withValue stakeValue
-                          . withDatum si
-                          . withOutRef (mkStakeRef idx)
-                    , output $
-                        script stakeValidatorHash
-                          . withValue stakeValue
-                          . withDatum so
-                    ]
-          )
-          $ let withIds = zip stakeInputDatums [0 ..]
-             in if ps.includeAllStakes
-                  then withIds
-                  else [head withIds]
+    authority =
+      testPolicy
+        (fromJust val.forAuthorityTokenPolicy)
+        "authority"
+        (authorityTokenPolicy $ AuthorityToken Shared.govAssetClass)
+        authorityTokenRedeemer
+        (mint authorityTokenSymbol)
+        <$ (pb.authorityTokenParameters)
 
-      signBuilder :: BaseBuilder
-      signBuilder =
-        let sos = mkStakeOwners ps
-         in if ps.signByAllCosigners
-              then foldMap signedWith sos
-              else signedWith $ head sos
+{- | Create a test tree that runs a bunch of parameter bundles. These bundles
+      should have the same validity.
+-}
+mkTestTree' ::
+  String ->
+  (ParameterBundle -> String) ->
+  [ParameterBundle] ->
+  Validity ->
+  SpecificationTree
+mkTestTree' groupName mkCaseName bundles val =
+  group groupName $
+    (\b -> mkTestTree (mkCaseName b) b val)
+      <$> bundles
 
-      builder :: BaseBuilder
-      builder =
-        mconcat
-          [ txId "95ba4015e30aef16a3461ea97a779f814aeea6b8009d99a94add4b8293be737a"
-          , signBuilder
-          , timeRange ps.validTimeRange
-          , input $
-              script proposalValidatorHash
-                . withValue pst
-                . withDatum proposalInputDatum
-                . withTxId proposalTxRef
-          , output $
-              script proposalValidatorHash
-                . withValue (pst <> minAda)
-                . withDatum proposalOutputDatum
-          ]
-   in buildTxInfoUnsafe $ builder <> stakeBuilder
+--------------------------------------------------------------------------------
 
----
+-- Utilities for creating parameter bundles
 
 {- | Given the proposal status, create a time range that is in time for
       advacing to the next state.
@@ -394,8 +695,6 @@ mkTooLateTimeRange advanceFrom =
         )
     Finished -> error "Cannot advance 'Finished' proposal"
 
----
-
 -- | Next state of the given proposal status.
 getNextState :: ProposalStatus -> ProposalStatus
 getNextState = \case
@@ -404,143 +703,372 @@ getNextState = \case
   Locked -> Finished
   Finished -> error "Cannot advance 'Finished' proposal"
 
+-- | Calculate the number of GTs per stake in order to exceed the minimum limit.
+compPerStakeGTsForDraft :: NumStake -> Integer
+compPerStakeGTsForDraft nCosigners =
+  untag (def :: ProposalThresholds).vote
+    `div` fromIntegral nCosigners + 1
+
+dummyDatum :: ()
+dummyDatum = ()
+
+dummyDatumHash :: DatumHash
+dummyDatumHash = datumHash $ toDatum dummyDatum
+
+-- | Create given number of effect groups. Each group will have 3 effects.
+mkMockEffects :: Int -> [AssocMap.Map ValidatorHash DatumHash]
+mkMockEffects =
+  flip
+    take
+    ( AssocMap.fromList
+        . flip zip (repeat dummyDatumHash)
+        <$> groupsOfN 3 validatorHashes
+    )
+
+numberOfVotesThatExceedsTheMinimumRequirement :: Integer
+numberOfVotesThatExceedsTheMinimumRequirement =
+  untag (def @ProposalThresholds).execute + 1
+
+mkWinnerVotes :: Index -> (Winner, Integer)
+mkWinnerVotes idx =
+  ( EffectAt idx
+  , numberOfVotesThatExceedsTheMinimumRequirement
+  )
+
+ambiguousWinnerVotes :: (Winner, Integer)
+ambiguousWinnerVotes =
+  ( All
+  , numberOfVotesThatExceedsTheMinimumRequirement
+  )
+
+--------------------------------------------------------------------------------
+
+-- * Parameter Bundles
+
 ---
 
-advanceToNextStateInTimeParameters :: Int -> [Parameters]
-advanceToNextStateInTimeParameters nCosigners =
-  map
-    ( \from ->
-        let -- Set the vote count of outcome 0 to @def.countingVoting + 1@,
-            --   meaning that outcome 0 will be the winner.
-            outcome0WinningVotes =
-              ProposalVotes $
-                updateMap
-                  (\_ -> Just $ untag (def :: ProposalThresholds).execute + 1)
-                  (ResultTag 0)
-                  (coerce emptyVotes)
+-- * Legal
 
-            votes = case from of
-              Draft -> emptyVotes
-              -- With sufficient votes
-              _ -> outcome0WinningVotes
+defaultWinnerIdx :: Index
+defaultWinnerIdx = 0
 
-            includeAllStakes = case from of
-              Draft -> True
-              _ -> False
+{- | Advance a proposal to the next state, perfectly valid for all the
+    componets.
+-}
+mkValidToNextStateBundle ::
+  -- | Number of cosigners.
+  Word ->
+  -- | Number of effects
+  Word ->
+  -- | The initial proposal state, should not be 'Finished'.
+  ProposalStatus ->
+  ParameterBundle
+mkValidToNextStateBundle _ _ Finished =
+  error "Cannot advance from Finished"
+mkValidToNextStateBundle nCosigners nEffects from =
+  let next = getNextState from
+      effects = mkMockEffects $ fromIntegral nEffects
+      winner = defaultWinnerIdx
 
-            signByAllCosigners = case from of
-              Draft -> True
-              _ -> False
-         in Parameters
-              { fromStatus = from
-              , toStatus = getNextState from
-              , votes = votes
-              , includeAllStakes = includeAllStakes
-              , validTimeRange = mkInTimeTimeRange from
-              , alterOutputStakes = False
-              , stakeCount = fromIntegral nCosigners
-              , signByAllCosigners = signByAllCosigners
-              , perStakeGTs =
-                  (def :: ProposalThresholds).vote
-                    `div` fromIntegral nCosigners + 1
-              }
-    )
-    [Draft, VotingReady, Locked]
-
-advanceToFailedStateDueToTimeoutParameters :: Int -> [Parameters]
-advanceToFailedStateDueToTimeoutParameters nCosigners =
-  map
-    ( \from ->
-        Parameters
-          { fromStatus = from
-          , toStatus = Finished
-          , votes = emptyVotes
-          , includeAllStakes = False
-          , validTimeRange = mkTooLateTimeRange from
-          , alterOutputStakes = False
-          , stakeCount = fromIntegral nCosigners
-          , signByAllCosigners = False
-          , perStakeGTs = 1
+      template =
+        ParameterBundle
+          { proposalParameters =
+              ProposalParameters
+                { fromStatus = from
+                , toStatus = next
+                , effectList = effects
+                , winnerAndVotes = Nothing
+                , numCosigners = fromIntegral nCosigners
+                , invalidProposalOutputDatum = False
+                }
+          , stakeParameters =
+              StakeParameters
+                { numStake = 1
+                , perStakeGTs =
+                    compPerStakeGTsForDraft $
+                      fromIntegral nCosigners
+                , transactionSignedByOwners = False
+                , invalidStakeOutputDatum = False
+                }
+          , governorParameters = Nothing
+          , authorityTokenParameters = Nothing
+          , transactionTimeRange = mkInTimeTimeRange from
+          , extraSignature = Just signer
           }
-    )
-    [Draft, VotingReady, Locked]
 
-insufficientVotesParameters :: Parameters
-insufficientVotesParameters =
-  let votes = emptyVotes
-      from = VotingReady
-      to = getNextState from
-   in Parameters
-        { fromStatus = from
-        , toStatus = to
-        , votes = votes
-        , includeAllStakes = False
-        , validTimeRange = mkInTimeTimeRange from
-        , alterOutputStakes = False
-        , stakeCount = 1
-        , signByAllCosigners = True
-        , perStakeGTs = 20
-        }
+      -- This is my favourite part of the test suite, lol.
+      modifyTemplate = do
+        when (from == Draft) $
+          modify $ \b ->
+            b
+              { stakeParameters =
+                  b.stakeParameters
+                    { transactionSignedByOwners = True
+                    , numStake = fromIntegral nCosigners
+                    }
+              , extraSignature = Nothing
+              }
 
-insufficientCosignsParameters :: Int -> Parameters
-insufficientCosignsParameters nCosigners =
-  (\ps -> ps {perStakeGTs = 0}) $
-    head $
-      advanceToNextStateInTimeParameters nCosigners
+        when (from == VotingReady || from == Locked) $
+          modify $ \b ->
+            b
+              { proposalParameters =
+                  b.proposalParameters
+                    { winnerAndVotes = Just $ mkWinnerVotes winner
+                    }
+              }
 
-advanceFromFinishedParameters :: Parameters
-advanceFromFinishedParameters =
-  Parameters
-    { fromStatus = Finished
-    , toStatus = Finished
-    , votes = emptyVotes
-    , includeAllStakes = False
-    , validTimeRange = always
-    , alterOutputStakes = False
-    , stakeCount = 1
-    , signByAllCosigners = True
-    , perStakeGTs = 20
+        when (from == Locked) $
+          modify $ \b ->
+            let aut =
+                  AuthorityTokenParameters
+                    { mintGATsFor = AssocMap.keys $ effects !! winner
+                    , carryDatum = Just dummyDatum
+                    , invalidTokenName = False
+                    }
+                gov =
+                  GovernorParameters
+                    { invalidGovernorOutputDatum = False
+                    }
+             in b
+                  { governorParameters = Just gov
+                  , authorityTokenParameters = Just aut
+                  }
+   in execState modifyTemplate template
+
+mkValidToNextStateBundles ::
+  -- | Number of cosigners
+  Word ->
+  -- | Number of effects
+  Word ->
+  [ParameterBundle]
+mkValidToNextStateBundles nCosigners nEffects =
+  mkValidToNextStateBundle nCosigners nEffects
+    <$> [ Draft
+        , VotingReady
+        , Locked
+        ]
+
+mkValidToFailedStateBundles ::
+  -- | Number of cosigners
+  Word ->
+  -- | Number of effects
+  Word ->
+  [ParameterBundle]
+mkValidToFailedStateBundles nCosigners nEffects =
+  mkBundle
+    <$> [ Draft
+        , VotingReady
+        , Locked
+        ]
+  where
+    mkBundle from =
+      let next = Finished
+          effects = mkMockEffects $ fromIntegral nEffects
+       in ParameterBundle
+            { proposalParameters =
+                ProposalParameters
+                  { fromStatus = from
+                  , toStatus = next
+                  , effectList = effects
+                  , winnerAndVotes = Nothing
+                  , numCosigners = fromIntegral nCosigners
+                  , invalidProposalOutputDatum = False
+                  }
+            , stakeParameters =
+                StakeParameters
+                  { numStake = 1
+                  , perStakeGTs =
+                      compPerStakeGTsForDraft $
+                        fromIntegral nCosigners
+                  , transactionSignedByOwners = False
+                  , invalidStakeOutputDatum = False
+                  }
+            , governorParameters = Nothing
+            , authorityTokenParameters = Nothing
+            , transactionTimeRange = mkTooLateTimeRange from
+            , extraSignature = Just signer
+            }
+
+-- * Illegal
+
+mkFromFinishedBundles ::
+  -- | Number of cosigners
+  Word ->
+  -- | Number of effects
+  Word ->
+  [ParameterBundle]
+mkFromFinishedBundles nCosigners nEffects =
+  mkBundle
+    <$> [ Draft
+        , VotingReady
+        , Locked
+        ]
+  where
+    mkBundle from =
+      let template = mkValidToNextStateBundle nCosigners nEffects from
+       in template
+            { proposalParameters =
+                template.proposalParameters
+                  { fromStatus = Finished
+                  , toStatus = Finished
+                  }
+            }
+
+mkToNextStateTooLateBundles :: Word -> Word -> [ParameterBundle]
+mkToNextStateTooLateBundles nCosigners nEffects =
+  mkBundle
+    <$> [ Draft
+        , VotingReady
+        , Locked
+        ]
+  where
+    mkBundle from =
+      let template = mkValidToNextStateBundle nCosigners nEffects from
+       in template
+            { transactionTimeRange = mkTooLateTimeRange from
+            }
+
+mkInvalidOutputStakeBundles :: Word -> Word -> [ParameterBundle]
+mkInvalidOutputStakeBundles nCosigners nEffects =
+  mkBundle <$> [Draft, VotingReady, Locked]
+  where
+    mkBundle from =
+      let template = mkValidToNextStateBundle nCosigners nEffects from
+       in template
+            { stakeParameters =
+                template.stakeParameters
+                  { invalidStakeOutputDatum = True
+                  }
+            }
+
+-- * From Draft
+
+mkInsufficientCosignsBundle :: Word -> Word -> ParameterBundle
+mkInsufficientCosignsBundle nCosigners nEffects =
+  template
+    { stakeParameters =
+        template.stakeParameters
+          { perStakeGTs = insuffcientPerStakeGTs
+          }
+    }
+  where
+    insuffcientPerStakeGTs =
+      untag (def :: ProposalThresholds).vote
+        `div` fromIntegral nCosigners - 1
+    template = mkValidToNextStateBundle nCosigners nEffects Draft
+
+-- * From VotingReady
+
+setWinnerAndVotes ::
+  ParameterBundle ->
+  Maybe (Winner, Integer) ->
+  ParameterBundle
+setWinnerAndVotes pb wv =
+  pb
+    { proposalParameters =
+        pb.proposalParameters
+          { winnerAndVotes = wv
+          }
     }
 
-invalidOutputStakeParameters :: Int -> [Parameters]
-invalidOutputStakeParameters nCosigners =
-  (\ps -> ps {alterOutputStakes = True})
-    <$> advanceToNextStateInTimeParameters nCosigners
+mkInsufficientVotesBundle ::
+  Word ->
+  Word ->
+  ParameterBundle
+mkInsufficientVotesBundle nCosigners nEffects =
+  mkValidToNextStateBundle nCosigners nEffects VotingReady
+    `setWinnerAndVotes` Nothing
 
----
+mkAmbiguousWinnerBundle ::
+  Word ->
+  Word ->
+  ParameterBundle
+mkAmbiguousWinnerBundle nCosigners nEffects =
+  mkValidToNextStateBundle nCosigners nEffects VotingReady
+    `setWinnerAndVotes` Just ambiguousWinnerVotes
 
-{- | Create a test tree that runs the stake validator and proposal validator to
-      test the advancing functionalities.
--}
-mkTestTree :: String -> Parameters -> Bool -> SpecificationTree
-mkTestTree name ps isValidForProposalValidator = group name [proposal, stake]
+-- * From Locked
+
+mkValidFromLockedBundle :: Word -> Word -> ParameterBundle
+mkValidFromLockedBundle nCosigners nEffects =
+  mkValidToNextStateBundle nCosigners nEffects Locked
+
+mkMintGATsForWrongEffectsBundle ::
+  Word ->
+  Word ->
+  ParameterBundle
+mkMintGATsForWrongEffectsBundle nCosigners nEffects =
+  template
+    { authorityTokenParameters =
+        ( \aut ->
+            aut
+              { mintGATsFor =
+                  [ validatorHashes !! 1
+                  , validatorHashes !! 3
+                  , validatorHashes !! 5
+                  , validatorHashes !! 7
+                  ]
+              }
+        )
+          <$> template.authorityTokenParameters
+    }
   where
-    txInfo = advance ps
+    template = mkValidFromLockedBundle nCosigners nEffects
 
-    proposal =
-      let proposalInputDatum = mkProposalInputDatum ps
-       in testValidator
-            isValidForProposalValidator
-            "propsoal"
-            (proposalValidator Shared.proposal)
-            proposalInputDatum
-            proposalRedeemer
-            ( ScriptContext
-                txInfo
-                proposalScriptPurpose
-            )
+mkNoGATMintedBundle ::
+  Word ->
+  Word ->
+  ParameterBundle
+mkNoGATMintedBundle nCosigners nEffects =
+  template
+    { authorityTokenParameters = Nothing
+    }
+  where
+    template = mkValidFromLockedBundle nCosigners nEffects
 
-    stake =
-      let idx = 0
-          stakeInputDatum = mkStakeInputDatums ps !! idx
-          isValid = not $ ps.alterOutputStakes
-       in testValidator
-            isValid
-            "stake"
-            (stakeValidator Shared.stake)
-            stakeInputDatum
-            stakeRedeemer
-            ( ScriptContext
-                txInfo
-                (mkStakeScriptPurpose idx)
-            )
+mkMintGATsWithoutTagBundle ::
+  Word ->
+  Word ->
+  ParameterBundle
+mkMintGATsWithoutTagBundle nCosigners nEffects =
+  template
+    { authorityTokenParameters =
+        ( \aut ->
+            aut
+              { invalidTokenName = True
+              }
+        )
+          <$> template.authorityTokenParameters
+    }
+  where
+    template = mkValidFromLockedBundle nCosigners nEffects
+
+mkGATsWithWrongDatumBundle ::
+  Word ->
+  Word ->
+  ParameterBundle
+mkGATsWithWrongDatumBundle nCosigners nEffects =
+  template
+    { authorityTokenParameters = Just newAut
+    }
+  where
+    template = mkValidFromLockedBundle nCosigners nEffects
+    aut = fromJust template.authorityTokenParameters
+    newAut =
+      AuthorityTokenParameters
+        aut.mintGATsFor
+        (Just (1 :: Integer))
+        False
+
+mkBadGovernorOutputDatumBundle ::
+  Word ->
+  Word ->
+  ParameterBundle
+mkBadGovernorOutputDatumBundle nCosigners nEffects =
+  template
+    { governorParameters = Just gov
+    }
+  where
+    template = mkValidFromLockedBundle nCosigners nEffects
+    gov = GovernorParameters True

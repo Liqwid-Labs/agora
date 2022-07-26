@@ -7,7 +7,7 @@ Property model and tests for 'Governor' related functions
 -}
 module Property.Governor (props) where
 
-import Agora.Governor (GovernorDatum (..), governorDatumValid)
+import Agora.Governor (GovernorDatum (..), pisGovernorDatumValid)
 import Agora.Governor.Scripts (governorPolicy)
 import Agora.Proposal (
   ProposalId (ProposalId),
@@ -30,6 +30,7 @@ import Plutarch.Context (
   output,
   script,
   withDatum,
+  withMinting,
   withOutRef,
   withValue,
  )
@@ -43,6 +44,7 @@ import PlutusLedgerApi.V1.Value (assetClassValue)
 import Property.Generator (genInput, genOutput)
 import Sample.Shared (
   govAssetClass,
+  govSymbol,
   govValidatorHash,
   governor,
   gstUTXORef,
@@ -62,8 +64,6 @@ data GovernorDatumCases
   = ExecuteLE0
   | CreateLE0
   | VoteLE0
-  | CreateLEVote
-  | ExecuteLVote
   | Correct
   deriving stock (Eq, Show)
 
@@ -72,8 +72,6 @@ instance Universe GovernorDatumCases where
     [ ExecuteLE0
     , CreateLE0
     , VoteLE0
-    , CreateLEVote
-    , ExecuteLVote
     , Correct
     ]
 
@@ -87,15 +85,13 @@ instance Finite GovernorDatumCases where
 -}
 governorDatumValidProperty :: Property
 governorDatumValidProperty =
-  classifiedPropertyNative gen (const []) expected classifier governorDatumValid
+  classifiedPropertyNative gen (const []) expected classifier pisGovernorDatumValid
   where
     classifier :: GovernorDatum -> GovernorDatumCases
     classifier (proposalThresholds -> ProposalThresholds e c v)
       | e < 0 = ExecuteLE0
       | c < 0 = CreateLE0
       | v < 0 = VoteLE0
-      | c > v = CreateLEVote
-      | v >= e = ExecuteLVote
       | otherwise = Correct
 
     expected :: GovernorDatum -> Maybe Bool
@@ -106,7 +102,7 @@ governorDatumValidProperty =
       thres <- genProposalThresholds c
 
       let timing = ProposalTimingConfig 0 0 0 0
-      return $ GovernorDatum thres (ProposalId 0) timing (MaxTimeRangeWidth 0) 3
+      return $ GovernorDatum thres (ProposalId 0) timing (MaxTimeRangeWidth 1) 3
       where
         taggedInteger p = Tagged <$> chooseInteger p
         genProposalThresholds :: GovernorDatumCases -> Gen ProposalThresholds
@@ -127,16 +123,6 @@ governorDatumValidProperty =
             VoteLE0 ->
               -- vote < 0
               return $ ProposalThresholds execute create le0
-            CreateLEVote -> do
-              -- c > vote
-              nv <- taggedInteger (0, untag create - 1)
-              ne <- taggedInteger (untag nv + 1, 1000000000)
-              return $ ProposalThresholds ne create nv
-            ExecuteLVote -> do
-              -- vote >= execute
-              ne <- taggedInteger (0, untag vote)
-              nc <- taggedInteger (0, untag vote)
-              return $ ProposalThresholds ne nc vote
             Correct -> do
               -- c <= vote < execute
               nv <- taggedInteger (0, untag execute - 1)
@@ -197,7 +183,7 @@ governorMintingProperty =
               GovernorOutputNotFound -> referencedInput <> mintAmount 1
               GovernorPolicyCorrect -> referencedInput <> outputToGov <> mintAmount 1
 
-      return . buildMintingUnsafe $ inputs <> outputs <> comp
+      return . buildMintingUnsafe $ inputs <> outputs <> comp <> withMinting govSymbol
 
     expected :: ScriptContext -> Maybe ()
     expected sc =

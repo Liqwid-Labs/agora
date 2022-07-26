@@ -40,8 +40,6 @@ import Data.Default (def)
 import Data.List (sort)
 import Data.Tagged (Tagged, untag)
 import Plutarch.Context (
-  BaseBuilder,
-  buildTxInfoUnsafe,
   input,
   output,
   script,
@@ -49,16 +47,13 @@ import Plutarch.Context (
   timeRange,
   txId,
   withDatum,
-  withRefIndex,
+  withOutRef,
   withTxId,
   withValue,
  )
 import PlutusLedgerApi.V1 (
   POSIXTimeRange,
   PubKeyHash,
-  ScriptContext (ScriptContext),
-  ScriptPurpose (Spending),
-  TxInfo,
   TxOutRef (..),
   Value,
  )
@@ -80,7 +75,7 @@ import Test.Specification (
   group,
   testValidator,
  )
-import Test.Util (closedBoundedInterval, pubKeyHashes, sortValue)
+import Test.Util (CombinableBuilder, closedBoundedInterval, mkSpending, pubKeyHashes, sortValue)
 
 -- | Parameters for cosigning a proposal.
 data Parameters = Parameters
@@ -138,8 +133,8 @@ mkStakeInputDatums :: Parameters -> [StakeDatum]
 mkStakeInputDatums = fmap (\pk -> StakeDatum perStakedGTs pk []) . newCosigners
 
 -- | Create a 'TxInfo' that tries to cosign a proposal with new cosigners.
-cosign :: Parameters -> TxInfo
-cosign ps = buildTxInfoUnsafe builder
+cosign :: forall b. CombinableBuilder b => Parameters -> b
+cosign ps = builder
   where
     pst = Value.singleton proposalPolicySymbol "" 1
     sst = Value.assetClassValue stakeAssetClass 1
@@ -158,7 +153,6 @@ cosign ps = buildTxInfoUnsafe builder
             (untag perStakedGTs)
           <> sst
 
-    stakeBuilder :: BaseBuilder
     stakeBuilder =
       foldMap
         ( \(stakeDatum, refIdx) ->
@@ -166,13 +160,13 @@ cosign ps = buildTxInfoUnsafe builder
                   if ps.alterOutputStakes
                     then stakeDatum {stakedAmount = 0}
                     else stakeDatum
-             in mconcat @BaseBuilder
+             in mconcat
                   [ input $
                       script stakeValidatorHash
                         . withValue stakeValue
                         . withDatum stakeDatum
                         . withTxId stakeTxRef
-                        . withRefIndex refIdx
+                        . withOutRef (mkStakeRef refIdx)
                   , output $
                       script stakeValidatorHash
                         . withValue stakeValue
@@ -182,7 +176,7 @@ cosign ps = buildTxInfoUnsafe builder
         )
         $ zip
           stakeInputDatums
-          [2 ..]
+          [0 ..]
 
     ---
 
@@ -192,7 +186,6 @@ cosign ps = buildTxInfoUnsafe builder
     proposalOutputDatum :: ProposalDatum
     proposalOutputDatum = mkProposalOutputDatum ps
 
-    proposalBuilder :: BaseBuilder
     proposalBuilder =
       mconcat
         [ input $
@@ -200,7 +193,7 @@ cosign ps = buildTxInfoUnsafe builder
               . withValue pst
               . withDatum proposalInputDatum
               . withTxId proposalTxRef
-              . withRefIndex proposalRefIdx
+              . withOutRef proposalRef
         , output $
             script proposalValidatorHash
               . withValue (sortValue (pst <> minAda))
@@ -217,7 +210,6 @@ cosign ps = buildTxInfoUnsafe builder
 
     ---
 
-    builder :: BaseBuilder
     builder =
       mconcat
         [ txId "05c67819fc3381a2052b929ab439244b7b5fe3b3bd07f2134055bbbb21bd9e52"
@@ -231,21 +223,15 @@ proposalRefIdx :: Integer
 proposalRefIdx = 1
 
 -- | Spend the proposal ST.
-proposalScriptPurpose :: ScriptPurpose
-proposalScriptPurpose =
-  Spending
-    ( TxOutRef
-        proposalTxRef
-        proposalRefIdx
-    )
+proposalRef :: TxOutRef
+proposalRef = TxOutRef proposalTxRef proposalRefIdx
 
 -- | Consume the given stake.
-mkStakeScriptPurpose :: Int -> ScriptPurpose
-mkStakeScriptPurpose idx =
-  Spending $
-    TxOutRef
-      stakeTxRef
-      $ proposalRefIdx + 1 + fromIntegral idx
+mkStakeRef :: Int -> TxOutRef
+mkStakeRef idx =
+  TxOutRef
+    stakeTxRef
+    $ proposalRefIdx + 1 + fromIntegral idx
 
 -- | Create a proposal redeemer which cosigns with the new cosginers.
 mkProposalRedeemer :: Parameters -> ProposalRedeemer
@@ -321,20 +307,17 @@ mkTestTree ::
   SpecificationTree
 mkTestTree name ps isValid = group name [proposal, stake]
   where
-    txInfo = cosign ps
+    spend = mkSpending cosign ps
 
     proposal =
       let proposalInputDatum = mkProposalInputDatum ps
        in testValidator
             isValid
-            "propsoal"
+            "proposal"
             (proposalValidator Shared.proposal)
             proposalInputDatum
             (mkProposalRedeemer ps)
-            ( ScriptContext
-                txInfo
-                proposalScriptPurpose
-            )
+            (spend proposalRef)
 
     stake =
       let idx = 0
@@ -346,7 +329,4 @@ mkTestTree name ps isValid = group name [proposal, stake]
             (stakeValidator Shared.stake)
             stakeInputDatum
             stakeRedeemer
-            ( ScriptContext
-                txInfo
-                (mkStakeScriptPurpose idx)
-            )
+            (spend $ mkStakeRef idx)

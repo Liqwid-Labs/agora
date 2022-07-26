@@ -1,3 +1,5 @@
+{-# LANGUAGE QuantifiedConstraints #-}
+
 {- |
 Module     : Agora.Utils
 Maintainer : emi@haskell.fyi
@@ -20,8 +22,8 @@ module Agora.Utils (
   isScriptAddress,
   isPubKey,
   pltAsData,
-  pisUniqBy',
-  pisUniq',
+  pon,
+  withBuiltinPairAsData,
 ) where
 
 import Plutarch.Api.V1 (
@@ -209,35 +211,32 @@ pltAsData = phoistAcyclic $
   plam $
     \(pfromData -> l) (pfromData -> r) -> l #< r
 
-{- | Special version of 'pisUniq'', the list elements should have 'PEq' instance.
+{- | Plutarch level 'Data.Function.on'.
 
- @since 0.2.0
+     @since 0.2.0
 -}
-pisUniq' ::
-  forall (l :: PType -> PType) (a :: PType) (s :: S).
-  (PEq a, PIsListLike l a) =>
-  Term s (l a :--> PBool)
-pisUniq' = phoistAcyclic $ pisUniqBy' # phoistAcyclic (plam (#==))
+pon ::
+  forall (a :: PType) (b :: PType) (c :: PType) (s :: S).
+  Term s ((b :--> b :--> c) :--> (a :--> b) :--> a :--> a :--> c)
+pon = phoistAcyclic $
+  plam $ \f g x y ->
+    let a = g # x
+        b = g # y
+     in f # a # b
 
-{- | Return true if all the elements in the given list are unique, given the equalator function.
-   The list is assumed to be ordered.
+{- | Extract data stored in a 'PBuiltinPair' and call a function to process it.
 
- @since 0.2.0
+     @since 0.2.0
 -}
-pisUniqBy' ::
-  forall (l :: PType -> PType) (a :: PType) (s :: S).
-  (PIsListLike l a) =>
-  Term s ((a :--> a :--> PBool) :--> l a :--> PBool)
-pisUniqBy' = phoistAcyclic $
-  plam $ \eq l ->
-    pif (pnull # l) (pconstant True) $
-      go # eq # (phead # l) # (ptail # l)
-  where
-    go :: Term _ ((a :--> a :--> PBool) :--> a :--> l a :--> PBool)
-    go = phoistAcyclic $
-      pfix #$ plam $ \self' eq x xs ->
-        plet (self' # eq) $ \self ->
-          pif (pnull # xs) (pconstant True) $
-            plet (phead # xs) $ \x' ->
-              pif (eq # x # x') (pconstant False) $
-                self # x' #$ ptail # xs
+withBuiltinPairAsData ::
+  forall (a :: PType) (b :: PType) (c :: PType) (s :: S).
+  (PIsData a, PIsData b) =>
+  (Term s a -> Term s b -> Term s c) ->
+  Term
+    s
+    (PBuiltinPair (PAsData a) (PAsData b)) ->
+  Term s c
+withBuiltinPairAsData f p =
+  let a = pfromData $ pfstBuiltin # p
+      b = pfromData $ psndBuiltin # p
+   in f a b

@@ -40,7 +40,7 @@ specs =
               "use other's stake"
               Create.useStakeOwnBySomeoneElseParameters
               True
-              False
+              True
               False
           , Create.mkTestTree
               "altered stake"
@@ -93,7 +93,7 @@ specs =
 
                 mkLegalGroup nCosigners =
                   Cosign.mkTestTree
-                    ("with " <> show nCosigners <> " cosigners")
+                    (unwords ["with", show nCosigners, "cosigners"])
                     (Cosign.validCosignNParameters nCosigners)
                     True
                 legalGroup =
@@ -101,7 +101,7 @@ specs =
                     map mkLegalGroup cosignerCases
 
                 mkIllegalStatusNotDraftGroup nCosigners =
-                  group ("with " <> show nCosigners <> " cosigners") $
+                  group (unwords ["with", show nCosigners, "cosigners"]) $
                     map
                       ( \ps ->
                           Cosign.mkTestTree
@@ -133,93 +133,164 @@ specs =
           [ Vote.mkTestTree "legal" Vote.validVoteParameters True
           -- TODO: add negative test cases
           ]
-      , group "advancing" $
-          let mkFromDraft nCosigners =
-                let name = "with " <> show nCosigners <> " cosigner(s)"
+      , group
+          "advancing"
+          $ let possibleCosigners = [1, 5, 10]
+                possibleEffects = [1, 2, 5]
+             in do
+                  cs <- possibleCosigners
+                  es <- possibleEffects
 
-                    legalGroup =
-                      group
-                        "legal"
-                        [ Advance.mkTestTree
-                            "to next state"
-                            ( head $
-                                Advance.advanceToNextStateInTimeParameters
-                                  nCosigners
-                            )
-                            True
-                        , Advance.mkTestTree
-                            "to failed state"
-                            ( head $
-                                Advance.advanceToFailedStateDueToTimeoutParameters
-                                  nCosigners
-                            )
-                            True
-                        ]
+                  let groupName =
+                        unwords
+                          [ "with"
+                          , show cs
+                          , "cosigners"
+                          , "and"
+                          , show es
+                          , "effects"
+                          ]
 
-                    illegalGroup =
-                      group
-                        "illegal"
-                        [ Advance.mkTestTree
-                            "insufficient cosigns"
-                            (Advance.insufficientCosignsParameters nCosigners)
-                            False
-                        , Advance.mkTestTree
-                            "invalid stake output"
-                            (head $ Advance.invalidOutputStakeParameters nCosigners)
-                            False
-                        ]
-                 in group name [legalGroup, illegalGroup]
-
-              draftGroup = group "from draft" $ map mkFromDraft [1, 5, 10]
-
-              legalGroup =
-                group
-                  "legal"
-                  [ group "advance to next state" $
-                      map
-                        ( \ps ->
-                            let name = "from: " <> show ps.fromStatus
-                             in Advance.mkTestTree name ps True
-                        )
-                        (tail $ Advance.advanceToNextStateInTimeParameters 1)
-                  , group "advance to failed state" $
-                      map
-                        ( \ps ->
-                            let name = "from: " <> show ps.fromStatus
-                             in Advance.mkTestTree name ps True
-                        )
-                        (tail $ Advance.advanceToFailedStateDueToTimeoutParameters 1)
-                  ]
-
-              illegalGroup =
-                group
-                  "illegal"
-                  [ Advance.mkTestTree
-                      "insufficient votes"
-                      Advance.insufficientVotesParameters
-                      False
-                  , Advance.mkTestTree
-                      "initial state is Finished"
-                      Advance.advanceFromFinishedParameters
-                      False
-                  , group
-                      "invalid stake output"
-                      $ do
-                        nStake <- [1, 5]
-                        ps <- tail $ Advance.invalidOutputStakeParameters nStake
-
-                        let name =
-                              "from " <> show ps.fromStatus <> "with "
-                                <> show nStake
-                                <> " stakes"
-
-                        pure $ Advance.mkTestTree name ps False
-                  ]
-           in [draftGroup, legalGroup, illegalGroup]
+                  pure $
+                    group
+                      groupName
+                      [ group
+                          "legal"
+                          $ let allValid =
+                                  Advance.Validity
+                                    { forProposalValidator = True
+                                    , forStakeValidator = True
+                                    , forGovernorValidator = Just True
+                                    , forAuthorityTokenPolicy = Just True
+                                    }
+                                mkName b =
+                                  unwords
+                                    [ "from"
+                                    , show b.proposalParameters.fromStatus
+                                    , "to"
+                                    , show b.proposalParameters.toStatus
+                                    ]
+                             in [ Advance.mkTestTree'
+                                    "to next state"
+                                    mkName
+                                    (Advance.mkValidToNextStateBundles cs es)
+                                    allValid
+                                , Advance.mkTestTree'
+                                    "to failed state"
+                                    mkName
+                                    (Advance.mkValidToFailedStateBundles cs es)
+                                    allValid
+                                ]
+                      , group
+                          "illegal"
+                          [ Advance.mkTestTree'
+                              "advance finished proposals"
+                              (const "(negative test)")
+                              (Advance.mkFromFinishedBundles cs es)
+                              Advance.Validity
+                                { forProposalValidator = False
+                                , forStakeValidator = True
+                                , forGovernorValidator = Just False
+                                , forAuthorityTokenPolicy = Just True
+                                }
+                          , Advance.mkTestTree
+                              "insufficient cosigns"
+                              (Advance.mkInsufficientCosignsBundle cs es)
+                              Advance.Validity
+                                { forProposalValidator = False
+                                , forStakeValidator = True
+                                , forGovernorValidator = Nothing
+                                , forAuthorityTokenPolicy = Nothing
+                                }
+                          , Advance.mkTestTree
+                              "insufficient votes"
+                              (Advance.mkInsufficientVotesBundle cs es)
+                              Advance.Validity
+                                { forProposalValidator = False
+                                , forStakeValidator = True
+                                , forGovernorValidator = Nothing
+                                , forAuthorityTokenPolicy = Nothing
+                                }
+                          , Advance.mkTestTree
+                              "ambiguous winning effect"
+                              (Advance.mkAmbiguousWinnerBundle cs es)
+                              Advance.Validity
+                                { forProposalValidator = False
+                                , forStakeValidator = True
+                                , forGovernorValidator = Nothing
+                                , forAuthorityTokenPolicy = Nothing
+                                }
+                          , Advance.mkTestTree'
+                              "to next state too late"
+                              (\b -> unwords ["from", show b.proposalParameters.fromStatus])
+                              (Advance.mkToNextStateTooLateBundles cs es)
+                              Advance.Validity
+                                { forProposalValidator = False
+                                , forStakeValidator = True
+                                , forGovernorValidator = Just True
+                                , forAuthorityTokenPolicy = Just True
+                                }
+                          , Advance.mkTestTree'
+                              "altered output stake datum"
+                              (\b -> unwords ["from", show b.proposalParameters.fromStatus])
+                              (Advance.mkInvalidOutputStakeBundles cs es)
+                              Advance.Validity
+                                { forProposalValidator = False
+                                , forStakeValidator = False
+                                , forGovernorValidator = Just True
+                                , forAuthorityTokenPolicy = Just True
+                                }
+                          , Advance.mkTestTree
+                              "forget to mint GATs"
+                              (Advance.mkNoGATMintedBundle cs es)
+                              Advance.Validity
+                                { forProposalValidator = True
+                                , forStakeValidator = True
+                                , forGovernorValidator = Just False
+                                , forAuthorityTokenPolicy = Nothing
+                                }
+                          , Advance.mkTestTree
+                              "mint GATs for wrong validators"
+                              (Advance.mkMintGATsForWrongEffectsBundle cs es)
+                              Advance.Validity
+                                { forProposalValidator = True
+                                , forStakeValidator = True
+                                , forGovernorValidator = Just False
+                                , forAuthorityTokenPolicy = Just True
+                                }
+                          , Advance.mkTestTree
+                              "mint GATs with bad token name"
+                              (Advance.mkMintGATsWithoutTagBundle cs es)
+                              Advance.Validity
+                                { forProposalValidator = True
+                                , forStakeValidator = True
+                                , forGovernorValidator = Just False
+                                , forAuthorityTokenPolicy = Just False
+                                }
+                          , Advance.mkTestTree
+                              "wrong GAT datum"
+                              (Advance.mkGATsWithWrongDatumBundle cs es)
+                              Advance.Validity
+                                { forProposalValidator = True
+                                , forStakeValidator = True
+                                , forGovernorValidator = Just False
+                                , forAuthorityTokenPolicy = Just True
+                                }
+                          , Advance.mkTestTree
+                              "invalid governor output datum"
+                              (Advance.mkBadGovernorOutputDatumBundle cs es)
+                              Advance.Validity
+                                { forProposalValidator = True
+                                , forStakeValidator = True
+                                , forGovernorValidator = Just False
+                                , forAuthorityTokenPolicy = Just True
+                                }
+                          ]
+                      ]
       , group "unlocking" $
           let proposalCountCases = [1, 5, 10, 42]
 
-              mkSubgroupName nProposals = "with " <> show nProposals <> " proposals"
+              mkSubgroupName nProposals = unwords ["with", show nProposals, "proposals"]
 
               mkLegalGroup nProposals =
                 group
@@ -260,9 +331,13 @@ specs =
                       map
                         ( \ps ->
                             let name =
-                                  "role: " <> show ps.stakeRole
-                                    <> ", status: "
-                                    <> show ps.proposalStatus
+                                  unwords
+                                    [ "role:"
+                                    , show ps.stakeRole
+                                    , ","
+                                    , "status:"
+                                    , show ps.proposalStatus
+                                    ]
                              in UnlockStake.mkTestTree name ps False
                         )
                         (UnlockStake.mkRetractVotesWhileNotVoting nProposals)
@@ -270,9 +345,12 @@ specs =
                       map
                         ( \ps ->
                             let name =
-                                  "status: " <> show ps.proposalStatus
-                                    <> "retract votes: "
-                                    <> show ps.retractVotes
+                                  unwords
+                                    [ "status:"
+                                    , show ps.proposalStatus
+                                    , "retract votes:"
+                                    , show ps.retractVotes
+                                    ]
                              in UnlockStake.mkTestTree name ps False
                         )
                         (UnlockStake.mkUnockIrrelevantStakeParameters nProposals)
@@ -280,7 +358,8 @@ specs =
                       map
                         ( \ps ->
                             let name =
-                                  "status: " <> show ps.proposalStatus
+                                  unwords
+                                    ["status:", show ps.proposalStatus]
                              in UnlockStake.mkTestTree name ps False
                         )
                         (UnlockStake.mkRemoveCreatorLockBeforeFinishedParameters nProposals)
@@ -292,9 +371,13 @@ specs =
                       map
                         ( \ps ->
                             let name =
-                                  "role: " <> show ps.stakeRole
-                                    <> ", status: "
-                                    <> show ps.proposalStatus
+                                  unwords
+                                    [ "role:"
+                                    , show ps.stakeRole
+                                    , ","
+                                    , "status:"
+                                    , show ps.proposalStatus
+                                    ]
                              in UnlockStake.mkTestTree name ps False
                         )
                         (UnlockStake.mkAlterStakeParameters nProposals)

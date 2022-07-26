@@ -11,6 +11,10 @@ This format is based on [Keep A Changelog](https://keepachangelog.com/en/1.0.0).
 
 ### Modified
 
+- Fixed bug that checks the proposal thresholds in an incorrect way. Added negative tests for the governor scripts.
+
+  Included by [#146](https://github.com/Liqwid-Labs/agora/pull/146).
+
 - Draft phase and cosigning for Proposals. 
 
   Included by [#136](https://github.com/Liqwid-Labs/agora/pull/136).

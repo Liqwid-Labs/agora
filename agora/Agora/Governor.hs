@@ -20,7 +20,7 @@ module Agora.Governor (
   -- * Utilities
   pgetNextProposalId,
   getNextProposalId,
-  governorDatumValid,
+  pisGovernorDatumValid,
 ) where
 
 import Agora.Proposal (
@@ -28,12 +28,15 @@ import Agora.Proposal (
   PProposalThresholds (..),
   ProposalId (ProposalId),
   ProposalThresholds,
+  pisProposalThresholdsValid,
  )
 import Agora.Proposal.Time (
   MaxTimeRangeWidth,
   PMaxTimeRangeWidth,
   PProposalTimingConfig,
   ProposalTimingConfig,
+  pisMaxTimeRangeWidthValid,
+  pisProposalTimingConfigValid,
  )
 import Agora.SafeMoney (GTTag)
 import Data.Tagged (Tagged (..))
@@ -44,15 +47,13 @@ import Plutarch.DataRepr (
   PDataFields,
   PIsDataReprInstances (PIsDataReprInstances),
  )
-import Plutarch.Extra.Comonad (pextract)
 import Plutarch.Extra.IsData (
   DerivePConstantViaEnum (..),
   EnumIsData (..),
  )
 import Plutarch.Extra.Other (DerivePNewtype' (..))
-import Plutarch.Extra.TermCont (pletC, pletFieldsC, pmatchC)
+import Plutarch.Extra.TermCont (pletFieldsC)
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (..))
-import Plutarch.SafeMoney (PDiscrete (..))
 import PlutusLedgerApi.V1 (TxOutRef)
 import PlutusLedgerApi.V1.Value (AssetClass (..))
 import PlutusTx qualified
@@ -239,27 +240,24 @@ getNextProposalId (ProposalId pid) = ProposalId $ pid + 1
 
      @since 0.1.0
 -}
-governorDatumValid :: Term s (PGovernorDatum :--> PBool)
-governorDatumValid = phoistAcyclic $
+pisGovernorDatumValid :: Term s (PGovernorDatum :--> PBool)
+pisGovernorDatumValid = phoistAcyclic $
   plam $ \datum -> unTermCont $ do
-    thresholds <-
-      pletFieldsC @'["execute", "create", "vote"] $
-        pfield @"proposalThresholds" # datum
-
-    PDiscrete execute' <- pmatchC thresholds.execute
-    PDiscrete draft' <- pmatchC thresholds.create
-    PDiscrete vote' <- pmatchC thresholds.vote
-
-    execute <- pletC $ pextract # execute'
-    draft <- pletC $ pextract # draft'
-    vote <- pletC $ pextract # vote'
+    datumF <-
+      pletFieldsC
+        @'[ "proposalThresholds"
+          , "proposalTimings"
+          , "createProposalTimeRangeMaxWidth"
+          ]
+        datum
 
     pure $
       foldr1
         (#&&)
-        [ ptraceIfFalse "Execute threshold is less than or equal to" $ 0 #<= execute
-        , ptraceIfFalse "Draft threshold is less than or equal to " $ 0 #<= draft
-        , ptraceIfFalse "Vote threshold is less than or equal to " $ 0 #<= vote
-        , ptraceIfFalse "Draft threshold is less than vote threshold" $ draft #<= vote
-        , ptraceIfFalse "Execute threshold is less than vote threshold" $ vote #< execute
+        [ ptraceIfFalse "thresholds valid" $
+            pisProposalThresholdsValid # datumF.proposalThresholds
+        , ptraceIfFalse "timings valid" $
+            pisProposalTimingConfigValid # datumF.proposalTimings
+        , ptraceIfFalse "time range valid" $
+            pisMaxTimeRangeWidthValid # datumF.createProposalTimeRangeMaxWidth
         ]

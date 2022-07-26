@@ -17,6 +17,12 @@ module Test.Util (
   pubKeyHashes,
   userCredentials,
   scriptCredentials,
+  validatorHashes,
+  groupsOfN,
+  withOptional,
+  mkSpending,
+  mkMinting,
+  CombinableBuilder,
 ) where
 
 --------------------------------------------------------------------------------
@@ -29,8 +35,26 @@ import Data.ByteString qualified as BS
 import Data.ByteString.Char8 qualified as C
 import Data.ByteString.Lazy qualified as ByteString.Lazy
 import Data.List (sortOn)
+import Plutarch.Context (
+  Builder,
+  UTXO,
+  buildMintingUnsafe,
+  buildSpendingUnsafe,
+  withMinting,
+  withSpendingOutRef,
+ )
 import Plutarch.Crypto (pblake2b_256)
-import PlutusLedgerApi.V1 (Credential (PubKeyCredential, ScriptCredential), PubKeyHash (..), ValidatorHash (ValidatorHash))
+import PlutusLedgerApi.V1 (
+  Credential (
+    PubKeyCredential,
+    ScriptCredential
+  ),
+  CurrencySymbol,
+  PubKeyHash (..),
+  ScriptContext,
+  TxOutRef,
+  ValidatorHash (ValidatorHash),
+ )
 import PlutusLedgerApi.V1.Interval qualified as PlutusTx
 import PlutusLedgerApi.V1.Scripts (Datum (Datum), DatumHash (DatumHash))
 import PlutusLedgerApi.V1.Value (Value (..))
@@ -132,6 +156,65 @@ pubKeyHashes = PubKeyHash . PlutusTx.toBuiltin <$> blake2b_224Hashes
 userCredentials :: [Credential]
 userCredentials = PubKeyCredential <$> pubKeyHashes
 
+-- | An infinite list of *valid* validator hashes.
+validatorHashes :: [ValidatorHash]
+validatorHashes = ValidatorHash . PlutusTx.toBuiltin <$> blake2b_224Hashes
+
 -- | An infinite list of *valid* script credentials.
 scriptCredentials :: [Credential]
-scriptCredentials = ScriptCredential . ValidatorHash . PlutusTx.toBuiltin <$> blake2b_224Hashes
+scriptCredentials = ScriptCredential <$> validatorHashes
+
+--------------------------------------------------------------------------------
+
+-- | Turn the given list in to groups which have the given length.
+groupsOfN :: Int -> [a] -> [[a]]
+groupsOfN _ [] = []
+groupsOfN n xs =
+  let (nextGroup, rest) = next n xs
+   in nextGroup : groupsOfN n rest
+  where
+    next :: Int -> [a] -> ([a], [a])
+    next _ [] = ([], [])
+    next 0 xs = ([], xs)
+    next n (x : xs) =
+      let (xs', rest) = next (n - 1) xs
+       in (x : xs', rest)
+
+--------------------------------------------------------------------------------
+
+-- | Optionally apply a modifier to the given 'UTXO'.
+withOptional ::
+  (a -> UTXO -> UTXO) ->
+  Maybe a ->
+  UTXO ->
+  UTXO
+withOptional f (Just b) = f b
+withOptional _ _ = id
+
+{- | Given the builder generator and the parameters, create a 'ScriptContext'
+    that spends the UTXO that referenced by the given 'TxOutRef'.
+-}
+mkSpending ::
+  forall ps.
+  (forall b. (Monoid b, Builder b) => ps -> b) ->
+  ps ->
+  TxOutRef ->
+  ScriptContext
+mkSpending mkBuilder ps oref =
+  buildSpendingUnsafe $
+    mkBuilder ps <> withSpendingOutRef oref
+
+{- | Given the builder generator and the parameters, create a 'ScriptContext'
+    that mints the token of the given currency symbol.
+-}
+mkMinting ::
+  forall ps.
+  (forall b. (Monoid b, Builder b) => ps -> b) ->
+  ps ->
+  CurrencySymbol ->
+  ScriptContext
+mkMinting mkBuilder ps cs =
+  buildMintingUnsafe $
+    mkBuilder ps <> withMinting cs
+
+type CombinableBuilder b = (Monoid b, Builder b)

@@ -114,14 +114,13 @@ treasuryValidator gatCs' = plam $ \_datum redeemer ctx' -> unTermCont $ do
     redeemer #== pforgetData (pconstantData SpendTreasuryGAT)
 
   -- Get the minted value from txInfo.
-  txInfo' <- pletC ctx.txInfo
-  txInfo <- pletFieldsC @'["mint"] txInfo'
+  txInfo <- pletFieldsC @'["mint", "inputs"] ctx.txInfo
   let mint :: Term _ (PValue _ _)
       mint = txInfo.mint
 
   gatCs <- pletC $ pconstant gatCs'
 
   pguardC "A single authority token has been burned" $
-    singleAuthorityTokenBurned gatCs txInfo' mint
+    singleAuthorityTokenBurned gatCs txInfo.inputs mint
 
   pure . popaque $ pconstant ()

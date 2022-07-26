@@ -100,19 +100,17 @@ authorityTokensValidIn = phoistAcyclic $
 
 {- | Assert that a single authority token has been burned.
 
-     @since 0.1.0
+     @since 0.2.0
 -}
 singleAuthorityTokenBurned ::
   forall (keys :: KeyGuarantees) (amounts :: AmountGuarantees) (s :: S).
   Term s PCurrencySymbol ->
-  Term s (PAsData PTxInfo) ->
+  Term s (PBuiltinList (PAsData PTxInInfo)) ->
   Term s (PValue keys amounts) ->
   Term s PBool
-singleAuthorityTokenBurned gatCs txInfo mint = unTermCont $ do
+singleAuthorityTokenBurned gatCs inputs mint = unTermCont $ do
   let gatAmountMinted :: Term _ PInteger
       gatAmountMinted = psymbolValueOf # gatCs # mint
-
-  txInfoF <- pletFieldsC @'["inputs"] $ txInfo
 
   pure $
     foldr1
@@ -126,7 +124,7 @@ singleAuthorityTokenBurned gatCs txInfo mint = unTermCont $ do
                   let txOut' = pfield @"resolved" # txInInfo
                   pure $ authorityTokensValidIn # gatCs # pfromData txOut'
               )
-            # txInfoF.inputs
+            # inputs
       ]
 
 {- | Policy given 'AuthorityToken' params.

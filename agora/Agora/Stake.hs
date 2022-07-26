@@ -45,19 +45,21 @@ import Plutarch.DataRepr (
   PDataFields,
   PIsDataReprInstances (PIsDataReprInstances),
  )
+import Plutarch.Extra.Field (pletAll)
 import Plutarch.Extra.IsData (
   DerivePConstantViaDataList (..),
   ProductIsData (ProductIsData),
  )
 import Plutarch.Extra.List (pnotNull)
 import Plutarch.Extra.Other (DerivePNewtype' (..))
+import Plutarch.Extra.Sum (PSum (..))
+import Plutarch.Extra.Traversable (pfoldMap)
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (..))
 import Plutarch.SafeMoney (PDiscrete)
 import Plutarch.Show (PShow (..))
 import PlutusLedgerApi.V1 (PubKeyHash)
 import PlutusLedgerApi.V1.Value (AssetClass)
 import PlutusTx qualified
-import Prelude ((+))
 import Prelude hiding (Num (..))
 
 --------------------------------------------------------------------------------
@@ -117,7 +119,7 @@ data ProposalLock
       -- ^ The identifier of the proposal.
   | -- | The stake was used to vote on a proposal.
     --
-    --   This kind of lock is placed while voting on a propsoal, in order to
+    --   This kind of lock is placed while voting on a proposal, in order to
     --    prevent depositing and withdrawing when votes are in place.
     --
     --   @since 0.2.0
@@ -396,21 +398,14 @@ pnumCreatedProposals :: Term s (PBuiltinList (PAsData PProposalLock) :--> PInteg
 pnumCreatedProposals =
   phoistAcyclic $
     plam $ \l ->
-      pfoldl
-        # phoistAcyclic
-          ( plam
-              ( \c (pfromData -> lock) ->
-                  c
-                    + pmatch
-                      lock
-                      ( \case
-                          PCreated _ -> 1
-                          _ -> 0
-                      )
-              )
-          )
-        # 0
-        # l
+      pto $
+        pfoldMap
+          # plam
+            ( \(pfromData -> lock) -> pmatch lock $ \case
+                PCreated _ -> pcon $ PSum 1
+                _ -> mempty
+            )
+          # l
 
 {- | The role of a stake for a particular proposal. Scott-encoded.
 
@@ -421,13 +416,13 @@ data PStakeRole (s :: S)
     PVoter
       (Term s PResultTag)
       -- ^ The option which was voted for.
-  | -- | The stake was used to create the propsoal.
+  | -- | The stake was used to create the proposal.
     PCreator
   | -- | The stake was used to both create and vote on the proposal.
     PBoth
       (Term s PResultTag)
       -- ^ The option which was voted for.
-  | -- | The stake has nothing to do with the given propsoal.
+  | -- | The stake has nothing to do with the given proposal.
     PIrrelevant
   deriving stock
     ( -- | @since 0.2.0
@@ -507,7 +502,7 @@ pgetStakeRole = phoistAcyclic $
                       (pid' #== pid)
                       (pcon PCreator)
                       (pcon PIrrelevant)
-                  PVoted lock' -> pletFields @'["votedOn", "votedFor"] lock' $ \lockF ->
+                  PVoted lock' -> pletAll lock' $ \lockF ->
                     pif
                       (lockF.votedOn #== pid)
                       (pcon $ PVoter lockF.votedFor)

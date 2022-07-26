@@ -26,6 +26,8 @@ module Agora.Proposal.Time (
   isVotingPeriod,
   isLockingPeriod,
   isExecutionPeriod,
+  pisProposalTimingConfigValid,
+  pisMaxTimeRangeWidthValid,
 ) where
 
 import Agora.Plutarch.Orphans ()
@@ -44,7 +46,8 @@ import Plutarch.DataRepr (
   PDataFields,
   PIsDataReprInstances (..),
  )
-import Plutarch.Extra.TermCont (pguardC, pletFieldsC, pmatchC)
+import Plutarch.Extra.Field (pletAllC)
+import Plutarch.Extra.TermCont (pguardC, pmatchC)
 import Plutarch.Lift (
   DerivePConstantViaNewtype (..),
   PConstantDecl,
@@ -273,6 +276,43 @@ deriving via
 
 --------------------------------------------------------------------------------
 
+{- | Return true if the timing configuration is valid.
+
+     @since 0.2.0
+-}
+pisProposalTimingConfigValid :: Term s (PProposalTimingConfig :--> PBool)
+pisProposalTimingConfigValid = phoistAcyclic $
+  plam $ \conf -> unTermCont $ do
+    confF <- pletAllC conf
+
+    -- everything is greater or equal 0
+    pure $
+      ptraceIfFalse "ge 0" $
+        foldr
+          ( \t ->
+              (#&&)
+                ( pconstant 0
+                    #<= pfromData t
+                )
+          )
+          (pconstant True)
+          [ confF.draftTime
+          , confF.votingTime
+          , confF.lockingTime
+          , confF.executingTime
+          ]
+
+{- | Return true if the maximum time width is greater than 0.
+
+     @since 0.2.0
+-}
+pisMaxTimeRangeWidthValid :: Term s (PMaxTimeRangeWidth :--> PBool)
+pisMaxTimeRangeWidthValid =
+  phoistAcyclic $
+    plam $
+      ptraceIfFalse "greater than 0"
+        . (pconstant (MaxTimeRangeWidth 0) #<)
+
 {- | Get the starting time of a proposal, from the 'PlutusLedgerApi.V1.txInfoValidPeriod' field.
      For every proposal, this is only meant to run once upon creation. Given time range should be
      tight enough, meaning that the width of the time range should be less than the maximum value.
@@ -308,11 +348,11 @@ currentProposalTime :: forall (s :: S). Term s (PPOSIXTimeRange :--> PProposalTi
 currentProposalTime = phoistAcyclic $
   plam $ \iv -> unTermCont $ do
     PInterval iv' <- pmatchC iv
-    ivf <- pletFieldsC @'["from", "to"] iv'
+    ivf <- pletAllC iv'
     PLowerBound lb <- pmatchC ivf.from
     PUpperBound ub <- pmatchC ivf.to
-    lbf <- pletFieldsC @'["_0", "_1"] lb
-    ubf <- pletFieldsC @'["_0", "_1"] ub
+    lbf <- pletAllC lb
+    ubf <- pletAllC ub
     pure $
       pcon $
         PProposalTime

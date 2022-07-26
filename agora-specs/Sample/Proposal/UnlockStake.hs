@@ -40,8 +40,6 @@ import Agora.Stake.Scripts (stakeValidator)
 import Data.Default.Class (Default (def))
 import Data.Tagged (Tagged (..), untag)
 import Plutarch.Context (
-  BaseBuilder,
-  buildTxInfoUnsafe,
   input,
   output,
   script,
@@ -54,9 +52,6 @@ import Plutarch.Context (
 import PlutusLedgerApi.V1 (
   DatumHash,
   PubKeyHash,
-  ScriptContext (..),
-  ScriptPurpose (Spending),
-  TxInfo (..),
   TxOutRef (..),
   ValidatorHash,
  )
@@ -74,7 +69,7 @@ import Sample.Shared (
  )
 import Sample.Shared qualified as Shared
 import Test.Specification (SpecificationTree, group, testValidator)
-import Test.Util (sortValue, updateMap)
+import Test.Util (CombinableBuilder, mkSpending, sortValue, updateMap)
 
 --------------------------------------------------------------------------------
 
@@ -249,7 +244,7 @@ mkProposalDatumPair params pid =
           getProposalVotes votesTemplate
 
 -- | Create a 'TxInfo' that tries to unlock a stake.
-unlockStake :: Parameters -> TxInfo
+unlockStake :: forall b. CombinableBuilder b => Parameters -> b
 unlockStake ps =
   let pst = Value.singleton proposalPolicySymbol "" 1
       sst = Value.assetClassValue stakeAssetClass 1
@@ -260,7 +255,6 @@ unlockStake ps =
         foldMap
           ( \((i, o), idx) ->
               mconcat
-                @BaseBuilder
                 [ input $
                     script proposalValidatorHash
                       . withValue pst
@@ -288,7 +282,7 @@ unlockStake ps =
       sOutDatum = mkStakeOutputDatum ps
 
       stakes =
-        mconcat @BaseBuilder
+        mconcat
           [ input $
               script stakeValidatorHash
                 . withValue stakeValue
@@ -301,13 +295,13 @@ unlockStake ps =
           ]
 
       builder =
-        mconcat @BaseBuilder
+        mconcat
           [ txId "388bc0b897b3dadcd479da4c88291de4113a50b72ddbed001faf7fc03f11bc52"
           , proposals
           , stakes
           , signedWith defOwner
           ]
-   in buildTxInfoUnsafe builder
+   in builder
 
 -- | Reference to the stake UTXO.
 stakeRef :: TxOutRef
@@ -523,7 +517,7 @@ mkAlterStakeParameters nProposals = do
 mkTestTree :: String -> Parameters -> Bool -> SpecificationTree
 mkTestTree name ps isValid = group name [stake, proposal]
   where
-    txInfo = unlockStake ps
+    spend = mkSpending unlockStake ps
 
     stake =
       testValidator
@@ -532,7 +526,7 @@ mkTestTree name ps isValid = group name [stake, proposal]
         (stakeValidator Shared.stake)
         (mkStakeInputDatum ps)
         stakeRedeemer
-        (ScriptContext txInfo (Spending stakeRef))
+        (spend stakeRef)
 
     proposal =
       let idx = 0
@@ -540,8 +534,8 @@ mkTestTree name ps isValid = group name [stake, proposal]
           ref = mkProposalRef idx
        in testValidator
             isValid
-            "propsoal"
+            "proposal"
             (proposalValidator Shared.proposal)
             (mkProposalInputDatum ps pid)
             proposalRedeemer
-            (ScriptContext txInfo (Spending ref))
+            (spend ref)

@@ -14,7 +14,7 @@ import Agora.Proposal (
   PProposalDatum (PProposalDatum),
   PProposalRedeemer (..),
   PProposalVotes (PProposalVotes),
-  Proposal (governorSTAssetClass, stakeSTAssetClass),
+  Proposal (..),
   ProposalStatus (..),
   pretractVotes,
   pwinner',
@@ -40,7 +40,6 @@ import Agora.Utils (
   getMintingPolicySymbol,
   mustBePJust,
   mustFindDatum',
-  pisUniq',
   pltAsData,
  )
 import Plutarch.Api.V1 (
@@ -62,8 +61,9 @@ import Plutarch.Api.V1.ScriptContext (
  )
 import "liqwid-plutarch-extra" Plutarch.Api.V1.Value (psymbolValueOf)
 import Plutarch.Extra.Comonad (pextract)
+import Plutarch.Extra.Field (pletAllC)
 import Plutarch.Extra.IsData (pmatchEnum)
-import Plutarch.Extra.List (pmapMaybe, pmergeBy, pmsortBy)
+import Plutarch.Extra.List (pisUniq', pmapMaybe, pmergeBy, pmsortBy)
 import Plutarch.Extra.Map (plookup, pupdate)
 import Plutarch.Extra.Maybe (pfromDJust, pfromJust, pisJust)
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
@@ -76,7 +76,7 @@ import Plutarch.Extra.TermCont (
  )
 import Plutarch.SafeMoney (PDiscrete (..))
 import Plutarch.Unsafe (punsafeCoerce)
-import PlutusLedgerApi.V1.Value (AssetClass (AssetClass))
+import PlutusLedgerApi.V1.Value (AssetClass (AssetClass, unAssetClass))
 
 {- | Policy for Proposals.
 
@@ -105,24 +105,20 @@ proposalPolicy ::
 proposalPolicy (AssetClass (govCs, govTn)) =
   plam $ \_redeemer ctx' -> unTermCont $ do
     PScriptContext ctx' <- pmatchC ctx'
-    ctx <- pletFieldsC @'["txInfo", "purpose"] ctx'
+    ctx <- pletAllC ctx'
     PTxInfo txInfo' <- pmatchC $ pfromData ctx.txInfo
     txInfo <- pletFieldsC @'["inputs", "mint"] txInfo'
-    PMinting _ownSymbol <- pmatchC $ pfromData ctx.purpose
-
-    let inputs = txInfo.inputs
-        mintedValue = pfromData txInfo.mint
 
     PMinting ownSymbol' <- pmatchC $ pfromData ctx.purpose
     let mintedProposalST =
           passetClassValueOf
-            # mintedValue
+            # pfromData txInfo.mint
             # (passetClass # (pfield @"_0" # ownSymbol') # pconstant "")
 
     pguardC "Governance state-thread token must move" $
       pisTokenSpent
         # (passetClass # pconstant govCs # pconstant govTn)
-        # inputs
+        # txInfo.inputs
 
     pguardC "Minted exactly one proposal ST" $
       mintedProposalST #== 1
@@ -184,22 +180,11 @@ proposalValidator proposal =
     (pfromData -> proposalRedeemer, _) <-
       ptryFromC @(PAsData PProposalRedeemer) redeemer
 
-    proposalF <-
-      pletFieldsC
-        @'[ "proposalId"
-          , "effects"
-          , "status"
-          , "cosigners"
-          , "thresholds"
-          , "votes"
-          , "timingConfig"
-          , "startingTime"
-          ]
-        proposalDatum
+    proposalF <- pletAllC proposalDatum
 
     ownAddress <- pletC $ txOutF.address
 
-    thresholdsF <- pletFieldsC @'["execute", "create", "vote"] proposalF.thresholds
+    thresholdsF <- pletAllC proposalF.thresholds
 
     currentStatus <- pletC $ pfromData $ proposalF.status
 
@@ -222,7 +207,7 @@ proposalValidator proposal =
         mustBePJust # "Own output should be present" #$ pfind
           # plam
             ( \input -> unTermCont $ do
-                inputF <- pletFieldsC @'["address", "value", "datumHash"] input
+                inputF <- pletAllC input
 
                 -- TODO: this is highly inefficient: O(n) for every output,
                 --       Maybe we can cache the sorted datum map?
@@ -407,7 +392,7 @@ proposalValidator proposal =
 
         withSingleStake val =
           withSingleStake' #$ plam $ \stakeIn stakeOut stakeUnchange -> unTermCont $ do
-            stakeInF <- pletFieldsC @'["stakedAmount", "lockedBy", "owner"] stakeIn
+            stakeInF <- pletAllC stakeIn
 
             val stakeInF stakeOut stakeUnchange
 
@@ -428,6 +413,9 @@ proposalValidator proposal =
                 pmergeBy # pltAsData
                   # newSigs
                   # proposalF.cosigners
+
+            pguardC "Less cosigners than maximum limit" $
+              plength # updatedSigs #< pconstant proposal.maximumCosigners
 
             pguardC "Cosigners are unique" $
               pisUniq' # updatedSigs
@@ -663,12 +651,29 @@ proposalValidator proposal =
                   pguardC "Cannot advance ahead of time" notTooEarly
                   pguardC "Finished proposals cannot be advanced" $ pnot # isFinished
 
+                  let gstSymbol =
+                        pconstant $
+                          fst $
+                            unAssetClass proposal.governorSTAssetClass
+
+                  gstMoved <-
+                    pletC $
+                      pany
+                        # plam
+                          ( \( (pfield @"value" #)
+                                . (pfield @"resolved" #)
+                                . pfromData ->
+                                value
+                              ) ->
+                                psymbolValueOf # gstSymbol # value #== 1
+                          )
+                        # txInfoF.inputs
+
                   let toFailedState = unTermCont $ do
                         pguardC "Proposal should fail: not on time" $
                           proposalOutStatus #== pconstant Finished
 
-                        -- TODO: Should check that the GST is not moved
-                        --        if the proposal is in 'Locked' state.
+                        pguardC "GST not moved" $ pnot # gstMoved
 
                         pure $ pconstant ()
 
@@ -688,6 +693,8 @@ proposalValidator proposal =
                           -- 'Locked' -> 'Finished'
                           pguardC "Proposal status set to Finished" $
                             proposalOutStatus #== pconstant Finished
+
+                          pguardC "GST moved" gstMoved
 
                           -- TODO: Perform other necessary checks.
                           pure $ pconstant ()
