@@ -417,8 +417,8 @@ stakeValidator stake =
                   pmatch stakeRedeemer $ \case
                     PRetractVotes _ -> unTermCont $ do
                       pguardC
-                        "Owner signs this transaction"
-                        ownerSignsTransaction
+                        "Owner or delegate signs this transaction"
+                        $ ownerSignsTransaction #|| delegateSignsTransaction
 
                       -- This puts trust into the Proposal. The Proposal must necessarily check
                       -- that this is not abused.
