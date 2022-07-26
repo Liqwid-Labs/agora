@@ -24,6 +24,8 @@ module Agora.Utils (
   pltAsData,
   pon,
   withBuiltinPairAsData,
+  unwords,
+  intercalate,
 ) where
 
 import Plutarch.Api.V1 (
@@ -56,6 +58,7 @@ import PlutusLedgerApi.V1 (
   TokenName (..),
   ValidatorHash (..),
  )
+import Prelude hiding (unwords)
 
 {- Functions which should (probably) not be upstreamed
    All of these functions are quite inefficient.
@@ -145,9 +148,11 @@ hasOnlyOneTokenOfCurrencySymbol ::
   forall (keys :: KeyGuarantees) (amounts :: AmountGuarantees) (s :: S).
   Term s (PCurrencySymbol :--> PValue keys amounts :--> PBool)
 hasOnlyOneTokenOfCurrencySymbol = phoistAcyclic $
-  plam $ \cs vs -> P.do
-    psymbolValueOf # cs # vs #== 1
-      #&& (plength #$ pto $ pto $ pto vs) #== 1
+  plam $ \cs vs ->
+    let tokenNum = psymbolValueOf # cs # vs
+        symbolNum = plength #$ pto $ pto $ pto vs
+     in ptraceIfFalse (unwords ["Number of tokens not 1", pshow tokenNum]) (tokenNum #== 1)
+          #&& ptraceIfFalse (unwords ["Number of symbols not 1", pshow symbolNum]) (symbolNum #== 1)
 
 {- | Find datum given a maybe datum hash
 
@@ -240,3 +245,12 @@ withBuiltinPairAsData f p =
   let a = pfromData $ pfstBuiltin # p
       b = pfromData $ psndBuiltin # p
    in f a b
+
+intercalate :: forall (s :: S). Term s PString -> [Term s PString] -> Term s PString
+intercalate i xs = mconcat $ go i xs
+  where
+    go i (x : xs) = x : i : go i xs
+    go _ [] = []
+
+unwords :: forall (s :: S). [Term s PString] -> Term s PString
+unwords = intercalate " "

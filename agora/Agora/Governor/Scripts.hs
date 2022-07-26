@@ -76,6 +76,7 @@ import Agora.Utils (
   mustBePJust,
   mustFindDatum',
   scriptHashFromAddress,
+  unwords,
   validatorHashToAddress,
   validatorHashToTokenName,
  )
@@ -109,7 +110,7 @@ import Plutarch.Extra.Map (
  )
 import Plutarch.Extra.Maybe (pisDJust)
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
-import Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC, ptryFromC)
+import Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC, ptraceC, ptryFromC)
 import PlutusLedgerApi.V1 (
   CurrencySymbol (..),
   MintingPolicy,
@@ -118,6 +119,7 @@ import PlutusLedgerApi.V1.Scripts (ValidatorHash (..))
 import PlutusLedgerApi.V1.Value (
   AssetClass (..),
  )
+import Prelude hiding (unwords)
 
 --------------------------------------------------------------------------------
 
@@ -339,6 +341,8 @@ governorValidator gov =
 
           pguardC "Exactly one proposal token must be minted" $
             hasOnlyOneTokenOfCurrencySymbol # ppstSymbol # txInfoF.mint
+
+          ptraceC $ unwords ["expected PST symbol", pshow $ pto ppstSymbol]
 
           -- Check that a stake is spent to create the propsal,
           --   and the value it contains meets the requirement.
