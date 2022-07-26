@@ -170,6 +170,7 @@ library pprelude
   build-depends:
     , base
     , plutarch
+  visibility: public
 
 library agora-testlib
   import:          lang, deps, test-deps
@@ -178,6 +179,7 @@ library agora-testlib
     Test.Util
 
   hs-source-dirs:  agora-testlib
+  visibility: public
 
 library agora-specs
   import:          lang, deps, test-deps
