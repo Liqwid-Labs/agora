@@ -101,6 +101,7 @@ import Plutarch.Api.V1.AssetClass (
  )
 import Plutarch.Api.V1.ScriptContext (pfindTxInByTxOutRef, pisUTXOSpent, ptryFindDatum, pvalueSpent)
 import "liqwid-plutarch-extra" Plutarch.Api.V1.Value (psymbolValueOf)
+import "plutarch" Plutarch.Api.V1.Value (pnormalize)
 import Plutarch.Extra.Field (pletAllC)
 import Plutarch.Extra.IsData (pmatchEnumFromData)
 import Plutarch.Extra.List (pfirstJust)
@@ -342,7 +343,7 @@ governorValidator gov =
           pguardC "Exactly one proposal token must be minted" $
             ptrace (unwords ["expected PST symbol", pshow ppstSymbol]) $
               ptrace (unwords ["mited value", pshow txInfoF.mint]) $
-                hasOnlyOneTokenOfCurrencySymbol # ppstSymbol # txInfoF.mint
+                hasOnlyOneTokenOfCurrencySymbol # ppstSymbol #$ pnormalize # txInfoF.mint
 
           -- Check that a stake is spent to create the propsal,
           --   and the value it contains meets the requirement.
