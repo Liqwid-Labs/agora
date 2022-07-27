@@ -11877,16 +11877,16 @@
         "plutarch": "plutarch_6"
       },
       "locked": {
-        "lastModified": 1658175311,
-        "narHash": "sha256-Wa7OKZGXeVDaruY3NcZ00CfLT0dy3cHp8xsjsCLwhs8=",
+        "lastModified": 1658368717,
+        "narHash": "sha256-GAneUtaxaJSZLNkIGOTByx/Auuq1g3MhzBhTiqZ13+s=",
         "owner": "Liqwid-Labs",
         "repo": "plutarch-context-builder",
-        "rev": "62ab154fdcd8dd07a741e7955e078813aff4ed6a",
+        "rev": "2a2ca72ff310788e531cbbe379ef7b0c4cb42dc9",
         "type": "github"
       },
       "original": {
         "owner": "Liqwid-Labs",
-        "ref": "62ab154fdcd8dd07a741e7955e078813aff4ed6a",
+        "ref": "2a2ca72ff310788e531cbbe379ef7b0c4cb42dc9",
         "repo": "plutarch-context-builder",
         "type": "github"
       }

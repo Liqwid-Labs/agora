@@ -30,11 +30,6 @@ import Agora.Governor.Scripts (
   governorSTAssetClassFromGovernor,
  )
 import Agora.Plutarch.Orphans ()
-import Agora.Utils (
-  isScriptAddress,
-  mustBePDJust,
-  mustBePJust,
- )
 import GHC.Generics qualified as GHC
 import Generics.SOP (Generic, I (I))
 import Plutarch.Api.V1 (
@@ -42,12 +37,16 @@ import Plutarch.Api.V1 (
   PValidator,
   PValue,
  )
-import Plutarch.Api.V1.ScriptContext (ptryFindDatum)
+import Plutarch.Api.V1.ScriptContext (pisScriptAddress, ptryFindDatum)
 import "liqwid-plutarch-extra" Plutarch.Api.V1.Value (pvalueOf)
 import Plutarch.DataRepr (
   DerivePConstantViaData (..),
   PDataFields,
   PIsDataReprInstances (PIsDataReprInstances),
+ )
+import Plutarch.Extra.Maybe (
+  passertPDJust,
+  passertPJust,
  )
 import Plutarch.Extra.TermCont (pguardC, pletFieldsC)
 import Plutarch.Lift (PConstantDecl, PLifted, PUnsafeLiftDecl)
@@ -167,7 +166,7 @@ mutateGovernorValidator gov = makeEffect (authorityTokenSymbolFromGovernor gov) 
           ( plam $ \inInfo count ->
               let address = pfield @"address" #$ pfield @"resolved" # inInfo
                in pif
-                    (isScriptAddress # address)
+                    (pisScriptAddress # address)
                     (count + 1)
                     count
           )
@@ -177,7 +176,7 @@ mutateGovernorValidator gov = makeEffect (authorityTokenSymbolFromGovernor gov) 
 
     -- Find the governor input by looking for GST.
     let inputWithGST =
-          mustBePJust # "Governor input not found" #$ pfind
+          passertPJust # "Governor input not found" #$ pfind
             # phoistAcyclic
               ( plam $ \inInfo ->
                   let value = pfield @"value" #$ pfield @"resolved" # inInfo
@@ -207,10 +206,10 @@ mutateGovernorValidator gov = makeEffect (authorityTokenSymbolFromGovernor gov) 
       gstValueOf # govOutput.value #== 1
 
     let governorOutputDatumHash =
-          mustBePDJust # "Governor output doesn't have datum" # govOutput.datumHash
+          passertPDJust # "Governor output doesn't have datum" # govOutput.datumHash
         governorOutputDatum =
           pfromData @PGovernorDatum $
-            mustBePJust # "Governor output datum not found"
+            passertPJust # "Governor output datum not found"
               #$ ptryFindDatum # governorOutputDatumHash # txInfoF.datums
 
     -- Ensure the output governor datum is what we want.

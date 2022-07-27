@@ -32,7 +32,7 @@
 
   # PCB Rev is locked until Agora test have explicit Minting CS. Check PCB PR #12
   inputs.plutarch-context-builder.url =
-    "github:Liqwid-Labs/plutarch-context-builder?ref=62ab154fdcd8dd07a741e7955e078813aff4ed6a";
+    "github:Liqwid-Labs/plutarch-context-builder?ref=2a2ca72ff310788e531cbbe379ef7b0c4cb42dc9";
 
   outputs = inputs@{ self, nixpkgs, nixpkgs-latest, haskell-nix, plutarch, ... }:
     let

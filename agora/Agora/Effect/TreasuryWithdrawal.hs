@@ -15,7 +15,6 @@ module Agora.Effect.TreasuryWithdrawal (
 
 import Agora.Effect (makeEffect)
 import Agora.Plutarch.Orphans ()
-import Agora.Utils (isPubKey)
 import GHC.Generics qualified as GHC
 import Generics.SOP (Generic, I (I))
 import Plutarch.Api.V1 (
@@ -27,7 +26,7 @@ import Plutarch.Api.V1 (
   PValue,
   ptuple,
  )
-import Plutarch.Api.V1.ScriptContext (pfindTxInByTxOutRef)
+import Plutarch.Api.V1.ScriptContext (pfindTxInByTxOutRef, pisPubKey)
 import "plutarch" Plutarch.Api.V1.Value (pnormalize)
 import Plutarch.DataRepr (
   DerivePConstantViaData (..),
@@ -199,7 +198,7 @@ treasuryWithdrawalValidator currSymbol = makeEffect currSymbol $
               ( \((pfield @"_0" #) . pfromData -> cred) ->
                   cred #== pfield @"credential" # effInput.address
                     #|| pelem # cred # datum.treasuries
-                    #|| isPubKey # pfromData cred
+                    #|| pisPubKey # pfromData cred
               )
             # inputValues
 
