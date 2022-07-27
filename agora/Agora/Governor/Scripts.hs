@@ -70,12 +70,7 @@ import Agora.Stake.Scripts (
   stakeValidator,
  )
 import Agora.Utils (
-  findOutputsToAddress,
-  hasOnlyOneTokenOfCurrencySymbol,
-  mustBePDJust,
-  mustBePJust,
   mustFindDatum',
-  scriptHashFromAddress,
   validatorHashToAddress,
   validatorHashToTokenName,
  )
@@ -98,18 +93,30 @@ import Plutarch.Api.V1.AssetClass (
   passetClass,
   passetClassValueOf,
  )
-import Plutarch.Api.V1.ScriptContext (pfindTxInByTxOutRef, pisUTXOSpent, ptryFindDatum, pvalueSpent)
-import "liqwid-plutarch-extra" Plutarch.Api.V1.Value (psymbolValueOf)
-import Plutarch.Extra.Field (pletAllC)
 import Plutarch.Extra.IsData (pmatchEnumFromData)
 import Plutarch.Extra.List (pfirstJust)
 import Plutarch.Extra.Map (
   plookup,
   plookup',
  )
-import Plutarch.Extra.Maybe (pisDJust)
+import Plutarch.SafeMoney (PDiscrete (..), pvalueDiscrete')
+
+--------------------------------------------------------------------------------
+
+import Plutarch.Api.V1.ScriptContext (
+  pfindOutputsToAddress,
+  pfindTxInByTxOutRef,
+  pisUTXOSpent,
+  pscriptHashFromAddress,
+  ptryFindDatum,
+  ptxSignedBy,
+  pvalueSpent,
+ )
+import "liqwid-plutarch-extra" Plutarch.Api.V1.Value (phasOnlyOneTokenOfCurrencySymbol, psymbolValueOf)
+import Plutarch.Extra.Maybe (mustBePDJust, mustBePJust, pisDJust)
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
 import Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC, ptryFromC)
+import Plutarch.Extra.Field (pletAllC)
 import PlutusLedgerApi.V1 (
   CurrencySymbol (..),
   MintingPolicy,
@@ -295,7 +302,7 @@ governorValidator gov =
     pguardC "Own input should have exactly one state token" $
       ownInputGSTAmount #== 1
 
-    ownOutputs <- pletC $ findOutputsToAddress # txInfoF.outputs # ownAddress
+    ownOutputs <- pletC $ pfindOutputsToAddress # txInfoF.outputs # ownAddress
     pguardC "Exactly one utxo should be sent to the governor" $
       plength # ownOutputs #== 1
 
@@ -338,7 +345,7 @@ governorValidator gov =
           -- Check that exactly one proposal token is being minted.
 
           pguardC "Exactly one proposal token must be minted" $
-            hasOnlyOneTokenOfCurrencySymbol # ppstSymbol # txInfoF.mint
+            phasOnlyOneTokenOfCurrencySymbol # ppstSymbol # txInfoF.mint
 
           -- Check that a stake is spent to create the propsal,
           --   and the value it contains meets the requirement.
@@ -556,7 +563,7 @@ governorValidator gov =
 
                         let scriptHash =
                               mustBePJust # "GAT receiver is not a script"
-                                #$ scriptHashFromAddress # output.address
+                                #$ pscriptHashFromAddress # output.address
                             datumHash =
                               mustBePDJust # "Output to effect should have datum"
                                 #$ output.datumHash

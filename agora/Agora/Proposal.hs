@@ -41,7 +41,6 @@ module Agora.Proposal (
 
 import Agora.Proposal.Time (PProposalStartingTime, PProposalTimingConfig, ProposalStartingTime, ProposalTimingConfig)
 import Agora.SafeMoney (GTTag)
-import Agora.Utils (withBuiltinPairAsData)
 import Data.Tagged (Tagged)
 import GHC.Generics qualified as GHC
 import Generics.SOP (Generic, I (I))
@@ -62,6 +61,7 @@ import Plutarch.Extra.IsData (
   EnumIsData (..),
   ProductIsData (ProductIsData),
  )
+import Plutarch.Extra.Function (pbuiltinUncurry)    
 import Plutarch.Extra.List (pfirstJust)
 import Plutarch.Extra.Map qualified as PM
 import Plutarch.Extra.Map.Unsorted qualified as PUM
@@ -836,7 +836,7 @@ pneutralOption = phoistAcyclic $
 
         f = phoistAcyclic $
           plam $
-            withBuiltinPairAsData $ \rt el ->
+            withbuiltinUncurry $ \rt el ->
               pif
                 (PAssocMap.pnull # el)
                 (pcon $ PJust rt)

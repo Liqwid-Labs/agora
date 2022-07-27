@@ -30,11 +30,6 @@ import Agora.Governor.Scripts (
   governorSTAssetClassFromGovernor,
  )
 import Agora.Plutarch.Orphans ()
-import Agora.Utils (
-  isScriptAddress,
-  mustBePDJust,
-  mustBePJust,
- )
 import GHC.Generics qualified as GHC
 import Generics.SOP (Generic, I (I))
 import Plutarch.Api.V1 (
@@ -42,12 +37,16 @@ import Plutarch.Api.V1 (
   PValidator,
   PValue,
  )
-import Plutarch.Api.V1.ScriptContext (ptryFindDatum)
+import Plutarch.Api.V1.ScriptContext (pisScriptAddress, ptryFindDatum)
 import "liqwid-plutarch-extra" Plutarch.Api.V1.Value (pvalueOf)
 import Plutarch.DataRepr (
   DerivePConstantViaData (..),
   PDataFields,
   PIsDataReprInstances (PIsDataReprInstances),
+ )
+import Plutarch.Extra.Maybe (
+  mustBePDJust,
+  mustBePJust,
  )
 import Plutarch.Extra.TermCont (pguardC, pletFieldsC)
 import Plutarch.Lift (PConstantDecl, PLifted, PUnsafeLiftDecl)
@@ -167,7 +166,7 @@ mutateGovernorValidator gov = makeEffect (authorityTokenSymbolFromGovernor gov) 
           ( plam $ \inInfo count ->
               let address = pfield @"address" #$ pfield @"resolved" # inInfo
                in pif
-                    (isScriptAddress # address)
+                    (pisScriptAddress # address)
                     (count + 1)
                     count
           )

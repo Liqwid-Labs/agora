@@ -21,7 +21,6 @@ import Agora.Stake (
   pstakeLocked,
  )
 import Agora.Utils (
-  mustBePJust,
   mustFindDatum',
   pvalidatorHashToTokenName,
  )
@@ -45,7 +44,7 @@ import Plutarch.Api.V1.AssetClass (passetClass, passetClassValueOf, pvalueOf)
 import Plutarch.Api.V1.ScriptContext (pfindTxInByTxOutRef, ptxSignedBy, pvalueSpent)
 import "liqwid-plutarch-extra" Plutarch.Api.V1.Value (pgeqByClass', pgeqBySymbol, psymbolValueOf)
 import Plutarch.Extra.List (pmapMaybe, pmsortBy)
-import Plutarch.Extra.Maybe (pfromDJust)
+import Plutarch.Extra.Maybe (mustBePJust, pfromDJust)
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
 import Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC, ptryFromC)
 import Plutarch.Internal (punsafeCoerce)
