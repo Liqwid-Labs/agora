@@ -151,7 +151,7 @@ hasOnlyOneTokenOfCurrencySymbol = phoistAcyclic $
   plam $ \cs vs ->
     let tokenNum = psymbolValueOf # cs # vs
         symbolNum = plength #$ pto $ pto $ pto vs
-     in ptraceIfFalse (unwords ["Number of tokens not 1", pshow tokenNum]) (tokenNum #== 1)
+     in ptraceIfFalse (unwords ["Number of tokens not 1", "but", pshow tokenNum]) (tokenNum #== 1)
           #&& ptraceIfFalse (unwords ["Number of symbols not 1", pshow symbolNum]) (symbolNum #== 1)
 
 {- | Find datum given a maybe datum hash

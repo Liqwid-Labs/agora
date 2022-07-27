@@ -110,7 +110,7 @@ import Plutarch.Extra.Map (
  )
 import Plutarch.Extra.Maybe (pisDJust)
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
-import Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC, ptraceC, ptryFromC)
+import Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC, ptryFromC)
 import PlutusLedgerApi.V1 (
   CurrencySymbol (..),
   MintingPolicy,
@@ -340,9 +340,9 @@ governorValidator gov =
           -- Check that exactly one proposal token is being minted.
 
           pguardC "Exactly one proposal token must be minted" $
-            hasOnlyOneTokenOfCurrencySymbol # ppstSymbol # txInfoF.mint
-
-          ptraceC $ unwords ["expected PST symbol", pshow $ pto ppstSymbol]
+            ptrace (unwords ["expected PST symbol", pshow ppstSymbol]) $
+              ptrace (unwords ["mited value", pshow txInfoF.mint]) $
+                hasOnlyOneTokenOfCurrencySymbol # ppstSymbol # txInfoF.mint
 
           -- Check that a stake is spent to create the propsal,
           --   and the value it contains meets the requirement.
