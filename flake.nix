@@ -17,7 +17,7 @@
     "plutarch/haskell-nix/nixpkgs-unstable";
 
   inputs.liqwid-plutarch-extra.url =
-    "github:Liqwid-Labs/liqwid-plutarch-extra?rev=a951b85d15e7cca1a03dd2a8e36b60fae561d74a";
+    "github:Liqwid-Labs/liqwid-plutarch-extra?ref=seungheonoh/agoraUtils";
   inputs.plutarch-numeric.url =
     "github:Liqwid-Labs/plutarch-numeric?ref=main";
   inputs.plutarch-safe-money.url =
@@ -29,8 +29,10 @@
   # Testing
   inputs.plutarch-quickcheck.url =
     "github:liqwid-labs/plutarch-quickcheck?ref=staging";
+
+  # PCB Rev is locked until Agora test have explicit Minting CS. Check PCB PR #12
   inputs.plutarch-context-builder.url =
-    "github:Liqwid-Labs/plutarch-context-builder?ref=staging";
+    "github:Liqwid-Labs/plutarch-context-builder?ref=62ab154fdcd8dd07a741e7955e078813aff4ed6a";
 
   outputs = inputs@{ self, nixpkgs, nixpkgs-latest, haskell-nix, plutarch, ... }:
     let

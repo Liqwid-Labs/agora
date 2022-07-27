@@ -15,7 +15,6 @@ import Agora.AuthorityToken qualified as AuthorityToken
 import Agora.Effect.GovernorMutation qualified as GovernorMutation
 import Agora.Effect.TreasuryWithdrawal qualified as TreasuryWithdrawalEffect
 import Agora.Governor qualified as Governor
-import Agora.MultiSig qualified as MultiSig
 import Agora.Proposal qualified as Proposal
 import Agora.Stake qualified as Stake
 import Agora.Treasury qualified as Treasury
@@ -37,8 +36,6 @@ agoraTypes =
     mkSumType (Proxy @Governor.GovernorDatum)
   , mkSumType (Proxy @Governor.GovernorRedeemer)
   , mkSumType (Proxy @Governor.Governor)
-  , -- MultiSig
-    mkSumType (Proxy @MultiSig.MultiSig)
   , -- Stake
     mkSumType (Proxy @Stake.Stake)
   , mkSumType (Proxy @Stake.ProposalLock)
