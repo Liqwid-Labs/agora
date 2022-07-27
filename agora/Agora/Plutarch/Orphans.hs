@@ -17,6 +17,7 @@ import Plutarch.DataRepr (PIsDataReprInstances (..))
 import Plutarch.Extra.TermCont (ptryFromC)
 import Plutarch.Numeric.Additive (AdditiveSemigroup ((+)))
 import Plutarch.Reducible (Reduce, Reducible)
+import Plutarch.Show (PShow (..))
 import Plutarch.TryFrom (PTryFrom (PTryFromExcess, ptryFrom'))
 import Plutarch.Unsafe (punsafeCoerce)
 import Prelude hiding ((+))
@@ -133,3 +134,19 @@ deriving via
   PAsData (PIsDataReprInstances PStakingCredential)
   instance
     PTryFrom PData (PAsData PStakingCredential)
+
+deriving via
+  (DerivePNewtype PCurrencySymbol PByteString)
+  instance
+    PShow PCurrencySymbol
+deriving via
+  (DerivePNewtype PTokenName PByteString)
+  instance
+    PShow PTokenName
+deriving via
+  ( DerivePNewtype
+      (PValue keys amount)
+      (PMap keys PCurrencySymbol (PMap keys PTokenName PInteger))
+  )
+  instance
+    PShow (PValue keys amount)
