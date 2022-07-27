@@ -38,7 +38,6 @@ import Agora.Stake (
  )
 import Agora.Utils (
   getMintingPolicySymbol,
-  mustBePJust,
   mustFindDatum',
   pltAsData,
  )
@@ -65,7 +64,7 @@ import Plutarch.Extra.Field (pletAllC)
 import Plutarch.Extra.IsData (pmatchEnum)
 import Plutarch.Extra.List (pisUniq', pmapMaybe, pmergeBy, pmsortBy)
 import Plutarch.Extra.Map (plookup, pupdate)
-import Plutarch.Extra.Maybe (pfromDJust, pfromJust, pisJust)
+import Plutarch.Extra.Maybe (passertPJust, pfromDJust, pfromJust, pisJust)
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
 import Plutarch.Extra.TermCont (
   pguardC,
@@ -204,7 +203,7 @@ proposalValidator proposal =
     --  proposal inputs in one thansaction.
     ownOutput <-
       pletC $
-        mustBePJust # "Own output should be present" #$ pfind
+        passertPJust # "Own output should be present" #$ pfind
           # plam
             ( \input -> unTermCont $ do
                 inputF <- pletAllC input

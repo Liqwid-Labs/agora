@@ -149,7 +149,6 @@ library
     Agora.Effect.TreasuryWithdrawal
     Agora.Governor
     Agora.Governor.Scripts
-    Agora.MultiSig
     Agora.Plutarch.Orphans
     Agora.Proposal
     Agora.Proposal.Scripts
@@ -184,7 +183,6 @@ library agora-specs
   exposed-modules:
     Property.Generator
     Property.Governor
-    Property.MultiSig
     Sample.Effect.GovernorMutation
     Sample.Effect.TreasuryWithdrawal
     Sample.Governor.Initialize
