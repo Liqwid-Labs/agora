@@ -99,7 +99,6 @@ import Plutarch.Extra.Map (
   plookup,
   plookup',
  )
-import Plutarch.SafeMoney (PDiscrete (..), pvalueDiscrete')
 
 --------------------------------------------------------------------------------
 
@@ -109,14 +108,13 @@ import Plutarch.Api.V1.ScriptContext (
   pisUTXOSpent,
   pscriptHashFromAddress,
   ptryFindDatum,
-  ptxSignedBy,
   pvalueSpent,
  )
 import "liqwid-plutarch-extra" Plutarch.Api.V1.Value (phasOnlyOneTokenOfCurrencySymbol, psymbolValueOf)
-import Plutarch.Extra.Maybe (mustBePDJust, mustBePJust, pisDJust)
+import Plutarch.Extra.Field (pletAllC)
+import Plutarch.Extra.Maybe (passertPDJust, passertPJust, pisDJust)
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
 import Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC, ptryFromC)
-import Plutarch.Extra.Field (pletAllC)
 import PlutusLedgerApi.V1 (
   CurrencySymbol (..),
   MintingPolicy,
@@ -175,7 +173,7 @@ governorPolicy gov =
 
     govOutput <-
       pletC $
-        mustBePJust
+        passertPJust
           # "Governor output not found"
             #$ pfind
           # plam
@@ -289,7 +287,7 @@ governorValidator gov =
 
     ((pfield @"resolved" #) -> ownInput) <-
       pletC $
-        mustBePJust # "Own input not found"
+        passertPJust # "Own input not found"
           #$ pfindTxInByTxOutRef # ownInputRef # txInfoF.inputs
     ownInputF <- pletFieldsC @'["address", "value"] ownInput
     let ownAddress = pfromData $ ownInputF.address
@@ -313,11 +311,11 @@ governorValidator gov =
 
     -- Check that own output have datum of type 'GovernorDatum'.
     let outputGovernorStateDatumHash =
-          mustBePDJust # "Governor output doesn't have datum" # ownOutput.datumHash
+          passertPDJust # "Governor output doesn't have datum" # ownOutput.datumHash
     newGovernorDatum <-
       pletC $
         pfromData $
-          mustBePJust # "Ouput governor state datum not found"
+          passertPJust # "Ouput governor state datum not found"
             #$ ptryFindDatum # outputGovernorStateDatumHash # txInfoF.datums
 
     pguardC "New datum is valid" $ pisGovernorDatumValid # newGovernorDatum
@@ -439,7 +437,7 @@ governorValidator gov =
 
           -- Check the output stake has been proposly updated.
           let stakeOutputDatumHash =
-                mustBePJust # "Output stake should be presented"
+                passertPJust # "Output stake should be presented"
                   #$ pfirstJust
                     # phoistAcyclic
                       ( plam
@@ -451,7 +449,7 @@ governorValidator gov =
                                   (psymbolValueOf # psstSymbol # txOutF.value #== 1)
                                   ( pcon $
                                       PJust $
-                                        mustBePDJust # "Output stake datum should be presented"
+                                        passertPDJust # "Output stake datum should be presented"
                                           # txOutF.datumHash
                                   )
                                   (pcon PNothing)
@@ -460,7 +458,7 @@ governorValidator gov =
                     # pfromData txInfoF.outputs
 
               stakeOutputDatum =
-                mustBePJust @(PAsData PStakeDatum) # "Stake output datum presented"
+                passertPJust @(PAsData PStakeDatum) # "Stake output datum presented"
                   #$ ptryFindDatum # stakeOutputDatumHash # txInfoF.datums
 
               stakeOutputLocks =
@@ -496,7 +494,7 @@ governorValidator gov =
             pletFieldsC @'["datumHash"] $
               pfield @"resolved"
                 #$ pfromData
-                $ mustBePJust
+                $ passertPJust
                   # "Proposal input not found"
                     #$ pfind
                   # plam
@@ -562,14 +560,14 @@ governorValidator gov =
                         output <- pletFieldsC @'["address", "datumHash"] $ output'
 
                         let scriptHash =
-                              mustBePJust # "GAT receiver is not a script"
+                              passertPJust # "GAT receiver is not a script"
                                 #$ pscriptHashFromAddress # output.address
                             datumHash =
-                              mustBePDJust # "Output to effect should have datum"
+                              passertPDJust # "Output to effect should have datum"
                                 #$ output.datumHash
 
                             expectedDatumHash =
-                              mustBePJust # "Receiver is not in the effect list"
+                              passertPJust # "Receiver is not in the effect list"
                                 #$ plookup # scriptHash # effects
 
                         pure $

@@ -62,8 +62,8 @@ mustFindDatum' ::
     )
 mustFindDatum' = phoistAcyclic $
   plam $ \mdh datums -> unTermCont $ do
-    let dh = mustBePDJust # "Given TxOut dones't have a datum" # mdh
-        dt = mustBePJust # "Datum not found in the transaction" #$ plookupTuple # dh # datums
+    let dh = passertPDJust # "Given TxOut dones't have a datum" # mdh
+        dt = passertPJust # "Datum not found in the transaction" #$ plookupTuple # dh # datums
     (d, _) <- ptryFromC $ pforgetData $ pdata dt
     pure $ pfromData d
 

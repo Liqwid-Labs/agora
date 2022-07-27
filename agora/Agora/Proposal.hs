@@ -55,13 +55,13 @@ import Plutarch.Api.V1.AssocMap qualified as PAssocMap
 import Plutarch.DataRepr (DerivePConstantViaData (..), PDataFields, PIsDataReprInstances (..))
 import Plutarch.Extra.Comonad (pextract)
 import Plutarch.Extra.Field (pletAllC)
+import Plutarch.Extra.Function (pbuiltinUncurry)
 import Plutarch.Extra.IsData (
   DerivePConstantViaDataList (..),
   DerivePConstantViaEnum (..),
   EnumIsData (..),
   ProductIsData (ProductIsData),
  )
-import Plutarch.Extra.Function (pbuiltinUncurry)    
 import Plutarch.Extra.List (pfirstJust)
 import Plutarch.Extra.Map qualified as PM
 import Plutarch.Extra.Map.Unsorted qualified as PUM
@@ -836,7 +836,7 @@ pneutralOption = phoistAcyclic $
 
         f = phoistAcyclic $
           plam $
-            withbuiltinUncurry $ \rt el ->
+            pbuiltinUncurry $ \rt el ->
               pif
                 (PAssocMap.pnull # el)
                 (pcon $ PJust rt)
