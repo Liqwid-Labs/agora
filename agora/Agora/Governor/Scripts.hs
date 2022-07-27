@@ -100,6 +100,7 @@ import Plutarch.Api.V1.AssetClass (
  )
 import Plutarch.Api.V1.ScriptContext (pfindTxInByTxOutRef, pisUTXOSpent, ptryFindDatum, pvalueSpent)
 import "liqwid-plutarch-extra" Plutarch.Api.V1.Value (psymbolValueOf)
+import "plutarch" Plutarch.Api.V1.Value (pnormalize)
 import Plutarch.Extra.Field (pletAllC)
 import Plutarch.Extra.IsData (pmatchEnumFromData)
 import Plutarch.Extra.List (pfirstJust)
@@ -338,7 +339,12 @@ governorValidator gov =
           -- Check that exactly one proposal token is being minted.
 
           pguardC "Exactly one proposal token must be minted" $
-            hasOnlyOneTokenOfCurrencySymbol # ppstSymbol # txInfoF.mint
+            hasOnlyOneTokenOfCurrencySymbol # ppstSymbol
+              #$
+              -- TODO: This is a temporary workaround. The minted value is
+              --        supposed to be normalized, but Ogmios won't normalize
+              --        it due to a bug.
+              pnormalize # txInfoF.mint
 
           -- Check that a stake is spent to create the propsal,
           --   and the value it contains meets the requirement.
