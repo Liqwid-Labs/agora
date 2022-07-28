@@ -130,7 +130,7 @@ mkProposalOutputDatum ps =
 
 -- | Create all the input stakes given the parameters.
 mkStakeInputDatums :: Parameters -> [StakeDatum]
-mkStakeInputDatums = fmap (\pk -> StakeDatum perStakedGTs pk []) . newCosigners
+mkStakeInputDatums = fmap (\pk -> StakeDatum perStakedGTs pk Nothing []) . newCosigners
 
 -- | Create a 'TxInfo' that tries to cosign a proposal with new cosigners.
 cosign :: forall b. CombinableBuilder b => Parameters -> b

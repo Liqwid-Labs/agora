@@ -177,6 +177,7 @@ mkStakeInputDatum ps =
   StakeDatum
     { stakedAmount = defStakedGTs
     , owner = defOwner
+    , delegatedTo = Nothing
     , lockedBy = mkInputStakeLocks ps
     }
 

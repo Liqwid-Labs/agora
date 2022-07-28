@@ -24,6 +24,10 @@ module Agora.Utils (
   pltAsData,
   pon,
   withBuiltinPairAsData,
+  pmaybeData,
+  pmaybe,
+  pdjust,
+  pdnothing,
 ) where
 
 import Plutarch.Api.V1 (
@@ -34,7 +38,7 @@ import Plutarch.Api.V1 (
   PCurrencySymbol,
   PDatum,
   PDatumHash,
-  PMaybeData (PDJust),
+  PMaybeData (PDJust, PDNothing),
   PMintingPolicy,
   PTokenName (PTokenName),
   PTuple,
@@ -240,3 +244,54 @@ withBuiltinPairAsData f p =
   let a = pfromData $ pfstBuiltin # p
       b = pfromData $ psndBuiltin # p
    in f a b
+
+{- | Plutarch version of 'Data.Maybe.maybe'. Take a default value and a function
+      @f@. If the given 'PMaybe' value is @'PJust' x@, apply the function @f@ to
+      @x@, otherewise the default value will be retuned.
+
+     @since 0.2.0
+-}
+pmaybe ::
+  forall (a :: PType) (b :: PType) (s :: S).
+  Term s (b :--> (a :--> b) :--> PMaybe a :--> b)
+pmaybe = phoistAcyclic $
+  plam $ \n f m -> pmatch m $ \case
+    PJust x -> f # x
+    _ -> n
+
+{- | Special version of 'pmaybe' that works with 'PMaybedata'.
+
+     @since 0.2.0
+-}
+pmaybeData ::
+  forall (a :: PType) (b :: PType) (s :: S).
+  PIsData a =>
+  Term s (b :--> (a :--> b) :--> PMaybeData a :--> b)
+pmaybeData = phoistAcyclic $
+  plam $ \n f m -> pmatch m $ \case
+    PDJust ((pfield @"_0" #) -> x) -> f # x
+    _ -> n
+
+{- Construct a 'PDJust' value.
+
+    @since 0.2.0
+-}
+pdjust ::
+  forall (a :: PType) (s :: S).
+  (PIsData a) =>
+  Term s (a :--> PMaybeData a)
+pdjust = phoistAcyclic $
+  plam $ \x ->
+    pcon $
+      PDJust $
+        pdcons @"_0" # pdata x #$ pdnil
+
+{- Construct a 'PDNothing' value.
+
+    @since 0.2.0
+-}
+pdnothing ::
+  forall (a :: PType) (s :: S).
+  (PIsData a) =>
+  Term s (PMaybeData a)
+pdnothing = phoistAcyclic $ pcon $ PDNothing pdnil

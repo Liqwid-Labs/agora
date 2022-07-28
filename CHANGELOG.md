@@ -11,6 +11,10 @@ This format is based on [Keep A Changelog](https://keepachangelog.com/en/1.0.0).
 
 ### Modified
 
+- Stake delegation.
+  
+  Included by [#149](https://github.com/Liqwid-Labs/agora/pull/149).
+
 - Fixed bug that checks the proposal thresholds in an incorrect way. Added negative tests for the governor scripts.
 
   Included by [#146](https://github.com/Liqwid-Labs/agora/pull/146).

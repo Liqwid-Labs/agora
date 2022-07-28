@@ -197,6 +197,7 @@ library agora-specs
     Sample.Proposal.Vote
     Sample.Shared
     Sample.Stake
+    Sample.Stake.SetDelegate
     Sample.Treasury
     Spec.AuthorityToken
     Spec.Effect.GovernorMutation

@@ -130,8 +130,12 @@ specs =
              in [legalGroup, illegalGroup]
       , group
           "voting"
-          [ Vote.mkTestTree "legal" Vote.validVoteParameters True
-          -- TODO: add negative test cases
+          [ group
+              "legal"
+              [ Vote.mkTestTree "ordinary" Vote.validVoteParameters True
+              , Vote.mkTestTree "delegate" Vote.validVoteAsDelegateParameters True
+              ]
+              -- TODO: add negative test cases
           ]
       , group
           "advancing"
