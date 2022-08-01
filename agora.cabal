@@ -149,7 +149,6 @@ library
     Agora.Effect.TreasuryWithdrawal
     Agora.Governor
     Agora.Governor.Scripts
-    Agora.MultiSig
     Agora.Plutarch.Orphans
     Agora.Proposal
     Agora.Proposal.Scripts
