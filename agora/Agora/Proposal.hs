@@ -342,12 +342,12 @@ data ProposalRedeemer
     --
     --   === @'Draft' -> 'VotingReady'@:
     --
-    --     1. The sum of all of the cosigner's GT is larger than the 'startVoting' field of 'ProposalThresholds'.
+    --     1. The sum of all of the cosigner's GT is larger than the 'vote' field of 'ProposalThresholds'.
     --     2. The proposal's current time ensures 'isDraftPeriod'.
     --
     --   === @'VotingReady' -> 'Locked'@:
     --
-    --     1. The sum of all votes is larger than 'countVoting'.
+    --     1. The sum of all votes is larger than 'execute'.
     --     2. The winning 'ResultTag' has more votes than all other 'ResultTag's.
     --     3. The proposal's current time ensures 'isVotingPeriod'.
     --
