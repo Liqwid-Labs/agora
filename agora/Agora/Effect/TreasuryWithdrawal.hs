@@ -16,8 +16,7 @@ module Agora.Effect.TreasuryWithdrawal (
 import Agora.Effect (makeEffect)
 import Agora.Plutarch.Orphans ()
 import Agora.Utils (isPubKey)
-import GHC.Generics qualified as GHC
-import Generics.SOP (Generic, I (I))
+import Generics.SOP qualified as SOP
 import Plutarch.Api.V1 (
   AmountGuarantees (Positive),
   KeyGuarantees (Sorted),
@@ -32,7 +31,6 @@ import "plutarch" Plutarch.Api.V1.Value (pnormalize)
 import Plutarch.DataRepr (
   DerivePConstantViaData (..),
   PDataFields,
-  PIsDataReprInstances (..),
  )
 import Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC)
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (..))
@@ -58,11 +56,11 @@ data TreasuryWithdrawalDatum = TreasuryWithdrawalDatum
     ( -- | @since 0.1.0
       Show
     , -- | @since 0.1.0
-      GHC.Generic
+      Generic
     )
   deriving anyclass
     ( -- | @since 0.1.0
-      Generic
+      SOP.Generic
     )
 
 -- | @since 0.1.0
@@ -87,11 +85,11 @@ newtype PTreasuryWithdrawalDatum (s :: S)
       )
   deriving stock
     ( -- | @since 0.1.0
-      GHC.Generic
+      Generic
     )
   deriving anyclass
     ( -- | @since 0.1.0
-      Generic
+      SOP.Generic
     , -- | @since 0.1.0
       PIsDataRepr
     )

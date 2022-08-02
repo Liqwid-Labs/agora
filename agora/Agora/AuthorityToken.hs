@@ -12,7 +12,6 @@ module Agora.AuthorityToken (
   AuthorityToken (..),
 ) where
 
-import GHC.Generics qualified as GHC
 import Plutarch.Api.V1 (
   AmountGuarantees,
   KeyGuarantees,
@@ -53,7 +52,7 @@ newtype AuthorityToken = AuthorityToken
   }
   deriving stock
     ( -- | @since 0.1.0
-      GHC.Generic
+      Generic
     )
 
 --------------------------------------------------------------------------------
@@ -105,7 +104,7 @@ authorityTokensValidIn = phoistAcyclic $
 singleAuthorityTokenBurned ::
   forall (keys :: KeyGuarantees) (amounts :: AmountGuarantees) (s :: S).
   Term s PCurrencySymbol ->
-  Term s (PBuiltinList (PAsData PTxInInfo)) ->
+  Term s (PBuiltinList PTxInInfo) ->
   Term s (PValue keys amounts) ->
   Term s PBool
 singleAuthorityTokenBurned gatCs inputs mint = unTermCont $ do
@@ -120,7 +119,7 @@ singleAuthorityTokenBurned gatCs inputs mint = unTermCont $ do
           pall
             # plam
               ( \txInInfo' -> unTermCont $ do
-                  PTxInInfo txInInfo <- pmatchC (pfromData txInInfo')
+                  PTxInInfo txInInfo <- pmatchC txInInfo'
                   let txOut' = pfield @"resolved" # txInInfo
                   pure $ authorityTokensValidIn # gatCs # pfromData txOut'
               )
@@ -156,9 +155,7 @@ authorityTokenPolicy params =
               pguardC "All outputs only emit valid GATs" $
                 pall
                   # plam
-                    ( (authorityTokensValidIn # ownSymbol #)
-                        . pfromData
-                    )
+                    (authorityTokensValidIn # ownSymbol #)
                   # txInfo.outputs
               pure $ popaque $ pconstant ()
           )

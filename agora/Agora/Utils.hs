@@ -1,4 +1,5 @@
 {-# LANGUAGE QuantifiedConstraints #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
 {- |
 Module     : Agora.Utils
@@ -30,6 +31,7 @@ module Agora.Utils (
   pdnothing,
 ) where
 
+import Data.Default (Default (def))
 import Plutarch.Api.V1 (
   AmountGuarantees,
   KeyGuarantees,
@@ -139,7 +141,7 @@ pvalidatorHashToTokenName vh = pcon (PTokenName (pto vh))
      @since 0.1.0
 -}
 getMintingPolicySymbol :: ClosedTerm PMintingPolicy -> CurrencySymbol
-getMintingPolicySymbol v = mintingPolicySymbol $ mkMintingPolicy v
+getMintingPolicySymbol v = mintingPolicySymbol $ mkMintingPolicy def v
 
 {- | The entire value only contains one token of the given currency symbol.
 

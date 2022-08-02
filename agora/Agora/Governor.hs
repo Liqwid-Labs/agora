@@ -45,13 +45,11 @@ import Generics.SOP (Generic, I (I))
 import Plutarch.DataRepr (
   DerivePConstantViaData (..),
   PDataFields,
-  PIsDataReprInstances (PIsDataReprInstances),
  )
 import Plutarch.Extra.IsData (
   DerivePConstantViaEnum (..),
   EnumIsData (..),
  )
-import Plutarch.Extra.Other (DerivePNewtype' (..))
 import Plutarch.Extra.TermCont (pletFieldsC)
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (..))
 import PlutusLedgerApi.V1 (TxOutRef)
