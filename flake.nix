@@ -58,6 +58,21 @@
           "${inputs.liqwid-plutarch-extra}"
           "${inputs.plutarch-script-export}"
         ])
+        (liqwid-nix.addChecks {
+          testSuite = "agora:test:agora-test";
+          agora = "agora:lib:agora";
+        })
+        (liqwid-nix.enableFormatCheck [
+          "-XQuasiQuotes"
+          "-XTemplateHaskell"
+          "-XTypeApplications"
+          "-XImportQualifiedPost"
+          "-XPatternSynonyms"
+          "-XOverloadedRecordDot"
+        ])
+        liqwid-nix.enableLintCheck
+        liqwid-nix.enableCabalFormatCheck
+        liqwid-nix.enableNixFormatCheck
       ]
     ).toFlake;
 }
