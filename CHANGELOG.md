@@ -39,6 +39,23 @@ This format is based on [Keep A Changelog](https://keepachangelog.com/en/1.0.0).
   - `PProposalRedeemer`
   - `PTreasuryRedeemer`
   - `PGovernorDatum`
+  
+### Removed
+
+- Side-stream utilies into `liqwid-Labs/liqwid-plutarch-extra`
+  - `Agora.MultiSig`--entire module.
+  - `scriptHashFromAddress` to `Plutarch.Api.V1.ScriptContext`.
+  - `findOutputsToAddress` to `Plutarch.Api.V1.ScriptContext`.
+  - `findTxOutDatum` to `Plutarch.Api.V1.ScriptContext`.
+  - `hasOnlyOneTokenOfCurrencySymbol` to `Plutarch.Api.V1.Value`.
+  - `mustBePJust` to `Plutarch.Extra.Maybe`.
+  - `mustBePDJust` to `Plutarch.Extra.Maybe`.
+  - `isScriptAddress` to `Plutarch.Api.V1.ScriptContext`.
+  - `isPubKey` to `Plutarch.Api.V1.ScriptContext`.
+  - `pisUniqBy'` to `Plutarch.Extra.List`.
+  - `pisUniq'` to `Plutarch.Extra.List`.
+  - `pon` to `Plutarch.Extra.Function`.
+  - `pbuiltinUncurry` to `Plutarch.Extra.Function`.
 
 ## 0.1.0 -- 2022-06-22
 
