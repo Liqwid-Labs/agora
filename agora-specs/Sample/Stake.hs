@@ -26,6 +26,7 @@ import Agora.Stake (
   StakeDatum (StakeDatum, stakedAmount),
  )
 import Agora.Stake.Scripts (stakeValidator)
+import Data.Default (def)
 import Data.Tagged (Tagged, untag)
 import Plutarch.Api.V1 (mkValidator, validatorHash)
 import Plutarch.Context (
@@ -69,7 +70,10 @@ import Sample.Shared (
 
 -- | 'TokenName' that represents the hash of the 'Stake' validator.
 validatorHashTN :: TokenName
-validatorHashTN = let ValidatorHash vh = validatorHash (mkValidator $ stakeValidator stake) in TokenName vh
+validatorHashTN =
+  let validator = mkValidator def $ stakeValidator stake
+      ValidatorHash vh = validatorHash validator
+   in TokenName vh
 
 -- | This script context should be a valid transaction.
 stakeCreation :: ScriptContext
@@ -85,9 +89,11 @@ stakeCreation =
           , signedWith signer
           , mint st
           , output $
-              script stakeValidatorHash
-                . withValue (st <> Value.singleton "da8c30857834c6ae7203935b89278c532b3995245295456f993e1d24" "LQ" 424242424242)
-                . withDatum datum
+              mconcat
+                [ script stakeValidatorHash
+                , withValue (st <> Value.singleton "da8c30857834c6ae7203935b89278c532b3995245295456f993e1d24" "LQ" 424242424242)
+                , withDatum datum
+                ]
           , withMinting stakeSymbol
           ]
    in buildMintingUnsafe builder
@@ -143,14 +149,18 @@ stakeDepositWithdraw config =
           , signedWith signer
           , mint st
           , input $
-              script stakeValidatorHash
-                . withValue (st <> Value.assetClassValue (untag stake.gtClassRef) (untag stakeBefore.stakedAmount))
-                . withDatum stakeAfter
-                . withOutRef stakeRef
+              mconcat
+                [ script stakeValidatorHash
+                , withValue (st <> Value.assetClassValue (untag stake.gtClassRef) (untag stakeBefore.stakedAmount))
+                , withDatum stakeAfter
+                , withOutRef stakeRef
+                ]
           , output $
-              script stakeValidatorHash
-                . withValue (st <> Value.assetClassValue (untag stake.gtClassRef) (untag stakeAfter.stakedAmount))
-                . withDatum stakeAfter
+              mconcat
+                [ script stakeValidatorHash
+                , withValue (st <> Value.assetClassValue (untag stake.gtClassRef) (untag stakeAfter.stakedAmount))
+                , withDatum stakeAfter
+                ]
           , withSpendingOutRef stakeRef
           ]
    in buildSpendingUnsafe builder

@@ -52,6 +52,7 @@ module Test.Specification (
 import Plutarch.Api.V1 (PMintingPolicy, PValidator)
 import Plutarch.Builtin (pforgetData)
 import Plutarch.Evaluate (evalScript)
+import Plutarch.Extra.Compile (mustCompile)
 import Plutarch.Lift (PUnsafeLiftDecl (PLifted))
 import PlutusLedgerApi.V1 (Script, ScriptContext)
 import PlutusTx.IsData qualified as PlutusTx (ToData)
@@ -164,7 +165,7 @@ policySucceedsWith ::
   SpecificationTree
 policySucceedsWith tag policy redeemer scriptContext =
   scriptSucceeds tag $
-    compile
+    mustCompile
       ( policy
           # pforgetData (pconstantData redeemer)
           # pconstant scriptContext
@@ -182,7 +183,7 @@ policyFailsWith ::
   SpecificationTree
 policyFailsWith tag policy redeemer scriptContext =
   scriptFails tag $
-    compile
+    mustCompile
       ( policy
           # pforgetData (pconstantData redeemer)
           # pconstant scriptContext
@@ -203,7 +204,7 @@ validatorSucceedsWith ::
   SpecificationTree
 validatorSucceedsWith tag validator datum redeemer scriptContext =
   scriptSucceeds tag $
-    compile
+    mustCompile
       ( validator
           # pforgetData (pconstantData datum)
           # pforgetData (pconstantData redeemer)
@@ -225,7 +226,7 @@ validatorFailsWith ::
   SpecificationTree
 validatorFailsWith tag validator datum redeemer scriptContext =
   scriptFails tag $
-    compile
+    mustCompile
       ( validator
           # pforgetData (pconstantData datum)
           # pforgetData (pconstantData redeemer)

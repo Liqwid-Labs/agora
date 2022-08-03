@@ -40,18 +40,16 @@ import Agora.Proposal.Time (
  )
 import Agora.SafeMoney (GTTag)
 import Data.Tagged (Tagged (..))
-import GHC.Generics qualified as GHC
-import Generics.SOP (Generic, I (I))
+import Generics.SOP qualified as SOP
 import Plutarch.DataRepr (
   DerivePConstantViaData (..),
   PDataFields,
-  PIsDataReprInstances (PIsDataReprInstances),
  )
 import Plutarch.Extra.IsData (
   DerivePConstantViaEnum (..),
   EnumIsData (..),
+  PlutusTypeEnumData,
  )
-import Plutarch.Extra.Other (DerivePNewtype' (..))
 import Plutarch.Extra.TermCont (pletFieldsC)
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (..))
 import PlutusLedgerApi.V1 (TxOutRef)
@@ -78,7 +76,12 @@ data GovernorDatum = GovernorDatum
   -- ^ The maximum number of unfinished proposals that a stake is allowed to be
   --   associated to.
   }
-  deriving stock (Show, GHC.Generic)
+  deriving stock
+    ( -- | @since 0.1.0
+      Show
+    , -- | @since 0.1.0
+      Generic
+    )
 
 -- | @since 0.1.0
 PlutusTx.makeIsDataIndexed ''GovernorDatum [('GovernorDatum, 0)]
@@ -105,7 +108,7 @@ data GovernorRedeemer
     ( -- | @since 0.1.0
       Show
     , -- | @since 0.1.0
-      GHC.Generic
+      Generic
     , -- | @since 0.2.0
       Enum
     , -- | @since 0.2.0
@@ -113,7 +116,7 @@ data GovernorRedeemer
     )
   deriving anyclass
     ( -- | @since 0.2.0
-      Generic
+      SOP.Generic
     )
   deriving
     ( -- | @since 0.1.0
@@ -136,7 +139,12 @@ data Governor = Governor
   -- ^ Arbitrary limit for maximum amount of cosigners on a proposal.
   -- See `Agora.Proposal.proposalDatumValid`.
   }
-  deriving stock (GHC.Generic)
+  deriving stock
+    ( -- | @since 0.1.0
+      Generic
+    , -- | @since 0.2.0
+      Show
+    )
 
 --------------------------------------------------------------------------------
 
@@ -159,17 +167,13 @@ newtype PGovernorDatum (s :: S) = PGovernorDatum
   }
   deriving stock
     ( -- | @since 0.1.0
-      GHC.Generic
-    )
-  deriving anyclass
-    ( -- | @since 0.1.0
       Generic
     )
   deriving anyclass
     ( -- | @since 0.1.0
-      PIsDataRepr
+      SOP.Generic
     )
-  deriving
+  deriving anyclass
     ( -- | @since 0.1.0
       PlutusType
     , -- | @since 0.1.0
@@ -179,7 +183,10 @@ newtype PGovernorDatum (s :: S) = PGovernorDatum
     , -- | @since 0.1.0
       PEq
     )
-    via PIsDataReprInstances PGovernorDatum
+
+-- | @since 0.2.0
+instance DerivePlutusType PGovernorDatum where
+  type DPTStrat _ = PlutusTypeData
 
 -- | @since 0.1.0
 instance PUnsafeLiftDecl PGovernorDatum where type PLifted PGovernorDatum = GovernorDatum
@@ -188,29 +195,41 @@ instance PUnsafeLiftDecl PGovernorDatum where type PLifted PGovernorDatum = Gove
 deriving via (DerivePConstantViaData GovernorDatum PGovernorDatum) instance (PConstantDecl GovernorDatum)
 
 -- | @since 0.1.0
-deriving via PAsData (PIsDataReprInstances PGovernorDatum) instance PTryFrom PData (PAsData PGovernorDatum)
+deriving anyclass instance PTryFrom PData PGovernorDatum
 
 {- | Plutarch-level version of 'GovernorRedeemer'.
 
      @since 0.1.0
 -}
-newtype PGovernorRedeemer (s :: S)
-  = PGovernorRedeemer (Term s PInteger)
+data PGovernorRedeemer (s :: S)
+  = PCreateProposal
+  | PMintGATs
+  | PMutateGovernor
   deriving stock
     ( -- | @since 0.1.0
-      GHC.Generic
+      Generic
+    , -- | @since 0.2.0
+      Enum
+    , -- | @since 0.2.0
+      Bounded
     )
   deriving anyclass
     ( -- | @since 0.1.0
-      Generic
-    )
-  deriving
-    ( -- | @since 0.1.0
+      SOP.Generic
+    , -- | @since 0.1.0
       PlutusType
     , -- | @since 0.1.0
       PIsData
+    , -- | @since 0.2.0
+      PEq
     )
-    via (DerivePNewtype' PGovernorRedeemer)
+
+-- | @since 0.2.0
+instance PTryFrom PData (PAsData PGovernorRedeemer)
+
+-- | @since 0.2.0
+instance DerivePlutusType PGovernorRedeemer where
+  type DPTStrat _ = PlutusTypeEnumData
 
 -- | @since 0.1.0
 instance PUnsafeLiftDecl PGovernorRedeemer where type PLifted PGovernorRedeemer = GovernorRedeemer
@@ -255,9 +274,9 @@ pisGovernorDatumValid = phoistAcyclic $
       foldr1
         (#&&)
         [ ptraceIfFalse "thresholds valid" $
-            pisProposalThresholdsValid # datumF.proposalThresholds
+            pisProposalThresholdsValid # pfromData datumF.proposalThresholds
         , ptraceIfFalse "timings valid" $
-            pisProposalTimingConfigValid # datumF.proposalTimings
+            pisProposalTimingConfigValid # pfromData datumF.proposalTimings
         , ptraceIfFalse "time range valid" $
             pisMaxTimeRangeWidthValid # datumF.createProposalTimeRangeMaxWidth
         ]

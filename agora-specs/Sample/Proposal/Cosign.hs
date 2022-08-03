@@ -162,15 +162,19 @@ cosign ps = builder
                     else stakeDatum
              in mconcat
                   [ input $
-                      script stakeValidatorHash
-                        . withValue stakeValue
-                        . withDatum stakeDatum
-                        . withTxId stakeTxRef
-                        . withOutRef (mkStakeRef refIdx)
+                      mconcat
+                        [ script stakeValidatorHash
+                        , withValue stakeValue
+                        , withDatum stakeDatum
+                        , withTxId stakeTxRef
+                        , withOutRef (mkStakeRef refIdx)
+                        ]
                   , output $
-                      script stakeValidatorHash
-                        . withValue stakeValue
-                        . withDatum stakeOutputDatum
+                      mconcat
+                        [ script stakeValidatorHash
+                        , withValue stakeValue
+                        , withDatum stakeOutputDatum
+                        ]
                   , signedWith stakeDatum.owner
                   ]
         )
@@ -189,15 +193,19 @@ cosign ps = builder
     proposalBuilder =
       mconcat
         [ input $
-            script proposalValidatorHash
-              . withValue pst
-              . withDatum proposalInputDatum
-              . withTxId proposalTxRef
-              . withOutRef proposalRef
+            mconcat
+              [ script proposalValidatorHash
+              , withValue pst
+              , withDatum proposalInputDatum
+              , withTxId proposalTxRef
+              , withOutRef proposalRef
+              ]
         , output $
-            script proposalValidatorHash
-              . withValue (sortValue (pst <> minAda))
-              . withDatum proposalOutputDatum
+            mconcat
+              [ script proposalValidatorHash
+              , withValue (sortValue (pst <> minAda))
+              , withDatum proposalOutputDatum
+              ]
         ]
 
     validTimeRange :: POSIXTimeRange

@@ -74,6 +74,7 @@ import Agora.Utils (
   validatorHashToAddress,
   validatorHashToTokenName,
  )
+import Data.Default (def)
 import Plutarch.Api.V1 (
   PAddress,
   PCurrencySymbol,
@@ -93,15 +94,6 @@ import Plutarch.Api.V1.AssetClass (
   passetClass,
   passetClassValueOf,
  )
-import Plutarch.Extra.IsData (pmatchEnumFromData)
-import Plutarch.Extra.List (pfirstJust)
-import Plutarch.Extra.Map (
-  plookup,
-  plookup',
- )
-
---------------------------------------------------------------------------------
-
 import Plutarch.Api.V1.ScriptContext (
   pfindOutputsToAddress,
   pfindTxInByTxOutRef,
@@ -112,6 +104,12 @@ import Plutarch.Api.V1.ScriptContext (
  )
 import "liqwid-plutarch-extra" Plutarch.Api.V1.Value (phasOnlyOneTokenOfCurrencySymbol, psymbolValueOf)
 import Plutarch.Extra.Field (pletAllC)
+import Plutarch.Extra.IsData (pmatchEnumFromData)
+import Plutarch.Extra.List (pfirstJust)
+import Plutarch.Extra.Map (
+  plookup,
+  plookup',
+ )
 import Plutarch.Extra.Maybe (passertPDJust, passertPJust, pisDJust)
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
 import Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC, ptryFromC)
@@ -177,12 +175,12 @@ governorPolicy gov =
           # "Governor output not found"
             #$ pfind
           # plam
-            ( \((pfield @"value" #) . pfromData -> value) ->
+            ( \((pfield @"value" #) -> value) ->
                 psymbolValueOf # ownSymbol # value #== 1
             )
           # pfromData txInfoF.outputs
 
-    let datumHash = pfield @"datumHash" # pfromData govOutput
+    let datumHash = pfield @"datumHash" # govOutput
         datum = mustFindDatum' @PGovernorDatum # datumHash # txInfoF.datums
 
     pguardC "Governor output datum valid" $ pisGovernorDatumValid # datum
@@ -292,7 +290,7 @@ governorValidator gov =
     ownInputF <- pletFieldsC @'["address", "value"] ownInput
     let ownAddress = pfromData $ ownInputF.address
 
-    (pfromData -> (oldGovernorDatum :: Term _ PGovernorDatum), _) <- ptryFromC datum'
+    (oldGovernorDatum :: Term _ PGovernorDatum, _) <- ptryFromC datum'
     oldGovernorDatumF <- pletAllC oldGovernorDatum
 
     -- Check that GST will be returned to the governor.
@@ -314,9 +312,8 @@ governorValidator gov =
           passertPDJust # "Governor output doesn't have datum" # ownOutput.datumHash
     newGovernorDatum <-
       pletC $
-        pfromData $
-          passertPJust # "Ouput governor state datum not found"
-            #$ ptryFindDatum # outputGovernorStateDatumHash # txInfoF.datums
+        passertPJust # "Ouput governor state datum not found"
+          #$ ptryFindDatum # outputGovernorStateDatumHash # txInfoF.datums
 
     pguardC "New datum is valid" $ pisGovernorDatumValid # newGovernorDatum
 
@@ -368,9 +365,9 @@ governorValidator gov =
           pguardC "Stake input doesn't have datum" $
             pisDJust # stakeInputF.datumHash
 
-          let stakeInputDatum = mustFindDatum' @PStakeDatum # stakeInputF.datumHash # txInfoF.datums
+          let stakeInputDatum = mustFindDatum' @(PAsData PStakeDatum) # stakeInputF.datumHash # txInfoF.datums
 
-          stakeInputDatumF <- pletAllC stakeInputDatum
+          stakeInputDatumF <- pletAllC $ pto $ pfromData stakeInputDatum
 
           pguardC "Proposals created by the stake must not exceed the number stored in the governor." $
             pnumCreatedProposals # stakeInputDatumF.lockedBy
@@ -400,11 +397,11 @@ governorValidator gov =
 
           proposalOutputDatum' <-
             pletC $
-              mustFindDatum' @PProposalDatum
+              mustFindDatum' @(PAsData PProposalDatum)
                 # outputDatumHash
                 # txInfoF.datums
 
-          proposalOutputDatum <- pletAllC proposalOutputDatum'
+          proposalOutputDatum <- pletAllC $ pto $ pfromData proposalOutputDatum'
 
           let expectedStartingTime =
                 createProposalStartingTime
@@ -462,7 +459,7 @@ governorValidator gov =
                   #$ ptryFindDatum # stakeOutputDatumHash # txInfoF.datums
 
               stakeOutputLocks =
-                pfromData $ pfield @"lockedBy" # stakeOutputDatum
+                pfromData $ pfield @"lockedBy" #$ pto $ pfromData stakeOutputDatum
 
               -- The stake should be locked by the newly created proposal.
               newLock =
@@ -493,29 +490,28 @@ governorValidator gov =
           proposalInputF <-
             pletFieldsC @'["datumHash"] $
               pfield @"resolved"
-                #$ pfromData
-                $ passertPJust
-                  # "Proposal input not found"
-                    #$ pfind
-                  # plam
-                    ( \((pfield @"resolved" #) -> txOut) -> unTermCont $ do
-                        txOutF <- pletFieldsC @'["address", "value"] txOut
+                #$ passertPJust
+                # "Proposal input not found"
+                  #$ pfind
+                # plam
+                  ( \((pfield @"resolved" #) -> txOut) -> unTermCont $ do
+                      txOutF <- pletFieldsC @'["address", "value"] txOut
 
-                        pure $
-                          psymbolValueOf # ppstSymbol # txOutF.value #== 1
-                            #&& txOutF.address #== pdata pproposalValidatorAddress
-                    )
-                  # pfromData txInfoF.inputs
+                      pure $
+                        psymbolValueOf # ppstSymbol # txOutF.value #== 1
+                          #&& txOutF.address #== pdata pproposalValidatorAddress
+                  )
+                # pfromData txInfoF.inputs
 
           proposalInputDatum <-
             pletC $
-              mustFindDatum' @PProposalDatum
+              mustFindDatum' @(PAsData PProposalDatum)
                 # proposalInputF.datumHash
                 # txInfoF.datums
 
           proposalInputDatumF <-
-            pletFieldsC @'["effects", "status", "thresholds", "votes"]
-              proposalInputDatum
+            pletFieldsC @'["effects", "status", "thresholds", "votes"] $
+              pto $ pfromData proposalInputDatum
 
           -- Check that the proposal state is advanced so that a proposal cannot be executed twice.
 
@@ -552,12 +548,12 @@ governorValidator gov =
           pguardC "Output GATs is more than minted GATs" $
             plength # outputsWithGAT #== gatCount
 
-          let gatOutputValidator' :: Term s (PMap _ PValidatorHash PDatumHash :--> PAsData PTxOut :--> PBool)
+          let gatOutputValidator' :: Term s (PMap _ PValidatorHash PDatumHash :--> PTxOut :--> PBool)
               gatOutputValidator' =
                 phoistAcyclic $
                   plam
-                    ( \effects (pfromData -> output') -> unTermCont $ do
-                        output <- pletFieldsC @'["address", "datumHash"] $ output'
+                    ( \effects output' -> unTermCont $ do
+                        output <- pletFieldsC @'["address", "datumHash"] output'
 
                         let scriptHash =
                               passertPJust # "GAT receiver is not a script"
@@ -644,7 +640,7 @@ governorSTSymbolFromGovernor :: Governor -> CurrencySymbol
 governorSTSymbolFromGovernor gov = mintingPolicySymbol policy
   where
     policy :: MintingPolicy
-    policy = mkMintingPolicy $ governorPolicy gov
+    policy = mkMintingPolicy def $ governorPolicy gov
 
 {- | Get the 'AssetClass' of GST.
 
@@ -664,7 +660,7 @@ proposalSTSymbolFromGovernor :: Governor -> CurrencySymbol
 proposalSTSymbolFromGovernor gov = symbol
   where
     gstAC = governorSTAssetClassFromGovernor gov
-    policy = mkMintingPolicy $ proposalPolicy gstAC
+    policy = mkMintingPolicy def $ proposalPolicy gstAC
     symbol = mintingPolicySymbol policy
 
 {- | Get the 'AssetClass' of the proposal state token.
@@ -683,7 +679,7 @@ proposalSTAssetClassFromGovernor gov = AssetClass (symbol, "")
 stakeSTSymbolFromGovernor :: Governor -> CurrencySymbol
 stakeSTSymbolFromGovernor gov = mintingPolicySymbol policy
   where
-    policy = mkMintingPolicy $ stakePolicy gov.gtClassRef
+    policy = mkMintingPolicy def $ stakePolicy gov.gtClassRef
 
 {- | Get the 'AssetClass' of the stake token.
 
@@ -717,7 +713,7 @@ stakeValidatorHashFromGovernor :: Governor -> ValidatorHash
 stakeValidatorHashFromGovernor gov = validatorHash validator
   where
     params = stakeFromGovernor gov
-    validator = mkValidator $ stakeValidator params
+    validator = mkValidator def $ stakeValidator params
 
 {- | Get the 'Proposal' parameter, given the 'Governor' parameter.
 
@@ -738,7 +734,7 @@ proposalValidatorHashFromGovernor :: Governor -> ValidatorHash
 proposalValidatorHashFromGovernor gov = validatorHash validator
   where
     params = proposalFromGovernor gov
-    validator = mkValidator $ proposalValidator params
+    validator = mkValidator def $ proposalValidator params
 
 {- | Get the hash of 'Agora.Proposal.proposalValidator'.
 
@@ -747,7 +743,7 @@ proposalValidatorHashFromGovernor gov = validatorHash validator
 governorValidatorHash :: Governor -> ValidatorHash
 governorValidatorHash gov = validatorHash validator
   where
-    validator = mkValidator $ governorValidator gov
+    validator = mkValidator def $ governorValidator gov
 
 {- | Get the 'AuthorityToken' parameter given the 'Governor' parameter.
 
@@ -763,5 +759,5 @@ authorityTokenFromGovernor gov = AuthorityToken $ governorSTAssetClassFromGovern
 authorityTokenSymbolFromGovernor :: Governor -> CurrencySymbol
 authorityTokenSymbolFromGovernor gov = mintingPolicySymbol policy
   where
-    policy = mkMintingPolicy $ authorityTokenPolicy params
+    policy = mkMintingPolicy def $ authorityTokenPolicy params
     params = authorityTokenFromGovernor gov

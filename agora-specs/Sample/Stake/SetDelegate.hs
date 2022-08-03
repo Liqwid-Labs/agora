@@ -129,14 +129,18 @@ setDelegate ps = buildSpendingUnsafe builder
         [ txId "0b2086cbf8b6900f8cb65e012de4516cb66b5cb08a9aaba12a8b88be"
         , signedWith signer
         , input $
-            script stakeValidatorHash
-              . withValue stakeValue
-              . withDatum stakeInput
-              . withOutRef stakeRef
+            mconcat
+              [ script stakeValidatorHash
+              , withValue stakeValue
+              , withDatum stakeInput
+              , withOutRef stakeRef
+              ]
         , output $
-            script stakeValidatorHash
-              . withValue stakeValue
-              . withDatum stakeOutput
+            mconcat
+              [ script stakeValidatorHash
+              , withValue stakeValue
+              , withDatum stakeOutput
+              ]
         , withSpendingOutRef stakeRef
         ]
 

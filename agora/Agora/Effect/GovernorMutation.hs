@@ -30,8 +30,7 @@ import Agora.Governor.Scripts (
   governorSTAssetClassFromGovernor,
  )
 import Agora.Plutarch.Orphans ()
-import GHC.Generics qualified as GHC
-import Generics.SOP (Generic, I (I))
+import Generics.SOP qualified as SOP
 import Plutarch.Api.V1 (
   PTxOutRef,
   PValidator,
@@ -42,7 +41,6 @@ import "liqwid-plutarch-extra" Plutarch.Api.V1.Value (pvalueOf)
 import Plutarch.DataRepr (
   DerivePConstantViaData (..),
   PDataFields,
-  PIsDataReprInstances (PIsDataReprInstances),
  )
 import Plutarch.Extra.Maybe (
   passertPDJust,
@@ -66,8 +64,16 @@ data MutateGovernorDatum = MutateGovernorDatum
   , newDatum :: GovernorDatum
   -- ^ The new settings for the governor.
   }
-  deriving stock (Show, GHC.Generic)
-  deriving anyclass (Generic)
+  deriving stock
+    ( -- | @since 0.1.ç
+      Show
+    , -- | @since 0.1.ç
+      Generic
+    )
+  deriving anyclass
+    ( -- | @since 0.1.ç
+      SOP.Generic
+    )
 
 PlutusTx.makeIsDataIndexed ''MutateGovernorDatum [('MutateGovernorDatum, 0)]
 
@@ -89,18 +95,12 @@ newtype PMutateGovernorDatum (s :: S)
       )
   deriving stock
     ( -- | @since 0.1.0
-      GHC.Generic
-    )
-  deriving anyclass
-    ( -- | @since 0.1.0
       Generic
     )
   deriving anyclass
     ( -- | @since 0.1.0
-      PIsDataRepr
-    )
-  deriving
-    ( -- | @since 0.1.0
+      SOP.Generic
+    , -- | @since 0.1.0
       PlutusType
     , -- | @since 0.1.0
       PIsData
@@ -109,7 +109,9 @@ newtype PMutateGovernorDatum (s :: S)
     , -- | @since 0.1.0
       PEq
     )
-    via (PIsDataReprInstances PMutateGovernorDatum)
+
+instance DerivePlutusType PMutateGovernorDatum where
+  type DPTStrat _ = PlutusTypeData
 
 -- | @since 0.1.0
 instance PUnsafeLiftDecl PMutateGovernorDatum where type PLifted PMutateGovernorDatum = MutateGovernorDatum
@@ -118,7 +120,7 @@ instance PUnsafeLiftDecl PMutateGovernorDatum where type PLifted PMutateGovernor
 deriving via (DerivePConstantViaData MutateGovernorDatum PMutateGovernorDatum) instance (PConstantDecl MutateGovernorDatum)
 
 -- | @since 0.1.0
-deriving via PAsData (PIsDataReprInstances PMutateGovernorDatum) instance PTryFrom PData (PAsData PMutateGovernorDatum)
+deriving anyclass instance PTryFrom PData PMutateGovernorDatum
 
 --------------------------------------------------------------------------------
 
@@ -195,7 +197,7 @@ mutateGovernorValidator gov = makeEffect (authorityTokenSymbolFromGovernor gov) 
       plength # pfromData txInfoF.outputs #== 1
 
     let govAddress = pfield @"address" #$ govInInfo.resolved
-        govOutput' = pfromData $ phead # pfromData txInfoF.outputs
+        govOutput' = phead # pfromData txInfoF.outputs
 
     govOutput <- pletFieldsC @'["address", "value", "datumHash"] govOutput'
 
@@ -208,9 +210,8 @@ mutateGovernorValidator gov = makeEffect (authorityTokenSymbolFromGovernor gov) 
     let governorOutputDatumHash =
           passertPDJust # "Governor output doesn't have datum" # govOutput.datumHash
         governorOutputDatum =
-          pfromData @PGovernorDatum $
-            passertPJust # "Governor output datum not found"
-              #$ ptryFindDatum # governorOutputDatumHash # txInfoF.datums
+          passertPJust @PGovernorDatum # "Governor output datum not found"
+            #$ ptryFindDatum # governorOutputDatumHash # txInfoF.datums
 
     -- Ensure the output governor datum is what we want.
     pguardC "Unexpected governor datum" $ datumF.newDatum #== governorOutputDatum

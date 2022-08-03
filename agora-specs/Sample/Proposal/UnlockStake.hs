@@ -257,14 +257,18 @@ unlockStake ps =
           ( \((i, o), idx) ->
               mconcat
                 [ input $
-                    script proposalValidatorHash
-                      . withValue pst
-                      . withDatum i
-                      . withOutRef (mkProposalRef idx)
+                    mconcat
+                      [ script proposalValidatorHash
+                      , withValue pst
+                      , withDatum i
+                      , withOutRef (mkProposalRef idx)
+                      ]
                 , output $
-                    script proposalValidatorHash
-                      . withValue (sortValue $ pst <> minAda)
-                      . withDatum o
+                    mconcat
+                      [ script proposalValidatorHash
+                      , withValue (sortValue $ pst <> minAda)
+                      , withDatum o
+                      ]
                 ]
           )
           (zip pIODatums [0 ..])
@@ -285,14 +289,18 @@ unlockStake ps =
       stakes =
         mconcat
           [ input $
-              script stakeValidatorHash
-                . withValue stakeValue
-                . withDatum sInDatum
-                . withOutRef stakeRef
+              mconcat
+                [ script stakeValidatorHash
+                , withValue stakeValue
+                , withDatum sInDatum
+                , withOutRef stakeRef
+                ]
           , output $
-              script stakeValidatorHash
-                . withValue stakeValue
-                . withDatum sOutDatum
+              mconcat
+                [ script stakeValidatorHash
+                , withValue stakeValue
+                , withDatum sOutDatum
+                ]
           ]
 
       builder =

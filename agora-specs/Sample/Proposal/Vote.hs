@@ -219,23 +219,31 @@ vote params =
           , signedWith signer
           , timeRange validTimeRange
           , input $
-              script proposalValidatorHash
-                . withValue pst
-                . withDatum proposalInputDatum
-                . withOutRef proposalRef
+              mconcat
+                [ script proposalValidatorHash
+                , withValue pst
+                , withDatum proposalInputDatum
+                , withOutRef proposalRef
+                ]
           , input $
-              script stakeValidatorHash
-                . withValue stakeValue
-                . withDatum stakeInputDatum
-                . withOutRef stakeRef
+              mconcat
+                [ script stakeValidatorHash
+                , withValue stakeValue
+                , withDatum stakeInputDatum
+                , withOutRef stakeRef
+                ]
           , output $
-              script proposalValidatorHash
-                . withValue pst
-                . withDatum proposalOutputDatum
+              mconcat
+                [ script proposalValidatorHash
+                , withValue pst
+                , withDatum proposalOutputDatum
+                ]
           , output $
-              script stakeValidatorHash
-                . withValue stakeValue
-                . withDatum stakeOutputDatum
+              mconcat
+                [ script stakeValidatorHash
+                , withValue stakeValue
+                , withDatum stakeOutputDatum
+                ]
           ]
    in builder
 

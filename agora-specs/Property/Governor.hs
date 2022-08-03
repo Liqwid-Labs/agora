@@ -157,7 +157,13 @@ governorMintingProperty =
     -}
     gst = assetClassValue govAssetClass 1
     mintAmount x = mint . mconcat $ replicate x gst
-    outputToGov = output $ script govValidatorHash . withValue gst . withDatum govDatum
+    outputToGov =
+      output $
+        mconcat
+          [ script govValidatorHash
+          , withValue gst
+          , withDatum govDatum
+          ]
     referencedInput = input $ withOutRef gstUTXORef
 
     govDatum :: GovernorDatum

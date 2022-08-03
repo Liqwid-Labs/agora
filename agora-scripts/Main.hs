@@ -107,7 +107,12 @@ agoraScripts params =
 
     governorSTAssetClass :: AssetClass
     governorSTAssetClass =
-      Value.assetClass (mintingPolicySymbol $ mkMintingPolicy $ governorPolicy governor) ""
+      Value.assetClass
+        ( mintingPolicySymbol $
+            mkMintingPolicy def $
+              governorPolicy governor
+        )
+        ""
 
     proposal :: Proposal
     proposal = proposalFromGovernor governor

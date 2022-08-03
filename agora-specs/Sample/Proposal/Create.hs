@@ -302,29 +302,39 @@ createProposal ps = builder
         , ---
           timeRange $ mkTimeRange ps
         , input $
-            script govValidatorHash
-              . withValue governorValue
-              . withDatum governorInputDatum
-              . withOutRef governorRef
+            mconcat
+              [ script govValidatorHash
+              , withValue governorValue
+              , withDatum governorInputDatum
+              , withOutRef governorRef
+              ]
         , output $
-            script govValidatorHash
-              . withValue governorValue
-              . withDatum (mkGovernorOutputDatum ps)
+            mconcat
+              [ script govValidatorHash
+              , withValue governorValue
+              , withDatum (mkGovernorOutputDatum ps)
+              ]
         , ---
           input $
-            script stakeValidatorHash
-              . withValue stakeValue
-              . withDatum (mkStakeInputDatum ps)
-              . withOutRef stakeRef
+            mconcat
+              [ script stakeValidatorHash
+              , withValue stakeValue
+              , withDatum (mkStakeInputDatum ps)
+              , withOutRef stakeRef
+              ]
         , output $
-            script stakeValidatorHash
-              . withValue stakeValue
-              . withDatum (mkStakeOutputDatum ps)
+            mconcat
+              [ script stakeValidatorHash
+              , withValue stakeValue
+              , withDatum (mkStakeOutputDatum ps)
+              ]
         , ---
           output $
-            script proposalValidatorHash
-              . withValue proposalValue
-              . withDatum (mkProposalOutputDatum ps)
+            mconcat
+              [ script proposalValidatorHash
+              , withValue proposalValue
+              , withDatum (mkProposalOutputDatum ps)
+              ]
         ]
 
 --------------------------------------------------------------------------------

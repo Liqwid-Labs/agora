@@ -23,6 +23,7 @@ import Agora.Effect.TreasuryWithdrawal (
   TreasuryWithdrawalDatum (TreasuryWithdrawalDatum),
   treasuryWithdrawalValidator,
  )
+import Data.Default (def)
 import Plutarch.Api.V1 (mkValidator, validatorHash)
 import PlutusLedgerApi.V1 (
   Address (Address),
@@ -147,7 +148,7 @@ buildReceiversOutputFromDatum (TreasuryWithdrawalDatum xs _) = f <$> xs
 
 -- | Effect validator instance.
 validator :: Validator
-validator = mkValidator $ treasuryWithdrawalValidator currSymbol
+validator = mkValidator def $ treasuryWithdrawalValidator currSymbol
 
 -- | 'TokenName' that represents the hash of the 'Agora.Stake.Stake' validator.
 validatorHashTN :: TokenName

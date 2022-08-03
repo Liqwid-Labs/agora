@@ -114,7 +114,7 @@ govValidatorHash :: ValidatorHash
 govValidatorHash = governorValidatorHash governor
 
 govPolicy :: MintingPolicy
-govPolicy = mkMintingPolicy (governorPolicy governor)
+govPolicy = mkMintingPolicy def (governorPolicy governor)
 
 govSymbol :: CurrencySymbol
 govSymbol = mintingPolicySymbol govPolicy
@@ -169,12 +169,16 @@ mintGST ps = builder
         then
           mconcat
             [ input $
-                pubKey witnessPubKey
-                  . withValue witnessValue
-                  . withOutRef witnessRef
+                mconcat
+                  [ pubKey witnessPubKey
+                  , withValue witnessValue
+                  , withOutRef witnessRef
+                  ]
             , output $
-                pubKey witnessPubKey
-                  . withValue witnessValue
+                mconcat
+                  [ pubKey witnessPubKey
+                  , withValue witnessValue
+                  ]
             ]
         else mempty
 
@@ -184,11 +188,13 @@ mintGST ps = builder
       let datum =
             if ps.withGovernorDatum
               then withDatum governorOutputDatum
-              else id
+              else mempty
        in output $
-            script govValidatorHash
-              . withValue governorValue
-              . datum
+            mconcat
+              [ script govValidatorHash
+              , withValue governorValue
+              , datum
+              ]
     --
     builder =
       mconcat

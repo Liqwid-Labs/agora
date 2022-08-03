@@ -51,7 +51,7 @@ import Test.Util (datumPair, toDatumHash)
 
 -- | The effect validator instance.
 effectValidator :: Validator
-effectValidator = mkValidator $ mutateGovernorValidator governor
+effectValidator = mkValidator def $ mutateGovernorValidator governor
 
 -- | The hash of the validator instance.
 effectValidatorHash :: ValidatorHash

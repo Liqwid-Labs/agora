@@ -30,9 +30,7 @@ module Agora.Proposal.Time (
   pisMaxTimeRangeWidthValid,
 ) where
 
-import Agora.Plutarch.Orphans ()
-import GHC.Generics qualified as GHC
-import Generics.SOP (Generic, HasDatatypeInfo, I (I))
+import Generics.SOP qualified as SOP
 import Plutarch.Api.V1 (
   PExtended (PFinite),
   PInterval (PInterval),
@@ -44,7 +42,6 @@ import Plutarch.Api.V1 (
 import Plutarch.DataRepr (
   DerivePConstantViaData (..),
   PDataFields,
-  PIsDataReprInstances (..),
  )
 import Plutarch.Extra.Field (pletAllC)
 import Plutarch.Extra.TermCont (pguardC, pmatchC)
@@ -53,10 +50,9 @@ import Plutarch.Lift (
   PConstantDecl,
   PUnsafeLiftDecl (..),
  )
-import Plutarch.Numeric.Additive (AdditiveSemigroup ((+)))
 import PlutusLedgerApi.V1.Time (POSIXTime)
 import PlutusTx qualified
-import Prelude hiding ((+))
+import Prelude
 
 --------------------------------------------------------------------------------
 
@@ -67,8 +63,22 @@ import Prelude hiding ((+))
 newtype ProposalStartingTime = ProposalStartingTime
   { getProposalStartingTime :: POSIXTime
   }
-  deriving newtype (PlutusTx.ToData, PlutusTx.FromData, PlutusTx.UnsafeFromData)
-  deriving stock (Eq, Show, GHC.Generic)
+  deriving stock
+    ( -- | @since 0.1.0
+      Eq
+    , -- | @since 0.1.0
+      Show
+    , -- | @since 0.1.0
+      Generic
+    )
+  deriving newtype
+    ( -- | @since 0.1.0
+      PlutusTx.ToData
+    , -- | @since 0.1.0
+      PlutusTx.FromData
+    , -- | @since 0.1.0
+      PlutusTx.UnsafeFromData
+    )
 
 {- | Configuration of proposal timings.
 
@@ -92,9 +102,12 @@ data ProposalTimingConfig = ProposalTimingConfig
     , -- | @since 0.1.0
       Show
     , -- | @since 0.1.0
-      GHC.Generic
+      Generic
     )
-  deriving anyclass (Generic)
+  deriving anyclass
+    ( -- | @since 0.1.0
+      SOP.Generic
+    )
 
 PlutusTx.makeIsDataIndexed 'ProposalTimingConfig [('ProposalTimingConfig, 0)]
 
@@ -108,7 +121,7 @@ newtype MaxTimeRangeWidth = MaxTimeRangeWidth {getMaxWidth :: POSIXTime}
     , -- | @since 0.1.0
       Ord
     , -- | @since 0.1.0
-      GHC.Generic
+      Generic
     )
   deriving newtype
     ( -- | @since 0.1.0
@@ -154,41 +167,47 @@ data PProposalTime (s :: S) = PProposalTime
   }
   deriving stock
     ( -- | @since 0.1.0
-      GHC.Generic
+      Generic
     )
   deriving anyclass
     ( -- | @since 0.1.0
-      Generic
+      SOP.Generic
+    , -- | @since 0.1.0
+      SOP.HasDatatypeInfo
     , -- | @since 0.1.0
       PlutusType
-    , -- | @since 0.1.0
-      HasDatatypeInfo
     , -- | @since 0.1.0
       PEq
     )
 
+instance DerivePlutusType PProposalTime where
+  type DPTStrat _ = PlutusTypeScott
+
 -- | Plutarch-level version of 'ProposalStartingTime'.
 newtype PProposalStartingTime (s :: S) = PProposalStartingTime (Term s PPOSIXTime)
-  deriving
+  deriving stock
     ( -- | @since 0.1.0
+      Generic
+    )
+  deriving anyclass
+    ( -- | @since 0.1.0
+      SOP.Generic
+    , -- | @since 0.1.0
       PlutusType
     , -- | @since 0.1.0
       PIsData
     , -- | @since 0.1.0
       PEq
-    , -- | @since 0.1.0
-      POrd
     )
-    via (DerivePNewtype PProposalStartingTime PPOSIXTime)
+
+instance DerivePlutusType PProposalStartingTime where
+  type DPTStrat _ = PlutusTypeNewtype
 
 -- | @since 0.1.0
 instance PUnsafeLiftDecl PProposalStartingTime where
   type PLifted PProposalStartingTime = ProposalStartingTime
 
-deriving via
-  PAsData (DerivePNewtype PProposalStartingTime PPOSIXTime)
-  instance
-    PTryFrom PData (PAsData PProposalStartingTime)
+instance PTryFrom PData (PAsData PProposalStartingTime)
 
 -- | @since 0.1.0
 deriving via
@@ -214,28 +233,24 @@ newtype PProposalTimingConfig (s :: S) = PProposalTimingConfig
   }
   deriving stock
     ( -- | @since 0.1.0
-      GHC.Generic
-    )
-  deriving anyclass
-    ( -- | @since 0.1.0
       Generic
     )
   deriving anyclass
     ( -- | @since 0.1.0
-      PIsDataRepr
-    )
-  deriving
-    ( -- | @since 0.1.0
+      SOP.Generic
+    , -- | @since 0.1.0
       PlutusType
     , -- | @since 0.1.0
       PIsData
     , -- | @since 0.1.0
       PDataFields
     )
-    via (PIsDataReprInstances PProposalTimingConfig)
+
+instance DerivePlutusType PProposalTimingConfig where
+  type DPTStrat _ = PlutusTypeData
 
 -- | @since 0.1.0
-deriving via PAsData (PIsDataReprInstances PProposalTimingConfig) instance PTryFrom PData (PAsData PProposalTimingConfig)
+instance PTryFrom PData PProposalTimingConfig
 
 -- | @since 0.1.0
 instance PUnsafeLiftDecl PProposalTimingConfig where
@@ -250,20 +265,30 @@ deriving via
 -- | Plutarch-level version of 'MaxTimeRangeWidth'.
 newtype PMaxTimeRangeWidth (s :: S)
   = PMaxTimeRangeWidth (Term s PPOSIXTime)
-  deriving
-    ( -- | @since 0.1.0
+  deriving stock
+    ( -- | @since 0.2.0
+      Generic
+    )
+  deriving anyclass
+    ( -- | @since 0.2.0
+      SOP.Generic
+    , -- | @since 0.1.0
       PlutusType
     , -- | @since 0.1.0
       PIsData
     , -- | @since 0.1.0
       PEq
+    , -- | @since 0.2.0
+      PPartialOrd
     , -- | @since 0.1.0
       POrd
     )
-    via (DerivePNewtype PMaxTimeRangeWidth PPOSIXTime)
+
+instance DerivePlutusType PMaxTimeRangeWidth where
+  type DPTStrat _ = PlutusTypeNewtype
 
 -- | @since 0.1.0
-deriving via PAsData (DerivePNewtype PMaxTimeRangeWidth PPOSIXTime) instance PTryFrom PData (PAsData PMaxTimeRangeWidth)
+instance PTryFrom PData (PAsData PMaxTimeRangeWidth)
 
 -- | @since 0.1.0
 instance PUnsafeLiftDecl PMaxTimeRangeWidth where type PLifted PMaxTimeRangeWidth = MaxTimeRangeWidth

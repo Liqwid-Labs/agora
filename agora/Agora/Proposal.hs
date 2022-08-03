@@ -39,11 +39,11 @@ module Agora.Proposal (
   pisProposalThresholdsValid,
 ) where
 
+import Agora.Plutarch.Orphans ()
 import Agora.Proposal.Time (PProposalStartingTime, PProposalTimingConfig, ProposalStartingTime, ProposalTimingConfig)
 import Agora.SafeMoney (GTTag)
 import Data.Tagged (Tagged)
-import GHC.Generics qualified as GHC
-import Generics.SOP (Generic, I (I))
+import Generics.SOP qualified as SOP
 import Plutarch.Api.V1 (
   KeyGuarantees (Unsorted),
   PDatumHash,
@@ -52,7 +52,7 @@ import Plutarch.Api.V1 (
   PValidatorHash,
  )
 import Plutarch.Api.V1.AssocMap qualified as PAssocMap
-import Plutarch.DataRepr (DerivePConstantViaData (..), PDataFields, PIsDataReprInstances (..))
+import Plutarch.DataRepr (DerivePConstantViaData (..), PDataFields)
 import Plutarch.Extra.Comonad (pextract)
 import Plutarch.Extra.Field (pletAllC)
 import Plutarch.Extra.Function (pbuiltinUncurry)
@@ -60,13 +60,13 @@ import Plutarch.Extra.IsData (
   DerivePConstantViaDataList (..),
   DerivePConstantViaEnum (..),
   EnumIsData (..),
+  PlutusTypeEnumData,
   ProductIsData (ProductIsData),
  )
 import Plutarch.Extra.List (pfirstJust)
 import Plutarch.Extra.Map qualified as PM
 import Plutarch.Extra.Map.Unsorted qualified as PUM
 import Plutarch.Extra.Maybe (pfromJust)
-import Plutarch.Extra.Other (DerivePNewtype' (..))
 import Plutarch.Extra.TermCont (pguardC, pletC, pmatchC)
 import Plutarch.Lift (
   DerivePConstantViaNewtype (..),
@@ -92,6 +92,14 @@ import PlutusTx.AssocMap qualified as AssocMap
      @since 0.1.0
 -}
 newtype ProposalId = ProposalId {proposalTag :: Integer}
+  deriving stock
+    ( -- | @since 0.1.0
+      Eq
+    , -- | @since 0.1.0
+      Show
+    , -- | @since 0.1.0
+      Generic
+    )
   deriving newtype
     ( -- | @since 0.1.0
       PlutusTx.ToData
@@ -100,13 +108,9 @@ newtype ProposalId = ProposalId {proposalTag :: Integer}
     , -- | @since 0.1.0
       PlutusTx.UnsafeFromData
     )
-  deriving stock
-    ( -- | @since 0.1.0
-      Eq
-    , -- | @since 0.1.0
-      Show
-    , -- | @since 0.1.0
-      GHC.Generic
+  deriving anyclass
+    ( -- | @since 0.2.0
+      SOP.Generic
     )
 
 {- | Encodes a result. Typically, for a Yes/No proposal, we encode it like this:
@@ -127,7 +131,7 @@ newtype ResultTag = ResultTag {getResultTag :: Integer}
     , -- | @since 0.1.0
       Ord
     , -- | @since 0.1.0
-      GHC.Generic
+      Generic
     )
   deriving newtype
     ( -- | @since 0.1.0
@@ -136,6 +140,10 @@ newtype ResultTag = ResultTag {getResultTag :: Integer}
       PlutusTx.FromData
     , -- | @since 0.1.0
       PlutusTx.UnsafeFromData
+    )
+  deriving anyclass
+    ( -- | @since 0.2.0
+      SOP.Generic
     )
 
 {- | The "status" of the proposal. This is only useful for state transitions that
@@ -186,7 +194,7 @@ data ProposalStatus
     , -- | @since 0.1.0
       Show
     , -- | @since 0.1.0
-      GHC.Generic
+      Generic
     , -- | @since 0.2.0
       Enum
     , -- | @since 0.2.0
@@ -194,7 +202,7 @@ data ProposalStatus
     )
   deriving anyclass
     ( -- | @since 0.2.0
-      Generic
+      SOP.Generic
     )
   deriving
     ( -- | @since 0.1.0
@@ -230,9 +238,9 @@ data ProposalThresholds = ProposalThresholds
     , -- | @since 0.1.0
       Show
     , -- | @since 0.1.0
-      GHC.Generic
+      Generic
     )
-  deriving anyclass (Generic)
+  deriving anyclass (SOP.Generic)
 
 PlutusTx.makeIsDataIndexed 'ProposalThresholds [('ProposalThresholds, 0)]
 
@@ -252,19 +260,23 @@ PlutusTx.makeIsDataIndexed 'ProposalThresholds [('ProposalThresholds, 0)]
 newtype ProposalVotes = ProposalVotes
   { getProposalVotes :: AssocMap.Map ResultTag Integer
   }
-  deriving newtype
-    ( -- | @since 0.1.0
-      PlutusTx.ToData
-    , -- | @since 0.1.0
-      PlutusTx.FromData
-    )
   deriving stock
     ( -- | @since 0.1.0
       Eq
     , -- | @since 0.1.0
       Show
     , -- | @since 0.1.0
-      GHC.Generic
+      Generic
+    )
+  deriving newtype
+    ( -- | @since 0.1.0
+      PlutusTx.ToData
+    , -- | @since 0.1.0
+      PlutusTx.FromData
+    )
+  deriving anyclass
+    ( -- | @since 0.2.0
+      SOP.Generic
     )
 
 {- | Create a 'ProposalVotes' that has the same shape as the 'effects' field.
@@ -307,9 +319,12 @@ data ProposalDatum = ProposalDatum
     , -- | @since 0.1.0
       Show
     , -- | @since 0.1.0
-      GHC.Generic
+      Generic
     )
-  deriving anyclass (Generic)
+  deriving anyclass
+    ( -- | @since 0.2.0
+      SOP.Generic
+    )
   deriving
     ( -- | @since 0.1.0
       PlutusTx.ToData
@@ -367,7 +382,11 @@ data ProposalRedeemer
     , -- | @since 0.1.0
       Show
     , -- | @since 0.1.0
-      GHC.Generic
+      Generic
+    )
+  deriving anyclass
+    ( -- | @since 0.2.0
+      SOP.Generic
     )
 
 -- | @since 0.1.0
@@ -395,7 +414,11 @@ data Proposal = Proposal
     , -- | @since 0.1.0
       Eq
     , -- | @since 0.1.0
-      GHC.Generic
+      Generic
+    )
+  deriving anyclass
+    ( -- | @since 0.2.0
+      SOP.Generic
     )
 
 --------------------------------------------------------------------------------
@@ -406,19 +429,33 @@ data Proposal = Proposal
      @since 0.1.0
 -}
 newtype PResultTag (s :: S) = PResultTag (Term s PInteger)
-  deriving
-    ( -- | @since 0.1.0
+  deriving stock
+    ( -- | @since 0.2.0
+      Generic
+    )
+  deriving anyclass
+    ( -- | @since 0.2.0
+      SOP.Generic
+    , -- @since 0.1.0
       PlutusType
     , -- | @since 0.1.0
       PIsData
     , -- | @since 0.1.0
       PEq
+    , -- | @since 0.2.0
+      PPartialOrd
     , -- | @since 0.1.0
       POrd
     , -- | @since 0.2.0
       PShow
     )
-    via (DerivePNewtype PResultTag PInteger)
+
+-- | @since 0.2.0
+instance DerivePlutusType PResultTag where
+  type DPTStrat _ = PlutusTypeNewtype
+
+-- | @since 0.1.0
+instance PTryFrom PData (PAsData PResultTag)
 
 -- | @since 0.1.0
 instance PUnsafeLiftDecl PResultTag where type PLifted PResultTag = ResultTag
@@ -429,36 +466,38 @@ deriving via
   instance
     (PConstantDecl ResultTag)
 
--- | @since 0.1.0
-deriving via
-  PAsData (DerivePNewtype PResultTag PInteger)
-  instance
-    PTryFrom PData (PAsData PResultTag)
-
 {- | Plutarch-level version of 'PProposalId'.
 
      @since 0.1.0
 -}
 newtype PProposalId (s :: S) = PProposalId (Term s PInteger)
-  deriving
-    ( -- | @since 0.1.0
+  deriving stock
+    ( -- | @since 0.2.0
+      Generic
+    )
+  deriving anyclass
+    ( -- | @since 0.2.0
+      SOP.Generic
+    , -- | @since 0.1.0
       PlutusType
     , -- | @since 0.1.0
       PIsData
     , -- | @since 0.1.0
       PEq
+    , -- | @since 0.2.0
+      PPartialOrd
     , -- | @since 0.1.0
       POrd
     , -- | @since 0.2.0
       PShow
     )
-    via (DerivePNewtype PProposalId PInteger)
+
+-- | @since 0.2.0
+instance DerivePlutusType PProposalId where
+  type DPTStrat _ = PlutusTypeNewtype
 
 -- | @since 0.1.0
-deriving via
-  PAsData (DerivePNewtype PProposalId PInteger)
-  instance
-    PTryFrom PData (PAsData PProposalId)
+instance PTryFrom PData (PAsData PProposalId)
 
 -- | @since 0.1.0
 instance PUnsafeLiftDecl PProposalId where type PLifted PProposalId = ProposalId
@@ -473,30 +512,43 @@ deriving via
 
      @since 0.1.0
 -}
-newtype PProposalStatus (s :: S) = PProposalStatus (Term s PInteger)
+data PProposalStatus (s :: S)
+  = -- | @since 0.2.0
+    PDraft
+  | -- | @since 0.2.0
+    PVoting
+  | -- | @since 0.2.0
+    PLocked
+  | -- | @since 0.2.0
+    PFinished
   deriving stock
     ( -- | @since 0.1.0
-      GHC.Generic
+      Generic
+    , -- | @since 0.2.0
+      Bounded
+    , -- | @since 0.2.0
+      Enum
     )
   deriving anyclass
     ( -- | @since 0.1.0
-      Generic
-    )
-  deriving
-    ( -- | @since 0.1.0
+      SOP.Generic
+    , -- | @since 0.1.0
       PlutusType
     , -- | @since 0.1.0
       PIsData
     , -- | @since 0.1.0
       PEq
     )
-    via (DerivePNewtype' PProposalStatus)
+
+-- | @since 0.2.0
+instance DerivePlutusType PProposalStatus where
+  type DPTStrat _ = PlutusTypeEnumData
 
 -- | @since 0.1.0
 instance PUnsafeLiftDecl PProposalStatus where type PLifted PProposalStatus = ProposalStatus
 
 -- | @since 0.1.0
-deriving via PAsData (DerivePNewtype' PProposalStatus) instance PTryFrom PData (PAsData PProposalStatus)
+instance PTryFrom PData (PAsData PProposalStatus)
 
 -- | @since 0.1.0
 deriving via (DerivePConstantViaEnum ProposalStatus PProposalStatus) instance (PConstantDecl ProposalStatus)
@@ -518,31 +570,25 @@ newtype PProposalThresholds (s :: S) = PProposalThresholds
   }
   deriving stock
     ( -- | @since 0.1.0
-      GHC.Generic
-    )
-  deriving anyclass
-    ( -- | @since 0.1.0
       Generic
     )
   deriving anyclass
     ( -- | @since 0.1.0
-      PIsDataRepr
-    )
-  deriving
-    ( -- | @since 0.1.0
+      SOP.Generic
+    , -- | @since 0.1.0
       PlutusType
     , -- | @since 0.1.0
       PIsData
     , -- | @since 0.1.0
       PDataFields
     )
-    via (PIsDataReprInstances PProposalThresholds)
+
+-- | @since 0.2.0
+instance DerivePlutusType PProposalThresholds where
+  type DPTStrat _ = PlutusTypeData
 
 -- | @since 0.1.0
-deriving via
-  PAsData (PIsDataReprInstances PProposalThresholds)
-  instance
-    PTryFrom PData (PAsData PProposalThresholds)
+instance PTryFrom PData PProposalThresholds
 
 -- | @since 0.1.0
 instance PUnsafeLiftDecl PProposalThresholds where type PLifted PProposalThresholds = ProposalThresholds
@@ -559,19 +605,25 @@ deriving via
 -}
 newtype PProposalVotes (s :: S)
   = PProposalVotes (Term s (PMap 'Unsorted PResultTag PInteger))
-  deriving
-    ( -- | @since 0.1.0
+  deriving stock
+    ( -- | @since 0.2.0
+      Generic
+    )
+  deriving anyclass
+    ( -- | @since 0.2.0
+      SOP.Generic
+    , -- | @since 0.1.0
       PlutusType
     , -- | @since 0.1.0
       PIsData
     )
-    via (DerivePNewtype PProposalVotes (PMap 'Unsorted PResultTag PInteger))
+
+-- | @since 0.2.0
+instance DerivePlutusType PProposalVotes where
+  type DPTStrat _ = PlutusTypeNewtype
 
 -- | @since 0.1.0
-deriving via
-  PAsData (DerivePNewtype PProposalVotes (PMap 'Unsorted PResultTag PInteger))
-  instance
-    PTryFrom PData (PAsData PProposalVotes)
+instance PTryFrom PData (PAsData PProposalVotes)
 
 -- | @since 0.1.0
 instance PUnsafeLiftDecl PProposalVotes where type PLifted PProposalVotes = ProposalVotes
@@ -604,30 +656,24 @@ newtype PProposalDatum (s :: S) = PProposalDatum
   }
   deriving stock
     ( -- | @since 0.1.0
-      GHC.Generic
-    )
-  deriving anyclass
-    ( -- | @since 0.1.0
       Generic
     )
   deriving anyclass
     ( -- | @since 0.1.0
-      PIsDataRepr
-    )
-  deriving
-    ( -- | @since 0.1.0
+      SOP.Generic
+    , -- | @since 0.1.0
       PlutusType
     , -- | @since 0.1.0
       PIsData
     , -- | @since 0.1.0
-      PDataFields
-    , -- | @since 0.1.0
       PEq
     )
-    via (DerivePNewtype' PProposalDatum)
 
--- | @since 0.1.0
-deriving via PAsData (DerivePNewtype' PProposalDatum) instance PTryFrom PData (PAsData PProposalDatum)
+-- | @since 0.2.0
+instance DerivePlutusType PProposalDatum where
+  type DPTStrat _ = PlutusTypeNewtype
+
+instance PTryFrom PData (PAsData PProposalDatum)
 
 -- | @since 0.1.0
 instance PUnsafeLiftDecl PProposalDatum where type PLifted PProposalDatum = ProposalDatum
@@ -646,29 +692,23 @@ data PProposalRedeemer (s :: S)
   | PAdvanceProposal (Term s (PDataRecord '[]))
   deriving stock
     ( -- | @since 0.1.0
-      GHC.Generic
-    )
-  deriving anyclass
-    ( -- | @since 0.1.0
       Generic
     )
   deriving anyclass
     ( -- | @since 0.1.0
-      PIsDataRepr
-    )
-  deriving
-    ( -- | @since 0.1.0
+      SOP.Generic
+    , -- | @since 0.1.0
       PlutusType
     , -- | @since 0.1.0
       PIsData
     )
-    via PIsDataReprInstances PProposalRedeemer
+
+-- | @since 0.2.0
+instance DerivePlutusType PProposalRedeemer where
+  type DPTStrat _ = PlutusTypeData
 
 -- | @since 0.1.0
-deriving via
-  PAsData (PIsDataReprInstances PProposalRedeemer)
-  instance
-    PTryFrom PData (PAsData PProposalRedeemer)
+instance PTryFrom PData PProposalRedeemer
 
 -- | @since 0.1.0
 instance PUnsafeLiftDecl PProposalRedeemer where type PLifted PProposalRedeemer = ProposalRedeemer

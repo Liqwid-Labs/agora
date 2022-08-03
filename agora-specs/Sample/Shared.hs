@@ -141,10 +141,10 @@ governor = Governor oref gt mc
     mc = 20
 
 govPolicy :: MintingPolicy
-govPolicy = mkMintingPolicy (governorPolicy governor)
+govPolicy = mkMintingPolicy def (governorPolicy governor)
 
 govValidator :: Validator
-govValidator = mkValidator (governorValidator governor)
+govValidator = mkValidator def (governorValidator governor)
 
 govSymbol :: CurrencySymbol
 govSymbol = mintingPolicySymbol govPolicy
@@ -239,7 +239,7 @@ gatCs :: CurrencySymbol
 gatCs = "73475cb40a568e8da8a045ced110137e159f890ac4da883b6b17dc651b3a8049"
 
 trValidator :: Validator
-trValidator = mkValidator (treasuryValidator gatCs)
+trValidator = mkValidator def (treasuryValidator gatCs)
 
 -- | `ScriptCredential` used for the dummy treasury validator.
 trCredential :: Credential
@@ -251,7 +251,7 @@ gatTn = validatorHashToTokenName $ validatorHash mockTrEffect
 
 -- | Mock treasury effect script, used for testing.
 mockTrEffect :: Validator
-mockTrEffect = mkValidator $ noOpValidator gatCs
+mockTrEffect = mkValidator def $ noOpValidator gatCs
 
 -- | Mock treasury effect validator hash
 mockTrEffectHash :: ValidatorHash

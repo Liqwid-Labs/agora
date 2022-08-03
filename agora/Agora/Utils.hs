@@ -1,4 +1,5 @@
 {-# LANGUAGE QuantifiedConstraints #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
 {- |
 Module     : Agora.Utils
@@ -30,6 +31,7 @@ module Agora.Utils (
   pdnothing,
 ) where
 
+import Data.Default (Default (def))
 import Plutarch.Api.V1 (
   AmountGuarantees,
   KeyGuarantees,
@@ -139,7 +141,7 @@ pvalidatorHashToTokenName vh = pcon (PTokenName (pto vh))
      @since 0.1.0
 -}
 getMintingPolicySymbol :: ClosedTerm PMintingPolicy -> CurrencySymbol
-getMintingPolicySymbol v = mintingPolicySymbol $ mkMintingPolicy v
+getMintingPolicySymbol v = mintingPolicySymbol $ mkMintingPolicy def v
 
 {- | The entire value only contains one token of the given currency symbol.
 
@@ -159,7 +161,7 @@ hasOnlyOneTokenOfCurrencySymbol = phoistAcyclic $
 -}
 mustFindDatum' ::
   forall (datum :: PType).
-  (PIsData datum, PTryFrom PData (PAsData datum)) =>
+  (PIsData datum, PTryFrom PData datum) =>
   forall s.
   Term
     s
@@ -172,7 +174,7 @@ mustFindDatum' = phoistAcyclic $
     let dh = mustBePDJust # "Given TxOut dones't have a datum" # mdh
         dt = mustBePJust # "Datum not found in the transaction" #$ plookupTuple # dh # datums
     (d, _) <- ptryFromC $ pforgetData $ pdata dt
-    pure $ pfromData d
+    pure d
 
 {- | Extract the value stored in a PMaybe container.
      If there's no value, throw an error with the given message.

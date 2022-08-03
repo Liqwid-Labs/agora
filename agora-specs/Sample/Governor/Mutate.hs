@@ -49,7 +49,7 @@ import Sample.Shared (
   minAda,
  )
 import Test.Specification (SpecificationTree, testValidator)
-import Test.Util (CombinableBuilder, mkSpending, pubKeyHashes, sortValue, validatorHashes, withOptional)
+import Test.Util (CombinableBuilder, mkSpending, pubKeyHashes, sortValue, validatorHashes)
 
 --------------------------------------------------------------------------------
 
@@ -142,18 +142,22 @@ mkGovernorBuilder ps =
           then pubKey $ head pubKeyHashes
           else script govValidatorHash
       withGSTDatum =
-        withOptional withDatum $
+        maybe mempty withDatum $
           mkGovernorOutputDatum ps.governorOutputDatumValidity
    in mconcat
         [ input $
-            script govValidatorHash
-              . withDatum governorInputDatum
-              . withValue value
-              . withOutRef governorRef
+            mconcat
+              [ script govValidatorHash
+              , withDatum governorInputDatum
+              , withValue value
+              , withOutRef governorRef
+              ]
         , output $
-            gstOutput
-              . withGSTDatum
-              . withValue value
+            mconcat
+              [ gstOutput
+              , withGSTDatum
+              , withValue value
+              ]
         ]
 
 --------------------------------------------------------------------------------
@@ -162,7 +166,7 @@ mockEffectValidator :: ClosedTerm PValidator
 mockEffectValidator = noOpValidator authorityTokenSymbol
 
 mockEffectValidatorHash :: ValidatorHash
-mockEffectValidatorHash = validatorHash $ mkValidator mockEffectValidator
+mockEffectValidatorHash = validatorHash $ mkValidator def mockEffectValidator
 
 mkGATValue :: GATValidity -> Integer -> Value
 mkGATValue NoGAT _ = mempty
@@ -187,11 +191,15 @@ mkMockEffectBuilder ps =
    in mconcat
         [ mint burnt
         , input $
-            script mockEffectValidatorHash
-              . withValue inputValue
+            mconcat
+              [ script mockEffectValidatorHash
+              , withValue inputValue
+              ]
         , output $
-            script mockEffectValidatorHash
-              . withValue outputValue
+            mconcat
+              [ script mockEffectValidatorHash
+              , withValue outputValue
+              ]
         ]
 
 --------------------------------------------------------------------------------

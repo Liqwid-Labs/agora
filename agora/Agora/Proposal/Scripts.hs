@@ -174,12 +174,10 @@ proposalValidator proposal =
     PJust ((pfield @"resolved" #) -> txOut) <- pmatchC $ pfindTxInByTxOutRef # txOutRef # txInfoF.inputs
     txOutF <- pletFieldsC @'["address", "value"] $ txOut
 
-    (pfromData -> proposalDatum, _) <-
-      ptryFromC @(PAsData PProposalDatum) datum
-    (pfromData -> proposalRedeemer, _) <-
-      ptryFromC @(PAsData PProposalRedeemer) redeemer
+    proposalDatum <- pfromData . fst <$> ptryFromC @(PAsData PProposalDatum) datum
+    proposalRedeemer <- fst <$> ptryFromC @PProposalRedeemer redeemer
 
-    proposalF <- pletAllC proposalDatum
+    proposalF <- pletAllC $ pto proposalDatum
 
     ownAddress <- pletC $ txOutF.address
 
@@ -211,11 +209,12 @@ proposalValidator proposal =
                 -- TODO: this is highly inefficient: O(n) for every output,
                 --       Maybe we can cache the sorted datum map?
                 let datum =
-                      mustFindDatum' @PProposalDatum
-                        # inputF.datumHash
-                        # txInfoF.datums
+                      pfromData $
+                        mustFindDatum' @(PAsData PProposalDatum)
+                          # inputF.datumHash
+                          # txInfoF.datums
 
-                    proposalId = pfield @"proposalId" # datum
+                    proposalId = pfield @"proposalId" # pto datum
 
                 pure $
                   inputF.address #== ownAddress
@@ -226,19 +225,32 @@ proposalValidator proposal =
 
     proposalOut <-
       pletC $
-        mustFindDatum' @PProposalDatum
-          # (pfield @"datumHash" # ownOutput)
-          # txInfoF.datums
+        pfromData $
+          mustFindDatum' @(PAsData PProposalDatum)
+            # (pfield @"datumHash" # ownOutput)
+            # txInfoF.datums
 
     proposalUnchanged <- pletC $ proposalOut #== proposalDatum
 
     proposalOutStatus <-
       pletC $
         pfromData $
-          pfield @"status" # proposalOut
+          pfield @"status" # pto proposalOut
 
     onlyStatusChanged <-
       pletC $
+        -- Only the status of proposals is updated.
+
+        -- Only the status of proposals is updated.
+
+        -- Only the status of proposals is updated.
+
+        -- Only the status of proposals is updated.
+
+        -- Only the status of proposals is updated.
+
+        -- Only the status of proposals is updated.
+
         -- Only the status of proposals is updated.
 
         -- Only the status of proposals is updated.
@@ -263,9 +275,9 @@ proposalValidator proposal =
     stakeSTAssetClass <-
       pletC $ passetClass # pconstant stakeSym # pconstant stakeTn
 
-    filterStakeDatumHash :: Term _ (PAsData PTxOut :--> PMaybe (PAsData PDatumHash)) <-
+    filterStakeDatumHash :: Term _ (PTxOut :--> PMaybe (PAsData PDatumHash)) <-
       pletC $
-        plam $ \(pfromData -> txOut) -> unTermCont $ do
+        plam $ \txOut -> unTermCont $ do
           txOutF <- pletFieldsC @'["value", "datumHash"] txOut
           pure $
             pif
@@ -333,12 +345,11 @@ proposalValidator proposal =
                       let stake =
                             pfromData $
                               pfromJust
-                                #$ ptryFindDatum
-                                  @(PAsData PStakeDatum)
+                                #$ ptryFindDatum @(PAsData PStakeDatum)
                                 # pfromData dh
                                 # txInfoF.datums
 
-                      stakeF <- pletFieldsC @'["stakedAmount", "owner"] stake
+                      stakeF <- pletFieldsC @'["stakedAmount", "owner"] $ pto stake
 
                       PPair amount owners <- pmatchC l
 
@@ -369,14 +380,10 @@ proposalValidator proposal =
         stakeOutputHash <- pletC $ pfromData $ phead # stakeOutputDatumHashes
 
         stakeIn :: Term _ PStakeDatum <-
-          pletC $
-            pfromData $
-              pfromJust #$ ptryFindDatum # stakeInputHash # txInfoF.datums
+          pletC $ pfromData $ pfromJust #$ ptryFindDatum # stakeInputHash # txInfoF.datums
 
         stakeOut :: Term _ PStakeDatum <-
-          pletC $
-            pfromData $
-              pfromJust #$ ptryFindDatum # stakeOutputHash # txInfoF.datums
+          pletC $ pfromData $ pfromJust #$ ptryFindDatum # stakeOutputHash # txInfoF.datums
 
         stakeUnchanged <- pletC $ stakeInputHash #== stakeOutputHash
 
@@ -391,7 +398,7 @@ proposalValidator proposal =
 
         withSingleStake val =
           withSingleStake' #$ plam $ \stakeIn stakeOut stakeUnchange -> unTermCont $ do
-            stakeInF <- pletAllC stakeIn
+            stakeInF <- pletAllC $ pto stakeIn
 
             val stakeInF stakeOut stakeUnchange
 
@@ -581,7 +588,7 @@ proposalValidator proposal =
                 $ ptraceIfFalse "Proposal unchanged" proposalUnchanged
 
             -- At last, we ensure that all locks belong to this proposal will be removed.
-            stakeOutputLocks <- pletC $ pfield @"lockedBy" # stakeOut
+            stakeOutputLocks <- pletC $ pfield @"lockedBy" # pto stakeOut
 
             let templateStakeOut =
                   mkRecordConstr
@@ -662,13 +669,12 @@ proposalValidator proposal =
                       pany
                         # plam
                           ( \( (pfield @"value" #)
-                                . (pfield @"resolved" #)
-                                . pfromData ->
+                                . (pfield @"resolved" #) ->
                                 value
                               ) ->
                                 psymbolValueOf # gstSymbol # value #== 1
                           )
-                        # txInfoF.inputs
+                        # pfromData txInfoF.inputs
 
                   let toFailedState = unTermCont $ do
                         pguardC "Proposal should fail: not on time" $

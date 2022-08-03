@@ -321,14 +321,18 @@ mkProposalBuilder ps =
       value = sortValue $ minAda <> pst
    in mconcat
         [ input $
-            script proposalValidatorHash
-              . withOutRef proposalRef
-              . withDatum (mkProposalInputDatum ps)
-              . withValue value
+            mconcat
+              [ script proposalValidatorHash
+              , withOutRef proposalRef
+              , withDatum (mkProposalInputDatum ps)
+              , withValue value
+              ]
         , output $
-            script proposalValidatorHash
-              . withDatum (mkProposalOutputDatum ps)
-              . withValue value
+            mconcat
+              [ script proposalValidatorHash
+              , withDatum (mkProposalOutputDatum ps)
+              , withValue value
+              ]
         ]
 
 {- | The proposal redeemer used to spend the proposal UTXO, which is always
@@ -400,14 +404,18 @@ mkStakeBuilder ps =
          in mconcat
               [ withSig
               , input $
-                  script stakeValidatorHash
-                    . withOutRef (mkStakeRef idx)
-                    . withValue perStakeValue
-                    . withDatum i
+                  mconcat
+                    [ script stakeValidatorHash
+                    , withOutRef (mkStakeRef idx)
+                    , withValue perStakeValue
+                    , withDatum i
+                    ]
               , output $
-                  script stakeValidatorHash
-                    . withValue perStakeValue
-                    . withDatum o
+                  mconcat
+                    [ script stakeValidatorHash
+                    , withValue perStakeValue
+                    , withDatum o
+                    ]
               ]
    in mconcat $
         zipWith3
@@ -457,15 +465,19 @@ mkGovernorBuilder ps =
       value = sortValue $ gst <> minAda
    in mconcat
         [ input $
-            script govValidatorHash
-              . withValue value
-              . withOutRef governorRef
-              . withDatum governorInputDatum
+            mconcat
+              [ script govValidatorHash
+              , withValue value
+              , withOutRef governorRef
+              , withDatum governorInputDatum
+              ]
         , output $
-            script govValidatorHash
-              . withValue value
-              . withOutRef governorRef
-              . withDatum (mkGovernorOutputDatum ps)
+            mconcat
+              [ script govValidatorHash
+              , withValue value
+              , withOutRef governorRef
+              , withDatum (mkGovernorOutputDatum ps)
+              ]
         ]
 
 {- | The proposal redeemer used to spend the governor UTXO, which is always
@@ -501,9 +513,11 @@ mkAuthorityTokenBuilder (AuthorityTokenParameters es mdt invalidTokenName) =
        in mconcat
             [ mint minted
             , output $
-                script vh
-                  . maybe id withDatum mdt
-                  . withValue value
+                mconcat
+                  [ script vh
+                  , maybe mempty withDatum mdt
+                  , withValue value
+                  ]
             ]
 
 -- | The redeemer used while running the authority token policy.

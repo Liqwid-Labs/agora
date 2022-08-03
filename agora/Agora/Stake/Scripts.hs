@@ -19,9 +19,9 @@ import Agora.Utils (
   mustFindDatum',
   pdjust,
   pdnothing,
-  pmaybeData,
   pvalidatorHashToTokenName,
  )
+import Data.Default (def)
 import Data.Function (on)
 import Data.Tagged (Tagged (..), untag)
 import Plutarch.Api.V1 (
@@ -106,7 +106,11 @@ stakePolicy gtClassRef =
                     pure $
                       pif
                         (psymbolValueOf # ownSymbol # txOutF.value #== 1)
-                        ( let datum = mustFindDatum' @PStakeDatum # txOutF.datumHash # txInfoF.datums
+                        ( let datum =
+                                pfromData $
+                                  mustFindDatum' @(PAsData PStakeDatum)
+                                    # txOutF.datumHash
+                                    # txInfoF.datums
                            in pnot # (pstakeLocked # datum)
                         )
                         (pconstant False)
@@ -146,7 +150,9 @@ stakePolicy gtClassRef =
                 pletFieldsC @'["value", "address", "datumHash"] scriptOutputWithStakeST
               datumF <-
                 pletFieldsC @'["owner", "stakedAmount"] $
-                  mustFindDatum' @PStakeDatum # outputF.datumHash # txInfoF.datums
+                  pto $
+                    pfromData $
+                      mustFindDatum' @(PAsData PStakeDatum) # outputF.datumHash # txInfoF.datums
 
               let hasExpectedStake =
                     ptraceIfFalse "Stake ouput has expected amount of stake token" $
@@ -232,12 +238,12 @@ stakeValidator stake =
           ]
         txInfo
 
-    (pfromData -> stakeRedeemer, _) <- ptryFromC redeemer
+    stakeRedeemer <- fst <$> ptryFromC redeemer
 
     -- TODO: Use PTryFrom
     let stakeDatum' :: Term _ PStakeDatum
         stakeDatum' = pfromData $ punsafeCoerce datum
-    stakeDatum <- pletAllC stakeDatum'
+    stakeDatum <- pletAllC $ pto stakeDatum'
 
     PSpending txOutRef <- pmatchC $ pfromData ctx.purpose
 
@@ -253,16 +259,16 @@ stakeValidator stake =
 
     ownerSignsTransaction <- pletC $ signedBy # stakeDatum.owner
     delegateSignsTransaction <-
-      pletC $
-        pmaybeData # pconstant False
-          # plam ((signedBy #) . pdata)
-          # stakeDatum.delegatedTo
+      pletC $ pconstant False
+    -- pmaybeData # pconstant False
+    --   # plam (signedBy #)
+    --   # stakeDatum.delegatedTo
 
     stCurrencySymbol <-
       pletC $
         pconstant $
           mintingPolicySymbol $
-            mkMintingPolicy (stakePolicy stake.gtClassRef)
+            mkMintingPolicy def (stakePolicy stake.gtClassRef)
     mintedST <- pletC $ psymbolValueOf # stCurrencySymbol # txInfoF.mint
     valueSpent <- pletC $ pvalueSpent # txInfoF.inputs
     spentST <- pletC $ psymbolValueOf # stCurrencySymbol #$ valueSpent
@@ -340,10 +346,10 @@ stakeValidator stake =
                           )
                         # pfromData txInfoF.inputs
 
-                    sortTxOuts :: Term _ (PBuiltinList (PAsData PTxOut) :--> PBuiltinList (PAsData PTxOut))
+                    sortTxOuts :: Term _ (PBuiltinList PTxOut :--> PBuiltinList PTxOut)
                     sortTxOuts = phoistAcyclic $ plam (pmsortBy # plam ((#<) `on` (getDatumHash #)) #)
                       where
-                        getDatumHash :: Term _ (PAsData PTxOut :--> PDatumHash)
+                        getDatumHash :: Term _ (PTxOut :--> PDatumHash)
                         getDatumHash = phoistAcyclic $ plam ((pfromDJust #) . pfromData . (pfield @"datumHash" #))
 
                     sortedOwnInputs = sortTxOuts # ownInputs
@@ -360,13 +366,14 @@ stakeValidator stake =
                 pguardC "ST at inputs must be 1" $
                   spentST #== 1
 
-                ownOutput <- pletC $ pfromData $ phead # ownOutputs
+                ownOutput <- pletC $ phead # ownOutputs
 
                 stakeOut <-
                   pletC $
-                    mustFindDatum' @PStakeDatum
-                      # (pfield @"datumHash" # ownOutput)
-                      # txInfoF.datums
+                    pfromData $
+                      mustFindDatum' @(PAsData PStakeDatum)
+                        # (pfield @"datumHash" # ownOutput)
+                        # txInfoF.datums
 
                 ownOutputValue <-
                   pletC $
@@ -384,7 +391,7 @@ stakeValidator stake =
                             ( #stakedAmount .= stakeDatum.stakedAmount
                                 .& #owner .= stakeDatum.owner
                                 .& #delegatedTo .= stakeDatum.delegatedTo
-                                .& #lockedBy .= pfield @"lockedBy" # stakeOut
+                                .& #lockedBy .= pfield @"lockedBy" # pto stakeOut
                             )
                      in stakeOut #== templateStakeDatum
 
@@ -524,7 +531,7 @@ stakeValidator stake =
                       pguardC "Cannot delegate to the owner" $
                         pnot #$ stakeDatum.owner #== pkh
 
-                      pure $ setDelegate #$ pdjust # pkh
+                      pure $ setDelegate #$ pdjust # pdata pkh
                     ------------------------------------------------------------
 
                     PClearDelegate _ ->

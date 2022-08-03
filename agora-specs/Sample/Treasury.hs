@@ -19,7 +19,6 @@ module Sample.Treasury (
 
 import Plutarch.Context (
   MintingBuilder,
-  UTXO,
   buildMintingUnsafe,
   credential,
   input,
@@ -57,11 +56,12 @@ import Sample.Shared (
 
 baseCtxBuilder :: MintingBuilder
 baseCtxBuilder =
-  let treasury :: UTXO -> UTXO
-      treasury =
-        credential trCredential
-          . withValue minAda
-          . withTxId "73475cb40a568e8da8a045ced110137e159f890ac4da883b6b17dc651b3a8049"
+  let treasury =
+        mconcat
+          [ credential trCredential
+          , withValue minAda
+          , withTxId "73475cb40a568e8da8a045ced110137e159f890ac4da883b6b17dc651b3a8049"
+          ]
    in mconcat
         [ txId "73475cb40a568e8da8a045ced110137e159f890ac4da883b6b17dc651b3a8049"
         , signedWith signer
@@ -81,9 +81,11 @@ validCtx =
         mconcat
           [ baseCtxBuilder
           , input $
-              script mockTrEffectHash
-                . withValue (Value.singleton gatCs gatTn 1 <> minAda)
-                . withTxId "52b67b60260da3937510ad545c7f46f8d9915bd27e1082e76947fb309f913bd3"
+              mconcat
+                [ script mockTrEffectHash
+                , withValue (Value.singleton gatCs gatTn 1 <> minAda)
+                , withTxId "52b67b60260da3937510ad545c7f46f8d9915bd27e1082e76947fb309f913bd3"
+                ]
           ]
    in buildMintingUnsafe builder
 
@@ -122,8 +124,10 @@ trCtxGATNameNotAddress =
         mconcat
           [ baseCtxBuilder
           , input $
-              script wrongEffHash
-                . withValue (Value.singleton gatCs gatTn 1 <> minAda)
-                . withTxId "52b67b60260da3937510ad545c7f46f8d9915bd27e1082e76947fb309f913bd3"
+              mconcat
+                [ script wrongEffHash
+                , withValue (Value.singleton gatCs gatTn 1 <> minAda)
+                , withTxId "52b67b60260da3937510ad545c7f46f8d9915bd27e1082e76947fb309f913bd3"
+                ]
           ]
    in buildMintingUnsafe builder
