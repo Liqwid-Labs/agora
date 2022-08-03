@@ -16,7 +16,6 @@ import Agora.Stake (
   pstakeLocked,
  )
 import Agora.Utils (
-  mustBePJust,
   mustFindDatum',
   pdjust,
   pdnothing,
@@ -44,7 +43,7 @@ import Plutarch.Api.V1.ScriptContext (pfindTxInByTxOutRef, ptxSignedBy, pvalueSp
 import "liqwid-plutarch-extra" Plutarch.Api.V1.Value (pgeqByClass', pgeqBySymbol, psymbolValueOf)
 import Plutarch.Extra.Field (pletAllC)
 import Plutarch.Extra.List (pmapMaybe, pmsortBy)
-import Plutarch.Extra.Maybe (pfromDJust)
+import Plutarch.Extra.Maybe (passertPJust, pfromDJust)
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
 import Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC, ptryFromC)
 import Plutarch.Internal (punsafeCoerce)
@@ -126,7 +125,7 @@ stakePolicy gtClassRef =
           pguardC "A UTXO must exist with the correct output" $
             unTermCont $ do
               let scriptOutputWithStakeST =
-                    mustBePJust
+                    passertPJust
                       # "Output to script not found"
                         #$ pfind
                       # plam

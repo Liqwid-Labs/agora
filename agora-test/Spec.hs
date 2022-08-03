@@ -8,7 +8,6 @@ import Test.Tasty (defaultMain, testGroup)
 --------------------------------------------------------------------------------
 
 import Property.Governor qualified as Governer
-import Property.MultiSig qualified as MultiSig
 import Spec.AuthorityToken qualified as AuthorityToken
 import Spec.Effect.GovernorMutation qualified as GovernorMutation
 import Spec.Effect.TreasuryWithdrawal qualified as TreasuryWithdrawal
@@ -42,7 +41,4 @@ main = do
       , testGroup
           "Utility tests"
           Utils.tests
-      , testGroup
-          "Multisig tests"
-          MultiSig.props
       ]
