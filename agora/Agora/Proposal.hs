@@ -41,7 +41,6 @@ module Agora.Proposal (
 
 import Agora.Proposal.Time (PProposalStartingTime, PProposalTimingConfig, ProposalStartingTime, ProposalTimingConfig)
 import Agora.SafeMoney (GTTag)
-import Agora.Utils (withBuiltinPairAsData)
 import Data.Tagged (Tagged)
 import GHC.Generics qualified as GHC
 import Generics.SOP (Generic, I (I))
@@ -56,6 +55,7 @@ import Plutarch.Api.V1.AssocMap qualified as PAssocMap
 import Plutarch.DataRepr (DerivePConstantViaData (..), PDataFields, PIsDataReprInstances (..))
 import Plutarch.Extra.Comonad (pextract)
 import Plutarch.Extra.Field (pletAllC)
+import Plutarch.Extra.Function (pbuiltinUncurry)
 import Plutarch.Extra.IsData (
   DerivePConstantViaDataList (..),
   DerivePConstantViaEnum (..),
@@ -836,7 +836,7 @@ pneutralOption = phoistAcyclic $
 
         f = phoistAcyclic $
           plam $
-            withBuiltinPairAsData $ \rt el ->
+            pbuiltinUncurry $ \rt el ->
               pif
                 (PAssocMap.pnull # el)
                 (pcon $ PJust rt)
