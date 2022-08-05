@@ -57,18 +57,12 @@ PS_BRIDGE_OUTPUT_DIR := agora-purescript-bridge/
 ps_bridge:
 	cabal run exe:agora-purescript-bridge -- -o $(PS_BRIDGE_OUTPUT_DIR)
 
+BENCH_OUTPUT = "bench.csv"
 bench:
-	cabal run agora-bench
+	cabal run agora-bench -- -o $(BENCH_OUTPUT)
 
-BENCH_TMPDIR := $(shell mktemp -d)
-BENCH_TMPFILE := $(BENCH_TMPDIR)/bench.csv
 bench_check:
-	(cabal run agora-bench -- -o "$(BENCH_TMPFILE)" \
-		|| $(bench) -o "$(BENCH_TMPFILE)") >> /dev/null
-	diff bench.csv $(BENCH_TMPFILE) \
-		|| (echo "bench.csv is outdated"; exit 1)
-	# TODO: do the clean-up even if `diff` fails.
-	rm -rf $(BENCH_TMPDIR)
+	cabal -v0 new-run agora-bench | diff bench.csv -
 
 scripts:
 	cabal run agora-scripts -- -c
