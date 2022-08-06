@@ -12,7 +12,7 @@ Goals:
 Non-goals:
 
 -   Agora is not a DAO. It doesn't have tokenomics or even a token. It is simply a library for governance.
--   Agora doesn't aim to provide any primitive tools for Plutus that are not governance-specific. For this, see [plutus-extra](https://github.com/Liqwid-Labs/plutus-extra/).
+-   Agora doesn't aim to provide any primitive tools for Plutus that are not governance-specific. For this, see [liqwid-plutarch-extra](https://github.com/Liqwid-Labs/liqwid-plutarch-extra/).
 
 ## Project setup
 
