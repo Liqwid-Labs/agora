@@ -31,14 +31,12 @@ agoraTypes =
   , mkSumType (Proxy @Proposal.ProposalVotes)
   , mkSumType (Proxy @Proposal.ProposalDatum)
   , mkSumType (Proxy @Proposal.ProposalRedeemer)
-  , mkSumType (Proxy @Proposal.Proposal)
   , -- Governor
     mkSumType (Proxy @Governor.GovernorDatum)
   , mkSumType (Proxy @Governor.GovernorRedeemer)
   , mkSumType (Proxy @Governor.Governor)
   , -- Stake
-    mkSumType (Proxy @Stake.Stake)
-  , mkSumType (Proxy @Stake.ProposalLock)
+    mkSumType (Proxy @Stake.ProposalLock)
   , mkSumType (Proxy @Stake.StakeRedeemer)
   , mkSumType (Proxy @Stake.StakeDatum)
   , -- Treasury

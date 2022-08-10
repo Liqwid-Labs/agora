@@ -20,16 +20,12 @@ module Agora.Effect.GovernorMutation (
 
 import Agora.Effect (makeEffect)
 import Agora.Governor (
-  Governor,
   GovernorDatum,
   PGovernorDatum,
   pisGovernorDatumValid,
  )
-import Agora.Governor.Scripts (
-  authorityTokenSymbolFromGovernor,
-  governorSTAssetClassFromGovernor,
- )
 import Agora.Plutarch.Orphans ()
+import Agora.Scripts (AgoraScripts, authorityTokenSymbol, governorSTAssetClass)
 import Generics.SOP qualified as SOP
 import Plutarch.Api.V1 (
   PTxOutRef,
@@ -149,8 +145,11 @@ deriving anyclass instance PTryFrom PData PMutateGovernorDatum
 
      @since 0.1.0
 -}
-mutateGovernorValidator :: Governor -> ClosedTerm PValidator
-mutateGovernorValidator gov = makeEffect (authorityTokenSymbolFromGovernor gov) $
+mutateGovernorValidator ::
+  -- | Lazy precompiled scripts. This is beacuse we need the symbol of GST.
+  AgoraScripts ->
+  ClosedTerm PValidator
+mutateGovernorValidator as = makeEffect (authorityTokenSymbol as) $
   \_gatCs (datum :: Term _ PMutateGovernorDatum) _ txInfo -> unTermCont $ do
     datumF <- pletFieldsC @'["newDatum", "governorRef"] datum
     txInfoF <- pletFieldsC @'["mint", "inputs", "outputs", "datums"] txInfo
@@ -223,4 +222,4 @@ mutateGovernorValidator gov = makeEffect (authorityTokenSymbolFromGovernor gov) 
     gstValueOf :: Term s (PValue _ _ :--> PInteger)
     gstValueOf = phoistAcyclic $ plam $ \v -> pvalueOf # v # pconstant cs # pconstant tn
       where
-        AssetClass (cs, tn) = governorSTAssetClassFromGovernor gov
+        AssetClass (cs, tn) = governorSTAssetClass as

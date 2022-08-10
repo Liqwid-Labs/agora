@@ -12,33 +12,15 @@ module Agora.Governor.Scripts (
   -- * Scripts
   governorPolicy,
   governorValidator,
-
-  -- * Bridges
-  governorSTSymbolFromGovernor,
-  governorSTAssetClassFromGovernor,
-  proposalSTAssetClassFromGovernor,
-  stakeSTSymbolFromGovernor,
-  stakeFromGovernor,
-  stakeValidatorHashFromGovernor,
-  proposalFromGovernor,
-  proposalValidatorHashFromGovernor,
-  proposalSTSymbolFromGovernor,
-  stakeSTAssetClassFromGovernor,
-  governorValidatorHash,
-  authorityTokenFromGovernor,
-  authorityTokenSymbolFromGovernor,
 ) where
 
 --------------------------------------------------------------------------------
 
 import Agora.AuthorityToken (
-  AuthorityToken (..),
-  authorityTokenPolicy,
   authorityTokensValidIn,
   singleAuthorityTokenBurned,
  )
 import Agora.Governor (
-  Governor (gstOutRef, gtClassRef, maximumCosigners),
   GovernorRedeemer (..),
   PGovernorDatum (PGovernorDatum),
   pgetNextProposalId,
@@ -46,7 +28,6 @@ import Agora.Governor (
  )
 import Agora.Proposal (
   PProposalDatum (..),
-  Proposal (..),
   ProposalStatus (Draft, Locked),
   phasNeutralEffect,
   pisEffectsVotesCompatible,
@@ -54,27 +35,17 @@ import Agora.Proposal (
   pneutralOption,
   pwinner,
  )
-import Agora.Proposal.Scripts (
-  proposalPolicy,
-  proposalValidator,
- )
 import Agora.Proposal.Time (createProposalStartingTime)
+import Agora.Scripts (AgoraScripts, authorityTokenSymbol, governorSTSymbol, proposalSTSymbol, proposalValidatoHash, stakeSTSymbol)
 import Agora.Stake (
   PProposalLock (..),
   PStakeDatum (..),
-  Stake (..),
   pnumCreatedProposals,
- )
-import Agora.Stake.Scripts (
-  stakePolicy,
-  stakeValidator,
  )
 import Agora.Utils (
   mustFindDatum',
   validatorHashToAddress,
-  validatorHashToTokenName,
  )
-import Data.Default (def)
 import Plutarch.Api.V1 (
   PAddress,
   PCurrencySymbol,
@@ -85,10 +56,6 @@ import Plutarch.Api.V1 (
   PTxOut,
   PValidator,
   PValidatorHash,
-  mintingPolicySymbol,
-  mkMintingPolicy,
-  mkValidator,
-  validatorHash,
  )
 import Plutarch.Api.V1.AssetClass (
   passetClass,
@@ -110,17 +77,10 @@ import Plutarch.Extra.Map (
   plookup,
   plookup',
  )
-import Plutarch.Extra.Maybe (passertPDJust, passertPJust, pisDJust)
+import Plutarch.Extra.Maybe (passertPDJust, passertPJust, pfromJust, pisDJust)
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
 import Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC, ptryFromC)
-import PlutusLedgerApi.V1 (
-  CurrencySymbol (..),
-  MintingPolicy,
- )
-import PlutusLedgerApi.V1.Scripts (ValidatorHash (..))
-import PlutusLedgerApi.V1.Value (
-  AssetClass (..),
- )
+import PlutusLedgerApi.V1 (TxOutRef)
 
 --------------------------------------------------------------------------------
 
@@ -151,10 +111,10 @@ import PlutusLedgerApi.V1.Value (
 
   @since 0.1.0
 -}
-governorPolicy :: Governor -> ClosedTerm PMintingPolicy
-governorPolicy gov =
+governorPolicy :: TxOutRef -> ClosedTerm PMintingPolicy
+governorPolicy initialSpend =
   plam $ \_ ctx' -> unTermCont $ do
-    let oref = pconstant gov.gstOutRef
+    let oref = pconstant initialSpend
 
     PMinting ((pfield @"_0" #) -> ownSymbol) <- pmatchC (pfromData $ pfield @"purpose" # ctx')
     let ownAssetClass = passetClass # ownSymbol # pconstant ""
@@ -273,8 +233,11 @@ governorPolicy gov =
 
      @since 0.1.0
 -}
-governorValidator :: Governor -> ClosedTerm PValidator
-governorValidator gov =
+governorValidator ::
+  -- | Lazy precompiled scripts.
+  AgoraScripts ->
+  ClosedTerm PValidator
+governorValidator as =
   plam $ \datum' redeemer' ctx' -> unTermCont $ do
     ctxF <- pletAllC ctx'
 
@@ -404,7 +367,7 @@ governorValidator gov =
           proposalOutputDatum <- pletAllC $ pto $ pfromData proposalOutputDatum'
 
           let expectedStartingTime =
-                createProposalStartingTime
+                pfromJust #$ createProposalStartingTime
                   # oldGovernorDatumF.createProposalTimeRangeMaxWidth
                   # txInfoF.validRange
 
@@ -604,160 +567,23 @@ governorValidator gov =
   where
     -- The currency symbol of authority token.
     patSymbol :: Term s PCurrencySymbol
-    patSymbol = phoistAcyclic $ pconstant $ authorityTokenSymbolFromGovernor gov
+    patSymbol = pconstant $ authorityTokenSymbol as
 
     -- The currency symbol of the proposal state token.
     ppstSymbol :: Term s PCurrencySymbol
-    ppstSymbol =
-      let AssetClass (sym, _) = proposalSTAssetClassFromGovernor gov
-       in phoistAcyclic $ pconstant sym
+    ppstSymbol = pconstant $ proposalSTSymbol as
 
     -- The address of the proposal validator.
     pproposalValidatorAddress :: Term s PAddress
     pproposalValidatorAddress =
-      let vh = proposalValidatorHashFromGovernor gov
-       in phoistAcyclic $ pconstant $ validatorHashToAddress vh
+      pconstant $
+        validatorHashToAddress $
+          proposalValidatoHash as
 
     -- The currency symbol of the stake state token.
     psstSymbol :: Term s PCurrencySymbol
-    psstSymbol =
-      let sym = stakeSTSymbolFromGovernor gov
-       in phoistAcyclic $ pconstant sym
+    psstSymbol = pconstant $ stakeSTSymbol as
 
     -- The currency symbol of the governor state token.
     pgstSymbol :: Term s PCurrencySymbol
-    pgstSymbol =
-      let sym = governorSTSymbolFromGovernor gov
-       in phoistAcyclic $ pconstant sym
-
---------------------------------------------------------------------------------
-
-{- | Get the 'CurrencySymbol' of GST.
-
-     @since 0.1.0
--}
-governorSTSymbolFromGovernor :: Governor -> CurrencySymbol
-governorSTSymbolFromGovernor gov = mintingPolicySymbol policy
-  where
-    policy :: MintingPolicy
-    policy = mkMintingPolicy def $ governorPolicy gov
-
-{- | Get the 'AssetClass' of GST.
-
-     @since 0.1.0
--}
-governorSTAssetClassFromGovernor :: Governor -> AssetClass
-governorSTAssetClassFromGovernor gov = AssetClass (symbol, "")
-  where
-    symbol :: CurrencySymbol
-    symbol = governorSTSymbolFromGovernor gov
-
-{- | Get the 'CurrencySymbol' of the proposal state token.
-
-     @since 0.1.0
--}
-proposalSTSymbolFromGovernor :: Governor -> CurrencySymbol
-proposalSTSymbolFromGovernor gov = symbol
-  where
-    gstAC = governorSTAssetClassFromGovernor gov
-    policy = mkMintingPolicy def $ proposalPolicy gstAC
-    symbol = mintingPolicySymbol policy
-
-{- | Get the 'AssetClass' of the proposal state token.
-
-     @since 0.1.0
--}
-proposalSTAssetClassFromGovernor :: Governor -> AssetClass
-proposalSTAssetClassFromGovernor gov = AssetClass (symbol, "")
-  where
-    symbol = proposalSTSymbolFromGovernor gov
-
-{- | Get the 'CurrencySymbol' of the stake token/
-
-     @since 0.1.0
--}
-stakeSTSymbolFromGovernor :: Governor -> CurrencySymbol
-stakeSTSymbolFromGovernor gov = mintingPolicySymbol policy
-  where
-    policy = mkMintingPolicy def $ stakePolicy gov.gtClassRef
-
-{- | Get the 'AssetClass' of the stake token.
-
-   Note that the token is tagged with the hash of the stake validator.
-   See 'Agora.Stake.Script.stakePolicy'.
-
-    @since 0.1.0
--}
-stakeSTAssetClassFromGovernor :: Governor -> AssetClass
-stakeSTAssetClassFromGovernor gov = AssetClass (symbol, tokenName)
-  where
-    symbol = stakeSTSymbolFromGovernor gov
-
-    -- Tag with the address where the token is being sent to.
-    tokenName = validatorHashToTokenName $ stakeValidatorHashFromGovernor gov
-
-{- | Get the 'Stake' parameter, given the 'Governor' parameter.
-
-     @since 0.1.0
--}
-stakeFromGovernor :: Governor -> Stake
-stakeFromGovernor gov =
-  Stake gov.gtClassRef $
-    proposalSTAssetClassFromGovernor gov
-
-{- | Get the hash of 'Agora.Stake.Script.stakePolicy'.
-
-     @since 0.1.0
--}
-stakeValidatorHashFromGovernor :: Governor -> ValidatorHash
-stakeValidatorHashFromGovernor gov = validatorHash validator
-  where
-    params = stakeFromGovernor gov
-    validator = mkValidator def $ stakeValidator params
-
-{- | Get the 'Proposal' parameter, given the 'Governor' parameter.
-
-     @since 0.1.0
--}
-proposalFromGovernor :: Governor -> Proposal
-proposalFromGovernor gov = Proposal gstAC sstAC mc
-  where
-    gstAC = governorSTAssetClassFromGovernor gov
-    mc = gov.maximumCosigners
-    sstAC = stakeSTAssetClassFromGovernor gov
-
-{- | Get the hash of 'Agora.Proposal.proposalPolicy'.
-
-     @since 0.1.0
--}
-proposalValidatorHashFromGovernor :: Governor -> ValidatorHash
-proposalValidatorHashFromGovernor gov = validatorHash validator
-  where
-    params = proposalFromGovernor gov
-    validator = mkValidator def $ proposalValidator params
-
-{- | Get the hash of 'Agora.Proposal.proposalValidator'.
-
-     @since 0.1.0
--}
-governorValidatorHash :: Governor -> ValidatorHash
-governorValidatorHash gov = validatorHash validator
-  where
-    validator = mkValidator def $ governorValidator gov
-
-{- | Get the 'AuthorityToken' parameter given the 'Governor' parameter.
-
-     @since 0.1.0
--}
-authorityTokenFromGovernor :: Governor -> AuthorityToken
-authorityTokenFromGovernor gov = AuthorityToken $ governorSTAssetClassFromGovernor gov
-
-{- | Get the 'CurrencySymbol' of the authority token.
-
-     @since 0.1.0
--}
-authorityTokenSymbolFromGovernor :: Governor -> CurrencySymbol
-authorityTokenSymbolFromGovernor gov = mintingPolicySymbol policy
-  where
-    policy = mkMintingPolicy def $ authorityTokenPolicy params
-    params = authorityTokenFromGovernor gov
+    pgstSymbol = pconstant $ governorSTSymbol as

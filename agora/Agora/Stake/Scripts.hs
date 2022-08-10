@@ -8,20 +8,17 @@ Plutus Scripts for Stakes.
 module Agora.Stake.Scripts (stakePolicy, stakeValidator) where
 
 import Agora.SafeMoney (GTTag)
+import Agora.Scripts (AgoraScripts, proposalSTAssetClass, stakeSTSymbol)
 import Agora.Stake (
   PStakeDatum (PStakeDatum),
   PStakeRedeemer (..),
-  Stake (gtClassRef, proposalSTClass),
   StakeRedeemer (WitnessStake),
   pstakeLocked,
  )
 import Agora.Utils (
   mustFindDatum',
-  pdjust,
-  pdnothing,
   pvalidatorHashToTokenName,
  )
-import Data.Default (def)
 import Data.Function (on)
 import Data.Tagged (Tagged (..), untag)
 import Plutarch.Api.V1 (
@@ -35,18 +32,15 @@ import Plutarch.Api.V1 (
   PTxOut,
   PValidator,
   PValue,
-  mintingPolicySymbol,
-  mkMintingPolicy,
  )
 import Plutarch.Api.V1.AssetClass (passetClass, passetClassValueOf, pvalueOf)
 import Plutarch.Api.V1.ScriptContext (pfindTxInByTxOutRef, ptxSignedBy, pvalueSpent)
 import "liqwid-plutarch-extra" Plutarch.Api.V1.Value (pgeqByClass', pgeqBySymbol, psymbolValueOf)
 import Plutarch.Extra.Field (pletAllC)
 import Plutarch.Extra.List (pmapMaybe, pmsortBy)
-import Plutarch.Extra.Maybe (passertPJust, pfromDJust)
+import Plutarch.Extra.Maybe (passertPJust, pdjust, pdnothing, pfromDJust, pmaybeData)
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
 import Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC, ptryFromC)
-import Plutarch.Internal (punsafeCoerce)
 import Plutarch.Numeric.Additive (AdditiveMonoid (zero), AdditiveSemigroup ((+)))
 import Plutarch.SafeMoney (
   pdiscreteValue',
@@ -223,8 +217,13 @@ stakePolicy gtClassRef =
 
      @since 0.1.0
 -}
-stakeValidator :: Stake -> ClosedTerm PValidator
-stakeValidator stake =
+stakeValidator ::
+  -- | Lazy precompiled scripts.
+  AgoraScripts ->
+  -- | See 'Agora.Governor.Governor.gtClassRef'.
+  Tagged GTTag AssetClass ->
+  ClosedTerm PValidator
+stakeValidator as gtClassRef =
   plam $ \datum redeemer ctx' -> unTermCont $ do
     ctx <- pletFieldsC @'["txInfo", "purpose"] ctx'
     txInfo <- pletC $ pfromData ctx.txInfo
@@ -240,9 +239,7 @@ stakeValidator stake =
 
     stakeRedeemer <- fst <$> ptryFromC redeemer
 
-    -- TODO: Use PTryFrom
-    let stakeDatum' :: Term _ PStakeDatum
-        stakeDatum' = pfromData $ punsafeCoerce datum
+    stakeDatum' <- pfromData . fst <$> ptryFromC datum
     stakeDatum <- pletAllC $ pto stakeDatum'
 
     PSpending txOutRef <- pmatchC $ pfromData ctx.purpose
@@ -258,17 +255,14 @@ stakeValidator stake =
     signedBy <- pletC $ ptxSignedBy # txInfoF.signatories
 
     ownerSignsTransaction <- pletC $ signedBy # stakeDatum.owner
-    delegateSignsTransaction <-
-      pletC $ pconstant False
-    -- pmaybeData # pconstant False
-    --   # plam (signedBy #)
-    --   # stakeDatum.delegatedTo
 
-    stCurrencySymbol <-
+    delegateSignsTransaction <-
       pletC $
-        pconstant $
-          mintingPolicySymbol $
-            mkMintingPolicy def (stakePolicy stake.gtClassRef)
+        pmaybeData # pconstant False
+          # signedBy
+          # stakeDatum.delegatedTo
+
+    stCurrencySymbol <- pletC $ pconstant $ stakeSTSymbol as
     mintedST <- pletC $ psymbolValueOf # stCurrencySymbol # txInfoF.mint
     valueSpent <- pletC $ pvalueSpent # txInfoF.inputs
     spentST <- pletC $ psymbolValueOf # stCurrencySymbol #$ valueSpent
@@ -294,7 +288,7 @@ stakeValidator stake =
         -- Handle redeemers that require own stake output.
 
         _ -> unTermCont $ do
-          let AssetClass (propCs, propTn) = stake.proposalSTClass
+          let AssetClass (propCs, propTn) = proposalSTAssetClass as
               proposalSTClass = passetClass # pconstant propCs # pconstant propTn
               spentProposalST = passetClassValueOf # valueSpent # proposalSTClass
 
@@ -496,7 +490,7 @@ stakeValidator stake =
                               datumCorrect = stakeOut #== expectedDatum
 
                           let valueDelta :: Term _ (PValue _ 'Positive)
-                              valueDelta = pdiscreteValue' stake.gtClassRef # delta
+                              valueDelta = pdiscreteValue' gtClassRef # delta
 
                               expectedValue =
                                 resolvedF.value <> valueDelta
@@ -507,7 +501,7 @@ stakeValidator stake =
                                   [ pgeqByClass' (AssetClass ("", ""))
                                       # ownOutputValue
                                       # expectedValue
-                                  , pgeqByClass' (untag stake.gtClassRef)
+                                  , pgeqByClass' (untag gtClassRef)
                                       # ownOutputValue
                                       # expectedValue
                                   , pgeqBySymbol

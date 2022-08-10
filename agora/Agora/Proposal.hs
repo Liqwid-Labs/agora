@@ -9,7 +9,8 @@ Proposal scripts encoding effects that operate on the system.
 -}
 module Agora.Proposal (
   -- * Haskell-land
-  Proposal (..),
+
+  -- Proposal (..),
   ProposalDatum (..),
   ProposalRedeemer (..),
   ProposalStatus (..),
@@ -76,7 +77,6 @@ import Plutarch.Lift (
 import Plutarch.SafeMoney (PDiscrete (..))
 import Plutarch.Show (PShow (..))
 import PlutusLedgerApi.V1 (DatumHash, PubKeyHash, ValidatorHash)
-import PlutusLedgerApi.V1.Value (AssetClass)
 import PlutusTx qualified
 import PlutusTx.AssocMap qualified as AssocMap
 
@@ -397,29 +397,6 @@ PlutusTx.makeIsDataIndexed
   , ('Unlock, 2)
   , ('AdvanceProposal, 3)
   ]
-
-{- | Parameters that identify the Proposal validator script.
-
-     @since 0.1.0
--}
-data Proposal = Proposal
-  { governorSTAssetClass :: AssetClass
-  , stakeSTAssetClass :: AssetClass
-  , maximumCosigners :: Integer
-  -- ^ Arbitrary limit for maximum amount of cosigners on a proposal.
-  }
-  deriving stock
-    ( -- | @since 0.1.0
-      Show
-    , -- | @since 0.1.0
-      Eq
-    , -- | @since 0.1.0
-      Generic
-    )
-  deriving anyclass
-    ( -- | @since 0.2.0
-      SOP.Generic
-    )
 
 --------------------------------------------------------------------------------
 -- Plutarch-land

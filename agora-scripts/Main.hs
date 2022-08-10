@@ -8,16 +8,11 @@
 -}
 module Main (main) where
 
-import Agora.AuthorityToken (AuthorityToken, authorityTokenPolicy)
-import Agora.Governor (Governor (Governor))
-import Agora.Governor qualified as Governor
-import Agora.Governor.Scripts (authorityTokenFromGovernor, authorityTokenSymbolFromGovernor, governorPolicy, governorValidator, proposalFromGovernor, stakeFromGovernor)
-import Agora.Proposal (Proposal)
-import Agora.Proposal.Scripts (proposalPolicy, proposalValidator)
+import Agora.Bootstrap qualified as Bootstrap
+import Agora.Governor (Governor (..))
 import Agora.SafeMoney (GTTag)
-import Agora.Stake (Stake)
-import Agora.Stake.Scripts (stakePolicy, stakeValidator)
-import Agora.Treasury (treasuryValidator)
+import Agora.Scripts qualified as Scripts
+import Agora.Utils (CompiledMintingPolicy (..), CompiledValidator (..))
 import Data.Aeson qualified as Aeson
 import Data.Default (def)
 import Data.Function ((&))
@@ -25,13 +20,16 @@ import Data.Tagged (Tagged)
 import Data.Text (Text)
 import Development.GitRev (gitBranch, gitHash)
 import GHC.Generics qualified as GHC
-import Plutarch.Api.V1 (mintingPolicySymbol, mkMintingPolicy)
-import PlutusLedgerApi.V1 (TxOutRef)
-import PlutusLedgerApi.V1.Value (AssetClass, CurrencySymbol)
-import PlutusLedgerApi.V1.Value qualified as Value
+import Plutarch (Config (..), TracingMode (DoTracing))
+import PlutusLedgerApi.V1 (
+  MintingPolicy (getMintingPolicy),
+  TxOutRef,
+  Validator (getValidator),
+ )
+import PlutusLedgerApi.V1.Value (AssetClass)
 import ScriptExport.API (runServer)
 import ScriptExport.Options (parseOptions)
-import ScriptExport.ScriptInfo (ScriptInfo, mkPolicyInfo, mkValidatorInfo)
+import ScriptExport.ScriptInfo (ScriptInfo (..), mkPolicyInfo, mkScriptInfo, mkValidatorInfo)
 import ScriptExport.Types (Builders, insertBuilder)
 
 main :: IO ()
@@ -81,44 +79,23 @@ builders =
 agoraScripts :: ScriptParams -> AgoraScripts
 agoraScripts params =
   AgoraScripts
-    { governorPolicyInfo = mkPolicyInfo (governorPolicy governor)
-    , governorValidatorInfo = mkValidatorInfo (governorValidator governor)
-    , stakePolicyInfo = mkPolicyInfo (stakePolicy params.gtClassRef)
-    , stakeValidatorInfo = mkValidatorInfo (stakeValidator stake)
-    , proposalPolicyInfo = mkPolicyInfo (proposalPolicy governorSTAssetClass)
-    , proposalValidatorInfo = mkValidatorInfo (proposalValidator proposal)
-    , treasuryValidatorInfo = mkValidatorInfo (treasuryValidator authorityTokenSymbol)
-    , authorityTokenPolicyInfo = mkPolicyInfo (authorityTokenPolicy authorityToken)
+    { governorPolicyInfo = mkPolicyInfo' scripts.compiledGovernorPolicy
+    , governorValidatorInfo = mkValidatorInfo' scripts.compiledGovernorValidator
+    , stakePolicyInfo = mkPolicyInfo' scripts.compiledStakePolicy
+    , stakeValidatorInfo = mkValidatorInfo' scripts.compiledStakeValidator
+    , proposalPolicyInfo = mkPolicyInfo' scripts.compiledProposalPolicy
+    , proposalValidatorInfo = mkValidatorInfo' scripts.compiledProposalValidator
+    , treasuryValidatorInfo = mkValidatorInfo' scripts.compiledTreasuryValidator
+    , authorityTokenPolicyInfo = mkPolicyInfo' scripts.compiledAuthorityTokenPolicy
     }
   where
-    governor :: Governor
     governor =
-      Governor
-        { Governor.gstOutRef = params.governorInitialSpend
-        , Governor.gtClassRef = params.gtClassRef
-        , Governor.maximumCosigners = params.maximumCosigners
-        }
+      Agora.Governor.Governor
+        params.governorInitialSpend
+        params.gtClassRef
+        params.maximumCosigners
 
-    authorityToken :: AuthorityToken
-    authorityToken = authorityTokenFromGovernor governor
-
-    authorityTokenSymbol :: CurrencySymbol
-    authorityTokenSymbol = authorityTokenSymbolFromGovernor governor
-
-    governorSTAssetClass :: AssetClass
-    governorSTAssetClass =
-      Value.assetClass
-        ( mintingPolicySymbol $
-            mkMintingPolicy def $
-              governorPolicy governor
-        )
-        ""
-
-    proposal :: Proposal
-    proposal = proposalFromGovernor governor
-
-    stake :: Stake
-    stake = stakeFromGovernor governor
+    scripts = Bootstrap.agoraScripts plutarchConfig governor
 
 {- | Params required for creating script export.
 
@@ -162,3 +139,26 @@ data AgoraScripts = AgoraScripts
     , -- | @since 0.2.0
       GHC.Generic
     )
+
+{- | Default plutarch configuration for compiling scripts.
+
+     TODO: we should have an option to control this.
+
+     @since 0.2.0
+-}
+plutarchConfig :: Config
+plutarchConfig = Config {tracingMode = DoTracing}
+
+{- | Turn a precompiled minting policy to a 'ScriptInfo'.
+
+     @since 0.2.0
+-}
+mkPolicyInfo' :: forall redeemer. CompiledMintingPolicy redeemer -> ScriptInfo
+mkPolicyInfo' = mkScriptInfo . getMintingPolicy . getCompiledMintingPolicy
+
+{- | Turn a precompiled validator to a 'ScriptInfo'.
+
+     @since 0.2.0
+-}
+mkValidatorInfo' :: forall redeemer datum. CompiledValidator datum redeemer -> ScriptInfo
+mkValidatorInfo' = mkScriptInfo . getValidator . getCompiledValidator

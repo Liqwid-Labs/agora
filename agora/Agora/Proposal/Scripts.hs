@@ -14,7 +14,6 @@ import Agora.Proposal (
   PProposalDatum (PProposalDatum),
   PProposalRedeemer (..),
   PProposalVotes (PProposalVotes),
-  Proposal (..),
   ProposalStatus (..),
   pretractVotes,
   pwinner',
@@ -26,6 +25,7 @@ import Agora.Proposal.Time (
   isLockingPeriod,
   isVotingPeriod,
  )
+import Agora.Scripts (AgoraScripts, governorSTSymbol, proposalSTSymbol, stakeSTAssetClass)
 import Agora.Stake (
   PProposalLock (..),
   PStakeDatum (..),
@@ -37,7 +37,6 @@ import Agora.Stake (
   pisVoter,
  )
 import Agora.Utils (
-  getMintingPolicySymbol,
   mustFindDatum',
   pltAsData,
  )
@@ -75,7 +74,7 @@ import Plutarch.Extra.TermCont (
  )
 import Plutarch.SafeMoney (PDiscrete (..))
 import Plutarch.Unsafe (punsafeCoerce)
-import PlutusLedgerApi.V1.Value (AssetClass (AssetClass, unAssetClass))
+import PlutusLedgerApi.V1.Value (AssetClass (AssetClass))
 
 {- | Policy for Proposals.
 
@@ -152,8 +151,13 @@ proposalPolicy (AssetClass (govCs, govTn)) =
 
      @since 0.1.0
 -}
-proposalValidator :: Proposal -> ClosedTerm PValidator
-proposalValidator proposal =
+proposalValidator ::
+  -- | Lazy precompiled scripts.
+  AgoraScripts ->
+  -- | See 'Agora.Governor.Governor.maximumCosigners'.
+  Integer ->
+  ClosedTerm PValidator
+proposalValidator as maximumCosigners =
   plam $ \datum redeemer ctx' -> unTermCont $ do
     PScriptContext ctx' <- pmatchC ctx'
     ctx <- pletFieldsC @'["txInfo", "purpose"] ctx'
@@ -185,8 +189,7 @@ proposalValidator proposal =
 
     currentStatus <- pletC $ pfromData $ proposalF.status
 
-    let stCurrencySymbol =
-          pconstant $ getMintingPolicySymbol (proposalPolicy proposal.governorSTAssetClass)
+    let stCurrencySymbol = pconstant $ proposalSTSymbol as
 
     signedBy <- pletC $ ptxSignedBy # txInfoF.signatories
 
@@ -240,20 +243,6 @@ proposalValidator proposal =
     onlyStatusChanged <-
       pletC $
         -- Only the status of proposals is updated.
-
-        -- Only the status of proposals is updated.
-
-        -- Only the status of proposals is updated.
-
-        -- Only the status of proposals is updated.
-
-        -- Only the status of proposals is updated.
-
-        -- Only the status of proposals is updated.
-
-        -- Only the status of proposals is updated.
-
-        -- Only the status of proposals is updated.
         proposalOut
           #== mkRecordConstr
             PProposalDatum
@@ -271,7 +260,7 @@ proposalValidator proposal =
 
     -- Find the stake inputs/outputs by SST.
 
-    let AssetClass (stakeSym, stakeTn) = proposal.stakeSTAssetClass
+    let AssetClass (stakeSym, stakeTn) = stakeSTAssetClass as
     stakeSTAssetClass <-
       pletC $ passetClass # pconstant stakeSym # pconstant stakeTn
 
@@ -421,7 +410,7 @@ proposalValidator proposal =
                   # proposalF.cosigners
 
             pguardC "Less cosigners than maximum limit" $
-              plength # updatedSigs #< pconstant proposal.maximumCosigners
+              plength # updatedSigs #< pconstant maximumCosigners
 
             pguardC "Cosigners are unique" $
               pisUniq' # updatedSigs
@@ -456,6 +445,7 @@ proposalValidator proposal =
             pguardC "Proposal time should be wthin the voting period" $
               isVotingPeriod # proposalF.timingConfig
                 # proposalF.startingTime
+                #$ pfromJust
                 # currentTime
 
             -- Ensure the transaction is voting to a valid 'ResultTag'(outcome).
@@ -610,8 +600,9 @@ proposalValidator proposal =
           ----------------------------------------------------------------------
 
           PAdvanceProposal _ ->
-            let fromDraft = withMultipleStakes $ \totalStakedAmount sortedStakeOwners ->
-                  pmatchC (isDraftPeriod # proposalF.timingConfig # proposalF.startingTime # currentTime) >>= \case
+            let currentTime' = pfromJust # currentTime
+                fromDraft = withMultipleStakes $ \totalStakedAmount sortedStakeOwners ->
+                  pmatchC (isDraftPeriod # proposalF.timingConfig # proposalF.startingTime # currentTime') >>= \case
                     PTrue -> do
                       pguardC "More cosigns than minimum amount" $
                         punsafeCoerce (pfromData thresholdsF.vote) #< totalStakedAmount
@@ -636,9 +627,9 @@ proposalValidator proposal =
                     "Only status changes in the output proposal"
                     onlyStatusChanged
 
-                  inVotingPeriod <- pletC $ isVotingPeriod # proposalF.timingConfig # proposalF.startingTime # currentTime
-                  inLockedPeriod <- pletC $ isLockingPeriod # proposalF.timingConfig # proposalF.startingTime # currentTime
-                  inExecutionPeriod <- pletC $ isExecutionPeriod # proposalF.timingConfig # proposalF.startingTime # currentTime
+                  inVotingPeriod <- pletC $ isVotingPeriod # proposalF.timingConfig # proposalF.startingTime # currentTime'
+                  inLockedPeriod <- pletC $ isLockingPeriod # proposalF.timingConfig # proposalF.startingTime # currentTime'
+                  inExecutionPeriod <- pletC $ isExecutionPeriod # proposalF.timingConfig # proposalF.startingTime # currentTime'
 
                   proposalStatus <- pletC $ pto $ pfromData proposalF.status
 
@@ -659,10 +650,7 @@ proposalValidator proposal =
                   pguardC "Cannot advance ahead of time" notTooEarly
                   pguardC "Finished proposals cannot be advanced" $ pnot # isFinished
 
-                  let gstSymbol =
-                        pconstant $
-                          fst $
-                            unAssetClass proposal.governorSTAssetClass
+                  let gstSymbol = pconstant $ governorSTSymbol as
 
                   gstMoved <-
                     pletC $

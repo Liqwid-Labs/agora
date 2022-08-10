@@ -23,7 +23,7 @@ import PlutusLedgerApi.V1.Value (CurrencySymbol)
 -}
 makeEffect ::
   forall (datum :: PType).
-  (PTryFrom PData datum) =>
+  (PTryFrom PData datum, PIsData datum) =>
   CurrencySymbol ->
   (forall (s :: S). Term s PCurrencySymbol -> Term s datum -> Term s PTxOutRef -> Term s (PAsData PTxInfo) -> Term s POpaque) ->
   ClosedTerm PValidator

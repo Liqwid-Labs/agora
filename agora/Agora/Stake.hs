@@ -11,7 +11,6 @@ module Agora.Stake (
   -- * Haskell-land
   StakeDatum (..),
   StakeRedeemer (..),
-  Stake (..),
   ProposalLock (..),
 
   -- * Plutarch-land
@@ -54,25 +53,10 @@ import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (..))
 import Plutarch.SafeMoney (PDiscrete)
 import Plutarch.Show (PShow (..))
 import PlutusLedgerApi.V1 (PubKeyHash)
-import PlutusLedgerApi.V1.Value (AssetClass)
 import PlutusTx qualified
 import Prelude hiding (Num (..))
 
 --------------------------------------------------------------------------------
-
-{- | Parameters for creating Stake scripts.
-
-     @since 0.1.0
--}
-data Stake = Stake
-  { gtClassRef :: Tagged GTTag AssetClass
-  -- ^ Used when inlining the AssetClass of a 'PDiscrete' in the script code.
-  , proposalSTClass :: AssetClass
-  }
-  deriving stock
-    ( -- | @since 0.1.0
-      Generic
-    )
 
 {- | Locks that are stored in the stake datums for various purposes.
 
