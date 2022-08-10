@@ -31,7 +31,6 @@ module Agora.Proposal.Time (
 ) where
 
 import Control.Composition ((.*))
-import Generics.SOP qualified as SOP
 import Plutarch.Api.V1 (
   PExtended (PFinite),
   PInterval (PInterval),
@@ -107,10 +106,6 @@ data ProposalTimingConfig = ProposalTimingConfig
     , -- | @since 0.1.0
       Generic
     )
-  deriving anyclass
-    ( -- | @since 0.1.0
-      SOP.Generic
-    )
 
 PlutusTx.makeIsDataIndexed 'ProposalTimingConfig [('ProposalTimingConfig, 0)]
 
@@ -174,10 +169,6 @@ data PProposalTime (s :: S) = PProposalTime
     )
   deriving anyclass
     ( -- | @since 0.1.0
-      SOP.Generic
-    , -- | @since 0.1.0
-      SOP.HasDatatypeInfo
-    , -- | @since 0.1.0
       PlutusType
     , -- | @since 0.1.0
       PEq
@@ -194,8 +185,6 @@ newtype PProposalStartingTime (s :: S) = PProposalStartingTime (Term s PPOSIXTim
     )
   deriving anyclass
     ( -- | @since 0.1.0
-      SOP.Generic
-    , -- | @since 0.1.0
       PlutusType
     , -- | @since 0.1.0
       PIsData
@@ -240,8 +229,6 @@ newtype PProposalTimingConfig (s :: S) = PProposalTimingConfig
     )
   deriving anyclass
     ( -- | @since 0.1.0
-      SOP.Generic
-    , -- | @since 0.1.0
       PlutusType
     , -- | @since 0.1.0
       PIsData
@@ -273,9 +260,7 @@ newtype PMaxTimeRangeWidth (s :: S)
       Generic
     )
   deriving anyclass
-    ( -- | @since 0.2.0
-      SOP.Generic
-    , -- | @since 0.1.0
+    ( -- | @since 0.1.0
       PlutusType
     , -- | @since 0.1.0
       PIsData

@@ -8,7 +8,14 @@ Helpers for constructing effects.
 module Agora.Effect (makeEffect) where
 
 import Agora.AuthorityToken (singleAuthorityTokenBurned)
-import Plutarch.Api.V1 (PCurrencySymbol, PScriptPurpose (PSpending), PTxInfo, PTxOutRef, PValidator, PValue)
+import Plutarch.Api.V1 (
+  PCurrencySymbol,
+  PScriptPurpose (PSpending),
+  PTxInfo,
+  PTxOutRef,
+  PValidator,
+  PValue,
+ )
 import Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC, ptryFromC)
 import Plutarch.TryFrom ()
 import PlutusLedgerApi.V1.Value (CurrencySymbol)

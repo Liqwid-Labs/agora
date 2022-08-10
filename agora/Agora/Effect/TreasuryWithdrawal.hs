@@ -15,7 +15,6 @@ module Agora.Effect.TreasuryWithdrawal (
 
 import Agora.Effect (makeEffect)
 import Agora.Plutarch.Orphans ()
-import Generics.SOP qualified as SOP
 import Plutarch.Api.V1 (
   AmountGuarantees (Positive),
   KeyGuarantees (Sorted),
@@ -57,10 +56,6 @@ data TreasuryWithdrawalDatum = TreasuryWithdrawalDatum
     , -- | @since 0.1.0
       Generic
     )
-  deriving anyclass
-    ( -- | @since 0.1.0
-      SOP.Generic
-    )
 
 -- | @since 0.1.0
 PlutusTx.makeLift ''TreasuryWithdrawalDatum
@@ -88,8 +83,6 @@ newtype PTreasuryWithdrawalDatum (s :: S)
     )
   deriving anyclass
     ( -- | @since 0.1.0
-      SOP.Generic
-    , -- | @since 0.1.0
       PlutusType
     , -- | @since 0.1.0
       PIsData

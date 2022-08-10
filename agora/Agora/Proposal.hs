@@ -108,10 +108,6 @@ newtype ProposalId = ProposalId {proposalTag :: Integer}
     , -- | @since 0.1.0
       PlutusTx.UnsafeFromData
     )
-  deriving anyclass
-    ( -- | @since 0.2.0
-      SOP.Generic
-    )
 
 {- | Encodes a result. Typically, for a Yes/No proposal, we encode it like this:
 
@@ -140,10 +136,6 @@ newtype ResultTag = ResultTag {getResultTag :: Integer}
       PlutusTx.FromData
     , -- | @since 0.1.0
       PlutusTx.UnsafeFromData
-    )
-  deriving anyclass
-    ( -- | @since 0.2.0
-      SOP.Generic
     )
 
 {- | The "status" of the proposal. This is only useful for state transitions that
@@ -240,7 +232,6 @@ data ProposalThresholds = ProposalThresholds
     , -- | @since 0.1.0
       Generic
     )
-  deriving anyclass (SOP.Generic)
 
 PlutusTx.makeIsDataIndexed 'ProposalThresholds [('ProposalThresholds, 0)]
 
@@ -273,10 +264,6 @@ newtype ProposalVotes = ProposalVotes
       PlutusTx.ToData
     , -- | @since 0.1.0
       PlutusTx.FromData
-    )
-  deriving anyclass
-    ( -- | @since 0.2.0
-      SOP.Generic
     )
 
 {- | Create a 'ProposalVotes' that has the same shape as the 'effects' field.
@@ -384,10 +371,6 @@ data ProposalRedeemer
     , -- | @since 0.1.0
       Generic
     )
-  deriving anyclass
-    ( -- | @since 0.2.0
-      SOP.Generic
-    )
 
 -- | @since 0.1.0
 PlutusTx.makeIsDataIndexed
@@ -411,9 +394,7 @@ newtype PResultTag (s :: S) = PResultTag (Term s PInteger)
       Generic
     )
   deriving anyclass
-    ( -- | @since 0.2.0
-      SOP.Generic
-    , -- @since 0.1.0
+    ( -- @since 0.1.0
       PlutusType
     , -- | @since 0.1.0
       PIsData
@@ -453,9 +434,7 @@ newtype PProposalId (s :: S) = PProposalId (Term s PInteger)
       Generic
     )
   deriving anyclass
-    ( -- | @since 0.2.0
-      SOP.Generic
-    , -- | @since 0.1.0
+    ( -- | @since 0.1.0
       PlutusType
     , -- | @since 0.1.0
       PIsData
@@ -508,8 +487,6 @@ data PProposalStatus (s :: S)
     )
   deriving anyclass
     ( -- | @since 0.1.0
-      SOP.Generic
-    , -- | @since 0.1.0
       PlutusType
     , -- | @since 0.1.0
       PIsData
@@ -551,8 +528,6 @@ newtype PProposalThresholds (s :: S) = PProposalThresholds
     )
   deriving anyclass
     ( -- | @since 0.1.0
-      SOP.Generic
-    , -- | @since 0.1.0
       PlutusType
     , -- | @since 0.1.0
       PIsData
@@ -587,9 +562,7 @@ newtype PProposalVotes (s :: S)
       Generic
     )
   deriving anyclass
-    ( -- | @since 0.2.0
-      SOP.Generic
-    , -- | @since 0.1.0
+    ( -- | @since 0.1.0
       PlutusType
     , -- | @since 0.1.0
       PIsData
@@ -637,8 +610,6 @@ newtype PProposalDatum (s :: S) = PProposalDatum
     )
   deriving anyclass
     ( -- | @since 0.1.0
-      SOP.Generic
-    , -- | @since 0.1.0
       PlutusType
     , -- | @since 0.1.0
       PIsData
@@ -673,8 +644,6 @@ data PProposalRedeemer (s :: S)
     )
   deriving anyclass
     ( -- | @since 0.1.0
-      SOP.Generic
-    , -- | @since 0.1.0
       PlutusType
     , -- | @since 0.1.0
       PIsData

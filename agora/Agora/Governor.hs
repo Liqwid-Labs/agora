@@ -40,7 +40,6 @@ import Agora.Proposal.Time (
  )
 import Agora.SafeMoney (GTTag)
 import Data.Tagged (Tagged (..))
-import Generics.SOP qualified as SOP
 import Plutarch.DataRepr (
   DerivePConstantViaData (..),
   PDataFields,
@@ -114,10 +113,6 @@ data GovernorRedeemer
     , -- | @since 0.2.0
       Bounded
     )
-  deriving anyclass
-    ( -- | @since 0.2.0
-      SOP.Generic
-    )
   deriving
     ( -- | @since 0.1.0
       PlutusTx.ToData
@@ -171,10 +166,6 @@ newtype PGovernorDatum (s :: S) = PGovernorDatum
     )
   deriving anyclass
     ( -- | @since 0.1.0
-      SOP.Generic
-    )
-  deriving anyclass
-    ( -- | @since 0.1.0
       PlutusType
     , -- | @since 0.1.0
       PIsData
@@ -215,8 +206,6 @@ data PGovernorRedeemer (s :: S)
     )
   deriving anyclass
     ( -- | @since 0.1.0
-      SOP.Generic
-    , -- | @since 0.1.0
       PlutusType
     , -- | @since 0.1.0
       PIsData

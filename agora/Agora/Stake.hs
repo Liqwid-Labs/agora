@@ -114,10 +114,6 @@ data ProposalLock
     , -- | @since 0.1.0
       Generic
     )
-  deriving anyclass
-    ( -- | @since 0.1.0
-      SOP.Generic
-    )
 
 PlutusTx.makeIsDataIndexed
   ''ProposalLock
@@ -234,8 +230,6 @@ newtype PStakeDatum (s :: S) = PStakeDatum
     )
   deriving anyclass
     ( -- | @since 0.1.0
-      SOP.Generic
-    , -- | @since 0.1.0
       PlutusType
     , -- | @since 0.1.0
       PIsData
@@ -329,10 +323,6 @@ data PProposalLock (s :: S)
     )
   deriving anyclass
     ( -- | @since 0.1.0
-      SOP.Generic
-    , -- | @since 0.1.0
-      SOP.HasDatatypeInfo
-    , -- | @since 0.1.0
       PlutusType
     , -- | @since 0.1.0
       PIsData
@@ -419,11 +409,7 @@ data PStakeRole (s :: S)
     )
   deriving anyclass
     ( -- | @since 0.2.0
-      SOP.Generic
-    , -- | @since 0.2.0
       PlutusType
-    , -- | @since 0.2.0
-      SOP.HasDatatypeInfo
     , -- | @since 0.2.0
       PEq
     )

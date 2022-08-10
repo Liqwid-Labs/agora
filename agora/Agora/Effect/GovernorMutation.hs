@@ -26,7 +26,6 @@ import Agora.Governor (
  )
 import Agora.Plutarch.Orphans ()
 import Agora.Scripts (AgoraScripts, authorityTokenSymbol, governorSTAssetClass)
-import Generics.SOP qualified as SOP
 import Plutarch.Api.V1 (
   PTxOutRef,
   PValidator,
@@ -66,10 +65,6 @@ data MutateGovernorDatum = MutateGovernorDatum
     , -- | @since 0.1.ç
       Generic
     )
-  deriving anyclass
-    ( -- | @since 0.1.ç
-      SOP.Generic
-    )
 
 PlutusTx.makeIsDataIndexed ''MutateGovernorDatum [('MutateGovernorDatum, 0)]
 
@@ -95,8 +90,6 @@ newtype PMutateGovernorDatum (s :: S)
     )
   deriving anyclass
     ( -- | @since 0.1.0
-      SOP.Generic
-    , -- | @since 0.1.0
       PlutusType
     , -- | @since 0.1.0
       PIsData

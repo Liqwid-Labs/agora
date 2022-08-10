@@ -77,10 +77,6 @@ data PTreasuryRedeemer (s :: S)
     )
   deriving anyclass
     ( -- | @since 0.1.0
-      SOP.Generic
-    )
-  deriving anyclass
-    ( -- | @since 0.1.0
       PlutusType
     , -- | @since 0.1.0
       PIsData
