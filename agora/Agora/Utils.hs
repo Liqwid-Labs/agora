@@ -10,7 +10,6 @@ Plutarch utility functions that should be upstreamed or don't belong anywhere el
 -}
 module Agora.Utils (
   validatorHashToTokenName,
-  pvalidatorHashToTokenName,
   mustFindDatum',
   validatorHashToAddress,
   pltAsData,
@@ -24,9 +23,7 @@ import Plutarch.Api.V1 (
   PDatum,
   PDatumHash,
   PMaybeData,
-  PTokenName (PTokenName),
   PTuple,
-  PValidatorHash,
  )
 import Plutarch.Builtin (pforgetData)
 import Plutarch.Extra.List (plookupTuple)
@@ -52,13 +49,6 @@ import PlutusLedgerApi.V1 (
 -}
 validatorHashToTokenName :: ValidatorHash -> TokenName
 validatorHashToTokenName (ValidatorHash hash) = TokenName hash
-
-{- | Plutarch level 'validatorHashToTokenName'.
-
-     @since 0.1.0
--}
-pvalidatorHashToTokenName :: forall (s :: S). Term s PValidatorHash -> Term s PTokenName
-pvalidatorHashToTokenName vh = pcon (PTokenName (pto vh))
 
 {- | Find datum given a maybe datum hash
 

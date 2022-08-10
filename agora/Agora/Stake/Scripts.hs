@@ -17,7 +17,6 @@ import Agora.Stake (
  )
 import Agora.Utils (
   mustFindDatum',
-  pvalidatorHashToTokenName,
  )
 import Data.Function (on)
 import Data.Tagged (Tagged (..), untag)
@@ -46,6 +45,7 @@ import Plutarch.SafeMoney (
   pdiscreteValue',
   pvalueDiscrete',
  )
+import Plutarch.Unsafe (punsafeCoerce)
 import PlutusLedgerApi.V1.Value (AssetClass (AssetClass))
 import Prelude hiding (Num (..))
 
@@ -135,7 +135,7 @@ stakePolicy gtClassRef =
                                 PPubKeyCredential _ -> pcon PFalse
                                 PScriptCredential ((pfield @"_0" #) -> validatorHash) ->
                                   let tn :: Term _ PTokenName
-                                      tn = pvalidatorHashToTokenName validatorHash
+                                      tn = punsafeCoerce $ pfromData validatorHash
                                    in pvalueOf # outputF.value # ownSymbol # tn #== 1
                         )
                       # pfromData txInfoF.outputs
