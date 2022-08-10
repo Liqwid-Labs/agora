@@ -18,8 +18,8 @@ module Sample.Governor.Mutate (
 
 import Agora.Effect.NoOp (noOpValidator)
 import Agora.Governor (GovernorDatum (..), GovernorRedeemer (MutateGovernor))
-import Agora.Governor.Scripts (governorValidator)
 import Agora.Proposal (ProposalId (ProposalId), ProposalThresholds (..))
+import Agora.Scripts (AgoraScripts (..))
 import Agora.Utils (validatorHashToTokenName)
 import Data.Default (def)
 import Plutarch.Api.V1 (PValidator, mkValidator, validatorHash)
@@ -42,10 +42,10 @@ import PlutusLedgerApi.V1 (
  )
 import PlutusLedgerApi.V1.Value qualified as Value
 import Sample.Shared (
+  agoraScripts,
   authorityTokenSymbol,
   govAssetClass,
   govValidatorHash,
-  governor,
   minAda,
  )
 import Test.Specification (SpecificationTree, testValidator)
@@ -219,7 +219,7 @@ mkTestCase name pb (Validity forGov) =
   testValidator
     forGov
     name
-    (governorValidator governor)
+    agoraScripts.compiledGovernorValidator
     governorInputDatum
     governorRedeemer
     (mkSpending mutate pb governorRef)

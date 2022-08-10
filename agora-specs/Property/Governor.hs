@@ -7,7 +7,7 @@ Property model and tests for 'Governor' related functions
 -}
 module Property.Governor (props) where
 
-import Agora.Governor (GovernorDatum (..), pisGovernorDatumValid)
+import Agora.Governor (Governor (gstOutRef), GovernorDatum (..), pisGovernorDatumValid)
 import Agora.Governor.Scripts (governorPolicy)
 import Agora.Proposal (
   ProposalId (ProposalId),
@@ -201,7 +201,7 @@ governorMintingProperty =
     opaqueToUnit = plam $ \_ -> pconstant ()
 
     actual :: Term s (PScriptContext :--> PUnit)
-    actual = plam $ \sc -> opaqueToUnit #$ governorPolicy governor # pforgetData (pconstantData ()) # sc
+    actual = plam $ \sc -> opaqueToUnit #$ governorPolicy governor.gstOutRef # pforgetData (pconstantData ()) # sc
 
     classifier :: ScriptContext -> GovernorPolicyCases
     classifier sc

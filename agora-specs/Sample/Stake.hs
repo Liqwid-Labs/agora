@@ -6,10 +6,8 @@ Description: Sample based testing for Stake utxos
 This module tests primarily the happy path for Stake creation
 -}
 module Sample.Stake (
-  stake,
   stakeAssetClass,
   stakeSymbol,
-  validatorHashTN,
   signer,
 
   -- * Script contexts
@@ -20,15 +18,12 @@ module Sample.Stake (
   DepositWithdrawExample (..),
 ) where
 
+import Agora.Governor (Governor (gtClassRef))
 import Agora.SafeMoney (GTTag)
 import Agora.Stake (
-  Stake (gtClassRef),
   StakeDatum (StakeDatum, stakedAmount),
  )
-import Agora.Stake.Scripts (stakeValidator)
-import Data.Default (def)
 import Data.Tagged (Tagged, untag)
-import Plutarch.Api.V1 (mkValidator, validatorHash)
 import Plutarch.Context (
   MintingBuilder,
   SpendingBuilder,
@@ -51,9 +46,7 @@ import PlutusLedgerApi.V1 (
   ScriptContext (..),
   ScriptPurpose (Minting),
   ToData (toBuiltinData),
-  TokenName (TokenName),
   TxInfo (txInfoData, txInfoSignatories),
-  ValidatorHash (ValidatorHash),
  )
 import PlutusLedgerApi.V1.Contexts (TxOutRef (..))
 import PlutusLedgerApi.V1.Value qualified as Value (
@@ -61,19 +54,13 @@ import PlutusLedgerApi.V1.Value qualified as Value (
   singleton,
  )
 import Sample.Shared (
+  governor,
   signer,
-  stake,
   stakeAssetClass,
   stakeSymbol,
   stakeValidatorHash,
  )
-
--- | 'TokenName' that represents the hash of the 'Stake' validator.
-validatorHashTN :: TokenName
-validatorHashTN =
-  let validator = mkValidator def $ stakeValidator stake
-      ValidatorHash vh = validatorHash validator
-   in TokenName vh
+import Test.Util (sortValue)
 
 -- | This script context should be a valid transaction.
 stakeCreation :: ScriptContext
@@ -151,14 +138,22 @@ stakeDepositWithdraw config =
           , input $
               mconcat
                 [ script stakeValidatorHash
-                , withValue (st <> Value.assetClassValue (untag stake.gtClassRef) (untag stakeBefore.stakedAmount))
+                , withValue
+                    ( sortValue $
+                        st
+                          <> Value.assetClassValue (untag governor.gtClassRef) (untag stakeBefore.stakedAmount)
+                    )
                 , withDatum stakeAfter
                 , withOutRef stakeRef
                 ]
           , output $
               mconcat
                 [ script stakeValidatorHash
-                , withValue (st <> Value.assetClassValue (untag stake.gtClassRef) (untag stakeAfter.stakedAmount))
+                , withValue
+                    ( sortValue $
+                        st
+                          <> Value.assetClassValue (untag governor.gtClassRef) (untag stakeAfter.stakedAmount)
+                    )
                 , withDatum stakeAfter
                 ]
           , withSpendingOutRef stakeRef

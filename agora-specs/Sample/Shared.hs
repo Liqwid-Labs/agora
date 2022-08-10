@@ -12,11 +12,15 @@ module Sample.Shared (
   signer,
   signer2,
   minAda,
+  deterministicTracingConfing,
+  mkEffect,
+
+  -- * Agora Scripts
+  agoraScripts,
 
   -- * Components
 
   -- ** Stake
-  stake,
   stakeAssetClass,
   stakeValidatorHash,
   stakeAddress,
@@ -33,14 +37,12 @@ module Sample.Shared (
   gstUTXORef,
 
   -- ** Proposal
-  proposal,
   proposalPolicySymbol,
   proposalValidatorHash,
   proposalValidatorAddress,
   proposalStartingTimeFromTimeRange,
 
   -- ** Authority
-  authorityToken,
   authorityTokenSymbol,
 
   -- ** Treasury
@@ -53,38 +55,29 @@ module Sample.Shared (
   wrongEffHash,
 ) where
 
-import Agora.AuthorityToken (AuthorityToken)
+import Agora.Bootstrap qualified as Bootstrap
 import Agora.Effect.NoOp (noOpValidator)
 import Agora.Governor (Governor (Governor))
-import Agora.Governor.Scripts (
-  authorityTokenFromGovernor,
-  authorityTokenSymbolFromGovernor,
-  governorPolicy,
-  governorSTAssetClassFromGovernor,
-  governorValidator,
-  governorValidatorHash,
-  proposalFromGovernor,
-  proposalSTSymbolFromGovernor,
-  proposalValidatorHashFromGovernor,
-  stakeFromGovernor,
-  stakeSTAssetClassFromGovernor,
-  stakeSTSymbolFromGovernor,
-  stakeValidatorHashFromGovernor,
- )
-import Agora.Proposal (Proposal (..), ProposalThresholds (..))
+import Agora.Proposal (ProposalThresholds (..))
 import Agora.Proposal.Time (
   MaxTimeRangeWidth (..),
   ProposalStartingTime (ProposalStartingTime),
   ProposalTimingConfig (..),
  )
-import Agora.Stake (Stake (..))
+import Agora.Scripts qualified as Scripts
 import Agora.Treasury (treasuryValidator)
-import Agora.Utils (validatorHashToTokenName)
+import Agora.Utils (
+  CompiledEffect (CompiledEffect),
+  CompiledMintingPolicy (getCompiledMintingPolicy),
+  CompiledValidator (getCompiledValidator),
+  validatorHashToTokenName,
+ )
 import Data.Default.Class (Default (..))
 import Data.Tagged (Tagged (..))
+import Plutarch (Config (..), TracingMode (DetTracing))
 import Plutarch.Api.V1 (
+  PValidator,
   mintingPolicySymbol,
-  mkMintingPolicy,
   mkValidator,
   validatorHash,
  )
@@ -110,24 +103,13 @@ import PlutusLedgerApi.V1.Value qualified as Value (
   assetClass,
   singleton,
  )
+import PlutusTx qualified
 
-stake :: Stake
-stake = stakeFromGovernor governor
-
-stakeSymbol :: CurrencySymbol
-stakeSymbol = stakeSTSymbolFromGovernor governor
-
-stakeAssetClass :: AssetClass
-stakeAssetClass = stakeSTAssetClassFromGovernor governor
-
-stakeValidatorHash :: ValidatorHash
-stakeValidatorHash = stakeValidatorHashFromGovernor governor
-
-stakeAddress :: Address
-stakeAddress = Address (ScriptCredential stakeValidatorHash) Nothing
-
-gstUTXORef :: TxOutRef
-gstUTXORef = TxOutRef "f28cd7145c24e66fd5bcd2796837aeb19a48a2656e7833c88c62a2d0450bd00d" 0
+-- Plutarch compiler configauration.
+-- TODO: add the ability to change this value. Maybe wrap everything in a
+--        Reader monad?
+deterministicTracingConfing :: Config
+deterministicTracingConfing = Config DetTracing
 
 governor :: Governor
 governor = Governor oref gt mc
@@ -140,29 +122,44 @@ governor = Governor oref gt mc
           "LQ"
     mc = 20
 
+agoraScripts :: Scripts.AgoraScripts
+agoraScripts = Bootstrap.agoraScripts deterministicTracingConfing governor
+
+stakeSymbol :: CurrencySymbol
+stakeSymbol = Scripts.stakeSTSymbol agoraScripts
+
+stakeAssetClass :: AssetClass
+stakeAssetClass = Scripts.stakeSTAssetClass agoraScripts
+
+stakeValidatorHash :: ValidatorHash
+stakeValidatorHash = Scripts.stakeValidatorHash agoraScripts
+
+stakeAddress :: Address
+stakeAddress = Address (ScriptCredential stakeValidatorHash) Nothing
+
+gstUTXORef :: TxOutRef
+gstUTXORef = TxOutRef "f28cd7145c24e66fd5bcd2796837aeb19a48a2656e7833c88c62a2d0450bd00d" 0
+
 govPolicy :: MintingPolicy
-govPolicy = mkMintingPolicy def (governorPolicy governor)
+govPolicy = getCompiledMintingPolicy $ agoraScripts.compiledGovernorPolicy
 
 govValidator :: Validator
-govValidator = mkValidator def (governorValidator governor)
+govValidator = getCompiledValidator $ agoraScripts.compiledGovernorValidator
 
 govSymbol :: CurrencySymbol
 govSymbol = mintingPolicySymbol govPolicy
 
 govAssetClass :: AssetClass
-govAssetClass = governorSTAssetClassFromGovernor governor
+govAssetClass = Scripts.governorSTAssetClass agoraScripts
 
 govValidatorHash :: ValidatorHash
-govValidatorHash = governorValidatorHash governor
+govValidatorHash = Scripts.governorValidatorHash agoraScripts
 
 govValidatorAddress :: Address
 govValidatorAddress = scriptHashAddress govValidatorHash
 
-proposal :: Proposal
-proposal = proposalFromGovernor governor
-
 proposalPolicySymbol :: CurrencySymbol
-proposalPolicySymbol = proposalSTSymbolFromGovernor governor
+proposalPolicySymbol = Scripts.proposalSTSymbol agoraScripts
 
 -- | A sample 'PubKeyHash'.
 signer :: PubKeyHash
@@ -173,7 +170,7 @@ signer2 :: PubKeyHash
 signer2 = "8a30896c4fd5e79843e4ca1bd2cdbaa36f8c0bc3be74012141420192"
 
 proposalValidatorHash :: ValidatorHash
-proposalValidatorHash = proposalValidatorHashFromGovernor governor
+proposalValidatorHash = Scripts.proposalValidatoHash agoraScripts
 
 proposalValidatorAddress :: Address
 proposalValidatorAddress = scriptHashAddress proposalValidatorHash
@@ -189,11 +186,8 @@ instance Default ProposalThresholds where
       , vote = Tagged 100
       }
 
-authorityToken :: AuthorityToken
-authorityToken = authorityTokenFromGovernor governor
-
 authorityTokenSymbol :: CurrencySymbol
-authorityTokenSymbol = authorityTokenSymbolFromGovernor governor
+authorityTokenSymbol = Scripts.authorityTokenSymbol agoraScripts
 
 {- | Default value of 'Agora.Governor.GovernorDatum.proposalTimings'.
      For testing purpose only.
@@ -221,6 +215,9 @@ proposalStartingTimeFromTimeRange
   (Interval (LowerBound (Finite l) True) (UpperBound (Finite u) True)) =
     ProposalStartingTime $ (l + u) `div` 2
 proposalStartingTimeFromTimeRange _ = error "Given time range should be finite and closed"
+
+mkEffect :: (PlutusTx.ToData datum) => ClosedTerm PValidator -> CompiledEffect datum
+mkEffect v = CompiledEffect $ mkValidator deterministicTracingConfing v
 
 ------------------------------------------------------------------
 

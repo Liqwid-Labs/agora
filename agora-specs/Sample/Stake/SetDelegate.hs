@@ -19,12 +19,12 @@ module Sample.Stake.SetDelegate (
   delegateToOwnerParameters,
 ) where
 
+import Agora.Governor (Governor (gtClassRef))
+import Agora.Scripts (AgoraScripts (..))
 import Agora.Stake (
-  Stake (gtClassRef),
   StakeDatum (..),
   StakeRedeemer (ClearDelegate, DelegateTo),
  )
-import Agora.Stake.Scripts (stakeValidator)
 import Data.Tagged (untag)
 import Plutarch.Context (
   SpendingBuilder,
@@ -46,10 +46,11 @@ import PlutusLedgerApi.V1 (
  )
 import PlutusLedgerApi.V1.Value qualified as Value
 import Sample.Shared (
+  agoraScripts,
+  governor,
   minAda,
   signer,
   signer2,
-  stake,
   stakeAssetClass,
   stakeValidatorHash,
  )
@@ -118,7 +119,7 @@ setDelegate ps = buildSpendingUnsafe builder
         mconcat
           [ st
           , Value.assetClassValue
-              (untag stake.gtClassRef)
+              (untag governor.gtClassRef)
               (untag stakeInput.stakedAmount)
           , minAda
           ]
@@ -154,7 +155,7 @@ mkTestCase name ps valid =
   testValidator
     valid
     name
-    (stakeValidator stake)
+    agoraScripts.compiledStakeValidator
     (mkStakeInputDatum ps)
     (mkStakeRedeemer ps)
     (setDelegate ps)

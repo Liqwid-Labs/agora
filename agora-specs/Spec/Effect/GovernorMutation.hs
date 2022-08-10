@@ -2,8 +2,8 @@ module Spec.Effect.GovernorMutation (specs) where
 
 import Agora.Effect.GovernorMutation (mutateGovernorValidator)
 import Agora.Governor (GovernorDatum (..), GovernorRedeemer (MutateGovernor))
-import Agora.Governor.Scripts (governorValidator)
 import Agora.Proposal (ProposalId (..))
+import Agora.Scripts (AgoraScripts (..))
 import Data.Default.Class (Default (def))
 import PlutusLedgerApi.V1 (ScriptContext (ScriptContext), ScriptPurpose (Spending))
 import Sample.Effect.GovernorMutation (
@@ -14,7 +14,7 @@ import Sample.Effect.GovernorMutation (
   mkEffectTxInfo,
   validNewGovernorDatum,
  )
-import Sample.Shared qualified as Shared
+import Sample.Shared (agoraScripts, mkEffect)
 import Test.Specification (
   SpecificationTree,
   effectFailsWith,
@@ -32,7 +32,7 @@ specs =
           "valid new governor datum"
           [ validatorSucceedsWith
               "governor validator should pass"
-              (governorValidator Shared.governor)
+              agoraScripts.compiledGovernorValidator
               ( GovernorDatum
                   def
                   (ProposalId 0)
@@ -47,7 +47,7 @@ specs =
               )
           , effectSucceedsWith
               "effect validator should pass"
-              (mutateGovernorValidator Shared.governor)
+              (mkEffect $ mutateGovernorValidator agoraScripts)
               (mkEffectDatum validNewGovernorDatum)
               (ScriptContext (mkEffectTxInfo validNewGovernorDatum) (Spending effectRef))
           ]
@@ -55,7 +55,7 @@ specs =
           "invalid new governor datum"
           [ validatorFailsWith
               "governor validator should fail"
-              (governorValidator Shared.governor)
+              agoraScripts.compiledGovernorValidator
               ( GovernorDatum
                   def
                   (ProposalId 0)
@@ -70,7 +70,7 @@ specs =
               )
           , effectFailsWith
               "effect validator should fail"
-              (mutateGovernorValidator Shared.governor)
+              (mkEffect $ mutateGovernorValidator agoraScripts)
               (mkEffectDatum validNewGovernorDatum)
               (ScriptContext (mkEffectTxInfo invalidNewGovernorDatum) (Spending effectRef))
           ]

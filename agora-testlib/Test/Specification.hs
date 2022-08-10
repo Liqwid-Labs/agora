@@ -49,12 +49,18 @@ module Test.Specification (
   toTestTree,
 ) where
 
-import Plutarch.Api.V1 (PMintingPolicy, PValidator)
-import Plutarch.Builtin (pforgetData)
+import Agora.Utils (CompiledEffect (..), CompiledMintingPolicy (..), CompiledValidator (..))
+import Control.Composition ((.**), (.***))
+import Data.Coerce (coerce)
 import Plutarch.Evaluate (evalScript)
-import Plutarch.Extra.Compile (mustCompile)
-import Plutarch.Lift (PUnsafeLiftDecl (PLifted))
-import PlutusLedgerApi.V1 (Script, ScriptContext)
+import PlutusLedgerApi.V1 (
+  Datum (..),
+  Redeemer (Redeemer),
+  Script,
+  ScriptContext,
+  ToData (toBuiltinData),
+ )
+import PlutusLedgerApi.V1.Scripts (Context (..), applyMintingPolicyScript, applyValidator)
 import PlutusTx.IsData qualified as PlutusTx (ToData)
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.HUnit (assertFailure, testCase)
@@ -153,122 +159,133 @@ scriptSucceeds name script = Terminal $ Specification name Success script
 scriptFails :: String -> Script -> SpecificationTree
 scriptFails name script = Terminal $ Specification name Failure script
 
+mkContext :: ScriptContext -> Context
+mkContext = Context . toBuiltinData
+
+mkRedeemer ::
+  forall redeemer.
+  (PlutusTx.ToData redeemer) =>
+  redeemer ->
+  Redeemer
+mkRedeemer = Redeemer . toBuiltinData
+
+mkDatum ::
+  forall datum.
+  (PlutusTx.ToData datum) =>
+  datum ->
+  Datum
+mkDatum = Datum . toBuiltinData
+
+applyMintingPolicy' ::
+  (PlutusTx.ToData redeemer) =>
+  CompiledMintingPolicy redeemer ->
+  redeemer ->
+  ScriptContext ->
+  Script
+applyMintingPolicy' policy redeemer scriptContext =
+  applyMintingPolicyScript
+    (mkContext scriptContext)
+    (getCompiledMintingPolicy policy)
+    (mkRedeemer redeemer)
+
+applyValidator' ::
+  ( PlutusTx.ToData datum
+  , PlutusTx.ToData redeemer
+  ) =>
+  CompiledValidator datum redeemer ->
+  datum ->
+  redeemer ->
+  ScriptContext ->
+  Script
+applyValidator' validator datum redeemer scriptContext =
+  applyValidator
+    (mkContext scriptContext)
+    (getCompiledValidator validator)
+    (mkDatum datum)
+    (mkRedeemer redeemer)
+
 -- | Check that a policy script succeeds, given a name and arguments.
 policySucceedsWith ::
-  ( PLift redeemer
-  , PlutusTx.ToData (PLifted redeemer)
-  ) =>
+  (PlutusTx.ToData redeemer) =>
   String ->
-  ClosedTerm PMintingPolicy ->
-  PLifted redeemer ->
+  CompiledMintingPolicy redeemer ->
+  redeemer ->
   ScriptContext ->
   SpecificationTree
-policySucceedsWith tag policy redeemer scriptContext =
-  scriptSucceeds tag $
-    mustCompile
-      ( policy
-          # pforgetData (pconstantData redeemer)
-          # pconstant scriptContext
-      )
+policySucceedsWith tag =
+  scriptSucceeds tag .** applyMintingPolicy'
 
 -- | Check that a policy script fails, given a name and arguments.
 policyFailsWith ::
-  ( PLift redeemer
-  , PlutusTx.ToData (PLifted redeemer)
-  ) =>
+  (PlutusTx.ToData redeemer) =>
   String ->
-  ClosedTerm PMintingPolicy ->
-  PLifted redeemer ->
+  CompiledMintingPolicy redeemer ->
+  redeemer ->
   ScriptContext ->
   SpecificationTree
-policyFailsWith tag policy redeemer scriptContext =
-  scriptFails tag $
-    mustCompile
-      ( policy
-          # pforgetData (pconstantData redeemer)
-          # pconstant scriptContext
-      )
+policyFailsWith tag =
+  scriptFails tag .** applyMintingPolicy'
 
 -- | Check that a validator script succeeds, given a name and arguments.
 validatorSucceedsWith ::
-  ( PLift datum
-  , PlutusTx.ToData (PLifted datum)
-  , PLift redeemer
-  , PlutusTx.ToData (PLifted redeemer)
+  ( PlutusTx.ToData datum
+  , PlutusTx.ToData redeemer
   ) =>
   String ->
-  ClosedTerm PValidator ->
-  PLifted datum ->
-  PLifted redeemer ->
+  CompiledValidator datum redeemer ->
+  datum ->
+  redeemer ->
   ScriptContext ->
   SpecificationTree
-validatorSucceedsWith tag validator datum redeemer scriptContext =
-  scriptSucceeds tag $
-    mustCompile
-      ( validator
-          # pforgetData (pconstantData datum)
-          # pforgetData (pconstantData redeemer)
-          # pconstant scriptContext
-      )
+validatorSucceedsWith tag =
+  scriptSucceeds tag .*** applyValidator'
 
 -- | Check that a validator script fails, given a name and arguments.
 validatorFailsWith ::
-  ( PLift datum
-  , PlutusTx.ToData (PLifted datum)
-  , PLift redeemer
-  , PlutusTx.ToData (PLifted redeemer)
+  ( PlutusTx.ToData datum
+  , PlutusTx.ToData redeemer
   ) =>
   String ->
-  ClosedTerm PValidator ->
-  PLifted datum ->
-  PLifted redeemer ->
+  CompiledValidator datum redeemer ->
+  datum ->
+  redeemer ->
   ScriptContext ->
   SpecificationTree
-validatorFailsWith tag validator datum redeemer scriptContext =
-  scriptFails tag $
-    mustCompile
-      ( validator
-          # pforgetData (pconstantData datum)
-          # pforgetData (pconstantData redeemer)
-          # pconstant scriptContext
-      )
+validatorFailsWith tag =
+  scriptFails tag .*** applyValidator'
 
 -- | Check that an effect succeeds, given a name and argument.
 effectSucceedsWith ::
-  ( PLift datum
-  , PlutusTx.ToData (PLifted datum)
+  ( PlutusTx.ToData datum
   ) =>
   String ->
-  ClosedTerm PValidator ->
-  PLifted datum ->
+  CompiledEffect datum ->
+  datum ->
   ScriptContext ->
   SpecificationTree
-effectSucceedsWith tag eff datum = validatorSucceedsWith tag eff datum ()
+effectSucceedsWith tag eff datum = validatorSucceedsWith tag (coerce eff) datum ()
 
 -- | Check that an effect fails, given a name and argument.
 effectFailsWith ::
-  ( PLift datum
-  , PlutusTx.ToData (PLifted datum)
+  ( PlutusTx.ToData datum
   ) =>
   String ->
-  ClosedTerm PValidator ->
-  PLifted datum ->
+  CompiledEffect datum ->
+  datum ->
   ScriptContext ->
   SpecificationTree
-effectFailsWith tag eff datum = validatorFailsWith tag eff datum ()
+effectFailsWith tag eff datum = validatorFailsWith tag (coerce eff) datum ()
 
+-- | Test a validator, given the expectation as a boolean value.
 testValidator ::
-  ( PLift datum
-  , PlutusTx.ToData (PLifted datum)
-  , PLift redeemer
-  , PlutusTx.ToData (PLifted redeemer)
-  ) =>
-  -- | Should the validator pass?
+  forall datum redeemer.
+  (PlutusTx.ToData datum, PlutusTx.ToData redeemer) =>
+  -- | Is this test case expected to succeed?
   Bool ->
   String ->
-  ClosedTerm PValidator ->
-  PLifted datum ->
-  PLifted redeemer ->
+  CompiledValidator datum redeemer ->
+  datum ->
+  redeemer ->
   ScriptContext ->
   SpecificationTree
 testValidator isValid =
@@ -276,14 +293,15 @@ testValidator isValid =
     then validatorSucceedsWith
     else validatorFailsWith
 
+-- | Test a policy, given the expectation as a boolean value.
 testPolicy ::
-  ( PLift redeemer
-  , PlutusTx.ToData (PLifted redeemer)
-  ) =>
+  forall redeemer.
+  (PlutusTx.ToData redeemer) =>
+  -- | Is this test case expected to succeed?
   Bool ->
   String ->
-  ClosedTerm PMintingPolicy ->
-  PLifted redeemer ->
+  CompiledMintingPolicy redeemer ->
+  redeemer ->
   ScriptContext ->
   SpecificationTree
 testPolicy isValid =

@@ -28,7 +28,7 @@ import Plutarch.Api.V1 (mkValidator, validatorHash)
 import PlutusLedgerApi.V1 (
   Address (Address),
   Credential (..),
-  CurrencySymbol (CurrencySymbol),
+  CurrencySymbol,
   DatumHash (DatumHash),
   PubKeyHash,
   ScriptContext (..),
@@ -60,7 +60,7 @@ import Test.Util (scriptCredentials, userCredentials)
 
 -- | A sample Currency Symbol.
 currSymbol :: CurrencySymbol
-currSymbol = CurrencySymbol "12312099"
+currSymbol = "9c04a69c7133e26061fe5a15adaf4f79cd51e47ef22a2e3c91a36f04"
 
 -- | A sample 'PubKeyHash'.
 signer :: PubKeyHash

@@ -25,6 +25,8 @@ import Agora.Treasury (
   TreasuryRedeemer (SpendTreasuryGAT),
   treasuryValidator,
  )
+import Agora.Utils (CompiledValidator (CompiledValidator))
+import Plutarch.Api.V1 (mkValidator)
 import PlutusLedgerApi.V1 (DCert (DCertDelegRegKey))
 import PlutusLedgerApi.V1.Contexts (
   ScriptContext (scriptContextPurpose, scriptContextTxInfo),
@@ -35,7 +37,7 @@ import PlutusLedgerApi.V1.Credential (
   StakingCredential (StakingHash),
  )
 import PlutusLedgerApi.V1.Value qualified as Value (singleton)
-import Sample.Shared (trCredential)
+import Sample.Shared (deterministicTracingConfing, trCredential)
 import Sample.Treasury (
   gatCs,
   gatTn,
@@ -51,6 +53,12 @@ import Test.Specification (
   validatorSucceedsWith,
  )
 
+compiledTreasuryValidator :: CompiledValidator () TreasuryRedeemer
+compiledTreasuryValidator =
+  CompiledValidator $
+    mkValidator deterministicTracingConfing $
+      treasuryValidator gatCs
+
 specs :: [SpecificationTree]
 specs =
   [ group
@@ -59,7 +67,7 @@ specs =
           "Positive"
           [ validatorSucceedsWith
               "Allows for effect changes"
-              (treasuryValidator gatCs)
+              compiledTreasuryValidator
               ()
               SpendTreasuryGAT
               validCtx
@@ -70,7 +78,7 @@ specs =
               "Fails with ScriptPurpose not Minting"
               [ validatorFailsWith
                   "Spending"
-                  (treasuryValidator gatCs)
+                  compiledTreasuryValidator
                   ()
                   SpendTreasuryGAT
                   validCtx
@@ -78,7 +86,7 @@ specs =
                     }
               , validatorFailsWith
                   "Rewarding"
-                  (treasuryValidator gatCs)
+                  compiledTreasuryValidator
                   ()
                   SpendTreasuryGAT
                   validCtx
@@ -88,7 +96,7 @@ specs =
                     }
               , validatorFailsWith
                   "Certifying"
-                  (treasuryValidator gatCs)
+                  compiledTreasuryValidator
                   ()
                   SpendTreasuryGAT
                   validCtx
@@ -100,7 +108,7 @@ specs =
               ]
           , validatorFailsWith -- TODO: Use QuickCheck.
               "Fails when multiple GATs burned"
-              (treasuryValidator gatCs)
+              compiledTreasuryValidator
               ()
               SpendTreasuryGAT
               validCtx
@@ -115,13 +123,13 @@ specs =
                 }
           , validatorFailsWith
               "Fails when GAT token name is not script address"
-              (treasuryValidator gatCs)
+              compiledTreasuryValidator
               ()
               SpendTreasuryGAT
               trCtxGATNameNotAddress
           , validatorFailsWith
               "Fails with wallet as input"
-              (treasuryValidator gatCs)
+              compiledTreasuryValidator
               ()
               SpendTreasuryGAT
               ( let txInfo = validCtx.scriptContextTxInfo

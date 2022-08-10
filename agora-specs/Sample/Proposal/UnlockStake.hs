@@ -25,6 +25,7 @@ module Sample.Proposal.UnlockStake (
 
 --------------------------------------------------------------------------------
 
+import Agora.Governor (Governor (..))
 import Agora.Proposal (
   ProposalDatum (..),
   ProposalId (..),
@@ -33,10 +34,9 @@ import Agora.Proposal (
   ProposalVotes (..),
   ResultTag (..),
  )
-import Agora.Proposal.Scripts (proposalValidator)
 import Agora.Proposal.Time (ProposalStartingTime (ProposalStartingTime))
-import Agora.Stake (ProposalLock (..), Stake (..), StakeDatum (..), StakeRedeemer (RetractVotes))
-import Agora.Stake.Scripts (stakeValidator)
+import Agora.Scripts (AgoraScripts (..))
+import Agora.Stake (ProposalLock (..), StakeDatum (..), StakeRedeemer (RetractVotes))
 import Data.Default.Class (Default (def))
 import Data.Tagged (Tagged (..), untag)
 import Plutarch.Context (
@@ -59,15 +59,15 @@ import PlutusLedgerApi.V1.Value qualified as Value
 import PlutusTx.AssocMap qualified as AssocMap
 import Sample.Proposal.Shared (stakeTxRef)
 import Sample.Shared (
+  agoraScripts,
+  governor,
   minAda,
   proposalPolicySymbol,
   proposalValidatorHash,
   signer,
-  stake,
   stakeAssetClass,
   stakeValidatorHash,
  )
-import Sample.Shared qualified as Shared
 import Test.Specification (SpecificationTree, group, testValidator)
 import Test.Util (CombinableBuilder, mkSpending, sortValue, updateMap)
 
@@ -277,7 +277,7 @@ unlockStake ps =
         sortValue $
           mconcat
             [ Value.assetClassValue
-                (untag stake.gtClassRef)
+                (untag governor.gtClassRef)
                 (untag defStakedGTs)
             , sst
             , minAda
@@ -532,7 +532,7 @@ mkTestTree name ps isValid = group name [stake, proposal]
       testValidator
         (not ps.alterOutputStake)
         "stake"
-        (stakeValidator Shared.stake)
+        agoraScripts.compiledStakeValidator
         (mkStakeInputDatum ps)
         stakeRedeemer
         (spend stakeRef)
@@ -544,7 +544,7 @@ mkTestTree name ps isValid = group name [stake, proposal]
        in testValidator
             isValid
             "proposal"
-            (proposalValidator Shared.proposal)
+            agoraScripts.compiledProposalValidator
             (mkProposalInputDatum ps pid)
             proposalRedeemer
             (spend ref)
