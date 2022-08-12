@@ -10,7 +10,8 @@ Tests for Authority token functions
 module Spec.AuthorityToken (specs) where
 
 import Agora.AuthorityToken (singleAuthorityTokenBurned)
-import Plutarch (ClosedTerm, POpaque, compile, perror, popaque)
+import Plutarch (ClosedTerm, POpaque, perror, popaque)
+import Plutarch.Extra.Compile (mustCompile)
 import Plutarch.Unsafe (punsafeCoerce)
 import PlutusLedgerApi.V1 (
   Address (Address),
@@ -60,7 +61,7 @@ singleAuthorityTokenBurnedTest mint outs =
           actual
           (popaque (pconstant ()))
           perror
-   in compile s
+   in mustCompile s
 
 -- | The SpecificationTree exported by this module.
 specs :: [SpecificationTree]

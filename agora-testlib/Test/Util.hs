@@ -19,7 +19,6 @@ module Test.Util (
   scriptCredentials,
   validatorHashes,
   groupsOfN,
-  withOptional,
   mkSpending,
   mkMinting,
   CombinableBuilder,
@@ -37,7 +36,6 @@ import Data.ByteString.Lazy qualified as ByteString.Lazy
 import Data.List (sortOn)
 import Plutarch.Context (
   Builder,
-  UTXO,
   buildMintingUnsafe,
   buildSpendingUnsafe,
   withMinting,
@@ -181,15 +179,6 @@ groupsOfN n xs =
        in (x : xs', rest)
 
 --------------------------------------------------------------------------------
-
--- | Optionally apply a modifier to the given 'UTXO'.
-withOptional ::
-  (a -> UTXO -> UTXO) ->
-  Maybe a ->
-  UTXO ->
-  UTXO
-withOptional f (Just b) = f b
-withOptional _ _ = id
 
 {- | Given the builder generator and the parameters, create a 'ScriptContext'
     that spends the UTXO that referenced by the given 'TxOutRef'.

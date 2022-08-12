@@ -14,6 +14,7 @@ module Sample.Proposal.Cosign (
   mkTestTree,
 ) where
 
+import Agora.Governor (Governor (..))
 import Agora.Proposal (
   ProposalDatum (..),
   ProposalId (ProposalId),
@@ -22,19 +23,17 @@ import Agora.Proposal (
   ResultTag (ResultTag),
   emptyVotesFor,
  )
-import Agora.Proposal.Scripts (proposalValidator)
 import Agora.Proposal.Time (
   ProposalStartingTime (ProposalStartingTime),
   ProposalTimingConfig (draftTime),
  )
 import Agora.SafeMoney (GTTag)
+import Agora.Scripts (AgoraScripts (..))
 import Agora.Stake (
-  Stake (gtClassRef),
   StakeDatum (StakeDatum, owner),
   StakeRedeemer (WitnessStake),
   stakedAmount,
  )
-import Agora.Stake.Scripts (stakeValidator)
 import Data.Coerce (coerce)
 import Data.Default (def)
 import Data.List (sort)
@@ -61,15 +60,15 @@ import PlutusLedgerApi.V1.Value qualified as Value
 import PlutusTx.AssocMap qualified as AssocMap
 import Sample.Proposal.Shared (proposalTxRef, stakeTxRef)
 import Sample.Shared (
+  agoraScripts,
+  governor,
   minAda,
   proposalPolicySymbol,
   proposalValidatorHash,
   signer,
-  stake,
   stakeAssetClass,
   stakeValidatorHash,
  )
-import Sample.Shared qualified as Shared
 import Test.Specification (
   SpecificationTree,
   group,
@@ -149,7 +148,7 @@ cosign ps = builder
       sortValue $
         minAda
           <> Value.assetClassValue
-            (untag stake.gtClassRef)
+            (untag governor.gtClassRef)
             (untag perStakedGTs)
           <> sst
 
@@ -162,15 +161,19 @@ cosign ps = builder
                     else stakeDatum
              in mconcat
                   [ input $
-                      script stakeValidatorHash
-                        . withValue stakeValue
-                        . withDatum stakeDatum
-                        . withTxId stakeTxRef
-                        . withOutRef (mkStakeRef refIdx)
+                      mconcat
+                        [ script stakeValidatorHash
+                        , withValue stakeValue
+                        , withDatum stakeDatum
+                        , withTxId stakeTxRef
+                        , withOutRef (mkStakeRef refIdx)
+                        ]
                   , output $
-                      script stakeValidatorHash
-                        . withValue stakeValue
-                        . withDatum stakeOutputDatum
+                      mconcat
+                        [ script stakeValidatorHash
+                        , withValue stakeValue
+                        , withDatum stakeOutputDatum
+                        ]
                   , signedWith stakeDatum.owner
                   ]
         )
@@ -189,15 +192,19 @@ cosign ps = builder
     proposalBuilder =
       mconcat
         [ input $
-            script proposalValidatorHash
-              . withValue pst
-              . withDatum proposalInputDatum
-              . withTxId proposalTxRef
-              . withOutRef proposalRef
+            mconcat
+              [ script proposalValidatorHash
+              , withValue pst
+              , withDatum proposalInputDatum
+              , withTxId proposalTxRef
+              , withOutRef proposalRef
+              ]
         , output $
-            script proposalValidatorHash
-              . withValue (sortValue (pst <> minAda))
-              . withDatum proposalOutputDatum
+            mconcat
+              [ script proposalValidatorHash
+              , withValue (sortValue (pst <> minAda))
+              , withDatum proposalOutputDatum
+              ]
         ]
 
     validTimeRange :: POSIXTimeRange
@@ -314,7 +321,7 @@ mkTestTree name ps isValid = group name [proposal, stake]
        in testValidator
             isValid
             "proposal"
-            (proposalValidator Shared.proposal)
+            agoraScripts.compiledProposalValidator
             proposalInputDatum
             (mkProposalRedeemer ps)
             (spend proposalRef)
@@ -326,7 +333,7 @@ mkTestTree name ps isValid = group name [proposal, stake]
        in testValidator
             isValid
             "stake"
-            (stakeValidator Shared.stake)
+            agoraScripts.compiledStakeValidator
             stakeInputDatum
             stakeRedeemer
             (spend $ mkStakeRef idx)

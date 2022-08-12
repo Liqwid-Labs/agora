@@ -37,15 +37,11 @@ module Sample.Proposal.Advance (
   mkBadGovernorOutputDatumBundle,
 ) where
 
-import Agora.AuthorityToken (
-  AuthorityToken (AuthorityToken),
-  authorityTokenPolicy,
- )
 import Agora.Governor (
+  Governor (..),
   GovernorDatum (..),
   GovernorRedeemer (MintGATs),
  )
-import Agora.Governor.Scripts (governorValidator)
 import Agora.Proposal (
   ProposalDatum (..),
   ProposalId (ProposalId),
@@ -56,7 +52,6 @@ import Agora.Proposal (
   ResultTag (ResultTag),
   emptyVotesFor,
  )
-import Agora.Proposal.Scripts (proposalValidator)
 import Agora.Proposal.Time (
   ProposalStartingTime (ProposalStartingTime),
   ProposalTimingConfig (
@@ -66,12 +61,11 @@ import Agora.Proposal.Time (
     votingTime
   ),
  )
+import Agora.Scripts (AgoraScripts (..))
 import Agora.Stake (
-  Stake (gtClassRef),
   StakeDatum (..),
   StakeRedeemer (WitnessStake),
  )
-import Agora.Stake.Scripts (stakeValidator)
 import Agora.Utils (validatorHashToTokenName)
 import Control.Monad.State (execState, modify, when)
 import Data.Default (def)
@@ -107,18 +101,18 @@ import Sample.Proposal.Shared (
   stakeTxRef,
  )
 import Sample.Shared (
+  agoraScripts,
   authorityTokenSymbol,
   govAssetClass,
   govValidatorHash,
+  governor,
   minAda,
   proposalPolicySymbol,
   proposalValidatorHash,
   signer,
-  stake,
   stakeAssetClass,
   stakeValidatorHash,
  )
-import Sample.Shared qualified as Shared
 import Test.Specification (
   SpecificationTree,
   group,
@@ -321,14 +315,18 @@ mkProposalBuilder ps =
       value = sortValue $ minAda <> pst
    in mconcat
         [ input $
-            script proposalValidatorHash
-              . withOutRef proposalRef
-              . withDatum (mkProposalInputDatum ps)
-              . withValue value
+            mconcat
+              [ script proposalValidatorHash
+              , withOutRef proposalRef
+              , withDatum (mkProposalInputDatum ps)
+              , withValue value
+              ]
         , output $
-            script proposalValidatorHash
-              . withDatum (mkProposalOutputDatum ps)
-              . withValue value
+            mconcat
+              [ script proposalValidatorHash
+              , withDatum (mkProposalOutputDatum ps)
+              , withValue value
+              ]
         ]
 
 {- | The proposal redeemer used to spend the proposal UTXO, which is always
@@ -390,7 +388,7 @@ mkStakeBuilder ps =
           minAda
             <> Value.assetClassValue stakeAssetClass 1
             <> Value.assetClassValue
-              (untag stake.gtClassRef)
+              (untag governor.gtClassRef)
               ps.perStakeGTs
       perStake idx i o =
         let withSig =
@@ -400,14 +398,18 @@ mkStakeBuilder ps =
          in mconcat
               [ withSig
               , input $
-                  script stakeValidatorHash
-                    . withOutRef (mkStakeRef idx)
-                    . withValue perStakeValue
-                    . withDatum i
+                  mconcat
+                    [ script stakeValidatorHash
+                    , withOutRef (mkStakeRef idx)
+                    , withValue perStakeValue
+                    , withDatum i
+                    ]
               , output $
-                  script stakeValidatorHash
-                    . withValue perStakeValue
-                    . withDatum o
+                  mconcat
+                    [ script stakeValidatorHash
+                    , withValue perStakeValue
+                    , withDatum o
+                    ]
               ]
    in mconcat $
         zipWith3
@@ -457,15 +459,19 @@ mkGovernorBuilder ps =
       value = sortValue $ gst <> minAda
    in mconcat
         [ input $
-            script govValidatorHash
-              . withValue value
-              . withOutRef governorRef
-              . withDatum governorInputDatum
+            mconcat
+              [ script govValidatorHash
+              , withValue value
+              , withOutRef governorRef
+              , withDatum governorInputDatum
+              ]
         , output $
-            script govValidatorHash
-              . withValue value
-              . withOutRef governorRef
-              . withDatum (mkGovernorOutputDatum ps)
+            mconcat
+              [ script govValidatorHash
+              , withValue value
+              , withOutRef governorRef
+              , withDatum (mkGovernorOutputDatum ps)
+              ]
         ]
 
 {- | The proposal redeemer used to spend the governor UTXO, which is always
@@ -501,9 +507,11 @@ mkAuthorityTokenBuilder (AuthorityTokenParameters es mdt invalidTokenName) =
        in mconcat
             [ mint minted
             , output $
-                script vh
-                  . maybe id withDatum mdt
-                  . withValue value
+                mconcat
+                  [ script vh
+                  , maybe mempty withDatum mdt
+                  , withValue value
+                  ]
             ]
 
 -- | The redeemer used while running the authority token policy.
@@ -551,7 +559,7 @@ mkTestTree name pb val =
             testValidator
               val.forProposalValidator
               "proposal"
-              (proposalValidator Shared.proposal)
+              agoraScripts.compiledProposalValidator
               proposalInputDatum
               proposalRedeemer
               (spend proposalRef)
@@ -562,7 +570,7 @@ mkTestTree name pb val =
             testValidator
               val.forStakeValidator
               "stake"
-              (stakeValidator Shared.stake)
+              agoraScripts.compiledStakeValidator
               (getStakeInputDatumAt pb.stakeParameters idx)
               stakeRedeemer
               ( spend (mkStakeRef idx)
@@ -572,7 +580,7 @@ mkTestTree name pb val =
       testValidator
         (fromJust val.forGovernorValidator)
         "governor"
-        (governorValidator Shared.governor)
+        agoraScripts.compiledGovernorValidator
         governorInputDatum
         governorRedeemer
         (spend governorRef)
@@ -582,7 +590,7 @@ mkTestTree name pb val =
       testPolicy
         (fromJust val.forAuthorityTokenPolicy)
         "authority"
-        (authorityTokenPolicy $ AuthorityToken Shared.govAssetClass)
+        agoraScripts.compiledAuthorityTokenPolicy
         authorityTokenRedeemer
         (mint authorityTokenSymbol)
         <$ (pb.authorityTokenParameters)

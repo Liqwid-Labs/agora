@@ -25,12 +25,14 @@ import Sample.Effect.TreasuryWithdrawal (
   treasuries,
   users,
  )
+import Sample.Shared (mkEffect)
 import Test.Specification (
   SpecificationTree,
   effectFailsWith,
   effectSucceedsWith,
   group,
  )
+import Test.Util (sortValue)
 
 specs :: [SpecificationTree]
 specs =
@@ -38,7 +40,7 @@ specs =
       "effect"
       [ effectSucceedsWith
           "Simple"
-          (treasuryWithdrawalValidator currSymbol)
+          (mkEffect $ treasuryWithdrawalValidator currSymbol)
           datum1
           ( buildScriptContext
               [ inputGAT
@@ -50,7 +52,7 @@ specs =
           )
       , effectSucceedsWith
           "Simple with multiple treasuries "
-          (treasuryWithdrawalValidator currSymbol)
+          (mkEffect $ treasuryWithdrawalValidator currSymbol)
           datum1
           ( buildScriptContext
               [ inputGAT
@@ -67,7 +69,7 @@ specs =
           )
       , effectSucceedsWith
           "Mixed Assets"
-          (treasuryWithdrawalValidator currSymbol)
+          (mkEffect $ treasuryWithdrawalValidator currSymbol)
           datum2
           ( buildScriptContext
               [ inputGAT
@@ -82,7 +84,7 @@ specs =
           )
       , effectFailsWith
           "Pay to uknown 3rd party"
-          (treasuryWithdrawalValidator currSymbol)
+          (mkEffect $ treasuryWithdrawalValidator currSymbol)
           datum2
           ( buildScriptContext
               [ inputGAT
@@ -98,7 +100,7 @@ specs =
           )
       , effectFailsWith
           "Missing receiver"
-          (treasuryWithdrawalValidator currSymbol)
+          (mkEffect $ treasuryWithdrawalValidator currSymbol)
           datum2
           ( buildScriptContext
               [ inputGAT
@@ -113,7 +115,7 @@ specs =
           )
       , effectFailsWith
           "Unauthorized treasury"
-          (treasuryWithdrawalValidator currSymbol)
+          (mkEffect $ treasuryWithdrawalValidator currSymbol)
           datum3
           ( buildScriptContext
               [ inputGAT
@@ -125,7 +127,7 @@ specs =
           )
       , effectFailsWith
           "Prevent transactions besides the withdrawal"
-          (treasuryWithdrawalValidator currSymbol)
+          (mkEffect $ treasuryWithdrawalValidator currSymbol)
           datum3
           ( buildScriptContext
               [ inputGAT
@@ -141,8 +143,14 @@ specs =
       ]
   ]
   where
-    asset1 = Value.singleton "abbc12" "OrangeBottle"
-    asset2 = Value.singleton "abbc12" "19721121"
+    asset1 =
+      Value.singleton
+        "0d586e057e76238f8c56c0752507bfa45ae13b04f8497a311d4aaa48"
+        "OrangeBottle"
+    asset2 =
+      Value.singleton
+        "7e6aa764bceeba1f7acf47d20f1a2a85440afa2928f8ae96376f4d85"
+        "19721121"
     datum1 =
       TreasuryWithdrawalDatum
         [ (head users, asset1 1)
@@ -155,8 +163,8 @@ specs =
         ]
     datum2 =
       TreasuryWithdrawalDatum
-        [ (head users, asset2 5 <> asset1 4)
-        , (users !! 1, asset2 1 <> asset1 2)
+        [ (head users, sortValue $ asset2 5 <> asset1 4)
+        , (users !! 1, sortValue $ asset2 1 <> asset1 2)
         , (users !! 2, asset1 1)
         ]
         [ head treasuries

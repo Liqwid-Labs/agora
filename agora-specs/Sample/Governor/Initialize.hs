@@ -19,16 +19,20 @@ module Sample.Governor.Initialize (
   mkTestCase,
 ) where
 
+import Agora.Bootstrap (agoraScripts)
 import Agora.Governor (Governor (..), GovernorDatum (..))
-import Agora.Governor.Scripts (
-  governorPolicy,
-  governorSTAssetClassFromGovernor,
+import Agora.Proposal (ProposalId (..), ProposalThresholds (..))
+import Agora.Proposal.Time (
+  MaxTimeRangeWidth (MaxTimeRangeWidth),
+  ProposalTimingConfig (ProposalTimingConfig),
+ )
+import Agora.Scripts (
+  AgoraScripts (compiledGovernorPolicy),
+  governorSTAssetClass,
+  governorSTSymbol,
   governorValidatorHash,
  )
-import Agora.Proposal (ProposalId (..), ProposalThresholds (..))
-import Agora.Proposal.Time (MaxTimeRangeWidth (MaxTimeRangeWidth), ProposalTimingConfig (ProposalTimingConfig))
 import Data.Default (Default (..))
-import Plutarch.Api.V1 (mintingPolicySymbol, mkMintingPolicy)
 import Plutarch.Context (
   input,
   mint,
@@ -43,7 +47,6 @@ import Plutarch.Context (
  )
 import PlutusLedgerApi.V1 (
   CurrencySymbol,
-  MintingPolicy,
   TxOutRef (TxOutRef),
   ValidatorHash,
  )
@@ -107,17 +110,17 @@ governor =
     { gstOutRef = witnessRef
     }
 
+scripts :: AgoraScripts
+scripts = agoraScripts Shared.deterministicTracingConfing governor
+
 govAssetClass :: AssetClass
-govAssetClass = governorSTAssetClassFromGovernor governor
+govAssetClass = governorSTAssetClass scripts
 
 govValidatorHash :: ValidatorHash
-govValidatorHash = governorValidatorHash governor
-
-govPolicy :: MintingPolicy
-govPolicy = mkMintingPolicy (governorPolicy governor)
+govValidatorHash = governorValidatorHash scripts
 
 govSymbol :: CurrencySymbol
-govSymbol = mintingPolicySymbol govPolicy
+govSymbol = governorSTSymbol scripts
 
 --------------------------------------------------------------------------------
 
@@ -169,12 +172,16 @@ mintGST ps = builder
         then
           mconcat
             [ input $
-                pubKey witnessPubKey
-                  . withValue witnessValue
-                  . withOutRef witnessRef
+                mconcat
+                  [ pubKey witnessPubKey
+                  , withValue witnessValue
+                  , withOutRef witnessRef
+                  ]
             , output $
-                pubKey witnessPubKey
-                  . withValue witnessValue
+                mconcat
+                  [ pubKey witnessPubKey
+                  , withValue witnessValue
+                  ]
             ]
         else mempty
 
@@ -184,11 +191,13 @@ mintGST ps = builder
       let datum =
             if ps.withGovernorDatum
               then withDatum governorOutputDatum
-              else id
+              else mempty
        in output $
-            script govValidatorHash
-              . withValue governorValue
-              . datum
+            mconcat
+              [ script govValidatorHash
+              , withValue governorValue
+              , datum
+              ]
     --
     builder =
       mconcat
@@ -265,6 +274,6 @@ mkTestCase name ps valid =
   testPolicy
     valid
     name
-    (governorPolicy governor)
+    scripts.compiledGovernorPolicy
     ()
     (mkMinting mintGST ps govSymbol)

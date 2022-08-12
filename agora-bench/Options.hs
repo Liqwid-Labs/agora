@@ -1,21 +1,22 @@
 module Options (Options (..), parseOptions) where
 
+import Control.Applicative (optional)
 import Options.Applicative ((<**>))
 import Options.Applicative qualified as Opt
 
 newtype Options = Options
-  { output :: FilePath
+  { output :: Maybe FilePath
   }
 
-outputOpt :: Opt.Parser FilePath
+outputOpt :: Opt.Parser (Maybe FilePath)
 outputOpt =
-  Opt.strOption
-    ( Opt.long "output-path"
-        <> Opt.short 'o'
-        <> Opt.metavar "OUTPUT_PATH"
-        <> Opt.value "./bench.csv"
-        <> Opt.help "The path of the bench report file."
-    )
+  optional $
+    Opt.strOption
+      ( Opt.long "output-path"
+          <> Opt.short 'o'
+          <> Opt.metavar "OUTPUT_PATH"
+          <> Opt.help "The path of the bench report file."
+      )
 
 benchOpt :: Opt.Parser Options
 benchOpt = Options <$> outputOpt

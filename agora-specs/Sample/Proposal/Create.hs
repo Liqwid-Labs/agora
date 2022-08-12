@@ -20,27 +20,24 @@ module Sample.Proposal.Create (
 ) where
 
 import Agora.Governor (
+  Governor (..),
   GovernorDatum (..),
   GovernorRedeemer (CreateProposal),
  )
-import Agora.Governor.Scripts (governorValidator)
 import Agora.Proposal (
-  Proposal (governorSTAssetClass),
   ProposalDatum (..),
   ProposalId (ProposalId),
   ProposalStatus (..),
   ResultTag (ResultTag),
   emptyVotesFor,
  )
-import Agora.Proposal.Scripts (proposalPolicy)
 import Agora.Proposal.Time (MaxTimeRangeWidth (MaxTimeRangeWidth), ProposalStartingTime (..))
+import Agora.Scripts (AgoraScripts (..))
 import Agora.Stake (
   ProposalLock (..),
-  Stake (gtClassRef),
   StakeDatum (..),
   StakeRedeemer (PermitVote),
  )
-import Agora.Stake.Scripts (stakeValidator)
 import Data.Coerce (coerce)
 import Data.Default (Default (def))
 import Data.Tagged (Tagged, untag)
@@ -69,19 +66,19 @@ import PlutusLedgerApi.V1.Value qualified as Value
 import PlutusTx.AssocMap qualified as AssocMap
 import Sample.Proposal.Shared (stakeTxRef)
 import Sample.Shared (
+  agoraScripts,
+  govAssetClass,
   govValidatorHash,
+  governor,
   minAda,
-  proposal,
   proposalPolicySymbol,
   proposalStartingTimeFromTimeRange,
   proposalValidatorHash,
   signer,
   signer2,
-  stake,
   stakeAssetClass,
   stakeValidatorHash,
  )
-import Sample.Shared qualified as Shared
 import Test.Specification (SpecificationTree, group, testPolicy, testValidator)
 import Test.Util (CombinableBuilder, closedBoundedInterval, mkMinting, mkSpending, sortValue)
 
@@ -270,7 +267,7 @@ createProposal ps = builder
   where
     pst = Value.singleton proposalPolicySymbol "" 1
     sst = Value.assetClassValue stakeAssetClass 1
-    gst = Value.assetClassValue proposal.governorSTAssetClass 1
+    gst = Value.assetClassValue govAssetClass 1
 
     ---
 
@@ -279,7 +276,7 @@ createProposal ps = builder
       sortValue $
         sortValue $
           sst
-            <> Value.assetClassValue (untag stake.gtClassRef) (untag stakedGTs)
+            <> Value.assetClassValue (untag governor.gtClassRef) (untag stakedGTs)
             <> minAda
     proposalValue = sortValue $ pst <> minAda
 
@@ -302,29 +299,39 @@ createProposal ps = builder
         , ---
           timeRange $ mkTimeRange ps
         , input $
-            script govValidatorHash
-              . withValue governorValue
-              . withDatum governorInputDatum
-              . withOutRef governorRef
+            mconcat
+              [ script govValidatorHash
+              , withValue governorValue
+              , withDatum governorInputDatum
+              , withOutRef governorRef
+              ]
         , output $
-            script govValidatorHash
-              . withValue governorValue
-              . withDatum (mkGovernorOutputDatum ps)
+            mconcat
+              [ script govValidatorHash
+              , withValue governorValue
+              , withDatum (mkGovernorOutputDatum ps)
+              ]
         , ---
           input $
-            script stakeValidatorHash
-              . withValue stakeValue
-              . withDatum (mkStakeInputDatum ps)
-              . withOutRef stakeRef
+            mconcat
+              [ script stakeValidatorHash
+              , withValue stakeValue
+              , withDatum (mkStakeInputDatum ps)
+              , withOutRef stakeRef
+              ]
         , output $
-            script stakeValidatorHash
-              . withValue stakeValue
-              . withDatum (mkStakeOutputDatum ps)
+            mconcat
+              [ script stakeValidatorHash
+              , withValue stakeValue
+              , withDatum (mkStakeOutputDatum ps)
+              ]
         , ---
           output $
-            script proposalValidatorHash
-              . withValue proposalValue
-              . withDatum (mkProposalOutputDatum ps)
+            mconcat
+              [ script proposalValidatorHash
+              , withValue proposalValue
+              , withDatum (mkProposalOutputDatum ps)
+              ]
         ]
 
 --------------------------------------------------------------------------------
@@ -428,7 +435,7 @@ mkTestTree
         testPolicy
           validForProposalPolicy
           "proposal"
-          (proposalPolicy Shared.proposal.governorSTAssetClass)
+          agoraScripts.compiledProposalPolicy
           proposalPolicyRedeemer
           (mint proposalPolicySymbol)
 
@@ -436,15 +443,16 @@ mkTestTree
         testValidator
           validForGovernorValidator
           "governor"
-          (governorValidator Shared.governor)
+          agoraScripts.compiledGovernorValidator
           governorInputDatum
           governorRedeemer
           (spend governorRef)
+
       stakeTest =
         testValidator
           validForStakeValidator
           "stake"
-          (stakeValidator Shared.stake)
+          agoraScripts.compiledStakeValidator
           (mkStakeInputDatum ps)
           stakeRedeemer
           (spend stakeRef)

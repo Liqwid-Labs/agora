@@ -11,7 +11,6 @@ module Agora.Stake (
   -- * Haskell-land
   StakeDatum (..),
   StakeRedeemer (..),
-  Stake (..),
   ProposalLock (..),
 
   -- * Plutarch-land
@@ -31,20 +30,16 @@ module Agora.Stake (
   pisIrrelevant,
 ) where
 
-import Agora.Plutarch.Orphans ()
 import Agora.Proposal (PProposalId, PResultTag, ProposalId (..), ResultTag (..))
 import Agora.SafeMoney (GTTag)
 import Data.Tagged (Tagged (..))
-import GHC.Generics qualified as GHC
-import Generics.SOP (Generic, HasDatatypeInfo, I (I))
+import Generics.SOP qualified as SOP
 import Plutarch.Api.V1 (
   PMaybeData,
   PPubKeyHash,
  )
 import Plutarch.DataRepr (
   DerivePConstantViaData (..),
-  PDataFields,
-  PIsDataReprInstances (PIsDataReprInstances),
  )
 import Plutarch.Extra.Field (pletAll)
 import Plutarch.Extra.IsData (
@@ -52,32 +47,16 @@ import Plutarch.Extra.IsData (
   ProductIsData (ProductIsData),
  )
 import Plutarch.Extra.List (pnotNull)
-import Plutarch.Extra.Other (DerivePNewtype' (..))
 import Plutarch.Extra.Sum (PSum (..))
 import Plutarch.Extra.Traversable (pfoldMap)
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (..))
 import Plutarch.SafeMoney (PDiscrete)
 import Plutarch.Show (PShow (..))
 import PlutusLedgerApi.V1 (PubKeyHash)
-import PlutusLedgerApi.V1.Value (AssetClass)
 import PlutusTx qualified
 import Prelude hiding (Num (..))
 
 --------------------------------------------------------------------------------
-
-{- | Parameters for creating Stake scripts.
-
-     @since 0.1.0
--}
-data Stake = Stake
-  { gtClassRef :: Tagged GTTag AssetClass
-  -- ^ Used when inlining the AssetClass of a 'PDiscrete' in the script code.
-  , proposalSTClass :: AssetClass
-  }
-  deriving stock
-    ( -- | @since 0.1.0
-      GHC.Generic
-    )
 
 {- | Locks that are stored in the stake datums for various purposes.
 
@@ -133,10 +112,6 @@ data ProposalLock
     ( -- | @since 0.1.0
       Show
     , -- | @since 0.1.0
-      GHC.Generic
-    )
-  deriving anyclass
-    ( -- | @since 0.1.0
       Generic
     )
 
@@ -176,7 +151,12 @@ data StakeRedeemer
     DelegateTo PubKeyHash
   | -- | Revoke the existing delegation.
     ClearDelegate
-  deriving stock (Show, GHC.Generic)
+  deriving stock
+    ( -- | @since 0.1.0
+      Show
+    , -- | @since 0.1.0
+      Generic
+    )
 
 PlutusTx.makeIsDataIndexed
   ''StakeRedeemer
@@ -208,8 +188,16 @@ data StakeDatum = StakeDatum
   -- ^ The current proposals locking this stake. This field must be empty
   --   for the stake to be usable for deposits and withdrawals.
   }
-  deriving stock (Show, GHC.Generic)
-  deriving anyclass (Generic)
+  deriving stock
+    ( -- | @since 0.1.0
+      Show
+    , -- | @since 0.1.0
+      Generic
+    )
+  deriving anyclass
+    ( -- | @since 0.1.0
+      SOP.Generic
+    )
   deriving
     ( -- | @since 0.1.0
       PlutusTx.ToData
@@ -231,34 +219,26 @@ newtype PStakeDatum (s :: S) = PStakeDatum
         ( PDataRecord
             '[ "stakedAmount" ':= PDiscrete GTTag
              , "owner" ':= PPubKeyHash
-             , "delegatedTo" ':= PMaybeData PPubKeyHash
+             , "delegatedTo" ':= PMaybeData (PAsData PPubKeyHash)
              , "lockedBy" ':= PBuiltinList (PAsData PProposalLock)
              ]
         )
   }
   deriving stock
     ( -- | @since 0.1.0
-      GHC.Generic
-    )
-  deriving anyclass
-    ( -- | @since 0.1.0
       Generic
     )
   deriving anyclass
-    ( -- | @since 0.1.0
-      PIsDataRepr
-    )
-  deriving
     ( -- | @since 0.1.0
       PlutusType
     , -- | @since 0.1.0
       PIsData
     , -- | @since 0.1.0
-      PDataFields
-    , -- | @since 0.1.0
       PEq
     )
-    via (DerivePNewtype' PStakeDatum)
+
+instance DerivePlutusType PStakeDatum where
+  type DPTStrat _ = PlutusTypeNewtype
 
 -- | @since 0.1.0
 instance Plutarch.Lift.PUnsafeLiftDecl PStakeDatum where
@@ -271,10 +251,7 @@ deriving via
     (Plutarch.Lift.PConstantDecl StakeDatum)
 
 -- | @since 0.1.0
-deriving via
-  PAsData (DerivePNewtype' PStakeDatum)
-  instance
-    PTryFrom PData (PAsData PStakeDatum)
+instance PTryFrom PData (PAsData PStakeDatum)
 
 {- | Plutarch-level redeemer for Stake scripts.
 
@@ -292,29 +269,22 @@ data PStakeRedeemer (s :: S)
   | PClearDelegate (Term s (PDataRecord '[]))
   deriving stock
     ( -- | @since 0.1.0
-      GHC.Generic
-    )
-  deriving anyclass
-    ( -- | @since 0.1.0
       Generic
     )
   deriving anyclass
     ( -- | @since 0.1.0
-      PIsDataRepr
-    )
-  deriving
-    ( -- | @since 0.1.0
+      SOP.Generic
+    , -- | @since 0.1.0
       PlutusType
     , -- | @since 0.1.0
       PIsData
     )
-    via PIsDataReprInstances PStakeRedeemer
+
+instance DerivePlutusType PStakeRedeemer where
+  type DPTStrat _ = PlutusTypeData
 
 -- | @since 0.1.0
-deriving via
-  PAsData (PIsDataReprInstances PStakeRedeemer)
-  instance
-    PTryFrom PData (PAsData PStakeRedeemer)
+instance PTryFrom PData PStakeRedeemer
 
 -- | @since 0.1.0
 instance Plutarch.Lift.PUnsafeLiftDecl PStakeRedeemer where
@@ -331,7 +301,13 @@ deriving via
      @since 0.2.0
 -}
 data PProposalLock (s :: S)
-  = PCreated (Term s (PDataRecord '["created" ':= PProposalId]))
+  = PCreated
+      ( Term
+          s
+          ( PDataRecord
+              '["created" ':= PProposalId]
+          )
+      )
   | PVoted
       ( Term
           s
@@ -343,19 +319,9 @@ data PProposalLock (s :: S)
       )
   deriving stock
     ( -- | @since 0.1.0
-      GHC.Generic
-    )
-  deriving anyclass
-    ( -- | @since 0.1.0
       Generic
-    , -- | @since 0.1.0
-      HasDatatypeInfo
     )
   deriving anyclass
-    ( -- | @since 0.1.0
-      PIsDataRepr
-    )
-  deriving
     ( -- | @since 0.1.0
       PlutusType
     , -- | @since 0.1.0
@@ -363,13 +329,15 @@ data PProposalLock (s :: S)
     , -- | @since 0.1.0
       PEq
     )
-    via (PIsDataReprInstances PProposalLock)
+
+instance DerivePlutusType PProposalLock where
+  type DPTStrat _ = PlutusTypeData
 
 -- | @since 0.1.0
-deriving via
-  PAsData (PIsDataReprInstances PProposalLock)
-  instance
-    PTryFrom PData (PAsData PProposalLock)
+instance PTryFrom PData PProposalLock
+
+-- | @since 0.2.0
+instance PTryFrom PData (PAsData PProposalLock)
 
 -- | @since 0.1.0
 instance Plutarch.Lift.PUnsafeLiftDecl PProposalLock where
@@ -399,9 +367,7 @@ instance PShow PProposalLock where
 pstakeLocked :: forall (s :: S). Term s (PStakeDatum :--> PBool)
 pstakeLocked = phoistAcyclic $
   plam $ \stakeDatum ->
-    let locks :: Term _ (PBuiltinList (PAsData PProposalLock))
-        locks = pfield @"lockedBy" # stakeDatum
-     in pnotNull # locks
+    pnotNull #$ pfield @"lockedBy" @(PBuiltinList _) # pto stakeDatum
 
 {- | Get the number of *alive* proposals that were created by the given stake.
 
@@ -439,18 +405,17 @@ data PStakeRole (s :: S)
     PIrrelevant
   deriving stock
     ( -- | @since 0.2.0
-      GHC.Generic
+      Generic
     )
   deriving anyclass
     ( -- | @since 0.2.0
-      Generic
-    , -- | @since 0.2.0
       PlutusType
-    , -- | @since 0.2.0
-      HasDatatypeInfo
     , -- | @since 0.2.0
       PEq
     )
+
+instance DerivePlutusType PStakeRole where
+  type DPTStrat _ = PlutusTypeScott
 
 {- | Retutn true if the stake was used to voted on the proposal.
 

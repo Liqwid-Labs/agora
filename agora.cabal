@@ -95,6 +95,7 @@ common deps
     , bytestring
     , cardano-binary
     , cardano-prelude
+    , composition-prelude
     , containers
     , data-default
     , data-default-class
@@ -143,6 +144,7 @@ library
   exposed-modules:
     Agora.Aeson.Orphans
     Agora.AuthorityToken
+    Agora.Bootstrap
     Agora.Effect
     Agora.Effect.GovernorMutation
     Agora.Effect.NoOp
@@ -154,6 +156,7 @@ library
     Agora.Proposal.Scripts
     Agora.Proposal.Time
     Agora.SafeMoney
+    Agora.Scripts
     Agora.Stake
     Agora.Stake.Scripts
     Agora.Treasury

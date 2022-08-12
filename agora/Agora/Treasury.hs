@@ -11,14 +11,16 @@ treasury.
 module Agora.Treasury (module Agora.Treasury) where
 
 import Agora.AuthorityToken (singleAuthorityTokenBurned)
-import GHC.Generics qualified as GHC
-import Generics.SOP (Generic)
+import Generics.SOP qualified as SOP
 import Plutarch.Api.V1 (PValidator)
 import Plutarch.Api.V1.Contexts (PScriptPurpose (PMinting))
 import "plutarch" Plutarch.Api.V1.Value (PValue)
 import Plutarch.Builtin (pforgetData)
-import Plutarch.Extra.IsData (DerivePConstantViaEnum (..), EnumIsData (..))
-import Plutarch.Extra.Other (DerivePNewtype' (..))
+import Plutarch.Extra.IsData (
+  DerivePConstantViaEnum (..),
+  EnumIsData (..),
+  PlutusTypeEnumData,
+ )
 import Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC)
 import Plutarch.Lift (PConstantDecl (..), PLifted (..), PUnsafeLiftDecl)
 import Plutarch.TryFrom ()
@@ -38,7 +40,7 @@ data TreasuryRedeemer
     , -- | @since 0.1.0
       Show
     , -- | @since 0.1.0
-      GHC.Generic
+      Generic
     , -- | @since 0.2.0
       Enum
     , -- | @since 0.2.0
@@ -46,7 +48,7 @@ data TreasuryRedeemer
     )
   deriving anyclass
     ( -- | @since 0.2.0
-      Generic
+      SOP.Generic
     )
   deriving
     ( -- | @since 0.1.0
@@ -63,23 +65,25 @@ data TreasuryRedeemer
 
      @since 0.1.0
 -}
-newtype PTreasuryRedeemer (s :: S)
-  = PTreasuryRedeemer (Term s PInteger)
+data PTreasuryRedeemer (s :: S)
+  = PSpendTreasuryGAT
   deriving stock
     ( -- | @since 0.1.0
-      GHC.Generic
+      Generic
+    , -- | @since 0.2.0
+      Bounded
+    , -- | @since 0.2.0
+      Enum
     )
   deriving anyclass
-    ( -- | @since 0.1.0
-      Generic
-    )
-  deriving
     ( -- | @since 0.1.0
       PlutusType
     , -- | @since 0.1.0
       PIsData
     )
-    via (DerivePNewtype' PTreasuryRedeemer)
+
+instance DerivePlutusType PTreasuryRedeemer where
+  type DPTStrat _ = PlutusTypeEnumData
 
 -- | @since 0.1.0
 instance PUnsafeLiftDecl PTreasuryRedeemer where

@@ -9,14 +9,14 @@ Tests for Stake policy and validator
 -}
 module Spec.Stake (specs) where
 
+import Agora.Scripts (AgoraScripts (..))
 import Agora.Stake (
-  Stake (..),
   StakeDatum (StakeDatum),
   StakeRedeemer (DepositWithdraw),
  )
-import Agora.Stake.Scripts (stakePolicy, stakeValidator)
 import Data.Bool (Bool (..))
 import Data.Maybe (Maybe (..))
+import Sample.Shared (agoraScripts)
 import Sample.Stake (
   DepositWithdrawExample (
     DepositWithdrawExample,
@@ -26,7 +26,6 @@ import Sample.Stake (
   signer,
  )
 import Sample.Stake qualified as Stake (
-  stake,
   stakeCreation,
   stakeCreationUnsigned,
   stakeCreationWrongDatum,
@@ -41,7 +40,6 @@ import Test.Specification (
   validatorFailsWith,
   validatorSucceedsWith,
  )
-import Test.Util (toDatum)
 import Prelude (Num (negate), ($))
 
 -- | The SpecificationTree exported by this module.
@@ -51,17 +49,17 @@ specs =
       "policy"
       [ policySucceedsWith
           "stakeCreation"
-          (stakePolicy Stake.stake.gtClassRef)
+          agoraScripts.compiledStakePolicy
           ()
           Stake.stakeCreation
       , policyFailsWith
           "stakeCreationWrongDatum"
-          (stakePolicy Stake.stake.gtClassRef)
+          agoraScripts.compiledStakePolicy
           ()
           Stake.stakeCreationWrongDatum
       , policyFailsWith
           "stakeCreationUnsigned"
-          (stakePolicy Stake.stake.gtClassRef)
+          agoraScripts.compiledStakePolicy
           ()
           Stake.stakeCreationUnsigned
       ]
@@ -69,21 +67,21 @@ specs =
       "validator"
       [ validatorSucceedsWith
           "stakeDepositWithdraw deposit"
-          (stakeValidator Stake.stake)
-          (toDatum $ StakeDatum 100_000 signer Nothing [])
-          (toDatum $ DepositWithdraw 100_000)
+          agoraScripts.compiledStakeValidator
+          (StakeDatum 100_000 signer Nothing [])
+          (DepositWithdraw 100_000)
           (Stake.stakeDepositWithdraw $ DepositWithdrawExample {startAmount = 100_000, delta = 100_000})
       , validatorSucceedsWith
           "stakeDepositWithdraw withdraw"
-          (stakeValidator Stake.stake)
-          (toDatum $ StakeDatum 100_000 signer Nothing [])
-          (toDatum $ DepositWithdraw $ negate 100_000)
+          agoraScripts.compiledStakeValidator
+          (StakeDatum 100_000 signer Nothing [])
+          (DepositWithdraw $ negate 100_000)
           (Stake.stakeDepositWithdraw $ DepositWithdrawExample {startAmount = 100_000, delta = negate 100_000})
       , validatorFailsWith
           "stakeDepositWithdraw negative GT"
-          (stakeValidator Stake.stake)
-          (toDatum $ StakeDatum 100_000 signer Nothing [])
-          (toDatum $ DepositWithdraw 1_000_000)
+          agoraScripts.compiledStakeValidator
+          (StakeDatum 100_000 signer Nothing [])
+          (DepositWithdraw 1_000_000)
           (Stake.stakeDepositWithdraw $ DepositWithdrawExample {startAmount = 100_000, delta = negate 1_000_000})
       , group
           "set delegate"

@@ -11,6 +11,7 @@ module Sample.Proposal.Vote (
   validVoteAsDelegateParameters,
 ) where
 
+import Agora.Governor (Governor (..))
 import Agora.Proposal (
   ProposalDatum (..),
   ProposalId (ProposalId),
@@ -19,18 +20,16 @@ import Agora.Proposal (
   ProposalVotes (ProposalVotes),
   ResultTag (ResultTag),
  )
-import Agora.Proposal.Scripts (proposalValidator)
 import Agora.Proposal.Time (
   ProposalStartingTime (ProposalStartingTime),
   ProposalTimingConfig (draftTime, votingTime),
  )
+import Agora.Scripts (AgoraScripts (..))
 import Agora.Stake (
   ProposalLock (..),
-  Stake (gtClassRef),
   StakeDatum (..),
   StakeRedeemer (PermitVote),
  )
-import Agora.Stake.Scripts (stakeValidator)
 import Data.Default (Default (def))
 import Data.Tagged (Tagged (Tagged), untag)
 import Plutarch.Context (
@@ -52,15 +51,15 @@ import PlutusLedgerApi.V1.Value qualified as Value
 import PlutusTx.AssocMap qualified as AssocMap
 import Sample.Proposal.Shared (proposalTxRef, stakeTxRef)
 import Sample.Shared (
+  agoraScripts,
+  governor,
   minAda,
   proposalPolicySymbol,
   proposalValidatorHash,
   signer,
-  stake,
   stakeAssetClass,
   stakeValidatorHash,
  )
-import Sample.Shared qualified as Shared
 import Test.Specification (
   SpecificationTree,
   group,
@@ -205,7 +204,7 @@ vote params =
       stakeValue =
         sortValue $
           sst
-            <> Value.assetClassValue (untag stake.gtClassRef) params.voteCount
+            <> Value.assetClassValue (untag governor.gtClassRef) params.voteCount
             <> minAda
 
       signer =
@@ -219,23 +218,31 @@ vote params =
           , signedWith signer
           , timeRange validTimeRange
           , input $
-              script proposalValidatorHash
-                . withValue pst
-                . withDatum proposalInputDatum
-                . withOutRef proposalRef
+              mconcat
+                [ script proposalValidatorHash
+                , withValue pst
+                , withDatum proposalInputDatum
+                , withOutRef proposalRef
+                ]
           , input $
-              script stakeValidatorHash
-                . withValue stakeValue
-                . withDatum stakeInputDatum
-                . withOutRef stakeRef
+              mconcat
+                [ script stakeValidatorHash
+                , withValue stakeValue
+                , withDatum stakeInputDatum
+                , withOutRef stakeRef
+                ]
           , output $
-              script proposalValidatorHash
-                . withValue pst
-                . withDatum proposalOutputDatum
+              mconcat
+                [ script proposalValidatorHash
+                , withValue pst
+                , withDatum proposalOutputDatum
+                ]
           , output $
-              script stakeValidatorHash
-                . withValue stakeValue
-                . withDatum stakeOutputDatum
+              mconcat
+                [ script stakeValidatorHash
+                , withValue stakeValue
+                , withDatum stakeOutputDatum
+                ]
           ]
    in builder
 
@@ -270,7 +277,7 @@ mkTestTree name ps isValid = group name [proposal, stake]
       testValidator
         isValid
         "proposal"
-        (proposalValidator Shared.proposal)
+        agoraScripts.compiledProposalValidator
         proposalInputDatum
         (mkProposalRedeemer ps)
         (spend proposalRef)
@@ -279,7 +286,7 @@ mkTestTree name ps isValid = group name [proposal, stake]
       let stakeInputDatum = mkStakeInputDatum ps
        in validatorSucceedsWith
             "stake"
-            (stakeValidator Shared.stake)
+            agoraScripts.compiledStakeValidator
             stakeInputDatum
             stakeRedeemer
             (spend stakeRef)

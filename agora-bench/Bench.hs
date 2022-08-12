@@ -8,7 +8,6 @@ import Data.ByteString.Short qualified as SBS
 import Data.Csv (DefaultOrdered, ToNamedRecord, header, headerOrder, namedRecord, toNamedRecord, (.=))
 import Data.List (intercalate)
 import Data.Text (Text, pack)
-import GHC.Generics (Generic)
 import Plutarch.Evaluate (evalScript)
 import PlutusLedgerApi.V1 (
   ExBudget (ExBudget),

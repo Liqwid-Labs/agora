@@ -17,6 +17,7 @@ import Agora.Effect.GovernorMutation (
  )
 import Agora.Governor (GovernorDatum (..))
 import Agora.Proposal (ProposalId (..), ProposalThresholds (..))
+import Agora.Utils (validatorHashToTokenName)
 import Data.Default.Class (Default (def))
 import Data.Tagged (Tagged (..))
 import Plutarch.Api.V1 (mkValidator, validatorHash)
@@ -24,7 +25,6 @@ import PlutusLedgerApi.V1 (
   Address,
   Datum (..),
   ToData (..),
-  TokenName (..),
   TxInInfo (..),
   TxInfo (..),
   TxOut (..),
@@ -40,10 +40,11 @@ import PlutusLedgerApi.V1.Value qualified as Value (
   singleton,
  )
 import Sample.Shared (
+  agoraScripts,
   authorityTokenSymbol,
+  deterministicTracingConfing,
   govAssetClass,
   govValidatorAddress,
-  governor,
   minAda,
   signer,
  )
@@ -51,7 +52,7 @@ import Test.Util (datumPair, toDatumHash)
 
 -- | The effect validator instance.
 effectValidator :: Validator
-effectValidator = mkValidator $ mutateGovernorValidator governor
+effectValidator = mkValidator deterministicTracingConfing $ mutateGovernorValidator agoraScripts
 
 -- | The hash of the validator instance.
 effectValidatorHash :: ValidatorHash
@@ -65,17 +66,15 @@ effectValidatorAddress = scriptHashAddress effectValidatorHash
 atAssetClass :: AssetClass
 atAssetClass = assetClass authorityTokenSymbol tokenName
   where
-    -- TODO: use 'validatorHashToTokenName'
-    ValidatorHash bs = effectValidatorHash
-    tokenName = TokenName bs
+    tokenName = validatorHashToTokenName effectValidatorHash
 
 -- | The mock reference of the governor state UTXO.
 govRef :: TxOutRef
-govRef = TxOutRef "614481d2159bfb72350222d61fce17e548e0fc00e5a1f841ff1837c431346ce7" 1
+govRef = TxOutRef "1475e1ee22330dfc55430980e5a6b100ec9d9249bb4b462256a79559" 1
 
 -- | The mock reference of the effect UTXO.
 effectRef :: TxOutRef
-effectRef = TxOutRef "c31164dc11835de7eb6187f67d0e1a19c1dfc0786a456923eef5043189cdb578" 1
+effectRef = TxOutRef "a302d327d8e5553d50b9d017475369753f723d7e999ac1b68da8ad52" 1
 
 -- | The input effect datum in 'mkEffectTransaction'.
 mkEffectDatum :: GovernorDatum -> MutateGovernorDatum
@@ -159,7 +158,7 @@ mkEffectTxInfo newGovDatum =
         , txInfoValidRange = Interval.always
         , txInfoSignatories = [signer]
         , txInfoData = datumPair <$> [governorInputDatum, governorOutputDatum, effectInputDatum]
-        , txInfoId = "4dae3806cc69615b721d52ed09b758f43f25a8f39b7934d6b28514caf71f5f7b"
+        , txInfoId = "74c75505691e7baa981fa80e50b9b7e88dbe1eda67d4f062d89d203b"
         }
 
 validNewGovernorDatum :: GovernorDatum
