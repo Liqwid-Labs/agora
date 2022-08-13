@@ -2,14 +2,23 @@
 
 This format is based on [Keep A Changelog](https://keepachangelog.com/en/1.0.0).
 
+## Unreleased (Candidate for 1.0.0)
 
-## Unreleased (Candidate for 0.2.0)
+## 0.2.0 -- 2022-08-13
 
 ### Added
 
 - Script exporting with `plutarch-script-export` 
 
 ### Modified
+
+- Bump plutarch to 1.2 and use `liqwid-nix` for flake derivation.
+
+  Included by [#150](https://github.com/Liqwid-Labs/agora/pull/150).
+
+- Script building uses the lazy record `AgoraScripts` instead of explicit per-component parameters.
+
+  Included by [#150](https://github.com/Liqwid-Labs/agora/pull/150).
 
 - Stake delegation.
   
