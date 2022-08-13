@@ -1,13 +1,32 @@
 # This really ought to be `/usr/bin/env bash`, but nix flakes don't like that.
 SHELL := /bin/sh
 
-.PHONY: hoogle format haddock usage tag format_nix format_haskell format_check lint ps_bridge bench bench_check scripts
+.PHONY: hoogle format haddock usage tag format_nix format_haskell format_check	\ 
+				lint refactor ps_bridge bench bench_check scripts test build ci
 
-AGORA_TARGETS := agora agora-bench agora-purescript-bridge agora-scripts agora-specs agora-test agora-testlib
+SOURCE_FILES := $(shell git ls-tree -r HEAD --full-tree --name-only)
+SOURCE_FILES := $(wildcard $(SOURCE_FILES))
+HASKELL_SOURCES := $(filter %.hs,$(SOURCE_FILES))
+CABAL_SOURCES := $(filter %.cabal,$(SOURCE_FILES))
+NIX_SOURCES := $(filter %.nix,$(SOURCE_FILES))
+FORMAT_EXTENSIONS := -o -XQuasiQuotes -o -XTemplateHaskell -o -XTypeApplications	\
+										-o -XImportQualifiedPost -o -XPatternSynonyms -o -XOverloadedRecordDot
+HLINT_EXTS := -XQuasiQuotes
+
+THREADS ?= 8
+PS_BRIDGE_OUTPUT_DIR ?= agora-purescript-bridge/
+BENCH_OUTPUT ?= bench.csv
+TEST_CASE_TIMEOUT ?= 100
 
 usage:
-	@echo "usage: make <command> [OPTIONS]"
+	@echo "usage: [env [<variable>=<value> ...]] make <command> [OPTIONS]"
 	@echo
+	@echo "Available variables:"
+	@echo "  THREADS -- The number of threads for building the project"
+	@echo "  PS_BRIDGE_OUTPUT_DIR -- The output directory of the purescript bridge"
+	@echo "  BENCH_OUTPUT -- The output file of the benchmark report"
+	@echo "  TEST_CASE_TIMEOUT -- Timeout for individual tests. Default unit: s"
+	@echo 
 	@echo "Available commands:"
 	@echo "  hoogle -- Start local hoogle"
 	@echo "  format -- Format the project"
@@ -20,9 +39,14 @@ usage:
 	@echo "  ps_bridge -- Generate purescript bridge files"
 	@echo "  bench -- Generate bench report bench.csv"
 	@echo "  bench_check -- Check if bench report is up-to-date"
-	@echo "  scripts -- Export scripts to json files"
+	@echo "  scripts -- Run the agora script server (dev mode)"
+	@echo "  ci -- Run all the CI checks"
 
-hoogle:
+requires_nix_shell:
+	@ [ "$(IN_NIX_SHELL)" ] || echo "The $(MAKECMDGOALS) target must be run from inside a nix shell"
+	@ [ "$(IN_NIX_SHELL)" ] || (echo "    run 'nix develop' first" && false)
+
+hoogle: requires_nix_shell
 	pkill hoogle || true
 	hoogle generate --local=haddock --database=hoo/local.hoo
 	hoogle server --local -p 8081 >> /dev/null &
@@ -30,45 +54,48 @@ hoogle:
 
 format: format_haskell format_nix
 
-format_nix:
-	git ls-tree -r HEAD --full-tree --name-only | grep -E '.*\.nix' | xargs nixpkgs-fmt
+format_nix: requires_nix_shell
+	nixpkgs-fmt $(NIX_SOURCES)
 
-FORMAT_EXTENSIONS := -o -XQuasiQuotes -o -XTemplateHaskell -o -XTypeApplications -o -XImportQualifiedPost -o -XPatternSynonyms -o -XOverloadedRecordDot
-format_haskell:
-	find -name '*.hs' -not -path './dist-*/*' | xargs fourmolu $(FORMAT_EXTENSIONS) -m inplace
-	git ls-tree -r HEAD --full-tree --name-only | grep -E '.*\.cabal' | xargs cabal-fmt -i
+format_haskell: requires_nix_shell
+	fourmolu $(FORMAT_EXTENSIONS) -m inplace $(HASKELL_SOURCES)
+	cabal-fmt -i $(CABAL_SOURCES)
 
-format_check:
-	find -name '*.hs' \
-	     -not -path './dist*/*' \
-	     -not -path './haddock/*' \
-	  | xargs fourmolu $(FORMAT_EXTENSIONS) -m check
+format_check: requires_nix_shell
+	fourmolu $(FORMAT_EXTENSIONS) -m check $(HASKELL_SOURCES)
+	nixpkgs-fmt --check $(NIX_SOURCES) 
+	cabal-fmt --check $(CABAL_SOURCES)
 
-haddock:
+haddock: requires_nix_shell
 	cabal haddock --haddock-html --haddock-hoogle --builddir=haddock
 
-tag:
-	hasktags -x $(AGORA_TARGETS)
+tag: requires_nix_shell
+	hasktags -x $(HASKELL_SOURCES)
 
-lint:
-	hlint $(AGORA_TARGETS)
+lint: requires_nix_shell
+	hlint $(HLINT_EXTS) $(HASKELL_SOURCES)
 
-PS_BRIDGE_OUTPUT_DIR := agora-purescript-bridge/
-ps_bridge:
+refactor: requires_nix_shell
+	for src in $(HASKELL_SOURCES) ; do \
+		hlint $(HLINT_EXTS) --refactor --refactor-options='-i -s' $$src ;\
+	done
+
+ps_bridge: requires_nix_shell
 	cabal run exe:agora-purescript-bridge -- -o $(PS_BRIDGE_OUTPUT_DIR)
 
-bench:
-	cabal run agora-bench
+bench: requires_nix_shell
+	cabal run agora-bench -- -o $(BENCH_OUTPUT)
 
-BENCH_TMPDIR := $(shell mktemp -d)
-BENCH_TMPFILE := $(BENCH_TMPDIR)/bench.csv
-bench_check:
-	(cabal run agora-bench -- -o "$(BENCH_TMPFILE)" \
-		|| $(bench) -o "$(BENCH_TMPFILE)") >> /dev/null
-	diff bench.csv $(BENCH_TMPFILE) \
-		|| (echo "bench.csv is outdated"; exit 1)
-	# TODO: do the clean-up even if `diff` fails.
-	rm -rf $(BENCH_TMPDIR)
+bench_check: requires_nix_shell
+	cabal -v0 new-run agora-bench | diff bench.csv -
 
-scripts:
-	cabal run agora-scripts
+scripts: requires_nix_shell
+	cabal run agora-scripts -- -c
+
+test: requires_nix_shell
+	cabal test --test-options="--hide-successes -t $(TEST_CASE_TIMEOUT) -j$(THREADS)"
+
+build: requires_nix_shell
+	cabal build -j$(THREADS)
+
+ci: format_check lint build bench_check test haddock

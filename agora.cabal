@@ -1,6 +1,6 @@
 cabal-version:      3.0
 name:               agora
-version:            0.1.0
+version:            0.2.0
 extra-source-files: CHANGELOG.md
 author:             Emily Martins <emi@haskell.fyi>
 license:            Apache-2.0
@@ -12,11 +12,11 @@ license:            Apache-2.0
 
 common lang
   ghc-options:
-    -Wall -Wcompat -Wincomplete-uni-patterns -Wno-unused-do-bind
-    -Wno-partial-type-signatures -Wmissing-export-lists
-    -Wincomplete-record-updates -Wmissing-deriving-strategies
-    -Wno-name-shadowing -Wunused-foralls -fprint-explicit-foralls
-    -fprint-explicit-kinds -Werror
+    -Werror -Wall -Wcompat -Wincomplete-uni-patterns
+    -Wno-unused-do-bind -Wno-partial-type-signatures
+    -Wmissing-export-lists -Wincomplete-record-updates
+    -Wmissing-deriving-strategies -Wno-name-shadowing -Wunused-foralls
+    -fprint-explicit-foralls -fprint-explicit-kinds -Wunused-do-bind
 
   mixins:
     base hiding (Prelude),
@@ -39,6 +39,7 @@ common lang
     DerivingStrategies
     DerivingVia
     DoAndIfThenElse
+    DuplicateRecordFields
     EmptyCase
     EmptyDataDecls
     EmptyDataDeriving
@@ -88,10 +89,13 @@ common deps
   build-depends:
     , aeson
     , ansi-terminal
-    , base                   >=4.14 && <5
+    , base                    >=4.14 && <5
     , base-compat
+    , base16
     , bytestring
+    , cardano-binary
     , cardano-prelude
+    , composition-prelude
     , containers
     , data-default
     , data-default-class
@@ -100,6 +104,7 @@ common deps
     , plutarch
     , plutarch-numeric
     , plutarch-safe-money
+    , plutarch-script-export
     , plutus-core
     , plutus-ledger-api
     , plutus-tx
@@ -137,28 +142,27 @@ common exe-opts
 library
   import:          lang, deps
   exposed-modules:
+    Agora.Aeson.Orphans
     Agora.AuthorityToken
+    Agora.Bootstrap
     Agora.Effect
     Agora.Effect.GovernorMutation
     Agora.Effect.NoOp
     Agora.Effect.TreasuryWithdrawal
     Agora.Governor
     Agora.Governor.Scripts
-    Agora.MultiSig
+    Agora.Plutarch.Orphans
     Agora.Proposal
     Agora.Proposal.Scripts
     Agora.Proposal.Time
     Agora.SafeMoney
-    Agora.ScriptInfo
+    Agora.Scripts
     Agora.Stake
     Agora.Stake.Scripts
     Agora.Treasury
     Agora.Utils
 
   other-modules:
-    Agora.Aeson.Orphans
-    Agora.Plutarch.Orphans
-
   hs-source-dirs:  agora
 
 library pprelude
@@ -182,15 +186,19 @@ library agora-specs
   exposed-modules:
     Property.Generator
     Property.Governor
-    Property.MultiSig
     Sample.Effect.GovernorMutation
     Sample.Effect.TreasuryWithdrawal
-    Sample.Governor
-    Sample.Proposal
+    Sample.Governor.Initialize
+    Sample.Governor.Mutate
+    Sample.Proposal.Advance
+    Sample.Proposal.Cosign
+    Sample.Proposal.Create
     Sample.Proposal.Shared
     Sample.Proposal.UnlockStake
+    Sample.Proposal.Vote
     Sample.Shared
     Sample.Stake
+    Sample.Stake.SetDelegate
     Sample.Treasury
     Spec.AuthorityToken
     Spec.Effect.GovernorMutation
@@ -232,13 +240,12 @@ benchmark agora-bench
 
 executable agora-scripts
   import:         lang, deps, exe-opts
-  main-is:        Scripts.hs
+  main-is:        Main.hs
   hs-source-dirs: agora-scripts
-  other-modules:  Options
+  other-modules:
   build-depends:
     , agora
     , gitrev
-    , optparse-applicative
 
 executable agora-purescript-bridge
   import:         lang, deps, exe-opts

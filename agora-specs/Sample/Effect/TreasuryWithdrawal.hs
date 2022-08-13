@@ -23,17 +23,14 @@ import Agora.Effect.TreasuryWithdrawal (
   TreasuryWithdrawalDatum (TreasuryWithdrawalDatum),
   treasuryWithdrawalValidator,
  )
-import Crypto.Hash qualified as Crypto
-import Data.ByteArray qualified as BA
-import Data.ByteString qualified as BS
-import Data.ByteString.Char8 qualified as C (pack)
+import Data.Default (def)
 import Plutarch.Api.V1 (mkValidator, validatorHash)
 import PlutusLedgerApi.V1 (
   Address (Address),
   Credential (..),
-  CurrencySymbol (CurrencySymbol),
+  CurrencySymbol,
   DatumHash (DatumHash),
-  PubKeyHash (PubKeyHash),
+  PubKeyHash,
   ScriptContext (..),
   ScriptPurpose (Spending),
   TokenName (TokenName),
@@ -56,29 +53,26 @@ import PlutusLedgerApi.V1 (
   Validator,
   ValidatorHash (ValidatorHash),
   Value,
-  toBuiltin,
  )
 import PlutusLedgerApi.V1.Interval qualified as Interval (always)
 import PlutusLedgerApi.V1.Value qualified as Value (singleton)
+import Test.Util (scriptCredentials, userCredentials)
 
 -- | A sample Currency Symbol.
 currSymbol :: CurrencySymbol
-currSymbol = CurrencySymbol "12312099"
+currSymbol = "9c04a69c7133e26061fe5a15adaf4f79cd51e47ef22a2e3c91a36f04"
 
 -- | A sample 'PubKeyHash'.
 signer :: PubKeyHash
 signer = "8a30896c4fd5e79843e4ca1bd2cdbaa36f8c0bc3be7401214142019c"
 
-blake2b_224 :: BS.ByteString -> BS.ByteString
-blake2b_224 = BS.pack . BA.unpack . Crypto.hashWith Crypto.Blake2b_224
-
 -- | List of users who the effect will pay to.
 users :: [Credential]
-users = PubKeyCredential . PubKeyHash . toBuiltin . blake2b_224 . C.pack . show <$> ([1 ..] :: [Integer])
+users = userCredentials
 
 -- | List of users who the effect will pay to.
 treasuries :: [Credential]
-treasuries = ScriptCredential . ValidatorHash . toBuiltin . blake2b_224 . C.pack . show <$> ([1 ..] :: [Integer])
+treasuries = scriptCredentials
 
 inputGAT :: TxInInfo
 inputGAT =
@@ -154,7 +148,7 @@ buildReceiversOutputFromDatum (TreasuryWithdrawalDatum xs _) = f <$> xs
 
 -- | Effect validator instance.
 validator :: Validator
-validator = mkValidator $ treasuryWithdrawalValidator currSymbol
+validator = mkValidator def $ treasuryWithdrawalValidator currSymbol
 
 -- | 'TokenName' that represents the hash of the 'Agora.Stake.Stake' validator.
 validatorHashTN :: TokenName

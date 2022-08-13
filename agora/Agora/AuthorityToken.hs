@@ -12,7 +12,6 @@ module Agora.AuthorityToken (
   AuthorityToken (..),
 ) where
 
-import GHC.Generics qualified as GHC
 import Plutarch.Api.V1 (
   AmountGuarantees,
   KeyGuarantees,
@@ -33,7 +32,7 @@ import "liqwid-plutarch-extra" Plutarch.Api.V1.Value (psymbolValueOf)
 import "plutarch" Plutarch.Api.V1.Value (PValue (PValue))
 import Plutarch.Builtin (pforgetData)
 import Plutarch.Extra.List (plookup)
-import Plutarch.Extra.TermCont (pguardC, pmatchC)
+import Plutarch.Extra.TermCont (pguardC, pletFieldsC, pmatchC)
 import PlutusLedgerApi.V1.Value (AssetClass (AssetClass))
 
 --------------------------------------------------------------------------------
@@ -53,7 +52,7 @@ newtype AuthorityToken = AuthorityToken
   }
   deriving stock
     ( -- | @since 0.1.0
-      GHC.Generic
+      Generic
     )
 
 --------------------------------------------------------------------------------
@@ -73,7 +72,7 @@ authorityTokensValidIn :: Term s (PCurrencySymbol :--> PTxOut :--> PBool)
 authorityTokensValidIn = phoistAcyclic $
   plam $ \authorityTokenSym txOut'' -> unTermCont $ do
     PTxOut txOut' <- pmatchC txOut''
-    txOut <- tcont $ pletFields @'["address", "value"] $ txOut'
+    txOut <- pletFieldsC @'["address", "value"] $ txOut'
     PAddress address <- pmatchC txOut.address
     PValue value' <- pmatchC txOut.value
     PMap value <- pmatchC value'
@@ -100,19 +99,17 @@ authorityTokensValidIn = phoistAcyclic $
 
 {- | Assert that a single authority token has been burned.
 
-     @since 0.1.0
+     @since 0.2.0
 -}
 singleAuthorityTokenBurned ::
   forall (keys :: KeyGuarantees) (amounts :: AmountGuarantees) (s :: S).
   Term s PCurrencySymbol ->
-  Term s (PAsData PTxInfo) ->
+  Term s (PBuiltinList PTxInInfo) ->
   Term s (PValue keys amounts) ->
   Term s PBool
-singleAuthorityTokenBurned gatCs txInfo mint = unTermCont $ do
+singleAuthorityTokenBurned gatCs inputs mint = unTermCont $ do
   let gatAmountMinted :: Term _ PInteger
       gatAmountMinted = psymbolValueOf # gatCs # mint
-
-  txInfoF <- tcont $ pletFields @'["inputs"] $ txInfo
 
   pure $
     foldr1
@@ -122,11 +119,11 @@ singleAuthorityTokenBurned gatCs txInfo mint = unTermCont $ do
           pall
             # plam
               ( \txInInfo' -> unTermCont $ do
-                  PTxInInfo txInInfo <- pmatchC (pfromData txInInfo')
+                  PTxInInfo txInInfo <- pmatchC txInInfo'
                   let txOut' = pfield @"resolved" # txInInfo
                   pure $ authorityTokensValidIn # gatCs # pfromData txOut'
               )
-            # txInfoF.inputs
+            # inputs
       ]
 
 {- | Policy given 'AuthorityToken' params.
@@ -137,9 +134,9 @@ authorityTokenPolicy :: AuthorityToken -> ClosedTerm PMintingPolicy
 authorityTokenPolicy params =
   plam $ \_redeemer ctx' ->
     pmatch ctx' $ \(PScriptContext ctx') -> unTermCont $ do
-      ctx <- tcont $ pletFields @'["txInfo", "purpose"] ctx'
+      ctx <- pletFieldsC @'["txInfo", "purpose"] ctx'
       PTxInfo txInfo' <- pmatchC $ pfromData ctx.txInfo
-      txInfo <- tcont $ pletFields @'["inputs", "mint", "outputs"] txInfo'
+      txInfo <- pletFieldsC @'["inputs", "mint", "outputs"] txInfo'
       let inputs = txInfo.inputs
           mintedValue = pfromData txInfo.mint
           AssetClass (govCs, govTn) = params.authority
@@ -158,9 +155,7 @@ authorityTokenPolicy params =
               pguardC "All outputs only emit valid GATs" $
                 pall
                   # plam
-                    ( (authorityTokensValidIn # ownSymbol #)
-                        . pfromData
-                    )
+                    (authorityTokensValidIn # ownSymbol #)
                   # txInfo.outputs
               pure $ popaque $ pconstant ()
           )

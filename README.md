@@ -1,5 +1,4 @@
 # Agora :classical_building:
-![integrate.yaml badge](https://github.com/Liqwid-Labs/agora/actions/workflows/integrate.yaml/badge.svg?branch=master)
 
 Agora is a set of Plutus scripts that compose together to form a governance system.
 
@@ -13,13 +12,25 @@ Goals:
 Non-goals:
 
 -   Agora is not a DAO. It doesn't have tokenomics or even a token. It is simply a library for governance.
--   Agora doesn't aim to provide any primitive tools for Plutus that are not governance-specific. For this, see [plutus-extra](https://github.com/Liqwid-Labs/plutus-extra/).
+-   Agora doesn't aim to provide any primitive tools for Plutus that are not governance-specific. For this, see [liqwid-plutarch-extra](https://github.com/Liqwid-Labs/liqwid-plutarch-extra/).
 
 ## Project setup
 
 An up to date version of the [Nix package manager](nixos.org) (>=2.3) is required to build this project. For information on how to install, see the [NixOS website](https://nixos.org/download.html). Important: see also [this section](https://github.com/input-output-hk/plutus#nix-advice) on binary caches.
 
 Open a development shell with `nix develop` and build the project with `cabal build`. Those pained by the need to remember to enter a Nix shell may consider using [nix-direnv](https://github.com/nix-community/nix-direnv).
+
+## `agora-scripts` HTTP export server
+
+To use scripts in a frontend, you can use the `agora-scripts` executable which allows you to query them on-demand.
+
+The CTL repo [`agora-offchain`](https://github.com/mlabs-haskell/agora-offchain) already has the setup prepared for this feature.
+
+In order to run the server, simply run the following command:
+
+```sh
+cabal run agora-scripts -- --enable-cors-middleware
+```
 
 ## Documentation
 
@@ -55,3 +66,9 @@ Please read [CONTRIBUTING.md](./CONTRIBUTING.md). Additionally, please follow th
 
 -   [ ] Rewards distribution
 -   [ ] Escrow staking pool solution
+
+### Available support channels info
+
+You can find help, more information and ongoing discusion about the project here:
+
+- The [Agora & Liqwid Libs Discord](https://discord.gg/yGkjxrYueB) - Most Agora discussion happens here.

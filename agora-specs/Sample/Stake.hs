@@ -6,10 +6,8 @@ Description: Sample based testing for Stake utxos
 This module tests primarily the happy path for Stake creation
 -}
 module Sample.Stake (
-  stake,
   stakeAssetClass,
   stakeSymbol,
-  validatorHashTN,
   signer,
 
   -- * Script contexts
@@ -20,14 +18,12 @@ module Sample.Stake (
   DepositWithdrawExample (..),
 ) where
 
+import Agora.Governor (Governor (gtClassRef))
 import Agora.SafeMoney (GTTag)
 import Agora.Stake (
-  Stake (gtClassRef),
   StakeDatum (StakeDatum, stakedAmount),
  )
-import Agora.Stake.Scripts (stakeValidator)
 import Data.Tagged (Tagged, untag)
-import Plutarch.Api.V1 (mkValidator, validatorHash)
 import Plutarch.Context (
   MintingBuilder,
   SpendingBuilder,
@@ -40,8 +36,9 @@ import Plutarch.Context (
   signedWith,
   txId,
   withDatum,
-  withSpending,
-  withTxId,
+  withMinting,
+  withOutRef,
+  withSpendingOutRef,
   withValue,
  )
 import PlutusLedgerApi.V1 (
@@ -49,32 +46,28 @@ import PlutusLedgerApi.V1 (
   ScriptContext (..),
   ScriptPurpose (Minting),
   ToData (toBuiltinData),
-  TokenName (TokenName),
   TxInfo (txInfoData, txInfoSignatories),
-  ValidatorHash (ValidatorHash),
  )
+import PlutusLedgerApi.V1.Contexts (TxOutRef (..))
 import PlutusLedgerApi.V1.Value qualified as Value (
   assetClassValue,
   singleton,
  )
 import Sample.Shared (
+  governor,
   signer,
-  stake,
   stakeAssetClass,
   stakeSymbol,
   stakeValidatorHash,
  )
-
--- | 'TokenName' that represents the hash of the 'Stake' validator.
-validatorHashTN :: TokenName
-validatorHashTN = let ValidatorHash vh = validatorHash (mkValidator $ stakeValidator stake) in TokenName vh
+import Test.Util (sortValue)
 
 -- | This script context should be a valid transaction.
 stakeCreation :: ScriptContext
 stakeCreation =
   let st = Value.assetClassValue stakeAssetClass 1 -- Stake ST
       datum :: StakeDatum
-      datum = StakeDatum 424242424242 signer []
+      datum = StakeDatum 424242424242 signer Nothing []
 
       builder :: MintingBuilder
       builder =
@@ -83,9 +76,12 @@ stakeCreation =
           , signedWith signer
           , mint st
           , output $
-              script stakeValidatorHash
-                . withValue (st <> Value.singleton "da8c30857834c6ae7203935b89278c532b3995245295456f993e1d24" "LQ" 424242424242)
-                . withDatum datum
+              mconcat
+                [ script stakeValidatorHash
+                , withValue (st <> Value.singleton "da8c30857834c6ae7203935b89278c532b3995245295456f993e1d24" "LQ" 424242424242)
+                , withDatum datum
+                ]
+          , withMinting stakeSymbol
           ]
    in buildMintingUnsafe builder
 
@@ -93,7 +89,7 @@ stakeCreation =
 stakeCreationWrongDatum :: ScriptContext
 stakeCreationWrongDatum =
   let datum :: Datum
-      datum = Datum (toBuiltinData $ StakeDatum 4242424242424242 signer []) -- Too much GT
+      datum = Datum (toBuiltinData $ StakeDatum 4242424242424242 signer Nothing []) -- Too much GT
    in ScriptContext
         { scriptContextTxInfo = stakeCreation.scriptContextTxInfo {txInfoData = [("", datum)]}
         , scriptContextPurpose = Minting stakeSymbol
@@ -125,10 +121,13 @@ stakeDepositWithdraw :: DepositWithdrawExample -> ScriptContext
 stakeDepositWithdraw config =
   let st = Value.assetClassValue stakeAssetClass 1 -- Stake ST
       stakeBefore :: StakeDatum
-      stakeBefore = StakeDatum config.startAmount signer []
+      stakeBefore = StakeDatum config.startAmount signer Nothing []
 
       stakeAfter :: StakeDatum
       stakeAfter = stakeBefore {stakedAmount = stakeBefore.stakedAmount + config.delta}
+
+      stakeRef :: TxOutRef
+      stakeRef = TxOutRef "0ffef57e30cc604342c738e31e0451593837b313e7bfb94b0922b142782f98e6" 1
 
       builder :: SpendingBuilder
       builder =
@@ -137,17 +136,26 @@ stakeDepositWithdraw config =
           , signedWith signer
           , mint st
           , input $
-              script stakeValidatorHash
-                . withValue (st <> Value.assetClassValue (untag stake.gtClassRef) (untag stakeBefore.stakedAmount))
-                . withDatum stakeAfter
-                . withTxId "0b2086cbf8b6900f8cb65e012de4516cb66b5cb08a9aaba12a8b88be"
+              mconcat
+                [ script stakeValidatorHash
+                , withValue
+                    ( sortValue $
+                        st
+                          <> Value.assetClassValue (untag governor.gtClassRef) (untag stakeBefore.stakedAmount)
+                    )
+                , withDatum stakeAfter
+                , withOutRef stakeRef
+                ]
           , output $
-              script stakeValidatorHash
-                . withValue (st <> Value.assetClassValue (untag stake.gtClassRef) (untag stakeAfter.stakedAmount))
-                . withDatum stakeAfter
-          , withSpending $
-              script stakeValidatorHash
-                . withValue (st <> Value.assetClassValue (untag stake.gtClassRef) (untag stakeBefore.stakedAmount))
-                . withDatum stakeAfter
+              mconcat
+                [ script stakeValidatorHash
+                , withValue
+                    ( sortValue $
+                        st
+                          <> Value.assetClassValue (untag governor.gtClassRef) (untag stakeAfter.stakedAmount)
+                    )
+                , withDatum stakeAfter
+                ]
+          , withSpendingOutRef stakeRef
           ]
    in buildSpendingUnsafe builder

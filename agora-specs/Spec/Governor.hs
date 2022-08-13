@@ -13,17 +13,11 @@ TODO: Add negative test cases, see [#76](https://github.com/Liqwid-Labs/agora/is
 -}
 module Spec.Governor (specs) where
 
-import Agora.Governor (GovernorDatum (..), GovernorRedeemer (..))
-import Agora.Governor.Scripts (governorPolicy, governorValidator)
-import Agora.Proposal (ProposalId (..))
-import Data.Default.Class (Default (def))
-import Sample.Governor (createProposal, mintGATs, mintGST, mutateState)
-import Sample.Shared qualified as Shared
+import Sample.Governor.Initialize qualified as GST
+import Sample.Governor.Mutate qualified as Mutate
 import Test.Specification (
   SpecificationTree,
   group,
-  policySucceedsWith,
-  validatorSucceedsWith,
  )
 
 -- | The SpecificationTree exported by this module.
@@ -31,46 +25,38 @@ specs :: [SpecificationTree]
 specs =
   [ group
       "policy"
-      [ policySucceedsWith
-          "GST minting"
-          (governorPolicy Shared.governor)
-          ()
-          mintGST
+      [ GST.mkTestCase "totally legal" GST.totallyValidParameters True
+      , group
+          "illegal"
+          [ GST.mkTestCase "invalid thresholds" GST.invalidDatumThresholdsParameters False
+          , GST.mkTestCase
+              "invalid max time range width for proposal creation"
+              GST.invalidDatumMaxTimeRangeWidthParameters
+              False
+          , GST.mkTestCase "invalid timings" GST.invalidDatumTimingConfigParameters False
+          , GST.mkTestCase "no governor datum" GST.withoutGovernorDatumParameters False
+          , GST.mkTestCase "no witness UTXO" GST.witnessNotPresentedParameters False
+          , GST.mkTestCase "mint more than one GST" GST.mintMoreThanOneGSTParameters False
+          , GST.mkTestCase "GST has non-empty name" GST.mintGSTWithNoneEmptyNameParameters False
+          ]
       ]
   , group
       "validator"
-      [ validatorSucceedsWith
-          "proposal creation"
-          (governorValidator Shared.governor)
-          ( GovernorDatum
-              def
-              (ProposalId 0)
-              def
-              def
-          )
-          CreateProposal
-          createProposal
-      , validatorSucceedsWith
-          "GATs minting"
-          (governorValidator Shared.governor)
-          ( GovernorDatum
-              def
-              (ProposalId 5)
-              def
-              def
-          )
-          MintGATs
-          mintGATs
-      , validatorSucceedsWith
-          "mutate governor state"
-          (governorValidator Shared.governor)
-          ( GovernorDatum
-              def
-              (ProposalId 5)
-              def
-              def
-          )
-          MutateGovernor
-          mutateState
+      [ group
+          "mutate"
+          [ Mutate.mkTestCase
+              "legal"
+              Mutate.totallyValidBundle
+              (Mutate.Validity True)
+          , group "illegal" $
+              map
+                ( \b ->
+                    Mutate.mkTestCase
+                      "(negative test)"
+                      b
+                      (Mutate.Validity False)
+                )
+                Mutate.invalidBundles
+          ]
       ]
   ]

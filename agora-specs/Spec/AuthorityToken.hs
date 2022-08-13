@@ -10,20 +10,20 @@ Tests for Authority token functions
 module Spec.AuthorityToken (specs) where
 
 import Agora.AuthorityToken (singleAuthorityTokenBurned)
-import Plutarch (ClosedTerm, POpaque, compile, perror, popaque)
+import Plutarch (ClosedTerm, POpaque, perror, popaque)
+import Plutarch.Extra.Compile (mustCompile)
+import Plutarch.Unsafe (punsafeCoerce)
 import PlutusLedgerApi.V1 (
   Address (Address),
   Credential (PubKeyCredential, ScriptCredential),
   CurrencySymbol,
   Script,
   TxInInfo (TxInInfo),
-  TxInfo (..),
   TxOut (TxOut),
   TxOutRef (TxOutRef),
   ValidatorHash (ValidatorHash),
   Value,
  )
-import PlutusLedgerApi.V1.Interval qualified as Interval (always)
 import PlutusLedgerApi.V1.Value qualified as Value (
   Value (Value),
   singleton,
@@ -36,44 +36,32 @@ import Test.Specification (
   scriptSucceeds,
  )
 import Prelude (
-  Functor (fmap),
   Maybe (Nothing),
   PBool,
   Semigroup ((<>)),
+  fmap,
   pconstant,
-  pconstantData,
   pif,
+  ($),
  )
 
 currencySymbol :: CurrencySymbol
 currencySymbol = "deadbeef"
 
-mkTxInfo :: Value -> [TxOut] -> TxInfo
-mkTxInfo mint outs =
-  TxInfo
-    { txInfoInputs = fmap (TxInInfo (TxOutRef "" 0)) outs
-    , txInfoOutputs = []
-    , txInfoFee = Value.singleton "" "" 1000
-    , txInfoMint = mint
-    , txInfoDCert = []
-    , txInfoWdrl = []
-    , txInfoValidRange = Interval.always
-    , txInfoSignatories = []
-    , txInfoData = []
-    , txInfoId = ""
-    }
+mkInputs :: [TxOut] -> [TxInInfo]
+mkInputs = fmap (TxInInfo (TxOutRef "" 0))
 
 singleAuthorityTokenBurnedTest :: Value -> [TxOut] -> Script
 singleAuthorityTokenBurnedTest mint outs =
   let actual :: ClosedTerm PBool
-      actual = singleAuthorityTokenBurned (pconstant currencySymbol) (pconstantData (mkTxInfo mint outs)) (pconstant mint)
+      actual = singleAuthorityTokenBurned (pconstant currencySymbol) (punsafeCoerce $ pconstant $ mkInputs outs) (pconstant mint)
       s :: ClosedTerm POpaque
       s =
         pif
           actual
           (popaque (pconstant ()))
           perror
-   in compile s
+   in mustCompile s
 
 -- | The SpecificationTree exported by this module.
 specs :: [SpecificationTree]

@@ -20,6 +20,7 @@ import Data.Text.Encoding qualified as T
 
 import PlutusLedgerApi.V1 qualified as Plutus
 import PlutusLedgerApi.V1.Bytes qualified as Plutus
+import PlutusLedgerApi.V1.Scripts qualified as Plutus
 import PlutusLedgerApi.V1.Value qualified as Plutus
 
 --------------------------------------------------------------------------------
@@ -108,6 +109,24 @@ deriving via
   (AsBase16Bytes Plutus.ValidatorHash)
   instance
     (Aeson.FromJSON Plutus.ValidatorHash)
+
+deriving via
+  (AsBase16Bytes Plutus.ScriptHash)
+  instance
+    (Aeson.ToJSON Plutus.ScriptHash)
+deriving via
+  (AsBase16Bytes Plutus.ScriptHash)
+  instance
+    (Aeson.FromJSON Plutus.ScriptHash)
+
+deriving via
+  (AsBase16Bytes Plutus.BuiltinByteString)
+  instance
+    (Aeson.ToJSON Plutus.BuiltinByteString)
+deriving via
+  (AsBase16Bytes Plutus.BuiltinByteString)
+  instance
+    (Aeson.FromJSON Plutus.BuiltinByteString)
 
 deriving via
   (AsBase16Codec Plutus.Validator)

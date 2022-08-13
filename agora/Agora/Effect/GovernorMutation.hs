@@ -20,36 +20,28 @@ module Agora.Effect.GovernorMutation (
 
 import Agora.Effect (makeEffect)
 import Agora.Governor (
-  Governor,
   GovernorDatum,
   PGovernorDatum,
-  governorDatumValid,
- )
-import Agora.Governor.Scripts (
-  authorityTokenSymbolFromGovernor,
-  governorSTAssetClassFromGovernor,
+  pisGovernorDatumValid,
  )
 import Agora.Plutarch.Orphans ()
-import Agora.Utils (
-  isScriptAddress,
-  mustBePDJust,
-  mustBePJust,
- )
-import GHC.Generics qualified as GHC
-import Generics.SOP (Generic, I (I))
+import Agora.Scripts (AgoraScripts, authorityTokenSymbol, governorSTAssetClass)
 import Plutarch.Api.V1 (
   PTxOutRef,
   PValidator,
   PValue,
  )
-import Plutarch.Api.V1.ScriptContext (ptryFindDatum)
+import Plutarch.Api.V1.ScriptContext (pisScriptAddress, ptryFindDatum)
 import "liqwid-plutarch-extra" Plutarch.Api.V1.Value (pvalueOf)
 import Plutarch.DataRepr (
   DerivePConstantViaData (..),
   PDataFields,
-  PIsDataReprInstances (PIsDataReprInstances),
  )
-import Plutarch.Extra.TermCont (pguardC)
+import Plutarch.Extra.Maybe (
+  passertPDJust,
+  passertPJust,
+ )
+import Plutarch.Extra.TermCont (pguardC, pletFieldsC)
 import Plutarch.Lift (PConstantDecl, PLifted, PUnsafeLiftDecl)
 import PlutusLedgerApi.V1 (TxOutRef)
 import PlutusLedgerApi.V1.Value (AssetClass (..))
@@ -67,8 +59,12 @@ data MutateGovernorDatum = MutateGovernorDatum
   , newDatum :: GovernorDatum
   -- ^ The new settings for the governor.
   }
-  deriving stock (Show, GHC.Generic)
-  deriving anyclass (Generic)
+  deriving stock
+    ( -- | @since 0.1.ç
+      Show
+    , -- | @since 0.1.ç
+      Generic
+    )
 
 PlutusTx.makeIsDataIndexed ''MutateGovernorDatum [('MutateGovernorDatum, 0)]
 
@@ -90,17 +86,9 @@ newtype PMutateGovernorDatum (s :: S)
       )
   deriving stock
     ( -- | @since 0.1.0
-      GHC.Generic
-    )
-  deriving anyclass
-    ( -- | @since 0.1.0
       Generic
     )
   deriving anyclass
-    ( -- | @since 0.1.0
-      PIsDataRepr
-    )
-  deriving
     ( -- | @since 0.1.0
       PlutusType
     , -- | @since 0.1.0
@@ -110,7 +98,9 @@ newtype PMutateGovernorDatum (s :: S)
     , -- | @since 0.1.0
       PEq
     )
-    via (PIsDataReprInstances PMutateGovernorDatum)
+
+instance DerivePlutusType PMutateGovernorDatum where
+  type DPTStrat _ = PlutusTypeData
 
 -- | @since 0.1.0
 instance PUnsafeLiftDecl PMutateGovernorDatum where type PLifted PMutateGovernorDatum = MutateGovernorDatum
@@ -119,7 +109,7 @@ instance PUnsafeLiftDecl PMutateGovernorDatum where type PLifted PMutateGovernor
 deriving via (DerivePConstantViaData MutateGovernorDatum PMutateGovernorDatum) instance (PConstantDecl MutateGovernorDatum)
 
 -- | @since 0.1.0
-deriving via PAsData (PIsDataReprInstances PMutateGovernorDatum) instance PTryFrom PData (PAsData PMutateGovernorDatum)
+deriving anyclass instance PTryFrom PData PMutateGovernorDatum
 
 --------------------------------------------------------------------------------
 
@@ -148,11 +138,14 @@ deriving via PAsData (PIsDataReprInstances PMutateGovernorDatum) instance PTryFr
 
      @since 0.1.0
 -}
-mutateGovernorValidator :: Governor -> ClosedTerm PValidator
-mutateGovernorValidator gov = makeEffect (authorityTokenSymbolFromGovernor gov) $
+mutateGovernorValidator ::
+  -- | Lazy precompiled scripts. This is beacuse we need the symbol of GST.
+  AgoraScripts ->
+  ClosedTerm PValidator
+mutateGovernorValidator as = makeEffect (authorityTokenSymbol as) $
   \_gatCs (datum :: Term _ PMutateGovernorDatum) _ txInfo -> unTermCont $ do
-    datumF <- tcont $ pletFields @'["newDatum", "governorRef"] datum
-    txInfoF <- tcont $ pletFields @'["mint", "inputs", "outputs", "datums"] txInfo
+    datumF <- pletFieldsC @'["newDatum", "governorRef"] datum
+    txInfoF <- pletFieldsC @'["mint", "inputs", "outputs", "datums"] txInfo
 
     let mint :: Term _ (PBuiltinList _)
         mint = pto $ pto $ pto $ pfromData txInfoF.mint
@@ -167,7 +160,7 @@ mutateGovernorValidator gov = makeEffect (authorityTokenSymbolFromGovernor gov) 
           ( plam $ \inInfo count ->
               let address = pfield @"address" #$ pfield @"resolved" # inInfo
                in pif
-                    (isScriptAddress # address)
+                    (pisScriptAddress # address)
                     (count + 1)
                     count
           )
@@ -177,7 +170,7 @@ mutateGovernorValidator gov = makeEffect (authorityTokenSymbolFromGovernor gov) 
 
     -- Find the governor input by looking for GST.
     let inputWithGST =
-          mustBePJust # "Governor input not found" #$ pfind
+          passertPJust # "Governor input not found" #$ pfind
             # phoistAcyclic
               ( plam $ \inInfo ->
                   let value = pfield @"value" #$ pfield @"resolved" # inInfo
@@ -185,7 +178,7 @@ mutateGovernorValidator gov = makeEffect (authorityTokenSymbolFromGovernor gov) 
               )
             # pfromData txInfoF.inputs
 
-    govInInfo <- tcont $ pletFields @'["outRef", "resolved"] $ inputWithGST
+    govInInfo <- pletFieldsC @'["outRef", "resolved"] $ inputWithGST
 
     -- The effect can only modify the governor UTXO referenced in the datum.
     pguardC "Can only modify the pinned governor" $
@@ -196,9 +189,9 @@ mutateGovernorValidator gov = makeEffect (authorityTokenSymbolFromGovernor gov) 
       plength # pfromData txInfoF.outputs #== 1
 
     let govAddress = pfield @"address" #$ govInInfo.resolved
-        govOutput' = pfromData $ phead # pfromData txInfoF.outputs
+        govOutput' = phead # pfromData txInfoF.outputs
 
-    govOutput <- tcont $ pletFields @'["address", "value", "datumHash"] govOutput'
+    govOutput <- pletFieldsC @'["address", "value", "datumHash"] govOutput'
 
     pguardC "No output to the governor" $
       govOutput.address #== govAddress
@@ -207,15 +200,14 @@ mutateGovernorValidator gov = makeEffect (authorityTokenSymbolFromGovernor gov) 
       gstValueOf # govOutput.value #== 1
 
     let governorOutputDatumHash =
-          mustBePDJust # "Governor output doesn't have datum" # govOutput.datumHash
+          passertPDJust # "Governor output doesn't have datum" # govOutput.datumHash
         governorOutputDatum =
-          pfromData @PGovernorDatum $
-            mustBePJust # "Governor output datum not found"
-              #$ ptryFindDatum # governorOutputDatumHash # txInfoF.datums
+          passertPJust @PGovernorDatum # "Governor output datum not found"
+            #$ ptryFindDatum # governorOutputDatumHash # txInfoF.datums
 
     -- Ensure the output governor datum is what we want.
     pguardC "Unexpected governor datum" $ datumF.newDatum #== governorOutputDatum
-    pguardC "New governor datum should be valid" $ governorDatumValid # governorOutputDatum
+    pguardC "New governor datum should be valid" $ pisGovernorDatumValid # governorOutputDatum
 
     return $ popaque $ pconstant ()
   where
@@ -223,4 +215,4 @@ mutateGovernorValidator gov = makeEffect (authorityTokenSymbolFromGovernor gov) 
     gstValueOf :: Term s (PValue _ _ :--> PInteger)
     gstValueOf = phoistAcyclic $ plam $ \v -> pvalueOf # v # pconstant cs # pconstant tn
       where
-        AssetClass (cs, tn) = governorSTAssetClassFromGovernor gov
+        AssetClass (cs, tn) = governorSTAssetClass as

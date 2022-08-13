@@ -26,11 +26,11 @@ module Agora.Proposal.Time (
   isVotingPeriod,
   isLockingPeriod,
   isExecutionPeriod,
+  pisProposalTimingConfigValid,
+  pisMaxTimeRangeWidthValid,
 ) where
 
-import Agora.Plutarch.Orphans ()
-import GHC.Generics qualified as GHC
-import Generics.SOP (Generic, HasDatatypeInfo, I (I))
+import Control.Composition ((.*))
 import Plutarch.Api.V1 (
   PExtended (PFinite),
   PInterval (PInterval),
@@ -42,18 +42,19 @@ import Plutarch.Api.V1 (
 import Plutarch.DataRepr (
   DerivePConstantViaData (..),
   PDataFields,
-  PIsDataReprInstances (..),
  )
-import Plutarch.Extra.TermCont (pguardC, pmatchC)
+import Plutarch.Extra.Applicative (PApply (pliftA2))
+import Plutarch.Extra.Field (pletAll, pletAllC)
+import Plutarch.Extra.Maybe (pjust, pmaybe, pnothing)
+import Plutarch.Extra.TermCont (pmatchC)
 import Plutarch.Lift (
   DerivePConstantViaNewtype (..),
   PConstantDecl,
   PUnsafeLiftDecl (..),
  )
-import Plutarch.Numeric.Additive (AdditiveSemigroup ((+)))
-import PlutusLedgerApi.V1.Time (POSIXTime)
+import PlutusLedgerApi.V1 (POSIXTime)
 import PlutusTx qualified
-import Prelude hiding ((+))
+import Prelude
 
 --------------------------------------------------------------------------------
 
@@ -64,8 +65,22 @@ import Prelude hiding ((+))
 newtype ProposalStartingTime = ProposalStartingTime
   { getProposalStartingTime :: POSIXTime
   }
-  deriving newtype (PlutusTx.ToData, PlutusTx.FromData, PlutusTx.UnsafeFromData)
-  deriving stock (Eq, Show, GHC.Generic)
+  deriving stock
+    ( -- | @since 0.1.0
+      Eq
+    , -- | @since 0.1.0
+      Show
+    , -- | @since 0.1.0
+      Generic
+    )
+  deriving newtype
+    ( -- | @since 0.1.0
+      PlutusTx.ToData
+    , -- | @since 0.1.0
+      PlutusTx.FromData
+    , -- | @since 0.1.0
+      PlutusTx.UnsafeFromData
+    )
 
 {- | Configuration of proposal timings.
 
@@ -89,11 +104,10 @@ data ProposalTimingConfig = ProposalTimingConfig
     , -- | @since 0.1.0
       Show
     , -- | @since 0.1.0
-      GHC.Generic
+      Generic
     )
 
--- | @since 0.1.0
-PlutusTx.makeIsDataIndexed ''ProposalTimingConfig [('ProposalTimingConfig, 0)]
+PlutusTx.makeIsDataIndexed 'ProposalTimingConfig [('ProposalTimingConfig, 0)]
 
 -- | Represents the maximum width of a 'PlutusLedgerApi.V1.Time.POSIXTimeRange'.
 newtype MaxTimeRangeWidth = MaxTimeRangeWidth {getMaxWidth :: POSIXTime}
@@ -105,7 +119,7 @@ newtype MaxTimeRangeWidth = MaxTimeRangeWidth {getMaxWidth :: POSIXTime}
     , -- | @since 0.1.0
       Ord
     , -- | @since 0.1.0
-      GHC.Generic
+      Generic
     )
   deriving newtype
     ( -- | @since 0.1.0
@@ -151,41 +165,41 @@ data PProposalTime (s :: S) = PProposalTime
   }
   deriving stock
     ( -- | @since 0.1.0
-      GHC.Generic
+      Generic
     )
   deriving anyclass
     ( -- | @since 0.1.0
-      Generic
-    , -- | @since 0.1.0
       PlutusType
-    , -- | @since 0.1.0
-      HasDatatypeInfo
     , -- | @since 0.1.0
       PEq
     )
 
+instance DerivePlutusType PProposalTime where
+  type DPTStrat _ = PlutusTypeScott
+
 -- | Plutarch-level version of 'ProposalStartingTime'.
 newtype PProposalStartingTime (s :: S) = PProposalStartingTime (Term s PPOSIXTime)
-  deriving
+  deriving stock
+    ( -- | @since 0.1.0
+      Generic
+    )
+  deriving anyclass
     ( -- | @since 0.1.0
       PlutusType
     , -- | @since 0.1.0
       PIsData
     , -- | @since 0.1.0
       PEq
-    , -- | @since 0.1.0
-      POrd
     )
-    via (DerivePNewtype PProposalStartingTime PPOSIXTime)
+
+instance DerivePlutusType PProposalStartingTime where
+  type DPTStrat _ = PlutusTypeNewtype
 
 -- | @since 0.1.0
 instance PUnsafeLiftDecl PProposalStartingTime where
   type PLifted PProposalStartingTime = ProposalStartingTime
 
-deriving via
-  PAsData (DerivePNewtype PProposalStartingTime PPOSIXTime)
-  instance
-    PTryFrom PData (PAsData PProposalStartingTime)
+instance PTryFrom PData (PAsData PProposalStartingTime)
 
 -- | @since 0.1.0
 deriving via
@@ -211,17 +225,9 @@ newtype PProposalTimingConfig (s :: S) = PProposalTimingConfig
   }
   deriving stock
     ( -- | @since 0.1.0
-      GHC.Generic
-    )
-  deriving anyclass
-    ( -- | @since 0.1.0
       Generic
     )
   deriving anyclass
-    ( -- | @since 0.1.0
-      PIsDataRepr
-    )
-  deriving
     ( -- | @since 0.1.0
       PlutusType
     , -- | @since 0.1.0
@@ -229,10 +235,12 @@ newtype PProposalTimingConfig (s :: S) = PProposalTimingConfig
     , -- | @since 0.1.0
       PDataFields
     )
-    via (PIsDataReprInstances PProposalTimingConfig)
+
+instance DerivePlutusType PProposalTimingConfig where
+  type DPTStrat _ = PlutusTypeData
 
 -- | @since 0.1.0
-deriving via PAsData (PIsDataReprInstances PProposalTimingConfig) instance PTryFrom PData (PAsData PProposalTimingConfig)
+instance PTryFrom PData PProposalTimingConfig
 
 -- | @since 0.1.0
 instance PUnsafeLiftDecl PProposalTimingConfig where
@@ -247,20 +255,28 @@ deriving via
 -- | Plutarch-level version of 'MaxTimeRangeWidth'.
 newtype PMaxTimeRangeWidth (s :: S)
   = PMaxTimeRangeWidth (Term s PPOSIXTime)
-  deriving
+  deriving stock
+    ( -- | @since 0.2.0
+      Generic
+    )
+  deriving anyclass
     ( -- | @since 0.1.0
       PlutusType
     , -- | @since 0.1.0
       PIsData
     , -- | @since 0.1.0
       PEq
+    , -- | @since 0.2.0
+      PPartialOrd
     , -- | @since 0.1.0
       POrd
     )
-    via (DerivePNewtype PMaxTimeRangeWidth PPOSIXTime)
+
+instance DerivePlutusType PMaxTimeRangeWidth where
+  type DPTStrat _ = PlutusTypeNewtype
 
 -- | @since 0.1.0
-deriving via PAsData (DerivePNewtype PMaxTimeRangeWidth PPOSIXTime) instance PTryFrom PData (PAsData PMaxTimeRangeWidth)
+instance PTryFrom PData (PAsData PMaxTimeRangeWidth)
 
 -- | @since 0.1.0
 instance PUnsafeLiftDecl PMaxTimeRangeWidth where type PLifted PMaxTimeRangeWidth = MaxTimeRangeWidth
@@ -273,29 +289,76 @@ deriving via
 
 --------------------------------------------------------------------------------
 
+{- | Return true if the timing configuration is valid.
+
+     @since 0.2.0
+-}
+pisProposalTimingConfigValid :: Term s (PProposalTimingConfig :--> PBool)
+pisProposalTimingConfigValid = phoistAcyclic $
+  plam $ \conf -> unTermCont $ do
+    confF <- pletAllC conf
+
+    -- everything is greater or equal 0
+    pure $
+      ptraceIfFalse "ge 0" $
+        foldr
+          ( \t ->
+              (#&&)
+                ( pconstant 0
+                    #<= pfromData t
+                )
+          )
+          (pconstant True)
+          [ confF.draftTime
+          , confF.votingTime
+          , confF.lockingTime
+          , confF.executingTime
+          ]
+
+{- | Return true if the maximum time width is greater than 0.
+
+     @since 0.2.0
+-}
+pisMaxTimeRangeWidthValid :: Term s (PMaxTimeRangeWidth :--> PBool)
+pisMaxTimeRangeWidthValid =
+  phoistAcyclic $
+    plam $
+      ptraceIfFalse "greater than 0"
+        . (pconstant (MaxTimeRangeWidth 0) #<)
+
 {- | Get the starting time of a proposal, from the 'PlutusLedgerApi.V1.txInfoValidPeriod' field.
      For every proposal, this is only meant to run once upon creation. Given time range should be
      tight enough, meaning that the width of the time range should be less than the maximum value.
 
      @since 0.1.0
 -}
-createProposalStartingTime :: forall (s :: S). Term s (PMaxTimeRangeWidth :--> PPOSIXTimeRange :--> PProposalStartingTime)
+createProposalStartingTime ::
+  forall (s :: S).
+  Term
+    s
+    ( PMaxTimeRangeWidth
+        :--> PPOSIXTimeRange
+        :--> PMaybe PProposalStartingTime
+    )
 createProposalStartingTime = phoistAcyclic $
-  plam $ \(pto -> maxDuration) iv -> unTermCont $ do
-    currentTimeF <- pmatchC $ currentProposalTime # iv
+  plam $ \(pto -> maxDuration) iv ->
+    let ct = currentProposalTime # iv
 
-    -- Use the middle of the current time range as the starting time.
-    let duration = currentTimeF.upperBound - currentTimeF.lowerBound
+        f :: Term _ (PProposalTime :--> PMaybe PProposalStartingTime)
+        f = plam $
+          flip pmatch $ \(PProposalTime lb ub) ->
+            let duration = ub - lb
 
-        startingTime =
-          pdiv
-            # (currentTimeF.lowerBound + currentTimeF.upperBound)
-            # 2
-
-    pguardC "createProposalStartingTime: given time range should be tight enough" $
-      duration #<= maxDuration
-
-    pure $ pcon $ PProposalStartingTime startingTime
+                startingTime = pdiv # (lb + ub) # 2
+             in pif
+                  (duration #<= maxDuration)
+                  (pjust #$ pcon $ PProposalStartingTime startingTime)
+                  ( ptrace
+                      "createProposalStartingTime: given time range should be tight enough"
+                      pnothing
+                  )
+     in -- TODO: PMonad when?
+        pmaybe # pnothing # f # ct
 
 {- | Get the current proposal time, from the 'PlutusLedgerApi.V1.txInfoValidPeriod' field.
 
@@ -304,33 +367,30 @@ createProposalStartingTime = phoistAcyclic $
 
      @since 0.1.0
 -}
-currentProposalTime :: forall (s :: S). Term s (PPOSIXTimeRange :--> PProposalTime)
+currentProposalTime :: forall (s :: S). Term s (PPOSIXTimeRange :--> PMaybe PProposalTime)
 currentProposalTime = phoistAcyclic $
   plam $ \iv -> unTermCont $ do
     PInterval iv' <- pmatchC iv
-    ivf <- tcont $ pletFields @'["from", "to"] iv'
+    ivf <- pletAllC iv'
     PLowerBound lb <- pmatchC ivf.from
     PUpperBound ub <- pmatchC ivf.to
-    lbf <- tcont $ pletFields @'["_0", "_1"] lb
-    ubf <- tcont $ pletFields @'["_0", "_1"] ub
-    pure $
-      pcon $
-        PProposalTime
-          { lowerBound =
-              pmatch
-                lbf._0
-                ( \case
-                    PFinite ((pfield @"_0" #) -> d) -> d
-                    _ -> ptraceError "currentProposalTime: Can't get fully-bounded proposal time."
+
+    let getBound = phoistAcyclic $
+          plam $
+            flip pletAll $ \f ->
+              pif
+                f._1
+                ( pmatch f._0 $ \case
+                    PFinite (pfromData . (pfield @"_0" #) -> d) -> pjust # d
+                    _ -> ptrace "currentProposalTime: time range should be bounded" pnothing
                 )
-          , upperBound =
-              pmatch
-                ubf._0
-                ( \case
-                    PFinite ((pfield @"_0" #) -> d) -> d
-                    _ -> ptraceError "currentProposalTime: Can't get fully-bounded proposal time."
-                )
-          }
+                (ptrace "currentProposalTime: time range should be inclusive" pnothing)
+
+        lowerBound = getBound # lb
+        upperBound = getBound # ub
+
+        mkTime = phoistAcyclic $ plam $ pcon .* PProposalTime
+    pure $ pliftA2 # mkTime # lowerBound # upperBound
 
 {- | Check if 'PProposalTime' is within two 'PPOSIXTime'. Inclusive.
 

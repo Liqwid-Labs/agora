@@ -13,22 +13,46 @@ module Test.Util (
   updateMap,
   sortMap,
   sortValue,
+  blake2b_224,
+  pubKeyHashes,
+  userCredentials,
+  scriptCredentials,
+  validatorHashes,
+  groupsOfN,
+  mkSpending,
+  mkMinting,
+  CombinableBuilder,
 ) where
 
 --------------------------------------------------------------------------------
 
-import Prelude
-
---------------------------------------------------------------------------------
-
 import Codec.Serialise (serialise)
-import Data.ByteString.Lazy qualified as ByteString.Lazy
-
---------------------------------------------------------------------------------
-
+import Crypto.Hash qualified as Crypto
 import Data.Bifunctor (second)
+import Data.ByteArray qualified as BA
+import Data.ByteString qualified as BS
+import Data.ByteString.Char8 qualified as C
+import Data.ByteString.Lazy qualified as ByteString.Lazy
 import Data.List (sortOn)
+import Plutarch.Context (
+  Builder,
+  buildMintingUnsafe,
+  buildSpendingUnsafe,
+  withMinting,
+  withSpendingOutRef,
+ )
 import Plutarch.Crypto (pblake2b_256)
+import PlutusLedgerApi.V1 (
+  Credential (
+    PubKeyCredential,
+    ScriptCredential
+  ),
+  CurrencySymbol,
+  PubKeyHash (..),
+  ScriptContext,
+  TxOutRef,
+  ValidatorHash (ValidatorHash),
+ )
 import PlutusLedgerApi.V1.Interval qualified as PlutusTx
 import PlutusLedgerApi.V1.Scripts (Datum (Datum), DatumHash (DatumHash))
 import PlutusLedgerApi.V1.Value (Value (..))
@@ -36,6 +60,7 @@ import PlutusTx.AssocMap qualified as AssocMap
 import PlutusTx.Builtins qualified as PlutusTx
 import PlutusTx.IsData qualified as PlutusTx
 import PlutusTx.Ord qualified as PlutusTx
+import Prelude
 
 --------------------------------------------------------------------------------
 
@@ -92,12 +117,16 @@ updateMap f k =
 
 --------------------------------------------------------------------------------
 
+-- | Sort the given 'AssocMap.Map' by keys in ascending order.
 sortMap :: forall k v. Ord k => AssocMap.Map k v -> AssocMap.Map k v
 sortMap =
   AssocMap.fromList
     . sortOn fst
     . AssocMap.toList
 
+{- | Sort the given 'Value' in ascending order. Some plutarch functions that
+   work with plutarch's 'Sorted' 'PMap' require this to work correctly.
+-}
 sortValue :: Value -> Value
 sortValue =
   Value
@@ -106,3 +135,75 @@ sortValue =
     . fmap (second sortMap)
     . AssocMap.toList
     . getValue
+
+--------------------------------------------------------------------------------
+
+-- | Compute the hash of a given byte string using blake2b_224 algorithm.
+blake2b_224 :: BS.ByteString -> BS.ByteString
+blake2b_224 = BS.pack . BA.unpack . Crypto.hashWith Crypto.Blake2b_224
+
+-- | An infinite list of blake2b_224 hashes.
+blake2b_224Hashes :: [BS.ByteString]
+blake2b_224Hashes = blake2b_224 . C.pack . show @Integer <$> [0 ..]
+
+-- | An infinite list of *valid* 'PubKeyHash'.
+pubKeyHashes :: [PubKeyHash]
+pubKeyHashes = PubKeyHash . PlutusTx.toBuiltin <$> blake2b_224Hashes
+
+-- | An infinite list of *valid* user credentials.
+userCredentials :: [Credential]
+userCredentials = PubKeyCredential <$> pubKeyHashes
+
+-- | An infinite list of *valid* validator hashes.
+validatorHashes :: [ValidatorHash]
+validatorHashes = ValidatorHash . PlutusTx.toBuiltin <$> blake2b_224Hashes
+
+-- | An infinite list of *valid* script credentials.
+scriptCredentials :: [Credential]
+scriptCredentials = ScriptCredential <$> validatorHashes
+
+--------------------------------------------------------------------------------
+
+-- | Turn the given list in to groups which have the given length.
+groupsOfN :: Int -> [a] -> [[a]]
+groupsOfN _ [] = []
+groupsOfN n xs =
+  let (nextGroup, rest) = next n xs
+   in nextGroup : groupsOfN n rest
+  where
+    next :: Int -> [a] -> ([a], [a])
+    next _ [] = ([], [])
+    next 0 xs = ([], xs)
+    next n (x : xs) =
+      let (xs', rest) = next (n - 1) xs
+       in (x : xs', rest)
+
+--------------------------------------------------------------------------------
+
+{- | Given the builder generator and the parameters, create a 'ScriptContext'
+    that spends the UTXO that referenced by the given 'TxOutRef'.
+-}
+mkSpending ::
+  forall ps.
+  (forall b. (Monoid b, Builder b) => ps -> b) ->
+  ps ->
+  TxOutRef ->
+  ScriptContext
+mkSpending mkBuilder ps oref =
+  buildSpendingUnsafe $
+    mkBuilder ps <> withSpendingOutRef oref
+
+{- | Given the builder generator and the parameters, create a 'ScriptContext'
+    that mints the token of the given currency symbol.
+-}
+mkMinting ::
+  forall ps.
+  (forall b. (Monoid b, Builder b) => ps -> b) ->
+  ps ->
+  CurrencySymbol ->
+  ScriptContext
+mkMinting mkBuilder ps cs =
+  buildMintingUnsafe $
+    mkBuilder ps <> withMinting cs
+
+type CombinableBuilder b = (Monoid b, Builder b)

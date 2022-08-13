@@ -114,8 +114,10 @@ genInput = do
   val <- genSingletonValue
   return $
     input $
-      credential cred
-        . withValue val
+      mconcat
+        [ credential cred
+        , withValue val
+        ]
 
 genOutput :: Builder a => Gen a
 genOutput = do
@@ -123,8 +125,10 @@ genOutput = do
   val <- genSingletonValue
   return $
     output $
-      credential cred
-        . withValue val
+      mconcat
+        [ credential cred
+        , withValue val
+        ]
 
 genOutRef :: Gen TxOutRef
 genOutRef = do

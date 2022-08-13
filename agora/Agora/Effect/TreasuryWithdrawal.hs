@@ -15,9 +15,6 @@ module Agora.Effect.TreasuryWithdrawal (
 
 import Agora.Effect (makeEffect)
 import Agora.Plutarch.Orphans ()
-import Agora.Utils (isPubKey)
-import GHC.Generics qualified as GHC
-import Generics.SOP (Generic, I (I))
 import Plutarch.Api.V1 (
   AmountGuarantees (Positive),
   KeyGuarantees (Sorted),
@@ -27,14 +24,13 @@ import Plutarch.Api.V1 (
   PValue,
   ptuple,
  )
-import Plutarch.Api.V1.ScriptContext (pfindTxInByTxOutRef)
+import Plutarch.Api.V1.ScriptContext (pfindTxInByTxOutRef, pisPubKey)
 import "plutarch" Plutarch.Api.V1.Value (pnormalize)
 import Plutarch.DataRepr (
   DerivePConstantViaData (..),
   PDataFields,
-  PIsDataReprInstances (..),
  )
-import Plutarch.Extra.TermCont (pguardC, pletC, pmatchC)
+import Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC)
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (..))
 import PlutusLedgerApi.V1.Credential (Credential)
 import PlutusLedgerApi.V1.Value (CurrencySymbol, Value)
@@ -58,10 +54,6 @@ data TreasuryWithdrawalDatum = TreasuryWithdrawalDatum
     ( -- | @since 0.1.0
       Show
     , -- | @since 0.1.0
-      GHC.Generic
-    )
-  deriving anyclass
-    ( -- | @since 0.1.0
       Generic
     )
 
@@ -87,15 +79,9 @@ newtype PTreasuryWithdrawalDatum (s :: S)
       )
   deriving stock
     ( -- | @since 0.1.0
-      GHC.Generic
+      Generic
     )
   deriving anyclass
-    ( -- | @since 0.1.0
-      Generic
-    , -- | @since 0.1.0
-      PIsDataRepr
-    )
-  deriving
     ( -- | @since 0.1.0
       PlutusType
     , -- | @since 0.1.0
@@ -103,7 +89,9 @@ newtype PTreasuryWithdrawalDatum (s :: S)
     , -- | @since 0.1.0
       PDataFields
     )
-    via PIsDataReprInstances PTreasuryWithdrawalDatum
+
+instance DerivePlutusType PTreasuryWithdrawalDatum where
+  type DPTStrat _ = PlutusTypeData
 
 -- | @since 0.1.0
 instance PUnsafeLiftDecl PTreasuryWithdrawalDatum where
@@ -116,10 +104,7 @@ deriving via
     (PConstantDecl TreasuryWithdrawalDatum)
 
 -- | @since 0.1.0
-deriving via
-  PAsData (PIsDataReprInstances PTreasuryWithdrawalDatum)
-  instance
-    PTryFrom PData (PAsData PTreasuryWithdrawalDatum)
+instance PTryFrom PData PTreasuryWithdrawalDatum
 
 {- | Withdraws given list of values to specific target addresses.
      It can be evoked by burning GAT. The transaction should have correct
@@ -143,26 +128,26 @@ deriving via
 treasuryWithdrawalValidator :: forall {s :: S}. CurrencySymbol -> Term s PValidator
 treasuryWithdrawalValidator currSymbol = makeEffect currSymbol $
   \_cs (datum' :: Term _ PTreasuryWithdrawalDatum) txOutRef' txInfo' -> unTermCont $ do
-    datum <- tcont $ pletFields @'["receivers", "treasuries"] datum'
-    txInfo <- tcont $ pletFields @'["outputs", "inputs"] txInfo'
+    datum <- pletFieldsC @'["receivers", "treasuries"] datum'
+    txInfo <- pletFieldsC @'["outputs", "inputs"] txInfo'
     PJust ((pfield @"resolved" #) -> txOut) <- pmatchC $ pfindTxInByTxOutRef # txOutRef' # pfromData txInfo.inputs
-    effInput <- tcont $ pletFields @'["address", "value"] $ txOut
+    effInput <- pletFieldsC @'["address", "value"] $ txOut
     outputValues <-
       pletC $
         pmap
           # plam
-            ( \(pfromData -> txOut') -> unTermCont $ do
-                txOut <- tcont $ pletFields @'["address", "value"] $ txOut'
+            ( \txOut' -> unTermCont $ do
+                txOut <- pletFieldsC @'["address", "value"] $ txOut'
                 let cred = pfield @"credential" # pfromData txOut.address
                 pure . pdata $ ptuple # cred # txOut.value
             )
-          # txInfo.outputs
+          # pfromData txInfo.outputs
     inputValues <-
       pletC $
         pmap
           # plam
-            ( \((pfield @"resolved" #) . pfromData -> txOut') -> unTermCont $ do
-                txOut <- tcont $ pletFields @'["address", "value"] $ txOut'
+            ( \((pfield @"resolved" #) -> txOut') -> unTermCont $ do
+                txOut <- pletFieldsC @'["address", "value"] $ txOut'
                 let cred = pfield @"credential" # pfromData txOut.address
                 pure . pdata $ ptuple # cred # txOut.value
             )
@@ -190,7 +175,7 @@ treasuryWithdrawalValidator currSymbol = makeEffect currSymbol $
           pnot #$ pany
             # plam
               ( \x ->
-                  effInput.address #== pfield @"address" # pfromData x
+                  effInput.address #== pfield @"address" # x
               )
             # pfromData txInfo.outputs
         inputsAreOnlyTreasuriesOrCollateral =
@@ -199,7 +184,7 @@ treasuryWithdrawalValidator currSymbol = makeEffect currSymbol $
               ( \((pfield @"_0" #) . pfromData -> cred) ->
                   cred #== pfield @"credential" # effInput.address
                     #|| pelem # cred # datum.treasuries
-                    #|| isPubKey # pfromData cred
+                    #|| pisPubKey # pfromData cred
               )
             # inputValues
 
