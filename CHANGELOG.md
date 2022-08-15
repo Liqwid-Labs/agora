@@ -4,11 +4,19 @@ This format is based on [Keep A Changelog](https://keepachangelog.com/en/1.0.0).
 
 ## Unreleased (Candidate for 1.0.0)
 
+## 0.3.0
+
+### Modified
+
+- Use plutus v2 types.
+
+  Included by [#156](https://github.com/Liqwid-Labs/agora/pull/156).
+
 ## 0.2.0 -- 2022-08-13
 
 ### Added
 
-- Script exporting with `plutarch-script-export` 
+- Script exporting with `plutarch-script-export`.
 
 ### Modified
 
