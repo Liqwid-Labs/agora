@@ -45,14 +45,13 @@ import Agora.Proposal.Time (PProposalStartingTime, PProposalTimingConfig, Propos
 import Agora.SafeMoney (GTTag)
 import Data.Tagged (Tagged)
 import Generics.SOP qualified as SOP
-import Plutarch.Api.V1 (
+import Plutarch.Api.V1 (PMap, PValidatorHash)
+import Plutarch.Api.V1.AssocMap qualified as PAssocMap
+import Plutarch.Api.V2 (
   KeyGuarantees (Unsorted),
   PDatumHash,
-  PMap,
   PPubKeyHash,
-  PValidatorHash,
  )
-import Plutarch.Api.V1.AssocMap qualified as PAssocMap
 import Plutarch.DataRepr (DerivePConstantViaData (..), PDataFields)
 import Plutarch.Extra.Comonad (pextract)
 import Plutarch.Extra.Field (pletAllC)

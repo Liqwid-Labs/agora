@@ -80,11 +80,13 @@ import Plutarch.Context (
   signedWith,
   timeRange,
   withDatum,
-  withOutRef,
+  withRef,
   withValue,
  )
 import Plutarch.Lift (PLifted, PUnsafeLiftDecl)
-import PlutusLedgerApi.V1 (
+import PlutusLedgerApi.V1.Value (AssetClass (..))
+import PlutusLedgerApi.V1.Value qualified as Value
+import PlutusLedgerApi.V2 (
   DatumHash,
   POSIXTime,
   POSIXTimeRange,
@@ -92,8 +94,6 @@ import PlutusLedgerApi.V1 (
   TxOutRef (TxOutRef),
   ValidatorHash,
  )
-import PlutusLedgerApi.V1.Value (AssetClass (..))
-import PlutusLedgerApi.V1.Value qualified as Value
 import PlutusTx.AssocMap qualified as AssocMap
 import Sample.Proposal.Shared (
   governorTxRef,
@@ -317,7 +317,7 @@ mkProposalBuilder ps =
         [ input $
             mconcat
               [ script proposalValidatorHash
-              , withOutRef proposalRef
+              , withRef proposalRef
               , withDatum (mkProposalInputDatum ps)
               , withValue value
               ]
@@ -400,7 +400,7 @@ mkStakeBuilder ps =
               , input $
                   mconcat
                     [ script stakeValidatorHash
-                    , withOutRef (mkStakeRef idx)
+                    , withRef (mkStakeRef idx)
                     , withValue perStakeValue
                     , withDatum i
                     ]
@@ -462,14 +462,14 @@ mkGovernorBuilder ps =
             mconcat
               [ script govValidatorHash
               , withValue value
-              , withOutRef governorRef
+              , withRef governorRef
               , withDatum governorInputDatum
               ]
         , output $
             mconcat
               [ script govValidatorHash
               , withValue value
-              , withOutRef governorRef
+              , withRef governorRef
               , withDatum (mkGovernorOutputDatum ps)
               ]
         ]

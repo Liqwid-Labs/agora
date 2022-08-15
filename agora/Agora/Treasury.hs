@@ -12,9 +12,8 @@ module Agora.Treasury (module Agora.Treasury) where
 
 import Agora.AuthorityToken (singleAuthorityTokenBurned)
 import Generics.SOP qualified as SOP
-import Plutarch.Api.V1 (PValidator)
-import Plutarch.Api.V1.Contexts (PScriptPurpose (PMinting))
-import "plutarch" Plutarch.Api.V1.Value (PValue)
+import Plutarch.Api.V1.Value (PValue)
+import Plutarch.Api.V2 (PScriptPurpose (PMinting), PValidator)
 import Plutarch.Builtin (pforgetData)
 import Plutarch.Extra.IsData (
   DerivePConstantViaEnum (..),

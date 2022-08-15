@@ -13,11 +13,15 @@ module Agora.AuthorityToken (
 ) where
 
 import Plutarch.Api.V1 (
+  PCredential (..),
+  PCurrencySymbol (..),
+ )
+import Plutarch.Api.V1.AssocMap (PMap (PMap))
+import Plutarch.Api.V1.Value (PValue (PValue))
+import Plutarch.Api.V2 (
   AmountGuarantees,
   KeyGuarantees,
   PAddress (..),
-  PCredential (..),
-  PCurrencySymbol (..),
   PMintingPolicy,
   PScriptContext (..),
   PScriptPurpose (..),
@@ -25,14 +29,12 @@ import Plutarch.Api.V1 (
   PTxInfo (..),
   PTxOut (..),
  )
-import Plutarch.Api.V1.AssetClass (passetClass, passetClassValueOf)
-import Plutarch.Api.V1.AssocMap (PMap (PMap))
-import Plutarch.Api.V1.ScriptContext (pisTokenSpent)
-import "liqwid-plutarch-extra" Plutarch.Api.V1.Value (psymbolValueOf)
-import "plutarch" Plutarch.Api.V1.Value (PValue (PValue))
 import Plutarch.Builtin (pforgetData)
+import Plutarch.Extra.AssetClass (passetClass, passetClassValueOf)
 import Plutarch.Extra.List (plookup)
+import Plutarch.Extra.ScriptContext (pisTokenSpent)
 import Plutarch.Extra.TermCont (pguardC, pletFieldsC, pmatchC)
+import Plutarch.Extra.Value (psymbolValueOf)
 import PlutusLedgerApi.V1.Value (AssetClass (AssetClass))
 
 --------------------------------------------------------------------------------

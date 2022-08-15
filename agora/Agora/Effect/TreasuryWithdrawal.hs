@@ -16,20 +16,22 @@ module Agora.Effect.TreasuryWithdrawal (
 import Agora.Effect (makeEffect)
 import Agora.Plutarch.Orphans ()
 import Plutarch.Api.V1 (
-  AmountGuarantees (Positive),
-  KeyGuarantees (Sorted),
   PCredential (..),
-  PTuple,
-  PValidator,
   PValue,
   ptuple,
  )
-import Plutarch.Api.V1.ScriptContext (pfindTxInByTxOutRef, pisPubKey)
-import "plutarch" Plutarch.Api.V1.Value (pnormalize)
+import Plutarch.Api.V1.Value (pnormalize)
+import Plutarch.Api.V2 (
+  AmountGuarantees (Positive),
+  KeyGuarantees (Sorted),
+  PTuple,
+  PValidator,
+ )
 import Plutarch.DataRepr (
   DerivePConstantViaData (..),
   PDataFields,
  )
+import Plutarch.Extra.ScriptContext (pfindTxInByTxOutRef, pisPubKey)
 import Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC)
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (..))
 import PlutusLedgerApi.V1.Credential (Credential)

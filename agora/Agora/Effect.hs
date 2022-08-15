@@ -10,11 +10,13 @@ module Agora.Effect (makeEffect) where
 import Agora.AuthorityToken (singleAuthorityTokenBurned)
 import Plutarch.Api.V1 (
   PCurrencySymbol,
+  PValue,
+ )
+import Plutarch.Api.V2 (
   PScriptPurpose (PSpending),
   PTxInfo,
   PTxOutRef,
   PValidator,
-  PValue,
  )
 import Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC, ptryFromC)
 import Plutarch.TryFrom ()

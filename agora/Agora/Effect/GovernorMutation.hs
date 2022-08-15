@@ -26,22 +26,22 @@ import Agora.Governor (
  )
 import Agora.Plutarch.Orphans ()
 import Agora.Scripts (AgoraScripts, authorityTokenSymbol, governorSTAssetClass)
-import Plutarch.Api.V1 (
+import Agora.Utils (pmustFindDatum)
+import Plutarch.Api.V1 (PValue)
+import Plutarch.Api.V2 (
   PTxOutRef,
   PValidator,
-  PValue,
  )
-import Plutarch.Api.V1.ScriptContext (pisScriptAddress, ptryFindDatum)
-import "liqwid-plutarch-extra" Plutarch.Api.V1.Value (pvalueOf)
 import Plutarch.DataRepr (
   DerivePConstantViaData (..),
   PDataFields,
  )
 import Plutarch.Extra.Maybe (
-  passertPDJust,
   passertPJust,
  )
+import Plutarch.Extra.ScriptContext (pisScriptAddress)
 import Plutarch.Extra.TermCont (pguardC, pletFieldsC)
+import Plutarch.Extra.Value (pvalueOf)
 import Plutarch.Lift (PConstantDecl, PLifted, PUnsafeLiftDecl)
 import PlutusLedgerApi.V1 (TxOutRef)
 import PlutusLedgerApi.V1.Value (AssetClass (..))
@@ -191,7 +191,7 @@ mutateGovernorValidator as = makeEffect (authorityTokenSymbol as) $
     let govAddress = pfield @"address" #$ govInInfo.resolved
         govOutput' = phead # pfromData txInfoF.outputs
 
-    govOutput <- pletFieldsC @'["address", "value", "datumHash"] govOutput'
+    govOutput <- pletFieldsC @'["address", "value", "datum"] govOutput'
 
     pguardC "No output to the governor" $
       govOutput.address #== govAddress
@@ -199,11 +199,9 @@ mutateGovernorValidator as = makeEffect (authorityTokenSymbol as) $
     pguardC "Governor output doesn't carry the GST" $
       gstValueOf # govOutput.value #== 1
 
-    let governorOutputDatumHash =
-          passertPDJust # "Governor output doesn't have datum" # govOutput.datumHash
-        governorOutputDatum =
-          passertPJust @PGovernorDatum # "Governor output datum not found"
-            #$ ptryFindDatum # governorOutputDatumHash # txInfoF.datums
+    let governorOutputDatum =
+          ptrace "Governor output datum not found" $
+            pmustFindDatum @PGovernorDatum # govOutput.datum # txInfoF.datums
 
     -- Ensure the output governor datum is what we want.
     pguardC "Unexpected governor datum" $ datumF.newDatum #== governorOutputDatum

@@ -26,17 +26,17 @@ import Agora.Treasury (
   treasuryValidator,
  )
 import Agora.Utils (CompiledValidator (CompiledValidator))
-import Plutarch.Api.V1 (mkValidator)
-import PlutusLedgerApi.V1 (DCert (DCertDelegRegKey))
-import PlutusLedgerApi.V1.Contexts (
-  ScriptContext (scriptContextPurpose, scriptContextTxInfo),
-  ScriptPurpose (Certifying, Rewarding, Spending),
-  TxInfo (txInfoInputs, txInfoMint),
- )
+import Plutarch.Api.V2 (mkValidator)
 import PlutusLedgerApi.V1.Credential (
   StakingCredential (StakingHash),
  )
 import PlutusLedgerApi.V1.Value qualified as Value (singleton)
+import PlutusLedgerApi.V2 (DCert (DCertDelegRegKey))
+import PlutusLedgerApi.V2.Contexts (
+  ScriptContext (scriptContextPurpose, scriptContextTxInfo),
+  ScriptPurpose (Certifying, Rewarding, Spending),
+  TxInfo (txInfoInputs, txInfoMint),
+ )
 import Sample.Shared (deterministicTracingConfing, trCredential)
 import Sample.Treasury (
   gatCs,

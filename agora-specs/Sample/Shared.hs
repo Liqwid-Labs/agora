@@ -14,6 +14,7 @@ module Sample.Shared (
   minAda,
   deterministicTracingConfing,
   mkEffect,
+  mkRedeemer,
 
   -- * Agora Scripts
   agoraScripts,
@@ -75,13 +76,21 @@ import Agora.Utils (
 import Data.Default.Class (Default (..))
 import Data.Tagged (Tagged (..))
 import Plutarch (Config (..), TracingMode (DetTracing))
-import Plutarch.Api.V1 (
+import Plutarch.Api.V2 (
   PValidator,
   mintingPolicySymbol,
   mkValidator,
   validatorHash,
  )
-import PlutusLedgerApi.V1 (
+import PlutusLedgerApi.V1.Address (scriptHashAddress)
+import PlutusLedgerApi.V1.Contexts (TxOut (..))
+import PlutusLedgerApi.V1.Scripts (Validator, ValidatorHash (..))
+import PlutusLedgerApi.V1.Value (AssetClass, TokenName)
+import PlutusLedgerApi.V1.Value qualified as Value (
+  assetClass,
+  singleton,
+ )
+import PlutusLedgerApi.V2 (
   Address (Address),
   Credential (ScriptCredential),
   CurrencySymbol,
@@ -91,17 +100,11 @@ import PlutusLedgerApi.V1 (
   MintingPolicy (..),
   POSIXTimeRange,
   PubKeyHash,
+  Redeemer (..),
+  ToData (toBuiltinData),
   TxOutRef (TxOutRef),
   UpperBound (..),
   Value,
- )
-import PlutusLedgerApi.V1.Address (scriptHashAddress)
-import PlutusLedgerApi.V1.Contexts (TxOut (..))
-import PlutusLedgerApi.V1.Scripts (Validator, ValidatorHash (..))
-import PlutusLedgerApi.V1.Value (AssetClass, TokenName)
-import PlutusLedgerApi.V1.Value qualified as Value (
-  assetClass,
-  singleton,
  )
 import PlutusTx qualified
 
@@ -218,6 +221,9 @@ proposalStartingTimeFromTimeRange _ = error "Given time range should be finite a
 
 mkEffect :: (PlutusTx.ToData datum) => ClosedTerm PValidator -> CompiledEffect datum
 mkEffect v = CompiledEffect $ mkValidator deterministicTracingConfing v
+
+mkRedeemer :: forall redeemer. PlutusTx.ToData redeemer => redeemer -> Redeemer
+mkRedeemer = Redeemer . toBuiltinData
 
 ------------------------------------------------------------------
 

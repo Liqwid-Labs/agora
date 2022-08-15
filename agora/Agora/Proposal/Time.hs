@@ -36,9 +36,9 @@ import Plutarch.Api.V1 (
   PInterval (PInterval),
   PLowerBound (PLowerBound),
   PPOSIXTime,
-  PPOSIXTimeRange,
   PUpperBound (PUpperBound),
  )
+import Plutarch.Api.V2 (PPOSIXTimeRange)
 import Plutarch.DataRepr (
   DerivePConstantViaData (..),
   PDataFields,

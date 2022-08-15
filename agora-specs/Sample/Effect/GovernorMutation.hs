@@ -15,15 +15,24 @@ import Agora.Effect.GovernorMutation (
   MutateGovernorDatum (..),
   mutateGovernorValidator,
  )
-import Agora.Governor (GovernorDatum (..))
+import Agora.Governor (GovernorDatum (..), GovernorRedeemer (MutateGovernor))
 import Agora.Proposal (ProposalId (..), ProposalThresholds (..))
 import Agora.Utils (validatorHashToTokenName)
 import Data.Default.Class (Default (def))
 import Data.Tagged (Tagged (..))
-import Plutarch.Api.V1 (mkValidator, validatorHash)
-import PlutusLedgerApi.V1 (
+import Plutarch.Api.V2 (mkValidator, validatorHash)
+import PlutusLedgerApi.V1 qualified as Interval (always)
+import PlutusLedgerApi.V1.Address (scriptHashAddress)
+import PlutusLedgerApi.V1.Value (AssetClass, assetClass)
+import PlutusLedgerApi.V1.Value qualified as Value (
+  assetClassValue,
+  singleton,
+ )
+import PlutusLedgerApi.V2 (
   Address,
   Datum (..),
+  OutputDatum (OutputDatumHash),
+  ScriptPurpose (Spending),
   ToData (..),
   TxInInfo (..),
   TxInfo (..),
@@ -32,13 +41,7 @@ import PlutusLedgerApi.V1 (
   Validator,
   ValidatorHash (..),
  )
-import PlutusLedgerApi.V1 qualified as Interval (always)
-import PlutusLedgerApi.V1.Address (scriptHashAddress)
-import PlutusLedgerApi.V1.Value (AssetClass, assetClass)
-import PlutusLedgerApi.V1.Value qualified as Value (
-  assetClassValue,
-  singleton,
- )
+import PlutusTx.AssocMap qualified as AssocMap
 import Sample.Shared (
   agoraScripts,
   authorityTokenSymbol,
@@ -46,6 +49,7 @@ import Sample.Shared (
   govAssetClass,
   govValidatorAddress,
   minAda,
+  mkRedeemer,
   signer,
  )
 import Test.Util (datumPair, toDatumHash)
@@ -114,7 +118,8 @@ mkEffectTxInfo newGovDatum =
         TxOut
           { txOutAddress = govValidatorAddress
           , txOutValue = gst
-          , txOutDatumHash = Just $ toDatumHash governorInputDatum
+          , txOutDatum = OutputDatumHash $ toDatumHash governorInputDatum
+          , txOutReferenceScript = Nothing
           }
 
       --
@@ -129,7 +134,8 @@ mkEffectTxInfo newGovDatum =
         TxOut
           { txOutAddress = effectValidatorAddress
           , txOutValue = at -- The effect carry an authotity token.
-          , txOutDatumHash = Just $ toDatumHash effectInputDatum
+          , txOutDatum = OutputDatumHash $ toDatumHash effectInputDatum
+          , txOutReferenceScript = Nothing
           }
 
       --
@@ -143,21 +149,28 @@ mkEffectTxInfo newGovDatum =
         TxOut
           { txOutAddress = govValidatorAddress
           , txOutValue = mconcat [gst, minAda]
-          , txOutDatumHash = Just $ toDatumHash governorOutputDatum
+          , txOutDatum = OutputDatumHash $ toDatumHash governorOutputDatum
+          , txOutReferenceScript = Nothing
           }
    in TxInfo
         { txInfoInputs =
             [ TxInInfo effectRef effectInput
             , TxInInfo govRef governorInput
             ]
+        , txInfoReferenceInputs = []
         , txInfoOutputs = [governorOutput]
         , txInfoFee = Value.singleton "" "" 2
         , txInfoMint = burnt
         , txInfoDCert = []
-        , txInfoWdrl = []
+        , txInfoWdrl = AssocMap.empty
         , txInfoValidRange = Interval.always
         , txInfoSignatories = [signer]
-        , txInfoData = datumPair <$> [governorInputDatum, governorOutputDatum, effectInputDatum]
+        , txInfoData = AssocMap.fromList $ datumPair <$> [governorInputDatum, governorOutputDatum, effectInputDatum]
+        , txInfoRedeemers =
+            AssocMap.fromList
+              [ (Spending effectRef, mkRedeemer ())
+              , (Spending govRef, mkRedeemer MutateGovernor)
+              ]
         , txInfoId = "74c75505691e7baa981fa80e50b9b7e88dbe1eda67d4f062d89d203b"
         }
 

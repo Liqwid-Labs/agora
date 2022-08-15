@@ -7,7 +7,7 @@ Shared constants for proposal samples.
 -}
 module Sample.Proposal.Shared (proposalTxRef, stakeTxRef, governorTxRef) where
 
-import PlutusLedgerApi.V1 (TxId)
+import PlutusLedgerApi.V2 (TxId)
 
 -- | 'TxId' of all the proposal inputs in the samples.
 proposalTxRef :: TxId

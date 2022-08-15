@@ -42,16 +42,16 @@ import Plutarch.Context (
   signedWith,
   txId,
   withDatum,
-  withOutRef,
+  withRef,
   withValue,
  )
-import PlutusLedgerApi.V1 (
+import PlutusLedgerApi.V1.Value (AssetClass (..))
+import PlutusLedgerApi.V1.Value qualified as Value
+import PlutusLedgerApi.V2 (
   CurrencySymbol,
   TxOutRef (TxOutRef),
   ValidatorHash,
  )
-import PlutusLedgerApi.V1.Value (AssetClass (..))
-import PlutusLedgerApi.V1.Value qualified as Value
 import Sample.Shared (
   minAda,
  )
@@ -175,7 +175,7 @@ mintGST ps = builder
                 mconcat
                   [ pubKey witnessPubKey
                   , withValue witnessValue
-                  , withOutRef witnessRef
+                  , withRef witnessRef
                   ]
             , output $
                 mconcat

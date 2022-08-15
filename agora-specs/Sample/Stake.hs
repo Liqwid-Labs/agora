@@ -27,8 +27,8 @@ import Data.Tagged (Tagged, untag)
 import Plutarch.Context (
   MintingBuilder,
   SpendingBuilder,
-  buildMintingUnsafe,
-  buildSpendingUnsafe,
+  buildMinting',
+  buildSpending',
   input,
   mint,
   output,
@@ -37,22 +37,23 @@ import Plutarch.Context (
   txId,
   withDatum,
   withMinting,
-  withOutRef,
+  withRef,
   withSpendingOutRef,
   withValue,
- )
-import PlutusLedgerApi.V1 (
-  Datum (Datum),
-  ScriptContext (..),
-  ScriptPurpose (Minting),
-  ToData (toBuiltinData),
-  TxInfo (txInfoData, txInfoSignatories),
  )
 import PlutusLedgerApi.V1.Contexts (TxOutRef (..))
 import PlutusLedgerApi.V1.Value qualified as Value (
   assetClassValue,
   singleton,
  )
+import PlutusLedgerApi.V2 (
+  Datum (Datum),
+  ScriptContext (..),
+  ScriptPurpose (Minting),
+  ToData (toBuiltinData),
+  TxInfo (txInfoData, txInfoSignatories),
+ )
+import PlutusTx.AssocMap qualified as AssocMap
 import Sample.Shared (
   governor,
   signer,
@@ -83,7 +84,7 @@ stakeCreation =
                 ]
           , withMinting stakeSymbol
           ]
-   in buildMintingUnsafe builder
+   in buildMinting' builder
 
 -- | This ScriptContext should fail because the datum has too much GT.
 stakeCreationWrongDatum :: ScriptContext
@@ -91,7 +92,7 @@ stakeCreationWrongDatum =
   let datum :: Datum
       datum = Datum (toBuiltinData $ StakeDatum 4242424242424242 signer Nothing []) -- Too much GT
    in ScriptContext
-        { scriptContextTxInfo = stakeCreation.scriptContextTxInfo {txInfoData = [("", datum)]}
+        { scriptContextTxInfo = stakeCreation.scriptContextTxInfo {txInfoData = AssocMap.fromList [("", datum)]}
         , scriptContextPurpose = Minting stakeSymbol
         }
 
@@ -144,7 +145,7 @@ stakeDepositWithdraw config =
                           <> Value.assetClassValue (untag governor.gtClassRef) (untag stakeBefore.stakedAmount)
                     )
                 , withDatum stakeAfter
-                , withOutRef stakeRef
+                , withRef stakeRef
                 ]
           , output $
               mconcat
@@ -158,4 +159,4 @@ stakeDepositWithdraw config =
                 ]
           , withSpendingOutRef stakeRef
           ]
-   in buildSpendingUnsafe builder
+   in buildSpending' builder

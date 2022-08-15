@@ -46,16 +46,16 @@ import Plutarch.Context (
   signedWith,
   txId,
   withDatum,
-  withOutRef,
+  withRef,
   withValue,
  )
-import PlutusLedgerApi.V1 (
+import PlutusLedgerApi.V1.Value qualified as Value
+import PlutusLedgerApi.V2 (
   DatumHash,
   PubKeyHash,
   TxOutRef (..),
   ValidatorHash,
  )
-import PlutusLedgerApi.V1.Value qualified as Value
 import PlutusTx.AssocMap qualified as AssocMap
 import Sample.Proposal.Shared (stakeTxRef)
 import Sample.Shared (
@@ -261,7 +261,7 @@ unlockStake ps =
                       [ script proposalValidatorHash
                       , withValue pst
                       , withDatum i
-                      , withOutRef (mkProposalRef idx)
+                      , withRef (mkProposalRef idx)
                       ]
                 , output $
                     mconcat
@@ -293,7 +293,7 @@ unlockStake ps =
                 [ script stakeValidatorHash
                 , withValue stakeValue
                 , withDatum sInDatum
-                , withOutRef stakeRef
+                , withRef stakeRef
                 ]
           , output $
               mconcat

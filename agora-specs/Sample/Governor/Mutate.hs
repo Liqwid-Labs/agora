@@ -22,7 +22,7 @@ import Agora.Proposal (ProposalId (ProposalId), ProposalThresholds (..))
 import Agora.Scripts (AgoraScripts (..))
 import Agora.Utils (validatorHashToTokenName)
 import Data.Default (def)
-import Plutarch.Api.V1 (PValidator, mkValidator, validatorHash)
+import Plutarch.Api.V2 (PValidator, mkValidator, validatorHash)
 import Plutarch.Context (
   input,
   mint,
@@ -30,17 +30,17 @@ import Plutarch.Context (
   pubKey,
   script,
   withDatum,
-  withOutRef,
+  withRef,
   withValue,
  )
-import PlutusLedgerApi.V1 (
+import PlutusLedgerApi.V1.Value qualified as Value
+import PlutusLedgerApi.V2 (
   Data,
   TxOutRef (TxOutRef),
   ValidatorHash,
   Value,
   toData,
  )
-import PlutusLedgerApi.V1.Value qualified as Value
 import Sample.Shared (
   agoraScripts,
   authorityTokenSymbol,
@@ -49,7 +49,13 @@ import Sample.Shared (
   minAda,
  )
 import Test.Specification (SpecificationTree, testValidator)
-import Test.Util (CombinableBuilder, mkSpending, pubKeyHashes, sortValue, validatorHashes)
+import Test.Util (
+  CombinableBuilder,
+  mkSpending,
+  pubKeyHashes,
+  sortValue,
+  validatorHashes,
+ )
 
 --------------------------------------------------------------------------------
 
@@ -150,7 +156,7 @@ mkGovernorBuilder ps =
               [ script govValidatorHash
               , withDatum governorInputDatum
               , withValue value
-              , withOutRef governorRef
+              , withRef governorRef
               ]
         , output $
             mconcat

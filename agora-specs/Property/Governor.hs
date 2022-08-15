@@ -20,27 +20,27 @@ import Agora.Proposal.Time (
 import Data.Default.Class (Default (def))
 import Data.Tagged (Tagged (Tagged), untag)
 import Data.Universe (Finite (..), Universe (..))
-import Plutarch.Api.V1 (PScriptContext)
+import Plutarch.Api.V2 (PScriptContext)
 import Plutarch.Builtin (pforgetData)
 import Plutarch.Context (
   MintingBuilder,
-  buildMintingUnsafe,
+  buildMinting',
   input,
   mint,
   output,
   script,
   withDatum,
   withMinting,
-  withOutRef,
+  withRef,
   withValue,
  )
-import PlutusLedgerApi.V1 (
+import PlutusLedgerApi.V1.Value (assetClassValue)
+import PlutusLedgerApi.V2 (
   ScriptContext (scriptContextTxInfo),
   TxInInfo (txInInfoOutRef),
   TxInfo (txInfoInputs, txInfoMint, txInfoOutputs),
   TxOut (txOutValue),
  )
-import PlutusLedgerApi.V1.Value (assetClassValue)
 import Property.Generator (genInput, genOutput)
 import Sample.Shared (
   govAssetClass,
@@ -164,7 +164,7 @@ governorMintingProperty =
           , withValue gst
           , withDatum govDatum
           ]
-    referencedInput = input $ withOutRef gstUTXORef
+    referencedInput = input $ withRef gstUTXORef
 
     govDatum :: GovernorDatum
     govDatum =
@@ -189,7 +189,7 @@ governorMintingProperty =
               GovernorOutputNotFound -> referencedInput <> mintAmount 1
               GovernorPolicyCorrect -> referencedInput <> outputToGov <> mintAmount 1
 
-      return . buildMintingUnsafe $ inputs <> outputs <> comp <> withMinting govSymbol
+      return . buildMinting' $ inputs <> outputs <> comp <> withMinting govSymbol
 
     expected :: ScriptContext -> Maybe ()
     expected sc =

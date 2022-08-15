@@ -37,10 +37,12 @@ import Agora.Stake (
   pisVoter,
  )
 import Agora.Utils (
-  mustFindDatum',
+  pfromDatumHash,
   pltAsData,
+  pmustFindDatum,
+  ptryFindDatum,
  )
-import Plutarch.Api.V1 (
+import Plutarch.Api.V2 (
   PDatumHash,
   PMintingPolicy,
   PPubKeyHash,
@@ -50,21 +52,19 @@ import Plutarch.Api.V1 (
   PTxOut,
   PValidator,
  )
-import Plutarch.Api.V1.AssetClass (passetClass, passetClassValueOf)
-import Plutarch.Api.V1.ScriptContext (
-  pfindTxInByTxOutRef,
-  pisTokenSpent,
-  ptryFindDatum,
-  ptxSignedBy,
- )
-import "liqwid-plutarch-extra" Plutarch.Api.V1.Value (psymbolValueOf)
+import Plutarch.Extra.AssetClass (passetClass, passetClassValueOf)
 import Plutarch.Extra.Comonad (pextract)
 import Plutarch.Extra.Field (pletAllC)
 import Plutarch.Extra.IsData (pmatchEnum)
 import Plutarch.Extra.List (pisUniq', pmapMaybe, pmergeBy, pmsortBy)
 import Plutarch.Extra.Map (plookup, pupdate)
-import Plutarch.Extra.Maybe (passertPJust, pfromDJust, pfromJust, pisJust)
+import Plutarch.Extra.Maybe (passertPJust, pfromJust, pisJust)
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
+import Plutarch.Extra.ScriptContext (
+  pfindTxInByTxOutRef,
+  pisTokenSpent,
+  ptxSignedBy,
+ )
 import Plutarch.Extra.TermCont (
   pguardC,
   pletC,
@@ -72,6 +72,7 @@ import Plutarch.Extra.TermCont (
   pmatchC,
   ptryFromC,
  )
+import Plutarch.Extra.Value (psymbolValueOf)
 import Plutarch.SafeMoney (PDiscrete (..))
 import Plutarch.Unsafe (punsafeCoerce)
 import PlutusLedgerApi.V1.Value (AssetClass (AssetClass))
@@ -213,8 +214,8 @@ proposalValidator as maximumCosigners =
                 --       Maybe we can cache the sorted datum map?
                 let datum =
                       pfromData $
-                        mustFindDatum' @(PAsData PProposalDatum)
-                          # inputF.datumHash
+                        pmustFindDatum @(PAsData PProposalDatum)
+                          # inputF.datum
                           # txInfoF.datums
 
                     proposalId = pfield @"proposalId" # pto datum
@@ -229,8 +230,8 @@ proposalValidator as maximumCosigners =
     proposalOut <-
       pletC $
         pfromData $
-          mustFindDatum' @(PAsData PProposalDatum)
-            # (pfield @"datumHash" # ownOutput)
+          pmustFindDatum @(PAsData PProposalDatum)
+            # (pfield @"datum" # ownOutput)
             # txInfoF.datums
 
     proposalUnchanged <- pletC $ proposalOut #== proposalDatum
@@ -267,11 +268,11 @@ proposalValidator as maximumCosigners =
     filterStakeDatumHash :: Term _ (PTxOut :--> PMaybe (PAsData PDatumHash)) <-
       pletC $
         plam $ \txOut -> unTermCont $ do
-          txOutF <- pletFieldsC @'["value", "datumHash"] txOut
+          txOutF <- pletFieldsC @'["value", "datum"] txOut
           pure $
             pif
               (passetClassValueOf # txOutF.value # stakeSTAssetClass #== 1)
-              ( let datumHash = pfromDJust # txOutF.datumHash
+              ( let datumHash = pfromDatumHash # txOutF.datum
                  in pcon $ PJust $ pdata datumHash
               )
               (pcon PNothing)

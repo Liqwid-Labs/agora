@@ -9,7 +9,7 @@ import Data.Csv (DefaultOrdered, ToNamedRecord, header, headerOrder, namedRecord
 import Data.List (intercalate)
 import Data.Text (Text, pack)
 import Plutarch.Evaluate (evalScript)
-import PlutusLedgerApi.V1 (
+import PlutusLedgerApi.V2 (
   ExBudget (ExBudget),
   ExCPU (..),
   ExMemory (..),
