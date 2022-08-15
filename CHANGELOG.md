@@ -4,8 +4,6 @@ This format is based on [Keep A Changelog](https://keepachangelog.com/en/1.0.0).
 
 ## Unreleased (Candidate for 1.0.0)
 
-## 0.3.0
-
 ### Modified
 
 - Use plutus v2 types.

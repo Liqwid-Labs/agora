@@ -116,7 +116,7 @@ newtype CompiledEffect (datum :: Type) = CompiledEffect
   { getCompiledEffect :: Validator
   }
 
--- @since 0.3.0
+-- @since 1.0.0
 presolveOutputDatum ::
   forall s.
   Term
@@ -136,7 +136,7 @@ presolveOutputDatum = phoistAcyclic $
         # hash
         # m
 
--- | @since 0.3.0
+-- | @since 1.0.0
 pfindDatum ::
   forall datum s.
   PTryFrom PData datum =>
@@ -152,7 +152,7 @@ pfindDatum = phoistAcyclic $
       # phoistAcyclic (plam $ flip ptryFrom fst . pto)
       # (presolveOutputDatum # od # m)
 
--- | @since 0.3.0
+-- | @since 1.0.0
 pmustFindDatum ::
   forall datum s.
   (PIsData datum, PTryFrom PData datum) =>
@@ -167,7 +167,7 @@ pmustFindDatum =
     plam $
       (passertPJust # "datum not found") #.* pfindDatum
 
--- | @since 0.3.0
+-- | @since 1.0.0
 pfromDatumHash :: forall s. Term s (POutputDatum :--> PDatumHash)
 pfromDatumHash = phoistAcyclic $
   plam $
@@ -175,7 +175,7 @@ pfromDatumHash = phoistAcyclic $
       POutputDatumHash ((pfield @"datumHash" #) -> hash) -> hash
       _ -> ptraceError "not a datum hash"
 
--- | @since 0.3.0
+-- | @since 1.0.0
 pfromInlineDatum :: forall s. Term s (POutputDatum :--> PDatum)
 pfromInlineDatum = phoistAcyclic $
   plam $
@@ -185,7 +185,7 @@ pfromInlineDatum = phoistAcyclic $
 
 {- | Find a datum with the given hash, and 'ptryFrom' it.
 
-     @since 0.3.0
+     @since 1.0.0
 -}
 ptryFindDatum ::
   forall datum (s :: S).
@@ -204,7 +204,7 @@ ptryFindDatum =
 
 {- | Convert a 'PDatum' to the given datum type.
 
-     @since 0.3.0
+     @since 1.0.0
 -}
 ptryFromDatum ::
   forall datum s.
@@ -215,7 +215,7 @@ ptryFromDatum = phoistAcyclic $ plam $ flip ptryFrom fst . pto
 infixr 8 #.*
 infixr 8 #.**
 
--- | @since 0.3.0
+-- | @since 1.0.0
 (#.*) ::
   forall d c b a s.
   Term s (c :--> d) ->
@@ -225,7 +225,7 @@ infixr 8 #.**
   Term s d
 (#.*) f g x y = f #$ g # x # y
 
--- | @since 0.3.0
+-- | @since 1.0.0
 (#.**) ::
   forall e d c b a s.
   Term s (d :--> e) ->
