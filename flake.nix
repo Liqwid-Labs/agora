@@ -28,11 +28,11 @@
     plutarch-safe-money.url =
       "github:Liqwid-Labs/plutarch-safe-money?ref=main";
     liqwid-plutarch-extra.url =
-      "github:Liqwid-Labs/liqwid-plutarch-extra?ref=plutus-v1";
+      "github:Liqwid-Labs/liqwid-plutarch-extra?ref=main";
     plutarch-quickcheck.url =
       "github:liqwid-labs/plutarch-quickcheck?ref=staging";
     plutarch-context-builder.url =
-      "github:Liqwid-Labs/plutarch-context-builder?ref=plutus-v1";
+      "github:Liqwid-Labs/plutarch-context-builder?ref=staging";
     plutarch-script-export.url =
       "github:Liqwid-Labs/plutarch-script-export?ref=main";
 
