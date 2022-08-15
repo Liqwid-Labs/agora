@@ -28,6 +28,7 @@ import Agora.Governor (
  )
 import Agora.Proposal (
   PProposalDatum (..),
+  PProposalEffectGroup,
   ProposalStatus (Draft, Locked),
   phasNeutralEffect,
   pisEffectsVotesCompatible,
@@ -36,7 +37,14 @@ import Agora.Proposal (
   pwinner,
  )
 import Agora.Proposal.Time (createProposalStartingTime)
-import Agora.Scripts (AgoraScripts, authorityTokenSymbol, governorSTSymbol, proposalSTSymbol, proposalValidatoHash, stakeSTSymbol)
+import Agora.Scripts (
+  AgoraScripts,
+  authorityTokenSymbol,
+  governorSTSymbol,
+  proposalSTSymbol,
+  proposalValidatoHash,
+  stakeSTSymbol,
+ )
 import Agora.Stake (
   PProposalLock (..),
   PStakeDatum (..),
@@ -45,17 +53,17 @@ import Agora.Stake (
 import Agora.Utils (
   pfindDatum,
   pfromDatumHash,
+  pfstTuple,
   pmustFindDatum,
+  psndTuple,
   validatorHashToAddress,
  )
 import Plutarch.Api.V1 (
   PCurrencySymbol,
-  PMap,
-  PValidatorHash,
  )
+import Plutarch.Api.V1.AssocMap qualified as AssocMap
 import Plutarch.Api.V2 (
   PAddress,
-  PDatumHash,
   PMintingPolicy,
   PScriptPurpose (PMinting, PSpending),
   PTxOut,
@@ -66,10 +74,9 @@ import Plutarch.Extra.Field (pletAllC)
 import Plutarch.Extra.IsData (pmatchEnumFromData)
 import Plutarch.Extra.List (pfirstJust)
 import Plutarch.Extra.Map (
-  plookup,
   plookup',
  )
-import Plutarch.Extra.Maybe (passertPJust, pfromJust, pnothing)
+import Plutarch.Extra.Maybe (passertPDJust, passertPJust, pfromJust, pmaybeData, pnothing)
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
 import Plutarch.Extra.ScriptContext (
   pfindOutputsToAddress,
@@ -489,35 +496,44 @@ governorValidator as =
           pguardC "Output GATs is more than minted GATs" $
             plength # outputsWithGAT #== gatCount
 
-          let gatOutputValidator' :: Term s (PMap _ PValidatorHash PDatumHash :--> PTxOut :--> PBool)
-              gatOutputValidator' =
+          let validateGATOutput' :: Term s (PProposalEffectGroup :--> PTxOut :--> PBool)
+              validateGATOutput' =
                 phoistAcyclic $
                   plam
-                    ( \effects output' -> unTermCont $ do
-                        output <- pletFieldsC @'["address", "datum"] output'
+                    ( \effects output -> unTermCont $ do
+                        outputF <- pletFieldsC @'["address", "datum", "referenceScript"] output
 
-                        let scriptHash =
-                              passertPJust # "GAT receiver is not a script"
-                                #$ pscriptHashFromAddress # output.address
-                            datumHash =
-                              ptrace
-                                "Output to effect should have datum"
-                                pfromDatumHash
-                                # output.datum
-
-                            expectedDatumHash =
-                              passertPJust # "Receiver is not in the effect list"
-                                #$ plookup # scriptHash # effects
+                        let receiverScriptHash =
+                              passertPJust # "GAT receiver should be a script"
+                                #$ pscriptHashFromAddress # outputF.address
+                            effect =
+                              passertPJust # "Receiver should be in the effect group"
+                                #$ AssocMap.plookup # receiverScriptHash # effects
+                            hasCorrectReferenceScript =
+                              pmaybeData
+                                # pconstant True
+                                # plam
+                                  ( ( passertPDJust
+                                        # "Output UTXO should have a reference script"
+                                        # outputF.referenceScript
+                                        #==
+                                    )
+                                      . pfromData
+                                  )
+                                # (psndTuple # effect)
+                            hasCorrectDatum =
+                              pfstTuple # effect #== pfromDatumHash # outputF.datum
 
                         pure $
                           foldr1
                             (#&&)
-                            [ ptraceIfFalse "GAT must be tagged by the effect hash" $ authorityTokensValidIn # patSymbol # output'
-                            , ptraceIfFalse "Unexpected datum" $ datumHash #== expectedDatumHash
+                            [ ptraceIfFalse "GAT valid" $ authorityTokensValidIn # patSymbol # output
+                            , ptraceIfFalse "Correct datum" hasCorrectDatum
+                            , ptraceIfFalse "Reference script correct" hasCorrectReferenceScript
                             ]
                     )
 
-              gatOutputValidator = gatOutputValidator' # effectGroup
+              validateGATOutput = validateGATOutput' # effectGroup
 
           pguardC "GATs valid" $
             pfoldr
@@ -526,7 +542,7 @@ governorValidator as =
                     let value = pfield @"value" # txOut
                         atValue = psymbolValueOf # patSymbol # value
                      in pif (atValue #== 0) r $
-                          pif (atValue #== 1) (r #&& gatOutputValidator # txOut) $ pconstant False
+                          pif (atValue #== 1) (r #&& validateGATOutput # txOut) $ pconstant False
                 )
               # pconstant True
               # pfromData txInfoF.outputs

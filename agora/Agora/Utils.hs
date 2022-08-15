@@ -24,6 +24,8 @@ module Agora.Utils (
   pfromDatumHash,
   pfromInlineDatum,
   ptryFindDatum,
+  pfstTuple,
+  psndTuple,
 ) where
 
 import Plutarch.Api.V1.AssocMap (KeyGuarantees (Unsorted), PMap)
@@ -32,6 +34,7 @@ import Plutarch.Api.V2 (
   PDatum,
   PDatumHash,
   POutputDatum (..),
+  PTuple,
  )
 import Plutarch.Extra.Functor (pfmap)
 import Plutarch.Extra.Maybe (passertPJust, pjust, pnothing)
@@ -235,3 +238,17 @@ infixr 8 #.**
   Term s c ->
   Term s e
 (#.**) f g x y z = f #$ g # x # y # z
+
+{- | Extract the first component of a 'PTuple'.
+
+     @since 1.0.0
+-}
+pfstTuple :: forall a b s. (PIsData a) => Term s (PTuple a b :--> a)
+pfstTuple = phoistAcyclic $ plam $ pfromData . (pfield @"_0" #)
+
+{- | Extract the second component of a 'PTuple'.
+
+     @since 1.0.0
+-}
+psndTuple :: forall b a s. (PIsData b) => Term s (PTuple a b :--> b)
+psndTuple = phoistAcyclic $ plam $ pfromData . (pfield @"_1" #)
