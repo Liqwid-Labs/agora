@@ -36,13 +36,16 @@ import Data.ByteString.Lazy qualified as ByteString.Lazy
 import Data.List (sortOn)
 import Plutarch.Context (
   Builder,
-  buildMintingUnsafe,
-  buildSpendingUnsafe,
+  buildMinting',
+  buildSpending',
   withMinting,
   withSpendingOutRef,
  )
 import Plutarch.Crypto (pblake2b_256)
-import PlutusLedgerApi.V1 (
+import PlutusLedgerApi.V1.Interval qualified as PlutusTx
+import PlutusLedgerApi.V1.Scripts (Datum (Datum), DatumHash (DatumHash))
+import PlutusLedgerApi.V1.Value (Value (..))
+import PlutusLedgerApi.V2 (
   Credential (
     PubKeyCredential,
     ScriptCredential
@@ -53,9 +56,6 @@ import PlutusLedgerApi.V1 (
   TxOutRef,
   ValidatorHash (ValidatorHash),
  )
-import PlutusLedgerApi.V1.Interval qualified as PlutusTx
-import PlutusLedgerApi.V1.Scripts (Datum (Datum), DatumHash (DatumHash))
-import PlutusLedgerApi.V1.Value (Value (..))
 import PlutusTx.AssocMap qualified as AssocMap
 import PlutusTx.Builtins qualified as PlutusTx
 import PlutusTx.IsData qualified as PlutusTx
@@ -190,7 +190,7 @@ mkSpending ::
   TxOutRef ->
   ScriptContext
 mkSpending mkBuilder ps oref =
-  buildSpendingUnsafe $
+  buildSpending' $
     mkBuilder ps <> withSpendingOutRef oref
 
 {- | Given the builder generator and the parameters, create a 'ScriptContext'
@@ -203,7 +203,7 @@ mkMinting ::
   CurrencySymbol ->
   ScriptContext
 mkMinting mkBuilder ps cs =
-  buildMintingUnsafe $
+  buildMinting' $
     mkBuilder ps <> withMinting cs
 
 type CombinableBuilder b = (Monoid b, Builder b)

@@ -23,11 +23,14 @@ import Agora.Governor (GovernorDatum, GovernorRedeemer)
 import Agora.Proposal (ProposalDatum, ProposalRedeemer)
 import Agora.Stake (StakeDatum, StakeRedeemer)
 import Agora.Treasury (TreasuryRedeemer)
-import Agora.Utils (CompiledMintingPolicy (..), CompiledValidator (..), validatorHashToTokenName)
-import Plutarch.Api.V1 (mintingPolicySymbol, validatorHash)
-import PlutusLedgerApi.V1 (CurrencySymbol)
-import PlutusLedgerApi.V1.Scripts (ValidatorHash)
+import Agora.Utils (
+  CompiledMintingPolicy (..),
+  CompiledValidator (..),
+  validatorHashToTokenName,
+ )
+import Plutarch.Api.V2 (mintingPolicySymbol, validatorHash)
 import PlutusLedgerApi.V1.Value (AssetClass (..))
+import PlutusLedgerApi.V2 (CurrencySymbol, ValidatorHash)
 
 {- | Precompiled core scripts.
 

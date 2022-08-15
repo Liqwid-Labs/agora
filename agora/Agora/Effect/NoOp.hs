@@ -9,7 +9,7 @@ module Agora.Effect.NoOp (noOpValidator, PNoOp) where
 
 import Agora.Effect (makeEffect)
 import Agora.Plutarch.Orphans ()
-import Plutarch.Api.V1 (PValidator)
+import Plutarch.Api.V2 (PValidator)
 import PlutusLedgerApi.V1.Value (CurrencySymbol)
 
 {- | Dummy datum for NoOp effect.

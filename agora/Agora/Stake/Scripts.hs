@@ -16,30 +16,41 @@ import Agora.Stake (
   pstakeLocked,
  )
 import Agora.Utils (
-  mustFindDatum',
+  pfromDatumHash,
+  pmustFindDatum,
  )
 import Data.Function (on)
 import Data.Tagged (Tagged (..), untag)
 import Plutarch.Api.V1 (
-  AmountGuarantees (Positive),
   PCredential (PPubKeyCredential, PScriptCredential),
+  PTokenName,
+  PValue,
+ )
+import Plutarch.Api.V2 (
+  AmountGuarantees (Positive),
   PDatumHash,
   PMintingPolicy,
   PScriptPurpose (PMinting, PSpending),
-  PTokenName,
   PTxInfo,
   PTxOut,
   PValidator,
-  PValue,
  )
-import Plutarch.Api.V1.AssetClass (passetClass, passetClassValueOf, pvalueOf)
-import Plutarch.Api.V1.ScriptContext (pfindTxInByTxOutRef, ptxSignedBy, pvalueSpent)
-import "liqwid-plutarch-extra" Plutarch.Api.V1.Value (pgeqByClass', pgeqBySymbol, psymbolValueOf)
+import Plutarch.Extra.AssetClass (
+  passetClass,
+  passetClassValueOf,
+  pvalueOf,
+ )
 import Plutarch.Extra.Field (pletAllC)
 import Plutarch.Extra.List (pmapMaybe, pmsortBy)
-import Plutarch.Extra.Maybe (passertPJust, pdjust, pdnothing, pfromDJust, pmaybeData)
+import Plutarch.Extra.Maybe (passertPJust, pdjust, pdnothing, pmaybeData)
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
+import Plutarch.Extra.ScriptContext (pfindTxInByTxOutRef, ptxSignedBy, pvalueSpent)
 import Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC, ptryFromC)
+import Plutarch.Extra.Value (
+  pgeqByClass',
+  pgeqBySymbol,
+  psymbolValueOf,
+ )
 import Plutarch.Numeric.Additive (AdditiveMonoid (zero), AdditiveSemigroup ((+)))
 import Plutarch.SafeMoney (
   pdiscreteValue',
@@ -96,14 +107,14 @@ stakePolicy gtClassRef =
             pany
               # plam
                 ( \((pfield @"resolved" #) -> txOut) -> unTermCont $ do
-                    txOutF <- pletFieldsC @'["value", "datumHash"] txOut
+                    txOutF <- pletFieldsC @'["value", "datum"] txOut
                     pure $
                       pif
                         (psymbolValueOf # ownSymbol # txOutF.value #== 1)
                         ( let datum =
                                 pfromData $
-                                  mustFindDatum' @(PAsData PStakeDatum)
-                                    # txOutF.datumHash
+                                  pmustFindDatum @(PAsData PStakeDatum)
+                                    # txOutF.datum
                                     # txInfoF.datums
                            in pnot # (pstakeLocked # datum)
                         )
@@ -141,12 +152,12 @@ stakePolicy gtClassRef =
                       # pfromData txInfoF.outputs
 
               outputF <-
-                pletFieldsC @'["value", "address", "datumHash"] scriptOutputWithStakeST
+                pletFieldsC @'["value", "address", "datum"] scriptOutputWithStakeST
               datumF <-
                 pletFieldsC @'["owner", "stakedAmount"] $
                   pto $
                     pfromData $
-                      mustFindDatum' @(PAsData PStakeDatum) # outputF.datumHash # txInfoF.datums
+                      pmustFindDatum @(PAsData PStakeDatum) # outputF.datum # txInfoF.datums
 
               let hasExpectedStake =
                     ptraceIfFalse "Stake ouput has expected amount of stake token" $
@@ -344,7 +355,7 @@ stakeValidator as gtClassRef =
                     sortTxOuts = phoistAcyclic $ plam (pmsortBy # plam ((#<) `on` (getDatumHash #)) #)
                       where
                         getDatumHash :: Term _ (PTxOut :--> PDatumHash)
-                        getDatumHash = phoistAcyclic $ plam ((pfromDJust #) . pfromData . (pfield @"datumHash" #))
+                        getDatumHash = phoistAcyclic $ plam ((pfromDatumHash #) . (pfield @"datum" #))
 
                     sortedOwnInputs = sortTxOuts # ownInputs
                     sortedOwnOutputs = sortTxOuts # ownOutputs
@@ -365,8 +376,8 @@ stakeValidator as gtClassRef =
                 stakeOut <-
                   pletC $
                     pfromData $
-                      mustFindDatum' @(PAsData PStakeDatum)
-                        # (pfield @"datumHash" # ownOutput)
+                      pmustFindDatum @(PAsData PStakeDatum)
+                        # (pfield @"datum" # ownOutput)
                         # txInfoF.datums
 
                 ownOutputValue <-

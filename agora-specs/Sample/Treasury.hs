@@ -19,7 +19,7 @@ module Sample.Treasury (
 
 import Plutarch.Context (
   MintingBuilder,
-  buildMintingUnsafe,
+  buildMinting',
   credential,
   input,
   mint,
@@ -28,22 +28,23 @@ import Plutarch.Context (
   signedWith,
   txId,
   withMinting,
-  withTxId,
+  withRefTxId,
   withValue,
  )
-import PlutusLedgerApi.V1 (
-  Credential (PubKeyCredential),
-  PubKeyHash (PubKeyHash),
- )
 import PlutusLedgerApi.V1.Address (Address (..))
-import PlutusLedgerApi.V1.Contexts (
+import PlutusLedgerApi.V1.Value qualified as Value (singleton)
+import PlutusLedgerApi.V2 (
+  Credential (PubKeyCredential),
+  OutputDatum (NoOutputDatum),
+  PubKeyHash (PubKeyHash),
+  ValidatorHash (ValidatorHash),
+ )
+import PlutusLedgerApi.V2.Contexts (
   ScriptContext (..),
   TxInInfo (..),
   TxOut (..),
   TxOutRef (..),
  )
-import PlutusLedgerApi.V1.Scripts (ValidatorHash (ValidatorHash))
-import PlutusLedgerApi.V1.Value qualified as Value (singleton)
 import Sample.Shared (
   gatCs,
   gatTn,
@@ -60,7 +61,7 @@ baseCtxBuilder =
         mconcat
           [ credential trCredential
           , withValue minAda
-          , withTxId "73475cb40a568e8da8a045ced110137e159f890ac4da883b6b17dc651b3a8049"
+          , withRefTxId "73475cb40a568e8da8a045ced110137e159f890ac4da883b6b17dc651b3a8049"
           ]
    in mconcat
         [ txId "73475cb40a568e8da8a045ced110137e159f890ac4da883b6b17dc651b3a8049"
@@ -84,10 +85,10 @@ validCtx =
               mconcat
                 [ script mockTrEffectHash
                 , withValue (Value.singleton gatCs gatTn 1 <> minAda)
-                , withTxId "52b67b60260da3937510ad545c7f46f8d9915bd27e1082e76947fb309f913bd3"
+                , withRefTxId "52b67b60260da3937510ad545c7f46f8d9915bd27e1082e76947fb309f913bd3"
                 ]
           ]
-   in buildMintingUnsafe builder
+   in buildMinting' builder
 
 treasuryRef :: TxOutRef
 treasuryRef =
@@ -108,7 +109,8 @@ walletIn =
               0
         , txInInfoResolved =
             TxOut
-              { txOutDatumHash = Nothing
+              { txOutDatum = NoOutputDatum
+              , txOutReferenceScript = Nothing
               , txOutValue = Value.singleton gatCs gatTn 1
               , txOutAddress =
                   Address
@@ -127,7 +129,7 @@ trCtxGATNameNotAddress =
               mconcat
                 [ script wrongEffHash
                 , withValue (Value.singleton gatCs gatTn 1 <> minAda)
-                , withTxId "52b67b60260da3937510ad545c7f46f8d9915bd27e1082e76947fb309f913bd3"
+                , withRefTxId "52b67b60260da3937510ad545c7f46f8d9915bd27e1082e76947fb309f913bd3"
                 ]
           ]
-   in buildMintingUnsafe builder
+   in buildMinting' builder

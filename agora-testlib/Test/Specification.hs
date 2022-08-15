@@ -49,18 +49,26 @@ module Test.Specification (
   toTestTree,
 ) where
 
-import Agora.Utils (CompiledEffect (..), CompiledMintingPolicy (..), CompiledValidator (..))
+import Agora.Utils (
+  CompiledEffect (..),
+  CompiledMintingPolicy (..),
+  CompiledValidator (..),
+ )
 import Control.Composition ((.**), (.***))
 import Data.Coerce (coerce)
 import Plutarch.Evaluate (evalScript)
-import PlutusLedgerApi.V1 (
+import PlutusLedgerApi.V1.Scripts (
+  Context (..),
+  applyMintingPolicyScript,
+  applyValidator,
+ )
+import PlutusLedgerApi.V2 (
   Datum (..),
   Redeemer (Redeemer),
   Script,
   ScriptContext,
   ToData (toBuiltinData),
  )
-import PlutusLedgerApi.V1.Scripts (Context (..), applyMintingPolicyScript, applyValidator)
 import PlutusTx.IsData qualified as PlutusTx (ToData)
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.HUnit (assertFailure, testCase)

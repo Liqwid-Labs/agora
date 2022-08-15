@@ -5,7 +5,7 @@ import Agora.Governor (GovernorDatum (..), GovernorRedeemer (MutateGovernor))
 import Agora.Proposal (ProposalId (..))
 import Agora.Scripts (AgoraScripts (..))
 import Data.Default.Class (Default (def))
-import PlutusLedgerApi.V1 (ScriptContext (ScriptContext), ScriptPurpose (Spending))
+import PlutusLedgerApi.V2 (ScriptContext (ScriptContext), ScriptPurpose (Spending))
 import Sample.Effect.GovernorMutation (
   effectRef,
   govRef,

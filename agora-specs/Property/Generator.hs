@@ -32,7 +32,13 @@ import Plutarch.Context (
   output,
   withValue,
  )
-import PlutusLedgerApi.V1 (
+import PlutusLedgerApi.V1.Value (
+  AssetClass (AssetClass),
+  assetClassValue,
+  currencySymbol,
+  tokenName,
+ )
+import PlutusLedgerApi.V2 (
   Address (Address),
   Credential (..),
   PubKeyHash (PubKeyHash),
@@ -41,12 +47,6 @@ import PlutusLedgerApi.V1 (
   ValidatorHash (ValidatorHash),
   Value,
   toBuiltin,
- )
-import PlutusLedgerApi.V1.Value (
-  AssetClass (AssetClass),
-  assetClassValue,
-  currencySymbol,
-  tokenName,
  )
 import Test.QuickCheck (
   Arbitrary (arbitrary),

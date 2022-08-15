@@ -10,26 +10,32 @@ Plutarch utility functions that should be upstreamed or don't belong anywhere el
 -}
 module Agora.Utils (
   validatorHashToTokenName,
-  mustFindDatum',
   validatorHashToAddress,
   pltAsData,
   withBuiltinPairAsData,
   CompiledValidator (..),
   CompiledMintingPolicy (..),
   CompiledEffect (..),
+  presolveOutputDatum,
+  pfindDatum,
+  pmustFindDatum,
+  (#.*),
+  (#.**),
+  pfromDatumHash,
+  pfromInlineDatum,
+  ptryFindDatum,
 ) where
 
-import Plutarch.Api.V1 (
+import Plutarch.Api.V1.AssocMap (KeyGuarantees (Unsorted), PMap)
+import Plutarch.Api.V1.AssocMap qualified as PAssocMap
+import Plutarch.Api.V2 (
   PDatum,
   PDatumHash,
-  PMaybeData,
-  PTuple,
+  POutputDatum (..),
  )
-import Plutarch.Builtin (pforgetData)
-import Plutarch.Extra.List (plookupTuple)
-import Plutarch.Extra.Maybe (passertPDJust, passertPJust)
-import Plutarch.Extra.TermCont (ptryFromC)
-import PlutusLedgerApi.V1 (
+import Plutarch.Extra.Functor (pfmap)
+import Plutarch.Extra.Maybe (passertPJust, pjust, pnothing)
+import PlutusLedgerApi.V2 (
   Address (..),
   Credential (..),
   MintingPolicy,
@@ -49,27 +55,6 @@ import PlutusLedgerApi.V1 (
 -}
 validatorHashToTokenName :: ValidatorHash -> TokenName
 validatorHashToTokenName (ValidatorHash hash) = TokenName hash
-
-{- | Find datum given a maybe datum hash
-
-     @since 0.1.0
--}
-mustFindDatum' ::
-  forall (datum :: PType).
-  (PIsData datum, PTryFrom PData datum) =>
-  forall s.
-  Term
-    s
-    ( PMaybeData PDatumHash
-        :--> PBuiltinList (PAsData (PTuple PDatumHash PDatum))
-        :--> datum
-    )
-mustFindDatum' = phoistAcyclic $
-  plam $ \mdh datums -> unTermCont $ do
-    let dh = passertPDJust # "Given TxOut dones't have a datum" # mdh
-        dt = passertPJust # "Datum not found in the transaction" #$ plookupTuple # dh # datums
-    (d, _) <- ptryFromC $ pforgetData $ pdata dt
-    pure d
 
 {- | Create an 'Address' from a given 'ValidatorHash' with no 'PlutusLedgerApi.V1.Credential.StakingCredential'.
 
@@ -130,3 +115,123 @@ newtype CompiledMintingPolicy (redeemer :: Type) = CompiledMintingPolicy
 newtype CompiledEffect (datum :: Type) = CompiledEffect
   { getCompiledEffect :: Validator
   }
+
+-- @since 0.3.0
+presolveOutputDatum ::
+  forall s.
+  Term
+    s
+    ( POutputDatum
+        :--> PMap 'Unsorted PDatumHash PDatum
+        :--> PMaybe PDatum
+    )
+presolveOutputDatum = phoistAcyclic $
+  plam $ \od m -> pmatch od $ \case
+    PNoOutputDatum _ ->
+      ptrace "no datum" pnothing
+    POutputDatum ((pfield @"outputDatum" #) -> datum) ->
+      ptrace "datum hash" pjust # datum
+    POutputDatumHash ((pfield @"datumHash" #) -> hash) ->
+      PAssocMap.plookup
+        # hash
+        # m
+
+-- | @since 0.3.0
+pfindDatum ::
+  forall datum s.
+  PTryFrom PData datum =>
+  Term
+    s
+    ( POutputDatum
+        :--> PMap 'Unsorted PDatumHash PDatum
+        :--> PMaybe datum
+    )
+pfindDatum = phoistAcyclic $
+  plam $ \od m ->
+    pfmap
+      # phoistAcyclic (plam $ flip ptryFrom fst . pto)
+      # (presolveOutputDatum # od # m)
+
+-- | @since 0.3.0
+pmustFindDatum ::
+  forall datum s.
+  (PIsData datum, PTryFrom PData datum) =>
+  Term
+    s
+    ( POutputDatum
+        :--> PMap 'Unsorted PDatumHash PDatum
+        :--> datum
+    )
+pmustFindDatum =
+  phoistAcyclic $
+    plam $
+      (passertPJust # "datum not found") #.* pfindDatum
+
+-- | @since 0.3.0
+pfromDatumHash :: forall s. Term s (POutputDatum :--> PDatumHash)
+pfromDatumHash = phoistAcyclic $
+  plam $
+    flip pmatch $ \case
+      POutputDatumHash ((pfield @"datumHash" #) -> hash) -> hash
+      _ -> ptraceError "not a datum hash"
+
+-- | @since 0.3.0
+pfromInlineDatum :: forall s. Term s (POutputDatum :--> PDatum)
+pfromInlineDatum = phoistAcyclic $
+  plam $
+    flip pmatch $ \case
+      POutputDatum ((pfield @"outputDatum" #) -> datum) -> datum
+      _ -> ptraceError "not an inline datum"
+
+{- | Find a datum with the given hash, and 'ptryFrom' it.
+
+     @since 0.3.0
+-}
+ptryFindDatum ::
+  forall datum (s :: S).
+  PTryFrom PData datum =>
+  Term
+    s
+    ( PDatumHash
+        :--> PMap 'Unsorted PDatumHash PDatum
+        :--> PMaybe datum
+    )
+ptryFindDatum =
+  phoistAcyclic $
+    plam $
+      (pfmap # ptryFromDatum)
+        #.* PAssocMap.plookup
+
+{- | Convert a 'PDatum' to the given datum type.
+
+     @since 0.3.0
+-}
+ptryFromDatum ::
+  forall datum s.
+  (PTryFrom PData datum) =>
+  Term s (PDatum :--> datum)
+ptryFromDatum = phoistAcyclic $ plam $ flip ptryFrom fst . pto
+
+infixr 8 #.*
+infixr 8 #.**
+
+-- | @since 0.3.0
+(#.*) ::
+  forall d c b a s.
+  Term s (c :--> d) ->
+  Term s (a :--> b :--> c) ->
+  Term s a ->
+  Term s b ->
+  Term s d
+(#.*) f g x y = f #$ g # x # y
+
+-- | @since 0.3.0
+(#.**) ::
+  forall e d c b a s.
+  Term s (d :--> e) ->
+  Term s (a :--> b :--> c :--> d) ->
+  Term s a ->
+  Term s b ->
+  Term s c ->
+  Term s e
+(#.**) f g x y z = f #$ g # x # y # z

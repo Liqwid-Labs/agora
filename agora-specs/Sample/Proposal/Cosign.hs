@@ -46,17 +46,16 @@ import Plutarch.Context (
   timeRange,
   txId,
   withDatum,
-  withOutRef,
-  withTxId,
+  withRef,
   withValue,
  )
-import PlutusLedgerApi.V1 (
+import PlutusLedgerApi.V1.Value qualified as Value
+import PlutusLedgerApi.V2 (
   POSIXTimeRange,
   PubKeyHash,
   TxOutRef (..),
   Value,
  )
-import PlutusLedgerApi.V1.Value qualified as Value
 import PlutusTx.AssocMap qualified as AssocMap
 import Sample.Proposal.Shared (proposalTxRef, stakeTxRef)
 import Sample.Shared (
@@ -165,8 +164,7 @@ cosign ps = builder
                         [ script stakeValidatorHash
                         , withValue stakeValue
                         , withDatum stakeDatum
-                        , withTxId stakeTxRef
-                        , withOutRef (mkStakeRef refIdx)
+                        , withRef (mkStakeRef refIdx)
                         ]
                   , output $
                       mconcat
@@ -196,8 +194,7 @@ cosign ps = builder
               [ script proposalValidatorHash
               , withValue pst
               , withDatum proposalInputDatum
-              , withTxId proposalTxRef
-              , withOutRef proposalRef
+              , withRef proposalRef
               ]
         , output $
             mconcat

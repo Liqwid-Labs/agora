@@ -43,33 +43,25 @@ import Agora.Stake (
   pnumCreatedProposals,
  )
 import Agora.Utils (
-  mustFindDatum',
+  pfindDatum,
+  pfromDatumHash,
+  pmustFindDatum,
   validatorHashToAddress,
  )
 import Plutarch.Api.V1 (
-  PAddress,
   PCurrencySymbol,
-  PDatumHash,
   PMap,
+  PValidatorHash,
+ )
+import Plutarch.Api.V2 (
+  PAddress,
+  PDatumHash,
   PMintingPolicy,
   PScriptPurpose (PMinting, PSpending),
   PTxOut,
   PValidator,
-  PValidatorHash,
  )
-import Plutarch.Api.V1.AssetClass (
-  passetClass,
-  passetClassValueOf,
- )
-import Plutarch.Api.V1.ScriptContext (
-  pfindOutputsToAddress,
-  pfindTxInByTxOutRef,
-  pisUTXOSpent,
-  pscriptHashFromAddress,
-  ptryFindDatum,
-  pvalueSpent,
- )
-import "liqwid-plutarch-extra" Plutarch.Api.V1.Value (phasOnlyOneTokenOfCurrencySymbol, psymbolValueOf)
+import Plutarch.Extra.AssetClass (passetClass, passetClassValueOf)
 import Plutarch.Extra.Field (pletAllC)
 import Plutarch.Extra.IsData (pmatchEnumFromData)
 import Plutarch.Extra.List (pfirstJust)
@@ -77,9 +69,17 @@ import Plutarch.Extra.Map (
   plookup,
   plookup',
  )
-import Plutarch.Extra.Maybe (passertPDJust, passertPJust, pfromJust, pisDJust)
+import Plutarch.Extra.Maybe (passertPJust, pfromJust, pnothing)
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
+import Plutarch.Extra.ScriptContext (
+  pfindOutputsToAddress,
+  pfindTxInByTxOutRef,
+  pisUTXOSpent,
+  pscriptHashFromAddress,
+  pvalueSpent,
+ )
 import Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC, ptryFromC)
+import Plutarch.Extra.Value (phasOnlyOneTokenOfCurrencySymbol, psymbolValueOf)
 import PlutusLedgerApi.V1 (TxOutRef)
 
 --------------------------------------------------------------------------------
@@ -140,8 +140,8 @@ governorPolicy initialSpend =
             )
           # pfromData txInfoF.outputs
 
-    let datumHash = pfield @"datumHash" # govOutput
-        datum = mustFindDatum' @PGovernorDatum # datumHash # txInfoF.datums
+    let outputDatum = pfield @"datum" # govOutput
+        datum = pmustFindDatum @PGovernorDatum # outputDatum # txInfoF.datums
 
     pguardC "Governor output datum valid" $ pisGovernorDatumValid # datum
 
@@ -265,18 +265,14 @@ governorValidator as =
     pguardC "Exactly one utxo should be sent to the governor" $
       plength # ownOutputs #== 1
 
-    ownOutput <- pletFieldsC @'["value", "datumHash"] $ phead # ownOutputs
+    ownOutput <- pletFieldsC @'["value", "datum"] $ phead # ownOutputs
     let ownOuputGSTAmount = psymbolValueOf # pgstSymbol # ownOutput.value
     pguardC "State token should stay at governor's address" $
       ownOuputGSTAmount #== 1
 
     -- Check that own output have datum of type 'GovernorDatum'.
-    let outputGovernorStateDatumHash =
-          passertPDJust # "Governor output doesn't have datum" # ownOutput.datumHash
     newGovernorDatum <-
-      pletC $
-        passertPJust # "Ouput governor state datum not found"
-          #$ ptryFindDatum # outputGovernorStateDatumHash # txInfoF.datums
+      pletC $ pmustFindDatum @PGovernorDatum # ownOutput.datum # txInfoF.datums
 
     pguardC "New datum is valid" $ pisGovernorDatumValid # newGovernorDatum
 
@@ -323,12 +319,9 @@ governorValidator as =
 
           stakeInput <- pletC $ phead # stakeInputs
 
-          stakeInputF <- pletFieldsC @'["datumHash", "value"] $ pfield @"resolved" # stakeInput
+          stakeInputF <- pletFieldsC @'["datum", "value"] $ pfield @"resolved" # stakeInput
 
-          pguardC "Stake input doesn't have datum" $
-            pisDJust # stakeInputF.datumHash
-
-          let stakeInputDatum = mustFindDatum' @(PAsData PStakeDatum) # stakeInputF.datumHash # txInfoF.datums
+          let stakeInputDatum = pmustFindDatum @(PAsData PStakeDatum) # stakeInputF.datum # txInfoF.datums
 
           stakeInputDatumF <- pletAllC $ pto $ pfromData stakeInputDatum
 
@@ -356,12 +349,10 @@ governorValidator as =
           pguardC "Exactly one UTXO with proposal state token should be sent to the proposal validator" $
             plength # outputsToProposalValidatorWithStateToken #== 1
 
-          outputDatumHash <- pletC $ pfield @"datumHash" #$ phead # outputsToProposalValidatorWithStateToken
-
           proposalOutputDatum' <-
             pletC $
-              mustFindDatum' @(PAsData PProposalDatum)
-                # outputDatumHash
+              pmustFindDatum @(PAsData PProposalDatum)
+                # (pfield @"datum" #$ phead # outputsToProposalValidatorWithStateToken)
                 # txInfoF.datums
 
           proposalOutputDatum <- pletAllC $ pto $ pfromData proposalOutputDatum'
@@ -396,30 +387,20 @@ governorValidator as =
               ]
 
           -- Check the output stake has been proposly updated.
-          let stakeOutputDatumHash =
+          let stakeOutputDatum =
                 passertPJust # "Output stake should be presented"
                   #$ pfirstJust
-                    # phoistAcyclic
-                      ( plam
-                          ( \txOut -> unTermCont $ do
-                              txOutF <- pletFieldsC @'["datumHash", "value"] txOut
+                    # plam
+                      ( \txOut -> unTermCont $ do
+                          txOutF <- pletFieldsC @'["datum", "value"] txOut
 
-                              pure $
-                                pif
-                                  (psymbolValueOf # psstSymbol # txOutF.value #== 1)
-                                  ( pcon $
-                                      PJust $
-                                        passertPDJust # "Output stake datum should be presented"
-                                          # txOutF.datumHash
-                                  )
-                                  (pcon PNothing)
-                          )
+                          pure $
+                            pif
+                              (psymbolValueOf # psstSymbol # txOutF.value #== 1)
+                              (pfindDatum @(PAsData PStakeDatum) # txOutF.datum # txInfoF.datums)
+                              (pcon PNothing)
                       )
                     # pfromData txInfoF.outputs
-
-              stakeOutputDatum =
-                passertPJust @(PAsData PStakeDatum) # "Stake output datum presented"
-                  #$ ptryFindDatum # stakeOutputDatumHash # txInfoF.datums
 
               stakeOutputLocks =
                 pfromData $ pfield @"lockedBy" #$ pto $ pfromData stakeOutputDatum
@@ -450,27 +431,24 @@ governorValidator as =
           pguardC "The governor can only process one proposal at a time" $
             (psymbolValueOf # ppstSymbol #$ pvalueSpent # txInfoF.inputs) #== 1
 
-          proposalInputF <-
-            pletFieldsC @'["datumHash"] $
-              pfield @"resolved"
-                #$ passertPJust
-                # "Proposal input not found"
-                  #$ pfind
-                # plam
-                  ( \((pfield @"resolved" #) -> txOut) -> unTermCont $ do
-                      txOutF <- pletFieldsC @'["address", "value"] txOut
-
-                      pure $
-                        psymbolValueOf # ppstSymbol # txOutF.value #== 1
-                          #&& txOutF.address #== pdata pproposalValidatorAddress
-                  )
-                # pfromData txInfoF.inputs
-
           proposalInputDatum <-
             pletC $
-              mustFindDatum' @(PAsData PProposalDatum)
-                # proposalInputF.datumHash
-                # txInfoF.datums
+              passertPJust
+                # "Proposal input not found"
+                  #$ pfirstJust
+                # plam
+                  ( \((pfield @"resolved" #) -> txOut) -> unTermCont $ do
+                      txOutF <- pletFieldsC @'["address", "value", "datum"] txOut
+
+                      pure $
+                        pif
+                          ( psymbolValueOf # ppstSymbol # txOutF.value #== 1
+                              #&& txOutF.address #== pdata pproposalValidatorAddress
+                          )
+                          (pfindDatum @(PAsData PProposalDatum) # txOutF.datum # txInfoF.datums)
+                          pnothing
+                  )
+                # pfromData txInfoF.inputs
 
           proposalInputDatumF <-
             pletFieldsC @'["effects", "status", "thresholds", "votes"] $
@@ -516,14 +494,16 @@ governorValidator as =
                 phoistAcyclic $
                   plam
                     ( \effects output' -> unTermCont $ do
-                        output <- pletFieldsC @'["address", "datumHash"] output'
+                        output <- pletFieldsC @'["address", "datum"] output'
 
                         let scriptHash =
                               passertPJust # "GAT receiver is not a script"
                                 #$ pscriptHashFromAddress # output.address
                             datumHash =
-                              passertPDJust # "Output to effect should have datum"
-                                #$ output.datumHash
+                              ptrace
+                                "Output to effect should have datum"
+                                pfromDatumHash
+                                # output.datum
 
                             expectedDatumHash =
                               passertPJust # "Receiver is not in the effect list"

@@ -19,7 +19,7 @@ import Agora.Utils (
   CompiledValidator (..),
  )
 import Plutarch (Config)
-import Plutarch.Api.V1 (
+import Plutarch.Api.V2 (
   mintingPolicySymbol,
   mkMintingPolicy,
   mkValidator,

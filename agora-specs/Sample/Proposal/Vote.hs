@@ -40,14 +40,14 @@ import Plutarch.Context (
   timeRange,
   txId,
   withDatum,
-  withOutRef,
+  withRef,
   withValue,
  )
-import PlutusLedgerApi.V1 (
+import PlutusLedgerApi.V1.Value qualified as Value
+import PlutusLedgerApi.V2 (
   PubKeyHash,
   TxOutRef (TxOutRef),
  )
-import PlutusLedgerApi.V1.Value qualified as Value
 import PlutusTx.AssocMap qualified as AssocMap
 import Sample.Proposal.Shared (proposalTxRef, stakeTxRef)
 import Sample.Shared (
@@ -222,14 +222,14 @@ vote params =
                 [ script proposalValidatorHash
                 , withValue pst
                 , withDatum proposalInputDatum
-                , withOutRef proposalRef
+                , withRef proposalRef
                 ]
           , input $
               mconcat
                 [ script stakeValidatorHash
                 , withValue stakeValue
                 , withDatum stakeInputDatum
-                , withOutRef stakeRef
+                , withRef stakeRef
                 ]
           , output $
               mconcat

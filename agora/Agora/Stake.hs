@@ -34,7 +34,7 @@ import Agora.Proposal (PProposalId, PResultTag, ProposalId (..), ResultTag (..))
 import Agora.SafeMoney (GTTag)
 import Data.Tagged (Tagged (..))
 import Generics.SOP qualified as SOP
-import Plutarch.Api.V1 (
+import Plutarch.Api.V2 (
   PMaybeData,
   PPubKeyHash,
  )

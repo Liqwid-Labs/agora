@@ -28,23 +28,23 @@ import Agora.Stake (
 import Data.Tagged (untag)
 import Plutarch.Context (
   SpendingBuilder,
-  buildSpendingUnsafe,
+  buildSpending',
   input,
   output,
   script,
   signedWith,
   txId,
   withDatum,
-  withOutRef,
+  withRef,
   withSpendingOutRef,
   withValue,
  )
-import PlutusLedgerApi.V1 (
+import PlutusLedgerApi.V1.Value qualified as Value
+import PlutusLedgerApi.V2 (
   PubKeyHash,
   ScriptContext,
   TxOutRef (TxOutRef),
  )
-import PlutusLedgerApi.V1.Value qualified as Value
 import Sample.Shared (
   agoraScripts,
   governor,
@@ -91,7 +91,7 @@ mkStakeInputDatum ps =
 
 -- | Generate a 'ScriptContext' that tries to change the delegate of a stake.
 setDelegate :: Parameters -> ScriptContext
-setDelegate ps = buildSpendingUnsafe builder
+setDelegate ps = buildSpending' builder
   where
     stakeRef :: TxOutRef
     stakeRef = TxOutRef "0ffef57e30cc604342c738e31e0451593837b313e7bfb94b0922b142782f98e6" 1
@@ -134,7 +134,7 @@ setDelegate ps = buildSpendingUnsafe builder
               [ script stakeValidatorHash
               , withValue stakeValue
               , withDatum stakeInput
-              , withOutRef stakeRef
+              , withRef stakeRef
               ]
         , output $
             mconcat

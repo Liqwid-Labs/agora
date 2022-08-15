@@ -31,7 +31,12 @@ import Agora.Proposal (
   ResultTag (ResultTag),
   emptyVotesFor,
  )
-import Agora.Proposal.Time (MaxTimeRangeWidth (MaxTimeRangeWidth), ProposalStartingTime (..))
+import Agora.Proposal.Time (
+  MaxTimeRangeWidth (
+    MaxTimeRangeWidth
+  ),
+  ProposalStartingTime (..),
+ )
 import Agora.Scripts (AgoraScripts (..))
 import Agora.Stake (
   ProposalLock (..),
@@ -50,10 +55,11 @@ import Plutarch.Context (
   timeRange,
   txId,
   withDatum,
-  withOutRef,
+  withRef,
   withValue,
  )
-import PlutusLedgerApi.V1 (
+import PlutusLedgerApi.V1.Value qualified as Value
+import PlutusLedgerApi.V2 (
   DatumHash,
   POSIXTime (POSIXTime),
   POSIXTimeRange,
@@ -62,7 +68,6 @@ import PlutusLedgerApi.V1 (
   ValidatorHash,
   always,
  )
-import PlutusLedgerApi.V1.Value qualified as Value
 import PlutusTx.AssocMap qualified as AssocMap
 import Sample.Proposal.Shared (stakeTxRef)
 import Sample.Shared (
@@ -303,7 +308,7 @@ createProposal ps = builder
               [ script govValidatorHash
               , withValue governorValue
               , withDatum governorInputDatum
-              , withOutRef governorRef
+              , withRef governorRef
               ]
         , output $
             mconcat
@@ -317,7 +322,7 @@ createProposal ps = builder
               [ script stakeValidatorHash
               , withValue stakeValue
               , withDatum (mkStakeInputDatum ps)
-              , withOutRef stakeRef
+              , withRef stakeRef
               ]
         , output $
             mconcat
