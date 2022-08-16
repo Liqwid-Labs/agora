@@ -32,7 +32,7 @@
     plutarch-quickcheck.url =
       "github:liqwid-labs/plutarch-quickcheck?ref=staging";
     plutarch-context-builder.url =
-      "github:Liqwid-Labs/plutarch-context-builder?ref=staging";
+      "github:Liqwid-Labs/plutarch-context-builder?ref=main";
     plutarch-script-export.url =
       "github:Liqwid-Labs/plutarch-script-export?ref=main";
 

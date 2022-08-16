@@ -12940,16 +12940,16 @@
         "plutarch": "plutarch_7"
       },
       "locked": {
-        "lastModified": 1660151677,
-        "narHash": "sha256-sUdXtVdCpm7pgmw0f+b0FyF4Bf0VX+1kTY5U8O3H4uk=",
+        "lastModified": 1660709756,
+        "narHash": "sha256-L9S9UYtpeTVGFmKNj8c/H3i17Jx8asCiW43xblN5nBo=",
         "owner": "Liqwid-Labs",
         "repo": "plutarch-context-builder",
-        "rev": "7033ca3c18968cfd206afbbd40861a0a778b414c",
+        "rev": "cc91cd134ce01e280df3b0ce09a25ede54dbf9b6",
         "type": "github"
       },
       "original": {
         "owner": "Liqwid-Labs",
-        "ref": "staging",
+        "ref": "main",
         "repo": "plutarch-context-builder",
         "type": "github"
       }
