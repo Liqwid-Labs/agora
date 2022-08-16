@@ -145,6 +145,7 @@ library
     Agora.Aeson.Orphans
     Agora.AuthorityToken
     Agora.Bootstrap
+    Agora.Credential
     Agora.Effect
     Agora.Effect.GovernorMutation
     Agora.Effect.NoOp

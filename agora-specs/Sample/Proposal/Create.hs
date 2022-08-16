@@ -61,9 +61,9 @@ import Plutarch.Context (
  )
 import PlutusLedgerApi.V1.Value qualified as Value
 import PlutusLedgerApi.V2 (
+  Credential (PubKeyCredential),
   POSIXTime (POSIXTime),
   POSIXTimeRange,
-  PubKeyHash,
   TxOutRef (TxOutRef),
   always,
  )
@@ -121,14 +121,14 @@ stakedGTs :: Tagged _ Integer
 stakedGTs = 5
 
 -- | The owner of the stake.
-stakeOwner :: PubKeyHash
-stakeOwner = signer
+stakeOwner :: Credential
+stakeOwner = PubKeyCredential signer
 
 {- | The invalid stake owner. If the 'alterOutputStakeOwner' is set to true,
       the output stake owner will be set to this.
 -}
-alteredStakeOwner :: PubKeyHash
-alteredStakeOwner = signer2
+alteredStakeOwner :: Credential
+alteredStakeOwner = PubKeyCredential signer2
 
 -- | Locks the stake that the input stake already has.
 defLocks :: [ProposalLock]
@@ -247,7 +247,7 @@ mkProposalStartingTime ps =
     else ProposalStartingTime 0
 
 -- | Who should be the 'owner' of the output stake.
-mkOwner :: Parameters -> PubKeyHash
+mkOwner :: Parameters -> Credential
 mkOwner ps =
   if ps.alterOutputStakeOwner
     then alteredStakeOwner
@@ -288,7 +288,9 @@ createProposal ps = builder
 
     withSig =
       if ps.stakeOwnerSignsTheTransaction
-        then signedWith stakeOwner
+        then case stakeOwner of
+          PubKeyCredential sig -> signedWith sig
+          _ -> mempty
         else mempty
 
     ---

@@ -7,6 +7,7 @@ Plutus Scripts for Stakes.
 -}
 module Agora.Stake.Scripts (stakePolicy, stakeValidator) where
 
+import Agora.Credential (authorizationContext, pauthorizedBy)
 import Agora.SafeMoney (GTTag)
 import Agora.Scripts (AgoraScripts, proposalSTAssetClass, stakeSTSymbol)
 import Agora.Stake (
@@ -44,7 +45,7 @@ import Plutarch.Extra.Field (pletAllC)
 import Plutarch.Extra.List (pmapMaybe, pmsortBy)
 import Plutarch.Extra.Maybe (passertPJust, pdjust, pdnothing, pmaybeData)
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
-import Plutarch.Extra.ScriptContext (pfindTxInByTxOutRef, ptxSignedBy, pvalueSpent)
+import Plutarch.Extra.ScriptContext (pfindTxInByTxOutRef, pvalueSpent)
 import Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC, ptryFromC)
 import Plutarch.Extra.Value (
   pgeqByClass',
@@ -164,8 +165,8 @@ stakePolicy gtClassRef =
                       pvalueDiscrete' gtClassRef # outputF.value #== datumF.stakedAmount
               let ownerSignsTransaction =
                     ptraceIfFalse "Stake Owner should sign the transaction" $
-                      ptxSignedBy
-                        # txInfoF.signatories
+                      pauthorizedBy
+                        # authorizationContext txInfoF
                         # datumF.owner
 
               pure $ hasExpectedStake #&& ownerSignsTransaction
@@ -263,15 +264,16 @@ stakeValidator as gtClassRef =
     resolvedF <- pletFieldsC @'["address", "value", "datumHash"] resolved
 
     -- Whether the owner signs this transaction or not.
-    signedBy <- pletC $ ptxSignedBy # txInfoF.signatories
+    signedBy <- pletC $ pauthorizedBy # authorizationContext txInfoF
 
     ownerSignsTransaction <- pletC $ signedBy # stakeDatum.owner
 
     delegateSignsTransaction <-
       pletC $
-        pmaybeData # pconstant False
-          # signedBy
-          # stakeDatum.delegatedTo
+        pmaybeData
+          # pconstant False
+          # plam ((signedBy #) . pfromData)
+          # pfromData stakeDatum.delegatedTo
 
     stCurrencySymbol <- pletC $ pconstant $ stakeSTSymbol as
     mintedST <- pletC $ psymbolValueOf # stCurrencySymbol # txInfoF.mint

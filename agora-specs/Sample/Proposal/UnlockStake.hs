@@ -52,6 +52,7 @@ import Plutarch.Context (
  )
 import PlutusLedgerApi.V1.Value qualified as Value
 import PlutusLedgerApi.V2 (
+  Credential (PubKeyCredential),
   PubKeyHash,
   TxOutRef (..),
  )
@@ -175,7 +176,7 @@ mkStakeInputDatum :: Parameters -> StakeDatum
 mkStakeInputDatum ps =
   StakeDatum
     { stakedAmount = defStakedGTs
-    , owner = defOwner
+    , owner = PubKeyCredential defOwner
     , delegatedTo = Nothing
     , lockedBy = mkInputStakeLocks ps
     }
@@ -214,7 +215,7 @@ mkProposalDatumPair params pid =
           { proposalId = pid
           , effects = emptyEffectFor votesTemplate
           , status = params.proposalStatus
-          , cosigners = [defOwner]
+          , cosigners = [PubKeyCredential defOwner]
           , thresholds = def
           , votes = inputVotes
           , timingConfig = def

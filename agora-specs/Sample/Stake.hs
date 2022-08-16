@@ -47,6 +47,7 @@ import PlutusLedgerApi.V1.Value qualified as Value (
   singleton,
  )
 import PlutusLedgerApi.V2 (
+  Credential (PubKeyCredential),
   Datum (Datum),
   ScriptContext (..),
   ScriptPurpose (Minting),
@@ -68,7 +69,7 @@ stakeCreation :: ScriptContext
 stakeCreation =
   let st = Value.assetClassValue stakeAssetClass 1 -- Stake ST
       datum :: StakeDatum
-      datum = StakeDatum 424242424242 signer Nothing []
+      datum = StakeDatum 424242424242 (PubKeyCredential signer) Nothing []
 
       builder :: MintingBuilder
       builder =
@@ -90,7 +91,7 @@ stakeCreation =
 stakeCreationWrongDatum :: ScriptContext
 stakeCreationWrongDatum =
   let datum :: Datum
-      datum = Datum (toBuiltinData $ StakeDatum 4242424242424242 signer Nothing []) -- Too much GT
+      datum = Datum (toBuiltinData $ StakeDatum 4242424242424242 (PubKeyCredential signer) Nothing []) -- Too much GT
    in ScriptContext
         { scriptContextTxInfo = stakeCreation.scriptContextTxInfo {txInfoData = AssocMap.fromList [("", datum)]}
         , scriptContextPurpose = Minting stakeSymbol
@@ -122,7 +123,7 @@ stakeDepositWithdraw :: DepositWithdrawExample -> ScriptContext
 stakeDepositWithdraw config =
   let st = Value.assetClassValue stakeAssetClass 1 -- Stake ST
       stakeBefore :: StakeDatum
-      stakeBefore = StakeDatum config.startAmount signer Nothing []
+      stakeBefore = StakeDatum config.startAmount (PubKeyCredential signer) Nothing []
 
       stakeAfter :: StakeDatum
       stakeAfter = stakeBefore {stakedAmount = stakeBefore.stakedAmount + config.delta}
