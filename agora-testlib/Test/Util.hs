@@ -15,6 +15,7 @@ module Test.Util (
   sortValue,
   blake2b_224,
   pubKeyHashes,
+  scriptHashes,
   userCredentials,
   scriptCredentials,
   validatorHashes,
@@ -43,7 +44,6 @@ import Plutarch.Context (
  )
 import Plutarch.Crypto (pblake2b_256)
 import PlutusLedgerApi.V1.Interval qualified as PlutusTx
-import PlutusLedgerApi.V1.Scripts (Datum (Datum), DatumHash (DatumHash))
 import PlutusLedgerApi.V1.Value (Value (..))
 import PlutusLedgerApi.V2 (
   Credential (
@@ -51,8 +51,11 @@ import PlutusLedgerApi.V2 (
     ScriptCredential
   ),
   CurrencySymbol,
+  Datum (Datum),
+  DatumHash (DatumHash),
   PubKeyHash (..),
   ScriptContext,
+  ScriptHash (ScriptHash),
   TxOutRef,
   ValidatorHash (ValidatorHash),
  )
@@ -161,6 +164,10 @@ validatorHashes = ValidatorHash . PlutusTx.toBuiltin <$> blake2b_224Hashes
 -- | An infinite list of *valid* script credentials.
 scriptCredentials :: [Credential]
 scriptCredentials = ScriptCredential <$> validatorHashes
+
+-- | An infinite list of *valid* script hashes.
+scriptHashes :: [ScriptHash]
+scriptHashes = ScriptHash . PlutusTx.toBuiltin <$> blake2b_224Hashes
 
 --------------------------------------------------------------------------------
 
