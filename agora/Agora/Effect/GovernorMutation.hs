@@ -32,7 +32,7 @@ import Plutarch.Api.V2 (
   PValidator,
  )
 import Plutarch.DataRepr (
-  DerivePConstantViaData (..),
+  DerivePConstantViaData (DerivePConstantViaData),
   PDataFields,
  )
 import Plutarch.Extra.Maybe (
@@ -43,7 +43,7 @@ import Plutarch.Extra.TermCont (pguardC, pletFieldsC)
 import Plutarch.Extra.Value (pvalueOf)
 import Plutarch.Lift (PConstantDecl, PLifted, PUnsafeLiftDecl)
 import PlutusLedgerApi.V1 (TxOutRef)
-import PlutusLedgerApi.V1.Value (AssetClass (..))
+import PlutusLedgerApi.V1.Value (AssetClass (AssetClass))
 import PlutusTx qualified
 
 --------------------------------------------------------------------------------

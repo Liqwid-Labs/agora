@@ -8,15 +8,15 @@ Description: An Effect that withdraws treasury deposit
 An Effect that withdraws treasury deposit
 -}
 module Agora.Effect.TreasuryWithdrawal (
-  TreasuryWithdrawalDatum (..),
-  PTreasuryWithdrawalDatum (..),
+  TreasuryWithdrawalDatum (TreasuryWithdrawalDatum),
+  PTreasuryWithdrawalDatum (PTreasuryWithdrawalDatum),
   treasuryWithdrawalValidator,
 ) where
 
 import Agora.Effect (makeEffect)
 import Agora.Plutarch.Orphans ()
 import Plutarch.Api.V1 (
-  PCredential (..),
+  PCredential,
   PValue,
   ptuple,
  )
@@ -28,12 +28,12 @@ import Plutarch.Api.V2 (
   PValidator,
  )
 import Plutarch.DataRepr (
-  DerivePConstantViaData (..),
+  DerivePConstantViaData (DerivePConstantViaData),
   PDataFields,
  )
 import Plutarch.Extra.ScriptContext (pfindTxInByTxOutRef, pisPubKey)
 import Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC)
-import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (..))
+import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (PLifted))
 import PlutusLedgerApi.V1.Credential (Credential)
 import PlutusLedgerApi.V1.Value (CurrencySymbol, Value)
 import PlutusTx qualified

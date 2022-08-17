@@ -4,7 +4,7 @@ import Bench (specificationTreeToBenchmarks)
 import Data.Csv (EncodeOptions (encUseCrLf), defaultEncodeOptions, encodeDefaultOrderedByNameWith)
 import Data.Text.Lazy.Encoding (decodeUtf8)
 import Data.Text.Lazy.IO as I (putStr, writeFile)
-import Options (Options (..), parseOptions)
+import Options (Options (output), parseOptions)
 import Prettyprinter (defaultLayoutOptions, layoutPretty, pretty)
 import Prettyprinter.Render.Text (renderLazy)
 import Spec.AuthorityToken qualified as AuthorityToken

@@ -20,12 +20,12 @@ import Plutarch.Api.V1.Value (PValue)
 import Plutarch.Api.V2 (PScriptPurpose (PMinting), PValidator)
 import Plutarch.Builtin (pforgetData)
 import Plutarch.Extra.IsData (
-  DerivePConstantViaEnum (..),
-  EnumIsData (..),
+  DerivePConstantViaEnum (DerivePConstantEnum),
+  EnumIsData (EnumIsData),
   PlutusTypeEnumData,
  )
 import Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC)
-import Plutarch.Lift (PConstantDecl (..), PLifted (..), PUnsafeLiftDecl)
+import Plutarch.Lift (PConstantDecl, PLifted, PUnsafeLiftDecl)
 import Plutarch.TryFrom ()
 import PlutusLedgerApi.V1.Value (CurrencySymbol)
 import PlutusTx qualified

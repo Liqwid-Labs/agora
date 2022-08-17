@@ -9,10 +9,10 @@
 module Main (main) where
 
 import Agora.Bootstrap qualified as Bootstrap
-import Agora.Governor (Governor (..))
+import Agora.Governor (Governor (Governor))
 import Agora.SafeMoney (GTTag)
 import Agora.Scripts qualified as Scripts
-import Agora.Utils (CompiledMintingPolicy (..), CompiledValidator (..))
+import Agora.Utils (CompiledMintingPolicy (getCompiledMintingPolicy), CompiledValidator (getCompiledValidator))
 import Data.Aeson qualified as Aeson
 import Data.Default (def)
 import Data.Function ((&))
@@ -20,7 +20,7 @@ import Data.Tagged (Tagged)
 import Data.Text (Text)
 import Development.GitRev (gitBranch, gitHash)
 import GHC.Generics qualified as GHC
-import Plutarch (Config (..), TracingMode (DoTracing))
+import Plutarch (Config (Config, tracingMode), TracingMode (DoTracing))
 import PlutusLedgerApi.V1 (
   MintingPolicy (getMintingPolicy),
   TxOutRef,
@@ -29,7 +29,7 @@ import PlutusLedgerApi.V1 (
 import PlutusLedgerApi.V1.Value (AssetClass)
 import ScriptExport.API (runServer)
 import ScriptExport.Options (parseOptions)
-import ScriptExport.ScriptInfo (ScriptInfo (..), mkPolicyInfo, mkScriptInfo, mkValidatorInfo)
+import ScriptExport.ScriptInfo (ScriptInfo, mkPolicyInfo, mkScriptInfo, mkValidatorInfo)
 import ScriptExport.Types (Builders, insertBuilder)
 
 main :: IO ()

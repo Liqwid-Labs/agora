@@ -61,14 +61,14 @@ import Plutarch.Api.V2 (
   PScriptHash,
   PTuple,
  )
-import Plutarch.DataRepr (DerivePConstantViaData (..), PDataFields)
+import Plutarch.DataRepr (DerivePConstantViaData (DerivePConstantViaData), PDataFields)
 import Plutarch.Extra.Comonad (pextract)
 import Plutarch.Extra.Field (pletAllC)
 import Plutarch.Extra.Function (pbuiltinUncurry)
 import Plutarch.Extra.IsData (
-  DerivePConstantViaDataList (..),
-  DerivePConstantViaEnum (..),
-  EnumIsData (..),
+  DerivePConstantViaDataList (DerivePConstantViaDataList),
+  DerivePConstantViaEnum (DerivePConstantEnum),
+  EnumIsData (EnumIsData),
   PlutusTypeEnumData,
   ProductIsData (ProductIsData),
  )
@@ -78,12 +78,12 @@ import Plutarch.Extra.Map.Unsorted qualified as PUM
 import Plutarch.Extra.Maybe (pfromJust)
 import Plutarch.Extra.TermCont (pguardC, pletC, pmatchC)
 import Plutarch.Lift (
-  DerivePConstantViaNewtype (..),
+  DerivePConstantViaNewtype (DerivePConstantViaNewtype),
   PConstantDecl,
-  PUnsafeLiftDecl (..),
+  PUnsafeLiftDecl (type PLifted),
  )
 import Plutarch.Orphans ()
-import Plutarch.SafeMoney (PDiscrete (..))
+import Plutarch.SafeMoney (PDiscrete (PDiscrete))
 import PlutusLedgerApi.V2 (Credential, DatumHash, ScriptHash, ValidatorHash)
 import PlutusTx qualified
 import PlutusTx.AssocMap qualified as AssocMap

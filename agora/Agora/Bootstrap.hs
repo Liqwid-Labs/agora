@@ -6,8 +6,8 @@
 -}
 module Agora.Bootstrap (agoraScripts) where
 
-import Agora.AuthorityToken (AuthorityToken (..), authorityTokenPolicy)
-import Agora.Governor (Governor (..))
+import Agora.AuthorityToken (AuthorityToken (AuthorityToken), authorityTokenPolicy)
+import Agora.Governor (Governor, gstOutRef, gtClassRef, maximumCosigners)
 import Agora.Governor.Scripts (governorPolicy, governorValidator)
 import Agora.Proposal.Scripts (proposalPolicy, proposalValidator)
 import Agora.Scripts (AgoraScripts (AgoraScripts))
@@ -15,8 +15,8 @@ import Agora.Scripts qualified as Scripts
 import Agora.Stake.Scripts (stakePolicy, stakeValidator)
 import Agora.Treasury (treasuryValidator)
 import Agora.Utils (
-  CompiledMintingPolicy (..),
-  CompiledValidator (..),
+  CompiledMintingPolicy (CompiledMintingPolicy),
+  CompiledValidator (CompiledValidator),
  )
 import Plutarch (Config)
 import Plutarch.Api.V2 (
@@ -24,7 +24,7 @@ import Plutarch.Api.V2 (
   mkMintingPolicy,
   mkValidator,
  )
-import PlutusLedgerApi.V1.Value (AssetClass (..))
+import PlutusLedgerApi.V1.Value (AssetClass (AssetClass))
 
 {- | Parameterize and precompiled core scripts, given the
      'Agora.Governor.Governor' parameters and plutarch configurations.

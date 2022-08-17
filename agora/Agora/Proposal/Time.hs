@@ -49,9 +49,9 @@ import Plutarch.Extra.Field (pletAll, pletAllC)
 import Plutarch.Extra.Maybe (pjust, pnothing)
 import Plutarch.Extra.TermCont (pmatchC)
 import Plutarch.Lift (
-  DerivePConstantViaNewtype (..),
+  DerivePConstantViaNewtype (DerivePConstantViaNewtype),
   PConstantDecl,
-  PUnsafeLiftDecl (..),
+  PUnsafeLiftDecl (PLifted),
  )
 import PlutusLedgerApi.V1 (POSIXTime)
 import PlutusTx qualified

@@ -13,9 +13,9 @@ module Agora.Proposal.Scripts (
 import Agora.Credential (authorizationContext, pauthorizedBy)
 import Agora.Proposal (
   PProposalDatum (PProposalDatum),
-  PProposalRedeemer (..),
+  PProposalRedeemer (PAdvanceProposal, PCosign, PUnlock, PVote),
   PProposalVotes (PProposalVotes),
-  ProposalStatus (..),
+  ProposalStatus (Draft, Finished, Locked, VotingReady),
   pretractVotes,
   pwinner',
  )
@@ -28,8 +28,8 @@ import Agora.Proposal.Time (
  )
 import Agora.Scripts (AgoraScripts, governorSTSymbol, proposalSTSymbol, stakeSTAssetClass)
 import Agora.Stake (
-  PProposalLock (..),
-  PStakeDatum (..),
+  PProposalLock (PVoted),
+  PStakeDatum (PStakeDatum),
   pextractVoteOption,
   pgetStakeRole,
   pisCreator,
@@ -73,7 +73,7 @@ import Plutarch.Extra.TermCont (
   ptryFromC,
  )
 import Plutarch.Extra.Value (psymbolValueOf)
-import Plutarch.SafeMoney (PDiscrete (..))
+import Plutarch.SafeMoney (PDiscrete (PDiscrete))
 import Plutarch.Unsafe (punsafeCoerce)
 import PlutusLedgerApi.V1.Value (AssetClass (AssetClass))
 

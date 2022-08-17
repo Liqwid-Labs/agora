@@ -24,12 +24,12 @@ import Agora.Proposal (ProposalDatum, ProposalRedeemer)
 import Agora.Stake (StakeDatum, StakeRedeemer)
 import Agora.Treasury (TreasuryRedeemer)
 import Agora.Utils (
-  CompiledMintingPolicy (..),
-  CompiledValidator (..),
+  CompiledMintingPolicy (getCompiledMintingPolicy),
+  CompiledValidator (getCompiledValidator),
   validatorHashToTokenName,
  )
 import Plutarch.Api.V2 (mintingPolicySymbol, validatorHash)
-import PlutusLedgerApi.V1.Value (AssetClass (..))
+import PlutusLedgerApi.V1.Value (AssetClass (AssetClass))
 import PlutusLedgerApi.V2 (CurrencySymbol, ValidatorHash)
 
 {- | Precompiled core scripts.
