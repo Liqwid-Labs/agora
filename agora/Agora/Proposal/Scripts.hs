@@ -38,10 +38,7 @@ import Agora.Stake (
   pisVoter,
  )
 import Agora.Utils (
-  pfromDatumHash,
   pltAsData,
-  pmustFindDatum,
-  ptryFindDatum,
  )
 import Plutarch.Api.V2 (
   PDatumHash,
@@ -62,7 +59,10 @@ import Plutarch.Extra.Maybe (passertPJust, pfromJust, pisJust)
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
 import Plutarch.Extra.ScriptContext (
   pfindTxInByTxOutRef,
+  pfromDatumHash,
+  pfromOutputDatum,
   pisTokenSpent,
+  ptryFindDatum,
  )
 import Plutarch.Extra.TermCont (
   pguardC,
@@ -213,7 +213,7 @@ proposalValidator as maximumCosigners =
                 --       Maybe we can cache the sorted datum map?
                 let datum =
                       pfromData $
-                        pmustFindDatum @(PAsData PProposalDatum)
+                        pfromOutputDatum @(PAsData PProposalDatum)
                           # inputF.datum
                           # txInfoF.datums
 
@@ -229,7 +229,7 @@ proposalValidator as maximumCosigners =
     proposalOut <-
       pletC $
         pfromData $
-          pmustFindDatum @(PAsData PProposalDatum)
+          pfromOutputDatum @(PAsData PProposalDatum)
             # (pfield @"datum" # ownOutput)
             # txInfoF.datums
 

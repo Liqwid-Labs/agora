@@ -50,6 +50,7 @@ import Plutarch.Extra.List (pnotNull)
 import Plutarch.Extra.Sum (PSum (..))
 import Plutarch.Extra.Traversable (pfoldMap)
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (..))
+import Plutarch.Orphans ()
 import Plutarch.SafeMoney (PDiscrete)
 import PlutusLedgerApi.V1 (Credential)
 import PlutusTx qualified
