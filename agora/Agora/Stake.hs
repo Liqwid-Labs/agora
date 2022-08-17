@@ -51,7 +51,6 @@ import Plutarch.Extra.Sum (PSum (..))
 import Plutarch.Extra.Traversable (pfoldMap)
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (..))
 import Plutarch.SafeMoney (PDiscrete)
-import Plutarch.Show (PShow (..))
 import PlutusLedgerApi.V1 (Credential)
 import PlutusTx qualified
 import Prelude hiding (Num (..))
@@ -328,6 +327,8 @@ data PProposalLock (s :: S)
       PIsData
     , -- | @since 0.1.0
       PEq
+    , -- | @since 0.2.0
+      PShow
     )
 
 instance DerivePlutusType PProposalLock where
@@ -348,15 +349,6 @@ deriving via
   (DerivePConstantViaData ProposalLock PProposalLock)
   instance
     (Plutarch.Lift.PConstantDecl ProposalLock)
-
--- | @since 0.2.0
-instance PShow PProposalLock where
-  pshow' :: Bool -> Term s PProposalLock -> Term s PString
-  pshow' True x = "(" <> pshow' False x <> ")"
-  pshow' False lock = pmatch lock $ \case
-    PCreated ((pfield @"created" #) -> pid) -> "PCreated " <> pshow' True pid
-    PVoted x -> pletFields @'["votedOn", "votedFor"] x $ \xF ->
-      "PVoted " <> pshow' True xF.votedOn <> " " <> pshow' True xF.votedFor
 
 --------------------------------------------------------------------------------
 

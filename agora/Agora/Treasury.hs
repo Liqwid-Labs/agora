@@ -8,7 +8,11 @@ Description: Treasury scripts.
 Contains the datum, redeemer and validator for a template DAO
 treasury.
 -}
-module Agora.Treasury (module Agora.Treasury) where
+module Agora.Treasury (
+  TreasuryRedeemer (..),
+  PTreasuryRedeemer (..),
+  treasuryValidator,
+) where
 
 import Agora.AuthorityToken (singleAuthorityTokenBurned)
 import Generics.SOP qualified as SOP

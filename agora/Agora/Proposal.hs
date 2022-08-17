@@ -84,7 +84,6 @@ import Plutarch.Lift (
   PUnsafeLiftDecl (..),
  )
 import Plutarch.SafeMoney (PDiscrete (..))
-import Plutarch.Show (PShow (..))
 import PlutusLedgerApi.V2 (Credential, DatumHash, ScriptHash, ValidatorHash)
 import PlutusTx qualified
 import PlutusTx.AssocMap qualified as AssocMap
