@@ -51,6 +51,7 @@ import Plutarch.Context (
  )
 import PlutusLedgerApi.V1.Value qualified as Value
 import PlutusLedgerApi.V2 (
+  Credential (PubKeyCredential),
   POSIXTimeRange,
   PubKeyHash,
   TxOutRef (..),
@@ -77,7 +78,7 @@ import Test.Util (CombinableBuilder, closedBoundedInterval, mkSpending, pubKeyHa
 
 -- | Parameters for cosigning a proposal.
 data Parameters = Parameters
-  { newCosigners :: [PubKeyHash]
+  { newCosigners :: [Credential]
   -- ^ New cosigners to be added, and the owners of the generated stakes.
   , proposalStatus :: ProposalStatus
   -- ^ Current state of the proposal.
@@ -108,7 +109,7 @@ mkProposalInputDatum ps =
         { proposalId = ProposalId 0
         , effects = effects
         , status = ps.proposalStatus
-        , cosigners = [proposalCreator]
+        , cosigners = [PubKeyCredential proposalCreator]
         , thresholds = def
         , votes = emptyVotesFor effects
         , timingConfig = def
@@ -128,7 +129,9 @@ mkProposalOutputDatum ps =
 
 -- | Create all the input stakes given the parameters.
 mkStakeInputDatums :: Parameters -> [StakeDatum]
-mkStakeInputDatums = fmap (\pk -> StakeDatum perStakedGTs pk Nothing []) . newCosigners
+mkStakeInputDatums =
+  fmap (\pk -> StakeDatum perStakedGTs pk Nothing [])
+    . newCosigners
 
 -- | Create a 'TxInfo' that tries to cosign a proposal with new cosigners.
 cosign :: forall b. CombinableBuilder b => Parameters -> b
@@ -172,7 +175,9 @@ cosign ps = builder
                         , withValue stakeValue
                         , withDatum stakeOutputDatum
                         ]
-                  , signedWith stakeDatum.owner
+                  , case stakeDatum.owner of
+                      PubKeyCredential k -> signedWith k
+                      _ -> mempty
                   ]
         )
         $ zip
@@ -239,7 +244,7 @@ mkStakeRef idx =
 
 -- | Create a proposal redeemer which cosigns with the new cosginers.
 mkProposalRedeemer :: Parameters -> ProposalRedeemer
-mkProposalRedeemer (sort . newCosigners -> cs) = Cosign cs
+mkProposalRedeemer = Cosign . sort . newCosigners
 
 -- | Stake redeemer for cosuming all the stakes generated in the module.
 stakeRedeemer :: StakeRedeemer
@@ -252,7 +257,7 @@ validCosignNParameters :: Int -> Parameters
 validCosignNParameters n
   | n > 0 =
       Parameters
-        { newCosigners = take n pubKeyHashes
+        { newCosigners = take n (fmap PubKeyCredential pubKeyHashes)
         , proposalStatus = Draft
         , alterOutputStakes = False
         }
@@ -266,7 +271,7 @@ validCosignNParameters n
 duplicateCosignersParameters :: Parameters
 duplicateCosignersParameters =
   Parameters
-    { newCosigners = [proposalCreator]
+    { newCosigners = [PubKeyCredential proposalCreator]
     , proposalStatus = Draft
     , alterOutputStakes = False
     }
@@ -281,7 +286,7 @@ statusNotDraftCosignNParameters n =
   map
     ( \st ->
         Parameters
-          { newCosigners = take n pubKeyHashes
+          { newCosigners = take n (fmap PubKeyCredential pubKeyHashes)
           , proposalStatus = st
           , alterOutputStakes = False
           }

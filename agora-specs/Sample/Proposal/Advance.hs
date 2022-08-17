@@ -90,6 +90,7 @@ import Plutarch.Lift (PLifted, PUnsafeLiftDecl)
 import PlutusLedgerApi.V1.Value (AssetClass (..))
 import PlutusLedgerApi.V1.Value qualified as Value
 import PlutusLedgerApi.V2 (
+  Credential (PubKeyCredential),
   DatumHash,
   POSIXTime,
   POSIXTimeRange,
@@ -241,8 +242,8 @@ data Validity = Validity
 -- * Proposal
 
 -- | Mock cosigners.
-mkCosigners :: NumStake -> [PubKeyHash]
-mkCosigners = sort . flip take pubKeyHashes
+mkCosigners :: NumStake -> [Credential]
+mkCosigners = sort . fmap PubKeyCredential . flip take pubKeyHashes
 
 -- | Allocate the result tag for the effect at the given index.
 outcomeIdxToResultTag :: Index -> ResultTag
@@ -347,7 +348,7 @@ proposalRedeemer = AdvanceProposal
 -- * Stake
 
 -- Mock owners of the stakes.
-mkStakeOwners :: NumStake -> [PubKeyHash]
+mkStakeOwners :: NumStake -> [Credential]
 mkStakeOwners = mkCosigners
 
 -- | Create the input stake datums given the parameters.
@@ -356,7 +357,7 @@ mkStakeInputDatums ps =
   let template =
         StakeDatum
           { stakedAmount = Tagged ps.perStakeGTs
-          , owner = ""
+          , owner = PubKeyCredential ""
           , delegatedTo = Nothing
           , lockedBy = []
           }
@@ -399,9 +400,9 @@ mkStakeBuilder ps =
               ps.perStakeGTs
       perStake idx i o =
         let withSig =
-              if ps.transactionSignedByOwners
-                then signedWith i.owner
-                else mempty
+              case (i.owner, ps.transactionSignedByOwners) of
+                (PubKeyCredential owner, True) -> signedWith owner
+                _ -> mempty
          in mconcat
               [ withSig
               , input $

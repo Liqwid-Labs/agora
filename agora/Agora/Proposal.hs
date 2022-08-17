@@ -42,6 +42,7 @@ module Agora.Proposal (
   pisProposalThresholdsValid,
 ) where
 
+import Agora.Credential (AuthorizationCredential, PAuthorizationCredential)
 import Agora.Plutarch.Orphans ()
 import Agora.Proposal.Time (
   PProposalStartingTime,
@@ -58,7 +59,6 @@ import Plutarch.Api.V2 (
   KeyGuarantees (Unsorted),
   PDatumHash,
   PMaybeData,
-  PPubKeyHash,
   PScriptHash,
   PTuple,
  )
@@ -85,7 +85,7 @@ import Plutarch.Lift (
  )
 import Plutarch.SafeMoney (PDiscrete (..))
 import Plutarch.Show (PShow (..))
-import PlutusLedgerApi.V2 (DatumHash, PubKeyHash, ScriptHash, ValidatorHash)
+import PlutusLedgerApi.V2 (Credential, DatumHash, ScriptHash, ValidatorHash)
 import PlutusTx qualified
 import PlutusTx.AssocMap qualified as AssocMap
 
@@ -299,7 +299,7 @@ data ProposalDatum = ProposalDatum
   -- ^ Effect lookup table. First by result, then by effect hash.
   , status :: ProposalStatus
   -- ^ The status the proposal is in.
-  , cosigners :: [PubKeyHash]
+  , cosigners :: [Credential]
   -- ^ Who created the proposal initially, and who cosigned it later.
   --
   -- This list should be sorted in **ascending** order.
@@ -347,7 +347,7 @@ data ProposalRedeemer
     --   provided enough GT is shared among them.
     --
     --   This list should be sorted in ascending order.
-    Cosign [PubKeyHash]
+    Cosign [AuthorizationCredential]
   | -- | Allow unlocking one or more stakes with votes towards particular 'ResultTag'.
     Unlock
   | -- | Advance the proposal, performing the required checks for whether that is legal.
@@ -617,7 +617,7 @@ newtype PProposalDatum (s :: S) = PProposalDatum
             '[ "proposalId" ':= PProposalId
              , "effects" ':= PMap 'Unsorted PResultTag PProposalEffectGroup
              , "status" ':= PProposalStatus
-             , "cosigners" ':= PBuiltinList (PAsData PPubKeyHash)
+             , "cosigners" ':= PBuiltinList (PAsData PAuthorizationCredential)
              , "thresholds" ':= PProposalThresholds
              , "votes" ':= PProposalVotes
              , "timingConfig" ':= PProposalTimingConfig
@@ -656,7 +656,7 @@ deriving via (DerivePConstantViaDataList ProposalDatum PProposalDatum) instance 
 -}
 data PProposalRedeemer (s :: S)
   = PVote (Term s (PDataRecord '["resultTag" ':= PResultTag]))
-  | PCosign (Term s (PDataRecord '["newCosigners" ':= PBuiltinList (PAsData PPubKeyHash)]))
+  | PCosign (Term s (PDataRecord '["newCosigners" ':= PBuiltinList (PAsData PAuthorizationCredential)]))
   | PUnlock (Term s (PDataRecord '[]))
   | PAdvanceProposal (Term s (PDataRecord '[]))
   deriving stock

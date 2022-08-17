@@ -10,6 +10,7 @@ module Agora.Proposal.Scripts (
   proposalPolicy,
 ) where
 
+import Agora.Credential (PAuthorizationCredential, authorizationContext, pauthorizedBy)
 import Agora.Proposal (
   PProposalDatum (PProposalDatum),
   PProposalRedeemer (..),
@@ -45,7 +46,6 @@ import Agora.Utils (
 import Plutarch.Api.V2 (
   PDatumHash,
   PMintingPolicy,
-  PPubKeyHash,
   PScriptContext (PScriptContext),
   PScriptPurpose (PMinting, PSpending),
   PTxInfo (PTxInfo),
@@ -63,7 +63,6 @@ import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
 import Plutarch.Extra.ScriptContext (
   pfindTxInByTxOutRef,
   pisTokenSpent,
-  ptxSignedBy,
  )
 import Plutarch.Extra.TermCont (
   pguardC,
@@ -192,7 +191,7 @@ proposalValidator as maximumCosigners =
 
     let stCurrencySymbol = pconstant $ proposalSTSymbol as
 
-    signedBy <- pletC $ ptxSignedBy # txInfoF.signatories
+    authorizedBy <- pletC $ pauthorizedBy # authorizationContext txInfoF
 
     currentTime <- pletC $ currentProposalTime # txInfoF.validRange
 
@@ -300,7 +299,7 @@ proposalValidator as maximumCosigners =
       Term
         _
         ( ( PInteger
-              :--> PBuiltinList (PAsData PPubKeyHash)
+              :--> PBuiltinList (PAsData PAuthorizationCredential)
               :--> PUnit
           )
             :--> PUnit
@@ -380,11 +379,11 @@ proposalValidator as maximumCosigners =
         pure $ validationLogic # stakeIn # stakeOut # stakeUnchanged
 
     let withMultipleStakes val =
-          withMultipleStakes' #$ plam $
-            \totalStakedAmount
-             sortedStakeOwner ->
-                unTermCont $
-                  val totalStakedAmount sortedStakeOwner
+          withMultipleStakes'
+            #$ plam
+            $ \totalStakedAmount sortedStakeOwner ->
+              unTermCont $
+                val totalStakedAmount sortedStakeOwner
 
         withSingleStake val =
           withSingleStake' #$ plam $ \stakeIn stakeOut stakeUnchange -> unTermCont $ do
@@ -402,7 +401,7 @@ proposalValidator as maximumCosigners =
             newSigs <- pletC $ pfield @"newCosigners" # r
 
             pguardC "Signed by all new cosigners" $
-              pall # signedBy # newSigs
+              pall # plam ((authorizedBy #) . pfromData) # newSigs
 
             updatedSigs <-
               pletC $

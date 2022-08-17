@@ -34,9 +34,9 @@ import Agora.Proposal (PProposalId, PResultTag, ProposalId (..), ResultTag (..))
 import Agora.SafeMoney (GTTag)
 import Data.Tagged (Tagged (..))
 import Generics.SOP qualified as SOP
+import Plutarch.Api.V1 (PCredential)
 import Plutarch.Api.V2 (
   PMaybeData,
-  PPubKeyHash,
  )
 import Plutarch.DataRepr (
   DerivePConstantViaData (..),
@@ -52,7 +52,7 @@ import Plutarch.Extra.Traversable (pfoldMap)
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (..))
 import Plutarch.SafeMoney (PDiscrete)
 import Plutarch.Show (PShow (..))
-import PlutusLedgerApi.V1 (PubKeyHash)
+import PlutusLedgerApi.V1 (Credential)
 import PlutusTx qualified
 import Prelude hiding (Num (..))
 
@@ -148,7 +148,7 @@ data StakeRedeemer
     WitnessStake
   | -- | The owner can delegate the stake to another user, allowing the
     --    delegate to vote on prooposals with the stake.
-    DelegateTo PubKeyHash
+    DelegateTo Credential
   | -- | Revoke the existing delegation.
     ClearDelegate
   deriving stock
@@ -177,12 +177,12 @@ data StakeDatum = StakeDatum
   { stakedAmount :: Tagged GTTag Integer
   -- ^ Tracks the amount of governance token staked in the datum.
   --   This also acts as the voting weight for 'Agora.Proposal.Proposal's.
-  , owner :: PubKeyHash
+  , owner :: Credential
   -- ^ The hash of the public key this stake belongs to.
   --
   -- TODO Support for MultiSig/Scripts is tracked here:
   --      https://github.com/Liqwid-Labs/agora/issues/45
-  , delegatedTo :: Maybe PubKeyHash
+  , delegatedTo :: Maybe Credential
   -- ^ To whom this stake has been delegated.
   , lockedBy :: [ProposalLock]
   -- ^ The current proposals locking this stake. This field must be empty
@@ -218,8 +218,8 @@ newtype PStakeDatum (s :: S) = PStakeDatum
         s
         ( PDataRecord
             '[ "stakedAmount" ':= PDiscrete GTTag
-             , "owner" ':= PPubKeyHash
-             , "delegatedTo" ':= PMaybeData (PAsData PPubKeyHash)
+             , "owner" ':= PCredential
+             , "delegatedTo" ':= PMaybeData (PAsData PCredential)
              , "lockedBy" ':= PBuiltinList (PAsData PProposalLock)
              ]
         )
@@ -265,7 +265,7 @@ data PStakeRedeemer (s :: S)
   | PPermitVote (Term s (PDataRecord '[]))
   | PRetractVotes (Term s (PDataRecord '[]))
   | PWitnessStake (Term s (PDataRecord '[]))
-  | PDelegateTo (Term s (PDataRecord '["pkh" ':= PPubKeyHash]))
+  | PDelegateTo (Term s (PDataRecord '["pkh" ':= PCredential]))
   | PClearDelegate (Term s (PDataRecord '[]))
   deriving stock
     ( -- | @since 0.1.0

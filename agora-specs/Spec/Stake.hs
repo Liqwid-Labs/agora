@@ -16,6 +16,7 @@ import Agora.Stake (
  )
 import Data.Bool (Bool (..))
 import Data.Maybe (Maybe (..))
+import PlutusLedgerApi.V1 (Credential (PubKeyCredential))
 import Sample.Shared (agoraScripts)
 import Sample.Stake (
   DepositWithdrawExample (
@@ -68,19 +69,19 @@ specs =
       [ validatorSucceedsWith
           "stakeDepositWithdraw deposit"
           agoraScripts.compiledStakeValidator
-          (StakeDatum 100_000 signer Nothing [])
+          (StakeDatum 100_000 (PubKeyCredential signer) Nothing [])
           (DepositWithdraw 100_000)
           (Stake.stakeDepositWithdraw $ DepositWithdrawExample {startAmount = 100_000, delta = 100_000})
       , validatorSucceedsWith
           "stakeDepositWithdraw withdraw"
           agoraScripts.compiledStakeValidator
-          (StakeDatum 100_000 signer Nothing [])
+          (StakeDatum 100_000 (PubKeyCredential signer) Nothing [])
           (DepositWithdraw $ negate 100_000)
           (Stake.stakeDepositWithdraw $ DepositWithdrawExample {startAmount = 100_000, delta = negate 100_000})
       , validatorFailsWith
           "stakeDepositWithdraw negative GT"
           agoraScripts.compiledStakeValidator
-          (StakeDatum 100_000 signer Nothing [])
+          (StakeDatum 100_000 (PubKeyCredential signer) Nothing [])
           (DepositWithdraw 1_000_000)
           (Stake.stakeDepositWithdraw $ DepositWithdrawExample {startAmount = 100_000, delta = negate 1_000_000})
       , group
