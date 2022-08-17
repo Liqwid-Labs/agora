@@ -44,8 +44,9 @@ import Plutarch.DataRepr (
   PDataFields,
  )
 import Plutarch.Extra.Applicative (PApply (pliftA2))
+import Plutarch.Extra.Bind ((#>>=))
 import Plutarch.Extra.Field (pletAll, pletAllC)
-import Plutarch.Extra.Maybe (pjust, pmaybe, pnothing)
+import Plutarch.Extra.Maybe (pjust, pnothing)
 import Plutarch.Extra.TermCont (pmatchC)
 import Plutarch.Lift (
   DerivePConstantViaNewtype (..),
@@ -357,8 +358,7 @@ createProposalStartingTime = phoistAcyclic $
                       "createProposalStartingTime: given time range should be tight enough"
                       pnothing
                   )
-     in -- TODO: PMonad when?
-        pmaybe # pnothing # f # ct
+     in ct #>>= f
 
 {- | Get the current proposal time, from the 'PlutusLedgerApi.V1.txInfoValidPeriod' field.
 

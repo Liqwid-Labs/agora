@@ -26,6 +26,7 @@ import Agora.Governor (
  )
 import Agora.Proposal (
   ProposalDatum (..),
+  ProposalEffectGroup,
   ProposalId (ProposalId),
   ProposalStatus (..),
   ResultTag (ResultTag),
@@ -60,12 +61,10 @@ import Plutarch.Context (
  )
 import PlutusLedgerApi.V1.Value qualified as Value
 import PlutusLedgerApi.V2 (
-  DatumHash,
   POSIXTime (POSIXTime),
   POSIXTimeRange,
   PubKeyHash,
   TxOutRef (TxOutRef),
-  ValidatorHash,
   always,
  )
 import PlutusTx.AssocMap qualified as AssocMap
@@ -136,7 +135,7 @@ defLocks :: [ProposalLock]
 defLocks = [Created (ProposalId 0)]
 
 -- | The effect of the newly created proposal.
-defEffects :: AssocMap.Map ResultTag (AssocMap.Map ValidatorHash DatumHash)
+defEffects :: AssocMap.Map ResultTag ProposalEffectGroup
 defEffects =
   AssocMap.fromList
     [ (ResultTag 0, AssocMap.empty)

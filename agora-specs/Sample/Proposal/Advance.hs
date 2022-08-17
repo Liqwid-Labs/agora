@@ -44,6 +44,7 @@ import Agora.Governor (
  )
 import Agora.Proposal (
   ProposalDatum (..),
+  ProposalEffectGroup,
   ProposalId (ProposalId),
   ProposalRedeemer (AdvanceProposal),
   ProposalStatus (..),
@@ -67,10 +68,11 @@ import Agora.Stake (
   StakeRedeemer (WitnessStake),
  )
 import Agora.Utils (validatorHashToTokenName)
+import Control.Applicative (liftA2)
 import Control.Monad.State (execState, modify, when)
 import Data.Default (def)
-import Data.List (sort)
-import Data.Maybe (catMaybes, fromJust)
+import Data.List (singleton, sort)
+import Data.Maybe (fromJust)
 import Data.Tagged (Tagged (..), untag)
 import Plutarch.Context (
   input,
@@ -81,6 +83,7 @@ import Plutarch.Context (
   timeRange,
   withDatum,
   withRef,
+  withReferenceScript,
   withValue,
  )
 import Plutarch.Lift (PLifted, PUnsafeLiftDecl)
@@ -91,6 +94,7 @@ import PlutusLedgerApi.V2 (
   POSIXTime,
   POSIXTimeRange,
   PubKeyHash,
+  ScriptHash,
   TxOutRef (TxOutRef),
   ValidatorHash,
  )
@@ -127,6 +131,7 @@ import Test.Util (
   mkMinting,
   mkSpending,
   pubKeyHashes,
+  scriptHashes,
   sortValue,
   toDatum,
   updateMap,
@@ -144,7 +149,7 @@ data ParameterBundle = ParameterBundle
   , governorParameters :: Maybe GovernorParameters
   -- ^ Parameters related to GST moving. If set to 'Nothing', the GST won't
   --   be moved, thus the governor validator won't be run in 'mkTestTree'.
-  , authorityTokenParameters :: Maybe AuthorityTokenParameters
+  , authorityTokenParameters :: [AuthorityTokenParameters]
   -- ^ Parameters related to GAT minting. If set to 'Nothing', no GAT will
   --     be minted, thus the GAT minting policy won't be run in 'mkTestTree'.
   , transactionTimeRange :: POSIXTimeRange
@@ -171,10 +176,12 @@ data AuthorityTokenParameters = forall
   , PIsData pdatum
   ) =>
   AuthorityTokenParameters
-  { mintGATsFor :: [ValidatorHash]
+  { mintGATsFor :: ValidatorHash
   -- ^ GATs will be minted and sent to the given group of effects.
   , carryDatum :: Maybe datum
   -- ^ The datum that GAT UTxOs will be carrying.
+  , carryRefScript :: Maybe ScriptHash
+  -- ^ The reference script that GAT UTxOs will be carrying.
   , invalidTokenName :: Bool
   -- ^ If set to true, GATs won't be tagged by their corresponding effect
   --    hashes.
@@ -193,7 +200,7 @@ data ProposalParameters = ProposalParameters
   -- ^ What status is the proposal advancing from
   , toStatus :: ProposalStatus
   -- ^ What status is the proposal advancing to
-  , effectList :: [AssocMap.Map ValidatorHash DatumHash]
+  , effectList :: [ProposalEffectGroup]
   -- ^ The effect groups of the proposal. A neutral effect group is not
   --    required here.
   , winnerAndVotes :: Maybe (Winner, Integer)
@@ -244,7 +251,7 @@ outcomeIdxToResultTag = ResultTag . fromIntegral
 -- | Add a neutral effect group and allocate result tags for the effect groups.
 mkEffects ::
   ProposalParameters ->
-  AssocMap.Map ResultTag (AssocMap.Map ValidatorHash DatumHash)
+  AssocMap.Map ResultTag ProposalEffectGroup
 mkEffects ps =
   let resultTags = map ResultTag [0 ..]
       neutralEffect = AssocMap.empty
@@ -492,27 +499,24 @@ mkAuthorityTokenBuilder ::
   CombinableBuilder b =>
   AuthorityTokenParameters ->
   b
-mkAuthorityTokenBuilder (AuthorityTokenParameters es mdt invalidTokenName) =
-  foldMap perEffect es
-  where
-    perEffect :: ValidatorHash -> b
-    perEffect vh =
-      let tn =
-            if invalidTokenName
-              then ""
-              else validatorHashToTokenName vh
-          ac = AssetClass (authorityTokenSymbol, tn)
-          minted = Value.assetClassValue ac 1
-          value = sortValue $ minAda <> minted
-       in mconcat
-            [ mint minted
-            , output $
-                mconcat
-                  [ script vh
-                  , maybe mempty withDatum mdt
-                  , withValue value
-                  ]
-            ]
+mkAuthorityTokenBuilder ps@AuthorityTokenParameters {carryDatum} =
+  let tn =
+        if ps.invalidTokenName
+          then ""
+          else validatorHashToTokenName ps.mintGATsFor
+      ac = AssetClass (authorityTokenSymbol, tn)
+      minted = Value.assetClassValue ac 1
+      value = sortValue $ minAda <> minted
+   in mconcat
+        [ mint minted
+        , output $
+            mconcat
+              [ script ps.mintGATsFor
+              , maybe mempty withDatum carryDatum
+              , maybe mempty withReferenceScript ps.carryRefScript
+              , withValue value
+              ]
+        ]
 
 -- | The redeemer used while running the authority token policy.
 authorityTokenRedeemer :: ()
@@ -532,7 +536,7 @@ advance pb =
         [ mkProposalBuilder pb.proposalParameters
         , mkStakeBuilder pb.stakeParameters
         , mkBuilderMaybe mkGovernorBuilder pb.governorParameters
-        , mkBuilderMaybe mkAuthorityTokenBuilder pb.authorityTokenParameters
+        , foldMap mkAuthorityTokenBuilder pb.authorityTokenParameters
         , timeRange pb.transactionTimeRange
         , maybe mempty signedWith pb.extraSignature
         ]
@@ -548,14 +552,13 @@ mkTestTree ::
   Validity ->
   SpecificationTree
 mkTestTree name pb val =
-  group name $ catMaybes [proposal, stake, governor, authority]
+  group name $ mconcat [proposal, stake, governor, authority]
   where
     spend = mkSpending advance pb
-    mint = mkMinting advance pb
 
     proposal =
       let proposalInputDatum = mkProposalInputDatum pb.proposalParameters
-       in Just $
+       in singleton $
             testValidator
               val.forProposalValidator
               "proposal"
@@ -566,7 +569,7 @@ mkTestTree name pb val =
 
     stake =
       let idx = 0
-       in Just $
+       in singleton $
             testValidator
               val.forStakeValidator
               "stake"
@@ -577,23 +580,27 @@ mkTestTree name pb val =
               )
 
     governor =
-      testValidator
-        (fromJust val.forGovernorValidator)
-        "governor"
-        agoraScripts.compiledGovernorValidator
-        governorInputDatum
-        governorRedeemer
-        (spend governorRef)
-        <$ pb.governorParameters
+      maybe [] singleton $
+        testValidator
+          (fromJust val.forGovernorValidator)
+          "governor"
+          agoraScripts.compiledGovernorValidator
+          governorInputDatum
+          governorRedeemer
+          (spend governorRef)
+          <$ pb.governorParameters
 
-    authority =
-      testPolicy
-        (fromJust val.forAuthorityTokenPolicy)
-        "authority"
-        agoraScripts.compiledAuthorityTokenPolicy
-        authorityTokenRedeemer
-        (mint authorityTokenSymbol)
-        <$ (pb.authorityTokenParameters)
+    authority = case pb.authorityTokenParameters of
+      [] -> []
+      _ ->
+        singleton
+          ( testPolicy
+              (fromJust val.forAuthorityTokenPolicy)
+              "authority"
+              agoraScripts.compiledAuthorityTokenPolicy
+              authorityTokenRedeemer
+              (mkMinting advance pb authorityTokenSymbol)
+          )
 
 {- | Create a test tree that runs a bunch of parameter bundles. These bundles
       should have the same validity.
@@ -725,14 +732,26 @@ dummyDatumHash :: DatumHash
 dummyDatumHash = datumHash $ toDatum dummyDatum
 
 -- | Create given number of effect groups. Each group will have 3 effects.
-mkMockEffects :: Int -> [AssocMap.Map ValidatorHash DatumHash]
-mkMockEffects =
-  flip
-    take
-    ( AssocMap.fromList
-        . flip zip (repeat dummyDatumHash)
-        <$> groupsOfN 3 validatorHashes
-    )
+mkMockEffects :: Bool -> Int -> [ProposalEffectGroup]
+mkMockEffects useRefScript n = effects
+  where
+    effectsPerGroup = 3
+
+    mkRefScripts True = Just <$> scriptHashes
+    mkRefScripts False = repeat Nothing
+    refScripts = mkRefScripts useRefScript
+
+    datums = repeat dummyDatumHash
+
+    effectMetadata = zip datums refScripts
+    effectScripts = validatorHashes
+
+    effects =
+      take n $
+        AssocMap.fromList
+          <$> groupsOfN
+            effectsPerGroup
+            (zip effectScripts effectMetadata)
 
 numberOfVotesThatExceedsTheMinimumRequirement :: Integer
 numberOfVotesThatExceedsTheMinimumRequirement =
@@ -767,16 +786,18 @@ defaultWinnerIdx = 0
 mkValidToNextStateBundle ::
   -- | Number of cosigners.
   Word ->
-  -- | Number of effects
+  -- | Number of effects.
   Word ->
+  -- | Toggle the referenc script in GAT UTXO.
+  Bool ->
   -- | The initial proposal state, should not be 'Finished'.
   ProposalStatus ->
   ParameterBundle
-mkValidToNextStateBundle _ _ Finished =
+mkValidToNextStateBundle _ _ _ Finished =
   error "Cannot advance from Finished"
-mkValidToNextStateBundle nCosigners nEffects from =
+mkValidToNextStateBundle nCosigners nEffects refScript from =
   let next = getNextState from
-      effects = mkMockEffects $ fromIntegral nEffects
+      effects = mkMockEffects refScript $ fromIntegral nEffects
       winner = defaultWinnerIdx
 
       template =
@@ -800,7 +821,7 @@ mkValidToNextStateBundle nCosigners nEffects from =
                 , invalidStakeOutputDatum = False
                 }
           , governorParameters = Nothing
-          , authorityTokenParameters = Nothing
+          , authorityTokenParameters = []
           , transactionTimeRange = mkInTimeTimeRange from
           , extraSignature = Just signer
           }
@@ -830,18 +851,24 @@ mkValidToNextStateBundle nCosigners nEffects from =
         when (from == Locked) $
           modify $ \b ->
             let aut =
-                  AuthorityTokenParameters
-                    { mintGATsFor = AssocMap.keys $ effects !! winner
-                    , carryDatum = Just dummyDatum
-                    , invalidTokenName = False
-                    }
+                  AssocMap.elems $
+                    AssocMap.mapWithKey
+                      ( \vh (_, refScript) ->
+                          AuthorityTokenParameters
+                            { mintGATsFor = vh
+                            , carryDatum = Just dummyDatum
+                            , carryRefScript = refScript
+                            , invalidTokenName = False
+                            }
+                      )
+                      (effects !! winner)
                 gov =
                   GovernorParameters
                     { invalidGovernorOutputDatum = False
                     }
              in b
                   { governorParameters = Just gov
-                  , authorityTokenParameters = Just aut
+                  , authorityTokenParameters = aut
                   }
    in execState modifyTemplate template
 
@@ -852,11 +879,10 @@ mkValidToNextStateBundles ::
   Word ->
   [ParameterBundle]
 mkValidToNextStateBundles nCosigners nEffects =
-  mkValidToNextStateBundle nCosigners nEffects
-    <$> [ Draft
-        , VotingReady
-        , Locked
-        ]
+  liftA2
+    (mkValidToNextStateBundle nCosigners nEffects)
+    [True, False]
+    [Draft, VotingReady, Locked]
 
 mkValidToFailedStateBundles ::
   -- | Number of cosigners
@@ -865,15 +891,14 @@ mkValidToFailedStateBundles ::
   Word ->
   [ParameterBundle]
 mkValidToFailedStateBundles nCosigners nEffects =
-  mkBundle
-    <$> [ Draft
-        , VotingReady
-        , Locked
-        ]
+  liftA2
+    mkBundle
+    [True, False]
+    [Draft, VotingReady, Locked]
   where
-    mkBundle from =
+    mkBundle refScript from =
       let next = Finished
-          effects = mkMockEffects $ fromIntegral nEffects
+          effects = mkMockEffects refScript $ fromIntegral nEffects
        in ParameterBundle
             { proposalParameters =
                 ProposalParameters
@@ -894,7 +919,7 @@ mkValidToFailedStateBundles nCosigners nEffects =
                   , invalidStakeOutputDatum = False
                   }
             , governorParameters = Nothing
-            , authorityTokenParameters = Nothing
+            , authorityTokenParameters = []
             , transactionTimeRange = mkTooLateTimeRange from
             , extraSignature = Just signer
             }
@@ -908,14 +933,13 @@ mkFromFinishedBundles ::
   Word ->
   [ParameterBundle]
 mkFromFinishedBundles nCosigners nEffects =
-  mkBundle
-    <$> [ Draft
-        , VotingReady
-        , Locked
-        ]
+  liftA2
+    mkBundle
+    [True, False]
+    [Draft, VotingReady, Locked]
   where
-    mkBundle from =
-      let template = mkValidToNextStateBundle nCosigners nEffects from
+    mkBundle refScript from =
+      let template = mkValidToNextStateBundle nCosigners nEffects refScript from
        in template
             { proposalParameters =
                 template.proposalParameters
@@ -926,24 +950,26 @@ mkFromFinishedBundles nCosigners nEffects =
 
 mkToNextStateTooLateBundles :: Word -> Word -> [ParameterBundle]
 mkToNextStateTooLateBundles nCosigners nEffects =
-  mkBundle
-    <$> [ Draft
-        , VotingReady
-        , Locked
-        ]
+  liftA2
+    mkBundle
+    [True, False]
+    [Draft, VotingReady, Locked]
   where
-    mkBundle from =
-      let template = mkValidToNextStateBundle nCosigners nEffects from
+    mkBundle refScript from =
+      let template = mkValidToNextStateBundle nCosigners nEffects refScript from
        in template
             { transactionTimeRange = mkTooLateTimeRange from
             }
 
 mkInvalidOutputStakeBundles :: Word -> Word -> [ParameterBundle]
 mkInvalidOutputStakeBundles nCosigners nEffects =
-  mkBundle <$> [Draft, VotingReady, Locked]
+  liftA2
+    mkBundle
+    [True, False]
+    [Draft, VotingReady, Locked]
   where
-    mkBundle from =
-      let template = mkValidToNextStateBundle nCosigners nEffects from
+    mkBundle refScript from =
+      let template = mkValidToNextStateBundle nCosigners nEffects refScript from
        in template
             { stakeParameters =
                 template.stakeParameters
@@ -965,7 +991,7 @@ mkInsufficientCosignsBundle nCosigners nEffects =
     insuffcientPerStakeGTs =
       untag (def :: ProposalThresholds).vote
         `div` fromIntegral nCosigners - 1
-    template = mkValidToNextStateBundle nCosigners nEffects Draft
+    template = mkValidToNextStateBundle nCosigners nEffects False Draft
 
 -- * From VotingReady
 
@@ -986,7 +1012,7 @@ mkInsufficientVotesBundle ::
   Word ->
   ParameterBundle
 mkInsufficientVotesBundle nCosigners nEffects =
-  mkValidToNextStateBundle nCosigners nEffects VotingReady
+  mkValidToNextStateBundle nCosigners nEffects False VotingReady
     `setWinnerAndVotes` Nothing
 
 mkAmbiguousWinnerBundle ::
@@ -994,14 +1020,14 @@ mkAmbiguousWinnerBundle ::
   Word ->
   ParameterBundle
 mkAmbiguousWinnerBundle nCosigners nEffects =
-  mkValidToNextStateBundle nCosigners nEffects VotingReady
+  mkValidToNextStateBundle nCosigners nEffects False VotingReady
     `setWinnerAndVotes` Just ambiguousWinnerVotes
 
 -- * From Locked
 
 mkValidFromLockedBundle :: Word -> Word -> ParameterBundle
 mkValidFromLockedBundle nCosigners nEffects =
-  mkValidToNextStateBundle nCosigners nEffects Locked
+  mkValidToNextStateBundle nCosigners nEffects False Locked
 
 mkMintGATsForWrongEffectsBundle ::
   Word ->
@@ -1010,17 +1036,11 @@ mkMintGATsForWrongEffectsBundle ::
 mkMintGATsForWrongEffectsBundle nCosigners nEffects =
   template
     { authorityTokenParameters =
-        ( \aut ->
-            aut
-              { mintGATsFor =
-                  [ validatorHashes !! 1
-                  , validatorHashes !! 3
-                  , validatorHashes !! 5
-                  , validatorHashes !! 7
-                  ]
-              }
-        )
-          <$> template.authorityTokenParameters
+        take 4 $
+          zipWith
+            (\a i -> a {mintGATsFor = validatorHashes !! i})
+            template.authorityTokenParameters
+            [1, 3 ..]
     }
   where
     template = mkValidFromLockedBundle nCosigners nEffects
@@ -1031,7 +1051,7 @@ mkNoGATMintedBundle ::
   ParameterBundle
 mkNoGATMintedBundle nCosigners nEffects =
   template
-    { authorityTokenParameters = Nothing
+    { authorityTokenParameters = []
     }
   where
     template = mkValidFromLockedBundle nCosigners nEffects
@@ -1059,16 +1079,19 @@ mkGATsWithWrongDatumBundle ::
   ParameterBundle
 mkGATsWithWrongDatumBundle nCosigners nEffects =
   template
-    { authorityTokenParameters = Just newAut
+    { authorityTokenParameters = newAut
     }
   where
     template = mkValidFromLockedBundle nCosigners nEffects
-    aut = fromJust template.authorityTokenParameters
     newAut =
-      AuthorityTokenParameters
-        aut.mintGATsFor
-        (Just (1 :: Integer))
-        False
+      ( \aut ->
+          AuthorityTokenParameters
+            aut.mintGATsFor
+            (Just (1 :: Integer))
+            aut.carryRefScript
+            False
+      )
+        <$> template.authorityTokenParameters
 
 mkBadGovernorOutputDatumBundle ::
   Word ->

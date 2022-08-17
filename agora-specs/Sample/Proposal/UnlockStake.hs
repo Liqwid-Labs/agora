@@ -28,6 +28,7 @@ module Sample.Proposal.UnlockStake (
 import Agora.Governor (Governor (..))
 import Agora.Proposal (
   ProposalDatum (..),
+  ProposalEffectGroup,
   ProposalId (..),
   ProposalRedeemer (Unlock),
   ProposalStatus (..),
@@ -51,10 +52,8 @@ import Plutarch.Context (
  )
 import PlutusLedgerApi.V1.Value qualified as Value
 import PlutusLedgerApi.V2 (
-  DatumHash,
   PubKeyHash,
   TxOutRef (..),
-  ValidatorHash,
  )
 import PlutusTx.AssocMap qualified as AssocMap
 import Sample.Proposal.Shared (stakeTxRef)
@@ -85,7 +84,7 @@ votesTemplate =
 -- | Create empty effects for every result tag given the votes.
 emptyEffectFor ::
   ProposalVotes ->
-  AssocMap.Map ResultTag (AssocMap.Map ValidatorHash DatumHash)
+  AssocMap.Map ResultTag ProposalEffectGroup
 emptyEffectFor (ProposalVotes vs) =
   AssocMap.fromList $
     map (,AssocMap.empty) (AssocMap.keys vs)

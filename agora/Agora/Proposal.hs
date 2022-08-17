@@ -11,6 +11,7 @@ module Agora.Proposal (
   -- * Haskell-land
 
   -- Proposal (..),
+  ProposalEffectGroup,
   ProposalDatum (..),
   ProposalRedeemer (..),
   ProposalStatus (..),
@@ -21,6 +22,7 @@ module Agora.Proposal (
   emptyVotesFor,
 
   -- * Plutarch-land
+  PProposalEffectGroup,
   PProposalDatum (..),
   PProposalRedeemer (..),
   PProposalStatus (..),
@@ -41,7 +43,12 @@ module Agora.Proposal (
 ) where
 
 import Agora.Plutarch.Orphans ()
-import Agora.Proposal.Time (PProposalStartingTime, PProposalTimingConfig, ProposalStartingTime, ProposalTimingConfig)
+import Agora.Proposal.Time (
+  PProposalStartingTime,
+  PProposalTimingConfig,
+  ProposalStartingTime,
+  ProposalTimingConfig,
+ )
 import Agora.SafeMoney (GTTag)
 import Data.Tagged (Tagged)
 import Generics.SOP qualified as SOP
@@ -50,7 +57,10 @@ import Plutarch.Api.V1.AssocMap qualified as PAssocMap
 import Plutarch.Api.V2 (
   KeyGuarantees (Unsorted),
   PDatumHash,
+  PMaybeData,
   PPubKeyHash,
+  PScriptHash,
+  PTuple,
  )
 import Plutarch.DataRepr (DerivePConstantViaData (..), PDataFields)
 import Plutarch.Extra.Comonad (pextract)
@@ -75,7 +85,7 @@ import Plutarch.Lift (
  )
 import Plutarch.SafeMoney (PDiscrete (..))
 import Plutarch.Show (PShow (..))
-import PlutusLedgerApi.V1 (DatumHash, PubKeyHash, ValidatorHash)
+import PlutusLedgerApi.V2 (DatumHash, PubKeyHash, ScriptHash, ValidatorHash)
 import PlutusTx qualified
 import PlutusTx.AssocMap qualified as AssocMap
 
@@ -272,6 +282,9 @@ newtype ProposalVotes = ProposalVotes
 emptyVotesFor :: forall a. AssocMap.Map ResultTag a -> ProposalVotes
 emptyVotesFor = ProposalVotes . AssocMap.mapWithKey (const . const 0)
 
+-- | @since 0.3.0
+type ProposalEffectGroup = AssocMap.Map ValidatorHash (DatumHash, Maybe ScriptHash)
+
 {- | Haskell-level datum for Proposal scripts.
 
      @since 0.1.0
@@ -282,7 +295,7 @@ data ProposalDatum = ProposalDatum
   -- TODO: could we encode this more efficiently?
   -- This is shaped this way for future proofing.
   -- See https://github.com/Liqwid-Labs/agora/issues/39
-  , effects :: AssocMap.Map ResultTag (AssocMap.Map ValidatorHash DatumHash)
+  , effects :: AssocMap.Map ResultTag ProposalEffectGroup
   -- ^ Effect lookup table. First by result, then by effect hash.
   , status :: ProposalStatus
   -- ^ The status the proposal is in.
@@ -583,6 +596,15 @@ deriving via
   instance
     (PConstantDecl ProposalVotes)
 
+type PProposalEffectGroup =
+  PMap
+    'Unsorted
+    PValidatorHash
+    ( PTuple
+        PDatumHash
+        (PMaybeData (PAsData PScriptHash))
+    )
+
 {- | Plutarch-level version of 'ProposalDatum'.
 
      @since 0.1.0
@@ -593,7 +615,7 @@ newtype PProposalDatum (s :: S) = PProposalDatum
         s
         ( PDataRecord
             '[ "proposalId" ':= PProposalId
-             , "effects" ':= PMap 'Unsorted PResultTag (PMap 'Unsorted PValidatorHash PDatumHash)
+             , "effects" ':= PMap 'Unsorted PResultTag PProposalEffectGroup
              , "status" ':= PProposalStatus
              , "cosigners" ':= PBuiltinList (PAsData PPubKeyHash)
              , "thresholds" ':= PProposalThresholds
@@ -678,7 +700,7 @@ phasNeutralEffect ::
   forall (s :: S).
   Term
     s
-    ( PMap 'Unsorted PResultTag (PMap 'Unsorted PValidatorHash PDatumHash)
+    ( PMap 'Unsorted PResultTag PProposalEffectGroup
         :--> PBool
     )
 phasNeutralEffect = phoistAcyclic $ PAssocMap.pany # PAssocMap.pnull
@@ -691,7 +713,7 @@ pisEffectsVotesCompatible ::
   forall (s :: S).
   Term
     s
-    ( PMap 'Unsorted PResultTag (PMap 'Unsorted PValidatorHash PDatumHash)
+    ( PMap 'Unsorted PResultTag PProposalEffectGroup
         :--> PProposalVotes
         :--> PBool
     )
@@ -811,7 +833,7 @@ phighestVotes = phoistAcyclic $
 pneutralOption ::
   Term
     s
-    ( PMap 'Unsorted PResultTag (PMap 'Unsorted PValidatorHash PDatumHash)
+    ( PMap 'Unsorted PResultTag PProposalEffectGroup
         :--> PResultTag
     )
 pneutralOption = phoistAcyclic $
