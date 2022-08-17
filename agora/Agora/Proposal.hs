@@ -42,7 +42,6 @@ module Agora.Proposal (
   pisProposalThresholdsValid,
 ) where
 
-import Agora.Credential (AuthorizationCredential, PAuthorizationCredential)
 import Agora.Plutarch.Orphans ()
 import Agora.Proposal.Time (
   PProposalStartingTime,
@@ -53,7 +52,7 @@ import Agora.Proposal.Time (
 import Agora.SafeMoney (GTTag)
 import Data.Tagged (Tagged)
 import Generics.SOP qualified as SOP
-import Plutarch.Api.V1 (PMap, PValidatorHash)
+import Plutarch.Api.V1 (PCredential, PMap, PValidatorHash)
 import Plutarch.Api.V1.AssocMap qualified as PAssocMap
 import Plutarch.Api.V2 (
   KeyGuarantees (Unsorted),
@@ -347,7 +346,7 @@ data ProposalRedeemer
     --   provided enough GT is shared among them.
     --
     --   This list should be sorted in ascending order.
-    Cosign [AuthorizationCredential]
+    Cosign [Credential]
   | -- | Allow unlocking one or more stakes with votes towards particular 'ResultTag'.
     Unlock
   | -- | Advance the proposal, performing the required checks for whether that is legal.
@@ -617,7 +616,7 @@ newtype PProposalDatum (s :: S) = PProposalDatum
             '[ "proposalId" ':= PProposalId
              , "effects" ':= PMap 'Unsorted PResultTag PProposalEffectGroup
              , "status" ':= PProposalStatus
-             , "cosigners" ':= PBuiltinList (PAsData PAuthorizationCredential)
+             , "cosigners" ':= PBuiltinList (PAsData PCredential)
              , "thresholds" ':= PProposalThresholds
              , "votes" ':= PProposalVotes
              , "timingConfig" ':= PProposalTimingConfig
@@ -656,7 +655,7 @@ deriving via (DerivePConstantViaDataList ProposalDatum PProposalDatum) instance 
 -}
 data PProposalRedeemer (s :: S)
   = PVote (Term s (PDataRecord '["resultTag" ':= PResultTag]))
-  | PCosign (Term s (PDataRecord '["newCosigners" ':= PBuiltinList (PAsData PAuthorizationCredential)]))
+  | PCosign (Term s (PDataRecord '["newCosigners" ':= PBuiltinList (PAsData PCredential)]))
   | PUnlock (Term s (PDataRecord '[]))
   | PAdvanceProposal (Term s (PDataRecord '[]))
   deriving stock

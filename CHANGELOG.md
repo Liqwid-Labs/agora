@@ -6,6 +6,17 @@ This format is based on [Keep A Changelog](https://keepachangelog.com/en/1.0.0).
 
 ### Modified
 
+- Use `Credential` instead of `PubKeyHash`
+
+  Included by [#158](https://github.com/Liqwid-Labs/agora/pull/158).
+
+  NOTE: This changes the representation of the following types:
+  
+  - `PStakeDatum`
+  - `PStakeRedeemer`
+  - `PProposalDatum`
+  - `PProposalRedeemer`
+
 - Use plutus v2 types.
 
   Included by [#156](https://github.com/Liqwid-Labs/agora/pull/156).

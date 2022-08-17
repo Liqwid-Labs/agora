@@ -10,7 +10,7 @@ module Agora.Proposal.Scripts (
   proposalPolicy,
 ) where
 
-import Agora.Credential (PAuthorizationCredential, authorizationContext, pauthorizedBy)
+import Agora.Credential (authorizationContext, pauthorizedBy)
 import Agora.Proposal (
   PProposalDatum (PProposalDatum),
   PProposalRedeemer (..),
@@ -40,6 +40,7 @@ import Agora.Stake (
 import Agora.Utils (
   pltAsData,
  )
+import Plutarch.Api.V1 (PCredential)
 import Plutarch.Api.V2 (
   PDatumHash,
   PMintingPolicy,
@@ -299,7 +300,7 @@ proposalValidator as maximumCosigners =
       Term
         _
         ( ( PInteger
-              :--> PBuiltinList (PAsData PAuthorizationCredential)
+              :--> PBuiltinList (PAsData PCredential)
               :--> PUnit
           )
             :--> PUnit
