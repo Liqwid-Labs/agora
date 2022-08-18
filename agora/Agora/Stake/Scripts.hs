@@ -16,10 +16,6 @@ import Agora.Stake (
   StakeRedeemer (WitnessStake),
   pstakeLocked,
  )
-import Agora.Utils (
-  pfromDatumHash,
-  pmustFindDatum,
- )
 import Data.Function (on)
 import Data.Tagged (Tagged (..), untag)
 import Plutarch.Api.V1 (
@@ -45,7 +41,12 @@ import Plutarch.Extra.Field (pletAllC)
 import Plutarch.Extra.List (pmapMaybe, pmsortBy)
 import Plutarch.Extra.Maybe (passertPJust, pdjust, pdnothing, pmaybeData)
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
-import Plutarch.Extra.ScriptContext (pfindTxInByTxOutRef, pvalueSpent)
+import Plutarch.Extra.ScriptContext (
+  pfindTxInByTxOutRef,
+  pfromDatumHash,
+  pfromOutputDatum,
+  pvalueSpent,
+ )
 import Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC, ptryFromC)
 import Plutarch.Extra.Value (
   pgeqByClass',
@@ -114,7 +115,7 @@ stakePolicy gtClassRef =
                         (psymbolValueOf # ownSymbol # txOutF.value #== 1)
                         ( let datum =
                                 pfromData $
-                                  pmustFindDatum @(PAsData PStakeDatum)
+                                  pfromOutputDatum @(PAsData PStakeDatum)
                                     # txOutF.datum
                                     # txInfoF.datums
                            in pnot # (pstakeLocked # datum)
@@ -158,7 +159,7 @@ stakePolicy gtClassRef =
                 pletFieldsC @'["owner", "stakedAmount"] $
                   pto $
                     pfromData $
-                      pmustFindDatum @(PAsData PStakeDatum) # outputF.datum # txInfoF.datums
+                      pfromOutputDatum @(PAsData PStakeDatum) # outputF.datum # txInfoF.datums
 
               let hasExpectedStake =
                     ptraceIfFalse "Stake ouput has expected amount of stake token" $
@@ -378,7 +379,7 @@ stakeValidator as gtClassRef =
                 stakeOut <-
                   pletC $
                     pfromData $
-                      pmustFindDatum @(PAsData PStakeDatum)
+                      pfromOutputDatum @(PAsData PStakeDatum)
                         # (pfield @"datum" # ownOutput)
                         # txInfoF.datums
 

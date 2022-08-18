@@ -51,11 +51,6 @@ import Agora.Stake (
   pnumCreatedProposals,
  )
 import Agora.Utils (
-  pfindDatum,
-  pfromDatumHash,
-  pfstTuple,
-  pmustFindDatum,
-  psndTuple,
   validatorHashToAddress,
  )
 import Plutarch.Api.V1 (
@@ -81,11 +76,15 @@ import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
 import Plutarch.Extra.ScriptContext (
   pfindOutputsToAddress,
   pfindTxInByTxOutRef,
+  pfromDatumHash,
+  pfromOutputDatum,
   pisUTXOSpent,
   pscriptHashFromAddress,
+  ptryFromOutputDatum,
   pvalueSpent,
  )
 import Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC, ptryFromC)
+import Plutarch.Extra.Tuple (pfstTuple, psndTuple)
 import Plutarch.Extra.Value (phasOnlyOneTokenOfCurrencySymbol, psymbolValueOf)
 import PlutusLedgerApi.V1 (TxOutRef)
 
@@ -148,7 +147,7 @@ governorPolicy initialSpend =
           # pfromData txInfoF.outputs
 
     let outputDatum = pfield @"datum" # govOutput
-        datum = pmustFindDatum @PGovernorDatum # outputDatum # txInfoF.datums
+        datum = pfromOutputDatum @PGovernorDatum # outputDatum # txInfoF.datums
 
     pguardC "Governor output datum valid" $ pisGovernorDatumValid # datum
 
@@ -279,7 +278,7 @@ governorValidator as =
 
     -- Check that own output have datum of type 'GovernorDatum'.
     newGovernorDatum <-
-      pletC $ pmustFindDatum @PGovernorDatum # ownOutput.datum # txInfoF.datums
+      pletC $ pfromOutputDatum @PGovernorDatum # ownOutput.datum # txInfoF.datums
 
     pguardC "New datum is valid" $ pisGovernorDatumValid # newGovernorDatum
 
@@ -328,7 +327,7 @@ governorValidator as =
 
           stakeInputF <- pletFieldsC @'["datum", "value"] $ pfield @"resolved" # stakeInput
 
-          let stakeInputDatum = pmustFindDatum @(PAsData PStakeDatum) # stakeInputF.datum # txInfoF.datums
+          let stakeInputDatum = pfromOutputDatum @(PAsData PStakeDatum) # stakeInputF.datum # txInfoF.datums
 
           stakeInputDatumF <- pletAllC $ pto $ pfromData stakeInputDatum
 
@@ -358,7 +357,7 @@ governorValidator as =
 
           proposalOutputDatum' <-
             pletC $
-              pmustFindDatum @(PAsData PProposalDatum)
+              pfromOutputDatum @(PAsData PProposalDatum)
                 # (pfield @"datum" #$ phead # outputsToProposalValidatorWithStateToken)
                 # txInfoF.datums
 
@@ -404,7 +403,7 @@ governorValidator as =
                           pure $
                             pif
                               (psymbolValueOf # psstSymbol # txOutF.value #== 1)
-                              (pfindDatum @(PAsData PStakeDatum) # txOutF.datum # txInfoF.datums)
+                              (ptryFromOutputDatum @(PAsData PStakeDatum) # txOutF.datum # txInfoF.datums)
                               (pcon PNothing)
                       )
                     # pfromData txInfoF.outputs
@@ -452,7 +451,7 @@ governorValidator as =
                           ( psymbolValueOf # ppstSymbol # txOutF.value #== 1
                               #&& txOutF.address #== pdata pproposalValidatorAddress
                           )
-                          (pfindDatum @(PAsData PProposalDatum) # txOutF.datum # txInfoF.datums)
+                          (ptryFromOutputDatum @(PAsData PProposalDatum) # txOutF.datum # txInfoF.datums)
                           pnothing
                   )
                 # pfromData txInfoF.inputs
