@@ -19,12 +19,12 @@ module Agora.Utils (
 ) where
 
 import PlutusLedgerApi.V2 (
-  Address (..),
-  Credential (..),
+  Address (Address),
+  Credential (ScriptCredential),
   MintingPolicy,
-  TokenName (..),
+  TokenName (TokenName),
   Validator,
-  ValidatorHash (..),
+  ValidatorHash (ValidatorHash),
  )
 
 {- Functions which should (probably) not be upstreamed

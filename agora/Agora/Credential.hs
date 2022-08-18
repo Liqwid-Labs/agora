@@ -5,29 +5,20 @@ Description: Functions for dealing with generalized credentials.
 
 Functions for dealing with generalized credentials.
 -}
-module Agora.Credential (PAuthorizationCredential, AuthorizationCredential, pauthorizedBy, authorizationContext) where
+module Agora.Credential (
+  pauthorizedBy,
+  authorizationContext,
+) where
 
 import GHC.Records (HasField)
-import Plutarch.Api.V1 (PCredential (..), PPubKeyHash)
-import Plutarch.Api.V2 (PTxInInfo (..))
+import Plutarch.Api.V1 (PCredential (PPubKeyCredential, PScriptCredential), PPubKeyHash)
+import Plutarch.Api.V2 (PTxInInfo)
 import Plutarch.Extra.ScriptContext (ptxSignedBy)
 import Plutarch.Extra.TermCont (pmatchC)
-import PlutusLedgerApi.V2 (Credential)
-
-{- | This type represents a general purpose authority which can be used
-     to check for approval.
-
-     The most basic case is simply a PubKeyCredential.
-
-     @since 1.0.0
--}
-type AuthorizationCredential =
-  Credential
-
-type PAuthorizationCredential =
-  PCredential
 
 {- | Context required in order to check 'AuthorizationCredential'.
+
+     Construct using 'authorizationContext'.
 
      @since 1.0.0
 -}
@@ -55,7 +46,7 @@ instance DerivePlutusType PAuthorizationContext where
      @since 1.0.0
 -}
 authorizationContext ::
-  forall {r} {s :: S}.
+  forall (s :: S) r.
   ( HasField "inputs" r (Term s (PBuiltinList PTxInInfo))
   , HasField "signatories" r (Term s (PBuiltinList (PAsData PPubKeyHash)))
   ) =>
@@ -68,7 +59,7 @@ authorizationContext f =
 
      @since 1.0.0
 -}
-pauthorizedBy :: forall (s :: S). Term s (PAuthorizationContext :--> PAuthorizationCredential :--> PBool)
+pauthorizedBy :: forall (s :: S). Term s (PAuthorizationContext :--> PCredential :--> PBool)
 pauthorizedBy = phoistAcyclic $
   plam $ \ctx credential -> unTermCont $ do
     ctxF <- pmatchC ctx

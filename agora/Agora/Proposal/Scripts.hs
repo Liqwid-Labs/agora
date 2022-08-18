@@ -10,12 +10,12 @@ module Agora.Proposal.Scripts (
   proposalPolicy,
 ) where
 
-import Agora.Credential (PAuthorizationCredential, authorizationContext, pauthorizedBy)
+import Agora.Credential (authorizationContext, pauthorizedBy)
 import Agora.Proposal (
   PProposalDatum (PProposalDatum),
-  PProposalRedeemer (..),
+  PProposalRedeemer (PAdvanceProposal, PCosign, PUnlock, PVote),
   PProposalVotes (PProposalVotes),
-  ProposalStatus (..),
+  ProposalStatus (Draft, Finished, Locked, VotingReady),
   pretractVotes,
   pwinner',
  )
@@ -28,8 +28,8 @@ import Agora.Proposal.Time (
  )
 import Agora.Scripts (AgoraScripts, governorSTSymbol, proposalSTSymbol, stakeSTAssetClass)
 import Agora.Stake (
-  PProposalLock (..),
-  PStakeDatum (..),
+  PProposalLock (PVoted),
+  PStakeDatum (PStakeDatum),
   pextractVoteOption,
   pgetStakeRole,
   pisCreator,
@@ -40,6 +40,7 @@ import Agora.Stake (
 import Agora.Utils (
   pltAsData,
  )
+import Plutarch.Api.V1 (PCredential)
 import Plutarch.Api.V2 (
   PDatumHash,
   PMintingPolicy,
@@ -72,7 +73,7 @@ import Plutarch.Extra.TermCont (
   ptryFromC,
  )
 import Plutarch.Extra.Value (psymbolValueOf)
-import Plutarch.SafeMoney (PDiscrete (..))
+import Plutarch.SafeMoney (PDiscrete (PDiscrete))
 import Plutarch.Unsafe (punsafeCoerce)
 import PlutusLedgerApi.V1.Value (AssetClass (AssetClass))
 
@@ -299,7 +300,7 @@ proposalValidator as maximumCosigners =
       Term
         _
         ( ( PInteger
-              :--> PBuiltinList (PAsData PAuthorizationCredential)
+              :--> PBuiltinList (PAsData PCredential)
               :--> PUnit
           )
             :--> PUnit

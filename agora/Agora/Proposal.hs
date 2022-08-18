@@ -42,7 +42,6 @@ module Agora.Proposal (
   pisProposalThresholdsValid,
 ) where
 
-import Agora.Credential (AuthorizationCredential, PAuthorizationCredential)
 import Agora.Plutarch.Orphans ()
 import Agora.Proposal.Time (
   PProposalStartingTime,
@@ -53,7 +52,7 @@ import Agora.Proposal.Time (
 import Agora.SafeMoney (GTTag)
 import Data.Tagged (Tagged)
 import Generics.SOP qualified as SOP
-import Plutarch.Api.V1 (PMap, PValidatorHash)
+import Plutarch.Api.V1 (PCredential, PMap, PValidatorHash)
 import Plutarch.Api.V1.AssocMap qualified as PAssocMap
 import Plutarch.Api.V2 (
   KeyGuarantees (Unsorted),
@@ -62,14 +61,14 @@ import Plutarch.Api.V2 (
   PScriptHash,
   PTuple,
  )
-import Plutarch.DataRepr (DerivePConstantViaData (..), PDataFields)
+import Plutarch.DataRepr (DerivePConstantViaData (DerivePConstantViaData), PDataFields)
 import Plutarch.Extra.Comonad (pextract)
 import Plutarch.Extra.Field (pletAllC)
 import Plutarch.Extra.Function (pbuiltinUncurry)
 import Plutarch.Extra.IsData (
-  DerivePConstantViaDataList (..),
-  DerivePConstantViaEnum (..),
-  EnumIsData (..),
+  DerivePConstantViaDataList (DerivePConstantViaDataList),
+  DerivePConstantViaEnum (DerivePConstantEnum),
+  EnumIsData (EnumIsData),
   PlutusTypeEnumData,
   ProductIsData (ProductIsData),
  )
@@ -79,12 +78,12 @@ import Plutarch.Extra.Map.Unsorted qualified as PUM
 import Plutarch.Extra.Maybe (pfromJust)
 import Plutarch.Extra.TermCont (pguardC, pletC, pmatchC)
 import Plutarch.Lift (
-  DerivePConstantViaNewtype (..),
+  DerivePConstantViaNewtype (DerivePConstantViaNewtype),
   PConstantDecl,
-  PUnsafeLiftDecl (..),
+  PUnsafeLiftDecl (type PLifted),
  )
 import Plutarch.Orphans ()
-import Plutarch.SafeMoney (PDiscrete (..))
+import Plutarch.SafeMoney (PDiscrete (PDiscrete))
 import PlutusLedgerApi.V2 (Credential, DatumHash, ScriptHash, ValidatorHash)
 import PlutusTx qualified
 import PlutusTx.AssocMap qualified as AssocMap
@@ -347,7 +346,7 @@ data ProposalRedeemer
     --   provided enough GT is shared among them.
     --
     --   This list should be sorted in ascending order.
-    Cosign [AuthorizationCredential]
+    Cosign [Credential]
   | -- | Allow unlocking one or more stakes with votes towards particular 'ResultTag'.
     Unlock
   | -- | Advance the proposal, performing the required checks for whether that is legal.
@@ -596,6 +595,11 @@ deriving via
   instance
     (PConstantDecl ProposalVotes)
 
+{- | The effect script hashes and their associated datum hash and authority check script hash
+     belonging to a particular effect group or result.
+
+     @since 1.0.0
+-}
 type PProposalEffectGroup =
   PMap
     'Unsorted
@@ -617,7 +621,7 @@ newtype PProposalDatum (s :: S) = PProposalDatum
             '[ "proposalId" ':= PProposalId
              , "effects" ':= PMap 'Unsorted PResultTag PProposalEffectGroup
              , "status" ':= PProposalStatus
-             , "cosigners" ':= PBuiltinList (PAsData PAuthorizationCredential)
+             , "cosigners" ':= PBuiltinList (PAsData PCredential)
              , "thresholds" ':= PProposalThresholds
              , "votes" ':= PProposalVotes
              , "timingConfig" ':= PProposalTimingConfig
@@ -656,7 +660,7 @@ deriving via (DerivePConstantViaDataList ProposalDatum PProposalDatum) instance 
 -}
 data PProposalRedeemer (s :: S)
   = PVote (Term s (PDataRecord '["resultTag" ':= PResultTag]))
-  | PCosign (Term s (PDataRecord '["newCosigners" ':= PBuiltinList (PAsData PAuthorizationCredential)]))
+  | PCosign (Term s (PDataRecord '["newCosigners" ':= PBuiltinList (PAsData PCredential)]))
   | PUnlock (Term s (PDataRecord '[]))
   | PAdvanceProposal (Term s (PDataRecord '[]))
   deriving stock

@@ -24,8 +24,8 @@ module Agora.Governor (
 ) where
 
 import Agora.Proposal (
-  PProposalId (..),
-  PProposalThresholds (..),
+  PProposalId (PProposalId),
+  PProposalThresholds,
   ProposalId (ProposalId),
   ProposalThresholds,
   pisProposalThresholdsValid,
@@ -39,20 +39,20 @@ import Agora.Proposal.Time (
   pisProposalTimingConfigValid,
  )
 import Agora.SafeMoney (GTTag)
-import Data.Tagged (Tagged (..))
+import Data.Tagged (Tagged)
 import Plutarch.DataRepr (
-  DerivePConstantViaData (..),
+  DerivePConstantViaData (DerivePConstantViaData),
   PDataFields,
  )
 import Plutarch.Extra.IsData (
-  DerivePConstantViaEnum (..),
-  EnumIsData (..),
+  DerivePConstantViaEnum (DerivePConstantEnum),
+  EnumIsData (EnumIsData),
   PlutusTypeEnumData,
  )
 import Plutarch.Extra.TermCont (pletFieldsC)
-import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (..))
+import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (PLifted))
 import PlutusLedgerApi.V1 (TxOutRef)
-import PlutusLedgerApi.V1.Value (AssetClass (..))
+import PlutusLedgerApi.V1.Value (AssetClass)
 import PlutusTx qualified
 
 --------------------------------------------------------------------------------

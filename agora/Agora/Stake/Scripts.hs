@@ -17,7 +17,7 @@ import Agora.Stake (
   pstakeLocked,
  )
 import Data.Function (on)
-import Data.Tagged (Tagged (..), untag)
+import Data.Tagged (Tagged, untag)
 import Plutarch.Api.V1 (
   PCredential (PPubKeyCredential, PScriptCredential),
   PTokenName,
