@@ -595,6 +595,11 @@ deriving via
   instance
     (PConstantDecl ProposalVotes)
 
+{- | The effect script hashes and their associated datum hash and authority check script hash
+     belonging to a particular effect group or result.
+
+     @since 1.0.0
+-}
 type PProposalEffectGroup =
   PMap
     'Unsorted
