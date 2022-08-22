@@ -269,7 +269,7 @@ specs =
                                 { forProposalValidator = True
                                 , forStakeValidator = True
                                 , forGovernorValidator = Just False
-                                , forAuthorityTokenPolicy = Just False
+                                , forAuthorityTokenPolicy = Just True
                                 }
                           , Advance.mkTestTree
                               "wrong GAT datum"

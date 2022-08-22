@@ -101,6 +101,17 @@ specs =
                   Nothing
               ]
           )
+      , scriptSucceeds
+          "Correct even though scripts don't match"
+          ( singleAuthorityTokenBurnedTest
+              ( Value.singleton currencySymbol "i'm not deadbeef!" (-1)
+              )
+              [ TxOut
+                  (Address (ScriptCredential (ValidatorHash "deadbeef")) Nothing)
+                  (Value.singleton currencySymbol "i'm not deadbeef!" 1)
+                  Nothing
+              ]
+          )
       , scriptFails
           "Incorrect no burn"
           ( singleAuthorityTokenBurnedTest
@@ -114,17 +125,6 @@ specs =
               ( Value.singleton "aabbcc" "not a GAT!" (-100)
               )
               []
-          )
-      , scriptFails
-          "Incorrect script mismatch"
-          ( singleAuthorityTokenBurnedTest
-              ( Value.singleton currencySymbol "i'm not deadbeef!" (-1)
-              )
-              [ TxOut
-                  (Address (ScriptCredential (ValidatorHash "deadbeef")) Nothing)
-                  (Value.singleton currencySymbol "i'm not deadbeef!" 1)
-                  Nothing
-              ]
           )
       , scriptFails
           "Incorrect spent from PK"

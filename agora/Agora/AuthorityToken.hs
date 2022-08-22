@@ -29,7 +29,6 @@ import Plutarch.Api.V2 (
   PTxInfo (..),
   PTxOut (..),
  )
-import Plutarch.Builtin (pforgetData)
 import Plutarch.Extra.AssetClass (passetClass, passetClassValueOf)
 import Plutarch.Extra.List (plookup)
 import Plutarch.Extra.ScriptContext (pisTokenSpent)
@@ -68,6 +67,9 @@ newtype AuthorityToken = AuthorityToken
      In other words, check that all assets of a particular currency symbol
      are tagged with a TokenName that matches where they live.
 
+     As of version 1.0.0, this has been weakened in order to be compatible
+     with RATs.
+
      @since 0.1.0
 -}
 authorityTokensValidIn :: Term s (PCurrencySymbol :--> PTxOut :--> PBool)
@@ -80,24 +82,20 @@ authorityTokensValidIn = phoistAcyclic $
     PMap value <- pmatchC value'
     pure $
       pmatch (plookup # pdata authorityTokenSym # value) $ \case
-        PJust (pfromData -> tokenMap') ->
+        PJust (pfromData -> _tokenMap') ->
           pmatch (pfield @"credential" # address) $ \case
             PPubKeyCredential _ ->
               -- GATs should only be sent to Effect validators
               ptraceIfFalse "authorityTokensValidIn: GAT incorrectly lives at PubKey" $ pconstant False
-            PScriptCredential ((pfromData . (pfield @"_0" #)) -> cred) -> unTermCont $ do
-              PMap tokenMap <- pmatchC tokenMap'
-              pure $
-                ptraceIfFalse "authorityTokensValidIn: GAT TokenName doesn't match ScriptHash" $
-                  pall
-                    # plam
-                      ( \pair ->
-                          pforgetData (pfstBuiltin # pair) #== pforgetData (pdata cred)
-                      )
-                    # tokenMap
+            PScriptCredential _ ->
+              -- NOTE: We no longer can perform a check on `TokenName` content here.
+              -- Instead, the auth check system uses `TokenName`s, but it cannot
+              -- check for GATs incorrectly escaping scripts. The effect scripts
+              -- need to be written very carefully in order to disallow this.
+              pcon PTrue
         PNothing ->
           -- No GATs exist at this output!
-          pconstant True
+          pcon PTrue
 
 {- | Assert that a single authority token has been burned.
 

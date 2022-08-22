@@ -20,9 +20,9 @@ import Agora.Effect.NoOp (noOpValidator)
 import Agora.Governor (GovernorDatum (..), GovernorRedeemer (MutateGovernor))
 import Agora.Proposal (ProposalId (ProposalId), ProposalThresholds (..))
 import Agora.Scripts (AgoraScripts (..))
-import Agora.Utils (validatorHashToTokenName)
+import Agora.Utils (scriptHashToTokenName)
 import Data.Default (def)
-import Plutarch.Api.V2 (PValidator, mkValidator, validatorHash)
+import Plutarch.Api.V2 (PMintingPolicy, PValidator, mintingPolicySymbol, mkMintingPolicy, mkValidator, validatorHash)
 import Plutarch.Context (
   input,
   mint,
@@ -35,7 +35,9 @@ import Plutarch.Context (
  )
 import PlutusLedgerApi.V1.Value qualified as Value
 import PlutusLedgerApi.V2 (
+  CurrencySymbol (CurrencySymbol),
   Data,
+  ScriptHash (ScriptHash),
   TxOutRef (TxOutRef),
   ValidatorHash,
   Value,
@@ -54,7 +56,6 @@ import Test.Util (
   mkSpending,
   pubKeyHashes,
   sortValue,
-  validatorHashes,
  )
 
 --------------------------------------------------------------------------------
@@ -174,15 +175,23 @@ mockEffectValidator = noOpValidator authorityTokenSymbol
 mockEffectValidatorHash :: ValidatorHash
 mockEffectValidatorHash = validatorHash $ mkValidator def mockEffectValidator
 
+mockAuthScript :: ClosedTerm PMintingPolicy
+mockAuthScript = plam $ \_ _ -> popaque $ pcon PUnit
+
+mockAuthScriptHash :: ScriptHash
+mockAuthScriptHash =
+  let CurrencySymbol h = mintingPolicySymbol $ mkMintingPolicy def mockAuthScript
+   in ScriptHash h
+
 mkGATValue :: GATValidity -> Integer -> Value
 mkGATValue NoGAT _ = mempty
 mkGATValue v q =
-  let gatOwner = case v of
-        GATValid -> mockEffectValidatorHash
-        WrongTag -> head validatorHashes
+  let authScript = case v of
+        GATValid -> mockAuthScriptHash
+        WrongTag -> ""
    in Value.singleton
         authorityTokenSymbol
-        (validatorHashToTokenName gatOwner)
+        (scriptHashToTokenName authScript)
         q
 
 mkMockEffectBuilder :: forall b. CombinableBuilder b => MockEffectParameters -> b
