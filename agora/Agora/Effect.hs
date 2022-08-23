@@ -10,13 +10,9 @@ module Agora.Effect (makeEffect) where
 import Agora.AuthorityToken (singleAuthorityTokenBurned)
 import Plutarch.Api.V1 (
   PCurrencySymbol,
-  PMap (PMap),
-  PValue (PValue),
  )
-import Plutarch.Api.V1.AssocMap (plookup)
 import Plutarch.Api.V2 (
   PScriptPurpose (PSpending),
-  PTxInInfo (PTxInInfo),
   PTxInfo,
   PTxOutRef,
   PValidator,
@@ -69,28 +65,6 @@ makeEffect gatCs' f =
 
     txInfo <- pletFieldsC @'["mint", "inputs"] ctx.txInfo
     gatCs <- pletC $ pconstant gatCs'
-
-    -- FIXME(emiflake): This is somewhat inefficient, we could roll these two loops together.
-    let inputsWithGAT =
-          pfoldr
-            # plam
-              ( \txInInfo' acc ->
-                  unTermCont $ do
-                    PTxInInfo txInInfo <- pmatchC txInInfo'
-                    let txOut' = pfield @"resolved" # txInInfo
-                    PValue value <- pmatchC $ pfield @"value" # txOut'
-                    pure $
-                      pmatch (plookup # gatCs # value) $ \case
-                        PNothing -> acc
-                        PJust tokenMap' -> unTermCont $ do
-                          PMap tokenMap <- pmatchC tokenMap'
-                          pure $ acc + plength # tokenMap
-              )
-            # (0 :: Term _ PInteger)
-            # txInfo.inputs
-
-    pguardC "Only one GAT must exist at the inputs" $
-      inputsWithGAT #== 1
 
     pguardC "A single authority token has been burned" $
       singleAuthorityTokenBurned gatCs txInfo.inputs txInfo.mint

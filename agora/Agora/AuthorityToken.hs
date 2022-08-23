@@ -32,7 +32,9 @@ import Plutarch.Api.V2 (
 import Plutarch.Extra.AssetClass (passetClass, passetClassValueOf)
 import Plutarch.Extra.List (plookup)
 import Plutarch.Extra.ScriptContext (pisTokenSpent)
-import Plutarch.Extra.TermCont (pguardC, pletFieldsC, pmatchC)
+import Plutarch.Extra.Sum (PSum (PSum))
+import Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC)
+import Plutarch.Extra.Traversable (pfoldMap)
 import Plutarch.Extra.Value (psymbolValueOf)
 import PlutusLedgerApi.V1.Value (AssetClass (AssetClass))
 
@@ -111,19 +113,32 @@ singleAuthorityTokenBurned gatCs inputs mint = unTermCont $ do
   let gatAmountMinted :: Term _ PInteger
       gatAmountMinted = psymbolValueOf # gatCs # mint
 
+  let inputsWithGAT =
+        pfoldMap
+          # plam
+            ( flip pmatch $ \case
+                PTxInInfo txInInfo -> unTermCont $ do
+                  resolved <- pletC $ pfield @"resolved" # txInInfo
+
+                  pguardC "While counting GATs at inputs: all GATs must be valid" $
+                    authorityTokensValidIn # gatCs
+                      #$ pfromData
+                      $ resolved
+
+                  pure . pcon . PSum $
+                    psymbolValueOf
+                      # gatCs
+                      #$ pfield @"value"
+                      #$ resolved
+            )
+          # inputs
   pure $
     foldr1
       (#&&)
-      [ ptraceIfFalse "singleAuthorityTokenBurned: Must burn exactly 1 GAT" $ gatAmountMinted #== -1
-      , ptraceIfFalse "singleAuthorityTokenBurned: All GAT tokens must be valid at the inputs" $
-          pall
-            # plam
-              ( \txInInfo' -> unTermCont $ do
-                  PTxInInfo txInInfo <- pmatchC txInInfo'
-                  let txOut' = pfield @"resolved" # txInInfo
-                  pure $ authorityTokensValidIn # gatCs # pfromData txOut'
-              )
-            # inputs
+      [ ptraceIfFalse "singleAuthorityTokenBurned: Must burn exactly 1 GAT" $
+          gatAmountMinted #== -1
+      , ptraceIfFalse "Only one GAT must exist at the inputs" $
+          inputsWithGAT #== 1
       ]
 
 {- | Policy given 'AuthorityToken' params.
