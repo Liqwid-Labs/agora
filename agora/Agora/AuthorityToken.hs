@@ -29,11 +29,12 @@ import Plutarch.Api.V2 (
   PTxInfo (..),
   PTxOut (..),
  )
-import Plutarch.Builtin (pforgetData)
 import Plutarch.Extra.AssetClass (passetClass, passetClassValueOf)
 import Plutarch.Extra.List (plookup)
 import Plutarch.Extra.ScriptContext (pisTokenSpent)
-import Plutarch.Extra.TermCont (pguardC, pletFieldsC, pmatchC)
+import Plutarch.Extra.Sum (PSum (PSum))
+import Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC)
+import Plutarch.Extra.Traversable (pfoldMap)
 import Plutarch.Extra.Value (psymbolValueOf)
 import PlutusLedgerApi.V1.Value (AssetClass (AssetClass))
 
@@ -68,6 +69,9 @@ newtype AuthorityToken = AuthorityToken
      In other words, check that all assets of a particular currency symbol
      are tagged with a TokenName that matches where they live.
 
+     As of version 1.0.0, this has been weakened in order to be compatible
+     with RATs.
+
      @since 0.1.0
 -}
 authorityTokensValidIn :: Term s (PCurrencySymbol :--> PTxOut :--> PBool)
@@ -80,24 +84,20 @@ authorityTokensValidIn = phoistAcyclic $
     PMap value <- pmatchC value'
     pure $
       pmatch (plookup # pdata authorityTokenSym # value) $ \case
-        PJust (pfromData -> tokenMap') ->
+        PJust (pfromData -> _tokenMap') ->
           pmatch (pfield @"credential" # address) $ \case
             PPubKeyCredential _ ->
               -- GATs should only be sent to Effect validators
               ptraceIfFalse "authorityTokensValidIn: GAT incorrectly lives at PubKey" $ pconstant False
-            PScriptCredential ((pfromData . (pfield @"_0" #)) -> cred) -> unTermCont $ do
-              PMap tokenMap <- pmatchC tokenMap'
-              pure $
-                ptraceIfFalse "authorityTokensValidIn: GAT TokenName doesn't match ScriptHash" $
-                  pall
-                    # plam
-                      ( \pair ->
-                          pforgetData (pfstBuiltin # pair) #== pforgetData (pdata cred)
-                      )
-                    # tokenMap
+            PScriptCredential _ ->
+              -- NOTE: We no longer can perform a check on `TokenName` content here.
+              -- Instead, the auth check system uses `TokenName`s, but it cannot
+              -- check for GATs incorrectly escaping scripts. The effect scripts
+              -- need to be written very carefully in order to disallow this.
+              pcon PTrue
         PNothing ->
           -- No GATs exist at this output!
-          pconstant True
+          pcon PTrue
 
 {- | Assert that a single authority token has been burned.
 
@@ -113,19 +113,32 @@ singleAuthorityTokenBurned gatCs inputs mint = unTermCont $ do
   let gatAmountMinted :: Term _ PInteger
       gatAmountMinted = psymbolValueOf # gatCs # mint
 
+  let inputsWithGAT =
+        pfoldMap
+          # plam
+            ( flip pmatch $ \case
+                PTxInInfo txInInfo -> unTermCont $ do
+                  resolved <- pletC $ pfield @"resolved" # txInInfo
+
+                  pguardC "While counting GATs at inputs: all GATs must be valid" $
+                    authorityTokensValidIn # gatCs
+                      #$ pfromData
+                      $ resolved
+
+                  pure . pcon . PSum $
+                    psymbolValueOf
+                      # gatCs
+                      #$ pfield @"value"
+                      #$ resolved
+            )
+          # inputs
   pure $
     foldr1
       (#&&)
-      [ ptraceIfFalse "singleAuthorityTokenBurned: Must burn exactly 1 GAT" $ gatAmountMinted #== -1
-      , ptraceIfFalse "singleAuthorityTokenBurned: All GAT tokens must be valid at the inputs" $
-          pall
-            # plam
-              ( \txInInfo' -> unTermCont $ do
-                  PTxInInfo txInInfo <- pmatchC txInInfo'
-                  let txOut' = pfield @"resolved" # txInInfo
-                  pure $ authorityTokensValidIn # gatCs # pfromData txOut'
-              )
-            # inputs
+      [ ptraceIfFalse "singleAuthorityTokenBurned: Must burn exactly 1 GAT" $
+          gatAmountMinted #== -1
+      , ptraceIfFalse "Only one GAT must exist at the inputs" $
+          inputsWithGAT #== 1
       ]
 
 {- | Policy given 'AuthorityToken' params.

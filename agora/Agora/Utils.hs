@@ -1,5 +1,4 @@
 {-# LANGUAGE QuantifiedConstraints #-}
-{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
 {- |
 Module     : Agora.Utils
@@ -16,12 +15,19 @@ module Agora.Utils (
   CompiledValidator (..),
   CompiledMintingPolicy (..),
   CompiledEffect (..),
+  pvalidatorHashToTokenName,
+  pscriptHashToTokenName,
+  scriptHashToTokenName,
 ) where
 
+import Plutarch.Api.V1 (PTokenName, PValidatorHash)
+import Plutarch.Api.V2 (PScriptHash)
+import Plutarch.Unsafe (punsafeCoerce)
 import PlutusLedgerApi.V2 (
   Address (Address),
   Credential (ScriptCredential),
   MintingPolicy,
+  ScriptHash (ScriptHash),
   TokenName (TokenName),
   Validator,
   ValidatorHash (ValidatorHash),
@@ -31,13 +37,37 @@ import PlutusLedgerApi.V2 (
    All of these functions are quite inefficient.
 -}
 
-{- | Safely convert a 'PValidatorHash' into a 'PTokenName'. This can be useful for tagging
+{- | Safely convert a 'ValidatorHash' into a 'TokenName'. This can be useful for tagging
      tokens for extra safety.
 
      @since 0.1.0
 -}
 validatorHashToTokenName :: ValidatorHash -> TokenName
 validatorHashToTokenName (ValidatorHash hash) = TokenName hash
+
+{- | Safely convert a 'PValidatorHash' into a 'PTokenName'. This can be useful for tagging
+     tokens for extra safety.
+
+     @since 1.0.0
+-}
+pvalidatorHashToTokenName :: forall (s :: S). Term s PValidatorHash -> Term s PTokenName
+pvalidatorHashToTokenName = punsafeCoerce
+
+{- | Safely convert a 'PScriptHash' into a 'PTokenName'. This can be useful for tagging
+     tokens for extra safety.
+
+     @since 1.0.0
+-}
+scriptHashToTokenName :: ScriptHash -> TokenName
+scriptHashToTokenName (ScriptHash hash) = TokenName hash
+
+{- | Safely convert a 'PScriptHash' into a 'PTokenName'. This can be useful for tagging
+     tokens for extra safety.
+
+     @since 1.0.0
+-}
+pscriptHashToTokenName :: forall (s :: S). Term s PScriptHash -> Term s PTokenName
+pscriptHashToTokenName = punsafeCoerce
 
 {- | Create an 'Address' from a given 'ValidatorHash' with no 'PlutusLedgerApi.V1.Credential.StakingCredential'.
 

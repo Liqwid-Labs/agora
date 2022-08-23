@@ -6,6 +6,11 @@ This format is based on [Keep A Changelog](https://keepachangelog.com/en/1.0.0).
 
 ### Modified
 
+- AuthCheck script is used for tagging GAT TokenName instead of effect script
+  it is deployed at.
+  
+  Included by [#161](https://github.com/Liqwid-Labs/agora/pull/161).
+
 - Use `Credential` instead of `PubKeyHash`
 
   Included by [#158](https://github.com/Liqwid-Labs/agora/pull/158).

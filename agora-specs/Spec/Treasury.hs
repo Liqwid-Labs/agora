@@ -71,6 +71,12 @@ specs =
               ()
               SpendTreasuryGAT
               validCtx
+          , validatorSucceedsWith
+              "Fails when GAT token name is not script address"
+              compiledTreasuryValidator
+              ()
+              SpendTreasuryGAT
+              trCtxGATNameNotAddress
           ]
       , group
           "Negative"
@@ -121,12 +127,6 @@ specs =
                             (-2)
                       }
                 }
-          , validatorFailsWith
-              "Fails when GAT token name is not script address"
-              compiledTreasuryValidator
-              ()
-              SpendTreasuryGAT
-              trCtxGATNameNotAddress
           , validatorFailsWith
               "Fails with wallet as input"
               compiledTreasuryValidator

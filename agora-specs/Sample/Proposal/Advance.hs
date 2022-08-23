@@ -67,7 +67,7 @@ import Agora.Stake (
   StakeDatum (..),
   StakeRedeemer (WitnessStake),
  )
-import Agora.Utils (validatorHashToTokenName)
+import Agora.Utils (scriptHashToTokenName)
 import Control.Applicative (liftA2)
 import Control.Monad.State (execState, modify, when)
 import Data.Default (def)
@@ -83,7 +83,6 @@ import Plutarch.Context (
   timeRange,
   withDatum,
   withRef,
-  withReferenceScript,
   withValue,
  )
 import Plutarch.Lift (PLifted, PUnsafeLiftDecl)
@@ -181,8 +180,8 @@ data AuthorityTokenParameters = forall
   -- ^ GATs will be minted and sent to the given group of effects.
   , carryDatum :: Maybe datum
   -- ^ The datum that GAT UTxOs will be carrying.
-  , carryRefScript :: Maybe ScriptHash
-  -- ^ The reference script that GAT UTxOs will be carrying.
+  , carryAuthScript :: Maybe ScriptHash
+  -- ^ The authentication script that GAT UTxOs link to through their token name.
   , invalidTokenName :: Bool
   -- ^ If set to true, GATs won't be tagged by their corresponding effect
   --    hashes.
@@ -502,9 +501,11 @@ mkAuthorityTokenBuilder ::
   b
 mkAuthorityTokenBuilder ps@AuthorityTokenParameters {carryDatum} =
   let tn =
-        if ps.invalidTokenName
-          then ""
-          else validatorHashToTokenName ps.mintGATsFor
+        case (ps.invalidTokenName, ps.carryAuthScript) of
+          (True, Just _) -> "deadbeef"
+          (True, Nothing) -> "deadbeef"
+          (False, Just as) -> scriptHashToTokenName as
+          (False, Nothing) -> ""
       ac = AssetClass (authorityTokenSymbol, tn)
       minted = Value.assetClassValue ac 1
       value = sortValue $ minAda <> minted
@@ -514,7 +515,6 @@ mkAuthorityTokenBuilder ps@AuthorityTokenParameters {carryDatum} =
             mconcat
               [ script ps.mintGATsFor
               , maybe mempty withDatum carryDatum
-              , maybe mempty withReferenceScript ps.carryRefScript
               , withValue value
               ]
         ]
@@ -734,17 +734,17 @@ dummyDatumHash = datumHash $ toDatum dummyDatum
 
 -- | Create given number of effect groups. Each group will have 3 effects.
 mkMockEffects :: Bool -> Int -> [ProposalEffectGroup]
-mkMockEffects useRefScript n = effects
+mkMockEffects useAuthScript n = effects
   where
     effectsPerGroup = 3
 
-    mkRefScripts True = Just <$> scriptHashes
-    mkRefScripts False = repeat Nothing
-    refScripts = mkRefScripts useRefScript
+    mkAuthScripts True = Just <$> scriptHashes
+    mkAuthScripts False = repeat Nothing
+    authScripts = mkAuthScripts useAuthScript
 
     datums = repeat dummyDatumHash
 
-    effectMetadata = zip datums refScripts
+    effectMetadata = zip datums authScripts
     effectScripts = validatorHashes
 
     effects =
@@ -796,9 +796,9 @@ mkValidToNextStateBundle ::
   ParameterBundle
 mkValidToNextStateBundle _ _ _ Finished =
   error "Cannot advance from Finished"
-mkValidToNextStateBundle nCosigners nEffects refScript from =
+mkValidToNextStateBundle nCosigners nEffects authScript from =
   let next = getNextState from
-      effects = mkMockEffects refScript $ fromIntegral nEffects
+      effects = mkMockEffects authScript $ fromIntegral nEffects
       winner = defaultWinnerIdx
 
       template =
@@ -854,11 +854,11 @@ mkValidToNextStateBundle nCosigners nEffects refScript from =
             let aut =
                   AssocMap.elems $
                     AssocMap.mapWithKey
-                      ( \vh (_, refScript) ->
+                      ( \vh (_, authScript) ->
                           AuthorityTokenParameters
                             { mintGATsFor = vh
                             , carryDatum = Just dummyDatum
-                            , carryRefScript = refScript
+                            , carryAuthScript = authScript
                             , invalidTokenName = False
                             }
                       )
@@ -897,9 +897,9 @@ mkValidToFailedStateBundles nCosigners nEffects =
     [True, False]
     [Draft, VotingReady, Locked]
   where
-    mkBundle refScript from =
+    mkBundle authScript from =
       let next = Finished
-          effects = mkMockEffects refScript $ fromIntegral nEffects
+          effects = mkMockEffects authScript $ fromIntegral nEffects
        in ParameterBundle
             { proposalParameters =
                 ProposalParameters
@@ -939,8 +939,8 @@ mkFromFinishedBundles nCosigners nEffects =
     [True, False]
     [Draft, VotingReady, Locked]
   where
-    mkBundle refScript from =
-      let template = mkValidToNextStateBundle nCosigners nEffects refScript from
+    mkBundle authScript from =
+      let template = mkValidToNextStateBundle nCosigners nEffects authScript from
        in template
             { proposalParameters =
                 template.proposalParameters
@@ -956,8 +956,8 @@ mkToNextStateTooLateBundles nCosigners nEffects =
     [True, False]
     [Draft, VotingReady, Locked]
   where
-    mkBundle refScript from =
-      let template = mkValidToNextStateBundle nCosigners nEffects refScript from
+    mkBundle authScript from =
+      let template = mkValidToNextStateBundle nCosigners nEffects authScript from
        in template
             { transactionTimeRange = mkTooLateTimeRange from
             }
@@ -969,8 +969,8 @@ mkInvalidOutputStakeBundles nCosigners nEffects =
     [True, False]
     [Draft, VotingReady, Locked]
   where
-    mkBundle refScript from =
-      let template = mkValidToNextStateBundle nCosigners nEffects refScript from
+    mkBundle authScript from =
+      let template = mkValidToNextStateBundle nCosigners nEffects authScript from
        in template
             { stakeParameters =
                 template.stakeParameters
@@ -1089,7 +1089,7 @@ mkGATsWithWrongDatumBundle nCosigners nEffects =
           AuthorityTokenParameters
             aut.mintGATsFor
             (Just (1 :: Integer))
-            aut.carryRefScript
+            aut.carryAuthScript
             False
       )
         <$> template.authorityTokenParameters

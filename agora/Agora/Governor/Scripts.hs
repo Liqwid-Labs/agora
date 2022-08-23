@@ -51,10 +51,14 @@ import Agora.Stake (
   pnumCreatedProposals,
  )
 import Agora.Utils (
+  pscriptHashToTokenName,
   validatorHashToAddress,
  )
 import Plutarch.Api.V1 (
   PCurrencySymbol,
+  PMap (PMap),
+  PTokenName,
+  PValue (PValue),
  )
 import Plutarch.Api.V1.AssocMap qualified as AssocMap
 import Plutarch.Api.V2 (
@@ -64,14 +68,16 @@ import Plutarch.Api.V2 (
   PTxOut,
   PValidator,
  )
+import Plutarch.Builtin (ppairDataBuiltin)
 import Plutarch.Extra.AssetClass (passetClass, passetClassValueOf)
 import Plutarch.Extra.Field (pletAllC)
 import Plutarch.Extra.IsData (pmatchEnumFromData)
 import Plutarch.Extra.List (pfirstJust)
 import Plutarch.Extra.Map (
+  plookup,
   plookup',
  )
-import Plutarch.Extra.Maybe (passertPDJust, passertPJust, pfromJust, pmaybeData, pnothing)
+import Plutarch.Extra.Maybe (passertPJust, pfromJust, pmaybeData, pnothing)
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
 import Plutarch.Extra.ScriptContext (
   pfindOutputsToAddress,
@@ -478,7 +484,7 @@ governorValidator as =
           gatCount <- pletC $ plength #$ pto $ pto effectGroup
 
           pguardC "Required amount of GATs should be minted" $
-            psymbolValueOf # patSymbol # txInfoF.mint #== gatCount
+            psymbolValueOf # atSymbol # txInfoF.mint #== gatCount
 
           -- Ensure that every GAT goes to one of the effects in the winner effect group.
           outputsWithGAT <-
@@ -487,7 +493,7 @@ governorValidator as =
                 # phoistAcyclic
                   ( plam
                       ( \((pfield @"value" #) -> value) ->
-                          0 #< psymbolValueOf # patSymbol # value
+                          0 #< psymbolValueOf # atSymbol # value
                       )
                   )
                 # pfromData txInfoF.outputs
@@ -495,40 +501,42 @@ governorValidator as =
           pguardC "Output GATs is more than minted GATs" $
             plength # outputsWithGAT #== gatCount
 
+          -- For a given output, check if it contains a single valid GAT
+          -- and whether it correctly belongs to the group.
           let validateGATOutput' :: Term s (PProposalEffectGroup :--> PTxOut :--> PBool)
               validateGATOutput' =
                 phoistAcyclic $
                   plam
                     ( \effects output -> unTermCont $ do
-                        outputF <- pletFieldsC @'["address", "datum", "referenceScript"] output
+                        outputF <- pletFieldsC @'["address", "datum", "value"] output
+                        PValue value <- pmatchC $ outputF.value
+                        PMap authorityTokens <-
+                          pmatchC $
+                            passertPJust # "validateGATOutput': Must have GAT in GAT output"
+                              #$ plookup # atSymbol # value
 
-                        let receiverScriptHash =
+                        let tagToken :: Term _ PTokenName
+                            tagToken =
+                              pmaybeData # pconstant "" # plam (pscriptHashToTokenName . pfromData)
+                                #$ psndTuple # effect
+                            receiverScriptHash =
                               passertPJust # "GAT receiver should be a script"
                                 #$ pscriptHashFromAddress # outputF.address
                             effect =
                               passertPJust # "Receiver should be in the effect group"
                                 #$ AssocMap.plookup # receiverScriptHash # effects
-                            hasCorrectReferenceScript =
-                              pmaybeData
-                                # pconstant True
-                                # plam
-                                  ( ( passertPDJust
-                                        # "Output UTXO should have a reference script"
-                                        # outputF.referenceScript
-                                        #==
-                                    )
-                                      . pfromData
-                                  )
-                                # (psndTuple # effect)
+                            valueGATCorrect =
+                              authorityTokens
+                                #== psingleton # (ppairDataBuiltin # pdata tagToken # pdata 1)
                             hasCorrectDatum =
                               pfstTuple # effect #== pfromDatumHash # outputF.datum
 
                         pure $
                           foldr1
                             (#&&)
-                            [ ptraceIfFalse "GAT valid" $ authorityTokensValidIn # patSymbol # output
+                            [ ptraceIfFalse "GAT valid" $ authorityTokensValidIn # atSymbol # output
                             , ptraceIfFalse "Correct datum" hasCorrectDatum
-                            , ptraceIfFalse "Reference script correct" hasCorrectReferenceScript
+                            , ptraceIfFalse "Value correctly encodes Auth Check script" valueGATCorrect
                             ]
                     )
 
@@ -539,7 +547,7 @@ governorValidator as =
               # plam
                 ( \txOut r ->
                     let value = pfield @"value" # txOut
-                        atValue = psymbolValueOf # patSymbol # value
+                        atValue = psymbolValueOf # atSymbol # value
                      in pif (atValue #== 0) r $
                           pif (atValue #== 1) (r #&& validateGATOutput # txOut) $ pconstant False
                 )
@@ -553,7 +561,7 @@ governorValidator as =
         Just MutateGovernor -> unTermCont $ do
           -- Check that a GAT is burnt.
           pguardC "One valid GAT burnt" $
-            singleAuthorityTokenBurned patSymbol txInfoF.inputs txInfoF.mint
+            singleAuthorityTokenBurned atSymbol txInfoF.inputs txInfoF.mint
 
           pure $ popaque $ pconstant ()
 
@@ -561,8 +569,8 @@ governorValidator as =
         Nothing -> ptraceError "Unknown redeemer"
   where
     -- The currency symbol of authority token.
-    patSymbol :: Term s PCurrencySymbol
-    patSymbol = pconstant $ authorityTokenSymbol as
+    atSymbol :: Term s PCurrencySymbol
+    atSymbol = pconstant $ authorityTokenSymbol as
 
     -- The currency symbol of the proposal state token.
     ppstSymbol :: Term s PCurrencySymbol
