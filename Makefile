@@ -99,6 +99,5 @@ build: requires_nix_shell
 	cabal build -j$(THREADS)
 
 ci:
-	@ [[ "$$(uname -sm)" == "Linux x86_64" ]] \
-	  && (nix build .#check.x86_64-linux) \
-	  || (echo "CI only builds on Linux x86_64. Your system is $$(uname -sm). If you want to build it for your system, use 'nix build .#check.<your system>' instead." && false)
+	@ [[ "$$(uname -sm)" == "Linux x86_64" ]] || (echo "NOTE: CI only builds on Linux x86_64. Your system is $$(uname -sm), continuing...")
+	nix build .#check.$(shell nix eval -f '<nixpkgs>' system)
