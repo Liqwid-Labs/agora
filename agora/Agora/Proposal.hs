@@ -746,6 +746,7 @@ pisVotesEmpty = phoistAcyclic $
      @since 0.1.0
 -}
 pwinner ::
+  forall (s :: S).
   Term
     s
     ( PProposalVotes
@@ -766,6 +767,7 @@ pwinner = phoistAcyclic $
      @since 0.1.0
 -}
 pwinner' ::
+  forall (s :: S).
   Term
     s
     ( PProposalVotes
@@ -813,6 +815,7 @@ pwinner' = phoistAcyclic $
      @since 0.1.0
 -}
 phighestVotes ::
+  forall (s :: S).
   Term
     s
     ( PProposalVotes
@@ -835,6 +838,7 @@ phighestVotes = phoistAcyclic $
      @since 0.1.0
 -}
 pneutralOption ::
+  forall (s :: S).
   Term
     s
     ( PMap 'Unsorted PResultTag PProposalEffectGroup
@@ -883,7 +887,7 @@ pisProposalThresholdsValid = phoistAcyclic $
 
      @since 0.1.0
 -}
-pretractVotes :: Term s (PResultTag :--> PInteger :--> PProposalVotes :--> PProposalVotes)
+pretractVotes :: forall (s :: S). Term s (PResultTag :--> PInteger :--> PProposalVotes :--> PProposalVotes)
 pretractVotes = phoistAcyclic $
   plam $ \rt count votes ->
     let voteMap :: Term _ (PMap 'Unsorted PResultTag PInteger)

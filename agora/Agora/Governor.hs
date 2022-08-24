@@ -232,7 +232,7 @@ deriving via (DerivePConstantViaEnum GovernorRedeemer PGovernorRedeemer) instanc
 
      @since 0.1.0
 -}
-pgetNextProposalId :: Term s (PProposalId :--> PProposalId)
+pgetNextProposalId :: forall (s :: S). Term s (PProposalId :--> PProposalId)
 pgetNextProposalId = phoistAcyclic $ plam $ \(pto -> pid) -> pcon $ PProposalId $ pid + 1
 
 {- | Get next proposal id.
@@ -248,7 +248,7 @@ getNextProposalId (ProposalId pid) = ProposalId $ pid + 1
 
      @since 0.1.0
 -}
-pisGovernorDatumValid :: Term s (PGovernorDatum :--> PBool)
+pisGovernorDatumValid :: forall (s :: S). Term s (PGovernorDatum :--> PBool)
 pisGovernorDatumValid = phoistAcyclic $
   plam $ \datum -> unTermCont $ do
     datumF <-

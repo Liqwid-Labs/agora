@@ -46,7 +46,7 @@ instance DerivePlutusType PAuthorizationContext where
      @since 1.0.0
 -}
 authorizationContext ::
-  forall (s :: S) r.
+  forall (s :: S) (r :: Type).
   ( HasField "inputs" r (Term s (PBuiltinList PTxInInfo))
   , HasField "signatories" r (Term s (PBuiltinList (PAsData PPubKeyHash)))
   ) =>

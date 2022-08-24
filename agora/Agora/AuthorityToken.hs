@@ -21,13 +21,13 @@ import Plutarch.Api.V1.Value (PValue (PValue))
 import Plutarch.Api.V2 (
   AmountGuarantees,
   KeyGuarantees,
-  PAddress (..),
+  PAddress (PAddress),
   PMintingPolicy,
-  PScriptContext (..),
-  PScriptPurpose (..),
+  PScriptContext (PScriptContext),
+  PScriptPurpose (PMinting),
   PTxInInfo (PTxInInfo),
-  PTxInfo (..),
-  PTxOut (..),
+  PTxInfo (PTxInfo),
+  PTxOut (PTxOut),
  )
 import Plutarch.Extra.AssetClass (passetClass, passetClassValueOf)
 import Plutarch.Extra.List (plookup)
@@ -74,7 +74,7 @@ newtype AuthorityToken = AuthorityToken
 
      @since 0.1.0
 -}
-authorityTokensValidIn :: Term s (PCurrencySymbol :--> PTxOut :--> PBool)
+authorityTokensValidIn :: forall (s :: S). Term s (PCurrencySymbol :--> PTxOut :--> PBool)
 authorityTokensValidIn = phoistAcyclic $
   plam $ \authorityTokenSym txOut'' -> unTermCont $ do
     PTxOut txOut' <- pmatchC txOut''
