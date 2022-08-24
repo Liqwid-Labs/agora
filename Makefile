@@ -1,7 +1,7 @@
 # This really ought to be `/usr/bin/env bash`, but nix flakes don't like that.
 SHELL := /bin/sh
 
-.PHONY: hoogle format haddock usage tag format_nix format_haskell format_check	\ 
+.PHONY: hoogle format haddock usage tag format_nix format_haskell format_check	\
 				lint refactor ps_bridge bench bench_check scripts test build ci
 
 SOURCE_FILES := $(shell git ls-tree -r HEAD --full-tree --name-only)
@@ -98,4 +98,7 @@ test: requires_nix_shell
 build: requires_nix_shell
 	cabal build -j$(THREADS)
 
-ci: format_check lint build bench_check test haddock
+ci:
+	@ [[ "$$(uname -sm)" == "Linux x86_64" ]] \
+	  && (nix build .#check.x86_64-linux) \
+	  || (echo "CI only builds on Linux x86_64. Your system is $$(uname -sm). If you want to build it for your system, use 'nix build .#check.<your system>' instead." && false)
