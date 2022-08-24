@@ -366,7 +366,9 @@ pstakeLocked = phoistAcyclic $
 
      @since 0.2.0
 -}
-pnumCreatedProposals :: Term s (PBuiltinList (PAsData PProposalLock) :--> PInteger)
+pnumCreatedProposals ::
+  forall (s :: S).
+  Term s (PBuiltinList (PAsData PProposalLock) :--> PInteger)
 pnumCreatedProposals =
   phoistAcyclic $
     plam $ \l ->
@@ -414,7 +416,7 @@ instance DerivePlutusType PStakeRole where
 
      @since 0.2.0
 -}
-pisVoter :: Term s (PStakeRole :--> PBool)
+pisVoter :: forall (s :: S). Term s (PStakeRole :--> PBool)
 pisVoter = phoistAcyclic $
   plam $ \sr -> pmatch sr $ \case
     PVoter _ -> pconstant True
@@ -425,7 +427,7 @@ pisVoter = phoistAcyclic $
 
      @since 0.2.0
 -}
-pisCreator :: Term s (PStakeRole :--> PBool)
+pisCreator :: forall (s :: S). Term s (PStakeRole :--> PBool)
 pisCreator = phoistAcyclic $
   plam $ \sr -> pmatch sr $ \case
     PCreator -> pconstant True
@@ -437,7 +439,7 @@ pisCreator = phoistAcyclic $
 
      @since 0.2.0
 -}
-pisPureCreator :: Term s (PStakeRole :--> PBool)
+pisPureCreator :: forall (s :: S). Term s (PStakeRole :--> PBool)
 pisPureCreator = phoistAcyclic $
   plam $ \sr -> pmatch sr $ \case
     PCreator -> pconstant True
@@ -447,7 +449,7 @@ pisPureCreator = phoistAcyclic $
 
      @since 0.2.0
 -}
-pisIrrelevant :: Term s (PStakeRole :--> PBool)
+pisIrrelevant :: forall (s :: S). Term s (PStakeRole :--> PBool)
 pisIrrelevant = phoistAcyclic $
   plam $ \sr -> pmatch sr $ \case
     PIrrelevant -> pconstant True
@@ -461,7 +463,7 @@ pisIrrelevant = phoistAcyclic $
 
      @since 0.2.0
 -}
-pgetStakeRole :: Term s (PProposalId :--> PBuiltinList (PAsData PProposalLock) :--> PStakeRole)
+pgetStakeRole :: forall (s :: S). Term s (PProposalId :--> PBuiltinList (PAsData PProposalLock) :--> PStakeRole)
 pgetStakeRole = phoistAcyclic $
   plam $ \pid locks ->
     pfoldl
@@ -483,7 +485,7 @@ pgetStakeRole = phoistAcyclic $
       # pcon PIrrelevant
       # locks
   where
-    pcombineStakeRole :: Term s (PStakeRole :--> PStakeRole :--> PStakeRole)
+    pcombineStakeRole :: forall (s :: S). Term s (PStakeRole :--> PStakeRole :--> PStakeRole)
     pcombineStakeRole = phoistAcyclic $
       plam $ \x y ->
         let cannotCombine = ptraceError "duplicate roles"
@@ -503,7 +505,7 @@ pgetStakeRole = phoistAcyclic $
 
      @since 0.2.0
 -}
-pextractVoteOption :: Term s (PStakeRole :--> PResultTag)
+pextractVoteOption :: forall (s :: S). Term s (PStakeRole :--> PResultTag)
 pextractVoteOption = phoistAcyclic $
   plam $ \sr -> pmatch sr $ \case
     PVoter r -> r

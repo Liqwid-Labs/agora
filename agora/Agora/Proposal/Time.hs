@@ -294,7 +294,7 @@ deriving via
 
      @since 0.2.0
 -}
-pisProposalTimingConfigValid :: Term s (PProposalTimingConfig :--> PBool)
+pisProposalTimingConfigValid :: forall (s :: S). Term s (PProposalTimingConfig :--> PBool)
 pisProposalTimingConfigValid = phoistAcyclic $
   plam $ \conf -> unTermCont $ do
     confF <- pletAllC conf
@@ -397,6 +397,7 @@ currentProposalTime = phoistAcyclic $
      @since 0.1.0
 -}
 proposalTimeWithin ::
+  forall (s :: S).
   Term
     s
     ( PPOSIXTime

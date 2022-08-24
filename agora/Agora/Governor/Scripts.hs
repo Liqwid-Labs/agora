@@ -503,7 +503,9 @@ governorValidator as =
 
           -- For a given output, check if it contains a single valid GAT
           -- and whether it correctly belongs to the group.
-          let validateGATOutput' :: Term s (PProposalEffectGroup :--> PTxOut :--> PBool)
+          let validateGATOutput' ::
+                forall (s :: S).
+                Term s (PProposalEffectGroup :--> PTxOut :--> PBool)
               validateGATOutput' =
                 phoistAcyclic $
                   plam
@@ -569,7 +571,7 @@ governorValidator as =
         Nothing -> ptraceError "Unknown redeemer"
   where
     -- The currency symbol of authority token.
-    atSymbol :: Term s PCurrencySymbol
+    atSymbol :: forall (s :: S). Term s PCurrencySymbol
     atSymbol = pconstant $ authorityTokenSymbol as
 
     -- The currency symbol of the proposal state token.
