@@ -17,6 +17,7 @@ module Sample.Proposal.Create (
   timeRangeNotTightParameters,
   timeRangeNotClosedParameters,
   invalidProposalStatusParameters,
+  unorderedEffectsParameters,
 ) where
 
 import Agora.Governor (
@@ -84,7 +85,7 @@ import Sample.Shared (
   stakeValidatorHash,
  )
 import Test.Specification (SpecificationTree, group, testPolicy, testValidator)
-import Test.Util (CombinableBuilder, closedBoundedInterval, mkMinting, mkSpending, sortValue)
+import Test.Util (CombinableBuilder, closedBoundedInterval, mkMinting, mkSpending, sortMap, sortValue)
 
 -- | Parameters for creating a proposal.
 data Parameters = Parameters
@@ -104,6 +105,8 @@ data Parameters = Parameters
   -- ^ Is 'TxInfo.validTimeRange' closed?
   , proposalStatus :: ProposalStatus
   -- ^ The status of the newly created proposal.
+  , shuffleEffects :: Bool
+  -- ^ Effects will be unordered if this is set to true.
   }
 
 --------------------------------------------------------------------------------
@@ -137,9 +140,20 @@ defLocks = [Created (ProposalId 0)]
 -- | The effect of the newly created proposal.
 defEffects :: AssocMap.Map ResultTag ProposalEffectGroup
 defEffects =
+  sortMap $
+    AssocMap.fromList
+      [ (ResultTag 0, AssocMap.empty)
+      , (ResultTag 1, AssocMap.empty)
+      , (ResultTag 3, AssocMap.empty)
+      ]
+
+unorderedEffects :: AssocMap.Map ResultTag ProposalEffectGroup
+unorderedEffects =
   AssocMap.fromList
-    [ (ResultTag 0, AssocMap.empty)
+    [ (ResultTag 4, AssocMap.empty)
+    , (ResultTag 0, AssocMap.empty)
     , (ResultTag 1, AssocMap.empty)
+    , (ResultTag 3, AssocMap.empty)
     ]
 
 --------------------------------------------------------------------------------
@@ -215,16 +229,21 @@ mkStakeOutputDatum ps =
 -}
 mkProposalOutputDatum :: Parameters -> ProposalDatum
 mkProposalOutputDatum ps =
-  ProposalDatum
-    { proposalId = thisProposalId
-    , effects = defEffects
-    , status = ps.proposalStatus
-    , cosigners = [mkOwner ps]
-    , thresholds = def
-    , votes = emptyVotesFor defEffects
-    , timingConfig = def
-    , startingTime = mkProposalStartingTime ps
-    }
+  let effects =
+        if ps.shuffleEffects
+          then unorderedEffects
+          else defEffects
+      votes = emptyVotesFor defEffects
+   in ProposalDatum
+        { proposalId = thisProposalId
+        , effects = effects
+        , status = ps.proposalStatus
+        , cosigners = [mkOwner ps]
+        , thresholds = def
+        , votes = votes
+        , timingConfig = def
+        , startingTime = mkProposalStartingTime ps
+        }
 
 --------------------------------------------------------------------------------
 
@@ -367,6 +386,13 @@ totallyValidParameters =
     , timeRangeTightEnough = True
     , timeRangeClosed = True
     , proposalStatus = Draft
+    , shuffleEffects = False
+    }
+
+unorderedEffectsParameters :: Parameters
+unorderedEffectsParameters =
+  totallyValidParameters
+    { shuffleEffects = True
     }
 
 invalidOutputGovernorDatumParameters :: Parameters

@@ -6,6 +6,10 @@ This format is based on [Keep A Changelog](https://keepachangelog.com/en/1.0.0).
 
 ### Modified
 
+- `effects` of `Proposaldatum` is now required to be sorted in ascending order. The uniqueness of result tags is also guaranteed.
+
+  `ProposalVotes` should be sorted the same way as a result.
+
 - AuthCheck script is used for tagging GAT TokenName instead of effect script
   it is deployed at.
   
