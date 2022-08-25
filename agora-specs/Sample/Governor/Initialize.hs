@@ -71,13 +71,13 @@ data Parameters = Parameters
   -- ^ Whether the 'GovernorDatum.proposalTimings'field  of the output
   --    governor datum is valid or not.
   , withGovernorDatum :: Bool
-  , -- Whether the output GST UTxO will carry the governor datum.
-    presentWitness :: Bool
-  , -- Whether to spend the UTxO referenced by 'Governor.gstOutRef'.
-    mintMoreThanOneStateToken :: Bool
-  , -- More than one GST will be minted if this is set to true.
-    mintStateTokenWithName :: Bool
-    -- The token name of the GST won't be empty if this is set to true.
+  -- ^ Whether the output GST UTxO will carry the governor datum.
+  , presentWitness :: Bool
+  -- ^ Whether to spend the UTxO referenced by 'Governor.gstOutRef'.
+  , mintMoreThanOneStateToken :: Bool
+  -- ^ More than one GST will be minted if this is set to true.
+  , mintStateTokenWithName :: Bool
+  -- ^ The token name of the GST won't be empty if this is set to true.
   }
 
 --------------------------------------------------------------------------------

@@ -55,13 +55,18 @@ import Generics.SOP qualified as SOP
 import Plutarch.Api.V1 (PCredential, PMap, PValidatorHash)
 import Plutarch.Api.V1.AssocMap qualified as PAssocMap
 import Plutarch.Api.V2 (
-  KeyGuarantees (Unsorted),
+  KeyGuarantees (Sorted, Unsorted),
   PDatumHash,
   PMaybeData,
   PScriptHash,
   PTuple,
  )
-import Plutarch.DataRepr (DerivePConstantViaData (DerivePConstantViaData), PDataFields)
+import Plutarch.DataRepr (
+  DerivePConstantViaData (
+    DerivePConstantViaData
+  ),
+  PDataFields,
+ )
 import Plutarch.Extra.Comonad (pextract)
 import Plutarch.Extra.Field (pletAllC)
 import Plutarch.Extra.Function (pbuiltinUncurry)
@@ -74,7 +79,6 @@ import Plutarch.Extra.IsData (
  )
 import Plutarch.Extra.List (pfirstJust)
 import Plutarch.Extra.Map qualified as PM
-import Plutarch.Extra.Map.Unsorted qualified as PUM
 import Plutarch.Extra.Maybe (pfromJust)
 import Plutarch.Extra.TermCont (pguardC, pletC, pmatchC)
 import Plutarch.Lift (
@@ -254,6 +258,8 @@ PlutusTx.makeIsDataIndexed 'ProposalThresholds [('ProposalThresholds, 0)]
 
      @[('ResultTag' 0, n), ('ResultTag' 1, m)]@
 
+     Note that this map should be sorted in ascending order.
+
      @since 0.1.0
 -}
 newtype ProposalVotes = ProposalVotes
@@ -290,7 +296,9 @@ type ProposalEffectGroup = AssocMap.Map ValidatorHash (DatumHash, Maybe ScriptHa
 -}
 data ProposalDatum = ProposalDatum
   { proposalId :: ProposalId
-  -- ^ Identification of the proposal.
+  -- ^ Identification of the proposal. Note that this map should be sorted in
+  --    ascending order, and its keys should be unique.
+  --
   -- TODO: could we encode this more efficiently?
   -- This is shaped this way for future proofing.
   -- See https://github.com/Liqwid-Labs/agora/issues/39
@@ -704,7 +712,7 @@ phasNeutralEffect ::
   forall (s :: S).
   Term
     s
-    ( PMap 'Unsorted PResultTag PProposalEffectGroup
+    ( PMap 'Sorted PResultTag PProposalEffectGroup
         :--> PBool
     )
 phasNeutralEffect = phoistAcyclic $ PAssocMap.pany # PAssocMap.pnull
@@ -717,13 +725,13 @@ pisEffectsVotesCompatible ::
   forall (s :: S).
   Term
     s
-    ( PMap 'Unsorted PResultTag PProposalEffectGroup
+    ( PMap 'Sorted PResultTag PProposalEffectGroup
         :--> PProposalVotes
         :--> PBool
     )
 pisEffectsVotesCompatible = phoistAcyclic $
-  plam $ \m (pto -> v :: Term _ (PMap _ _ _)) ->
-    PUM.pkeysEqual # m # v
+  plam $ \((PM.pkeys #) -> effectKeys) ((PM.pkeys #) . pto -> voteKeys) ->
+    plistEquals # effectKeys # voteKeys
 
 {- | Retutns true if vote counts of /all/ the options are zero.
 

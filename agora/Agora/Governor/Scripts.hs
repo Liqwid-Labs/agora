@@ -60,6 +60,7 @@ import Plutarch.Api.V1 (
   PTokenName,
   PValue (PValue),
  )
+import Plutarch.Api.V1.AssocMap (passertSorted)
 import Plutarch.Api.V1.AssocMap qualified as AssocMap
 import Plutarch.Api.V2 (
   PAddress,
@@ -376,13 +377,18 @@ governorValidator as =
 
               expectedCosigners = psingleton @PBuiltinList # stakeInputDatumF.owner
 
+          sortedEffects <-
+            pletC $
+              ptrace "Result tags should be unique" $
+                passertSorted # proposalOutputDatum.effects
+
           pguardC "Proposal datum correct" $
             foldl1
               (#&&)
               [ ptraceIfFalse "has neutral effect" $
-                  phasNeutralEffect # proposalOutputDatum.effects
+                  phasNeutralEffect # sortedEffects
               , ptraceIfFalse "votes have valid shape" $
-                  pisEffectsVotesCompatible # proposalOutputDatum.effects # proposalOutputDatum.votes
+                  pisEffectsVotesCompatible # sortedEffects # proposalOutputDatum.votes
               , ptraceIfFalse "votes are empty" $
                   pisVotesEmpty # proposalOutputDatum.votes
               , ptraceIfFalse "id correct" $
