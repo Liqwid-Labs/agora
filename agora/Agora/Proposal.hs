@@ -50,12 +50,13 @@ import Agora.Proposal.Time (
   ProposalTimingConfig,
  )
 import Agora.SafeMoney (GTTag)
+import Data.Map.Strict qualified as StrictMap
 import Data.Tagged (Tagged)
 import Generics.SOP qualified as SOP
 import Plutarch.Api.V1 (PCredential, PMap, PValidatorHash)
 import Plutarch.Api.V1.AssocMap qualified as PAssocMap
 import Plutarch.Api.V2 (
-  KeyGuarantees (Sorted, Unsorted),
+  KeyGuarantees (Sorted),
   PDatumHash,
   PMaybeData,
   PScriptHash,
@@ -90,7 +91,6 @@ import Plutarch.Orphans ()
 import Plutarch.SafeMoney (PDiscrete (PDiscrete))
 import PlutusLedgerApi.V2 (Credential, DatumHash, ScriptHash, ValidatorHash)
 import PlutusTx qualified
-import PlutusTx.AssocMap qualified as AssocMap
 
 --------------------------------------------------------------------------------
 -- Haskell-land
@@ -258,12 +258,10 @@ PlutusTx.makeIsDataIndexed 'ProposalThresholds [('ProposalThresholds, 0)]
 
      @[('ResultTag' 0, n), ('ResultTag' 1, m)]@
 
-     Note that this map should be sorted in ascending order.
-
      @since 0.1.0
 -}
 newtype ProposalVotes = ProposalVotes
-  { getProposalVotes :: AssocMap.Map ResultTag Integer
+  { getProposalVotes :: StrictMap.Map ResultTag Integer
   }
   deriving stock
     ( -- | @since 0.1.0
@@ -284,11 +282,11 @@ newtype ProposalVotes = ProposalVotes
 
      @since 0.1.0
 -}
-emptyVotesFor :: forall a. AssocMap.Map ResultTag a -> ProposalVotes
-emptyVotesFor = ProposalVotes . AssocMap.mapWithKey (const . const 0)
+emptyVotesFor :: forall a. StrictMap.Map ResultTag a -> ProposalVotes
+emptyVotesFor = ProposalVotes . StrictMap.mapWithKey (const . const 0)
 
 -- | @since 0.3.0
-type ProposalEffectGroup = AssocMap.Map ValidatorHash (DatumHash, Maybe ScriptHash)
+type ProposalEffectGroup = StrictMap.Map ValidatorHash (DatumHash, Maybe ScriptHash)
 
 {- | Haskell-level datum for Proposal scripts.
 
@@ -302,7 +300,7 @@ data ProposalDatum = ProposalDatum
   -- TODO: could we encode this more efficiently?
   -- This is shaped this way for future proofing.
   -- See https://github.com/Liqwid-Labs/agora/issues/39
-  , effects :: AssocMap.Map ResultTag ProposalEffectGroup
+  , effects :: StrictMap.Map ResultTag ProposalEffectGroup
   -- ^ Effect lookup table. First by result, then by effect hash.
   , status :: ProposalStatus
   -- ^ The status the proposal is in.
@@ -572,10 +570,17 @@ deriving via
 
 {- | Plutarch-level version of 'ProposalVotes'.
 
+     Note: we don't really need this map to be ordered on chain, the purpose of
+     tagging it as sorted is to ensure the uniqueness of the keys. This
+     introduces some performance overhead cause sortness is unnecessarily
+     checked every time we try to recover a `PPropopsalVotes` from `PData`.
+
+     FIXME(Connor): optimize away this.
+
      @since 0.1.0
 -}
 newtype PProposalVotes (s :: S)
-  = PProposalVotes (Term s (PMap 'Unsorted PResultTag PInteger))
+  = PProposalVotes (Term s (PMap 'Sorted PResultTag PInteger))
   deriving stock
     ( -- | @since 0.2.0
       Generic
@@ -599,7 +604,7 @@ instance PUnsafeLiftDecl PProposalVotes where type PLifted PProposalVotes = Prop
 
 -- | @since 0.1.0
 deriving via
-  (DerivePConstantViaNewtype ProposalVotes PProposalVotes (PMap 'Unsorted PResultTag PInteger))
+  (DerivePConstantViaNewtype ProposalVotes PProposalVotes (PMap 'Sorted PResultTag PInteger))
   instance
     (PConstantDecl ProposalVotes)
 
@@ -610,7 +615,7 @@ deriving via
 -}
 type PProposalEffectGroup =
   PMap
-    'Unsorted
+    'Sorted
     PValidatorHash
     ( PTuple
         PDatumHash
@@ -627,7 +632,7 @@ newtype PProposalDatum (s :: S) = PProposalDatum
         s
         ( PDataRecord
             '[ "proposalId" ':= PProposalId
-             , "effects" ':= PMap 'Unsorted PResultTag PProposalEffectGroup
+             , "effects" ':= PMap 'Sorted PResultTag PProposalEffectGroup
              , "status" ':= PProposalStatus
              , "cosigners" ':= PBuiltinList (PAsData PCredential)
              , "thresholds" ':= PProposalThresholds
@@ -849,7 +854,7 @@ pneutralOption ::
   forall (s :: S).
   Term
     s
-    ( PMap 'Unsorted PResultTag PProposalEffectGroup
+    ( PMap 'Sorted PResultTag PProposalEffectGroup
         :--> PResultTag
     )
 pneutralOption = phoistAcyclic $
@@ -898,7 +903,7 @@ pisProposalThresholdsValid = phoistAcyclic $
 pretractVotes :: forall (s :: S). Term s (PResultTag :--> PInteger :--> PProposalVotes :--> PProposalVotes)
 pretractVotes = phoistAcyclic $
   plam $ \rt count votes ->
-    let voteMap :: Term _ (PMap 'Unsorted PResultTag PInteger)
+    let voteMap :: Term _ (PMap 'Sorted PResultTag PInteger)
         voteMap = pto votes
      in pcon $
           PProposalVotes $

@@ -37,6 +37,7 @@ import Agora.Stake (
 import Data.Coerce (coerce)
 import Data.Default (def)
 import Data.List (sort)
+import Data.Map.Strict qualified as StrictMap
 import Data.Tagged (Tagged, untag)
 import Plutarch.Context (
   input,
@@ -57,7 +58,6 @@ import PlutusLedgerApi.V2 (
   TxOutRef (..),
   Value,
  )
-import PlutusTx.AssocMap qualified as AssocMap
 import Sample.Proposal.Shared (proposalTxRef, stakeTxRef)
 import Sample.Shared (
   agoraScripts,
@@ -101,9 +101,9 @@ perStakedGTs = 5
 mkProposalInputDatum :: Parameters -> ProposalDatum
 mkProposalInputDatum ps =
   let effects =
-        AssocMap.fromList
-          [ (ResultTag 0, AssocMap.empty)
-          , (ResultTag 1, AssocMap.empty)
+        StrictMap.fromList
+          [ (ResultTag 0, StrictMap.empty)
+          , (ResultTag 1, StrictMap.empty)
           ]
    in ProposalDatum
         { proposalId = ProposalId 0
