@@ -17,7 +17,6 @@ module Sample.Proposal.Create (
   timeRangeNotTightParameters,
   timeRangeNotClosedParameters,
   invalidProposalStatusParameters,
-  unorderedEffectsParameters,
 ) where
 
 import Agora.Governor (
@@ -47,6 +46,7 @@ import Agora.Stake (
  )
 import Data.Coerce (coerce)
 import Data.Default (Default (def))
+import Data.Map.Strict qualified as StrictMap
 import Data.Tagged (Tagged, untag)
 import Plutarch.Context (
   input,
@@ -68,7 +68,6 @@ import PlutusLedgerApi.V2 (
   TxOutRef (TxOutRef),
   always,
  )
-import PlutusTx.AssocMap qualified as AssocMap
 import Sample.Proposal.Shared (stakeTxRef)
 import Sample.Shared (
   agoraScripts,
@@ -85,7 +84,13 @@ import Sample.Shared (
   stakeValidatorHash,
  )
 import Test.Specification (SpecificationTree, group, testPolicy, testValidator)
-import Test.Util (CombinableBuilder, closedBoundedInterval, mkMinting, mkSpending, sortMap, sortValue)
+import Test.Util (
+  CombinableBuilder,
+  closedBoundedInterval,
+  mkMinting,
+  mkSpending,
+  sortValue,
+ )
 
 -- | Parameters for creating a proposal.
 data Parameters = Parameters
@@ -105,8 +110,6 @@ data Parameters = Parameters
   -- ^ Is 'TxInfo.validTimeRange' closed?
   , proposalStatus :: ProposalStatus
   -- ^ The status of the newly created proposal.
-  , shuffleEffects :: Bool
-  -- ^ Effects will be unordered if this is set to true.
   }
 
 --------------------------------------------------------------------------------
@@ -138,22 +141,12 @@ defLocks :: [ProposalLock]
 defLocks = [Created (ProposalId 0)]
 
 -- | The effect of the newly created proposal.
-defEffects :: AssocMap.Map ResultTag ProposalEffectGroup
+defEffects :: StrictMap.Map ResultTag ProposalEffectGroup
 defEffects =
-  sortMap $
-    AssocMap.fromList
-      [ (ResultTag 0, AssocMap.empty)
-      , (ResultTag 1, AssocMap.empty)
-      , (ResultTag 3, AssocMap.empty)
-      ]
-
-unorderedEffects :: AssocMap.Map ResultTag ProposalEffectGroup
-unorderedEffects =
-  AssocMap.fromList
-    [ (ResultTag 4, AssocMap.empty)
-    , (ResultTag 0, AssocMap.empty)
-    , (ResultTag 1, AssocMap.empty)
-    , (ResultTag 3, AssocMap.empty)
+  StrictMap.fromList
+    [ (ResultTag 0, StrictMap.empty)
+    , (ResultTag 1, StrictMap.empty)
+    , (ResultTag 3, StrictMap.empty)
     ]
 
 --------------------------------------------------------------------------------
@@ -229,10 +222,7 @@ mkStakeOutputDatum ps =
 -}
 mkProposalOutputDatum :: Parameters -> ProposalDatum
 mkProposalOutputDatum ps =
-  let effects =
-        if ps.shuffleEffects
-          then unorderedEffects
-          else defEffects
+  let effects = defEffects
       votes = emptyVotesFor defEffects
    in ProposalDatum
         { proposalId = thisProposalId
@@ -386,13 +376,6 @@ totallyValidParameters =
     , timeRangeTightEnough = True
     , timeRangeClosed = True
     , proposalStatus = Draft
-    , shuffleEffects = False
-    }
-
-unorderedEffectsParameters :: Parameters
-unorderedEffectsParameters =
-  totallyValidParameters
-    { shuffleEffects = True
     }
 
 invalidOutputGovernorDatumParameters :: Parameters

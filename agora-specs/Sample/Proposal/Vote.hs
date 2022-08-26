@@ -31,6 +31,7 @@ import Agora.Stake (
   StakeRedeemer (PermitVote),
  )
 import Data.Default (Default (def))
+import Data.Map.Strict qualified as StrictMap
 import Data.Tagged (Tagged (Tagged), untag)
 import Plutarch.Context (
   input,
@@ -49,7 +50,6 @@ import PlutusLedgerApi.V2 (
   PubKeyHash,
   TxOutRef (TxOutRef),
  )
-import PlutusTx.AssocMap qualified as AssocMap
 import Sample.Proposal.Shared (proposalTxRef, stakeTxRef)
 import Sample.Shared (
   agoraScripts,
@@ -67,7 +67,13 @@ import Test.Specification (
   testValidator,
   validatorSucceedsWith,
  )
-import Test.Util (CombinableBuilder, closedBoundedInterval, mkSpending, pubKeyHashes, sortValue, updateMap)
+import Test.Util (
+  CombinableBuilder,
+  closedBoundedInterval,
+  mkSpending,
+  pubKeyHashes,
+  sortValue,
+ )
 
 -- | Reference to the proposal UTXO.
 proposalRef :: TxOutRef
@@ -92,9 +98,9 @@ stakeOwner :: PubKeyHash
 stakeOwner = signer
 
 -- | The votes of the input proposals.
-initialVotes :: AssocMap.Map ResultTag Integer
+initialVotes :: StrictMap.Map ResultTag Integer
 initialVotes =
-  AssocMap.fromList
+  StrictMap.fromList
     [ (ResultTag 0, 42)
     , (ResultTag 1, 4242)
     ]
@@ -105,9 +111,9 @@ proposalInputDatum =
   ProposalDatum
     { proposalId = ProposalId 42
     , effects =
-        AssocMap.fromList
-          [ (ResultTag 0, AssocMap.empty)
-          , (ResultTag 1, AssocMap.empty)
+        StrictMap.fromList
+          [ (ResultTag 0, StrictMap.empty)
+          , (ResultTag 1, StrictMap.empty)
           ]
     , status = VotingReady
     , cosigners = [PubKeyCredential stakeOwner]
@@ -168,8 +174,8 @@ vote params =
 
       ---
 
-      updatedVotes :: AssocMap.Map ResultTag Integer
-      updatedVotes = updateMap (Just . (+ params.voteCount)) params.voteFor initialVotes
+      updatedVotes :: StrictMap.Map ResultTag Integer
+      updatedVotes = StrictMap.adjust (+ params.voteCount) params.voteFor initialVotes
 
       ---
 

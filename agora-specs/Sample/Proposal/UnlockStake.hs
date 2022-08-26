@@ -37,8 +37,13 @@ import Agora.Proposal (
  )
 import Agora.Proposal.Time (ProposalStartingTime (ProposalStartingTime))
 import Agora.Scripts (AgoraScripts (..))
-import Agora.Stake (ProposalLock (..), StakeDatum (..), StakeRedeemer (RetractVotes))
+import Agora.Stake (
+  ProposalLock (..),
+  StakeDatum (..),
+  StakeRedeemer (RetractVotes),
+ )
 import Data.Default.Class (Default (def))
+import Data.Map.Strict qualified as StrictMap
 import Data.Tagged (Tagged (..), untag)
 import Plutarch.Context (
   input,
@@ -56,7 +61,6 @@ import PlutusLedgerApi.V2 (
   PubKeyHash,
   TxOutRef (..),
  )
-import PlutusTx.AssocMap qualified as AssocMap
 import Sample.Proposal.Shared (stakeTxRef)
 import Sample.Shared (
   agoraScripts,
@@ -69,7 +73,7 @@ import Sample.Shared (
   stakeValidatorHash,
  )
 import Test.Specification (SpecificationTree, group, testValidator)
-import Test.Util (CombinableBuilder, mkSpending, sortValue, updateMap)
+import Test.Util (CombinableBuilder, mkSpending, sortValue)
 
 --------------------------------------------------------------------------------
 
@@ -77,7 +81,7 @@ import Test.Util (CombinableBuilder, mkSpending, sortValue, updateMap)
 votesTemplate :: ProposalVotes
 votesTemplate =
   ProposalVotes $
-    AssocMap.fromList
+    StrictMap.fromList
       [ (ResultTag 0, 0)
       , (ResultTag 1, 0)
       ]
@@ -85,10 +89,10 @@ votesTemplate =
 -- | Create empty effects for every result tag given the votes.
 emptyEffectFor ::
   ProposalVotes ->
-  AssocMap.Map ResultTag ProposalEffectGroup
+  StrictMap.Map ResultTag ProposalEffectGroup
 emptyEffectFor (ProposalVotes vs) =
-  AssocMap.fromList $
-    map (,AssocMap.empty) (AssocMap.keys vs)
+  StrictMap.fromList $
+    map (,StrictMap.empty) (StrictMap.keys vs)
 
 -- | The default vote option that will be used by functions in this module.
 defVoteFor :: ResultTag
@@ -236,12 +240,12 @@ mkProposalDatumPair params pid =
       ProposalVotes
     mkInputVotes Creator _ =
       ProposalVotes $
-        updateMap (Just . const 1000) defVoteFor $
+        StrictMap.adjust (const 1000) defVoteFor $
           getProposalVotes votesTemplate
     mkInputVotes Irrelevant _ = votesTemplate
     mkInputVotes _ vc =
       ProposalVotes $
-        updateMap (Just . const vc) defVoteFor $
+        StrictMap.adjust (const vc) defVoteFor $
           getProposalVotes votesTemplate
 
 -- | Create a 'TxInfo' that tries to unlock a stake.

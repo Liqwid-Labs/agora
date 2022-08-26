@@ -72,12 +72,6 @@ specs =
               True
               False
               True
-          , Create.mkTestTree
-              "unordered effects"
-              Create.unorderedEffectsParameters
-              True
-              False
-              True
           , group "invalid proposal status" $
               map
                 ( \ps ->

@@ -72,6 +72,7 @@ import Control.Applicative (liftA2)
 import Control.Monad.State (execState, modify, when)
 import Data.Default (def)
 import Data.List (singleton, sort)
+import Data.Map.Strict qualified as StrictMap
 import Data.Maybe (fromJust)
 import Data.Tagged (Tagged (..), untag)
 import Plutarch.Context (
@@ -98,7 +99,6 @@ import PlutusLedgerApi.V2 (
   TxOutRef (TxOutRef),
   ValidatorHash,
  )
-import PlutusTx.AssocMap qualified as AssocMap
 import Sample.Proposal.Shared (
   governorTxRef,
   proposalTxRef,
@@ -134,7 +134,6 @@ import Test.Util (
   scriptHashes,
   sortValue,
   toDatum,
-  updateMap,
   validatorHashes,
  )
 
@@ -251,20 +250,20 @@ outcomeIdxToResultTag = ResultTag . fromIntegral
 -- | Add a neutral effect group and allocate result tags for the effect groups.
 mkEffects ::
   ProposalParameters ->
-  AssocMap.Map ResultTag ProposalEffectGroup
+  StrictMap.Map ResultTag ProposalEffectGroup
 mkEffects ps =
   let resultTags = map ResultTag [0 ..]
-      neutralEffect = AssocMap.empty
+      neutralEffect = StrictMap.empty
       finalEffects = ps.effectList <> [neutralEffect]
-   in AssocMap.fromList $ zip resultTags finalEffects
+   in StrictMap.fromList $ zip resultTags finalEffects
 
 -- | Set the votes of the winning group(s).
 setWinner :: (Winner, Integer) -> ProposalVotes -> ProposalVotes
 setWinner (All, votes) (ProposalVotes m) =
-  ProposalVotes $ AssocMap.mapMaybe (const $ Just votes) m
+  ProposalVotes $ StrictMap.mapMaybe (const $ Just votes) m
 setWinner (EffectAt winnerIdx, votes) (ProposalVotes m) =
   let winnerResultTag = outcomeIdxToResultTag winnerIdx
-   in ProposalVotes $ updateMap (const $ Just votes) winnerResultTag m
+   in ProposalVotes $ StrictMap.adjust (const votes) winnerResultTag m
 
 -- | Mock votes for the proposal, given the parameters.
 mkVotes ::
@@ -749,7 +748,7 @@ mkMockEffects useAuthScript n = effects
 
     effects =
       take n $
-        AssocMap.fromList
+        StrictMap.fromList
           <$> groupsOfN
             effectsPerGroup
             (zip effectScripts effectMetadata)
@@ -852,8 +851,8 @@ mkValidToNextStateBundle nCosigners nEffects authScript from =
         when (from == Locked) $
           modify $ \b ->
             let aut =
-                  AssocMap.elems $
-                    AssocMap.mapWithKey
+                  StrictMap.elems $
+                    StrictMap.mapWithKey
                       ( \vh (_, authScript) ->
                           AuthorityTokenParameters
                             { mintGATsFor = vh
