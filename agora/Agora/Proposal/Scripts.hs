@@ -666,16 +666,16 @@ proposalValidator as maximumCosigners =
                           pure $ pconstant ()
                       )
                       toFailedState
-                VotingReady ->
-                  withSingleStake $ \_ _ stakeUnchanged -> do
-                    pguardC "Stake should not change" stakeUnchanged
+                VotingReady -> unTermCont $ do
+                  -- Check the timings.
+                  let notTooLate = inLockedPeriod
+                      notTooEarly = pnot # inVotingPeriod
 
-                    -- Check the timings.
-                    let notTooLate = inLockedPeriod
-                        notTooEarly = pnot # inVotingPeriod
-
-                    pguardC "Cannot advance ahead of time" notTooEarly
-                    let toNextState = unTermCont $ do
+                  pguardC "Cannot advance ahead of time" notTooEarly
+                  pure $
+                    pif
+                      notTooLate
+                      ( unTermCont $ do
                           -- 'VotingReady' -> 'Locked'
                           pguardC "Proposal status set to Locked" $
                             proposalOutStatus #== pconstant Locked
@@ -686,11 +686,6 @@ proposalValidator as maximumCosigners =
                               $ pfromData thresholdsF.execute
 
                           pure $ pconstant ()
-
-                    pure $
-                      pif
-                        notTooLate
-                        -- On time: advance to next status.
-                        toNextState
-                        -- Too late: failed proposal, status set to 'Finished'.
-                        toFailedState
+                      )
+                      -- Too late: failed proposal, status set to 'Finished'.
+                      toFailedState

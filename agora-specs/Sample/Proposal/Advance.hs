@@ -966,7 +966,7 @@ mkInvalidOutputStakeBundles nCosigners nEffects =
   liftA2
     mkBundle
     [True, False]
-    [Draft, VotingReady]
+    [Draft]
   where
     mkBundle authScript from =
       let template = mkValidToNextStateBundle nCosigners nEffects authScript from
