@@ -600,81 +600,82 @@ proposalValidator as maximumCosigners =
 
           ----------------------------------------------------------------------
 
-          PAdvanceProposal _ ->
-            let currentTime' = pfromJust # currentTime
-                fromDraft = withMultipleStakes $ \totalStakedAmount sortedStakeOwners ->
-                  pmatchC (isDraftPeriod # proposalF.timingConfig # proposalF.startingTime # currentTime') >>= \case
-                    PTrue -> do
-                      pguardC "More cosigns than minimum amount" $
-                        punsafeCoerce (pfromData thresholdsF.vote) #< totalStakedAmount
+          PAdvanceProposal _ -> unTermCont $ do
+            currentTime' <- pletC $ pfromJust # currentTime
+            let inDraftPeriod = isDraftPeriod # proposalF.timingConfig # proposalF.startingTime # currentTime'
+            inVotingPeriod <- pletC $ isVotingPeriod # proposalF.timingConfig # proposalF.startingTime # currentTime'
+            inLockedPeriod <- pletC $ isLockingPeriod # proposalF.timingConfig # proposalF.startingTime # currentTime'
+            inExecutionPeriod <- pletC $ isExecutionPeriod # proposalF.timingConfig # proposalF.startingTime # currentTime'
+            pguardC "Only status changes in the output proposal" onlyStatusChanged
+            let gstSymbol = pconstant $ governorSTSymbol as
+            gstMoved <-
+              pletC $
+                pany
+                  # plam
+                    ( \( (pfield @"value" #)
+                          . (pfield @"resolved" #) ->
+                          value
+                        ) ->
+                          psymbolValueOf # gstSymbol # value #== 1
+                    )
+                  # pfromData txInfoF.inputs
+            let toFailedState = unTermCont $ do
+                  pguardC "Proposal should fail: not on time" $
+                    proposalOutStatus #== pconstant Finished
 
-                      pguardC "All new cosigners are witnessed by their Stake datums" $
-                        plistEquals # sortedStakeOwners # proposalF.cosigners
+                  pguardC "GST not moved" $ pnot # gstMoved
 
-                      -- 'Draft' -> 'VotingReady'
-                      pguardC "Proposal status set to VotingReady" $
-                        proposalOutStatus #== pconstant VotingReady
+                  pure $ pconstant ()
+            pure $
+              pmatchEnum (pto currentStatus) $ \case
+                Draft ->
+                  withMultipleStakes $ \totalStakedAmount sortedStakeOwners ->
+                    pmatchC inDraftPeriod >>= \case
+                      PTrue -> do
+                        pguardC "More cosigns than minimum amount" $
+                          punsafeCoerce (pfromData thresholdsF.vote) #< totalStakedAmount
 
-                      pure $ pconstant ()
-                    PFalse -> do
-                      pguardC "Advance to failed state" $ proposalOutStatus #== pconstant Finished
+                        pguardC "All new cosigners are witnessed by their Stake datums" $
+                          plistEquals # sortedStakeOwners # proposalF.cosigners
 
-                      pure $ pconstant ()
-
-                fromOther = withSingleStake $ \_ _ stakeUnchanged -> do
-                  pguardC "Stake should not change" stakeUnchanged
-
-                  pguardC
-                    "Only status changes in the output proposal"
-                    onlyStatusChanged
-
-                  inVotingPeriod <- pletC $ isVotingPeriod # proposalF.timingConfig # proposalF.startingTime # currentTime'
-                  inLockedPeriod <- pletC $ isLockingPeriod # proposalF.timingConfig # proposalF.startingTime # currentTime'
-                  inExecutionPeriod <- pletC $ isExecutionPeriod # proposalF.timingConfig # proposalF.startingTime # currentTime'
-
-                  proposalStatus <- pletC $ pto $ pfromData proposalF.status
-
-                  -- Check the timings.
-                  let isFinished = currentStatus #== pconstant Finished
-
-                      notTooLate = pmatchEnum proposalStatus $ \case
-                        -- Can only advance after the voting period is over.
-                        VotingReady -> inLockedPeriod
-                        Locked -> inExecutionPeriod
-                        _ -> pconstant False
-
-                      notTooEarly = pmatchEnum (pto $ pfromData proposalF.status) $ \case
-                        VotingReady -> pnot # inVotingPeriod
-                        Locked -> pnot # inLockedPeriod
-                        _ -> pconstant True
-
-                  pguardC "Cannot advance ahead of time" notTooEarly
-                  pguardC "Finished proposals cannot be advanced" $ pnot # isFinished
-
-                  let gstSymbol = pconstant $ governorSTSymbol as
-
-                  gstMoved <-
-                    pletC $
-                      pany
-                        # plam
-                          ( \( (pfield @"value" #)
-                                . (pfield @"resolved" #) ->
-                                value
-                              ) ->
-                                psymbolValueOf # gstSymbol # value #== 1
-                          )
-                        # pfromData txInfoF.inputs
-
-                  let toFailedState = unTermCont $ do
-                        pguardC "Proposal should fail: not on time" $
-                          proposalOutStatus #== pconstant Finished
-
-                        pguardC "GST not moved" $ pnot # gstMoved
+                        -- 'Draft' -> 'VotingReady'
+                        pguardC "Proposal status set to VotingReady" $
+                          proposalOutStatus #== pconstant VotingReady
 
                         pure $ pconstant ()
+                      PFalse -> do
+                        pguardC "Advance to failed state" $ proposalOutStatus #== pconstant Finished
 
-                      toNextState = pmatchEnum proposalStatus $ \case
-                        VotingReady -> unTermCont $ do
+                        pure $ pconstant ()
+                Finished -> ptraceError "Finished proposals cannot be advanced"
+                Locked -> unTermCont $ do
+                  let notTooLate = inExecutionPeriod
+                      notTooEarly = pnot # inLockedPeriod
+                  pguardC "Not too early" notTooEarly
+                  pure $
+                    pif
+                      notTooLate
+                      ( unTermCont $ do
+                          -- 'Locked' -> 'Finished'
+                          pguardC "Proposal status set to Finished" $
+                            proposalOutStatus #== pconstant Finished
+
+                          pguardC "GST moved" gstMoved
+
+                          -- TODO: Perform other necessary checks.
+                          pure $ pconstant ()
+                      )
+                      toFailedState
+                VotingReady ->
+                  withSingleStake $ \_ _ stakeUnchanged -> do
+                    pguardC "Stake should not change" stakeUnchanged
+
+                    -- Check the timings.
+                    let notTooLate = inLockedPeriod
+                        notTooEarly = pnot # inVotingPeriod
+
+                    pguardC "Cannot advance ahead of time" notTooEarly
+                    let toNextState = unTermCont $ do
                           -- 'VotingReady' -> 'Locked'
                           pguardC "Proposal status set to Locked" $
                             proposalOutStatus #== pconstant Locked
@@ -685,22 +686,11 @@ proposalValidator as maximumCosigners =
                               $ pfromData thresholdsF.execute
 
                           pure $ pconstant ()
-                        Locked -> unTermCont $ do
-                          -- 'Locked' -> 'Finished'
-                          pguardC "Proposal status set to Finished" $
-                            proposalOutStatus #== pconstant Finished
 
-                          pguardC "GST moved" gstMoved
-
-                          -- TODO: Perform other necessary checks.
-                          pure $ pconstant ()
-                        _ -> pconstant ()
-
-                  pure $
-                    pif
-                      notTooLate
-                      -- On time: advance to next status.
-                      toNextState
-                      -- Too late: failed proposal, status set to 'Finished'.
-                      toFailedState
-             in pif (currentStatus #== pconstant Draft) fromDraft fromOther
+                    pure $
+                      pif
+                        notTooLate
+                        -- On time: advance to next status.
+                        toNextState
+                        -- Too late: failed proposal, status set to 'Finished'.
+                        toFailedState
