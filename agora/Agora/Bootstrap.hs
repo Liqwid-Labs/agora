@@ -10,6 +10,7 @@ import Agora.AuthorityToken (AuthorityToken (AuthorityToken), authorityTokenPoli
 import Agora.Governor (Governor, gstOutRef, gtClassRef, maximumCosigners)
 import Agora.Governor.Scripts (governorPolicy, governorValidator)
 import Agora.Proposal.Scripts (proposalPolicy, proposalValidator)
+import Agora.Effect.TreasuryWithdrawal (treasuryWithdrawalValidator)
 import Agora.Scripts (AgoraScripts (AgoraScripts))
 import Agora.Scripts qualified as Scripts
 import Agora.Stake.Scripts (stakePolicy, stakeValidator)
@@ -54,6 +55,8 @@ agoraScripts conf gov = scripts
 
     compiledTreasuryValidator = mkValidator' $ treasuryValidator authorityTokenSymbol
 
+    compiledTreasuryWithdrawalEffect = mkValidator' $ treasuryWithdrawalValidator authorityTokenSymbol
+
     scripts =
       AgoraScripts
         { Scripts.compiledGovernorPolicy = CompiledMintingPolicy compiledGovernorPolicy
@@ -64,4 +67,5 @@ agoraScripts conf gov = scripts
         , Scripts.compiledProposalValidator = CompiledValidator compiledProposalValidator
         , Scripts.compiledTreasuryValidator = CompiledValidator compiledTreasuryValidator
         , Scripts.compiledAuthorityTokenPolicy = CompiledMintingPolicy compiledAuthorityPolicy
+        , Scripts.compiledTreasuryWithdrawalEffect = CompiledValidator compiledTreasuryWithdrawalEffect
         }
