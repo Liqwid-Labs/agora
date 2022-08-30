@@ -16,6 +16,7 @@ import Agora.Proposal (
   PProposalRedeemer (PAdvanceProposal, PCosign, PUnlock, PVote),
   PProposalVotes (PProposalVotes),
   ProposalStatus (Draft, Finished, Locked, VotingReady),
+  PProposalStatus (PDraft, PFinished, PLocked, PVotingReady),
   pretractVotes,
   pwinner',
  )
@@ -53,7 +54,6 @@ import Plutarch.Api.V2 (
 import Plutarch.Extra.AssetClass (passetClass, passetClassValueOf)
 import Plutarch.Extra.Comonad (pextract)
 import Plutarch.Extra.Field (pletAllC)
-import Plutarch.Extra.IsData (pmatchEnum)
 import Plutarch.Extra.List (pisUniq', pmapMaybe, pmergeBy, pmsortBy)
 import Plutarch.Extra.Map (plookup, pupdate)
 import Plutarch.Extra.Maybe (passertPJust, pfromJust, pisJust)
@@ -627,8 +627,8 @@ proposalValidator as maximumCosigners =
 
                   pure $ pconstant ()
             pure $
-              pmatchEnum (pto currentStatus) $ \case
-                Draft ->
+              pmatch currentStatus $ \case
+                PDraft ->
                   withMultipleStakes $ \totalStakedAmount sortedStakeOwners ->
                     pmatchC inDraftPeriod >>= \case
                       PTrue -> do
@@ -647,8 +647,8 @@ proposalValidator as maximumCosigners =
                         pguardC "Advance to failed state" $ proposalOutStatus #== pconstant Finished
 
                         pure $ pconstant ()
-                Finished -> ptraceError "Finished proposals cannot be advanced"
-                Locked -> unTermCont $ do
+                PFinished -> ptraceError "Finished proposals cannot be advanced"
+                PLocked -> unTermCont $ do
                   let notTooLate = inExecutionPeriod
                       notTooEarly = pnot # inLockedPeriod
                   pguardC "Not too early" notTooEarly
@@ -666,7 +666,7 @@ proposalValidator as maximumCosigners =
                           pure $ pconstant ()
                       )
                       toFailedState
-                VotingReady -> unTermCont $ do
+                PVotingReady -> unTermCont $ do
                   -- Check the timings.
                   let notTooLate = inLockedPeriod
                       notTooEarly = pnot # inVotingPeriod

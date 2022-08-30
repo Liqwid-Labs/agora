@@ -488,8 +488,8 @@ deriving via
 data PProposalStatus (s :: S)
   = -- | @since 0.2.0
     PDraft
-  | -- | @since 0.2.0
-    PVoting
+  | -- | @since 1.0.0
+    PVotingReady
   | -- | @since 0.2.0
     PLocked
   | -- | @since 0.2.0
