@@ -9,8 +9,7 @@ Proposal scripts encoding effects that operate on the system.
 -}
 module Agora.Proposal (
   -- * Haskell-land
-
-  -- Proposal (..),
+  ProposalEffectMetadata (..),
   ProposalEffectGroup,
   ProposalDatum (..),
   ProposalRedeemer (..),
@@ -22,6 +21,7 @@ module Agora.Proposal (
   emptyVotesFor,
 
   -- * Plutarch-land
+  PProposalEffectMetadata (..),
   PProposalEffectGroup,
   PProposalDatum (..),
   PProposalRedeemer (..),

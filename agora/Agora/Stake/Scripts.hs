@@ -8,6 +8,7 @@ Plutus Scripts for Stakes.
 module Agora.Stake.Scripts (stakePolicy, stakeValidator) where
 
 import Agora.Credential (authorizationContext, pauthorizedBy)
+import Agora.Proposal (PProposalRedeemer (PUnlock, PVote))
 import Agora.SafeMoney (GTTag)
 import Agora.Scripts (AgoraScripts, proposalSTAssetClass, stakeSTSymbol)
 import Agora.Stake (
@@ -15,22 +16,22 @@ import Agora.Stake (
   PStakeRedeemer (..),
   pstakeLocked,
  )
-import Data.Function (on)
 import Data.Tagged (Tagged, untag)
 import Plutarch.Api.V1 (
   PCredential (PPubKeyCredential, PScriptCredential),
   PTokenName,
   PValue,
  )
+import Plutarch.Api.V1.AssocMap (plookup)
 import Plutarch.Api.V2 (
   AmountGuarantees (Positive),
   KeyGuarantees (Sorted),
-  PDatumHash,
   PMaybeData,
   PMintingPolicy,
   PScriptPurpose (PMinting, PSpending),
+  PTxInInfo,
   PTxInfo,
-  PTxOut,
+  PTxOutRef,
   PValidator,
  )
 import Plutarch.Extra.AssetClass (
@@ -38,23 +39,40 @@ import Plutarch.Extra.AssetClass (
   passetClassValueOf,
   pvalueOf,
  )
+import Plutarch.Extra.Bind (PBind ((#>>=)))
 import Plutarch.Extra.Field (pletAllC)
-import Plutarch.Extra.List (pmapMaybe, pmsortBy)
-import Plutarch.Extra.Maybe (passertPJust, pdjust, pdnothing, pmaybeData)
+import Plutarch.Extra.Functor (PFunctor (pfmap))
+import Plutarch.Extra.List (pfirstJust)
+import Plutarch.Extra.Maybe (
+  passertPJust,
+  pdjust,
+  pdnothing,
+  pjust,
+  pmaybeData,
+  pnothing,
+ )
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
 import Plutarch.Extra.ScriptContext (
   pfindTxInByTxOutRef,
-  pfromDatumHash,
   pfromOutputDatum,
   pvalueSpent,
  )
-import Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC, ptryFromC)
+import Plutarch.Extra.TermCont (
+  pguardC,
+  pletC,
+  pletFieldsC,
+  pmatchC,
+  ptryFromC,
+ )
 import Plutarch.Extra.Value (
   pgeqByClass',
   pgeqBySymbol,
   psymbolValueOf,
  )
-import Plutarch.Numeric.Additive (AdditiveMonoid (zero), AdditiveSemigroup ((+)))
+import Plutarch.Numeric.Additive (
+  AdditiveMonoid (zero),
+  AdditiveSemigroup ((+)),
+ )
 import Plutarch.SafeMoney (
   pdiscreteValue',
   pvalueDiscrete',
@@ -264,6 +282,7 @@ stakeValidator as gtClassRef =
           , "outputs"
           , "signatories"
           , "datums"
+          , "redeemers"
           ]
         txInfo
 
@@ -321,9 +340,33 @@ stakeValidator as gtClassRef =
         _ -> unTermCont $ do
           let AssetClass (propCs, propTn) = proposalSTAssetClass as
               proposalSTClass = passetClass # pconstant propCs # pconstant propTn
-              spentProposalST = passetClassValueOf # valueSpent # proposalSTClass
 
-          proposalTokenMoved <- pletC $ 1 #<= spentProposalST
+          proposalRedeemer <-
+            pletC $
+              let convertRedeemer = plam $ \(pto -> dt) ->
+                    ptryFrom @PProposalRedeemer dt fst
+
+                  findRedeemer = plam $ \ref ->
+                    plookup
+                      # pcon
+                        ( PSpending $
+                            pdcons @_0
+                              # pdata ref
+                              # pdnil
+                        )
+                      # txInfoF.redeemers
+
+                  f :: Term _ (PTxInInfo :--> PMaybe PTxOutRef)
+                  f = plam $ \inInfo ->
+                    let value = pfield @"value" #$ pfield @"resolved" # inInfo
+                        ref = pfield @"outRef" # inInfo
+                     in pif
+                          (passetClassValueOf # value # proposalSTClass #== 1)
+                          (pjust # ref)
+                          pnothing
+
+                  proposalRef = pfirstJust # f # txInfoF.inputs
+               in pfmap # convertRedeemer #$ proposalRef #>>= findRedeemer
 
           -- Filter out own outputs using own address and ST.
           ownOutputs <-
@@ -338,52 +381,6 @@ stakeValidator as gtClassRef =
                           #&& psymbolValueOf # stCurrencySymbol # outputF.value #== 1
                   )
                 # pfromData txInfoF.outputs
-
-          let witnessStake = unTermCont $ do
-                pguardC "Either owner signs the transaction or proposal token moved" $
-                  ownerSignsTransaction #|| proposalTokenMoved
-
-                -- FIXME: remove this once we have reference input.
-                --
-                -- Our goal here is to allow multiple input stakes, and also ensure that every the input stakes has a
-                --   corresponding output stake, which carries the same value and the same datum as the input stake.
-                --
-                -- Validation strategy I have tried/considered so far:
-                -- 1. Check that the number of input stakes equals to the number of output stakes, and verify
-                --     that there's an output stake with the exact same value and datum hash as the stake being
-                --     validated , However this approach has a fatal vulnerability: let's say we have two totally
-                --     identical stakes, a malicious user can comsume these two stakes and remove GTs from one of them.
-                -- 2. Perform the same checks as the last approch does, while also checking that every output stake is
-                --     valid(stakedAmount == actual value). However this requires that all the output stake datum are
-                --     included in the transaction, and we have to find and go through them one by one to access the
-                --      'stakedAmount' fields, meaning that computationally this approach is *very* expensive.
-                -- 3. The one implemented below. Find all the continuous input/output, sort them by 'datumHash', and
-                --     ensure that the two sorted lists are equal.
-                let ownInputs =
-                      pmapMaybe
-                        # plam
-                          ( \input -> plet (pfield @"resolved" # input) $ \resolvedInput ->
-                              let value = pfield @"value" # resolvedInput
-                               in pif
-                                    (psymbolValueOf # stCurrencySymbol # value #== 1)
-                                    (pcon $ PJust resolvedInput)
-                                    (pcon PNothing)
-                          )
-                        # pfromData txInfoF.inputs
-
-                    sortTxOuts :: Term _ (PBuiltinList PTxOut :--> PBuiltinList PTxOut)
-                    sortTxOuts = phoistAcyclic $ plam (pmsortBy # plam ((#<) `on` (getDatumHash #)) #)
-                      where
-                        getDatumHash :: Term _ (PTxOut :--> PDatumHash)
-                        getDatumHash = phoistAcyclic $ plam ((pfromDatumHash #) . (pfield @"datum" #))
-
-                    sortedOwnInputs = sortTxOuts # ownInputs
-                    sortedOwnOutputs = sortTxOuts # ownOutputs
-
-                pguardC "Every stake inputs has a corresponding unchanged output" $
-                  plistEquals # sortedOwnInputs # sortedOwnOutputs
-
-                pure $ popaque $ pconstant ()
 
           ----------------------------------------------------------------------
 
@@ -479,7 +476,17 @@ stakeValidator as gtClassRef =
 
                 -- This puts trust into the Proposal. The Proposal must necessarily check
                 -- that this is not abused.
-                pguardC "Proposal ST spent" proposalTokenMoved
+
+                pguardC "Proposal ST spent" $
+                  pmatch proposalRedeemer $ \case
+                    PJust redeemer -> pmatch redeemer $ \case
+                      PUnlock _ -> pconstant True
+                      _ ->
+                        ptrace "Expected PUnlock, but got other" $
+                          pconstant False
+                    PNothing ->
+                      ptrace "Proposal redeemer not found" $
+                        pconstant False
 
                 pguardC "A UTXO must exist with the correct output" $
                   let valueCorrect = ctx.ownOutputValueUnchanged
@@ -503,7 +510,16 @@ stakeValidator as gtClassRef =
                 -- This puts trust into the Proposal. The Proposal must necessarily check
                 -- that this is not abused.
                 pguardC "Proposal ST spent or minted" $
-                  proposalTokenMoved #|| proposalTokenMinted
+                  pmatch
+                    proposalRedeemer
+                    ( \case
+                        PJust proposalRedeemer' ->
+                          pmatch proposalRedeemer' $ \case
+                            PVote _ -> pconstant True
+                            _ -> ptrace "Expected PVote" $ pconstant False
+                        _ -> proposalTokenMinted
+                    )
+
                 pguardC "A UTXO must exist with the correct output" $
                   let correctOutputDatum = ctx.onlyLocksUpdated
                       valueCorrect = ctx.ownOutputValueUnchanged
@@ -577,9 +593,6 @@ stakeValidator as gtClassRef =
                         , ptraceIfFalse "datumCorrect" datumCorrect
                         ]
 
-              ------------------------------------------------------------------
-
-              PWitnessStake _ -> witnessStake
               ------------------------------------------------------------------
 
               _ -> ptraceError "unreachable"
