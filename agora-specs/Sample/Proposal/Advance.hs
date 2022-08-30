@@ -35,6 +35,7 @@ module Sample.Proposal.Advance (
   mkGATsWithWrongDatumBundle,
   mkMintGATsWithoutTagBundle,
   mkBadGovernorOutputDatumBundle,
+  mkUnexpectedOutputStakeBundles,
 ) where
 
 import Agora.Governor (
@@ -568,16 +569,19 @@ mkTestTree name pb val =
               (spend proposalRef)
 
     stake =
-      let idx = 0
-       in singleton $
-            testValidator
-              val.forStakeValidator
-              "stake"
-              agoraScripts.compiledStakeValidator
-              (getStakeInputDatumAt pb.stakeParameters idx)
-              stakeRedeemer
-              ( spend (mkStakeRef idx)
-              )
+      if pb.stakeParameters.numStake == 0
+        then mempty
+        else
+          let idx = 0
+           in singleton $
+                testValidator
+                  val.forStakeValidator
+                  "stake"
+                  agoraScripts.compiledStakeValidator
+                  (getStakeInputDatumAt pb.stakeParameters idx)
+                  stakeRedeemer
+                  ( spend (mkStakeRef idx)
+                  )
 
     governor =
       maybe [] singleton $
@@ -813,7 +817,7 @@ mkValidToNextStateBundle nCosigners nEffects authScript from =
                 }
           , stakeParameters =
               StakeParameters
-                { numStake = 1
+                { numStake = 0
                 , perStakeGTs =
                     compPerStakeGTsForDraft $
                       fromIntegral nCosigners
@@ -911,7 +915,7 @@ mkValidToFailedStateBundles nCosigners nEffects =
                   }
             , stakeParameters =
                 StakeParameters
-                  { numStake = 1
+                  { numStake = 0
                   , perStakeGTs =
                       compPerStakeGTsForDraft $
                         fromIntegral nCosigners
@@ -966,7 +970,7 @@ mkInvalidOutputStakeBundles nCosigners nEffects =
   liftA2
     mkBundle
     [True, False]
-    [Draft, VotingReady, Locked]
+    [Draft]
   where
     mkBundle authScript from =
       let template = mkValidToNextStateBundle nCosigners nEffects authScript from
@@ -974,6 +978,22 @@ mkInvalidOutputStakeBundles nCosigners nEffects =
             { stakeParameters =
                 template.stakeParameters
                   { invalidStakeOutputDatum = True
+                  }
+            }
+
+mkUnexpectedOutputStakeBundles :: Word -> Word -> [ParameterBundle]
+mkUnexpectedOutputStakeBundles nCosigners nEffects =
+  liftA2
+    mkBundle
+    [True, False]
+    [VotingReady, Locked]
+  where
+    mkBundle authScript from =
+      let template = mkValidToNextStateBundle nCosigners nEffects authScript from
+       in template
+            { stakeParameters =
+                template.stakeParameters
+                  { numStake = 1
                   }
             }
 
