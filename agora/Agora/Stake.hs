@@ -143,9 +143,6 @@ data StakeRedeemer
     --   always allowed to have votes retracted and won't affect the Proposal datum,
     --   allowing 'Stake's to be unlocked.
     RetractVotes
-  | -- | The owner can consume stake if nothing is changed about it.
-    --   If the proposal token moves, this is equivalent to the owner consuming it.
-    WitnessStake
   | -- | The owner can delegate the stake to another user, allowing the
     --    delegate to vote on prooposals with the stake.
     DelegateTo Credential
@@ -164,9 +161,8 @@ PlutusTx.makeIsDataIndexed
   , ('Destroy, 1)
   , ('PermitVote, 2)
   , ('RetractVotes, 3)
-  , ('WitnessStake, 4)
-  , ('DelegateTo, 5)
-  , ('ClearDelegate, 6)
+  , ('DelegateTo, 4)
+  , ('ClearDelegate, 5)
   ]
 
 {- | Haskell-level datum for Stake scripts.
@@ -264,7 +260,6 @@ data PStakeRedeemer (s :: S)
     PDestroy (Term s (PDataRecord '[]))
   | PPermitVote (Term s (PDataRecord '[]))
   | PRetractVotes (Term s (PDataRecord '[]))
-  | PWitnessStake (Term s (PDataRecord '[]))
   | PDelegateTo (Term s (PDataRecord '["pkh" ':= PCredential]))
   | PClearDelegate (Term s (PDataRecord '[]))
   deriving stock
