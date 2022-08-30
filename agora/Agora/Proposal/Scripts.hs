@@ -314,13 +314,11 @@ proposalValidator as maximumCosigners =
           --   have a nice way to check this. In plutus v2 we'll have map of
           --   (Script -> Redeemer) in ScriptContext, which should be the
           --   straight up solution.
-          let sortDatumHashes = phoistAcyclic $ pmsortBy # pltAsData
-
-              sortedStakeInputDatumHashes =
-                sortDatumHashes # stakeInputDatumHashes
+          let sortedStakeInputDatumHashes =
+                pmsortAsData # stakeInputDatumHashes
 
               sortedStakeOutputDatumHashes =
-                sortDatumHashes # stakeOutputDatumHashes
+                pmsortAsData # stakeOutputDatumHashes
 
           pguardC "All stake datum are unchanged" $
             plistEquals
@@ -351,7 +349,7 @@ proposalValidator as maximumCosigners =
                 # pcon (PPair (0 :: Term _ PInteger) (pnil @PBuiltinList))
                 # stakeInputDatumHashes
 
-          sortedStakeOwners <- pletC $ pmsortBy # pltAsData # stakeOwners
+          sortedStakeOwners <- pletC $ pmsortAsData # stakeOwners
 
           pure $ validationLogic # totalStakedAmount # sortedStakeOwners
 
@@ -399,7 +397,7 @@ proposalValidator as maximumCosigners =
             pguardC "Should be in draft state" $
               currentStatus #== pconstant Draft
 
-            newSigs <- pletC $ pfield @"newCosigners" # r
+            newSigs <- pletC $ pmsortAsData #$ pfield @"newCosigners" # r
 
             pguardC "Signed by all new cosigners" $
               pall # plam ((authorizedBy #) . pfromData) # newSigs
@@ -690,3 +688,13 @@ proposalValidator as maximumCosigners =
                       )
                       toFailedState
                 PFinished -> ptraceError "Finished proposals cannot be advanced"
+
+pmsortAsData ::
+  forall (s :: S) (l :: PType -> PType) (a :: PType).
+  ( PIsListLike l (PAsData a)
+  , PIsListLike l (l (PAsData a))
+  , POrd a
+  , PIsData a
+  ) =>
+  Term s (l (PAsData a) :--> l (PAsData a))
+pmsortAsData = phoistAcyclic $ plam (pmsortBy # pltAsData #)
