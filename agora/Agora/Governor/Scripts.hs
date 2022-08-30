@@ -21,8 +21,8 @@ import Agora.AuthorityToken (
   singleAuthorityTokenBurned,
  )
 import Agora.Governor (
-  GovernorRedeemer (..),
   PGovernorDatum (PGovernorDatum),
+  PGovernorRedeemer (..),
   pgetNextProposalId,
   pisGovernorDatumValid,
  )
@@ -71,7 +71,6 @@ import Plutarch.Api.V2 (
 import Plutarch.Builtin (ppairDataBuiltin)
 import Plutarch.Extra.AssetClass (passetClass, passetClassValueOf)
 import Plutarch.Extra.Field (pletAllC)
-import Plutarch.Extra.IsData (pmatchEnumFromData)
 import Plutarch.Extra.List (pfirstJust)
 import Plutarch.Extra.Map (
   plookup,
@@ -253,6 +252,8 @@ governorValidator as =
   plam $ \datum' redeemer' ctx' -> unTermCont $ do
     ctxF <- pletAllC ctx'
 
+    redeemer <- pfromData . fst <$> ptryFromC redeemer'
+
     txInfo' <- pletC $ pfromData $ ctxF.txInfo
     txInfoF <- pletFieldsC @'["mint", "inputs", "outputs", "datums", "signatories", "validRange"] txInfo'
 
@@ -289,8 +290,8 @@ governorValidator as =
     pguardC "New datum is valid" $ pisGovernorDatumValid # newGovernorDatum
 
     pure $
-      pmatchEnumFromData redeemer' $ \case
-        Just CreateProposal -> unTermCont $ do
+      pmatch redeemer $ \case
+        PCreateProposal -> unTermCont $ do
           -- Check that the transaction advances proposal id.
 
           let expectedNextProposalId = pgetNextProposalId # oldGovernorDatumF.nextProposalId
@@ -435,7 +436,7 @@ governorValidator as =
 
         --------------------------------------------------------------------------
 
-        Just MintGATs -> unTermCont $ do
+        PMintGATs -> unTermCont $ do
           pguardC "Governor state should not be changed" $ newGovernorDatum #== oldGovernorDatum
 
           -- Filter out proposal inputs and ouputs using PST and the address of proposal validator.
@@ -560,15 +561,12 @@ governorValidator as =
 
         --------------------------------------------------------------------------
 
-        Just MutateGovernor -> unTermCont $ do
+        PMutateGovernor -> unTermCont $ do
           -- Check that a GAT is burnt.
           pguardC "One valid GAT burnt" $
             singleAuthorityTokenBurned atSymbol txInfoF.inputs txInfoF.mint
 
           pure $ popaque $ pconstant ()
-
-        --------------------------------------------------------------------------
-        Nothing -> ptraceError "Unknown redeemer"
   where
     -- The currency symbol of authority token.
     atSymbol :: forall (s :: S). Term s PCurrencySymbol
