@@ -53,10 +53,10 @@ import Plutarch.Api.V2 (
  )
 import Plutarch.Extra.AssetClass (passetClass, passetClassValueOf)
 import Plutarch.Extra.Comonad (pextract)
-import Plutarch.Extra.Field (pletAllC)
-import Plutarch.Extra.List (pisUniq', pmapMaybe, pmergeBy, pmsortBy)
+import Plutarch.Extra.Field (pletAll, pletAllC)
+import Plutarch.Extra.List (pfirstJust, pisUniq', pmapMaybe, pmergeBy, pmsortBy)
 import Plutarch.Extra.Map (plookup, pupdate)
-import Plutarch.Extra.Maybe (passertPJust, pfromJust, pisJust)
+import Plutarch.Extra.Maybe (passertPJust, pfromJust, pisJust, pjust, pnothing)
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
 import Plutarch.Extra.ScriptContext (
   pfindTxInByTxOutRef,
@@ -176,7 +176,11 @@ proposalValidator as maximumCosigners =
         txInfo'
     PSpending ((pfield @"_0" #) -> txOutRef) <- pmatchC $ pfromData ctx.purpose
 
-    PJust ((pfield @"resolved" #) -> txOut) <- pmatchC $ pfindTxInByTxOutRef # txOutRef # txInfoF.inputs
+    PJust ((pfield @"resolved" #) -> txOut) <-
+      pmatchC $
+        pfindTxInByTxOutRef
+          # txOutRef
+          # txInfoF.inputs
     txOutF <- pletFieldsC @'["address", "value"] $ txOut
 
     proposalDatum <- pfromData . fst <$> ptryFromC @(PAsData PProposalDatum) datum
@@ -203,36 +207,44 @@ proposalValidator as maximumCosigners =
     --
     -- We match the proposal id here so that we can support multiple
     --  proposal inputs in one thansaction.
-    ownOutput <-
-      pletC $
-        passertPJust # "Own output should be present" #$ pfind
-          # plam
-            ( \input -> unTermCont $ do
-                inputF <- pletAllC input
-
-                -- TODO: this is highly inefficient: O(n) for every output,
-                --       Maybe we can cache the sorted datum map?
-                let datum =
-                      pfromData $
-                        pfromOutputDatum @(PAsData PProposalDatum)
-                          # inputF.datum
-                          # txInfoF.datums
-
-                    proposalId = pfield @"proposalId" # pto datum
-
-                pure $
-                  inputF.address #== ownAddress
-                    #&& psymbolValueOf # stCurrencySymbol # inputF.value #== 1
-                    #&& proposalId #== proposalF.proposalId
-            )
-          # pfromData txInfoF.outputs
-
     proposalOut <-
       pletC $
-        pfromData $
-          pfromOutputDatum @(PAsData PProposalDatum)
-            # (pfield @"datum" # ownOutput)
-            # txInfoF.datums
+        passertPJust
+          # "Own output should be present"
+            #$ pfirstJust
+          # plam
+            ( flip pletAll $ \outputF ->
+                let isProposalUTxO =
+                      foldl1
+                        (#&&)
+                        [ ptraceIfFalse "Own by proposal validator" $
+                            outputF.address #== ownAddress
+                        , ptraceIfFalse "Has proposal ST" $
+                            psymbolValueOf # stCurrencySymbol # outputF.value #== 1
+                        ]
+
+                    handleProposalUTxO = unTermCont $ do
+                      -- Using inline datum to avoid O(n^2) lookup.
+                      datum <-
+                        pletC $
+                          pfromData $
+                            pfromOutputDatum @(PAsData PProposalDatum)
+                              # outputF.datum
+                              # txInfoF.datums
+
+                      pure $
+                        pif
+                          ( pfield @"proposalId" # pto datum
+                              #== proposalF.proposalId
+                          )
+                          (pjust # datum)
+                          pnothing
+                 in pif
+                      isProposalUTxO
+                      handleProposalUTxO
+                      pnothing
+            )
+          # pfromData txInfoF.outputs
 
     proposalUnchanged <- pletC $ proposalOut #== proposalDatum
 
