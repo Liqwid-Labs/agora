@@ -72,10 +72,9 @@ import Plutarch.Builtin (ppairDataBuiltin)
 import Plutarch.Extra.AssetClass (passetClass, passetClassValueOf)
 import Plutarch.Extra.Field (pletAllC)
 import Plutarch.Extra.IsData (pmatchEnumFromData)
-import Plutarch.Extra.List (pfirstJust)
+import Plutarch.Extra.List (pfindJust)
 import Plutarch.Extra.Map (
-  plookup,
-  plookup',
+  ptryLookup,
  )
 import Plutarch.Extra.Maybe (passertPJust, pfromJust, pmaybeData, pnothing)
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
@@ -401,7 +400,7 @@ governorValidator as =
           -- Check the output stake has been proposly updated.
           let stakeOutputDatum =
                 passertPJust # "Output stake should be presented"
-                  #$ pfirstJust
+                  #$ pfindJust
                     # plam
                       ( \txOut -> unTermCont $ do
                           txOutF <- pletFieldsC @'["datum", "value"] txOut
@@ -447,7 +446,7 @@ governorValidator as =
             pletC $
               passertPJust
                 # "Proposal input not found"
-                  #$ pfirstJust
+                  #$ pfindJust
                 # plam
                   ( \((pfield @"resolved" #) -> txOut) -> unTermCont $ do
                       txOutF <- pletFieldsC @'["address", "value", "datum"] txOut
@@ -479,7 +478,7 @@ governorValidator as =
               finalResultTag = pwinner # proposalInputDatumF.votes # quorum # neutralOption
 
           -- The effects of the winner outcome.
-          effectGroup <- pletC $ plookup' # finalResultTag #$ proposalInputDatumF.effects
+          effectGroup <- pletC $ ptryLookup # finalResultTag #$ proposalInputDatumF.effects
 
           gatCount <- pletC $ plength #$ pto $ pto effectGroup
 
@@ -515,7 +514,7 @@ governorValidator as =
                         PMap authorityTokens <-
                           pmatchC $
                             passertPJust # "validateGATOutput': Must have GAT in GAT output"
-                              #$ plookup # atSymbol # value
+                              #$ AssocMap.plookup # atSymbol # value
 
                         let tagToken :: Term _ PTokenName
                             tagToken =

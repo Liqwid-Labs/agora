@@ -78,7 +78,7 @@ import Plutarch.Extra.IsData (
   PlutusTypeEnumData,
   ProductIsData (ProductIsData),
  )
-import Plutarch.Extra.List (pfirstJust)
+import Plutarch.Extra.List (pfindJust)
 import Plutarch.Extra.Map qualified as PM
 import Plutarch.Extra.Maybe (pfromJust)
 import Plutarch.Extra.TermCont (pguardC, pletC, pmatchC)
@@ -735,7 +735,7 @@ pisEffectsVotesCompatible ::
         :--> PBool
     )
 pisEffectsVotesCompatible = phoistAcyclic $
-  plam $ \((PM.pkeys #) -> effectKeys) ((PM.pkeys #) . pto -> voteKeys) ->
+  plam $ \((PM.pkeys @PBuiltinList #) -> effectKeys) ((PM.pkeys @PBuiltinList #) . pto -> voteKeys) ->
     plistEquals # effectKeys # voteKeys
 
 {- | Retutns true if vote counts of /all/ the options are zero.
@@ -869,7 +869,7 @@ pneutralOption = phoistAcyclic $
                 (PAssocMap.pnull # el)
                 (pcon $ PJust rt)
                 (pcon PNothing)
-     in pfromJust #$ pfirstJust # f # l
+     in pfromJust #$ pfindJust # f # l
 
 {- | Return true if the thresholds are valid.
 

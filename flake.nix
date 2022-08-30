@@ -15,7 +15,7 @@
 
     # Plutarch and its friends
     plutarch = {
-      url = "github:Plutonomicon/plutarch-plutus?ref=staging";
+      url = "github:Plutonomicon/plutarch-plutus?ref=master";
 
       inputs.emanote.follows =
         "plutarch/haskell-nix/nixpkgs-unstable";
@@ -28,7 +28,7 @@
     plutarch-safe-money.url =
       "github:Liqwid-Labs/plutarch-safe-money?ref=main";
     liqwid-plutarch-extra.url =
-      "github:Liqwid-Labs/liqwid-plutarch-extra?ref=main";
+      "github:Liqwid-Labs/liqwid-plutarch-extra?ref=koz/fix-sorting";
     plutarch-quickcheck.url =
       "github:liqwid-labs/plutarch-quickcheck?ref=staging";
     plutarch-context-builder.url =

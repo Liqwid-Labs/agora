@@ -46,7 +46,6 @@ import Plutarch.Extra.IsData (
   DerivePConstantViaDataList (DerivePConstantViaDataList),
   ProductIsData (ProductIsData),
  )
-import Plutarch.Extra.List (pnotNull)
 import Plutarch.Extra.Sum (PSum (PSum))
 import Plutarch.Extra.Traversable (pfoldMap)
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (PLifted))
@@ -360,7 +359,7 @@ deriving via
 pstakeLocked :: forall (s :: S). Term s (PStakeDatum :--> PBool)
 pstakeLocked = phoistAcyclic $
   plam $ \stakeDatum ->
-    pnotNull #$ pfield @"lockedBy" @(PBuiltinList _) # pto stakeDatum
+    pnot # (pnull #$ pfield @"lockedBy" @(PBuiltinList _) # pto stakeDatum)
 
 {- | Get the number of *alive* proposals that were created by the given stake.
 

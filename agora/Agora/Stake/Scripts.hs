@@ -16,7 +16,6 @@ import Agora.Stake (
   StakeRedeemer (WitnessStake),
   pstakeLocked,
  )
-import Data.Function (on)
 import Data.Tagged (Tagged, untag)
 import Plutarch.Api.V1 (
   PCredential (PPubKeyCredential, PScriptCredential),
@@ -37,8 +36,9 @@ import Plutarch.Extra.AssetClass (
   passetClassValueOf,
   pvalueOf,
  )
+import Plutarch.Extra.Ord (psortBy, pfromOrdBy)
 import Plutarch.Extra.Field (pletAllC)
-import Plutarch.Extra.List (pmapMaybe, pmsortBy)
+import Plutarch.Extra.List (pmapMaybe)
 import Plutarch.Extra.Maybe (passertPJust, pdjust, pdnothing, pmaybeData)
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
 import Plutarch.Extra.ScriptContext (
@@ -355,7 +355,7 @@ stakeValidator as gtClassRef =
                         # pfromData txInfoF.inputs
 
                     sortTxOuts :: Term _ (PBuiltinList PTxOut :--> PBuiltinList PTxOut)
-                    sortTxOuts = phoistAcyclic $ plam (pmsortBy # plam ((#<) `on` (getDatumHash #)) #)
+                    sortTxOuts = phoistAcyclic $ plam (psortBy # (pfromOrdBy # getDatumHash) # )
                       where
                         getDatumHash :: Term _ (PTxOut :--> PDatumHash)
                         getDatumHash = phoistAcyclic $ plam ((pfromDatumHash #) . (pfield @"datum" #))

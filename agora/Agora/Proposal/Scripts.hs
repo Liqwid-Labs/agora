@@ -37,10 +37,8 @@ import Agora.Stake (
   pisPureCreator,
   pisVoter,
  )
-import Agora.Utils (
-  pltAsData,
- )
 import Plutarch.Api.V1 (PCredential)
+import Plutarch.Api.V1.AssocMap (plookup)
 import Plutarch.Api.V2 (
   PDatumHash,
   PMintingPolicy,
@@ -52,10 +50,11 @@ import Plutarch.Api.V2 (
  )
 import Plutarch.Extra.AssetClass (passetClass, passetClassValueOf)
 import Plutarch.Extra.Comonad (pextract)
+import Plutarch.Extra.Ord (psortBy, pfromOrdBy, ptryMergeBy, pAllUniqueBy)
 import Plutarch.Extra.Field (pletAllC)
 import Plutarch.Extra.IsData (pmatchEnum)
-import Plutarch.Extra.List (pisUniq', pmapMaybe, pmergeBy, pmsortBy)
-import Plutarch.Extra.Map (plookup, pupdate)
+import Plutarch.Extra.List (pmapMaybe)
+import Plutarch.Extra.Map (pupdate)
 import Plutarch.Extra.Maybe (passertPJust, pfromJust, pisJust)
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
 import Plutarch.Extra.ScriptContext (
@@ -314,7 +313,7 @@ proposalValidator as maximumCosigners =
           --   have a nice way to check this. In plutus v2 we'll have map of
           --   (Script -> Redeemer) in ScriptContext, which should be the
           --   straight up solution.
-          let sortDatumHashes = phoistAcyclic $ pmsortBy # pltAsData
+          let sortDatumHashes = phoistAcyclic $ psortBy # (pfromOrdBy # plam pfromData)
 
               sortedStakeInputDatumHashes =
                 sortDatumHashes # stakeInputDatumHashes
@@ -351,7 +350,7 @@ proposalValidator as maximumCosigners =
                 # pcon (PPair (0 :: Term _ PInteger) (pnil @PBuiltinList))
                 # stakeInputDatumHashes
 
-          sortedStakeOwners <- pletC $ pmsortBy # pltAsData # stakeOwners
+          sortedStakeOwners <- pletC $ psortBy # (pfromOrdBy # plam pfromData) # stakeOwners
 
           pure $ validationLogic # totalStakedAmount # sortedStakeOwners
 
@@ -406,7 +405,7 @@ proposalValidator as maximumCosigners =
 
             updatedSigs <-
               pletC $
-                pmergeBy # pltAsData
+                ptryMergeBy # (pfromOrdBy # plam pfromData)
                   # newSigs
                   # proposalF.cosigners
 
@@ -414,7 +413,7 @@ proposalValidator as maximumCosigners =
               plength # updatedSigs #< pconstant maximumCosigners
 
             pguardC "Cosigners are unique" $
-              pisUniq' # updatedSigs
+              pfromJust #$ pAllUniqueBy # (pfromOrdBy # plam pfromData) # updatedSigs
 
             pguardC "All new cosigners are witnessed by their Stake datums" $
               plistEquals # sortedStakeOwners # newSigs
