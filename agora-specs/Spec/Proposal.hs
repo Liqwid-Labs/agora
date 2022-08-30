@@ -244,6 +244,16 @@ specs =
                                 , forGovernorValidator = Just True
                                 , forAuthorityTokenPolicy = Just True
                                 }
+                          , Advance.mkTestTree'
+                              "unexpected stake datum"
+                              (\b -> unwords ["from", show b.proposalParameters.fromStatus])
+                              (Advance.mkUnexpectedOutputStakeBundles cs es)
+                              Advance.Validity
+                                { forProposalValidator = False
+                                , forStakeValidator = True
+                                , forGovernorValidator = Just True
+                                , forAuthorityTokenPolicy = Just True
+                                }
                           , Advance.mkTestTree
                               "forget to mint GATs"
                               (Advance.mkNoGATMintedBundle cs es)

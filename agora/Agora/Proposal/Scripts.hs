@@ -14,9 +14,9 @@ import Agora.Credential (authorizationContext, pauthorizedBy)
 import Agora.Proposal (
   PProposalDatum (PProposalDatum),
   PProposalRedeemer (PAdvanceProposal, PCosign, PUnlock, PVote),
+  PProposalStatus (PDraft, PFinished, PLocked, PVotingReady),
   PProposalVotes (PProposalVotes),
   ProposalStatus (Draft, Finished, Locked, VotingReady),
-  PProposalStatus (PDraft, PFinished, PLocked, PVotingReady),
   pretractVotes,
   pwinner',
  )
@@ -620,7 +620,7 @@ proposalValidator as maximumCosigners =
                     )
                   # pfromData txInfoF.inputs
             let toFailedState = unTermCont $ do
-                  -- * -> 'Finished'
+                  -- -> 'Finished'
                   pguardC "Proposal should fail: not on time" $
                     proposalOutStatus #== pconstant Finished
 
@@ -652,6 +652,8 @@ proposalValidator as maximumCosigners =
                   let notTooLate = inLockedPeriod
                       notTooEarly = pnot # inVotingPeriod
                   pguardC "Cannot advance ahead of time" notTooEarly
+                  -- FIXME: This should be checked by Stake, as opposed to here.
+                  pguardC "No stakes must be present" $ stakeInputNum #== 0
                   pure $
                     pif
                       notTooLate
@@ -673,6 +675,7 @@ proposalValidator as maximumCosigners =
                   let notTooLate = inExecutionPeriod
                       notTooEarly = pnot # inLockedPeriod
                   pguardC "Not too early" notTooEarly
+                  pguardC "No stakes must be present" $ stakeInputNum #== 0
                   pure $
                     pif
                       notTooLate
