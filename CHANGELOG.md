@@ -6,6 +6,13 @@ This format is based on [Keep A Changelog](https://keepachangelog.com/en/1.0.0).
 
 ### Modified
 
+- `tracing` flag in `ScriptParams` of `agora-scripts` to enable/disable tracing in exported scripts.
+
+  NOTE: This changes the representation of `ScriptParams`. In order to preserve old behavior, the flag
+  must be set to `True`.
+  
+  Included by [#167](https://github.com/Liqwid-Labs/agora/pull/167).
+
 - `effects` of `Proposaldatum` is now required to be sorted in ascending order. The uniqueness of result tags is also guaranteed.
 
   `ProposalVotes` should be sorted the same way as a result.

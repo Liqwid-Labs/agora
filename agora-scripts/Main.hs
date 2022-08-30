@@ -20,7 +20,7 @@ import Data.Tagged (Tagged)
 import Data.Text (Text)
 import Development.GitRev (gitBranch, gitHash)
 import GHC.Generics qualified as GHC
-import Plutarch (Config (Config, tracingMode), TracingMode (DoTracing))
+import Plutarch (Config (Config, tracingMode), TracingMode (DoTracing, NoTracing))
 import PlutusLedgerApi.V1 (
   MintingPolicy (getMintingPolicy),
   TxOutRef,
@@ -97,17 +97,19 @@ agoraScripts params =
 
     scripts = Bootstrap.agoraScripts plutarchConfig governor
 
+    plutarchConfig :: Config
+    plutarchConfig = Config {tracingMode = if params.tracing then DoTracing else NoTracing}
+
 {- | Params required for creating script export.
 
-     @since 0.2.0
+     @since 1.0.0
 -}
-data ScriptParams where
-  ScriptParams ::
-    { governorInitialSpend :: TxOutRef
-    , gtClassRef :: Tagged GTTag AssetClass
-    , maximumCosigners :: Integer
-    } ->
-    ScriptParams
+data ScriptParams = ScriptParams
+  { governorInitialSpend :: TxOutRef
+  , gtClassRef :: Tagged GTTag AssetClass
+  , maximumCosigners :: Integer
+  , tracing :: Bool
+  }
   deriving anyclass (Aeson.ToJSON, Aeson.FromJSON)
   deriving stock (Show, Eq, GHC.Generic, Ord)
 
@@ -139,15 +141,6 @@ data AgoraScripts = AgoraScripts
     , -- | @since 0.2.0
       GHC.Generic
     )
-
-{- | Default plutarch configuration for compiling scripts.
-
-     TODO: we should have an option to control this.
-
-     @since 0.2.0
--}
-plutarchConfig :: Config
-plutarchConfig = Config {tracingMode = DoTracing}
 
 {- | Turn a precompiled minting policy to a 'ScriptInfo'.
 
