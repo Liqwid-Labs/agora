@@ -603,9 +603,9 @@ proposalValidator as maximumCosigners =
           PAdvanceProposal _ -> unTermCont $ do
             currentTime' <- pletC $ pfromJust # currentTime
             let inDraftPeriod = isDraftPeriod # proposalF.timingConfig # proposalF.startingTime # currentTime'
-            inVotingPeriod <- pletC $ isVotingPeriod # proposalF.timingConfig # proposalF.startingTime # currentTime'
+                inVotingPeriod = isVotingPeriod # proposalF.timingConfig # proposalF.startingTime # currentTime'
+                inExecutionPeriod = isExecutionPeriod # proposalF.timingConfig # proposalF.startingTime # currentTime'
             inLockedPeriod <- pletC $ isLockingPeriod # proposalF.timingConfig # proposalF.startingTime # currentTime'
-            inExecutionPeriod <- pletC $ isExecutionPeriod # proposalF.timingConfig # proposalF.startingTime # currentTime'
             pguardC "Only status changes in the output proposal" onlyStatusChanged
             let gstSymbol = pconstant $ governorSTSymbol as
             gstMoved <-
@@ -620,6 +620,7 @@ proposalValidator as maximumCosigners =
                     )
                   # pfromData txInfoF.inputs
             let toFailedState = unTermCont $ do
+                  -- * -> 'Finished'
                   pguardC "Proposal should fail: not on time" $
                     proposalOutStatus #== pconstant Finished
 
@@ -647,30 +648,9 @@ proposalValidator as maximumCosigners =
                         pguardC "Advance to failed state" $ proposalOutStatus #== pconstant Finished
 
                         pure $ pconstant ()
-                PFinished -> ptraceError "Finished proposals cannot be advanced"
-                PLocked -> unTermCont $ do
-                  let notTooLate = inExecutionPeriod
-                      notTooEarly = pnot # inLockedPeriod
-                  pguardC "Not too early" notTooEarly
-                  pure $
-                    pif
-                      notTooLate
-                      ( unTermCont $ do
-                          -- 'Locked' -> 'Finished'
-                          pguardC "Proposal status set to Finished" $
-                            proposalOutStatus #== pconstant Finished
-
-                          pguardC "GST moved" gstMoved
-
-                          -- TODO: Perform other necessary checks.
-                          pure $ pconstant ()
-                      )
-                      toFailedState
                 PVotingReady -> unTermCont $ do
-                  -- Check the timings.
                   let notTooLate = inLockedPeriod
                       notTooEarly = pnot # inVotingPeriod
-
                   pguardC "Cannot advance ahead of time" notTooEarly
                   pure $
                     pif
@@ -689,3 +669,21 @@ proposalValidator as maximumCosigners =
                       )
                       -- Too late: failed proposal, status set to 'Finished'.
                       toFailedState
+                PLocked -> unTermCont $ do
+                  let notTooLate = inExecutionPeriod
+                      notTooEarly = pnot # inLockedPeriod
+                  pguardC "Not too early" notTooEarly
+                  pure $
+                    pif
+                      notTooLate
+                      ( unTermCont $ do
+                          -- 'Locked' -> 'Finished'
+                          pguardC "Proposal status set to Finished" $
+                            proposalOutStatus #== pconstant Finished
+
+                          pguardC "GST moved" gstMoved
+
+                          pure $ pconstant ()
+                      )
+                      toFailedState
+                PFinished -> ptraceError "Finished proposals cannot be advanced"
