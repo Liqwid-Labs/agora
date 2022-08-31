@@ -46,10 +46,6 @@ Contributors should expect that if their work is insufficiently documented (eith
 
 Agora utilises [Plutarch](https://github.com/plutonomicon/plutarch) and your work must be written with Plutarch, when appropriate. Plutarch can prove _complicated_ but the documentation is extensive. We would encourage you to dive deeply into the documentation, whilst stating that Plutarch's [Tricks.md](https://github.com/Plutonomicon/plutarch/blob/master/docs/Tricks.md) could prove particularly helpful.
 
-### Stylistic guidelines
-
-All work must comply with the [MLabs style guide](https://github.com/mlabs-haskell/styleguide/).
-
 ### Continuous integration
 
 For your PR to be merged it must pass three automated checks:
@@ -63,6 +59,12 @@ Our custom `fourmolu` rules may be found in the [base of the repository](./fourm
 1. Running `make format` from the included `Makefile`.
 2. Running `make lint` from the included `Makefile` and applying any recommendations.
 3. Ensuring that `cabal build` terminates successfully on your machine in the provided Nix environment.
+
+## Standards
+
+Agora follows a strict standards to increase consistency, to minimize
+legacy impacts, to use proper automated means, and more. The standard document 
+can be discovered in [here](https://liqwid.notion.site/Coding-Standards-cd3c430e6e444fa292ecc3c57b7d95eb).
 
 ## Documentation
 
