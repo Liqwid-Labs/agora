@@ -62,9 +62,9 @@ Our custom `fourmolu` rules may be found in the [base of the repository](./fourm
 
 ## Standards
 
-Agora follows a strict standards to increase consistency, to minimize
-legacy impacts, to use proper automated means, and more. The standard document 
-can be discovered in [here](https://liqwid.notion.site/Coding-Standards-cd3c430e6e444fa292ecc3c57b7d95eb).
+Agora follows strict standards to increase consistency, to minimize
+the impact of legacy, to properly use automated tools, and more. The standards document
+can be found [here](https://liqwid.notion.site/Coding-Standards-cd3c430e6e444fa292ecc3c57b7d95eb).
 
 ## Documentation
 
