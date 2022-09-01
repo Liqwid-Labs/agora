@@ -22,7 +22,6 @@ Tests need to fail when:
 module Spec.Treasury (specs) where
 
 import Agora.Treasury (
-  TreasuryRedeemer (SpendTreasuryGAT),
   treasuryValidator,
  )
 import Agora.Utils (CompiledValidator (CompiledValidator))
@@ -34,7 +33,7 @@ import PlutusLedgerApi.V1.Value qualified as Value (singleton)
 import PlutusLedgerApi.V2 (DCert (DCertDelegRegKey))
 import PlutusLedgerApi.V2.Contexts (
   ScriptContext (scriptContextPurpose, scriptContextTxInfo),
-  ScriptPurpose (Certifying, Rewarding, Spending),
+  ScriptPurpose (Certifying, Minting, Rewarding),
   TxInfo (txInfoInputs, txInfoMint),
  )
 import Sample.Shared (deterministicTracingConfing, trCredential)
@@ -42,7 +41,6 @@ import Sample.Treasury (
   gatCs,
   gatTn,
   trCtxGATNameNotAddress,
-  treasuryRef,
   validCtx,
   walletIn,
  )
@@ -53,7 +51,7 @@ import Test.Specification (
   validatorSucceedsWith,
  )
 
-compiledTreasuryValidator :: CompiledValidator () TreasuryRedeemer
+compiledTreasuryValidator :: CompiledValidator () ()
 compiledTreasuryValidator =
   CompiledValidator $
     mkValidator deterministicTracingConfing $
@@ -69,32 +67,32 @@ specs =
               "Allows for effect changes"
               compiledTreasuryValidator
               ()
-              SpendTreasuryGAT
+              ()
               validCtx
           , validatorSucceedsWith
               "Fails when GAT token name is not script address"
               compiledTreasuryValidator
               ()
-              SpendTreasuryGAT
+              ()
               trCtxGATNameNotAddress
           ]
       , group
           "Negative"
           [ group
-              "Fails with ScriptPurpose not Minting"
+              "Fails with ScriptPurpose not Spending"
               [ validatorFailsWith
-                  "Spending"
+                  "Minting"
                   compiledTreasuryValidator
                   ()
-                  SpendTreasuryGAT
+                  ()
                   validCtx
-                    { scriptContextPurpose = Spending treasuryRef
+                    { scriptContextPurpose = Minting ""
                     }
               , validatorFailsWith
                   "Rewarding"
                   compiledTreasuryValidator
                   ()
-                  SpendTreasuryGAT
+                  ()
                   validCtx
                     { scriptContextPurpose =
                         Rewarding $
@@ -104,7 +102,7 @@ specs =
                   "Certifying"
                   compiledTreasuryValidator
                   ()
-                  SpendTreasuryGAT
+                  ()
                   validCtx
                     { scriptContextPurpose =
                         Certifying $
@@ -116,7 +114,7 @@ specs =
               "Fails when multiple GATs burned"
               compiledTreasuryValidator
               ()
-              SpendTreasuryGAT
+              ()
               validCtx
                 { scriptContextTxInfo =
                     validCtx.scriptContextTxInfo
@@ -131,7 +129,7 @@ specs =
               "Fails with wallet as input"
               compiledTreasuryValidator
               ()
-              SpendTreasuryGAT
+              ()
               ( let txInfo = validCtx.scriptContextTxInfo
                     inputs = txInfo.txInfoInputs
                     newInputs =

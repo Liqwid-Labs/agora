@@ -17,7 +17,6 @@ import Agora.Effect.TreasuryWithdrawal qualified as TreasuryWithdrawalEffect
 import Agora.Governor qualified as Governor
 import Agora.Proposal qualified as Proposal
 import Agora.Stake qualified as Stake
-import Agora.Treasury qualified as Treasury
 
 --------------------------------------------------------------------------------
 
@@ -39,8 +38,6 @@ agoraTypes =
     mkSumType (Proxy @Stake.ProposalLock)
   , mkSumType (Proxy @Stake.StakeRedeemer)
   , mkSumType (Proxy @Stake.StakeDatum)
-  , -- Treasury
-    mkSumType (Proxy @Treasury.TreasuryRedeemer)
   , -- AuthorityToken
     mkSumType (Proxy @AuthorityToken.AuthorityToken)
   , -- Effects

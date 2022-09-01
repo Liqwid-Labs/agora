@@ -18,8 +18,8 @@ module Sample.Treasury (
 ) where
 
 import Plutarch.Context (
-  MintingBuilder,
-  buildMinting',
+  SpendingBuilder,
+  buildSpending',
   credential,
   input,
   mint,
@@ -27,8 +27,8 @@ import Plutarch.Context (
   script,
   signedWith,
   txId,
-  withMinting,
   withRefTxId,
+  withSpendingOutRefId,
   withValue,
  )
 import PlutusLedgerApi.V1.Address (Address (..))
@@ -55,7 +55,7 @@ import Sample.Shared (
   wrongEffHash,
  )
 
-baseCtxBuilder :: MintingBuilder
+baseCtxBuilder :: SpendingBuilder
 baseCtxBuilder =
   let treasury =
         mconcat
@@ -69,7 +69,7 @@ baseCtxBuilder =
         , mint (Value.singleton gatCs gatTn (-1))
         , input treasury
         , output treasury
-        , withMinting gatCs
+        , withSpendingOutRefId "73475cb40a568e8da8a045ced110137e159f890ac4da883b6b17dc651b3a8049"
         ]
 
 {- | A `ScriptContext` that should be compatible with treasury
@@ -77,7 +77,7 @@ baseCtxBuilder =
 -}
 validCtx :: ScriptContext
 validCtx =
-  let builder :: MintingBuilder
+  let builder :: SpendingBuilder
       builder =
         mconcat
           [ baseCtxBuilder
@@ -88,7 +88,7 @@ validCtx =
                 , withRefTxId "52b67b60260da3937510ad545c7f46f8d9915bd27e1082e76947fb309f913bd3"
                 ]
           ]
-   in buildMinting' builder
+   in buildSpending' builder
 
 treasuryRef :: TxOutRef
 treasuryRef =
@@ -121,7 +121,7 @@ walletIn =
 
 trCtxGATNameNotAddress :: ScriptContext
 trCtxGATNameNotAddress =
-  let builder :: MintingBuilder
+  let builder :: SpendingBuilder
       builder =
         mconcat
           [ baseCtxBuilder
@@ -132,4 +132,4 @@ trCtxGATNameNotAddress =
                 , withRefTxId "52b67b60260da3937510ad545c7f46f8d9915bd27e1082e76947fb309f913bd3"
                 ]
           ]
-   in buildMinting' builder
+   in buildSpending' builder

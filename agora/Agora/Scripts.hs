@@ -22,7 +22,6 @@ module Agora.Scripts (
 import Agora.Governor (GovernorDatum, GovernorRedeemer)
 import Agora.Proposal (ProposalDatum, ProposalRedeemer)
 import Agora.Stake (StakeDatum, StakeRedeemer)
-import Agora.Treasury (TreasuryRedeemer)
 import Agora.Utils (
   CompiledMintingPolicy (getCompiledMintingPolicy),
   CompiledValidator (getCompiledValidator),
@@ -54,7 +53,7 @@ data AgoraScripts = AgoraScripts
   , compiledStakeValidator :: CompiledValidator StakeDatum StakeRedeemer
   , compiledProposalPolicy :: CompiledMintingPolicy ()
   , compiledProposalValidator :: CompiledValidator ProposalDatum ProposalRedeemer
-  , compiledTreasuryValidator :: CompiledValidator () TreasuryRedeemer
+  , compiledTreasuryValidator :: CompiledValidator () ()
   , compiledAuthorityTokenPolicy :: CompiledMintingPolicy ()
   }
 
