@@ -621,8 +621,8 @@ Agora/Proposal/validator/unlocking/illegal/with 42 proposals/creator: retract vo
 Agora/AuthorityToken/singleAuthorityTokenBurned/Correct simple,24929970,68747,726
 Agora/AuthorityToken/singleAuthorityTokenBurned/Correct many inputs,47662922,128817,826
 Agora/AuthorityToken/singleAuthorityTokenBurned/Correct even though scripts don't match,24929970,68747,725
-Agora/Treasury/Validator/Positive/Allows for effect changes,40927846,108662,1430
-Agora/Treasury/Validator/Positive/Fails when GAT token name is not script address,40927846,108662,1466
+Agora/Treasury/Validator/Positive/Allows for effect changes,39447993,107460,1386
+Agora/Treasury/Validator/Positive/Fails when GAT token name is not script address,39447993,107460,1422
 Agora/AuthorityToken/singleAuthorityTokenBurned/Correct simple,24929970,68747,726
 Agora/AuthorityToken/singleAuthorityTokenBurned/Correct many inputs,47662922,128817,826
 Agora/AuthorityToken/singleAuthorityTokenBurned/Correct even though scripts don't match,24929970,68747,725
