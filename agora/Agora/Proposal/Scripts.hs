@@ -42,6 +42,7 @@ import Agora.Utils (
   pltAsData,
  )
 import Plutarch.Api.V1 (PCredential)
+import Plutarch.Api.V1.AssocMap (plookup)
 import Plutarch.Api.V2 (
   PDatumHash,
   PMintingPolicy,
@@ -55,7 +56,7 @@ import Plutarch.Extra.AssetClass (passetClass, passetClassValueOf)
 import Plutarch.Extra.Comonad (pextract)
 import Plutarch.Extra.Field (pletAll, pletAllC)
 import Plutarch.Extra.List (pfirstJust, pisUniq', pmapMaybe, pmergeBy, pmsortBy)
-import Plutarch.Extra.Map (plookup, pupdate)
+import Plutarch.Extra.Map (pupdate)
 import Plutarch.Extra.Maybe (passertPJust, pfromJust, pisJust, pjust, pnothing)
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
 import Plutarch.Extra.ScriptContext (
