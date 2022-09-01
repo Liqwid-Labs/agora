@@ -60,6 +60,7 @@ import Plutarch.Api.V1 (
   PTokenName,
   PValue (PValue),
  )
+import Plutarch.Api.V1.AssocMap (plookup)
 import Plutarch.Api.V1.AssocMap qualified as AssocMap
 import Plutarch.Api.V2 (
   PAddress,
@@ -72,10 +73,7 @@ import Plutarch.Builtin (ppairDataBuiltin)
 import Plutarch.Extra.AssetClass (passetClass, passetClassValueOf)
 import Plutarch.Extra.Field (pletAllC)
 import Plutarch.Extra.List (pfirstJust)
-import Plutarch.Extra.Map (
-  plookup,
-  plookup',
- )
+import Plutarch.Extra.Map (ptryLookup)
 import Plutarch.Extra.Maybe (passertPJust, pfromJust, pmaybeData, pnothing)
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
 import Plutarch.Extra.ScriptContext (
@@ -480,7 +478,7 @@ governorValidator as =
               finalResultTag = pwinner # proposalInputDatumF.votes # quorum # neutralOption
 
           -- The effects of the winner outcome.
-          effectGroup <- pletC $ plookup' # finalResultTag #$ proposalInputDatumF.effects
+          effectGroup <- pletC $ ptryLookup # finalResultTag #$ proposalInputDatumF.effects
 
           gatCount <- pletC $ plength #$ pto $ pto effectGroup
 

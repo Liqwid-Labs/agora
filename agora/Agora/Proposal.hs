@@ -728,6 +728,7 @@ phasNeutralEffect = phoistAcyclic $ PAssocMap.pany # PAssocMap.pnull
 -}
 pisEffectsVotesCompatible ::
   forall (s :: S).
+  (PIsListLike PList PResultTag) =>
   Term
     s
     ( PMap 'Sorted PResultTag PProposalEffectGroup
@@ -735,7 +736,7 @@ pisEffectsVotesCompatible ::
         :--> PBool
     )
 pisEffectsVotesCompatible = phoistAcyclic $
-  plam $ \((PM.pkeys #) -> effectKeys) ((PM.pkeys #) . pto -> voteKeys) ->
+  plam $ \((PM.pkeys @PList #) -> effectKeys) ((PM.pkeys #) . pto -> voteKeys) ->
     plistEquals # effectKeys # voteKeys
 
 {- | Retutns true if vote counts of /all/ the options are zero.
