@@ -7,10 +7,10 @@
 module Agora.Bootstrap (agoraScripts) where
 
 import Agora.AuthorityToken (AuthorityToken (AuthorityToken), authorityTokenPolicy)
+import Agora.Effect.TreasuryWithdrawal (treasuryWithdrawalValidator)
 import Agora.Governor (Governor, gstOutRef, gtClassRef, maximumCosigners)
 import Agora.Governor.Scripts (governorPolicy, governorValidator)
 import Agora.Proposal.Scripts (proposalPolicy, proposalValidator)
-import Agora.Effect.TreasuryWithdrawal (treasuryWithdrawalValidator)
 import Agora.Scripts (AgoraScripts (AgoraScripts))
 import Agora.Scripts qualified as Scripts
 import Agora.Stake.Scripts (stakePolicy, stakeValidator)
