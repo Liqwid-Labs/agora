@@ -87,7 +87,6 @@ import Plutarch.Extra.ScriptContext (
   pvalueSpent,
  )
 import Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC, ptryFromC)
-import Plutarch.Extra.Tuple (pfstTuple, psndTuple)
 import Plutarch.Extra.Value (phasOnlyOneTokenOfCurrencySymbol, psymbolValueOf)
 import PlutusLedgerApi.V1 (TxOutRef)
 
@@ -519,7 +518,7 @@ governorValidator as =
                         let tagToken :: Term _ PTokenName
                             tagToken =
                               pmaybeData # pconstant "" # plam (pscriptHashToTokenName . pfromData)
-                                #$ psndTuple # effect
+                                #$ pfield @"scriptHash" # effect
                             receiverScriptHash =
                               passertPJust # "GAT receiver should be a script"
                                 #$ pscriptHashFromAddress # outputF.address
@@ -530,7 +529,7 @@ governorValidator as =
                               authorityTokens
                                 #== psingleton # (ppairDataBuiltin # pdata tagToken # pdata 1)
                             hasCorrectDatum =
-                              pfstTuple # effect #== pfromDatumHash # outputF.datum
+                              pfield @"datumHash" # effect #== pfromDatumHash # outputF.datum
 
                         pure $
                           foldr1
