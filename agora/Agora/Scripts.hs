@@ -19,6 +19,7 @@ module Agora.Scripts (
   treasuryValidatorHash,
 ) where
 
+import Agora.Effect.TreasuryWithdrawal (TreasuryWithdrawalDatum)
 import Agora.Governor (GovernorDatum, GovernorRedeemer)
 import Agora.Proposal (ProposalDatum, ProposalRedeemer)
 import Agora.Stake (StakeDatum, StakeRedeemer)
@@ -55,6 +56,7 @@ data AgoraScripts = AgoraScripts
   , compiledProposalValidator :: CompiledValidator ProposalDatum ProposalRedeemer
   , compiledTreasuryValidator :: CompiledValidator () ()
   , compiledAuthorityTokenPolicy :: CompiledMintingPolicy ()
+  , compiledTreasuryWithdrawalEffect :: CompiledValidator () TreasuryWithdrawalDatum
   }
 
 {- | Get the currency symbol of the governor state token.

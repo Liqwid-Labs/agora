@@ -7,6 +7,7 @@
 module Agora.Bootstrap (agoraScripts) where
 
 import Agora.AuthorityToken (AuthorityToken (AuthorityToken), authorityTokenPolicy)
+import Agora.Effect.TreasuryWithdrawal (treasuryWithdrawalValidator)
 import Agora.Governor (Governor, gstOutRef, gtClassRef, maximumCosigners)
 import Agora.Governor.Scripts (governorPolicy, governorValidator)
 import Agora.Proposal.Scripts (proposalPolicy, proposalValidator)
@@ -54,6 +55,8 @@ agoraScripts conf gov = scripts
 
     compiledTreasuryValidator = mkValidator' $ treasuryValidator authorityTokenSymbol
 
+    compiledTreasuryWithdrawalEffect = mkValidator' $ treasuryWithdrawalValidator authorityTokenSymbol
+
     scripts =
       AgoraScripts
         { Scripts.compiledGovernorPolicy = CompiledMintingPolicy compiledGovernorPolicy
@@ -64,4 +67,5 @@ agoraScripts conf gov = scripts
         , Scripts.compiledProposalValidator = CompiledValidator compiledProposalValidator
         , Scripts.compiledTreasuryValidator = CompiledValidator compiledTreasuryValidator
         , Scripts.compiledAuthorityTokenPolicy = CompiledMintingPolicy compiledAuthorityPolicy
+        , Scripts.compiledTreasuryWithdrawalEffect = CompiledValidator compiledTreasuryWithdrawalEffect
         }

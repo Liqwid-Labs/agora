@@ -71,6 +71,8 @@ builders =
     & insertBuilder
       "neverSucceedsValidator"
       (\() -> mkValidatorInfo $ plam $ \_ _ _ -> perror)
+    -- Provided Effect scripts
+    & insertBuilder "treasuryWithdrawalEffect" ((.treasuryWithdrawalEffectInfo) . agoraScripts)
 
 {- | Create scripts from params.
 
@@ -87,6 +89,7 @@ agoraScripts params =
     , proposalValidatorInfo = mkValidatorInfo' scripts.compiledProposalValidator
     , treasuryValidatorInfo = mkValidatorInfo' scripts.compiledTreasuryValidator
     , authorityTokenPolicyInfo = mkPolicyInfo' scripts.compiledAuthorityTokenPolicy
+    , treasuryWithdrawalEffectInfo = mkValidatorInfo' scripts.compiledTreasuryWithdrawalEffect
     }
   where
     governor =
@@ -126,6 +129,7 @@ data AgoraScripts = AgoraScripts
   , proposalValidatorInfo :: ScriptInfo
   , treasuryValidatorInfo :: ScriptInfo
   , authorityTokenPolicyInfo :: ScriptInfo
+  , treasuryWithdrawalEffectInfo :: ScriptInfo
   }
   deriving anyclass
     ( -- | @since 0.2.0
