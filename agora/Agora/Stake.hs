@@ -44,6 +44,7 @@ import Plutarch.DataRepr (
 import Plutarch.Extra.Field (pletAll)
 import Plutarch.Extra.IsData (
   DerivePConstantViaDataList (DerivePConstantViaDataList),
+  PlutusTypeDataList,
   ProductIsData (ProductIsData),
  )
 import Plutarch.Extra.List (pnotNull)
@@ -51,7 +52,7 @@ import Plutarch.Extra.Sum (PSum (PSum))
 import Plutarch.Extra.Traversable (pfoldMap)
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (PLifted))
 import Plutarch.Orphans ()
-import Plutarch.SafeMoney (PDiscrete)
+import Plutarch.SafeMoney (Discrete, PDiscrete)
 import PlutusLedgerApi.V2 (Credential)
 import PlutusTx qualified
 import Prelude hiding (Num (..))
@@ -170,7 +171,7 @@ PlutusTx.makeIsDataIndexed
      @since 0.1.0
 -}
 data StakeDatum = StakeDatum
-  { stakedAmount :: Tagged GTTag Integer
+  { stakedAmount :: Discrete GTTag
   -- ^ Tracks the amount of governance token staked in the datum.
   --   This also acts as the voting weight for 'Agora.Proposal.Proposal's.
   , owner :: Credential
@@ -234,7 +235,7 @@ newtype PStakeDatum (s :: S) = PStakeDatum
     )
 
 instance DerivePlutusType PStakeDatum where
-  type DPTStrat _ = PlutusTypeNewtype
+  type DPTStrat _ = PlutusTypeDataList
 
 -- | @since 0.1.0
 instance Plutarch.Lift.PUnsafeLiftDecl PStakeDatum where
