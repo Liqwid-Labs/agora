@@ -21,11 +21,13 @@ module Agora.Utils (
   plistEqualsBy,
   pstringIntercalate,
   punwords,
+  pcurrentTimeDuration,
 ) where
 
-import Plutarch.Api.V1 (PTokenName, PValidatorHash)
+import Plutarch.Api.V1 (PPOSIXTime, PTokenName, PValidatorHash)
 import Plutarch.Api.V2 (PScriptHash)
 import Plutarch.Extra.TermCont (pmatchC)
+import Plutarch.Extra.Time (PCurrentTime (PCurrentTime))
 import Plutarch.List (puncons)
 import Plutarch.Unsafe (punsafeCoerce)
 import PlutusLedgerApi.V2 (
@@ -175,3 +177,16 @@ punwords ::
   [Term s PString] ->
   Term s PString
 punwords = pstringIntercalate " "
+
+-- | @since 1.0.0
+pcurrentTimeDuration ::
+  forall (s :: S).
+  Term
+    s
+    ( PCurrentTime
+        :--> PPOSIXTime
+    )
+pcurrentTimeDuration = phoistAcyclic $
+  plam $
+    flip pmatch $
+      \(PCurrentTime lb ub) -> ub - lb
