@@ -134,32 +134,48 @@ proposalPolicy (AssetClass (govCs, govTn)) =
 
     pure $ popaque (pconstant ())
 
+{- | Validation context for redeemers which witness multiple stake in the reference
+      inputs.
+
+     @since 1.0.0
+-}
 data PWitneseMultipleStakeContext (s :: S) = PWitneseMultipleStakeContext
   { totalAmount :: Term s PInteger
   , orderedOwners :: Term s (PList PCredential)
   }
-  deriving stock (Generic)
+  deriving stock
+    ( -- | @since 1.0.0
+      Generic
+    )
   deriving anyclass
-    ( PlutusType
+    ( -- | @since 1.0.0
+      PlutusType
     )
 
+-- | @since 1.0.0
 instance DerivePlutusType PWitneseMultipleStakeContext where
   type DPTStrat _ = PlutusTypeScott
 
+{- | Validation context for redeemers which need to modify a single stake.
+
+     @since 1.0.0
+-}
 data PSpendSingleStakeContext (s :: S) = PSpendSingleStakeContext
   { inputStake :: Term s PStakeDatum
   , outputStake :: Term s PStakeDatum
   }
-  deriving stock (Generic)
+  deriving stock
+    ( -- | @since 1.0.0
+      Generic
+    )
   deriving anyclass
-    ( PlutusType
+    ( -- | @since 1.0.0
+      PlutusType
     )
 
+-- | @since 1.0.0
 instance DerivePlutusType PSpendSingleStakeContext where
   type DPTStrat _ = PlutusTypeScott
-
-pemptyWitneseMultipleStakeContext :: forall (s :: S). Term s PWitneseMultipleStakeContext
-pemptyWitneseMultipleStakeContext = pcon $ PWitneseMultipleStakeContext 0 pnil
 
 {- | The validator for Proposals.
 
@@ -294,8 +310,6 @@ proposalValidator as maximumCosigners =
     onlyStatusChanged <-
       pletC $
         -- Only the status of proposals is updated.
-
-        -- Only the status of proposals is updated.
         proposalOut
           #== mkRecordConstr
             PProposalDatum
@@ -376,7 +390,7 @@ proposalValidator as maximumCosigners =
               sortOwners
                 #$ pfoldl
                 # f
-                # pemptyWitneseMultipleStakeContext
+                # pcon (PWitneseMultipleStakeContext 0 pnil)
                 # txInfoF.referenceInputs
          in plam (# ctx)
 

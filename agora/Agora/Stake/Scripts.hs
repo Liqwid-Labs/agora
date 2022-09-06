@@ -197,6 +197,11 @@ stakePolicy gtClassRef =
 
 --------------------------------------------------------------------------------
 
+{- | Validation context for stake redeemers that allow only one stake to be
+      spent in the transaction.
+
+     @since 1.0.0
+-}
 data POnlyOneStakeContext (s :: S) = POnlyOneStakeContext
   { ownOutputDatum :: Term s PStakeDatum
   , ownOutputValue :: Term s (PValue 'Sorted 'Positive)
@@ -204,12 +209,15 @@ data POnlyOneStakeContext (s :: S) = POnlyOneStakeContext
   , onlyLocksUpdated :: Term s PBool
   }
   deriving stock
-    ( Generic
+    ( -- | @since 1.0.0
+      Generic
     )
   deriving anyclass
-    ( PlutusType
+    ( -- | @since 1.0.0
+      PlutusType
     )
 
+-- | @since 1.0.0
 instance DerivePlutusType POnlyOneStakeContext where
   type DPTStrat _ = PlutusTypeScott
 
