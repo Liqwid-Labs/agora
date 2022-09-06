@@ -36,7 +36,7 @@ import Agora.Proposal (
   pneutralOption,
   pwinner,
  )
-import Agora.Proposal.Time (createProposalStartingTime)
+import Agora.Proposal.Time (validateProposalStartingTime)
 import Agora.Scripts (
   AgoraScripts,
   authorityTokenSymbol,
@@ -74,7 +74,7 @@ import Plutarch.Extra.AssetClass (passetClass, passetClassValueOf)
 import Plutarch.Extra.Field (pletAllC)
 import Plutarch.Extra.List (pfirstJust)
 import Plutarch.Extra.Map (ptryLookup)
-import Plutarch.Extra.Maybe (passertPJust, pfromJust, pmaybeData, pnothing)
+import Plutarch.Extra.Maybe (passertPJust, pmaybeData, pnothing)
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
 import Plutarch.Extra.ScriptContext (
   pfindOutputsToAddress,
@@ -367,12 +367,7 @@ governorValidator as =
 
           proposalOutputDatum <- pletAllC $ pto $ pfromData proposalOutputDatum'
 
-          let expectedStartingTime =
-                pfromJust #$ createProposalStartingTime
-                  # oldGovernorDatumF.createProposalTimeRangeMaxWidth
-                  # txInfoF.validRange
-
-              expectedCosigners = psingleton @PBuiltinList # stakeInputDatumF.owner
+          let expectedCosigners = psingleton @PBuiltinList # stakeInputDatumF.owner
 
           pguardC "Proposal datum correct" $
             foldl1
@@ -389,8 +384,11 @@ governorValidator as =
                   proposalOutputDatum.status #== pconstantData Draft
               , ptraceIfFalse "cosigners correct" $
                   plistEquals # pfromData proposalOutputDatum.cosigners # expectedCosigners
-              , ptraceIfFalse "starting time correct" $
-                  proposalOutputDatum.startingTime #== expectedStartingTime
+              , ptraceIfFalse "starting time valid" $
+                  validateProposalStartingTime
+                    # oldGovernorDatumF.createProposalTimeRangeMaxWidth
+                    # txInfoF.validRange
+                    # proposalOutputDatum.startingTime
               , ptraceIfFalse "copy over configurations" $
                   proposalOutputDatum.thresholds #== oldGovernorDatumF.proposalThresholds
                     #&& proposalOutputDatum.timingConfig #== oldGovernorDatumF.proposalTimings

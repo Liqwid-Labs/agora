@@ -14,13 +14,13 @@ module Agora.Proposal.Time (
   MaxTimeRangeWidth (..),
 
   -- * Plutarch-land
-  PProposalTime (..),
+  PProposalTime,
   PProposalTimingConfig (..),
   PProposalStartingTime (..),
   PMaxTimeRangeWidth (..),
 
   -- * Compute periods given config and starting time.
-  createProposalStartingTime,
+  validateProposalStartingTime,
   currentProposalTime,
   isDraftPeriod,
   isVotingPeriod,
@@ -30,6 +30,7 @@ module Agora.Proposal.Time (
   pisMaxTimeRangeWidthValid,
 ) where
 
+import Agora.Utils (pcurrentTimeDuration)
 import Control.Composition ((.*))
 import Plutarch.Api.V1 (
   PExtended (PFinite),
@@ -44,10 +45,14 @@ import Plutarch.DataRepr (
   PDataFields,
  )
 import Plutarch.Extra.Applicative (PApply (pliftA2))
-import Plutarch.Extra.Bind ((#>>=))
 import Plutarch.Extra.Field (pletAll, pletAllC)
-import Plutarch.Extra.Maybe (pjust, pnothing)
+import Plutarch.Extra.Maybe (pjust, pmaybe, pnothing)
 import Plutarch.Extra.TermCont (pmatchC)
+import Plutarch.Extra.Time (
+  PCurrentTime (PCurrentTime),
+  pisCurrentTimeWithin,
+  pisWithinCurrentTime,
+ )
 import Plutarch.Lift (
   DerivePConstantViaNewtype (DerivePConstantViaNewtype),
   PConstantDecl,
@@ -160,23 +165,7 @@ newtype MaxTimeRangeWidth = MaxTimeRangeWidth {getMaxWidth :: POSIXTime}
 
      @since 0.1.0
 -}
-data PProposalTime (s :: S) = PProposalTime
-  { lowerBound :: Term s PPOSIXTime
-  , upperBound :: Term s PPOSIXTime
-  }
-  deriving stock
-    ( -- | @since 0.1.0
-      Generic
-    )
-  deriving anyclass
-    ( -- | @since 0.1.0
-      PlutusType
-    , -- | @since 0.1.0
-      PEq
-    )
-
-instance DerivePlutusType PProposalTime where
-  type DPTStrat _ = PlutusTypeScott
+type PProposalTime = PCurrentTime
 
 -- | Plutarch-level version of 'ProposalStartingTime'.
 newtype PProposalStartingTime (s :: S) = PProposalStartingTime (Term s PPOSIXTime)
@@ -327,38 +316,41 @@ pisMaxTimeRangeWidthValid =
       ptraceIfFalse "greater than 0"
         . (pconstant (MaxTimeRangeWidth 0) #<)
 
-{- | Get the starting time of a proposal, from the 'PlutusLedgerApi.V1.txInfoValidPeriod' field.
+{- | Validate starting time of a proposal, from the 'PlutusLedgerApi.V1.txInfoValidPeriod' field.
      For every proposal, this is only meant to run once upon creation. Given time range should be
      tight enough, meaning that the width of the time range should be less than the maximum value.
 
-     @since 0.1.0
+     @since 1.0.0
 -}
-createProposalStartingTime ::
+validateProposalStartingTime ::
   forall (s :: S).
   Term
     s
     ( PMaxTimeRangeWidth
         :--> PPOSIXTimeRange
-        :--> PMaybe PProposalStartingTime
+        :--> PProposalStartingTime
+        :--> PBool
     )
-createProposalStartingTime = phoistAcyclic $
-  plam $ \(pto -> maxDuration) iv ->
-    let ct = currentProposalTime # iv
-
-        f :: Term _ (PProposalTime :--> PMaybe PProposalStartingTime)
-        f = plam $
-          flip pmatch $ \(PProposalTime lb ub) ->
-            let duration = ub - lb
-
-                startingTime = pdiv # (lb + ub) # 2
-             in pif
-                  (duration #<= maxDuration)
-                  (pjust #$ pcon $ PProposalStartingTime startingTime)
-                  ( ptrace
-                      "createProposalStartingTime: given time range should be tight enough"
-                      pnothing
-                  )
-     in ct #>>= f
+validateProposalStartingTime = phoistAcyclic $
+  plam $ \(pto -> maxDuration) iv (pto -> st) ->
+    pmaybe
+      # ptrace
+        "validateProposalStartingTime: unable to get current time"
+        (pconstant False)
+      # plam
+        ( \ct ->
+            let duration = pcurrentTimeDuration # ct
+                isTightEnough =
+                  ptraceIfFalse
+                    "createProposalStartingTime: given time range should be tight enough"
+                    $ duration #<= maxDuration
+                isInCurrentTimeRange =
+                  ptraceIfFalse
+                    "createProposalStartingTime: starting time should be in current time range"
+                    $ pisWithinCurrentTime # st # ct
+             in isTightEnough #&& isInCurrentTimeRange
+        )
+      # (currentProposalTime # iv)
 
 {- | Get the current proposal time, from the 'PlutusLedgerApi.V1.txInfoValidPeriod' field.
 
@@ -389,31 +381,8 @@ currentProposalTime = phoistAcyclic $
         lowerBound = getBound # lb
         upperBound = getBound # ub
 
-        mkTime = phoistAcyclic $ plam $ pcon .* PProposalTime
+        mkTime = phoistAcyclic $ plam $ pcon .* PCurrentTime
     pure $ pliftA2 # mkTime # lowerBound # upperBound
-
-{- | Check if 'PProposalTime' is within two 'PPOSIXTime'. Inclusive.
-
-     @since 0.1.0
--}
-proposalTimeWithin ::
-  forall (s :: S).
-  Term
-    s
-    ( PPOSIXTime
-        :--> PPOSIXTime
-        :--> PProposalTime
-        :--> PBool
-    )
-proposalTimeWithin = phoistAcyclic $
-  plam $ \l h proposalTime' -> unTermCont $ do
-    PProposalTime ut lt <- pmatchC proposalTime'
-    pure $
-      foldr1
-        (#&&)
-        [ l #<= lt
-        , ut #<= h
-        ]
 
 {- | True if the 'PProposalTime' is in the draft period.
 
@@ -430,7 +399,7 @@ isDraftPeriod ::
     )
 isDraftPeriod = phoistAcyclic $
   plam $ \config s' -> pmatch s' $ \(PProposalStartingTime s) ->
-    proposalTimeWithin # s # (s + (pfield @"draftTime" # config))
+    pisCurrentTimeWithin # s # (s + (pfield @"draftTime" # config))
 
 {- | True if the 'PProposalTime' is in the voting period.
 
@@ -448,7 +417,7 @@ isVotingPeriod ::
 isVotingPeriod = phoistAcyclic $
   plam $ \config s' -> pmatch s' $ \(PProposalStartingTime s) ->
     pletFields @'["draftTime", "votingTime"] config $ \f ->
-      proposalTimeWithin # s # (s + f.draftTime + f.votingTime)
+      pisCurrentTimeWithin # s # (s + f.draftTime + f.votingTime)
 
 {- | True if the 'PProposalTime' is in the locking period.
 
@@ -466,7 +435,7 @@ isLockingPeriod ::
 isLockingPeriod = phoistAcyclic $
   plam $ \config s' -> pmatch s' $ \(PProposalStartingTime s) ->
     pletFields @'["draftTime", "votingTime", "lockingTime"] config $ \f ->
-      proposalTimeWithin # s # (s + f.draftTime + f.votingTime + f.lockingTime)
+      pisCurrentTimeWithin # s # (s + f.draftTime + f.votingTime + f.lockingTime)
 
 {- | True if the 'PProposalTime' is in the execution period.
 
@@ -484,5 +453,5 @@ isExecutionPeriod ::
 isExecutionPeriod = phoistAcyclic $
   plam $ \config s' -> pmatch s' $ \(PProposalStartingTime s) ->
     pletFields @'["draftTime", "votingTime", "lockingTime", "executingTime"] config $ \f ->
-      proposalTimeWithin # s
+      pisCurrentTimeWithin # s
         # (s + f.draftTime + f.votingTime + f.lockingTime + f.executingTime)
