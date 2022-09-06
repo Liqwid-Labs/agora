@@ -48,6 +48,7 @@ import PlutusLedgerApi.V2 (
  )
 import Sample.Shared (
   agoraScripts,
+  fromDiscrete,
   governor,
   minAda,
   signer,
@@ -123,7 +124,7 @@ setDelegate ps = buildSpending' builder
           [ st
           , Value.assetClassValue
               (untag governor.gtClassRef)
-              (untag stakeInput.stakedAmount)
+              (fromDiscrete stakeInput.stakedAmount)
           , minAda
           ]
 

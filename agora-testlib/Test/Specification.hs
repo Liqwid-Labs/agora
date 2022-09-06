@@ -56,6 +56,7 @@ import Agora.Utils (
  )
 import Control.Composition ((.**), (.***))
 import Data.Coerce (coerce)
+import Data.Text qualified as Text
 import Plutarch.Evaluate (evalScript)
 import PlutusLedgerApi.V1.Scripts (
   Context (..),
@@ -137,8 +138,12 @@ toTestTree (Terminal (Specification name expectation script)) =
       Failure -> onFailure
       FailureWith s -> onFailureWith s
   where
+    beautifyTraces =
+      Text.unpack
+        . Text.intercalate "\n"
+        . map ("  " <>)
     (res, _budget, traces) = evalScript script
-    ts = " Traces: " <> show traces
+    ts = " Traces:\n" <> beautifyTraces traces
     onSuccess = case res of
       Left e ->
         assertFailure $

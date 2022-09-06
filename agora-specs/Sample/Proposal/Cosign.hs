@@ -10,7 +10,6 @@ module Sample.Proposal.Cosign (
   validCosignNParameters,
   duplicateCosignersParameters,
   statusNotDraftCosignNParameters,
-  invalidStakeOutputParameters,
   mkTestTree,
 ) where
 
@@ -31,25 +30,26 @@ import Agora.SafeMoney (GTTag)
 import Agora.Scripts (AgoraScripts (..))
 import Agora.Stake (
   StakeDatum (StakeDatum, owner),
-  StakeRedeemer (WitnessStake),
-  stakedAmount,
  )
 import Data.Coerce (coerce)
 import Data.Default (def)
 import Data.List (sort)
 import Data.Map.Strict qualified as StrictMap
-import Data.Tagged (Tagged, untag)
+import Data.Tagged (untag)
 import Plutarch.Context (
   input,
   output,
+  referenceInput,
   script,
   signedWith,
   timeRange,
   txId,
   withDatum,
+  withInlineDatum,
   withRef,
   withValue,
  )
+import Plutarch.SafeMoney (Discrete)
 import PlutusLedgerApi.V1.Value qualified as Value
 import PlutusLedgerApi.V2 (
   Credential (PubKeyCredential),
@@ -61,6 +61,7 @@ import PlutusLedgerApi.V2 (
 import Sample.Proposal.Shared (proposalTxRef, stakeTxRef)
 import Sample.Shared (
   agoraScripts,
+  fromDiscrete,
   governor,
   minAda,
   proposalPolicySymbol,
@@ -71,7 +72,6 @@ import Sample.Shared (
  )
 import Test.Specification (
   SpecificationTree,
-  group,
   testValidator,
  )
 import Test.Util (CombinableBuilder, closedBoundedInterval, mkSpending, pubKeyHashes, sortValue)
@@ -82,9 +82,6 @@ data Parameters = Parameters
   -- ^ New cosigners to be added, and the owners of the generated stakes.
   , proposalStatus :: ProposalStatus
   -- ^ Current state of the proposal.
-  , alterOutputStakes :: Bool
-  -- ^ Whether to generate invalid stake outputs.
-  --   In particular, the 'stakedAmount' of all the stake datums will be set to zero.
   }
 
 -- | Owner of the creator stake, doesn't really matter in this case.
@@ -92,7 +89,7 @@ proposalCreator :: PubKeyHash
 proposalCreator = signer
 
 -- | The amount of GTs every generated stake has, doesn't really matter in this case.
-perStakedGTs :: Tagged GTTag Integer
+perStakedGTs :: Discrete GTTag
 perStakedGTs = 5
 
 {- | Create input proposal datum given the parameters.
@@ -151,34 +148,24 @@ cosign ps = builder
         minAda
           <> Value.assetClassValue
             (untag governor.gtClassRef)
-            (untag perStakedGTs)
+            (fromDiscrete perStakedGTs)
           <> sst
 
     stakeBuilder =
       foldMap
         ( \(stakeDatum, refIdx) ->
-            let stakeOutputDatum =
-                  if ps.alterOutputStakes
-                    then stakeDatum {stakedAmount = 0}
-                    else stakeDatum
-             in mconcat
-                  [ input $
-                      mconcat
-                        [ script stakeValidatorHash
-                        , withValue stakeValue
-                        , withDatum stakeDatum
-                        , withRef (mkStakeRef refIdx)
-                        ]
-                  , output $
-                      mconcat
-                        [ script stakeValidatorHash
-                        , withValue stakeValue
-                        , withDatum stakeOutputDatum
-                        ]
-                  , case stakeDatum.owner of
-                      PubKeyCredential k -> signedWith k
-                      _ -> mempty
-                  ]
+            mconcat
+              [ referenceInput $
+                  mconcat
+                    [ script stakeValidatorHash
+                    , withValue stakeValue
+                    , withInlineDatum stakeDatum
+                    , withRef (mkStakeRef refIdx)
+                    ]
+              , case stakeDatum.owner of
+                  PubKeyCredential k -> signedWith k
+                  _ -> mempty
+              ]
         )
         $ zip
           stakeInputDatums
@@ -246,10 +233,6 @@ mkStakeRef idx =
 mkProposalRedeemer :: Parameters -> ProposalRedeemer
 mkProposalRedeemer = Cosign . sort . newCosigners
 
--- | Stake redeemer for cosuming all the stakes generated in the module.
-stakeRedeemer :: StakeRedeemer
-stakeRedeemer = WitnessStake
-
 ---
 
 -- | Create a valid parameters that cosign the proposal with a given number of cosigners.
@@ -259,7 +242,6 @@ validCosignNParameters n
       Parameters
         { newCosigners = take n (fmap PubKeyCredential pubKeyHashes)
         , proposalStatus = Draft
-        , alterOutputStakes = False
         }
   | otherwise = error "Number of cosigners should be positive"
 
@@ -273,7 +255,6 @@ duplicateCosignersParameters =
   Parameters
     { newCosigners = [PubKeyCredential proposalCreator]
     , proposalStatus = Draft
-    , alterOutputStakes = False
     }
 
 ---
@@ -288,21 +269,9 @@ statusNotDraftCosignNParameters n =
         Parameters
           { newCosigners = take n (fmap PubKeyCredential pubKeyHashes)
           , proposalStatus = st
-          , alterOutputStakes = False
           }
     )
     [VotingReady, Locked, Finished]
-
----
-
-{- | Parameters thet change the output stake datums.
-   Invalid for both proposal validator and stake validator.
--}
-invalidStakeOutputParameters :: Parameters
-invalidStakeOutputParameters =
-  (validCosignNParameters 2)
-    { alterOutputStakes = True
-    }
 
 ---
 
@@ -314,7 +283,7 @@ mkTestTree ::
   -- | Are the parameters valid for the proposal validator?
   Bool ->
   SpecificationTree
-mkTestTree name ps isValid = group name [proposal, stake]
+mkTestTree name ps isValid = proposal
   where
     spend = mkSpending cosign ps
 
@@ -322,20 +291,8 @@ mkTestTree name ps isValid = group name [proposal, stake]
       let proposalInputDatum = mkProposalInputDatum ps
        in testValidator
             isValid
-            "proposal"
+            (name <> ": proposal")
             agoraScripts.compiledProposalValidator
             proposalInputDatum
             (mkProposalRedeemer ps)
             (spend proposalRef)
-
-    stake =
-      let idx = 0
-          stakeInputDatum = mkStakeInputDatums ps !! idx
-          isValid = not ps.alterOutputStakes
-       in testValidator
-            isValid
-            "stake"
-            agoraScripts.compiledStakeValidator
-            stakeInputDatum
-            stakeRedeemer
-            (spend $ mkStakeRef idx)

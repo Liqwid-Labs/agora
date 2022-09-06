@@ -29,7 +29,6 @@ module Sample.Proposal.Advance (
   mkFromFinishedBundles,
   mkInsufficientCosignsBundle,
   mkToNextStateTooLateBundles,
-  mkInvalidOutputStakeBundles,
   mkMintGATsForWrongEffectsBundle,
   mkNoGATMintedBundle,
   mkGATsWithWrongDatumBundle,
@@ -46,6 +45,7 @@ import Agora.Governor (
 import Agora.Proposal (
   ProposalDatum (..),
   ProposalEffectGroup,
+  ProposalEffectMetadata (ProposalEffectMetadata),
   ProposalId (ProposalId),
   ProposalRedeemer (AdvanceProposal),
   ProposalStatus (..),
@@ -66,7 +66,6 @@ import Agora.Proposal.Time (
 import Agora.Scripts (AgoraScripts (..))
 import Agora.Stake (
   StakeDatum (..),
-  StakeRedeemer (WitnessStake),
  )
 import Agora.Utils (scriptHashToTokenName)
 import Control.Applicative (liftA2)
@@ -75,15 +74,17 @@ import Data.Default (def)
 import Data.List (singleton, sort)
 import Data.Map.Strict qualified as StrictMap
 import Data.Maybe (fromJust)
-import Data.Tagged (Tagged (..), untag)
+import Data.Tagged (untag)
 import Plutarch.Context (
   input,
   mint,
   output,
+  referenceInput,
   script,
   signedWith,
   timeRange,
   withDatum,
+  withInlineDatum,
   withRef,
   withValue,
  )
@@ -217,7 +218,6 @@ data StakeParameters = StakeParameters
   { numStake :: NumStake
   , perStakeGTs :: Integer
   , transactionSignedByOwners :: Bool
-  , invalidStakeOutputDatum :: Bool
   }
 
 -- | Represent the number of stakes or the number of the cosigners.
@@ -355,31 +355,13 @@ mkStakeInputDatums :: StakeParameters -> [StakeDatum]
 mkStakeInputDatums ps =
   let template =
         StakeDatum
-          { stakedAmount = Tagged ps.perStakeGTs
+          { stakedAmount = fromInteger ps.perStakeGTs
           , owner = PubKeyCredential ""
           , delegatedTo = Nothing
           , lockedBy = []
           }
    in (\owner -> template {owner = owner})
         <$> mkStakeOwners ps.numStake
-
--- | Create the output stake datums given the parameters.
-mkStakeOutputDatums :: StakeParameters -> [StakeDatum]
-mkStakeOutputDatums ps =
-  let inputDatums = mkStakeInputDatums ps
-      outputStakedAmount =
-        Tagged $
-          if ps.invalidStakeOutputDatum
-            then ps.perStakeGTs * 10
-            else ps.perStakeGTs
-      modify inp = inp {stakedAmount = outputStakedAmount}
-   in modify <$> inputDatums
-
-{- | Get the input stake datum given the index. The range of the index is
-    @[0, 'StakeParameters.numStake - 1']@
--}
-getStakeInputDatumAt :: StakeParameters -> Index -> StakeDatum
-getStakeInputDatumAt ps = (!!) (mkStakeInputDatums ps)
 
 -- | Create the reference to a particular stake UTXO.
 mkStakeRef :: Index -> TxOutRef
@@ -397,39 +379,26 @@ mkStakeBuilder ps =
             <> Value.assetClassValue
               (untag governor.gtClassRef)
               ps.perStakeGTs
-      perStake idx i o =
+      perStake idx i =
         let withSig =
               case (i.owner, ps.transactionSignedByOwners) of
                 (PubKeyCredential owner, True) -> signedWith owner
                 _ -> mempty
          in mconcat
               [ withSig
-              , input $
+              , referenceInput $
                   mconcat
                     [ script stakeValidatorHash
                     , withRef (mkStakeRef idx)
                     , withValue perStakeValue
-                    , withDatum i
-                    ]
-              , output $
-                  mconcat
-                    [ script stakeValidatorHash
-                    , withValue perStakeValue
-                    , withDatum o
+                    , withInlineDatum i
                     ]
               ]
    in mconcat $
-        zipWith3
+        zipWith
           perStake
           [0 :: Index ..]
           (mkStakeInputDatums ps)
-          (mkStakeOutputDatums ps)
-
-{- | The proposal redeemer used to spend the stake UTXO, which is always
-      'WitnessStake' in this case.
--}
-stakeRedeemer :: StakeRedeemer
-stakeRedeemer = WitnessStake
 
 --------------------------------------------------------------------------------
 
@@ -553,7 +522,7 @@ mkTestTree ::
   Validity ->
   SpecificationTree
 mkTestTree name pb val =
-  group name $ mconcat [proposal, stake, governor, authority]
+  group name $ mconcat [proposal, governor, authority]
   where
     spend = mkSpending advance pb
 
@@ -567,22 +536,6 @@ mkTestTree name pb val =
               proposalInputDatum
               proposalRedeemer
               (spend proposalRef)
-
-    stake =
-      if pb.stakeParameters.numStake == 0
-        then mempty
-        else
-          let idx = 0
-           in singleton $
-                testValidator
-                  val.forStakeValidator
-                  "stake"
-                  agoraScripts.compiledStakeValidator
-                  (getStakeInputDatumAt pb.stakeParameters idx)
-                  stakeRedeemer
-                  ( spend (mkStakeRef idx)
-                  )
-
     governor =
       maybe [] singleton $
         testValidator
@@ -747,7 +700,7 @@ mkMockEffects useAuthScript n = effects
 
     datums = repeat dummyDatumHash
 
-    effectMetadata = zip datums authScripts
+    effectMetadata = zipWith ProposalEffectMetadata datums authScripts
     effectScripts = validatorHashes
 
     effects =
@@ -822,7 +775,6 @@ mkValidToNextStateBundle nCosigners nEffects authScript from =
                     compPerStakeGTsForDraft $
                       fromIntegral nCosigners
                 , transactionSignedByOwners = False
-                , invalidStakeOutputDatum = False
                 }
           , governorParameters = Nothing
           , authorityTokenParameters = []
@@ -857,7 +809,7 @@ mkValidToNextStateBundle nCosigners nEffects authScript from =
             let aut =
                   StrictMap.elems $
                     StrictMap.mapWithKey
-                      ( \vh (_, authScript) ->
+                      ( \vh (ProposalEffectMetadata _ authScript) ->
                           AuthorityTokenParameters
                             { mintGATsFor = vh
                             , carryDatum = Just dummyDatum
@@ -920,7 +872,6 @@ mkValidToFailedStateBundles nCosigners nEffects =
                       compPerStakeGTsForDraft $
                         fromIntegral nCosigners
                   , transactionSignedByOwners = False
-                  , invalidStakeOutputDatum = False
                   }
             , governorParameters = Nothing
             , authorityTokenParameters = []
@@ -963,22 +914,6 @@ mkToNextStateTooLateBundles nCosigners nEffects =
       let template = mkValidToNextStateBundle nCosigners nEffects authScript from
        in template
             { transactionTimeRange = mkTooLateTimeRange from
-            }
-
-mkInvalidOutputStakeBundles :: Word -> Word -> [ParameterBundle]
-mkInvalidOutputStakeBundles nCosigners nEffects =
-  liftA2
-    mkBundle
-    [True, False]
-    [Draft]
-  where
-    mkBundle authScript from =
-      let template = mkValidToNextStateBundle nCosigners nEffects authScript from
-       in template
-            { stakeParameters =
-                template.stakeParameters
-                  { invalidStakeOutputDatum = True
-                  }
             }
 
 mkUnexpectedOutputStakeBundles :: Word -> Word -> [ParameterBundle]

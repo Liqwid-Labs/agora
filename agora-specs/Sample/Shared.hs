@@ -15,6 +15,7 @@ module Sample.Shared (
   deterministicTracingConfing,
   mkEffect,
   mkRedeemer,
+  fromDiscrete,
 
   -- * Agora Scripts
   agoraScripts,
@@ -73,6 +74,7 @@ import Agora.Utils (
   CompiledValidator (getCompiledValidator),
   validatorHashToTokenName,
  )
+import Data.Coerce (coerce)
 import Data.Default.Class (Default (..))
 import Data.Tagged (Tagged (..))
 import Plutarch (Config (..), TracingMode (DetTracing))
@@ -82,6 +84,7 @@ import Plutarch.Api.V2 (
   mkValidator,
   validatorHash,
  )
+import Plutarch.SafeMoney (Discrete (Discrete))
 import PlutusLedgerApi.V1.Address (scriptHashAddress)
 import PlutusLedgerApi.V1.Contexts (TxOut (..))
 import PlutusLedgerApi.V1.Scripts (Validator, ValidatorHash (..))
@@ -224,6 +227,9 @@ mkEffect v = CompiledEffect $ mkValidator deterministicTracingConfing v
 
 mkRedeemer :: forall redeemer. PlutusTx.ToData redeemer => redeemer -> Redeemer
 mkRedeemer = Redeemer . toBuiltinData
+
+fromDiscrete :: forall tag. Discrete tag -> Integer
+fromDiscrete = coerce
 
 ------------------------------------------------------------------
 
