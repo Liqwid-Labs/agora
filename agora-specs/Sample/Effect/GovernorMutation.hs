@@ -74,11 +74,17 @@ atAssetClass = assetClass authorityTokenSymbol tokenName
 
 -- | The mock reference of the governor state UTXO.
 govRef :: TxOutRef
-govRef = TxOutRef "1475e1ee22330dfc55430980e5a6b100ec9d9249bb4b462256a79559" 1
+govRef =
+  TxOutRef
+    "d63fe09e6ac6e55dea82291149085d0a9b901df65087b83965188ee92fb25aef"
+    1
 
 -- | The mock reference of the effect UTXO.
 effectRef :: TxOutRef
-effectRef = TxOutRef "a302d327d8e5553d50b9d017475369753f723d7e999ac1b68da8ad52" 1
+effectRef =
+  TxOutRef
+    "3ca6864670aae61a9f3e63064284cec00bd983d77cf4e1ab1e26bef34cafb0a9"
+    1
 
 -- | The input effect datum in 'mkEffectTransaction'.
 mkEffectDatum :: GovernorDatum -> MutateGovernorDatum

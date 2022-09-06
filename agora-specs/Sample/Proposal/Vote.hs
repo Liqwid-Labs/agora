@@ -32,7 +32,7 @@ import Agora.Stake (
  )
 import Data.Default (Default (def))
 import Data.Map.Strict qualified as StrictMap
-import Data.Tagged (Tagged (Tagged), untag)
+import Data.Tagged (untag)
 import Plutarch.Context (
   input,
   output,
@@ -41,6 +41,7 @@ import Plutarch.Context (
   timeRange,
   txId,
   withDatum,
+  withRedeemer,
   withRef,
   withValue,
  )
@@ -139,7 +140,7 @@ delegate = head pubKeyHashes
 mkStakeInputDatum :: Parameters -> StakeDatum
 mkStakeInputDatum params =
   StakeDatum
-    { stakedAmount = Tagged params.voteCount
+    { stakedAmount = fromInteger params.voteCount
     , owner = PubKeyCredential stakeOwner
     , delegatedTo =
         if params.voteAsDelegate
@@ -230,6 +231,7 @@ vote params =
                 , withValue pst
                 , withDatum proposalInputDatum
                 , withRef proposalRef
+                , withRedeemer $ mkProposalRedeemer params
                 ]
           , input $
               mconcat

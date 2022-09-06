@@ -23,7 +23,7 @@ import Agora.SafeMoney (GTTag)
 import Agora.Stake (
   StakeDatum (StakeDatum, stakedAmount),
  )
-import Data.Tagged (Tagged, untag)
+import Data.Tagged (untag)
 import Plutarch.Context (
   MintingBuilder,
   SpendingBuilder,
@@ -41,6 +41,7 @@ import Plutarch.Context (
   withSpendingOutRef,
   withValue,
  )
+import Plutarch.SafeMoney (Discrete)
 import PlutusLedgerApi.V1.Contexts (TxOutRef (..))
 import PlutusLedgerApi.V1.Value qualified as Value (
   assetClassValue,
@@ -56,6 +57,7 @@ import PlutusLedgerApi.V2 (
  )
 import PlutusTx.AssocMap qualified as AssocMap
 import Sample.Shared (
+  fromDiscrete,
   governor,
   signer,
   stakeAssetClass,
@@ -112,9 +114,9 @@ stakeCreationUnsigned =
 
 -- | Config for creating a ScriptContext that deposits or withdraws.
 data DepositWithdrawExample = DepositWithdrawExample
-  { startAmount :: Tagged GTTag Integer
+  { startAmount :: Discrete GTTag
   -- ^ The amount of GT stored before the transaction.
-  , delta :: Tagged GTTag Integer
+  , delta :: Discrete GTTag
   -- ^ The amount of GT deposited or withdrawn from the Stake.
   }
 
@@ -143,7 +145,7 @@ stakeDepositWithdraw config =
                 , withValue
                     ( sortValue $
                         st
-                          <> Value.assetClassValue (untag governor.gtClassRef) (untag stakeBefore.stakedAmount)
+                          <> Value.assetClassValue (untag governor.gtClassRef) (fromDiscrete stakeBefore.stakedAmount)
                     )
                 , withDatum stakeAfter
                 , withRef stakeRef
@@ -154,7 +156,7 @@ stakeDepositWithdraw config =
                 , withValue
                     ( sortValue $
                         st
-                          <> Value.assetClassValue (untag governor.gtClassRef) (untag stakeAfter.stakedAmount)
+                          <> Value.assetClassValue (untag governor.gtClassRef) (fromDiscrete stakeAfter.stakedAmount)
                     )
                 , withDatum stakeAfter
                 ]

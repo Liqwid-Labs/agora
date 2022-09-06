@@ -36,6 +36,7 @@ import Agora.Proposal (
   ResultTag (..),
  )
 import Agora.Proposal.Time (ProposalStartingTime (ProposalStartingTime))
+import Agora.SafeMoney (GTTag)
 import Agora.Scripts (AgoraScripts (..))
 import Agora.Stake (
   ProposalLock (..),
@@ -44,7 +45,7 @@ import Agora.Stake (
  )
 import Data.Default.Class (Default (def))
 import Data.Map.Strict qualified as StrictMap
-import Data.Tagged (Tagged (..), untag)
+import Data.Tagged (untag)
 import Plutarch.Context (
   input,
   output,
@@ -52,9 +53,11 @@ import Plutarch.Context (
   signedWith,
   txId,
   withDatum,
+  withRedeemer,
   withRef,
   withValue,
  )
+import Plutarch.SafeMoney (Discrete)
 import PlutusLedgerApi.V1.Value qualified as Value
 import PlutusLedgerApi.V2 (
   Credential (PubKeyCredential),
@@ -64,6 +67,7 @@ import PlutusLedgerApi.V2 (
 import Sample.Proposal.Shared (stakeTxRef)
 import Sample.Shared (
   agoraScripts,
+  fromDiscrete,
   governor,
   minAda,
   proposalPolicySymbol,
@@ -99,13 +103,13 @@ defVoteFor :: ResultTag
 defVoteFor = ResultTag 0
 
 -- | The default number of GTs the stake will have.
-defStakedGTs :: Tagged _ Integer
+defStakedGTs :: Discrete GTTag
 defStakedGTs = 100000
 
 {- | If 'Parameters.alterOutputStake' is set to true, the
      'StakeDatum.stakedAmount' will be set to this.
 -}
-alteredStakedGTs :: Tagged _ Integer
+alteredStakedGTs :: Discrete GTTag
 alteredStakedGTs = 100
 
 -- | Default owner of the stakes.
@@ -212,7 +216,7 @@ mkProposalDatumPair ::
   ProposalId ->
   (ProposalDatum, ProposalDatum)
 mkProposalDatumPair params pid =
-  let inputVotes = mkInputVotes params.stakeRole $ untag defStakedGTs
+  let inputVotes = mkInputVotes params.stakeRole $ fromDiscrete defStakedGTs
 
       input =
         ProposalDatum
@@ -266,6 +270,7 @@ unlockStake ps =
                       , withValue pst
                       , withDatum i
                       , withRef (mkProposalRef idx)
+                      , withRedeemer proposalRedeemer
                       ]
                 , output $
                     mconcat
@@ -282,7 +287,7 @@ unlockStake ps =
           mconcat
             [ Value.assetClassValue
                 (untag governor.gtClassRef)
-                (untag defStakedGTs)
+                (fromDiscrete defStakedGTs)
             , sst
             , minAda
             ]
