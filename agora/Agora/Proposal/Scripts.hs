@@ -139,7 +139,7 @@ proposalPolicy (AssetClass (govCs, govTn)) =
 
      @since 1.0.0
 -}
-data PWitneseMultipleStakeContext (s :: S) = PWitneseMultipleStakeContext
+data PWitnessMultipleStakeContext (s :: S) = PWitnessMultipleStakeContext
   { totalAmount :: Term s PInteger
   , orderedOwners :: Term s (PList PCredential)
   }
@@ -153,7 +153,7 @@ data PWitneseMultipleStakeContext (s :: S) = PWitneseMultipleStakeContext
     )
 
 -- | @since 1.0.0
-instance DerivePlutusType PWitneseMultipleStakeContext where
+instance DerivePlutusType PWitnessMultipleStakeContext where
   type DPTStrat _ = PlutusTypeScott
 
 {- | Validation context for redeemers which need to modify a single stake.
@@ -351,7 +351,7 @@ proposalValidator as maximumCosigners =
     witnessStakes' ::
       Term
         s
-        ( (PWitneseMultipleStakeContext :--> PUnit) :--> PUnit
+        ( (PWitnessMultipleStakeContext :--> PUnit) :--> PUnit
         ) <-
       pletC $
         let updateCtx = plam $ \ctx' stake -> unTermCont $ do
@@ -363,7 +363,7 @@ proposalValidator as maximumCosigners =
 
               pure $
                 pcon $
-                  PWitneseMultipleStakeContext
+                  PWitnessMultipleStakeContext
                     { totalAmount =
                         ctxF.totalAmount
                           + punsafeCoerce
@@ -381,7 +381,7 @@ proposalValidator as maximumCosigners =
             sortOwners = plam $
               flip pmatch $ \ctxF ->
                 pcon $
-                  PWitneseMultipleStakeContext
+                  PWitnessMultipleStakeContext
                     { totalAmount = ctxF.totalAmount
                     , orderedOwners = pmsort # ctxF.orderedOwners
                     }
@@ -390,12 +390,12 @@ proposalValidator as maximumCosigners =
               sortOwners
                 #$ pfoldl
                 # f
-                # pcon (PWitneseMultipleStakeContext 0 pnil)
+                # pcon (PWitnessMultipleStakeContext 0 pnil)
                 # txInfoF.referenceInputs
          in plam (# ctx)
 
     let witnessStakes ::
-          ( PWitneseMultipleStakeContext _ ->
+          ( PWitnessMultipleStakeContext _ ->
             TermCont _ ()
           ) ->
           Term _ POpaque
@@ -419,7 +419,7 @@ proposalValidator as maximumCosigners =
               unTermCont $ do
                 lF <- pmatchC l
                 t <- pletC $ getStakeDatum # txOut
-                tF <- pmatchC l
+                tF <- pmatchC t
 
                 pure $ case (lF, tF) of
                   (PJust _, PJust _) ->
