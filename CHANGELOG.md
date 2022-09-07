@@ -6,6 +6,10 @@ This format is based on [Keep A Changelog](https://keepachangelog.com/en/1.0.0).
 
 ### Modified
 
+- Witness stakes with reference input. Stake redeemer `WitnessStake` is removed. 
+
+  Included by [#168](https://github.com/Liqwid-Labs/agora/pull/168)
+
 - `tracing` flag in `ScriptParams` of `agora-scripts` to enable/disable tracing in exported scripts.
 
   NOTE: This changes the representation of `ScriptParams`. In order to preserve old behavior, the flag
