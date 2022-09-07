@@ -312,7 +312,7 @@ data ProposalEffectMetadata = ProposalEffectMetadata
     )
     via (ProductIsData ProposalEffectMetadata)
 
--- | @since 0.3.0
+-- | @since 1.0.0
 type ProposalEffectGroup = StrictMap.Map ValidatorHash ProposalEffectMetadata
 
 {- | Haskell-level datum for Proposal scripts.
@@ -725,7 +725,7 @@ newtype PProposalDatum (s :: S) = PProposalDatum
       PEq
     )
 
--- | @since 0.2.0
+-- | @since 1.0.0
 instance DerivePlutusType PProposalDatum where
   type DPTStrat _ = PlutusTypeDataList
 
@@ -798,7 +798,6 @@ phasNeutralEffect = phoistAcyclic $ PAssocMap.pany # PAssocMap.pnull
 -}
 pisEffectsVotesCompatible ::
   forall (s :: S).
-  (PIsListLike PList PResultTag) =>
   Term
     s
     ( PMap 'Sorted PResultTag PProposalEffectGroup
