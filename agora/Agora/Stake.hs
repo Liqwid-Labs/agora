@@ -19,6 +19,17 @@ module Agora.Stake (
   PProposalLock (..),
   PStakeRole (..),
 
+  -- * Validation Context
+  PStakeInputContext (..),
+  PStakeOutputContext (..),
+  PSigContext (..),
+  PStakeRedeemerContext (..),
+  PStakeRedeemerHandlerContext (..),
+  PProposalContext (..),
+  PStakeRedeemerHandler,
+  StakeRedeemerImpl (..),
+  PExtraTxContext (..),
+
   -- * Utility functions
   pstakeLocked,
   pnumCreatedProposals,
@@ -30,17 +41,30 @@ module Agora.Stake (
   pisIrrelevant,
 ) where
 
-import Agora.Proposal (PProposalId, PResultTag, ProposalId, ResultTag)
+import Agora.Proposal (PProposalId, PProposalRedeemer, PResultTag, ProposalId, ResultTag)
 import Agora.SafeMoney (GTTag)
 import Data.Tagged (Tagged)
 import Generics.SOP qualified as SOP
-import Plutarch.Api.V1 (PCredential)
+import Plutarch.Api.V1 (AmountGuarantees (NoGuarantees), KeyGuarantees (Sorted), PCredential, PMap)
+import Plutarch.Api.V1.Scripts (PRedeemer)
+import Plutarch.Api.V1.Value (PValue)
 import Plutarch.Api.V2 (
+  AmountGuarantees (Positive),
+  KeyGuarantees (Unsorted),
+  PDatum,
+  PDatumHash,
   PMaybeData,
+  PPOSIXTimeRange,
+  PPubKeyHash,
+  PScriptPurpose,
+  PTxInInfo,
+  PTxOut,
  )
 import Plutarch.DataRepr (
   DerivePConstantViaData (DerivePConstantViaData),
+  PDataFields,
  )
+import Plutarch.Extra.AssetClass (PAssetClass)
 import Plutarch.Extra.Field (pletAll)
 import Plutarch.Extra.IsData (
   DerivePConstantViaDataList (DerivePConstantViaDataList),
@@ -231,6 +255,8 @@ newtype PStakeDatum (s :: S) = PStakeDatum
       PIsData
     , -- | @since 0.1.0
       PEq
+    , -- | @since 1.0.0
+      PDataFields
     )
 
 instance DerivePlutusType PStakeDatum where
@@ -407,6 +433,104 @@ data PStakeRole (s :: S)
 
 instance DerivePlutusType PStakeRole where
   type DPTStrat _ = PlutusTypeScott
+
+--------------------------------------------------------------------------------
+
+data PStakeInputContext (s :: S) = PStakeInput
+  { ownInputDatum :: Term s PStakeDatum
+  , ownInputValue :: Term s (PValue 'Sorted 'Positive)
+  }
+  deriving stock (Generic)
+  deriving anyclass (PlutusType)
+
+instance DerivePlutusType PStakeInputContext where
+  type DPTStrat _ = PlutusTypeScott
+
+data PStakeOutputContext (s :: S)
+  = PStakeOutput
+      { ownOutputDatum :: Term s PStakeDatum
+      , ownOutputValue :: Term s (PValue 'Sorted 'Positive)
+      }
+  | PStakeBurnt
+  deriving stock (Generic)
+  deriving anyclass (PlutusType)
+
+instance DerivePlutusType PStakeOutputContext where
+  type DPTStrat _ = PlutusTypeScott
+
+data PSigContext (s :: S)
+  = PSignedByOwner
+  | PSignedByDelegate
+  | PUnknownSig
+  deriving stock (Generic)
+  deriving anyclass (PlutusType)
+
+instance DerivePlutusType PSigContext where
+  type DPTStrat _ = PlutusTypeScott
+
+data PStakeRedeemerContext (s :: S)
+  = PDepositWithdrawDelta (Term s (PDiscrete GTTag))
+  | PSetDelegateTo (Term s PCredential)
+  | PNoMetadata
+  deriving stock (Generic)
+  deriving anyclass (PlutusType)
+
+instance DerivePlutusType PStakeRedeemerContext where
+  type DPTStrat _ = PlutusTypeScott
+
+data PProposalContext (s :: S)
+  = PWithProposalRedeemer (Term s PProposalRedeemer)
+  | PNewProposal
+  | PNoProposal
+  deriving stock (Generic)
+  deriving anyclass (PlutusType)
+
+instance DerivePlutusType PProposalContext where
+  type DPTStrat _ = PlutusTypeScott
+
+data PExtraTxContext (s :: S) = PExtraTxContext
+  { inputs :: Term s (PBuiltinList PTxInInfo)
+  , referenceInputs :: Term s (PBuiltinList PTxInInfo)
+  , outputs :: Term s (PBuiltinList PTxOut)
+  , mint :: Term s (PValue 'Sorted 'NoGuarantees)
+  , validRange :: Term s PPOSIXTimeRange
+  , signatories :: Term s (PBuiltinList (PAsData PPubKeyHash))
+  , redeemers :: Term s (PMap 'Unsorted PScriptPurpose PRedeemer)
+  , datums :: Term s (PMap 'Unsorted PDatumHash PDatum)
+  }
+  deriving stock (Generic)
+  deriving anyclass (PlutusType)
+
+instance DerivePlutusType PExtraTxContext where
+  type DPTStrat _ = PlutusTypeScott
+
+data PStakeRedeemerHandlerContext (s :: S) = PStakeRedeemerHandlerContext
+  { stakeInput :: Term s PStakeInputContext
+  , stakeOutput :: Term s PStakeOutputContext
+  , redeemerContext :: Term s PStakeRedeemerContext
+  , sigContext :: Term s PSigContext
+  , proposalContext :: Term s PProposalContext
+  , gtAssetClass :: Term s PAssetClass
+  , extraTxContext :: Term s PExtraTxContext
+  }
+  deriving stock (Generic)
+  deriving anyclass (PlutusType)
+
+instance DerivePlutusType PStakeRedeemerHandlerContext where
+  type DPTStrat _ = PlutusTypeScott
+
+type PStakeRedeemerHandler = PStakeRedeemerHandlerContext :--> PUnit
+
+data StakeRedeemerImpl = StakeRedeemerImpl
+  { onDepositWithdraw :: ClosedTerm PStakeRedeemerHandler
+  , onDestroy :: ClosedTerm PStakeRedeemerHandler
+  , onPermitVote :: ClosedTerm PStakeRedeemerHandler
+  , onRetractVote :: ClosedTerm PStakeRedeemerHandler
+  , onDelegateTo :: ClosedTerm PStakeRedeemerHandler
+  , onClearDelegate :: ClosedTerm PStakeRedeemerHandler
+  }
+
+--------------------------------------------------------------------------------
 
 {- | Retutn true if the stake was used to voted on the proposal.
 
