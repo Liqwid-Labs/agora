@@ -159,6 +159,7 @@ library
     Agora.SafeMoney
     Agora.Scripts
     Agora.Stake
+    Agora.Stake.Redeemers
     Agora.Stake.Scripts
     Agora.Treasury
     Agora.Utils
