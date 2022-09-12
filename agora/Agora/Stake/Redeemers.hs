@@ -10,7 +10,6 @@ module Agora.Stake.Redeemers (
 
 import Agora.Proposal (PProposalRedeemer (PUnlock, PVote))
 import Agora.Stake (
-  PExtraTxContext (inputs),
   PProposalContext (PNewProposal, PWithProposalRedeemer),
   PSigContext (PSignedByOwner, PUnknownSig),
   PStakeDatum (PStakeDatum),
@@ -209,9 +208,9 @@ pdepositWithdraw' = phoistAcyclic $
   plam $ \ctx -> unTermCont $ do
     ctxF <- pmatchC ctx
 
-    extraTxContextF <- pmatchC ctxF.extraTxContext
+    inputs <- pletC $ pfromData $ pfield @"inputs" # ctxF.extraTxContext
 
-    ptraceC $ pshow $ plength # extraTxContextF.inputs
+    ptraceC $ pshow $ plength # inputs
 
     pure $ pdepositWithdraw # ctx
 

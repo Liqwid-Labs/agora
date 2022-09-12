@@ -20,7 +20,6 @@ import Agora.Scripts (
   stakeSTSymbol,
  )
 import Agora.Stake (
-  PExtraTxContext (PExtraTxContext),
   PProposalContext (
     PNewProposal,
     PNoProposal,
@@ -267,18 +266,18 @@ mkStakeValidator
 
       --------------------------------------------------------------------------
 
-      extraTxContext <-
-        pletC $
-          pcon $
-            PExtraTxContext
-              txInfoF.inputs
-              txInfoF.referenceInputs
-              txInfoF.outputs
-              txInfoF.mint
-              txInfoF.validRange
-              txInfoF.signatories
-              txInfoF.redeemers
-              txInfoF.datums
+      -- extraTxContext <-
+      --   pletC $
+      --     pcon $
+      --       PExtraTxContext
+      --         txInfoF.inputs
+      --         txInfoF.referenceInputs
+      --         txInfoF.outputs
+      --         txInfoF.mint
+      --         txInfoF.validRange
+      --         txInfoF.signatories
+      --         txInfoF.redeemers
+      --         txInfoF.datums
 
       --------------------------------------------------------------------------
 
@@ -439,7 +438,7 @@ mkStakeValidator
               sigContext
               proposalContext
               gtAssetClass
-              extraTxContext
+              txInfo
 
       noMetadataContext <-
         pletC $

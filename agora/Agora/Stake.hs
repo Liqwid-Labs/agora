@@ -58,6 +58,7 @@ import Plutarch.Api.V2 (
   PPubKeyHash,
   PScriptPurpose,
   PTxInInfo,
+  PTxInfo,
   PTxOut,
  )
 import Plutarch.DataRepr (
@@ -511,7 +512,7 @@ data PStakeRedeemerHandlerContext (s :: S) = PStakeRedeemerHandlerContext
   , sigContext :: Term s PSigContext
   , proposalContext :: Term s PProposalContext
   , gtAssetClass :: Term s PAssetClass
-  , extraTxContext :: Term s PExtraTxContext
+  , extraTxContext :: Term s PTxInfo
   }
   deriving stock (Generic)
   deriving anyclass (PlutusType)
