@@ -64,7 +64,7 @@ import Agora.Stake (
 import Agora.Stake.Redeemers (
   pclearDelegate,
   pdelegateTo,
-  pdepositWithdraw,
+  pdepositWithdraw',
   pdestroy,
   ppermitVote,
   pretractVote,
@@ -528,7 +528,7 @@ stakeValidator ::
 stakeValidator =
   mkStakeValidator $
     StakeRedeemerImpl
-      { onDepositWithdraw = pdepositWithdraw
+      { onDepositWithdraw = pdepositWithdraw'
       , onDestroy = pdestroy
       , onPermitVote = ppermitVote
       , onRetractVote = pretractVote

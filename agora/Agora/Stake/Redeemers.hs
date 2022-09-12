@@ -5,10 +5,12 @@ module Agora.Stake.Redeemers (
   pclearDelegate,
   pdestroy,
   pdepositWithdraw,
+  pdepositWithdraw',
 ) where
 
 import Agora.Proposal (PProposalRedeemer (PUnlock, PVote))
 import Agora.Stake (
+  PExtraTxContext (inputs),
   PProposalContext (PNewProposal, PWithProposalRedeemer),
   PSigContext (PSignedByOwner, PUnknownSig),
   PStakeDatum (PStakeDatum),
@@ -25,7 +27,7 @@ import Plutarch.Api.V2 (PMaybeData)
 import Plutarch.Extra.Field (pletAllC)
 import Plutarch.Extra.Maybe (pdjust, pdnothing, pmaybeData)
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
-import Plutarch.Extra.TermCont (pguardC, pletC, pmatchC)
+import Plutarch.Extra.TermCont (pguardC, pletC, pmatchC, ptraceC)
 import Plutarch.Extra.Value (pgeqByClass, pgeqByClass')
 import Plutarch.Numeric.Additive (AdditiveMonoid (zero), AdditiveSemigroup ((+)))
 import Plutarch.SafeMoney (pdiscreteValue)
@@ -201,6 +203,17 @@ pdestroy = phoistAcyclic $
     pguardC "Stake unlocked" $ pnot #$ pstakeLocked # inpDat
 
     pure $ pconstant ()
+
+pdepositWithdraw' :: forall (s :: S). Term s PStakeRedeemerHandler
+pdepositWithdraw' = phoistAcyclic $
+  plam $ \ctx -> unTermCont $ do
+    ctxF <- pmatchC ctx
+
+    extraTxContextF <- pmatchC ctxF.extraTxContext
+
+    ptraceC $ pshow $ plength # extraTxContextF.inputs
+
+    pure $ pdepositWithdraw # ctx
 
 pdepositWithdraw :: forall (s :: S). Term s PStakeRedeemerHandler
 pdepositWithdraw = phoistAcyclic $
