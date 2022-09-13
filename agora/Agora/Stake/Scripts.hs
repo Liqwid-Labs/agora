@@ -8,28 +8,30 @@ Plutus Scripts for Stakes.
 module Agora.Stake.Scripts (stakePolicy, stakeValidator) where
 
 import Agora.Credential (authorizationContext, pauthorizedBy)
+import Agora.Proposal (PProposalRedeemer (PUnlock, PVote))
 import Agora.SafeMoney (GTTag)
 import Agora.Scripts (AgoraScripts, proposalSTAssetClass, stakeSTSymbol)
 import Agora.Stake (
   PStakeDatum (PStakeDatum),
   PStakeRedeemer (..),
-  StakeRedeemer (WitnessStake),
   pstakeLocked,
  )
-import Data.Function (on)
 import Data.Tagged (Tagged, untag)
 import Plutarch.Api.V1 (
   PCredential (PPubKeyCredential, PScriptCredential),
   PTokenName,
   PValue,
  )
+import Plutarch.Api.V1.AssocMap (plookup)
 import Plutarch.Api.V2 (
   AmountGuarantees (Positive),
-  PDatumHash,
+  KeyGuarantees (Sorted),
+  PMaybeData,
   PMintingPolicy,
   PScriptPurpose (PMinting, PSpending),
+  PTxInInfo,
   PTxInfo,
-  PTxOut,
+  PTxOutRef,
   PValidator,
  )
 import Plutarch.Extra.AssetClass (
@@ -37,23 +39,40 @@ import Plutarch.Extra.AssetClass (
   passetClassValueOf,
   pvalueOf,
  )
+import Plutarch.Extra.Bind (PBind ((#>>=)))
 import Plutarch.Extra.Field (pletAllC)
-import Plutarch.Extra.List (pmapMaybe, pmsortBy)
-import Plutarch.Extra.Maybe (passertPJust, pdjust, pdnothing, pmaybeData)
+import Plutarch.Extra.Functor (PFunctor (pfmap))
+import Plutarch.Extra.List (pfirstJust)
+import Plutarch.Extra.Maybe (
+  passertPJust,
+  pdjust,
+  pdnothing,
+  pjust,
+  pmaybeData,
+  pnothing,
+ )
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
 import Plutarch.Extra.ScriptContext (
   pfindTxInByTxOutRef,
-  pfromDatumHash,
   pfromOutputDatum,
   pvalueSpent,
  )
-import Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC, ptryFromC)
+import Plutarch.Extra.TermCont (
+  pguardC,
+  pletC,
+  pletFieldsC,
+  pmatchC,
+  ptryFromC,
+ )
 import Plutarch.Extra.Value (
   pgeqByClass',
   pgeqBySymbol,
   psymbolValueOf,
  )
-import Plutarch.Numeric.Additive (AdditiveMonoid (zero), AdditiveSemigroup ((+)))
+import Plutarch.Numeric.Additive (
+  AdditiveMonoid (zero),
+  AdditiveSemigroup ((+)),
+ )
 import Plutarch.SafeMoney (
   pdiscreteValue',
   pvalueDiscrete',
@@ -178,6 +197,30 @@ stakePolicy gtClassRef =
 
 --------------------------------------------------------------------------------
 
+{- | Validation context for stake redeemers that allow only one stake to be
+      spent in the transaction.
+
+     @since 1.0.0
+-}
+data POnlyOneStakeContext (s :: S) = POnlyOneStakeContext
+  { ownOutputDatum :: Term s PStakeDatum
+  , ownOutputValue :: Term s (PValue 'Sorted 'Positive)
+  , ownOutputValueUnchanged :: Term s PBool
+  , onlyLocksUpdated :: Term s PBool
+  }
+  deriving stock
+    ( -- | @since 1.0.0
+      Generic
+    )
+  deriving anyclass
+    ( -- | @since 1.0.0
+      PlutusType
+    )
+
+-- | @since 1.0.0
+instance DerivePlutusType POnlyOneStakeContext where
+  type DPTStrat _ = PlutusTypeScott
+
 {- | Validator intended for Stake UTXOs to be locked by.
 
      == What this Validator does:
@@ -247,6 +290,7 @@ stakeValidator as gtClassRef =
           , "outputs"
           , "signatories"
           , "datums"
+          , "redeemers"
           ]
         txInfo
 
@@ -304,9 +348,33 @@ stakeValidator as gtClassRef =
         _ -> unTermCont $ do
           let AssetClass (propCs, propTn) = proposalSTAssetClass as
               proposalSTClass = passetClass # pconstant propCs # pconstant propTn
-              spentProposalST = passetClassValueOf # valueSpent # proposalSTClass
 
-          proposalTokenMoved <- pletC $ 1 #<= spentProposalST
+          proposalRedeemer <-
+            pletC $
+              let convertRedeemer = plam $ \(pto -> dt) ->
+                    ptryFrom @PProposalRedeemer dt fst
+
+                  findRedeemer = plam $ \ref ->
+                    plookup
+                      # pcon
+                        ( PSpending $
+                            pdcons @_0
+                              # pdata ref
+                              # pdnil
+                        )
+                      # txInfoF.redeemers
+
+                  f :: Term _ (PTxInInfo :--> PMaybe PTxOutRef)
+                  f = plam $ \inInfo ->
+                    let value = pfield @"value" #$ pfield @"resolved" # inInfo
+                        ref = pfield @"outRef" # inInfo
+                     in pif
+                          (passetClassValueOf # value # proposalSTClass #== 1)
+                          (pjust # ref)
+                          pnothing
+
+                  proposalRef = pfirstJust # f # txInfoF.inputs
+               in pfmap # convertRedeemer #$ proposalRef #>>= findRedeemer
 
           -- Filter out own outputs using own address and ST.
           ownOutputs <-
@@ -322,234 +390,217 @@ stakeValidator as gtClassRef =
                   )
                 # pfromData txInfoF.outputs
 
-          let witnessStake = unTermCont $ do
-                pguardC "Either owner signs the transaction or proposal token moved" $
-                  ownerSignsTransaction #|| proposalTokenMoved
-
-                -- FIXME: remove this once we have reference input.
-                --
-                -- Our goal here is to allow multiple input stakes, and also ensure that every the input stakes has a
-                --   corresponding output stake, which carries the same value and the same datum as the input stake.
-                --
-                -- Validation strategy I have tried/considered so far:
-                -- 1. Check that the number of input stakes equals to the number of output stakes, and verify
-                --     that there's an output stake with the exact same value and datum hash as the stake being
-                --     validated , However this approach has a fatal vulnerability: let's say we have two totally
-                --     identical stakes, a malicious user can comsume these two stakes and remove GTs from one of them.
-                -- 2. Perform the same checks as the last approch does, while also checking that every output stake is
-                --     valid(stakedAmount == actual value). However this requires that all the output stake datum are
-                --     included in the transaction, and we have to find and go through them one by one to access the
-                --      'stakedAmount' fields, meaning that computationally this approach is *very* expensive.
-                -- 3. The one implemented below. Find all the continuous input/output, sort them by 'datumHash', and
-                --     ensure that the two sorted lists are equal.
-                let ownInputs =
-                      pmapMaybe
-                        # plam
-                          ( \input -> plet (pfield @"resolved" # input) $ \resolvedInput ->
-                              let value = pfield @"value" # resolvedInput
-                               in pif
-                                    (psymbolValueOf # stCurrencySymbol # value #== 1)
-                                    (pcon $ PJust resolvedInput)
-                                    (pcon PNothing)
-                          )
-                        # pfromData txInfoF.inputs
-
-                    sortTxOuts :: Term _ (PBuiltinList PTxOut :--> PBuiltinList PTxOut)
-                    sortTxOuts = phoistAcyclic $ plam (pmsortBy # plam ((#<) `on` (getDatumHash #)) #)
-                      where
-                        getDatumHash :: Term _ (PTxOut :--> PDatumHash)
-                        getDatumHash = phoistAcyclic $ plam ((pfromDatumHash #) . (pfield @"datum" #))
-
-                    sortedOwnInputs = sortTxOuts # ownInputs
-                    sortedOwnOutputs = sortTxOuts # ownOutputs
-
-                pguardC "Every stake inputs has a corresponding unchanged output" $
-                  plistEquals # sortedOwnInputs # sortedOwnOutputs
-
-                pure $ popaque $ pconstant ()
-
           ----------------------------------------------------------------------
 
-          let onlyAcceptOneStake = unTermCont $ do
+          withSingleStake' ::
+            Term
+              s
+              ( (POnlyOneStakeContext :--> PUnit)
+                  :--> POpaque
+              ) <-
+            pletC $
+              plam $ \validationLogic -> unTermCont $ do
                 pguardC "ST at inputs must be 1" $
                   spentST #== 1
 
                 ownOutput <- pletC $ phead # ownOutputs
 
-                stakeOut <-
-                  pletC $
-                    pfromData $
-                      pfromOutputDatum @(PAsData PStakeDatum)
-                        # (pfield @"datum" # ownOutput)
-                        # txInfoF.datums
+                let ownOutputDatum =
+                      pfromData $
+                        pfromOutputDatum @(PAsData PStakeDatum)
+                          # (pfield @"datum" # ownOutput)
+                          # txInfoF.datums
 
-                ownOutputValue <-
-                  pletC $
-                    pfield @"value" # ownOutput
+                    ownOutputValue =
+                      pfield @"value" # ownOutput
 
-                ownOutputValueUnchanged <-
-                  pletC $
-                    pdata resolvedF.value #== pdata ownOutputValue
+                    ownOutputValueUnchanged =
+                      pdata resolvedF.value #== pdata ownOutputValue
 
-                onlyLocksUpdated <-
-                  pletC $
-                    let templateStakeDatum =
-                          mkRecordConstr
+                    onlyLocksUpdated =
+                      let templateStakeDatum =
+                            mkRecordConstr
+                              PStakeDatum
+                              ( #stakedAmount .= stakeDatum.stakedAmount
+                                  .& #owner .= stakeDatum.owner
+                                  .& #delegatedTo .= stakeDatum.delegatedTo
+                                  .& #lockedBy .= pfield @"lockedBy"
+                                    # pto ownOutputDatum
+                              )
+                       in ownOutputDatum #== templateStakeDatum
+
+                    ctx =
+                      pcon $
+                        POnlyOneStakeContext
+                          ownOutputDatum
+                          ownOutputValue
+                          ownOutputValueUnchanged
+                          onlyLocksUpdated
+
+                pure $ popaque $ validationLogic # ctx
+
+          let withSingleStake val = withSingleStake' #$ plam $ \ctx ->
+                unTermCont $ do
+                  ctxF <- pmatchC ctx
+                  val ctxF
+                  pure $ pconstant ()
+
+          setDelegate :: Term s (PMaybeData (PAsData PCredential) :--> POpaque) <-
+            pletC $
+              plam $ \maybePkh -> withSingleStake $ \ctx -> do
+                pguardC
+                  "Owner signs this transaction"
+                  ownerSignsTransaction
+
+                pguardC "Cannot delegate to the owner" $
+                  pmaybeData
+                    # pcon PTrue
+                    # plam (\pkh -> pnot #$ stakeDatum.owner #== pkh)
+                    # maybePkh
+
+                pguardC "A UTXO must exist with the correct output" $
+                  let correctOutputDatum =
+                        ctx.ownOutputDatum
+                          #== mkRecordConstr
                             PStakeDatum
                             ( #stakedAmount .= stakeDatum.stakedAmount
                                 .& #owner .= stakeDatum.owner
-                                .& #delegatedTo .= stakeDatum.delegatedTo
-                                .& #lockedBy .= pfield @"lockedBy" # pto stakeOut
+                                .& #delegatedTo .= pdata maybePkh
+                                .& #lockedBy .= stakeDatum.lockedBy
                             )
-                     in stakeOut #== templateStakeDatum
-
-                setDelegate <- pletC $
-                  plam $ \maybePkh -> unTermCont $ do
-                    pguardC
-                      "Owner signs this transaction"
-                      ownerSignsTransaction
-
-                    pguardC "A UTXO must exist with the correct output" $
-                      let correctOutputDatum =
-                            stakeOut
-                              #== mkRecordConstr
-                                PStakeDatum
-                                ( #stakedAmount .= stakeDatum.stakedAmount
-                                    .& #owner .= stakeDatum.owner
-                                    .& #delegatedTo .= pdata maybePkh
-                                    .& #lockedBy .= stakeDatum.lockedBy
-                                )
-                          valueCorrect = ownOutputValueUnchanged
-                       in foldl1
-                            (#&&)
-                            [ ptraceIfFalse "valueCorrect" valueCorrect
-                            , ptraceIfFalse "datumCorrect" correctOutputDatum
-                            ]
-
-                    pure $ popaque (pconstant ())
-
-                pure $
-                  pmatch stakeRedeemer $ \case
-                    PRetractVotes _ -> unTermCont $ do
-                      pguardC
-                        "Owner or delegate signs this transaction"
-                        $ ownerSignsTransaction #|| delegateSignsTransaction
-
-                      -- This puts trust into the Proposal. The Proposal must necessarily check
-                      -- that this is not abused.
-                      pguardC "Proposal ST spent" proposalTokenMoved
-
-                      pguardC "A UTXO must exist with the correct output" $
-                        let valueCorrect = ownOutputValueUnchanged
-                            outputDatumCorrect = onlyLocksUpdated
-                         in foldl1
-                              (#&&)
-                              [ ptraceIfFalse "valueCorrect" valueCorrect
-                              , ptraceIfFalse "datumCorrect" outputDatumCorrect
-                              ]
-
-                      pure $ popaque (pconstant ())
-
-                    ------------------------------------------------------------
-
-                    PPermitVote _ -> unTermCont $ do
-                      pguardC
-                        "Owner or delegate signs this transaction"
-                        $ ownerSignsTransaction #|| delegateSignsTransaction
-
-                      let proposalTokenMinted =
-                            passetClassValueOf # txInfoF.mint # proposalSTClass #== 1
-
-                      -- This puts trust into the Proposal. The Proposal must necessarily check
-                      -- that this is not abused.
-                      pguardC "Proposal ST spent or minted" $
-                        proposalTokenMoved #|| proposalTokenMinted
-                      pguardC "A UTXO must exist with the correct output" $
-                        let correctOutputDatum = onlyLocksUpdated
-                            valueCorrect = ownOutputValueUnchanged
-                         in foldl1
-                              (#&&)
-                              [ ptraceIfFalse "valueCorrect" valueCorrect
-                              , ptraceIfFalse "datumCorrect" correctOutputDatum
-                              ]
-
-                      pure $ popaque (pconstant ())
-
-                    ------------------------------------------------------------
-
-                    PDepositWithdraw r -> unTermCont $ do
-                      pguardC "Stake unlocked" $
-                        pnot #$ stakeIsLocked
-                      pguardC
-                        "Owner signs this transaction"
-                        ownerSignsTransaction
-                      pguardC "A UTXO must exist with the correct output" $
-                        unTermCont $ do
-                          let oldStakedAmount = pfromData $ stakeDatum.stakedAmount
-                              delta = pfromData $ pfield @"delta" # r
-
-                          newStakedAmount <- pletC $ oldStakedAmount + delta
-
-                          pguardC "New staked amount should be greater than or equal to 0" $
-                            zero #<= newStakedAmount
-
-                          let expectedDatum =
-                                mkRecordConstr
-                                  PStakeDatum
-                                  ( #stakedAmount .= pdata newStakedAmount
-                                      .& #owner .= stakeDatum.owner
-                                      .& #delegatedTo .= stakeDatum.delegatedTo
-                                      .& #lockedBy .= stakeDatum.lockedBy
-                                  )
-                              datumCorrect = stakeOut #== expectedDatum
-
-                          let valueDelta :: Term _ (PValue _ 'Positive)
-                              valueDelta = pdiscreteValue' gtClassRef # delta
-
-                              expectedValue =
-                                resolvedF.value <> valueDelta
-
-                              valueCorrect =
-                                foldr1
-                                  (#&&)
-                                  [ pgeqByClass' (AssetClass ("", ""))
-                                      # ownOutputValue
-                                      # expectedValue
-                                  , pgeqByClass' (untag gtClassRef)
-                                      # ownOutputValue
-                                      # expectedValue
-                                  , pgeqBySymbol
-                                      # stCurrencySymbol
-                                      # ownOutputValue
-                                      # expectedValue
-                                  ]
-                          --
-                          pure $
-                            foldl1
-                              (#&&)
-                              [ ptraceIfFalse "valueCorrect" valueCorrect
-                              , ptraceIfFalse "datumCorrect" datumCorrect
-                              ]
-                      --
-                      pure $ popaque (pconstant ())
-
-                    ------------------------------------------------------------
-
-                    PDelegateTo ((pfromData . (pfield @"pkh" #)) -> pkh) -> unTermCont $ do
-                      pguardC "Cannot delegate to the owner" $
-                        pnot #$ stakeDatum.owner #== pkh
-
-                      pure $ setDelegate #$ pdjust # pdata pkh
-                    ------------------------------------------------------------
-
-                    PClearDelegate _ ->
-                      setDelegate # pdnothing
-                    ------------------------------------------------------------
-
-                    _ -> popaque (pconstant ())
+                      valueCorrect = ctx.ownOutputValueUnchanged
+                   in foldl1
+                        (#&&)
+                        [ ptraceIfFalse "valueCorrect" valueCorrect
+                        , ptraceIfFalse "datumCorrect" correctOutputDatum
+                        ]
 
           pure $
-            pif
-              (pdata stakeRedeemer #== pconstantData WitnessStake)
-              witnessStake
-              onlyAcceptOneStake
+            pmatch stakeRedeemer $ \case
+              PRetractVotes _ -> withSingleStake $ \ctx -> do
+                pguardC
+                  "Owner or delegate signs this transaction"
+                  $ ownerSignsTransaction #|| delegateSignsTransaction
+
+                -- This puts trust into the Proposal. The Proposal must necessarily check
+                -- that this is not abused.
+
+                pguardC "Proposal ST spent" $
+                  pmatch proposalRedeemer $ \case
+                    PJust redeemer -> pmatch redeemer $ \case
+                      PUnlock _ -> pconstant True
+                      _ ->
+                        ptrace "Expected PUnlock, but got other" $
+                          pconstant False
+                    PNothing ->
+                      ptrace "Proposal redeemer not found" $
+                        pconstant False
+
+                pguardC "A UTXO must exist with the correct output" $
+                  let valueCorrect = ctx.ownOutputValueUnchanged
+                      outputDatumCorrect = ctx.onlyLocksUpdated
+                   in foldl1
+                        (#&&)
+                        [ ptraceIfFalse "valueCorrect" valueCorrect
+                        , ptraceIfFalse "datumCorrect" outputDatumCorrect
+                        ]
+
+              ------------------------------------------------------------------
+
+              PPermitVote _ -> withSingleStake $ \ctx -> do
+                pguardC
+                  "Owner or delegate signs this transaction"
+                  $ ownerSignsTransaction #|| delegateSignsTransaction
+
+                let proposalTokenMinted =
+                      passetClassValueOf # txInfoF.mint # proposalSTClass #== 1
+
+                -- This puts trust into the Proposal. The Proposal must necessarily check
+                -- that this is not abused.
+                pguardC "Proposal ST spent or minted" $
+                  pmatch
+                    proposalRedeemer
+                    ( \case
+                        PJust proposalRedeemer' ->
+                          pmatch proposalRedeemer' $ \case
+                            PVote _ -> pconstant True
+                            _ -> ptrace "Expected PVote" $ pconstant False
+                        _ -> proposalTokenMinted
+                    )
+
+                pguardC "A UTXO must exist with the correct output" $
+                  let correctOutputDatum = ctx.onlyLocksUpdated
+                      valueCorrect = ctx.ownOutputValueUnchanged
+                   in foldl1
+                        (#&&)
+                        [ ptraceIfFalse "valueCorrect" valueCorrect
+                        , ptraceIfFalse "datumCorrect" correctOutputDatum
+                        ]
+
+              ------------------------------------------------------------------
+
+              PDelegateTo ((pfromData . (pfield @"pkh" #)) -> pkh) ->
+                setDelegate #$ pdjust # pdata pkh
+              ------------------------------------------------------------------
+
+              PClearDelegate _ ->
+                setDelegate # pdnothing
+              ------------------------------------------------------------------
+
+              PDepositWithdraw r -> withSingleStake $ \ctx -> do
+                pguardC "Stake unlocked" $
+                  pnot #$ stakeIsLocked
+                pguardC
+                  "Owner signs this transaction"
+                  ownerSignsTransaction
+                pguardC "A UTXO must exist with the correct output" $
+                  unTermCont $ do
+                    let oldStakedAmount = pfromData $ stakeDatum.stakedAmount
+                        delta = pfromData $ pfield @"delta" # r
+
+                    newStakedAmount <- pletC $ oldStakedAmount + delta
+
+                    pguardC "New staked amount should be greater than or equal to 0" $
+                      zero #<= newStakedAmount
+
+                    let expectedDatum =
+                          mkRecordConstr
+                            PStakeDatum
+                            ( #stakedAmount .= pdata newStakedAmount
+                                .& #owner .= stakeDatum.owner
+                                .& #delegatedTo .= stakeDatum.delegatedTo
+                                .& #lockedBy .= stakeDatum.lockedBy
+                            )
+                        datumCorrect = ctx.ownOutputDatum #== expectedDatum
+
+                    let valueDelta :: Term _ (PValue _ 'Positive)
+                        valueDelta = pdiscreteValue' gtClassRef # delta
+
+                        expectedValue =
+                          resolvedF.value <> valueDelta
+
+                        valueCorrect =
+                          foldr1
+                            (#&&)
+                            [ pgeqByClass' (AssetClass ("", ""))
+                                # ctx.ownOutputValue
+                                # expectedValue
+                            , pgeqByClass' (untag gtClassRef)
+                                # ctx.ownOutputValue
+                                # expectedValue
+                            , pgeqBySymbol
+                                # stCurrencySymbol
+                                # ctx.ownOutputValue
+                                # expectedValue
+                            ]
+                    --
+                    pure $
+                      foldl1
+                        (#&&)
+                        [ ptraceIfFalse "valueCorrect" valueCorrect
+                        , ptraceIfFalse "datumCorrect" datumCorrect
+                        ]
+
+              ------------------------------------------------------------------
+
+              _ -> ptraceError "unreachable"

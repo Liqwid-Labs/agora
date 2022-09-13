@@ -18,10 +18,17 @@ module Agora.Utils (
   pvalidatorHashToTokenName,
   pscriptHashToTokenName,
   scriptHashToTokenName,
+  plistEqualsBy,
+  pstringIntercalate,
+  punwords,
+  pcurrentTimeDuration,
 ) where
 
-import Plutarch.Api.V1 (PTokenName, PValidatorHash)
+import Plutarch.Api.V1 (PPOSIXTime, PTokenName, PValidatorHash)
 import Plutarch.Api.V2 (PScriptHash)
+import Plutarch.Extra.TermCont (pmatchC)
+import Plutarch.Extra.Time (PCurrentTime (PCurrentTime))
+import Plutarch.List (puncons)
 import Plutarch.Unsafe (punsafeCoerce)
 import PlutusLedgerApi.V2 (
   Address (Address),
@@ -128,3 +135,58 @@ newtype CompiledMintingPolicy (redeemer :: Type) = CompiledMintingPolicy
 newtype CompiledEffect (datum :: Type) = CompiledEffect
   { getCompiledEffect :: Validator
   }
+
+-- | @since 1.0.0
+plistEqualsBy ::
+  forall
+    (list1 :: PType -> PType)
+    (list2 :: PType -> PType)
+    (a :: PType)
+    (b :: PType)
+    (s :: S).
+  (PIsListLike list1 a, PIsListLike list2 b) =>
+  Term s ((a :--> b :--> PBool) :--> list1 a :--> (list2 b :--> PBool))
+plistEqualsBy = phoistAcyclic $ pfix # go
+  where
+    go = plam $ \self eq l1 l2 -> unTermCont $ do
+      l1' <- pmatchC $ puncons # l1
+      l2' <- pmatchC $ puncons # l2
+
+      case (l1', l2') of
+        (PJust l1'', PJust l2'') -> do
+          (PPair h1 t1) <- pmatchC l1''
+          (PPair h2 t2) <- pmatchC l2''
+
+          pure $ eq # h1 # h2 #&& self # eq # t1 # t2
+        (PNothing, PNothing) -> pure $ pconstant True
+        _ -> pure $ pconstant False
+
+-- | @since 1.0.0
+pstringIntercalate ::
+  forall (s :: S).
+  Term s PString ->
+  [Term s PString] ->
+  Term s PString
+pstringIntercalate _ [x] = x
+pstringIntercalate i (x : xs) = x <> i <> pstringIntercalate i xs
+pstringIntercalate _ _ = ""
+
+-- | @since 1.0.0
+punwords ::
+  forall (s :: S).
+  [Term s PString] ->
+  Term s PString
+punwords = pstringIntercalate " "
+
+-- | @since 1.0.0
+pcurrentTimeDuration ::
+  forall (s :: S).
+  Term
+    s
+    ( PCurrentTime
+        :--> PPOSIXTime
+    )
+pcurrentTimeDuration = phoistAcyclic $
+  plam $
+    flip pmatch $
+      \(PCurrentTime lb ub) -> ub - lb

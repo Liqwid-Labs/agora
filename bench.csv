@@ -2,629 +2,481 @@ name,cpu,mem,size
 Agora/Effects/Treasury Withdrawal Effect/effect/Simple,395212858,1021782,4379
 Agora/Effects/Treasury Withdrawal Effect/effect/Simple with multiple treasuries ,569763954,1435806,4811
 Agora/Effects/Treasury Withdrawal Effect/effect/Mixed Assets,565354560,1442811,4749
-Agora/Effects/Governor Mutation Effect/validator/valid new governor datum/governor validator should pass,124529097,340153,9631
-Agora/Effects/Governor Mutation Effect/validator/valid new governor datum/effect validator should pass,167967647,454593,4882
-Agora/Stake/policy/stakeCreation,56178945,162035,3161
-Agora/Stake/validator/stakeDepositWithdraw deposit,199321866,548328,6160
-Agora/Stake/validator/stakeDepositWithdraw withdraw,199321866,548328,6148
-Agora/Stake/validator/set delegate/override existing delegate,124675267,322292,6228
-Agora/Stake/validator/set delegate/remove existing delegate,115176927,299103,6158
-Agora/Stake/validator/set delegate/set delegate to something,117428447,304400,6158
-Agora/Proposal/policy (proposal creation)/legal/proposal,34052826,101718,1985
-Agora/Proposal/policy (proposal creation)/legal/governor,360738210,916862,10059
-Agora/Proposal/policy (proposal creation)/legal/stake,162410179,421106,6819
-Agora/Proposal/policy (proposal creation)/illegal/invalid next proposal id/proposal,34052826,101718,1985
-Agora/Proposal/policy (proposal creation)/illegal/invalid next proposal id/stake,162410179,421106,6819
-Agora/Proposal/policy (proposal creation)/illegal/use other's stake/proposal,34052826,101718,1954
-Agora/Proposal/policy (proposal creation)/illegal/use other's stake/governor,360738210,916862,10028
-Agora/Proposal/policy (proposal creation)/illegal/altered stake/proposal,34052826,101718,1985
-Agora/Proposal/policy (proposal creation)/illegal/invalid stake locks/proposal,34052826,101718,1993
-Agora/Proposal/policy (proposal creation)/illegal/invalid stake locks/stake,167843839,435756,6827
-Agora/Proposal/policy (proposal creation)/illegal/has reached maximum proposals limit/proposal,34052826,101718,2005
-Agora/Proposal/policy (proposal creation)/illegal/has reached maximum proposals limit/stake,175108615,457322,6849
-Agora/Proposal/policy (proposal creation)/illegal/loose time range/proposal,34052826,101718,1985
-Agora/Proposal/policy (proposal creation)/illegal/loose time range/stake,162410179,421106,6819
-Agora/Proposal/policy (proposal creation)/illegal/open time range/proposal,34052826,101718,1981
-Agora/Proposal/policy (proposal creation)/illegal/open time range/stake,162410179,421106,6815
-Agora/Proposal/policy (proposal creation)/illegal/invalid proposal status/VotingReady/proposal,34052826,101718,1985
-Agora/Proposal/policy (proposal creation)/illegal/invalid proposal status/VotingReady/stake,162410179,421106,6819
-Agora/Proposal/policy (proposal creation)/illegal/invalid proposal status/Locked/proposal,34052826,101718,1985
-Agora/Proposal/policy (proposal creation)/illegal/invalid proposal status/Locked/stake,162410179,421106,6819
-Agora/Proposal/policy (proposal creation)/illegal/invalid proposal status/Finished/proposal,34052826,101718,1985
-Agora/Proposal/policy (proposal creation)/illegal/invalid proposal status/Finished/stake,162410179,421106,6819
-Agora/Proposal/validator/cosignature/legal/with 1 cosigners/proposal,316006408,870988,10974
-Agora/Proposal/validator/cosignature/legal/with 1 cosigners/stake,129047955,341600,6636
-Agora/Proposal/validator/cosignature/legal/with 5 cosigners/proposal,812672837,2172141,13684
-Agora/Proposal/validator/cosignature/legal/with 5 cosigners/stake,548277993,1467222,9210
-Agora/Proposal/validator/cosignature/legal/with 10 cosigners/proposal,1630500516,4232466,17072
-Agora/Proposal/validator/cosignature/legal/with 10 cosigners/stake,1185241836,3199885,12427
-Agora/Proposal/validator/cosignature/illegal/duplicate cosigners/stake,129047955,341600,6636
-Agora/Proposal/validator/cosignature/illegal/proposal status not Draft/with 1 cosigners/status: VotingReady/stake,129047955,341600,6636
-Agora/Proposal/validator/cosignature/illegal/proposal status not Draft/with 1 cosigners/status: Locked/stake,129047955,341600,6636
-Agora/Proposal/validator/cosignature/illegal/proposal status not Draft/with 1 cosigners/status: Finished/stake,129047955,341600,6636
-Agora/Proposal/validator/cosignature/illegal/proposal status not Draft/with 5 cosigners/status: VotingReady/stake,548277993,1467222,9210
-Agora/Proposal/validator/cosignature/illegal/proposal status not Draft/with 5 cosigners/status: Locked/stake,548277993,1467222,9210
-Agora/Proposal/validator/cosignature/illegal/proposal status not Draft/with 5 cosigners/status: Finished/stake,548277993,1467222,9210
-Agora/Proposal/validator/cosignature/illegal/proposal status not Draft/with 10 cosigners/status: VotingReady/stake,1185241836,3199885,12427
-Agora/Proposal/validator/cosignature/illegal/proposal status not Draft/with 10 cosigners/status: Locked/stake,1185241836,3199885,12427
-Agora/Proposal/validator/cosignature/illegal/proposal status not Draft/with 10 cosigners/status: Finished/stake,1185241836,3199885,12427
-Agora/Proposal/validator/voting/legal/ordinary/proposal,332067123,907768,10948
-Agora/Proposal/validator/voting/legal/ordinary/stake,150651199,390778,6655
-Agora/Proposal/validator/voting/legal/delegate/proposal,337076131,921968,11018
-Agora/Proposal/validator/voting/legal/delegate/stake,160327007,415770,6760
-Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/legal/to next state/from Draft to VotingReady/proposal,405704430,1105300,11803
-Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/legal/to next state/from Draft to VotingReady/stake,140147056,371068,7196
-Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/legal/to next state/from VotingReady to Locked/proposal,343427922,945245,11228
-Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/legal/to next state/from Locked to Finished/proposal,389643321,1070186,12376
-Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/legal/to next state/from Locked to Finished/governor,529562250,1336436,11016
-Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/legal/to next state/from Locked to Finished/authority,15755485,47872,3178
-Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/legal/to next state/from Draft to VotingReady/proposal,399836463,1086958,11523
-Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/legal/to next state/from Draft to VotingReady/stake,140147056,371068,7009
-Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/legal/to next state/from VotingReady to Locked/proposal,337559955,926903,10949
-Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/legal/to next state/from Locked to Finished/proposal,383775354,1051844,11918
-Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/legal/to next state/from Locked to Finished/governor,524255856,1321006,10651
-Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/legal/to next state/from Locked to Finished/authority,78441861,206056,2812
-Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/legal/to failed state/from Draft to Finished/proposal,335668590,926900,11221
-Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/legal/to failed state/from VotingReady to Finished/proposal,332175436,912914,11222
-Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/legal/to failed state/from Locked to Finished/proposal,334007455,916912,11222
-Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/legal/to failed state/from Draft to Finished/proposal,329800623,908558,10942
-Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/legal/to failed state/from VotingReady to Finished/proposal,326307469,894572,10943
-Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/legal/to failed state/from Locked to Finished/proposal,328139488,898570,10943
-Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/illegal/advance finished proposals/(negative test)/stake,140147056,371068,7196
-Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/illegal/advance finished proposals/(negative test)/authority,15755485,47872,3178
-Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/illegal/advance finished proposals/(negative test)/stake,140147056,371068,7009
-Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/illegal/advance finished proposals/(negative test)/authority,78441861,206056,2812
-Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/illegal/insufficient cosigns/stake,140147056,371068,7009
-Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/illegal/to next state too late/from Draft/stake,140147056,371068,7198
-Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/illegal/to next state too late/from Locked/governor,529562250,1336436,11016
-Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/illegal/to next state too late/from Locked/authority,15755485,47872,3178
-Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/illegal/to next state too late/from Draft/stake,140147056,371068,7011
-Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/illegal/to next state too late/from Locked/governor,524255856,1321006,10651
-Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/illegal/to next state too late/from Locked/authority,78441861,206056,2812
-Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/illegal/unexpected stake datum/from VotingReady/stake,140869592,373332,7203
-Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/illegal/unexpected stake datum/from Locked/stake,197149193,508235,8350
-Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/illegal/unexpected stake datum/from Locked/governor,585671452,1467340,11599
-Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/illegal/unexpected stake datum/from Locked/authority,15755485,47872,3761
-Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/illegal/unexpected stake datum/from VotingReady/stake,140869592,373332,7016
-Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/illegal/unexpected stake datum/from Locked/stake,197149193,508235,7985
-Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/illegal/unexpected stake datum/from Locked/governor,580365058,1451910,11234
-Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/illegal/unexpected stake datum/from Locked/authority,99168588,258623,3396
-Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/illegal/forget to mint GATs/proposal,359524308,979235,11387
-Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/illegal/mint GATs for wrong validators/proposal,383775354,1051844,11918
-Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/illegal/mint GATs for wrong validators/authority,78441861,206056,2812
-Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/illegal/mint GATs with bad token name/proposal,383775354,1051844,11950
-Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/illegal/mint GATs with bad token name/authority,12079326,37748,2845
-Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/illegal/wrong GAT datum/proposal,383775354,1051844,11911
-Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/illegal/wrong GAT datum/authority,78441861,206056,2806
-Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/illegal/invalid governor output datum/proposal,383775354,1051844,11918
-Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/illegal/invalid governor output datum/authority,78441861,206056,2812
-Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/legal/to next state/from Draft to VotingReady/proposal,527046950,1434847,12736
-Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/legal/to next state/from Draft to VotingReady/stake,140147056,371068,7818
-Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/legal/to next state/from VotingReady to Locked/proposal,468465328,1284780,12162
-Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/legal/to next state/from Locked to Finished/proposal,510985841,1399733,13309
-Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/legal/to next state/from Locked to Finished/governor,574391393,1461366,11638
-Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/legal/to next state/from Locked to Finished/authority,15755485,47872,3800
-Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/legal/to next state/from Draft to VotingReady/proposal,515311016,1398163,12176
-Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/legal/to next state/from Draft to VotingReady/stake,140147056,371068,7445
-Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/legal/to next state/from VotingReady to Locked/proposal,456729394,1248096,11601
-Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/legal/to next state/from Locked to Finished/proposal,499249907,1363049,12570
-Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/legal/to next state/from Locked to Finished/governor,567330386,1439822,11086
-Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/legal/to next state/from Locked to Finished/authority,78441861,206056,3248
-Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/legal/to failed state/from Draft to Finished/proposal,457011110,1256447,12155
-Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/legal/to failed state/from VotingReady to Finished/proposal,453517956,1242461,12156
-Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/legal/to failed state/from Locked to Finished/proposal,455349975,1246459,12156
-Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/legal/to failed state/from Draft to Finished/proposal,445275176,1219763,11594
-Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/legal/to failed state/from VotingReady to Finished/proposal,441782022,1205777,11595
-Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/legal/to failed state/from Locked to Finished/proposal,443614041,1209775,11595
-Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/illegal/advance finished proposals/(negative test)/stake,140147056,371068,7818
-Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/illegal/advance finished proposals/(negative test)/authority,15755485,47872,3800
-Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/illegal/advance finished proposals/(negative test)/stake,140147056,371068,7445
-Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/illegal/advance finished proposals/(negative test)/authority,78441861,206056,3248
-Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/illegal/insufficient cosigns/stake,140147056,371068,7445
-Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/illegal/to next state too late/from Draft/stake,140147056,371068,7820
-Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/illegal/to next state too late/from Locked/governor,574391393,1461366,11638
-Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/illegal/to next state too late/from Locked/authority,15755485,47872,3800
-Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/illegal/to next state too late/from Draft/stake,140147056,371068,7447
-Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/illegal/to next state too late/from Locked/governor,567330386,1439822,11086
-Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/illegal/to next state too late/from Locked/authority,78441861,206056,3248
-Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/illegal/unexpected stake datum/from VotingReady/stake,140869592,373332,7825
-Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/illegal/unexpected stake datum/from Locked/stake,197149193,508235,8973
-Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/illegal/unexpected stake datum/from Locked/governor,630500595,1592270,12222
-Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/illegal/unexpected stake datum/from Locked/authority,15755485,47872,4384
-Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/illegal/unexpected stake datum/from VotingReady/stake,140869592,373332,7452
-Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/illegal/unexpected stake datum/from Locked/stake,197149193,508235,8420
-Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/illegal/unexpected stake datum/from Locked/governor,623439588,1570726,11670
-Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/illegal/unexpected stake datum/from Locked/authority,99168588,258623,3831
-Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/illegal/forget to mint GATs/proposal,474998861,1290440,12040
-Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/illegal/mint GATs for wrong validators/proposal,499249907,1363049,12570
-Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/illegal/mint GATs for wrong validators/authority,78441861,206056,3248
-Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/illegal/mint GATs with bad token name/proposal,499249907,1363049,12602
-Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/illegal/mint GATs with bad token name/authority,12079326,37748,3280
-Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/illegal/wrong GAT datum/proposal,499249907,1363049,12564
-Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/illegal/wrong GAT datum/authority,78441861,206056,3242
-Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/illegal/invalid governor output datum/proposal,499249907,1363049,12570
-Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/illegal/invalid governor output datum/authority,78441861,206056,3248
-Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/legal/to next state/from Draft to VotingReady/proposal,891074510,2423488,15537
-Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/legal/to next state/from Draft to VotingReady/stake,140147056,371068,9685
-Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/legal/to next state/from VotingReady to Locked/proposal,843577546,2303385,14963
-Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/legal/to next state/from Locked to Finished/proposal,875013401,2388374,16111
-Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/legal/to next state/from Locked to Finished/governor,708878822,1836156,13506
-Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/legal/to next state/from Locked to Finished/authority,15755485,47872,5668
-Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/legal/to next state/from Draft to VotingReady/proposal,861734675,2331778,14137
-Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/legal/to next state/from Draft to VotingReady/stake,140147056,371068,8752
-Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/legal/to next state/from VotingReady to Locked/proposal,814237711,2211675,13563
-Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/legal/to next state/from Locked to Finished/proposal,845673566,2296664,14531
-Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/legal/to next state/from Locked to Finished/governor,696553976,1796270,12393
-Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/legal/to next state/from Locked to Finished/authority,78441861,206056,4555
-Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/legal/to failed state/from Draft to Finished/proposal,821038670,2245088,14956
-Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/legal/to failed state/from VotingReady to Finished/proposal,817545516,2231102,14957
-Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/legal/to failed state/from Locked to Finished/proposal,819377535,2235100,14957
-Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/legal/to failed state/from Draft to Finished/proposal,791698835,2153378,13556
-Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/legal/to failed state/from VotingReady to Finished/proposal,788205681,2139392,13557
-Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/legal/to failed state/from Locked to Finished/proposal,790037700,2143390,13557
-Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/illegal/advance finished proposals/(negative test)/stake,140147056,371068,9685
-Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/illegal/advance finished proposals/(negative test)/authority,15755485,47872,5668
-Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/illegal/advance finished proposals/(negative test)/stake,140147056,371068,8752
-Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/illegal/advance finished proposals/(negative test)/authority,78441861,206056,4555
-Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/illegal/insufficient cosigns/stake,140147056,371068,8752
-Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/illegal/to next state too late/from Draft/stake,140147056,371068,9687
-Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/illegal/to next state too late/from Locked/governor,708878822,1836156,13506
-Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/illegal/to next state too late/from Locked/authority,15755485,47872,5668
-Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/illegal/to next state too late/from Draft/stake,140147056,371068,8754
-Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/illegal/to next state too late/from Locked/governor,696553976,1796270,12393
-Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/illegal/to next state too late/from Locked/authority,78441861,206056,4555
-Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/illegal/unexpected stake datum/from VotingReady/stake,140869592,373332,9692
-Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/illegal/unexpected stake datum/from Locked/stake,197149193,508235,10840
-Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/illegal/unexpected stake datum/from Locked/governor,764988024,1967060,14089
-Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/illegal/unexpected stake datum/from Locked/authority,15755485,47872,6251
-Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/illegal/unexpected stake datum/from VotingReady/stake,140869592,373332,8759
-Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/illegal/unexpected stake datum/from Locked/stake,197149193,508235,9728
-Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/illegal/unexpected stake datum/from Locked/governor,752663178,1927174,12977
-Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/illegal/unexpected stake datum/from Locked/authority,99168588,258623,5139
-Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/illegal/forget to mint GATs/proposal,821422520,2224055,14001
-Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/illegal/mint GATs for wrong validators/proposal,845673566,2296664,14531
-Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/illegal/mint GATs for wrong validators/authority,78441861,206056,4555
-Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/illegal/mint GATs with bad token name/proposal,845673566,2296664,14563
-Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/illegal/mint GATs with bad token name/authority,12079326,37748,4587
-Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/illegal/wrong GAT datum/proposal,845673566,2296664,14525
-Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/illegal/wrong GAT datum/authority,78441861,206056,4549
-Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/illegal/invalid governor output datum/proposal,845673566,2296664,14531
-Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/illegal/invalid governor output datum/authority,78441861,206056,4555
-Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/legal/to next state/from Draft to VotingReady/proposal,868225687,2326559,14646
-Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/legal/to next state/from Draft to VotingReady/stake,572008792,1533568,9901
-Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/legal/to next state/from VotingReady to Locked/proposal,389256066,1070837,11639
-Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/legal/to next state/from Locked to Finished/proposal,435471465,1195778,12786
-Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/legal/to next state/from Locked to Finished/governor,544435546,1378300,11289
-Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/legal/to next state/from Locked to Finished/authority,15755485,47872,3451
-Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/legal/to next state/from Draft to VotingReady/proposal,862357720,2308217,14366
-Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/legal/to next state/from Draft to VotingReady/stake,572008792,1533568,9715
-Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/legal/to next state/from VotingReady to Locked/proposal,383388099,1052495,11358
-Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/legal/to next state/from Locked to Finished/proposal,429603498,1177436,12327
-Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/legal/to next state/from Locked to Finished/governor,539129152,1362870,10924
-Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/legal/to next state/from Locked to Finished/authority,78441861,206056,3086
-Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/legal/to failed state/from Draft to Finished/proposal,381496734,1052492,11632
-Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/legal/to failed state/from VotingReady to Finished/proposal,378003580,1038506,11633
-Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/legal/to failed state/from Locked to Finished/proposal,379835599,1042504,11633
-Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/legal/to failed state/from Draft to Finished/proposal,375628767,1034150,11351
-Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/legal/to failed state/from VotingReady to Finished/proposal,372135613,1020164,11352
-Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/legal/to failed state/from Locked to Finished/proposal,373967632,1024162,11352
-Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/illegal/advance finished proposals/(negative test)/stake,572008792,1533568,9901
-Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/illegal/advance finished proposals/(negative test)/authority,15755485,47872,3451
-Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/illegal/advance finished proposals/(negative test)/stake,572008792,1533568,9715
-Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/illegal/advance finished proposals/(negative test)/authority,78441861,206056,3086
-Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/illegal/insufficient cosigns/stake,572750086,1535634,9715
-Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/illegal/to next state too late/from Draft/stake,572008792,1533568,9903
-Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/illegal/to next state too late/from Locked/governor,544435546,1378300,11289
-Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/illegal/to next state too late/from Locked/authority,15755485,47872,3451
-Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/illegal/to next state too late/from Draft/stake,572008792,1533568,9717
-Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/illegal/to next state too late/from Locked/governor,539129152,1362870,10924
-Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/illegal/to next state too late/from Locked/authority,78441861,206056,3086
-Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/illegal/unexpected stake datum/from VotingReady/stake,140869592,373332,7471
-Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/illegal/unexpected stake datum/from Locked/stake,197149193,508235,8618
-Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/illegal/unexpected stake datum/from Locked/governor,600544748,1509204,11868
-Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/illegal/unexpected stake datum/from Locked/authority,15755485,47872,4030
-Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/illegal/unexpected stake datum/from VotingReady/stake,140869592,373332,7284
-Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/illegal/unexpected stake datum/from Locked/stake,197149193,508235,8253
-Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/illegal/unexpected stake datum/from Locked/governor,595238354,1493774,11503
-Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/illegal/unexpected stake datum/from Locked/authority,99168588,258623,3665
-Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/illegal/forget to mint GATs/proposal,405352452,1104827,11797
-Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/illegal/mint GATs for wrong validators/proposal,429603498,1177436,12327
-Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/illegal/mint GATs for wrong validators/authority,78441861,206056,3086
-Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/illegal/mint GATs with bad token name/proposal,429603498,1177436,12359
-Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/illegal/mint GATs with bad token name/authority,12079326,37748,3118
-Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/illegal/wrong GAT datum/proposal,429603498,1177436,12321
-Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/illegal/wrong GAT datum/authority,78441861,206056,3080
-Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/illegal/invalid governor output datum/proposal,429603498,1177436,12327
-Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/illegal/invalid governor output datum/authority,78441861,206056,3086
-Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/legal/to next state/from Draft to VotingReady/proposal,989568207,2656106,15580
-Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/legal/to next state/from Draft to VotingReady/stake,572008792,1533568,10524
-Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/legal/to next state/from VotingReady to Locked/proposal,514293472,1410372,12572
-Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/legal/to next state/from Locked to Finished/proposal,556813985,1525325,13719
-Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/legal/to next state/from Locked to Finished/governor,589264689,1503230,11911
-Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/legal/to next state/from Locked to Finished/authority,15755485,47872,4073
-Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/legal/to next state/from Draft to VotingReady/proposal,977832273,2619422,15019
-Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/legal/to next state/from Draft to VotingReady/stake,572008792,1533568,10150
-Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/legal/to next state/from VotingReady to Locked/proposal,502557538,1373688,12012
-Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/legal/to next state/from Locked to Finished/proposal,545078051,1488641,12980
-Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/legal/to next state/from Locked to Finished/governor,582203682,1481686,11359
-Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/legal/to next state/from Locked to Finished/authority,78441861,206056,3521
-Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/legal/to failed state/from Draft to Finished/proposal,502839254,1382039,12565
-Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/legal/to failed state/from VotingReady to Finished/proposal,499346100,1368053,12566
-Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/legal/to failed state/from Locked to Finished/proposal,501178119,1372051,12566
-Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/legal/to failed state/from Draft to Finished/proposal,491103320,1345355,12004
-Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/legal/to failed state/from VotingReady to Finished/proposal,487610166,1331369,12005
-Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/legal/to failed state/from Locked to Finished/proposal,489442185,1335367,12005
-Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/illegal/advance finished proposals/(negative test)/stake,572008792,1533568,10524
-Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/illegal/advance finished proposals/(negative test)/authority,15755485,47872,4073
-Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/illegal/advance finished proposals/(negative test)/stake,572008792,1533568,10150
-Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/illegal/advance finished proposals/(negative test)/authority,78441861,206056,3521
-Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/illegal/insufficient cosigns/stake,572750086,1535634,10150
-Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/illegal/to next state too late/from Draft/stake,572008792,1533568,10526
-Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/illegal/to next state too late/from Locked/governor,589264689,1503230,11911
-Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/illegal/to next state too late/from Locked/authority,15755485,47872,4073
-Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/illegal/to next state too late/from Draft/stake,572008792,1533568,10152
-Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/illegal/to next state too late/from Locked/governor,582203682,1481686,11359
-Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/illegal/to next state too late/from Locked/authority,78441861,206056,3521
-Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/illegal/unexpected stake datum/from VotingReady/stake,140869592,373332,8093
-Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/illegal/unexpected stake datum/from Locked/stake,197149193,508235,9241
-Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/illegal/unexpected stake datum/from Locked/governor,645373891,1634134,12491
-Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/illegal/unexpected stake datum/from Locked/authority,15755485,47872,4653
-Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/illegal/unexpected stake datum/from VotingReady/stake,140869592,373332,7720
-Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/illegal/unexpected stake datum/from Locked/stake,197149193,508235,8689
-Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/illegal/unexpected stake datum/from Locked/governor,638312884,1612590,11939
-Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/illegal/unexpected stake datum/from Locked/authority,99168588,258623,4101
-Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/illegal/forget to mint GATs/proposal,520827005,1416032,12450
-Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/illegal/mint GATs for wrong validators/proposal,545078051,1488641,12980
-Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/illegal/mint GATs for wrong validators/authority,78441861,206056,3521
-Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/illegal/mint GATs with bad token name/proposal,545078051,1488641,13012
-Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/illegal/mint GATs with bad token name/authority,12079326,37748,3553
-Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/illegal/wrong GAT datum/proposal,545078051,1488641,12974
-Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/illegal/wrong GAT datum/authority,78441861,206056,3515
-Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/illegal/invalid governor output datum/proposal,545078051,1488641,12980
-Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/illegal/invalid governor output datum/authority,78441861,206056,3521
-Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/legal/to next state/from Draft to VotingReady/proposal,1353595767,3644747,18380
-Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/legal/to next state/from Draft to VotingReady/stake,572008792,1533568,12391
-Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/legal/to next state/from VotingReady to Locked/proposal,889405690,2428977,15372
-Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/legal/to next state/from Locked to Finished/proposal,920841545,2513966,16520
-Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/legal/to next state/from Locked to Finished/governor,723752118,1878020,13779
-Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/legal/to next state/from Locked to Finished/authority,15755485,47872,5941
-Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/legal/to next state/from Draft to VotingReady/proposal,1324255932,3553037,16980
-Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/legal/to next state/from Draft to VotingReady/stake,572008792,1533568,11457
-Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/legal/to next state/from VotingReady to Locked/proposal,860065855,2337267,13973
-Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/legal/to next state/from Locked to Finished/proposal,891501710,2422256,14941
-Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/legal/to next state/from Locked to Finished/governor,711427272,1838134,12666
-Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/legal/to next state/from Locked to Finished/authority,78441861,206056,4828
-Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/legal/to failed state/from Draft to Finished/proposal,866866814,2370680,15365
-Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/legal/to failed state/from VotingReady to Finished/proposal,863373660,2356694,15366
-Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/legal/to failed state/from Locked to Finished/proposal,865205679,2360692,15366
-Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/legal/to failed state/from Draft to Finished/proposal,837526979,2278970,13966
-Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/legal/to failed state/from VotingReady to Finished/proposal,834033825,2264984,13967
-Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/legal/to failed state/from Locked to Finished/proposal,835865844,2268982,13967
-Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/illegal/advance finished proposals/(negative test)/stake,572008792,1533568,12391
-Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/illegal/advance finished proposals/(negative test)/authority,15755485,47872,5941
-Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/illegal/advance finished proposals/(negative test)/stake,572008792,1533568,11457
-Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/illegal/advance finished proposals/(negative test)/authority,78441861,206056,4828
-Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/illegal/insufficient cosigns/stake,572750086,1535634,11457
-Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/illegal/to next state too late/from Draft/stake,572008792,1533568,12393
-Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/illegal/to next state too late/from Locked/governor,723752118,1878020,13779
-Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/illegal/to next state too late/from Locked/authority,15755485,47872,5941
-Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/illegal/to next state too late/from Draft/stake,572008792,1533568,11459
-Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/illegal/to next state too late/from Locked/governor,711427272,1838134,12666
-Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/illegal/to next state too late/from Locked/authority,78441861,206056,4828
-Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/illegal/unexpected stake datum/from VotingReady/stake,140869592,373332,9961
-Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/illegal/unexpected stake datum/from Locked/stake,197149193,508235,11108
-Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/illegal/unexpected stake datum/from Locked/governor,779861320,2008924,14358
-Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/illegal/unexpected stake datum/from Locked/authority,15755485,47872,6520
-Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/illegal/unexpected stake datum/from VotingReady/stake,140869592,373332,9027
-Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/illegal/unexpected stake datum/from Locked/stake,197149193,508235,9996
-Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/illegal/unexpected stake datum/from Locked/governor,767536474,1969038,13246
-Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/illegal/unexpected stake datum/from Locked/authority,99168588,258623,5408
-Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/illegal/forget to mint GATs/proposal,867250664,2349647,14411
-Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/illegal/mint GATs for wrong validators/proposal,891501710,2422256,14941
-Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/illegal/mint GATs for wrong validators/authority,78441861,206056,4828
-Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/illegal/mint GATs with bad token name/proposal,891501710,2422256,14974
-Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/illegal/mint GATs with bad token name/authority,12079326,37748,4861
-Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/illegal/wrong GAT datum/proposal,891501710,2422256,14935
-Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/illegal/wrong GAT datum/authority,78441861,206056,4822
-Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/illegal/invalid governor output datum/proposal,891501710,2422256,14941
-Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/illegal/invalid governor output datum/authority,78441861,206056,4828
-Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/legal/to next state/from Draft to VotingReady/proposal,1522764420,4000234,18205
-Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/legal/to next state/from Draft to VotingReady/stake,1142848969,3073577,13290
-Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/legal/to next state/from VotingReady to Locked/proposal,446541246,1227827,12150
-Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/legal/to next state/from Locked to Finished/proposal,492756645,1352768,13297
-Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/legal/to next state/from Locked to Finished/governor,563027166,1430630,11630
-Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/legal/to next state/from Locked to Finished/authority,15755485,47872,3792
-Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/legal/to next state/from Draft to VotingReady/proposal,1516896453,3981892,17925
-Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/legal/to next state/from Draft to VotingReady/stake,1142848969,3073577,13103
-Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/legal/to next state/from VotingReady to Locked/proposal,440673279,1209485,11870
-Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/legal/to next state/from Locked to Finished/proposal,486888678,1334426,12839
-Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/legal/to next state/from Locked to Finished/governor,557720772,1415200,11265
-Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/legal/to next state/from Locked to Finished/authority,78441861,206056,3427
-Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/legal/to failed state/from Draft to Finished/proposal,438781914,1209482,12143
-Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/legal/to failed state/from VotingReady to Finished/proposal,435288760,1195496,12144
-Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/legal/to failed state/from Locked to Finished/proposal,437120779,1199494,12144
-Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/legal/to failed state/from Draft to Finished/proposal,432913947,1191140,11863
-Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/legal/to failed state/from VotingReady to Finished/proposal,429420793,1177154,11864
-Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/legal/to failed state/from Locked to Finished/proposal,431252812,1181152,11864
-Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/illegal/advance finished proposals/(negative test)/stake,1142848969,3073577,13290
-Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/illegal/advance finished proposals/(negative test)/authority,15755485,47872,3792
-Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/illegal/advance finished proposals/(negative test)/stake,1142848969,3073577,13103
-Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/illegal/advance finished proposals/(negative test)/authority,78441861,206056,3427
-Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/illegal/insufficient cosigns/stake,1167371071,3145267,13103
-Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/illegal/to next state too late/from Draft/stake,1142848969,3073577,13292
-Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/illegal/to next state too late/from Locked/governor,563027166,1430630,11630
-Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/illegal/to next state too late/from Locked/authority,15755485,47872,3792
-Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/illegal/to next state too late/from Draft/stake,1142848969,3073577,13105
-Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/illegal/to next state too late/from Locked/governor,557720772,1415200,11265
-Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/illegal/to next state too late/from Locked/authority,78441861,206056,3427
-Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/illegal/unexpected stake datum/from VotingReady/stake,140869592,373332,7812
-Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/illegal/unexpected stake datum/from Locked/stake,197149193,508235,8960
-Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/illegal/unexpected stake datum/from Locked/governor,619136368,1561534,12210
-Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/illegal/unexpected stake datum/from Locked/authority,15755485,47872,4372
-Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/illegal/unexpected stake datum/from VotingReady/stake,140869592,373332,7625
-Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/illegal/unexpected stake datum/from Locked/stake,197149193,508235,8594
-Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/illegal/unexpected stake datum/from Locked/governor,613829974,1546104,11844
-Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/illegal/unexpected stake datum/from Locked/authority,99168588,258623,4006
-Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/illegal/forget to mint GATs/proposal,462637632,1261817,12309
-Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/illegal/mint GATs for wrong validators/proposal,486888678,1334426,12839
-Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/illegal/mint GATs for wrong validators/authority,78441861,206056,3427
-Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/illegal/mint GATs with bad token name/proposal,486888678,1334426,12871
-Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/illegal/mint GATs with bad token name/authority,12079326,37748,3459
-Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/illegal/wrong GAT datum/proposal,486888678,1334426,12833
-Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/illegal/wrong GAT datum/authority,78441861,206056,3421
-Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/illegal/invalid governor output datum/proposal,486888678,1334426,12839
-Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/illegal/invalid governor output datum/authority,78441861,206056,3427
-Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/legal/to next state/from Draft to VotingReady/proposal,1644106940,4329781,19138
-Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/legal/to next state/from Draft to VotingReady/stake,1142848969,3073577,13912
-Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/legal/to next state/from VotingReady to Locked/proposal,571578652,1567362,13083
-Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/legal/to next state/from Locked to Finished/proposal,614099165,1682315,14231
-Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/legal/to next state/from Locked to Finished/governor,607856309,1555560,12253
-Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/legal/to next state/from Locked to Finished/authority,15755485,47872,4415
-Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/legal/to next state/from Draft to VotingReady/proposal,1632371006,4293097,18578
-Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/legal/to next state/from Draft to VotingReady/stake,1142848969,3073577,13538
-Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/legal/to next state/from VotingReady to Locked/proposal,559842718,1530678,12524
-Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/legal/to next state/from Locked to Finished/proposal,602363231,1645631,13493
-Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/legal/to next state/from Locked to Finished/governor,600795302,1534016,11701
-Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/legal/to next state/from Locked to Finished/authority,78441861,206056,3863
-Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/legal/to failed state/from Draft to Finished/proposal,560124434,1539029,13076
-Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/legal/to failed state/from VotingReady to Finished/proposal,556631280,1525043,13077
-Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/legal/to failed state/from Locked to Finished/proposal,558463299,1529041,13077
-Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/legal/to failed state/from Draft to Finished/proposal,548388500,1502345,12517
-Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/legal/to failed state/from VotingReady to Finished/proposal,544895346,1488359,12518
-Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/legal/to failed state/from Locked to Finished/proposal,546727365,1492357,12518
-Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/illegal/advance finished proposals/(negative test)/stake,1142848969,3073577,13912
-Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/illegal/advance finished proposals/(negative test)/authority,15755485,47872,4415
-Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/illegal/advance finished proposals/(negative test)/stake,1142848969,3073577,13538
-Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/illegal/advance finished proposals/(negative test)/authority,78441861,206056,3863
-Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/illegal/insufficient cosigns/stake,1167371071,3145267,13538
-Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/illegal/to next state too late/from Draft/stake,1142848969,3073577,13914
-Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/illegal/to next state too late/from Locked/governor,607856309,1555560,12253
-Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/illegal/to next state too late/from Locked/authority,15755485,47872,4415
-Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/illegal/to next state too late/from Draft/stake,1142848969,3073577,13541
-Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/illegal/to next state too late/from Locked/governor,600795302,1534016,11701
-Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/illegal/to next state too late/from Locked/authority,78441861,206056,3863
-Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/illegal/unexpected stake datum/from VotingReady/stake,140869592,373332,8435
-Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/illegal/unexpected stake datum/from Locked/stake,197149193,508235,9582
-Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/illegal/unexpected stake datum/from Locked/governor,663965511,1686464,12832
-Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/illegal/unexpected stake datum/from Locked/authority,15755485,47872,4994
-Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/illegal/unexpected stake datum/from VotingReady/stake,140869592,373332,8061
-Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/illegal/unexpected stake datum/from Locked/stake,197149193,508235,9030
-Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/illegal/unexpected stake datum/from Locked/governor,656904504,1664920,12280
-Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/illegal/unexpected stake datum/from Locked/authority,99168588,258623,4442
-Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/illegal/forget to mint GATs/proposal,578112185,1573022,12963
-Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/illegal/mint GATs for wrong validators/proposal,602363231,1645631,13493
-Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/illegal/mint GATs for wrong validators/authority,78441861,206056,3863
-Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/illegal/mint GATs with bad token name/proposal,602363231,1645631,13525
-Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/illegal/mint GATs with bad token name/authority,12079326,37748,3895
-Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/illegal/wrong GAT datum/proposal,602363231,1645631,13487
-Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/illegal/wrong GAT datum/authority,78441861,206056,3857
-Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/illegal/invalid governor output datum/proposal,602363231,1645631,13493
-Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/illegal/invalid governor output datum/authority,78441861,206056,3863
-Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/legal/to next state/from Draft to VotingReady/proposal,2008134500,5318422,21939
-Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/legal/to next state/from Draft to VotingReady/stake,1142848969,3073577,15779
-Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/legal/to next state/from VotingReady to Locked/proposal,946690870,2585967,15885
-Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/legal/to next state/from Locked to Finished/proposal,978126725,2670956,17032
-Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/legal/to next state/from Locked to Finished/governor,742343738,1930350,14120
-Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/legal/to next state/from Locked to Finished/authority,15755485,47872,6282
-Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/legal/to next state/from Draft to VotingReady/proposal,1978794665,5226712,20539
-Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/legal/to next state/from Draft to VotingReady/stake,1142848969,3073577,14846
-Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/legal/to next state/from VotingReady to Locked/proposal,917351035,2494257,14484
-Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/legal/to next state/from Locked to Finished/proposal,948786890,2579246,15453
-Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/legal/to next state/from Locked to Finished/governor,730018892,1890464,13008
-Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/legal/to next state/from Locked to Finished/authority,78441861,206056,5170
-Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/legal/to failed state/from Draft to Finished/proposal,924151994,2527670,15878
-Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/legal/to failed state/from VotingReady to Finished/proposal,920658840,2513684,15879
-Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/legal/to failed state/from Locked to Finished/proposal,922490859,2517682,15879
-Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/legal/to failed state/from Draft to Finished/proposal,894812159,2435960,14477
-Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/legal/to failed state/from VotingReady to Finished/proposal,891319005,2421974,14478
-Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/legal/to failed state/from Locked to Finished/proposal,893151024,2425972,14478
-Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/illegal/advance finished proposals/(negative test)/stake,1142848969,3073577,15779
-Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/illegal/advance finished proposals/(negative test)/authority,15755485,47872,6282
-Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/illegal/advance finished proposals/(negative test)/stake,1142848969,3073577,14846
-Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/illegal/advance finished proposals/(negative test)/authority,78441861,206056,5170
-Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/illegal/insufficient cosigns/stake,1167371071,3145267,14846
-Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/illegal/to next state too late/from Draft/stake,1142848969,3073577,15781
-Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/illegal/to next state too late/from Locked/governor,742343738,1930350,14120
-Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/illegal/to next state too late/from Locked/authority,15755485,47872,6282
-Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/illegal/to next state too late/from Draft/stake,1142848969,3073577,14848
-Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/illegal/to next state too late/from Locked/governor,730018892,1890464,13008
-Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/illegal/to next state too late/from Locked/authority,78441861,206056,5170
-Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/illegal/unexpected stake datum/from VotingReady/stake,140869592,373332,10302
-Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/illegal/unexpected stake datum/from Locked/stake,197149193,508235,11449
-Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/illegal/unexpected stake datum/from Locked/governor,798452940,2061254,14699
-Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/illegal/unexpected stake datum/from Locked/authority,15755485,47872,6861
-Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/illegal/unexpected stake datum/from VotingReady/stake,140869592,373332,9368
-Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/illegal/unexpected stake datum/from Locked/stake,197149193,508235,10337
-Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/illegal/unexpected stake datum/from Locked/governor,786128094,2021368,13587
-Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/illegal/unexpected stake datum/from Locked/authority,99168588,258623,5749
-Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/illegal/forget to mint GATs/proposal,924535844,2506637,14923
-Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/illegal/mint GATs for wrong validators/proposal,948786890,2579246,15453
-Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/illegal/mint GATs for wrong validators/authority,78441861,206056,5170
-Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/illegal/mint GATs with bad token name/proposal,948786890,2579246,15485
-Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/illegal/mint GATs with bad token name/authority,12079326,37748,5202
-Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/illegal/wrong GAT datum/proposal,948786890,2579246,15447
-Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/illegal/wrong GAT datum/authority,78441861,206056,5164
-Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/illegal/invalid governor output datum/proposal,948786890,2579246,15453
-Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/illegal/invalid governor output datum/authority,78441861,206056,5170
-Agora/Proposal/validator/unlocking/legal/with 1 proposals/voter: retract votes while voting/stake,134295013,344673,6634
-Agora/Proposal/validator/unlocking/legal/with 1 proposals/voter: retract votes while voting/proposal,314582794,858591,10928
-Agora/Proposal/validator/unlocking/legal/with 1 proposals/voter/creator: retract votes while voting/stake,140644231,362781,6651
-Agora/Proposal/validator/unlocking/legal/with 1 proposals/voter/creator: retract votes while voting/proposal,332082366,908032,10940
-Agora/Proposal/validator/unlocking/legal/with 1 proposals/creator: remove creator locks when finished/stake,133256736,341875,6632
-Agora/Proposal/validator/unlocking/legal/with 1 proposals/creator: remove creator locks when finished/proposal,293984030,818337,10925
-Agora/Proposal/validator/unlocking/legal/with 1 proposals/voter/creator: remove all locks when finished/stake,137412985,353727,6649
-Agora/Proposal/validator/unlocking/legal/with 1 proposals/voter/creator: remove all locks when finished/proposal,302221499,842845,10938
-Agora/Proposal/validator/unlocking/legal/with 1 proposals/voter: unlock after voting/Locked/stake,134295013,344673,6638
-Agora/Proposal/validator/unlocking/legal/with 1 proposals/voter: unlock after voting/Locked/proposal,289911138,810112,10932
-Agora/Proposal/validator/unlocking/legal/with 1 proposals/voter: unlock after voting/Finished/stake,134295013,344673,6638
-Agora/Proposal/validator/unlocking/legal/with 1 proposals/voter: unlock after voting/Finished/proposal,290476627,811314,10932
-Agora/Proposal/validator/unlocking/legal/with 1 proposals/voter/creator: remove vote locks when locked/stake,140644231,362781,6655
-Agora/Proposal/validator/unlocking/legal/with 1 proposals/voter/creator: remove vote locks when locked/proposal,307976199,860755,10944
-Agora/Proposal/validator/unlocking/legal/with 5 proposals/voter: retract votes while voting/stake,279914477,703501,8751
-Agora/Proposal/validator/unlocking/legal/with 5 proposals/voter: retract votes while voting/proposal,453127858,1203527,13021
-Agora/Proposal/validator/unlocking/legal/with 5 proposals/voter/creator: retract votes while voting/stake,311660567,794041,8827
-Agora/Proposal/validator/unlocking/legal/with 5 proposals/voter/creator: retract votes while voting/proposal,522683758,1404280,13072
-Agora/Proposal/validator/unlocking/legal/with 5 proposals/creator: remove creator locks when finished/stake,274723092,689511,8741
-Agora/Proposal/validator/unlocking/legal/with 5 proposals/creator: remove creator locks when finished/proposal,408729330,1120641,13014
-Agora/Proposal/validator/unlocking/legal/with 5 proposals/voter/creator: remove all locks when finished/stake,295504337,748771,8821
-Agora/Proposal/validator/unlocking/legal/with 5 proposals/voter/creator: remove all locks when finished/proposal,446921523,1231997,13066
-Agora/Proposal/validator/unlocking/legal/with 5 proposals/voter: unlock after voting/Locked/stake,279914477,703501,8771
-Agora/Proposal/validator/unlocking/legal/with 5 proposals/voter: unlock after voting/Locked/proposal,408809546,1123608,13041
-Agora/Proposal/validator/unlocking/legal/with 5 proposals/voter: unlock after voting/Finished/stake,279914477,703501,8771
-Agora/Proposal/validator/unlocking/legal/with 5 proposals/voter: unlock after voting/Finished/proposal,409375035,1124810,13041
-Agora/Proposal/validator/unlocking/legal/with 5 proposals/voter/creator: remove vote locks when locked/stake,311660567,794041,8847
-Agora/Proposal/validator/unlocking/legal/with 5 proposals/voter/creator: remove vote locks when locked/proposal,478930935,1325563,13092
-Agora/Proposal/validator/unlocking/legal/with 10 proposals/voter: retract votes while voting/stake,461938807,1152036,11396
-Agora/Proposal/validator/unlocking/legal/with 10 proposals/voter: retract votes while voting/proposal,626309188,1634697,15636
-Agora/Proposal/validator/unlocking/legal/with 10 proposals/voter/creator: retract votes while voting/stake,525430987,1333116,11547
-Agora/Proposal/validator/unlocking/legal/with 10 proposals/voter/creator: retract votes while voting/proposal,760935498,2024590,15737
-Agora/Proposal/validator/unlocking/legal/with 10 proposals/creator: remove creator locks when finished/stake,451556037,1124056,11376
-Agora/Proposal/validator/unlocking/legal/with 10 proposals/creator: remove creator locks when finished/proposal,552160955,1498521,15624
-Agora/Proposal/validator/unlocking/legal/with 10 proposals/voter/creator: remove all locks when finished/stake,493118527,1242576,11536
-Agora/Proposal/validator/unlocking/legal/with 10 proposals/voter/creator: remove all locks when finished/proposal,627796553,1718437,15726
-Agora/Proposal/validator/unlocking/legal/with 10 proposals/voter: unlock after voting/Locked/stake,461938807,1152036,11436
-Agora/Proposal/validator/unlocking/legal/with 10 proposals/voter: unlock after voting/Locked/proposal,557432556,1515478,15676
-Agora/Proposal/validator/unlocking/legal/with 10 proposals/voter: unlock after voting/Finished/stake,461938807,1152036,11436
-Agora/Proposal/validator/unlocking/legal/with 10 proposals/voter: unlock after voting/Finished/proposal,557998045,1516680,15676
-Agora/Proposal/validator/unlocking/legal/with 10 proposals/voter/creator: remove vote locks when locked/stake,525430987,1333116,11587
-Agora/Proposal/validator/unlocking/legal/with 10 proposals/voter/creator: remove vote locks when locked/proposal,692624355,1906573,15777
-Agora/Proposal/validator/unlocking/legal/with 42 proposals/voter: retract votes while voting/stake,1626894519,4022660,28420
-Agora/Proposal/validator/unlocking/legal/with 42 proposals/voter: retract votes while voting/proposal,1734669700,4394185,32449
-Agora/Proposal/validator/unlocking/legal/with 42 proposals/voter/creator: retract votes while voting/stake,1893561675,4783196,29107
-Agora/Proposal/validator/unlocking/legal/with 42 proposals/voter/creator: retract votes while voting/proposal,2285746634,5994574,32907
-Agora/Proposal/validator/unlocking/legal/with 42 proposals/creator: remove creator locks when finished/stake,1583286885,3905144,28335
-Agora/Proposal/validator/unlocking/legal/with 42 proposals/creator: remove creator locks when finished/proposal,1470123355,3916953,32404
-Agora/Proposal/validator/unlocking/legal/with 42 proposals/voter/creator: remove all locks when finished/stake,1757849343,4402928,29046
-Agora/Proposal/validator/unlocking/legal/with 42 proposals/voter/creator: remove all locks when finished/proposal,1785396745,4831653,32846
-Agora/Proposal/validator/unlocking/legal/with 42 proposals/voter: unlock after voting/Locked/stake,1626894519,4022660,28588
-Agora/Proposal/validator/unlocking/legal/with 42 proposals/voter: unlock after voting/Locked/proposal,1508619820,4023446,32617
-Agora/Proposal/validator/unlocking/legal/with 42 proposals/voter: unlock after voting/Finished/stake,1626894519,4022660,28588
-Agora/Proposal/validator/unlocking/legal/with 42 proposals/voter: unlock after voting/Finished/proposal,1509185309,4024648,32617
-Agora/Proposal/validator/unlocking/legal/with 42 proposals/voter/creator: remove vote locks when locked/stake,1893561675,4783196,29276
-Agora/Proposal/validator/unlocking/legal/with 42 proposals/voter/creator: remove vote locks when locked/proposal,2060262243,5625037,33076
-"Agora/Proposal/validator/unlocking/illegal/with 1 proposals/retract votes while not voting/role: Voter , status: Draft/stake",134295013,344673,6634
-"Agora/Proposal/validator/unlocking/illegal/with 1 proposals/retract votes while not voting/role: Voter , status: Locked/stake",134295013,344673,6634
-"Agora/Proposal/validator/unlocking/illegal/with 1 proposals/retract votes while not voting/role: Voter , status: Finished/stake",134295013,344673,6634
-"Agora/Proposal/validator/unlocking/illegal/with 1 proposals/retract votes while not voting/role: Creator , status: Draft/stake",131576318,343069,6636
-"Agora/Proposal/validator/unlocking/illegal/with 1 proposals/retract votes while not voting/role: Creator , status: Locked/stake",131576318,343069,6636
-"Agora/Proposal/validator/unlocking/illegal/with 1 proposals/retract votes while not voting/role: Creator , status: Finished/stake",131576318,343069,6636
-"Agora/Proposal/validator/unlocking/illegal/with 1 proposals/retract votes while not voting/role: Both , status: Draft/stake",140644231,362781,6651
-"Agora/Proposal/validator/unlocking/illegal/with 1 proposals/retract votes while not voting/role: Both , status: Locked/stake",140644231,362781,6651
-"Agora/Proposal/validator/unlocking/illegal/with 1 proposals/retract votes while not voting/role: Both , status: Finished/stake",140644231,362781,6651
-"Agora/Proposal/validator/unlocking/illegal/with 1 proposals/retract votes while not voting/role: Irrelevant , status: Draft/stake",125227100,324961,6616
-"Agora/Proposal/validator/unlocking/illegal/with 1 proposals/retract votes while not voting/role: Irrelevant , status: Locked/stake",125227100,324961,6616
-"Agora/Proposal/validator/unlocking/illegal/with 1 proposals/retract votes while not voting/role: Irrelevant , status: Finished/stake",125227100,324961,6616
-Agora/Proposal/validator/unlocking/illegal/with 1 proposals/unlock an irrelevant stake/status: Draft retract votes: True/stake,125227100,324961,6616
-Agora/Proposal/validator/unlocking/illegal/with 1 proposals/unlock an irrelevant stake/status: Draft retract votes: False/stake,125227100,324961,6616
-Agora/Proposal/validator/unlocking/illegal/with 1 proposals/unlock an irrelevant stake/status: VotingReady retract votes: True/stake,125227100,324961,6616
-Agora/Proposal/validator/unlocking/illegal/with 1 proposals/unlock an irrelevant stake/status: VotingReady retract votes: False/stake,125227100,324961,6616
-Agora/Proposal/validator/unlocking/illegal/with 1 proposals/unlock an irrelevant stake/status: Locked retract votes: True/stake,125227100,324961,6616
-Agora/Proposal/validator/unlocking/illegal/with 1 proposals/unlock an irrelevant stake/status: Locked retract votes: False/stake,125227100,324961,6616
-Agora/Proposal/validator/unlocking/illegal/with 1 proposals/unlock an irrelevant stake/status: Finished retract votes: True/stake,125227100,324961,6616
-Agora/Proposal/validator/unlocking/illegal/with 1 proposals/unlock an irrelevant stake/status: Finished retract votes: False/stake,125227100,324961,6616
-Agora/Proposal/validator/unlocking/illegal/with 1 proposals/remove creator too early/status: Draft/stake,133256736,341875,6632
-Agora/Proposal/validator/unlocking/illegal/with 1 proposals/remove creator too early/status: VotingReady/stake,133256736,341875,6632
-Agora/Proposal/validator/unlocking/illegal/with 1 proposals/remove creator too early/status: Locked/stake,133256736,341875,6632
-Agora/Proposal/validator/unlocking/illegal/with 1 proposals/creator: retract votes/stake,133256736,341875,6630
-"Agora/Proposal/validator/unlocking/illegal/with 5 proposals/retract votes while not voting/role: Voter , status: Draft/stake",279914477,703501,8751
-"Agora/Proposal/validator/unlocking/illegal/with 5 proposals/retract votes while not voting/role: Voter , status: Locked/stake",279914477,703501,8751
-"Agora/Proposal/validator/unlocking/illegal/with 5 proposals/retract votes while not voting/role: Voter , status: Finished/stake",279914477,703501,8751
-"Agora/Proposal/validator/unlocking/illegal/with 5 proposals/retract votes while not voting/role: Creator , status: Draft/stake",276144330,711201,8757
-"Agora/Proposal/validator/unlocking/illegal/with 5 proposals/retract votes while not voting/role: Creator , status: Locked/stake",276144330,711201,8757
-"Agora/Proposal/validator/unlocking/illegal/with 5 proposals/retract votes while not voting/role: Creator , status: Finished/stake",276144330,711201,8757
-"Agora/Proposal/validator/unlocking/illegal/with 5 proposals/retract votes while not voting/role: Both , status: Draft/stake",311660567,794041,8827
-"Agora/Proposal/validator/unlocking/illegal/with 5 proposals/retract votes while not voting/role: Both , status: Locked/stake",311660567,794041,8827
-"Agora/Proposal/validator/unlocking/illegal/with 5 proposals/retract votes while not voting/role: Both , status: Finished/stake",311660567,794041,8827
-"Agora/Proposal/validator/unlocking/illegal/with 5 proposals/retract votes while not voting/role: Irrelevant , status: Draft/stake",244398240,620661,8668
-"Agora/Proposal/validator/unlocking/illegal/with 5 proposals/retract votes while not voting/role: Irrelevant , status: Locked/stake",244398240,620661,8668
-"Agora/Proposal/validator/unlocking/illegal/with 5 proposals/retract votes while not voting/role: Irrelevant , status: Finished/stake",244398240,620661,8668
-Agora/Proposal/validator/unlocking/illegal/with 5 proposals/unlock an irrelevant stake/status: Draft retract votes: True/stake,244398240,620661,8668
-Agora/Proposal/validator/unlocking/illegal/with 5 proposals/unlock an irrelevant stake/status: Draft retract votes: False/stake,244398240,620661,8668
-Agora/Proposal/validator/unlocking/illegal/with 5 proposals/unlock an irrelevant stake/status: VotingReady retract votes: True/stake,244398240,620661,8668
-Agora/Proposal/validator/unlocking/illegal/with 5 proposals/unlock an irrelevant stake/status: VotingReady retract votes: False/stake,244398240,620661,8668
-Agora/Proposal/validator/unlocking/illegal/with 5 proposals/unlock an irrelevant stake/status: Locked retract votes: True/stake,244398240,620661,8668
-Agora/Proposal/validator/unlocking/illegal/with 5 proposals/unlock an irrelevant stake/status: Locked retract votes: False/stake,244398240,620661,8668
-Agora/Proposal/validator/unlocking/illegal/with 5 proposals/unlock an irrelevant stake/status: Finished retract votes: True/stake,244398240,620661,8668
-Agora/Proposal/validator/unlocking/illegal/with 5 proposals/unlock an irrelevant stake/status: Finished retract votes: False/stake,244398240,620661,8668
-Agora/Proposal/validator/unlocking/illegal/with 5 proposals/remove creator too early/status: Draft/stake,274723092,689511,8741
-Agora/Proposal/validator/unlocking/illegal/with 5 proposals/remove creator too early/status: VotingReady/stake,274723092,689511,8741
-Agora/Proposal/validator/unlocking/illegal/with 5 proposals/remove creator too early/status: Locked/stake,274723092,689511,8741
-Agora/Proposal/validator/unlocking/illegal/with 5 proposals/creator: retract votes/stake,274723092,689511,8731
-"Agora/Proposal/validator/unlocking/illegal/with 10 proposals/retract votes while not voting/role: Voter , status: Draft/stake",461938807,1152036,11396
-"Agora/Proposal/validator/unlocking/illegal/with 10 proposals/retract votes while not voting/role: Voter , status: Locked/stake",461938807,1152036,11396
-"Agora/Proposal/validator/unlocking/illegal/with 10 proposals/retract votes while not voting/role: Voter , status: Finished/stake",461938807,1152036,11396
-"Agora/Proposal/validator/unlocking/illegal/with 10 proposals/retract votes while not voting/role: Creator , status: Draft/stake",456854345,1171366,11407
-"Agora/Proposal/validator/unlocking/illegal/with 10 proposals/retract votes while not voting/role: Creator , status: Locked/stake",456854345,1171366,11407
-"Agora/Proposal/validator/unlocking/illegal/with 10 proposals/retract votes while not voting/role: Creator , status: Finished/stake",456854345,1171366,11407
-"Agora/Proposal/validator/unlocking/illegal/with 10 proposals/retract votes while not voting/role: Both , status: Draft/stake",525430987,1333116,11547
-"Agora/Proposal/validator/unlocking/illegal/with 10 proposals/retract votes while not voting/role: Both , status: Locked/stake",525430987,1333116,11547
-"Agora/Proposal/validator/unlocking/illegal/with 10 proposals/retract votes while not voting/role: Both , status: Finished/stake",525430987,1333116,11547
-"Agora/Proposal/validator/unlocking/illegal/with 10 proposals/retract votes while not voting/role: Irrelevant , status: Draft/stake",393362165,990286,11234
-"Agora/Proposal/validator/unlocking/illegal/with 10 proposals/retract votes while not voting/role: Irrelevant , status: Locked/stake",393362165,990286,11234
-"Agora/Proposal/validator/unlocking/illegal/with 10 proposals/retract votes while not voting/role: Irrelevant , status: Finished/stake",393362165,990286,11234
-Agora/Proposal/validator/unlocking/illegal/with 10 proposals/unlock an irrelevant stake/status: Draft retract votes: True/stake,393362165,990286,11234
-Agora/Proposal/validator/unlocking/illegal/with 10 proposals/unlock an irrelevant stake/status: Draft retract votes: False/stake,393362165,990286,11234
-Agora/Proposal/validator/unlocking/illegal/with 10 proposals/unlock an irrelevant stake/status: VotingReady retract votes: True/stake,393362165,990286,11234
-Agora/Proposal/validator/unlocking/illegal/with 10 proposals/unlock an irrelevant stake/status: VotingReady retract votes: False/stake,393362165,990286,11234
-Agora/Proposal/validator/unlocking/illegal/with 10 proposals/unlock an irrelevant stake/status: Locked retract votes: True/stake,393362165,990286,11234
-Agora/Proposal/validator/unlocking/illegal/with 10 proposals/unlock an irrelevant stake/status: Locked retract votes: False/stake,393362165,990286,11234
-Agora/Proposal/validator/unlocking/illegal/with 10 proposals/unlock an irrelevant stake/status: Finished retract votes: True/stake,393362165,990286,11234
-Agora/Proposal/validator/unlocking/illegal/with 10 proposals/unlock an irrelevant stake/status: Finished retract votes: False/stake,393362165,990286,11234
-Agora/Proposal/validator/unlocking/illegal/with 10 proposals/remove creator too early/status: Draft/stake,451556037,1124056,11376
-Agora/Proposal/validator/unlocking/illegal/with 10 proposals/remove creator too early/status: VotingReady/stake,451556037,1124056,11376
-Agora/Proposal/validator/unlocking/illegal/with 10 proposals/remove creator too early/status: Locked/stake,451556037,1124056,11376
-Agora/Proposal/validator/unlocking/illegal/with 10 proposals/creator: retract votes/stake,451556037,1124056,11356
-"Agora/Proposal/validator/unlocking/illegal/with 42 proposals/retract votes while not voting/role: Voter , status: Draft/stake",1626894519,4022660,28420
-"Agora/Proposal/validator/unlocking/illegal/with 42 proposals/retract votes while not voting/role: Voter , status: Locked/stake",1626894519,4022660,28420
-"Agora/Proposal/validator/unlocking/illegal/with 42 proposals/retract votes while not voting/role: Voter , status: Finished/stake",1626894519,4022660,28420
-"Agora/Proposal/validator/unlocking/illegal/with 42 proposals/retract votes while not voting/role: Creator , status: Draft/stake",1613398441,4116422,28481
-"Agora/Proposal/validator/unlocking/illegal/with 42 proposals/retract votes while not voting/role: Creator , status: Locked/stake",1613398441,4116422,28481
-"Agora/Proposal/validator/unlocking/illegal/with 42 proposals/retract votes while not voting/role: Creator , status: Finished/stake",1613398441,4116422,28481
-"Agora/Proposal/validator/unlocking/illegal/with 42 proposals/retract votes while not voting/role: Both , status: Draft/stake",1893561675,4783196,29107
-"Agora/Proposal/validator/unlocking/illegal/with 42 proposals/retract votes while not voting/role: Both , status: Locked/stake",1893561675,4783196,29107
-"Agora/Proposal/validator/unlocking/illegal/with 42 proposals/retract votes while not voting/role: Both , status: Finished/stake",1893561675,4783196,29107
-"Agora/Proposal/validator/unlocking/illegal/with 42 proposals/retract votes while not voting/role: Irrelevant , status: Draft/stake",1346731285,3355886,27707
-"Agora/Proposal/validator/unlocking/illegal/with 42 proposals/retract votes while not voting/role: Irrelevant , status: Locked/stake",1346731285,3355886,27707
-"Agora/Proposal/validator/unlocking/illegal/with 42 proposals/retract votes while not voting/role: Irrelevant , status: Finished/stake",1346731285,3355886,27707
-Agora/Proposal/validator/unlocking/illegal/with 42 proposals/unlock an irrelevant stake/status: Draft retract votes: True/stake,1346731285,3355886,27707
-Agora/Proposal/validator/unlocking/illegal/with 42 proposals/unlock an irrelevant stake/status: Draft retract votes: False/stake,1346731285,3355886,27707
-Agora/Proposal/validator/unlocking/illegal/with 42 proposals/unlock an irrelevant stake/status: VotingReady retract votes: True/stake,1346731285,3355886,27707
-Agora/Proposal/validator/unlocking/illegal/with 42 proposals/unlock an irrelevant stake/status: VotingReady retract votes: False/stake,1346731285,3355886,27707
-Agora/Proposal/validator/unlocking/illegal/with 42 proposals/unlock an irrelevant stake/status: Locked retract votes: True/stake,1346731285,3355886,27707
-Agora/Proposal/validator/unlocking/illegal/with 42 proposals/unlock an irrelevant stake/status: Locked retract votes: False/stake,1346731285,3355886,27707
-Agora/Proposal/validator/unlocking/illegal/with 42 proposals/unlock an irrelevant stake/status: Finished retract votes: True/stake,1346731285,3355886,27707
-Agora/Proposal/validator/unlocking/illegal/with 42 proposals/unlock an irrelevant stake/status: Finished retract votes: False/stake,1346731285,3355886,27707
-Agora/Proposal/validator/unlocking/illegal/with 42 proposals/remove creator too early/status: Draft/stake,1583286885,3905144,28335
-Agora/Proposal/validator/unlocking/illegal/with 42 proposals/remove creator too early/status: VotingReady/stake,1583286885,3905144,28335
-Agora/Proposal/validator/unlocking/illegal/with 42 proposals/remove creator too early/status: Locked/stake,1583286885,3905144,28335
-Agora/Proposal/validator/unlocking/illegal/with 42 proposals/creator: retract votes/stake,1583286885,3905144,28251
+Agora/Effects/Governor Mutation Effect/validator/valid new governor datum/governor validator should pass,124963454,341885,9954
+Agora/Effects/Governor Mutation Effect/validator/valid new governor datum/effect validator should pass,171725573,451393,4885
+Agora/Stake/policy/stakeCreation,56178945,162035,3199
+Agora/Stake/validator/stakeDepositWithdraw deposit,242089408,642275,6224
+Agora/Stake/validator/stakeDepositWithdraw withdraw,242089408,642275,6212
+Agora/Stake/validator/set delegate/override existing delegate,166352470,438155,6255
+Agora/Stake/validator/set delegate/remove existing delegate,154745748,407927,6185
+Agora/Stake/validator/set delegate/set delegate to something,159105650,420263,6185
+Agora/Proposal/policy (proposal creation)/legal/proposal,34052826,101718,2022
+Agora/Proposal/policy (proposal creation)/legal/governor,360154125,923395,10395
+Agora/Proposal/policy (proposal creation)/legal/stake,230569597,600796,6883
+Agora/Proposal/policy (proposal creation)/illegal/invalid next proposal id/proposal,34052826,101718,2022
+Agora/Proposal/policy (proposal creation)/illegal/invalid next proposal id/stake,230569597,600796,6883
+Agora/Proposal/policy (proposal creation)/illegal/use other's stake/proposal,34052826,101718,1991
+Agora/Proposal/policy (proposal creation)/illegal/use other's stake/governor,360154125,923395,10364
+Agora/Proposal/policy (proposal creation)/illegal/altered stake/proposal,34052826,101718,2022
+Agora/Proposal/policy (proposal creation)/illegal/invalid stake locks/proposal,34052826,101718,2030
+Agora/Proposal/policy (proposal creation)/illegal/invalid stake locks/stake,246392309,644746,6891
+Agora/Proposal/policy (proposal creation)/illegal/has reached maximum proposals limit/proposal,34052826,101718,2042
+Agora/Proposal/policy (proposal creation)/illegal/has reached maximum proposals limit/stake,255739921,673228,6913
+Agora/Proposal/policy (proposal creation)/illegal/loose time range/proposal,34052826,101718,2022
+Agora/Proposal/policy (proposal creation)/illegal/loose time range/stake,230569597,600796,6883
+Agora/Proposal/policy (proposal creation)/illegal/open time range/proposal,34052826,101718,2018
+Agora/Proposal/policy (proposal creation)/illegal/open time range/stake,230569597,600796,6879
+Agora/Proposal/policy (proposal creation)/illegal/invalid proposal status/VotingReady/proposal,34052826,101718,2022
+Agora/Proposal/policy (proposal creation)/illegal/invalid proposal status/VotingReady/stake,230569597,600796,6883
+Agora/Proposal/policy (proposal creation)/illegal/invalid proposal status/Locked/proposal,34052826,101718,2022
+Agora/Proposal/policy (proposal creation)/illegal/invalid proposal status/Locked/stake,230569597,600796,6883
+Agora/Proposal/policy (proposal creation)/illegal/invalid proposal status/Finished/proposal,34052826,101718,2022
+Agora/Proposal/policy (proposal creation)/illegal/invalid proposal status/Finished/stake,230569597,600796,6883
+Agora/Proposal/validator/cosignature/legal/with 1 cosigners: proposal,215428122,594883,10482
+Agora/Proposal/validator/cosignature/legal/with 5 cosigners: proposal,522188507,1462750,11847
+Agora/Proposal/validator/cosignature/legal/with 10 cosigners: proposal,1019709027,2836183,13554
+Agora/Proposal/validator/voting/legal/ordinary/proposal,275112748,731990,10840
+Agora/Proposal/validator/voting/legal/ordinary/stake,228856245,593720,6730
+Agora/Proposal/validator/voting/legal/delegate/proposal,280121756,746190,10910
+Agora/Proposal/validator/voting/legal/delegate/stake,243390029,632912,6835
+Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/legal/to next state/from Draft to VotingReady/proposal,248851428,686062,11291
+Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/legal/to next state/from VotingReady to Locked/proposal,225653650,614614,11054
+Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/legal/to next state/from Locked to Finished/proposal,238191563,636388,12313
+Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/legal/to next state/from Locked to Finished/governor,531021092,1323582,11414
+Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/legal/to next state/from Locked to Finished/authority,15755485,47872,3277
+Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/legal/to next state/from Draft to VotingReady/proposal,244738074,673834,11012
+Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/legal/to next state/from VotingReady to Locked/proposal,221540296,602386,10775
+Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/legal/to next state/from Locked to Finished/proposal,234078209,624160,11855
+Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/legal/to next state/from Locked to Finished/governor,525714698,1308152,11049
+Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/legal/to next state/from Locked to Finished/authority,78441861,206056,2912
+Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/legal/to failed state/from Draft to Finished/proposal,215258592,588676,11047
+Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/legal/to failed state/from VotingReady to Finished/proposal,213849052,580581,11048
+Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/legal/to failed state/from Locked to Finished/proposal,225885997,609287,11048
+Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/legal/to failed state/from Draft to Finished/proposal,211145238,576448,10768
+Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/legal/to failed state/from VotingReady to Finished/proposal,209735698,568353,10769
+Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/legal/to failed state/from Locked to Finished/proposal,221772643,597059,10769
+Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/illegal/advance finished proposals/(negative test)/authority,15755485,47872,3277
+Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/illegal/advance finished proposals/(negative test)/authority,78441861,206056,2912
+Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/illegal/to next state too late/from Locked/governor,531021092,1323582,11414
+Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/illegal/to next state too late/from Locked/authority,15755485,47872,3277
+Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/illegal/to next state too late/from Locked/governor,525714698,1308152,11049
+Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/illegal/to next state too late/from Locked/authority,78441861,206056,2912
+Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/illegal/forget to mint GATs/proposal,234078209,624160,11213
+Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/illegal/mint GATs for wrong validators/proposal,234078209,624160,11855
+Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/illegal/mint GATs for wrong validators/authority,78441861,206056,2912
+Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/illegal/mint GATs with bad token name/proposal,234078209,624160,11887
+Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/illegal/mint GATs with bad token name/authority,12079326,37748,2944
+Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/illegal/wrong GAT datum/proposal,234078209,624160,11849
+Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/illegal/wrong GAT datum/authority,78441861,206056,2906
+Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/illegal/invalid governor output datum/proposal,234078209,624160,11855
+Agora/Proposal/validator/advancing/with 1 cosigners and 1 effects/illegal/invalid governor output datum/authority,78441861,206056,2912
+Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/legal/to next state/from Draft to VotingReady/proposal,324523538,890364,12207
+Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/legal/to next state/from VotingReady to Locked/proposal,305020646,828904,11970
+Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/legal/to next state/from Locked to Finished/proposal,313863673,840690,13229
+Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/legal/to next state/from Locked to Finished/governor,572756320,1440814,12025
+Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/legal/to next state/from Locked to Finished/authority,15755485,47872,3888
+Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/legal/to next state/from Draft to VotingReady/proposal,316296830,865908,11646
+Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/legal/to next state/from VotingReady to Locked/proposal,296793938,804448,11409
+Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/legal/to next state/from Locked to Finished/proposal,305636965,816234,12490
+Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/legal/to next state/from Locked to Finished/governor,565695313,1419270,11473
+Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/legal/to next state/from Locked to Finished/authority,78441861,206056,3336
+Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/legal/to failed state/from Draft to Finished/proposal,290930702,792978,11963
+Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/legal/to failed state/from VotingReady to Finished/proposal,289521162,784883,11964
+Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/legal/to failed state/from Locked to Finished/proposal,301558107,813589,11964
+Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/legal/to failed state/from Draft to Finished/proposal,282703994,768522,11402
+Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/legal/to failed state/from VotingReady to Finished/proposal,281294454,760427,11403
+Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/legal/to failed state/from Locked to Finished/proposal,293331399,789133,11403
+Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/illegal/advance finished proposals/(negative test)/authority,15755485,47872,3888
+Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/illegal/advance finished proposals/(negative test)/authority,78441861,206056,3336
+Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/illegal/to next state too late/from Locked/governor,572756320,1440814,12025
+Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/illegal/to next state too late/from Locked/authority,15755485,47872,3888
+Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/illegal/to next state too late/from Locked/governor,565695313,1419270,11473
+Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/illegal/to next state too late/from Locked/authority,78441861,206056,3336
+Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/illegal/forget to mint GATs/proposal,305636965,816234,11848
+Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/illegal/mint GATs for wrong validators/proposal,305636965,816234,12490
+Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/illegal/mint GATs for wrong validators/authority,78441861,206056,3336
+Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/illegal/mint GATs with bad token name/proposal,305636965,816234,12522
+Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/illegal/mint GATs with bad token name/authority,12079326,37748,3368
+Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/illegal/wrong GAT datum/proposal,305636965,816234,12484
+Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/illegal/wrong GAT datum/authority,78441861,206056,3330
+Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/illegal/invalid governor output datum/proposal,305636965,816234,12490
+Agora/Proposal/validator/advancing/with 1 cosigners and 2 effects/illegal/invalid governor output datum/authority,78441861,206056,3336
+Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/legal/to next state/from Draft to VotingReady/proposal,551539868,1503270,14954
+Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/legal/to next state/from VotingReady to Locked/proposal,543121634,1471774,14717
+Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/legal/to next state/from Locked to Finished/proposal,540880003,1453596,15976
+Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/legal/to next state/from Locked to Finished/governor,697962004,1792510,13856
+Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/legal/to next state/from Locked to Finished/authority,15755485,47872,5719
+Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/legal/to next state/from Draft to VotingReady/proposal,530973098,1442130,13553
+Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/legal/to next state/from VotingReady to Locked/proposal,522554864,1410634,13316
+Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/legal/to next state/from Locked to Finished/proposal,520313233,1392456,14397
+Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/legal/to next state/from Locked to Finished/governor,685637158,1752624,12744
+Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/legal/to next state/from Locked to Finished/authority,78441861,206056,4606
+Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/legal/to failed state/from Draft to Finished/proposal,517947032,1405884,14710
+Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/legal/to failed state/from VotingReady to Finished/proposal,516537492,1397789,14711
+Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/legal/to failed state/from Locked to Finished/proposal,528574437,1426495,14711
+Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/legal/to failed state/from Draft to Finished/proposal,497380262,1344744,13309
+Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/legal/to failed state/from VotingReady to Finished/proposal,495970722,1336649,13310
+Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/legal/to failed state/from Locked to Finished/proposal,508007667,1365355,13310
+Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/illegal/advance finished proposals/(negative test)/authority,15755485,47872,5719
+Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/illegal/advance finished proposals/(negative test)/authority,78441861,206056,4606
+Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/illegal/to next state too late/from Locked/governor,697962004,1792510,13856
+Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/illegal/to next state too late/from Locked/authority,15755485,47872,5719
+Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/illegal/to next state too late/from Locked/governor,685637158,1752624,12744
+Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/illegal/to next state too late/from Locked/authority,78441861,206056,4606
+Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/illegal/forget to mint GATs/proposal,520313233,1392456,13755
+Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/illegal/mint GATs for wrong validators/proposal,520313233,1392456,14397
+Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/illegal/mint GATs for wrong validators/authority,78441861,206056,4606
+Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/illegal/mint GATs with bad token name/proposal,520313233,1392456,14429
+Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/illegal/mint GATs with bad token name/authority,12079326,37748,4639
+Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/illegal/wrong GAT datum/proposal,520313233,1392456,14391
+Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/illegal/wrong GAT datum/authority,78441861,206056,4600
+Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/illegal/invalid governor output datum/proposal,520313233,1392456,14397
+Agora/Proposal/validator/advancing/with 1 cosigners and 5 effects/illegal/invalid governor output datum/authority,78441861,206056,4606
+Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/legal/to next state/from Draft to VotingReady/proposal,470437369,1355649,12792
+Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/legal/to next state/from VotingReady to Locked/proposal,256608498,698342,11464
+Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/legal/to next state/from Locked to Finished/proposal,269146411,720116,12723
+Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/legal/to next state/from Locked to Finished/governor,545894388,1365446,11687
+Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/legal/to next state/from Locked to Finished/authority,15755485,47872,3550
+Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/legal/to next state/from Draft to VotingReady/proposal,466324015,1343421,12511
+Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/legal/to next state/from VotingReady to Locked/proposal,252495144,686114,11184
+Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/legal/to next state/from Locked to Finished/proposal,265033057,707888,12264
+Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/legal/to next state/from Locked to Finished/governor,540587994,1350016,11322
+Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/legal/to next state/from Locked to Finished/authority,78441861,206056,3185
+Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/legal/to failed state/from Draft to Finished/proposal,246213440,672404,11457
+Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/legal/to failed state/from VotingReady to Finished/proposal,244803900,664309,11458
+Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/legal/to failed state/from Locked to Finished/proposal,256840845,693015,11458
+Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/legal/to failed state/from Draft to Finished/proposal,242100086,660176,11177
+Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/legal/to failed state/from VotingReady to Finished/proposal,240690546,652081,11178
+Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/legal/to failed state/from Locked to Finished/proposal,252727491,680787,11178
+Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/illegal/advance finished proposals/(negative test)/authority,15755485,47872,3550
+Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/illegal/advance finished proposals/(negative test)/authority,78441861,206056,3185
+Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/illegal/to next state too late/from Locked/governor,545894388,1365446,11687
+Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/illegal/to next state too late/from Locked/authority,15755485,47872,3550
+Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/illegal/to next state too late/from Locked/governor,540587994,1350016,11322
+Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/illegal/to next state too late/from Locked/authority,78441861,206056,3185
+Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/illegal/forget to mint GATs/proposal,265033057,707888,11622
+Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/illegal/mint GATs for wrong validators/proposal,265033057,707888,12264
+Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/illegal/mint GATs for wrong validators/authority,78441861,206056,3185
+Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/illegal/mint GATs with bad token name/proposal,265033057,707888,12296
+Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/illegal/mint GATs with bad token name/authority,12079326,37748,3217
+Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/illegal/wrong GAT datum/proposal,265033057,707888,12258
+Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/illegal/wrong GAT datum/authority,78441861,206056,3179
+Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/illegal/invalid governor output datum/proposal,265033057,707888,12264
+Agora/Proposal/validator/advancing/with 5 cosigners and 1 effects/illegal/invalid governor output datum/authority,78441861,206056,3185
+Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/legal/to next state/from Draft to VotingReady/proposal,546109479,1559951,13707
+Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/legal/to next state/from VotingReady to Locked/proposal,335975494,912632,12380
+Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/legal/to next state/from Locked to Finished/proposal,344818521,924418,13639
+Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/legal/to next state/from Locked to Finished/governor,587629616,1482678,12298
+Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/legal/to next state/from Locked to Finished/authority,15755485,47872,4161
+Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/legal/to next state/from Draft to VotingReady/proposal,537882771,1535495,13147
+Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/legal/to next state/from VotingReady to Locked/proposal,327748786,888176,11819
+Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/legal/to next state/from Locked to Finished/proposal,336591813,899962,12900
+Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/legal/to next state/from Locked to Finished/governor,580568609,1461134,11746
+Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/legal/to next state/from Locked to Finished/authority,78441861,206056,3609
+Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/legal/to failed state/from Draft to Finished/proposal,321885550,876706,12373
+Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/legal/to failed state/from VotingReady to Finished/proposal,320476010,868611,12374
+Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/legal/to failed state/from Locked to Finished/proposal,332512955,897317,12374
+Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/legal/to failed state/from Draft to Finished/proposal,313658842,852250,11812
+Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/legal/to failed state/from VotingReady to Finished/proposal,312249302,844155,11813
+Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/legal/to failed state/from Locked to Finished/proposal,324286247,872861,11813
+Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/illegal/advance finished proposals/(negative test)/authority,15755485,47872,4161
+Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/illegal/advance finished proposals/(negative test)/authority,78441861,206056,3609
+Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/illegal/to next state too late/from Locked/governor,587629616,1482678,12298
+Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/illegal/to next state too late/from Locked/authority,15755485,47872,4161
+Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/illegal/to next state too late/from Locked/governor,580568609,1461134,11746
+Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/illegal/to next state too late/from Locked/authority,78441861,206056,3609
+Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/illegal/forget to mint GATs/proposal,336591813,899962,12258
+Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/illegal/mint GATs for wrong validators/proposal,336591813,899962,12900
+Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/illegal/mint GATs for wrong validators/authority,78441861,206056,3609
+Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/illegal/mint GATs with bad token name/proposal,336591813,899962,12932
+Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/illegal/mint GATs with bad token name/authority,12079326,37748,3641
+Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/illegal/wrong GAT datum/proposal,336591813,899962,12894
+Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/illegal/wrong GAT datum/authority,78441861,206056,3603
+Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/illegal/invalid governor output datum/proposal,336591813,899962,12900
+Agora/Proposal/validator/advancing/with 5 cosigners and 2 effects/illegal/invalid governor output datum/authority,78441861,206056,3609
+Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/legal/to next state/from Draft to VotingReady/proposal,773125809,2172857,16453
+Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/legal/to next state/from VotingReady to Locked/proposal,574076482,1555502,15126
+Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/legal/to next state/from Locked to Finished/proposal,571834851,1537324,16385
+Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/legal/to next state/from Locked to Finished/governor,712835300,1834374,14129
+Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/legal/to next state/from Locked to Finished/authority,15755485,47872,5992
+Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/legal/to next state/from Draft to VotingReady/proposal,752559039,2111717,15053
+Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/legal/to next state/from VotingReady to Locked/proposal,553509712,1494362,13725
+Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/legal/to next state/from Locked to Finished/proposal,551268081,1476184,14806
+Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/legal/to next state/from Locked to Finished/governor,700510454,1794488,13017
+Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/legal/to next state/from Locked to Finished/authority,78441861,206056,4880
+Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/legal/to failed state/from Draft to Finished/proposal,548901880,1489612,15119
+Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/legal/to failed state/from VotingReady to Finished/proposal,547492340,1481517,15120
+Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/legal/to failed state/from Locked to Finished/proposal,559529285,1510223,15120
+Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/legal/to failed state/from Draft to Finished/proposal,528335110,1428472,13718
+Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/legal/to failed state/from VotingReady to Finished/proposal,526925570,1420377,13719
+Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/legal/to failed state/from Locked to Finished/proposal,538962515,1449083,13719
+Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/illegal/advance finished proposals/(negative test)/authority,15755485,47872,5992
+Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/illegal/advance finished proposals/(negative test)/authority,78441861,206056,4880
+Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/illegal/to next state too late/from Locked/governor,712835300,1834374,14129
+Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/illegal/to next state too late/from Locked/authority,15755485,47872,5992
+Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/illegal/to next state too late/from Locked/governor,700510454,1794488,13017
+Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/illegal/to next state too late/from Locked/authority,78441861,206056,4880
+Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/illegal/forget to mint GATs/proposal,551268081,1476184,14164
+Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/illegal/mint GATs for wrong validators/proposal,551268081,1476184,14806
+Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/illegal/mint GATs for wrong validators/authority,78441861,206056,4880
+Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/illegal/mint GATs with bad token name/proposal,551268081,1476184,14838
+Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/illegal/mint GATs with bad token name/authority,12079326,37748,4912
+Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/illegal/wrong GAT datum/proposal,551268081,1476184,14800
+Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/illegal/wrong GAT datum/authority,78441861,206056,4874
+Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/illegal/invalid governor output datum/proposal,551268081,1476184,14806
+Agora/Proposal/validator/advancing/with 5 cosigners and 5 effects/illegal/invalid governor output datum/authority,78441861,206056,4880
+Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/legal/to next state/from Draft to VotingReady/proposal,762258642,2236602,14668
+Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/legal/to next state/from VotingReady to Locked/proposal,295302058,803002,11976
+Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/legal/to next state/from Locked to Finished/proposal,307839971,824776,13235
+Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/legal/to next state/from Locked to Finished/governor,564486008,1417776,12029
+Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/legal/to next state/from Locked to Finished/authority,15755485,47872,3892
+Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/legal/to next state/from Draft to VotingReady/proposal,758145288,2224374,14389
+Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/legal/to next state/from VotingReady to Locked/proposal,291188704,790774,11696
+Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/legal/to next state/from Locked to Finished/proposal,303726617,812548,12776
+Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/legal/to next state/from Locked to Finished/governor,559179614,1402346,11663
+Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/legal/to next state/from Locked to Finished/authority,78441861,206056,3526
+Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/legal/to failed state/from Draft to Finished/proposal,284907000,777064,11969
+Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/legal/to failed state/from VotingReady to Finished/proposal,283497460,768969,11970
+Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/legal/to failed state/from Locked to Finished/proposal,295534405,797675,11970
+Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/legal/to failed state/from Draft to Finished/proposal,280793646,764836,11689
+Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/legal/to failed state/from VotingReady to Finished/proposal,279384106,756741,11690
+Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/legal/to failed state/from Locked to Finished/proposal,291421051,785447,11690
+Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/illegal/advance finished proposals/(negative test)/authority,15755485,47872,3892
+Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/illegal/advance finished proposals/(negative test)/authority,78441861,206056,3526
+Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/illegal/to next state too late/from Locked/governor,564486008,1417776,12029
+Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/illegal/to next state too late/from Locked/authority,15755485,47872,3892
+Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/illegal/to next state too late/from Locked/governor,559179614,1402346,11663
+Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/illegal/to next state too late/from Locked/authority,78441861,206056,3526
+Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/illegal/forget to mint GATs/proposal,303726617,812548,12135
+Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/illegal/mint GATs for wrong validators/proposal,303726617,812548,12776
+Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/illegal/mint GATs for wrong validators/authority,78441861,206056,3526
+Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/illegal/mint GATs with bad token name/proposal,303726617,812548,12808
+Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/illegal/mint GATs with bad token name/authority,12079326,37748,3558
+Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/illegal/wrong GAT datum/proposal,303726617,812548,12770
+Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/illegal/wrong GAT datum/authority,78441861,206056,3520
+Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/illegal/invalid governor output datum/proposal,303726617,812548,12776
+Agora/Proposal/validator/advancing/with 10 cosigners and 1 effects/illegal/invalid governor output datum/authority,78441861,206056,3526
+Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/legal/to next state/from Draft to VotingReady/proposal,837930752,2440904,15584
+Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/legal/to next state/from VotingReady to Locked/proposal,374669054,1017292,12891
+Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/legal/to next state/from Locked to Finished/proposal,383512081,1029078,14150
+Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/legal/to next state/from Locked to Finished/governor,606221236,1535008,12639
+Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/legal/to next state/from Locked to Finished/authority,15755485,47872,4502
+Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/legal/to next state/from Draft to VotingReady/proposal,829704044,2416448,15024
+Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/legal/to next state/from VotingReady to Locked/proposal,366442346,992836,12332
+Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/legal/to next state/from Locked to Finished/proposal,375285373,1004622,13412
+Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/legal/to next state/from Locked to Finished/governor,599160229,1513464,12087
+Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/legal/to next state/from Locked to Finished/authority,78441861,206056,3950
+Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/legal/to failed state/from Draft to Finished/proposal,360579110,981366,12884
+Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/legal/to failed state/from VotingReady to Finished/proposal,359169570,973271,12885
+Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/legal/to failed state/from Locked to Finished/proposal,371206515,1001977,12885
+Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/legal/to failed state/from Draft to Finished/proposal,352352402,956910,12325
+Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/legal/to failed state/from VotingReady to Finished/proposal,350942862,948815,12326
+Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/legal/to failed state/from Locked to Finished/proposal,362979807,977521,12326
+Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/illegal/advance finished proposals/(negative test)/authority,15755485,47872,4502
+Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/illegal/advance finished proposals/(negative test)/authority,78441861,206056,3950
+Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/illegal/to next state too late/from Locked/governor,606221236,1535008,12639
+Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/illegal/to next state too late/from Locked/authority,15755485,47872,4502
+Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/illegal/to next state too late/from Locked/governor,599160229,1513464,12087
+Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/illegal/to next state too late/from Locked/authority,78441861,206056,3950
+Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/illegal/forget to mint GATs/proposal,375285373,1004622,12770
+Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/illegal/mint GATs for wrong validators/proposal,375285373,1004622,13412
+Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/illegal/mint GATs for wrong validators/authority,78441861,206056,3950
+Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/illegal/mint GATs with bad token name/proposal,375285373,1004622,13444
+Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/illegal/mint GATs with bad token name/authority,12079326,37748,3982
+Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/illegal/wrong GAT datum/proposal,375285373,1004622,13406
+Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/illegal/wrong GAT datum/authority,78441861,206056,3944
+Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/illegal/invalid governor output datum/proposal,375285373,1004622,13412
+Agora/Proposal/validator/advancing/with 10 cosigners and 2 effects/illegal/invalid governor output datum/authority,78441861,206056,3950
+Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/legal/to next state/from Draft to VotingReady/proposal,1064947082,3053810,18331
+Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/legal/to next state/from VotingReady to Locked/proposal,612770042,1660162,15638
+Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/legal/to next state/from Locked to Finished/proposal,610528411,1641984,16897
+Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/legal/to next state/from Locked to Finished/governor,731426920,1886704,14470
+Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/legal/to next state/from Locked to Finished/authority,15755485,47872,6333
+Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/legal/to next state/from Draft to VotingReady/proposal,1044380312,2992670,16930
+Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/legal/to next state/from VotingReady to Locked/proposal,592203272,1599022,14238
+Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/legal/to next state/from Locked to Finished/proposal,589961641,1580844,15318
+Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/legal/to next state/from Locked to Finished/governor,719102074,1846818,13358
+Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/legal/to next state/from Locked to Finished/authority,78441861,206056,5221
+Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/legal/to failed state/from Draft to Finished/proposal,587595440,1594272,15631
+Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/legal/to failed state/from VotingReady to Finished/proposal,586185900,1586177,15632
+Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/legal/to failed state/from Locked to Finished/proposal,598222845,1614883,15632
+Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/legal/to failed state/from Draft to Finished/proposal,567028670,1533132,14231
+Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/legal/to failed state/from VotingReady to Finished/proposal,565619130,1525037,14232
+Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/legal/to failed state/from Locked to Finished/proposal,577656075,1553743,14232
+Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/illegal/advance finished proposals/(negative test)/authority,15755485,47872,6333
+Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/illegal/advance finished proposals/(negative test)/authority,78441861,206056,5221
+Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/illegal/to next state too late/from Locked/governor,731426920,1886704,14470
+Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/illegal/to next state too late/from Locked/authority,15755485,47872,6333
+Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/illegal/to next state too late/from Locked/governor,719102074,1846818,13358
+Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/illegal/to next state too late/from Locked/authority,78441861,206056,5221
+Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/illegal/forget to mint GATs/proposal,589961641,1580844,14676
+Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/illegal/mint GATs for wrong validators/proposal,589961641,1580844,15318
+Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/illegal/mint GATs for wrong validators/authority,78441861,206056,5221
+Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/illegal/mint GATs with bad token name/proposal,589961641,1580844,15350
+Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/illegal/mint GATs with bad token name/authority,12079326,37748,5253
+Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/illegal/wrong GAT datum/proposal,589961641,1580844,15312
+Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/illegal/wrong GAT datum/authority,78441861,206056,5215
+Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/illegal/invalid governor output datum/proposal,589961641,1580844,15318
+Agora/Proposal/validator/advancing/with 10 cosigners and 5 effects/illegal/invalid governor output datum/authority,78441861,206056,5221
+Agora/Proposal/validator/unlocking/legal/with 1 proposals/voter: retract votes while voting/stake,188554311,478412,6708
+Agora/Proposal/validator/unlocking/legal/with 1 proposals/voter: retract votes while voting/proposal,259046956,685287,10819
+Agora/Proposal/validator/unlocking/legal/with 1 proposals/voter/creator: retract votes while voting/stake,201139473,514628,6724
+Agora/Proposal/validator/unlocking/legal/with 1 proposals/voter/creator: retract votes while voting/proposal,276546528,734728,10830
+Agora/Proposal/validator/unlocking/legal/with 1 proposals/creator: remove creator locks when finished/stake,187516034,475614,6706
+Agora/Proposal/validator/unlocking/legal/with 1 proposals/creator: remove creator locks when finished/proposal,244224995,653258,10816
+Agora/Proposal/validator/unlocking/legal/with 1 proposals/voter/creator: remove all locks when finished/stake,191672283,487466,6722
+Agora/Proposal/validator/unlocking/legal/with 1 proposals/voter/creator: remove all locks when finished/proposal,252462464,677766,10828
+Agora/Proposal/validator/unlocking/legal/with 1 proposals/voter: unlock after voting/Locked/stake,188554311,478412,6712
+Agora/Proposal/validator/unlocking/legal/with 1 proposals/voter: unlock after voting/Locked/proposal,240152103,645033,10823
+Agora/Proposal/validator/unlocking/legal/with 1 proposals/voter: unlock after voting/Finished/stake,188554311,478412,6712
+Agora/Proposal/validator/unlocking/legal/with 1 proposals/voter: unlock after voting/Finished/proposal,240717592,646235,10823
+Agora/Proposal/validator/unlocking/legal/with 1 proposals/voter/creator: remove vote locks when locked/stake,201139473,514628,6728
+Agora/Proposal/validator/unlocking/legal/with 1 proposals/voter/creator: remove vote locks when locked/proposal,258217164,695676,10834
+Agora/Proposal/validator/unlocking/legal/with 5 proposals/voter: retract votes while voting/stake,373467087,900120,9009
+Agora/Proposal/validator/unlocking/legal/with 5 proposals/voter: retract votes while voting/proposal,389806176,988063,13096
+Agora/Proposal/validator/unlocking/legal/with 5 proposals/voter/creator: retract votes while voting/stake,436392897,1081200,9085
+Agora/Proposal/validator/unlocking/legal/with 5 proposals/voter/creator: retract votes while voting/proposal,459362076,1188816,13147
+Agora/Proposal/validator/unlocking/legal/with 5 proposals/creator: remove creator locks when finished/stake,368275702,886130,8999
+Agora/Proposal/validator/unlocking/legal/with 5 proposals/creator: remove creator locks when finished/proposal,361007779,929122,13089
+Agora/Proposal/validator/unlocking/legal/with 5 proposals/voter/creator: remove all locks when finished/stake,389056947,945390,9079
+Agora/Proposal/validator/unlocking/legal/with 5 proposals/voter/creator: remove all locks when finished/proposal,399199972,1040478,13141
+Agora/Proposal/validator/unlocking/legal/with 5 proposals/voter: unlock after voting/Locked/stake,373467087,900120,9029
+Agora/Proposal/validator/unlocking/legal/with 5 proposals/voter: unlock after voting/Locked/proposal,361087995,932089,13116
+Agora/Proposal/validator/unlocking/legal/with 5 proposals/voter: unlock after voting/Finished/stake,373467087,900120,9029
+Agora/Proposal/validator/unlocking/legal/with 5 proposals/voter: unlock after voting/Finished/proposal,361653484,933291,13116
+Agora/Proposal/validator/unlocking/legal/with 5 proposals/voter/creator: remove vote locks when locked/stake,436392897,1081200,9105
+Agora/Proposal/validator/unlocking/legal/with 5 proposals/voter/creator: remove vote locks when locked/proposal,431209384,1134044,13167
+Agora/Proposal/validator/unlocking/legal/with 10 proposals/voter: retract votes while voting/stake,604608057,1427255,11885
+Agora/Proposal/validator/unlocking/legal/with 10 proposals/voter: retract votes while voting/proposal,553255201,1366533,15942
+Agora/Proposal/validator/unlocking/legal/with 10 proposals/voter/creator: retract votes while voting/stake,730459677,1789415,12036
+Agora/Proposal/validator/unlocking/legal/with 10 proposals/voter/creator: retract votes while voting/proposal,687881511,1756426,16043
+Agora/Proposal/validator/unlocking/legal/with 10 proposals/creator: remove creator locks when finished/stake,594225287,1399275,11865
+Agora/Proposal/validator/unlocking/legal/with 10 proposals/creator: remove creator locks when finished/proposal,506986259,1273952,15930
+Agora/Proposal/validator/unlocking/legal/with 10 proposals/voter/creator: remove all locks when finished/stake,635787777,1517795,12025
+Agora/Proposal/validator/unlocking/legal/with 10 proposals/voter/creator: remove all locks when finished/proposal,582621857,1493868,16032
+Agora/Proposal/validator/unlocking/legal/with 10 proposals/voter: unlock after voting/Locked/stake,604608057,1427255,11925
+Agora/Proposal/validator/unlocking/legal/with 10 proposals/voter: unlock after voting/Locked/proposal,512257860,1290909,15982
+Agora/Proposal/validator/unlocking/legal/with 10 proposals/voter: unlock after voting/Finished/stake,604608057,1427255,11925
+Agora/Proposal/validator/unlocking/legal/with 10 proposals/voter: unlock after voting/Finished/proposal,512823349,1292111,15982
+Agora/Proposal/validator/unlocking/legal/with 10 proposals/voter/creator: remove vote locks when locked/stake,730459677,1789415,12076
+Agora/Proposal/validator/unlocking/legal/with 10 proposals/voter/creator: remove vote locks when locked/proposal,647449659,1682004,16083
+Agora/Proposal/validator/unlocking/legal/with 42 proposals/voter: retract votes while voting/stake,2083910265,4800919,30407
+Agora/Proposal/validator/unlocking/legal/with 42 proposals/voter: retract votes while voting/proposal,1599328961,3788741,34253
+Agora/Proposal/validator/unlocking/legal/with 42 proposals/voter/creator: retract votes while voting/stake,2612487069,6321991,31095
+Agora/Proposal/validator/unlocking/legal/with 42 proposals/voter/creator: retract votes while voting/proposal,2150405895,5389130,34712
+Agora/Proposal/validator/unlocking/legal/with 42 proposals/creator: remove creator locks when finished/stake,2040302631,4683403,30323
+Agora/Proposal/validator/unlocking/legal/with 42 proposals/creator: remove creator locks when finished/proposal,1441248531,3480864,34209
+Agora/Proposal/validator/unlocking/legal/with 42 proposals/voter/creator: remove all locks when finished/stake,2214865089,5181187,31034
+Agora/Proposal/validator/unlocking/legal/with 42 proposals/voter/creator: remove all locks when finished/proposal,1756521921,4395564,34651
+Agora/Proposal/validator/unlocking/legal/with 42 proposals/voter: unlock after voting/Locked/stake,2083910265,4800919,30576
+Agora/Proposal/validator/unlocking/legal/with 42 proposals/voter: unlock after voting/Locked/proposal,1479744996,3587357,34422
+Agora/Proposal/validator/unlocking/legal/with 42 proposals/voter: unlock after voting/Finished/stake,2083910265,4800919,30576
+Agora/Proposal/validator/unlocking/legal/with 42 proposals/voter: unlock after voting/Finished/proposal,1480310485,3588559,34422
+Agora/Proposal/validator/unlocking/legal/with 42 proposals/voter/creator: remove vote locks when locked/stake,2612487069,6321991,31264
+Agora/Proposal/validator/unlocking/legal/with 42 proposals/voter/creator: remove vote locks when locked/proposal,2031387419,5188948,34881
+"Agora/Proposal/validator/unlocking/illegal/with 1 proposals/retract votes while not voting/role: Voter , status: Draft/stake",188554311,478412,6708
+"Agora/Proposal/validator/unlocking/illegal/with 1 proposals/retract votes while not voting/role: Voter , status: Locked/stake",188554311,478412,6708
+"Agora/Proposal/validator/unlocking/illegal/with 1 proposals/retract votes while not voting/role: Voter , status: Finished/stake",188554311,478412,6708
+"Agora/Proposal/validator/unlocking/illegal/with 1 proposals/retract votes while not voting/role: Creator , status: Draft/stake",182248232,479196,6710
+"Agora/Proposal/validator/unlocking/illegal/with 1 proposals/retract votes while not voting/role: Creator , status: Locked/stake",182248232,479196,6710
+"Agora/Proposal/validator/unlocking/illegal/with 1 proposals/retract votes while not voting/role: Creator , status: Finished/stake",182248232,479196,6710
+"Agora/Proposal/validator/unlocking/illegal/with 1 proposals/retract votes while not voting/role: Both , status: Draft/stake",201139473,514628,6724
+"Agora/Proposal/validator/unlocking/illegal/with 1 proposals/retract votes while not voting/role: Both , status: Locked/stake",201139473,514628,6724
+"Agora/Proposal/validator/unlocking/illegal/with 1 proposals/retract votes while not voting/role: Both , status: Finished/stake",201139473,514628,6724
+"Agora/Proposal/validator/unlocking/illegal/with 1 proposals/retract votes while not voting/role: Irrelevant , status: Draft/stake",169663070,442980,6690
+"Agora/Proposal/validator/unlocking/illegal/with 1 proposals/retract votes while not voting/role: Irrelevant , status: Locked/stake",169663070,442980,6690
+"Agora/Proposal/validator/unlocking/illegal/with 1 proposals/retract votes while not voting/role: Irrelevant , status: Finished/stake",169663070,442980,6690
+Agora/Proposal/validator/unlocking/illegal/with 1 proposals/unlock an irrelevant stake/status: Draft retract votes: True/stake,169663070,442980,6690
+Agora/Proposal/validator/unlocking/illegal/with 1 proposals/unlock an irrelevant stake/status: Draft retract votes: False/stake,169663070,442980,6690
+Agora/Proposal/validator/unlocking/illegal/with 1 proposals/unlock an irrelevant stake/status: VotingReady retract votes: True/stake,169663070,442980,6690
+Agora/Proposal/validator/unlocking/illegal/with 1 proposals/unlock an irrelevant stake/status: VotingReady retract votes: False/stake,169663070,442980,6690
+Agora/Proposal/validator/unlocking/illegal/with 1 proposals/unlock an irrelevant stake/status: Locked retract votes: True/stake,169663070,442980,6690
+Agora/Proposal/validator/unlocking/illegal/with 1 proposals/unlock an irrelevant stake/status: Locked retract votes: False/stake,169663070,442980,6690
+Agora/Proposal/validator/unlocking/illegal/with 1 proposals/unlock an irrelevant stake/status: Finished retract votes: True/stake,169663070,442980,6690
+Agora/Proposal/validator/unlocking/illegal/with 1 proposals/unlock an irrelevant stake/status: Finished retract votes: False/stake,169663070,442980,6690
+Agora/Proposal/validator/unlocking/illegal/with 1 proposals/remove creator too early/status: Draft/stake,187516034,475614,6706
+Agora/Proposal/validator/unlocking/illegal/with 1 proposals/remove creator too early/status: VotingReady/stake,187516034,475614,6706
+Agora/Proposal/validator/unlocking/illegal/with 1 proposals/remove creator too early/status: Locked/stake,187516034,475614,6706
+Agora/Proposal/validator/unlocking/illegal/with 1 proposals/creator: retract votes/stake,187516034,475614,6704
+"Agora/Proposal/validator/unlocking/illegal/with 5 proposals/retract votes while not voting/role: Voter , status: Draft/stake",373467087,900120,9009
+"Agora/Proposal/validator/unlocking/illegal/with 5 proposals/retract votes while not voting/role: Voter , status: Locked/stake",373467087,900120,9009
+"Agora/Proposal/validator/unlocking/illegal/with 5 proposals/retract votes while not voting/role: Voter , status: Finished/stake",373467087,900120,9009
+"Agora/Proposal/validator/unlocking/illegal/with 5 proposals/retract votes while not voting/role: Creator , status: Draft/stake",371406676,951200,9015
+"Agora/Proposal/validator/unlocking/illegal/with 5 proposals/retract votes while not voting/role: Creator , status: Locked/stake",371406676,951200,9015
+"Agora/Proposal/validator/unlocking/illegal/with 5 proposals/retract votes while not voting/role: Creator , status: Finished/stake",371406676,951200,9015
+"Agora/Proposal/validator/unlocking/illegal/with 5 proposals/retract votes while not voting/role: Both , status: Draft/stake",436392897,1081200,9085
+"Agora/Proposal/validator/unlocking/illegal/with 5 proposals/retract votes while not voting/role: Both , status: Locked/stake",436392897,1081200,9085
+"Agora/Proposal/validator/unlocking/illegal/with 5 proposals/retract votes while not voting/role: Both , status: Finished/stake",436392897,1081200,9085
+"Agora/Proposal/validator/unlocking/illegal/with 5 proposals/retract votes while not voting/role: Irrelevant , status: Draft/stake",308480866,770120,8926
+"Agora/Proposal/validator/unlocking/illegal/with 5 proposals/retract votes while not voting/role: Irrelevant , status: Locked/stake",308480866,770120,8926
+"Agora/Proposal/validator/unlocking/illegal/with 5 proposals/retract votes while not voting/role: Irrelevant , status: Finished/stake",308480866,770120,8926
+Agora/Proposal/validator/unlocking/illegal/with 5 proposals/unlock an irrelevant stake/status: Draft retract votes: True/stake,308480866,770120,8926
+Agora/Proposal/validator/unlocking/illegal/with 5 proposals/unlock an irrelevant stake/status: Draft retract votes: False/stake,308480866,770120,8926
+Agora/Proposal/validator/unlocking/illegal/with 5 proposals/unlock an irrelevant stake/status: VotingReady retract votes: True/stake,308480866,770120,8926
+Agora/Proposal/validator/unlocking/illegal/with 5 proposals/unlock an irrelevant stake/status: VotingReady retract votes: False/stake,308480866,770120,8926
+Agora/Proposal/validator/unlocking/illegal/with 5 proposals/unlock an irrelevant stake/status: Locked retract votes: True/stake,308480866,770120,8926
+Agora/Proposal/validator/unlocking/illegal/with 5 proposals/unlock an irrelevant stake/status: Locked retract votes: False/stake,308480866,770120,8926
+Agora/Proposal/validator/unlocking/illegal/with 5 proposals/unlock an irrelevant stake/status: Finished retract votes: True/stake,308480866,770120,8926
+Agora/Proposal/validator/unlocking/illegal/with 5 proposals/unlock an irrelevant stake/status: Finished retract votes: False/stake,308480866,770120,8926
+Agora/Proposal/validator/unlocking/illegal/with 5 proposals/remove creator too early/status: Draft/stake,368275702,886130,8999
+Agora/Proposal/validator/unlocking/illegal/with 5 proposals/remove creator too early/status: VotingReady/stake,368275702,886130,8999
+Agora/Proposal/validator/unlocking/illegal/with 5 proposals/remove creator too early/status: Locked/stake,368275702,886130,8999
+Agora/Proposal/validator/unlocking/illegal/with 5 proposals/creator: retract votes/stake,368275702,886130,8988
+"Agora/Proposal/validator/unlocking/illegal/with 10 proposals/retract votes while not voting/role: Voter , status: Draft/stake",604608057,1427255,11885
+"Agora/Proposal/validator/unlocking/illegal/with 10 proposals/retract votes while not voting/role: Voter , status: Locked/stake",604608057,1427255,11885
+"Agora/Proposal/validator/unlocking/illegal/with 10 proposals/retract votes while not voting/role: Voter , status: Finished/stake",604608057,1427255,11885
+"Agora/Proposal/validator/unlocking/illegal/with 10 proposals/retract votes while not voting/role: Creator , status: Draft/stake",607854731,1541205,11896
+"Agora/Proposal/validator/unlocking/illegal/with 10 proposals/retract votes while not voting/role: Creator , status: Locked/stake",607854731,1541205,11896
+"Agora/Proposal/validator/unlocking/illegal/with 10 proposals/retract votes while not voting/role: Creator , status: Finished/stake",607854731,1541205,11896
+"Agora/Proposal/validator/unlocking/illegal/with 10 proposals/retract votes while not voting/role: Both , status: Draft/stake",730459677,1789415,12036
+"Agora/Proposal/validator/unlocking/illegal/with 10 proposals/retract votes while not voting/role: Both , status: Locked/stake",730459677,1789415,12036
+"Agora/Proposal/validator/unlocking/illegal/with 10 proposals/retract votes while not voting/role: Both , status: Finished/stake",730459677,1789415,12036
+"Agora/Proposal/validator/unlocking/illegal/with 10 proposals/retract votes while not voting/role: Irrelevant , status: Draft/stake",482003111,1179045,11722
+"Agora/Proposal/validator/unlocking/illegal/with 10 proposals/retract votes while not voting/role: Irrelevant , status: Locked/stake",482003111,1179045,11722
+"Agora/Proposal/validator/unlocking/illegal/with 10 proposals/retract votes while not voting/role: Irrelevant , status: Finished/stake",482003111,1179045,11722
+Agora/Proposal/validator/unlocking/illegal/with 10 proposals/unlock an irrelevant stake/status: Draft retract votes: True/stake,482003111,1179045,11722
+Agora/Proposal/validator/unlocking/illegal/with 10 proposals/unlock an irrelevant stake/status: Draft retract votes: False/stake,482003111,1179045,11722
+Agora/Proposal/validator/unlocking/illegal/with 10 proposals/unlock an irrelevant stake/status: VotingReady retract votes: True/stake,482003111,1179045,11722
+Agora/Proposal/validator/unlocking/illegal/with 10 proposals/unlock an irrelevant stake/status: VotingReady retract votes: False/stake,482003111,1179045,11722
+Agora/Proposal/validator/unlocking/illegal/with 10 proposals/unlock an irrelevant stake/status: Locked retract votes: True/stake,482003111,1179045,11722
+Agora/Proposal/validator/unlocking/illegal/with 10 proposals/unlock an irrelevant stake/status: Locked retract votes: False/stake,482003111,1179045,11722
+Agora/Proposal/validator/unlocking/illegal/with 10 proposals/unlock an irrelevant stake/status: Finished retract votes: True/stake,482003111,1179045,11722
+Agora/Proposal/validator/unlocking/illegal/with 10 proposals/unlock an irrelevant stake/status: Finished retract votes: False/stake,482003111,1179045,11722
+Agora/Proposal/validator/unlocking/illegal/with 10 proposals/remove creator too early/status: Draft/stake,594225287,1399275,11865
+Agora/Proposal/validator/unlocking/illegal/with 10 proposals/remove creator too early/status: VotingReady/stake,594225287,1399275,11865
+Agora/Proposal/validator/unlocking/illegal/with 10 proposals/remove creator too early/status: Locked/stake,594225287,1399275,11865
+Agora/Proposal/validator/unlocking/illegal/with 10 proposals/creator: retract votes/stake,594225287,1399275,11845
+"Agora/Proposal/validator/unlocking/illegal/with 42 proposals/retract votes while not voting/role: Voter , status: Draft/stake",2083910265,4800919,30407
+"Agora/Proposal/validator/unlocking/illegal/with 42 proposals/retract votes while not voting/role: Voter , status: Locked/stake",2083910265,4800919,30407
+"Agora/Proposal/validator/unlocking/illegal/with 42 proposals/retract votes while not voting/role: Voter , status: Finished/stake",2083910265,4800919,30407
+"Agora/Proposal/validator/unlocking/illegal/with 42 proposals/retract votes while not voting/role: Creator , status: Draft/stake",2121122283,5317237,30469
+"Agora/Proposal/validator/unlocking/illegal/with 42 proposals/retract votes while not voting/role: Creator , status: Locked/stake",2121122283,5317237,30469
+"Agora/Proposal/validator/unlocking/illegal/with 42 proposals/retract votes while not voting/role: Creator , status: Finished/stake",2121122283,5317237,30469
+"Agora/Proposal/validator/unlocking/illegal/with 42 proposals/retract votes while not voting/role: Both , status: Draft/stake",2612487069,6321991,31095
+"Agora/Proposal/validator/unlocking/illegal/with 42 proposals/retract votes while not voting/role: Both , status: Locked/stake",2612487069,6321991,31095
+"Agora/Proposal/validator/unlocking/illegal/with 42 proposals/retract votes while not voting/role: Both , status: Finished/stake",2612487069,6321991,31095
+"Agora/Proposal/validator/unlocking/illegal/with 42 proposals/retract votes while not voting/role: Irrelevant , status: Draft/stake",1592545479,3796165,29694
+"Agora/Proposal/validator/unlocking/illegal/with 42 proposals/retract votes while not voting/role: Irrelevant , status: Locked/stake",1592545479,3796165,29694
+"Agora/Proposal/validator/unlocking/illegal/with 42 proposals/retract votes while not voting/role: Irrelevant , status: Finished/stake",1592545479,3796165,29694
+Agora/Proposal/validator/unlocking/illegal/with 42 proposals/unlock an irrelevant stake/status: Draft retract votes: True/stake,1592545479,3796165,29694
+Agora/Proposal/validator/unlocking/illegal/with 42 proposals/unlock an irrelevant stake/status: Draft retract votes: False/stake,1592545479,3796165,29694
+Agora/Proposal/validator/unlocking/illegal/with 42 proposals/unlock an irrelevant stake/status: VotingReady retract votes: True/stake,1592545479,3796165,29694
+Agora/Proposal/validator/unlocking/illegal/with 42 proposals/unlock an irrelevant stake/status: VotingReady retract votes: False/stake,1592545479,3796165,29694
+Agora/Proposal/validator/unlocking/illegal/with 42 proposals/unlock an irrelevant stake/status: Locked retract votes: True/stake,1592545479,3796165,29694
+Agora/Proposal/validator/unlocking/illegal/with 42 proposals/unlock an irrelevant stake/status: Locked retract votes: False/stake,1592545479,3796165,29694
+Agora/Proposal/validator/unlocking/illegal/with 42 proposals/unlock an irrelevant stake/status: Finished retract votes: True/stake,1592545479,3796165,29694
+Agora/Proposal/validator/unlocking/illegal/with 42 proposals/unlock an irrelevant stake/status: Finished retract votes: False/stake,1592545479,3796165,29694
+Agora/Proposal/validator/unlocking/illegal/with 42 proposals/remove creator too early/status: Draft/stake,2040302631,4683403,30323
+Agora/Proposal/validator/unlocking/illegal/with 42 proposals/remove creator too early/status: VotingReady/stake,2040302631,4683403,30323
+Agora/Proposal/validator/unlocking/illegal/with 42 proposals/remove creator too early/status: Locked/stake,2040302631,4683403,30323
+Agora/Proposal/validator/unlocking/illegal/with 42 proposals/creator: retract votes/stake,2040302631,4683403,30239
 Agora/AuthorityToken/singleAuthorityTokenBurned/Correct simple,24929970,68747,726
 Agora/AuthorityToken/singleAuthorityTokenBurned/Correct many inputs,47662922,128817,826
 Agora/AuthorityToken/singleAuthorityTokenBurned/Correct even though scripts don't match,24929970,68747,725
-Agora/Treasury/Validator/Positive/Allows for effect changes,39447993,107460,1386
-Agora/Treasury/Validator/Positive/Fails when GAT token name is not script address,39447993,107460,1422
+Agora/Treasury/Validator/Positive/Allows for effect changes,39447993,107460,1427
+Agora/Treasury/Validator/Positive/Fails when GAT token name is not script address,39447993,107460,1463
 Agora/AuthorityToken/singleAuthorityTokenBurned/Correct simple,24929970,68747,726
 Agora/AuthorityToken/singleAuthorityTokenBurned/Correct many inputs,47662922,128817,826
 Agora/AuthorityToken/singleAuthorityTokenBurned/Correct even though scripts don't match,24929970,68747,725
-Agora/Governor/policy/totally legal,67006732,183600,2594
-Agora/Governor/validator/mutate/legal,134073807,355373,9431
+Agora/Governor/policy/totally legal,67006732,183600,2631
+Agora/Governor/validator/mutate/legal,134508164,357105,9767

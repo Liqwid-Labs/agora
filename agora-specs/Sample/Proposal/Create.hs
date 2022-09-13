@@ -38,6 +38,7 @@ import Agora.Proposal.Time (
   ),
   ProposalStartingTime (..),
  )
+import Agora.SafeMoney (GTTag)
 import Agora.Scripts (AgoraScripts (..))
 import Agora.Stake (
   ProposalLock (..),
@@ -47,7 +48,7 @@ import Agora.Stake (
 import Data.Coerce (coerce)
 import Data.Default (Default (def))
 import Data.Map.Strict qualified as StrictMap
-import Data.Tagged (Tagged, untag)
+import Data.Tagged (untag)
 import Plutarch.Context (
   input,
   mint,
@@ -60,6 +61,7 @@ import Plutarch.Context (
   withRef,
   withValue,
  )
+import Plutarch.SafeMoney (Discrete)
 import PlutusLedgerApi.V1.Value qualified as Value
 import PlutusLedgerApi.V2 (
   Credential (PubKeyCredential),
@@ -71,6 +73,7 @@ import PlutusLedgerApi.V2 (
 import Sample.Proposal.Shared (stakeTxRef)
 import Sample.Shared (
   agoraScripts,
+  fromDiscrete,
   govAssetClass,
   govValidatorHash,
   governor,
@@ -123,7 +126,7 @@ thisProposalId :: ProposalId
 thisProposalId = ProposalId 25
 
 -- | The arbitrary staked amount. Doesn;t really matter in this case.
-stakedGTs :: Tagged _ Integer
+stakedGTs :: Discrete GTTag
 stakedGTs = 5
 
 -- | The owner of the stake.
@@ -289,7 +292,7 @@ createProposal ps = builder
       sortValue $
         sortValue $
           sst
-            <> Value.assetClassValue (untag governor.gtClassRef) (untag stakedGTs)
+            <> Value.assetClassValue (untag governor.gtClassRef) (fromDiscrete stakedGTs)
             <> minAda
     proposalValue = sortValue $ pst <> minAda
 

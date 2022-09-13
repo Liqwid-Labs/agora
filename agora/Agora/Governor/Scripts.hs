@@ -21,8 +21,8 @@ import Agora.AuthorityToken (
   singleAuthorityTokenBurned,
  )
 import Agora.Governor (
-  GovernorRedeemer (..),
   PGovernorDatum (PGovernorDatum),
+  PGovernorRedeemer (..),
   pgetNextProposalId,
   pisGovernorDatumValid,
  )
@@ -36,7 +36,7 @@ import Agora.Proposal (
   pneutralOption,
   pwinner,
  )
-import Agora.Proposal.Time (createProposalStartingTime)
+import Agora.Proposal.Time (validateProposalStartingTime)
 import Agora.Scripts (
   AgoraScripts,
   authorityTokenSymbol,
@@ -60,6 +60,7 @@ import Plutarch.Api.V1 (
   PTokenName,
   PValue (PValue),
  )
+import Plutarch.Api.V1.AssocMap (plookup)
 import Plutarch.Api.V1.AssocMap qualified as AssocMap
 import Plutarch.Api.V2 (
   PAddress,
@@ -71,13 +72,9 @@ import Plutarch.Api.V2 (
 import Plutarch.Builtin (ppairDataBuiltin)
 import Plutarch.Extra.AssetClass (passetClass, passetClassValueOf)
 import Plutarch.Extra.Field (pletAllC)
-import Plutarch.Extra.IsData (pmatchEnumFromData)
 import Plutarch.Extra.List (pfirstJust)
-import Plutarch.Extra.Map (
-  plookup,
-  plookup',
- )
-import Plutarch.Extra.Maybe (passertPJust, pfromJust, pmaybeData, pnothing)
+import Plutarch.Extra.Map (ptryLookup)
+import Plutarch.Extra.Maybe (passertPJust, pmaybeData, pnothing)
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
 import Plutarch.Extra.ScriptContext (
   pfindOutputsToAddress,
@@ -90,7 +87,6 @@ import Plutarch.Extra.ScriptContext (
   pvalueSpent,
  )
 import Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC, ptryFromC)
-import Plutarch.Extra.Tuple (pfstTuple, psndTuple)
 import Plutarch.Extra.Value (phasOnlyOneTokenOfCurrencySymbol, psymbolValueOf)
 import PlutusLedgerApi.V1 (TxOutRef)
 
@@ -253,6 +249,8 @@ governorValidator as =
   plam $ \datum' redeemer' ctx' -> unTermCont $ do
     ctxF <- pletAllC ctx'
 
+    redeemer <- pfromData . fst <$> ptryFromC redeemer'
+
     txInfo' <- pletC $ pfromData $ ctxF.txInfo
     txInfoF <- pletFieldsC @'["mint", "inputs", "outputs", "datums", "signatories", "validRange"] txInfo'
 
@@ -289,8 +287,8 @@ governorValidator as =
     pguardC "New datum is valid" $ pisGovernorDatumValid # newGovernorDatum
 
     pure $
-      pmatchEnumFromData redeemer' $ \case
-        Just CreateProposal -> unTermCont $ do
+      pmatch redeemer $ \case
+        PCreateProposal -> unTermCont $ do
           -- Check that the transaction advances proposal id.
 
           let expectedNextProposalId = pgetNextProposalId # oldGovernorDatumF.nextProposalId
@@ -369,12 +367,7 @@ governorValidator as =
 
           proposalOutputDatum <- pletAllC $ pto $ pfromData proposalOutputDatum'
 
-          let expectedStartingTime =
-                pfromJust #$ createProposalStartingTime
-                  # oldGovernorDatumF.createProposalTimeRangeMaxWidth
-                  # txInfoF.validRange
-
-              expectedCosigners = psingleton @PBuiltinList # stakeInputDatumF.owner
+          let expectedCosigners = psingleton @PBuiltinList # stakeInputDatumF.owner
 
           pguardC "Proposal datum correct" $
             foldl1
@@ -391,8 +384,11 @@ governorValidator as =
                   proposalOutputDatum.status #== pconstantData Draft
               , ptraceIfFalse "cosigners correct" $
                   plistEquals # pfromData proposalOutputDatum.cosigners # expectedCosigners
-              , ptraceIfFalse "starting time correct" $
-                  proposalOutputDatum.startingTime #== expectedStartingTime
+              , ptraceIfFalse "starting time valid" $
+                  validateProposalStartingTime
+                    # oldGovernorDatumF.createProposalTimeRangeMaxWidth
+                    # txInfoF.validRange
+                    # proposalOutputDatum.startingTime
               , ptraceIfFalse "copy over configurations" $
                   proposalOutputDatum.thresholds #== oldGovernorDatumF.proposalThresholds
                     #&& proposalOutputDatum.timingConfig #== oldGovernorDatumF.proposalTimings
@@ -435,7 +431,7 @@ governorValidator as =
 
         --------------------------------------------------------------------------
 
-        Just MintGATs -> unTermCont $ do
+        PMintGATs -> unTermCont $ do
           pguardC "Governor state should not be changed" $ newGovernorDatum #== oldGovernorDatum
 
           -- Filter out proposal inputs and ouputs using PST and the address of proposal validator.
@@ -479,7 +475,7 @@ governorValidator as =
               finalResultTag = pwinner # proposalInputDatumF.votes # quorum # neutralOption
 
           -- The effects of the winner outcome.
-          effectGroup <- pletC $ plookup' # finalResultTag #$ proposalInputDatumF.effects
+          effectGroup <- pletC $ ptryLookup # finalResultTag #$ proposalInputDatumF.effects
 
           gatCount <- pletC $ plength #$ pto $ pto effectGroup
 
@@ -520,7 +516,7 @@ governorValidator as =
                         let tagToken :: Term _ PTokenName
                             tagToken =
                               pmaybeData # pconstant "" # plam (pscriptHashToTokenName . pfromData)
-                                #$ psndTuple # effect
+                                #$ pfield @"scriptHash" # effect
                             receiverScriptHash =
                               passertPJust # "GAT receiver should be a script"
                                 #$ pscriptHashFromAddress # outputF.address
@@ -531,7 +527,7 @@ governorValidator as =
                               authorityTokens
                                 #== psingleton # (ppairDataBuiltin # pdata tagToken # pdata 1)
                             hasCorrectDatum =
-                              pfstTuple # effect #== pfromDatumHash # outputF.datum
+                              pfield @"datumHash" # effect #== pfromDatumHash # outputF.datum
 
                         pure $
                           foldr1
@@ -560,15 +556,12 @@ governorValidator as =
 
         --------------------------------------------------------------------------
 
-        Just MutateGovernor -> unTermCont $ do
+        PMutateGovernor -> unTermCont $ do
           -- Check that a GAT is burnt.
           pguardC "One valid GAT burnt" $
             singleAuthorityTokenBurned atSymbol txInfoF.inputs txInfoF.mint
 
           pure $ popaque $ pconstant ()
-
-        --------------------------------------------------------------------------
-        Nothing -> ptraceError "Unknown redeemer"
   where
     -- The currency symbol of authority token.
     atSymbol :: forall (s :: S). Term s PCurrencySymbol

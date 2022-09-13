@@ -9,8 +9,7 @@ Proposal scripts encoding effects that operate on the system.
 -}
 module Agora.Proposal (
   -- * Haskell-land
-
-  -- Proposal (..),
+  ProposalEffectMetadata (..),
   ProposalEffectGroup,
   ProposalDatum (..),
   ProposalRedeemer (..),
@@ -22,6 +21,7 @@ module Agora.Proposal (
   emptyVotesFor,
 
   -- * Plutarch-land
+  PProposalEffectMetadata (..),
   PProposalEffectGroup,
   PProposalDatum (..),
   PProposalRedeemer (..),
@@ -60,7 +60,6 @@ import Plutarch.Api.V2 (
   PDatumHash,
   PMaybeData,
   PScriptHash,
-  PTuple,
  )
 import Plutarch.DataRepr (
   DerivePConstantViaData (
@@ -75,6 +74,7 @@ import Plutarch.Extra.IsData (
   DerivePConstantViaDataList (DerivePConstantViaDataList),
   DerivePConstantViaEnum (DerivePConstantEnum),
   EnumIsData (EnumIsData),
+  PlutusTypeDataList,
   PlutusTypeEnumData,
   ProductIsData (ProductIsData),
  )
@@ -285,8 +285,35 @@ newtype ProposalVotes = ProposalVotes
 emptyVotesFor :: forall a. StrictMap.Map ResultTag a -> ProposalVotes
 emptyVotesFor = ProposalVotes . StrictMap.mapWithKey (const . const 0)
 
--- | @since 0.3.0
-type ProposalEffectGroup = StrictMap.Map ValidatorHash (DatumHash, Maybe ScriptHash)
+-- | @since 1.0.0
+data ProposalEffectMetadata = ProposalEffectMetadata
+  { datumHash :: DatumHash
+  -- ^ Hash of datum sent to effect validator with GAT
+  , scriptHash :: Maybe ScriptHash
+  -- ^ A 'ScriptHash' that encodes the authority script.
+  }
+  deriving stock
+    ( -- | @since 1.0.0
+      Generic
+    , -- | @since 1.0.0
+      Show
+    , -- | @since 1.0.0
+      Eq
+    )
+  deriving anyclass
+    ( -- | @since 1.0.0
+      SOP.Generic
+    )
+  deriving
+    ( -- | @since 1.0.0
+      PlutusTx.ToData
+    , -- | @since 1.0.0
+      PlutusTx.FromData
+    )
+    via (ProductIsData ProposalEffectMetadata)
+
+-- | @since 1.0.0
+type ProposalEffectGroup = StrictMap.Map ValidatorHash ProposalEffectMetadata
 
 {- | Haskell-level datum for Proposal scripts.
 
@@ -608,6 +635,52 @@ deriving via
   instance
     (PConstantDecl ProposalVotes)
 
+{- | Plutarch-level version of 'ProposalEffectMetadata'.
+
+     @since 1.0.0
+-}
+newtype PProposalEffectMetadata (s :: S)
+  = PProposalEffectMetadata
+      ( Term
+          s
+          ( PDataRecord
+              '[ "datumHash" ':= PDatumHash
+               , "scriptHash" ':= PMaybeData (PAsData PScriptHash)
+               ]
+          )
+      )
+  deriving stock
+    ( -- | @since 1.0.0
+      Generic
+    )
+  deriving anyclass
+    ( -- | @since 1.0.0
+      PlutusType
+    , -- | @since 1.0.0
+      PIsData
+    , -- | @since 1.0.0
+      PEq
+    , -- | @since 1.0.0
+      PDataFields
+    )
+
+-- | @since 1.0.0
+instance DerivePlutusType PProposalEffectMetadata where
+  type DPTStrat _ = PlutusTypeDataList
+
+-- | @since 1.0.0
+instance PUnsafeLiftDecl PProposalEffectMetadata where
+  type PLifted _ = ProposalEffectMetadata
+
+-- | @since 1.0.0
+deriving via
+  (DerivePConstantViaDataList ProposalEffectMetadata PProposalEffectMetadata)
+  instance
+    (PConstantDecl ProposalEffectMetadata)
+
+-- | @since 1.0.0
+instance PTryFrom PData (PAsData PProposalEffectMetadata)
+
 {- | The effect script hashes and their associated datum hash and authority check script hash
      belonging to a particular effect group or result.
 
@@ -617,10 +690,7 @@ type PProposalEffectGroup =
   PMap
     'Sorted
     PValidatorHash
-    ( PTuple
-        PDatumHash
-        (PMaybeData (PAsData PScriptHash))
-    )
+    PProposalEffectMetadata
 
 {- | Plutarch-level version of 'ProposalDatum'.
 
@@ -655,14 +725,14 @@ newtype PProposalDatum (s :: S) = PProposalDatum
       PEq
     )
 
--- | @since 0.2.0
+-- | @since 1.0.0
 instance DerivePlutusType PProposalDatum where
-  type DPTStrat _ = PlutusTypeNewtype
+  type DPTStrat _ = PlutusTypeDataList
 
 instance PTryFrom PData (PAsData PProposalDatum)
 
 -- | @since 0.1.0
-instance PUnsafeLiftDecl PProposalDatum where type PLifted PProposalDatum = ProposalDatum
+instance PUnsafeLiftDecl PProposalDatum where type PLifted _ = ProposalDatum
 
 -- | @since 0.1.0
 deriving via (DerivePConstantViaDataList ProposalDatum PProposalDatum) instance (PConstantDecl ProposalDatum)
@@ -735,7 +805,7 @@ pisEffectsVotesCompatible ::
         :--> PBool
     )
 pisEffectsVotesCompatible = phoistAcyclic $
-  plam $ \((PM.pkeys #) -> effectKeys) ((PM.pkeys #) . pto -> voteKeys) ->
+  plam $ \((PM.pkeys @PList #) -> effectKeys) ((PM.pkeys #) . pto -> voteKeys) ->
     plistEquals # effectKeys # voteKeys
 
 {- | Retutns true if vote counts of /all/ the options are zero.

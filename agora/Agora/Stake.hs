@@ -44,6 +44,7 @@ import Plutarch.DataRepr (
 import Plutarch.Extra.Field (pletAll)
 import Plutarch.Extra.IsData (
   DerivePConstantViaDataList (DerivePConstantViaDataList),
+  PlutusTypeDataList,
   ProductIsData (ProductIsData),
  )
 import Plutarch.Extra.List (pnotNull)
@@ -51,10 +52,9 @@ import Plutarch.Extra.Sum (PSum (PSum))
 import Plutarch.Extra.Traversable (pfoldMap)
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (PLifted))
 import Plutarch.Orphans ()
-import Plutarch.SafeMoney (PDiscrete)
+import Plutarch.SafeMoney (Discrete, PDiscrete)
 import PlutusLedgerApi.V2 (Credential)
 import PlutusTx qualified
-import Prelude hiding (Num (..))
 
 --------------------------------------------------------------------------------
 
@@ -123,7 +123,7 @@ PlutusTx.makeIsDataIndexed
 
 {- | Haskell-level redeemer for Stake scripts.
 
-     @since 0.1.0
+     @since 1.0.0
 -}
 data StakeRedeemer
   = -- | Deposit or withdraw a discrete amount of the staked governance token.
@@ -143,9 +143,6 @@ data StakeRedeemer
     --   always allowed to have votes retracted and won't affect the Proposal datum,
     --   allowing 'Stake's to be unlocked.
     RetractVotes
-  | -- | The owner can consume stake if nothing is changed about it.
-    --   If the proposal token moves, this is equivalent to the owner consuming it.
-    WitnessStake
   | -- | The owner can delegate the stake to another user, allowing the
     --    delegate to vote on prooposals with the stake.
     DelegateTo Credential
@@ -164,9 +161,8 @@ PlutusTx.makeIsDataIndexed
   , ('Destroy, 1)
   , ('PermitVote, 2)
   , ('RetractVotes, 3)
-  , ('WitnessStake, 4)
-  , ('DelegateTo, 5)
-  , ('ClearDelegate, 6)
+  , ('DelegateTo, 4)
+  , ('ClearDelegate, 5)
   ]
 
 {- | Haskell-level datum for Stake scripts.
@@ -174,7 +170,7 @@ PlutusTx.makeIsDataIndexed
      @since 0.1.0
 -}
 data StakeDatum = StakeDatum
-  { stakedAmount :: Tagged GTTag Integer
+  { stakedAmount :: Discrete GTTag
   -- ^ Tracks the amount of governance token staked in the datum.
   --   This also acts as the voting weight for 'Agora.Proposal.Proposal's.
   , owner :: Credential
@@ -238,24 +234,24 @@ newtype PStakeDatum (s :: S) = PStakeDatum
     )
 
 instance DerivePlutusType PStakeDatum where
-  type DPTStrat _ = PlutusTypeNewtype
+  type DPTStrat _ = PlutusTypeDataList
 
--- | @since 0.1.0
-instance Plutarch.Lift.PUnsafeLiftDecl PStakeDatum where
+-- | @since 1.0.0
+instance PUnsafeLiftDecl PStakeDatum where
   type PLifted PStakeDatum = StakeDatum
 
 -- | @since 0.1.0
 deriving via
   (DerivePConstantViaDataList StakeDatum PStakeDatum)
   instance
-    (Plutarch.Lift.PConstantDecl StakeDatum)
+    (PConstantDecl StakeDatum)
 
 -- | @since 0.1.0
 instance PTryFrom PData (PAsData PStakeDatum)
 
 {- | Plutarch-level redeemer for Stake scripts.
 
-     @since 0.1.0
+     @since 1.0.0
 -}
 data PStakeRedeemer (s :: S)
   = -- | Deposit or withdraw a discrete amount of the staked governance token.
@@ -264,7 +260,6 @@ data PStakeRedeemer (s :: S)
     PDestroy (Term s (PDataRecord '[]))
   | PPermitVote (Term s (PDataRecord '[]))
   | PRetractVotes (Term s (PDataRecord '[]))
-  | PWitnessStake (Term s (PDataRecord '[]))
   | PDelegateTo (Term s (PDataRecord '["pkh" ':= PCredential]))
   | PClearDelegate (Term s (PDataRecord '[]))
   deriving stock
@@ -280,6 +275,7 @@ data PStakeRedeemer (s :: S)
       PIsData
     )
 
+-- | @since 0.2.0
 instance DerivePlutusType PStakeRedeemer where
   type DPTStrat _ = PlutusTypeData
 
@@ -287,14 +283,14 @@ instance DerivePlutusType PStakeRedeemer where
 instance PTryFrom PData PStakeRedeemer
 
 -- | @since 0.1.0
-instance Plutarch.Lift.PUnsafeLiftDecl PStakeRedeemer where
+instance PUnsafeLiftDecl PStakeRedeemer where
   type PLifted PStakeRedeemer = StakeRedeemer
 
 -- | @since 0.1.0
 deriving via
   (DerivePConstantViaData StakeRedeemer PStakeRedeemer)
   instance
-    (Plutarch.Lift.PConstantDecl StakeRedeemer)
+    (PConstantDecl StakeRedeemer)
 
 {- | Plutarch-level version of 'ProposalLock'.
 
@@ -342,14 +338,14 @@ instance PTryFrom PData PProposalLock
 instance PTryFrom PData (PAsData PProposalLock)
 
 -- | @since 0.1.0
-instance Plutarch.Lift.PUnsafeLiftDecl PProposalLock where
+instance PUnsafeLiftDecl PProposalLock where
   type PLifted PProposalLock = ProposalLock
 
 -- | @since 0.1.0
 deriving via
   (DerivePConstantViaData ProposalLock PProposalLock)
   instance
-    (Plutarch.Lift.PConstantDecl ProposalLock)
+    (PConstantDecl ProposalLock)
 
 --------------------------------------------------------------------------------
 

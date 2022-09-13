@@ -15,7 +15,7 @@
 
     # Plutarch and its friends
     plutarch = {
-      url = "github:Plutonomicon/plutarch-plutus?ref=staging";
+      url = "github:Plutonomicon/plutarch-plutus?ref=master";
 
       inputs.emanote.follows =
         "plutarch/haskell-nix/nixpkgs-unstable";
