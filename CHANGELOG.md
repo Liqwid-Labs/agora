@@ -6,6 +6,12 @@ This format is based on [Keep A Changelog](https://keepachangelog.com/en/1.0.0).
 
 ### Modified
 
+- Standalone stake redeemers. This allows injecting custom validation logic to
+the stake validator easily. The behaviour of the default stake validator remains
+ unchanged.
+
+  Included by [#172](https://github.com/Liqwid-Labs/agora/pull/172)
+
 - Witness stakes with reference input. Stake redeemer `WitnessStake` is removed. 
 
   Included by [#168](https://github.com/Liqwid-Labs/agora/pull/168)

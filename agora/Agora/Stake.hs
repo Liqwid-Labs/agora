@@ -19,6 +19,16 @@ module Agora.Stake (
   PProposalLock (..),
   PStakeRole (..),
 
+  -- * Validation context
+  PStakeInputContext (..),
+  PStakeOutputContext (..),
+  PSigContext (..),
+  PStakeRedeemerContext (..),
+  PStakeRedeemerHandlerContext (..),
+  PProposalContext (..),
+  PStakeRedeemerHandler,
+  StakeRedeemerImpl (..),
+
   -- * Utility functions
   pstakeLocked,
   pnumCreatedProposals,
@@ -30,17 +40,22 @@ module Agora.Stake (
   pisIrrelevant,
 ) where
 
-import Agora.Proposal (PProposalId, PResultTag, ProposalId, ResultTag)
+import Agora.Proposal (PProposalId, PProposalRedeemer, PResultTag, ProposalId, ResultTag)
 import Agora.SafeMoney (GTTag)
 import Data.Tagged (Tagged)
 import Generics.SOP qualified as SOP
-import Plutarch.Api.V1 (PCredential)
+import Plutarch.Api.V1 (KeyGuarantees (Sorted), PCredential)
+import Plutarch.Api.V1.Value (PValue)
 import Plutarch.Api.V2 (
+  AmountGuarantees (Positive),
   PMaybeData,
+  PTxInfo,
  )
 import Plutarch.DataRepr (
   DerivePConstantViaData (DerivePConstantViaData),
+  PDataFields,
  )
+import Plutarch.Extra.AssetClass (PAssetClass)
 import Plutarch.Extra.Field (pletAll)
 import Plutarch.Extra.IsData (
   DerivePConstantViaDataList (DerivePConstantViaDataList),
@@ -231,6 +246,8 @@ newtype PStakeDatum (s :: S) = PStakeDatum
       PIsData
     , -- | @since 0.1.0
       PEq
+    , -- | @since 1.0.0
+      PDataFields
     )
 
 instance DerivePlutusType PStakeDatum where
@@ -407,6 +424,185 @@ data PStakeRole (s :: S)
 
 instance DerivePlutusType PStakeRole where
   type DPTStrat _ = PlutusTypeScott
+
+--------------------------------------------------------------------------------
+
+{- | Represent the stake being spent.
+
+     @since 1.0.0
+-}
+data PStakeInputContext (s :: S) = PStakeInput
+  { ownInputDatum :: Term s PStakeDatum
+  -- ^ The stake datum of said stake.
+  , ownInputValue :: Term s (PValue 'Sorted 'Positive)
+  -- ^ The value carried by the stake UTxO.
+  }
+  deriving stock
+    ( -- | @since 1.0.0
+      Generic
+    )
+  deriving anyclass
+    ( -- | @since 1.0.0
+      PlutusType
+    )
+
+-- | @since 1.0.0
+instance DerivePlutusType PStakeInputContext where
+  type DPTStrat _ = PlutusTypeScott
+
+{- | Where the stake will go?
+
+     @since 1.0.0
+-}
+data PStakeOutputContext (s :: S)
+  = -- | The output stake is owned by the stake validator.
+    PStakeOutput
+      { ownOutputDatum :: Term s PStakeDatum
+      -- ^ The stake datum of the output stake.
+      , ownOutputValue :: Term s (PValue 'Sorted 'Positive)
+      -- ^ The value carried by the stake output UTxO.
+      }
+  | -- | The stake is burnt in the transaction.
+    PStakeBurnt
+  deriving stock
+    ( -- | @since 1.0.0
+      Generic
+    )
+  deriving anyclass
+    ( -- | @since 1.0.0
+      PlutusType
+    )
+
+-- | @since 1.0.0
+instance DerivePlutusType PStakeOutputContext where
+  type DPTStrat _ = PlutusTypeScott
+
+{- | Who authorizes the transaction?
+
+     @since 1.0.0
+-}
+data PSigContext (s :: S)
+  = -- | The stake owner authorized the transaction.
+    PSignedByOwner
+  | -- | The delegate authorized the transaction.
+    PSignedByDelegate
+  | -- | Both owner and delegate didn't authorize.
+    PUnknownSig
+  deriving stock
+    ( -- | @since 1.0.0
+      Generic
+    )
+  deriving anyclass
+    ( -- | @since 1.0.0
+      PlutusType
+    )
+
+-- | @since 1.0.0
+instance DerivePlutusType PSigContext where
+  type DPTStrat _ = PlutusTypeScott
+
+{- | The metadata carried by the stake redeemer. See also 'StakeRedeemer'.
+
+     @since 1.0.0
+-}
+data PStakeRedeemerContext (s :: S)
+  = -- | See also 'DepositWithdraw'.
+    PDepositWithdrawDelta (Term s (PDiscrete GTTag))
+  | -- | See also 'DelegateTo'.
+    PSetDelegateTo (Term s PCredential)
+  | PNoMetadata
+  deriving stock
+    ( -- | @since 1.0.0
+      Generic
+    )
+  deriving anyclass
+    ( -- | @since 1.0.0
+      PlutusType
+    )
+
+-- | @since 1.0.0
+instance DerivePlutusType PStakeRedeemerContext where
+  type DPTStrat _ = PlutusTypeScott
+
+{- | The usage of proposal in the transaction.
+
+     @since 1.0.0
+-}
+data PProposalContext (s :: S)
+  = -- | A proposal is spent.
+    PWithProposalRedeemer (Term s PProposalRedeemer)
+  | -- | A new proposal is created.
+    PNewProposal
+  | -- | No proposal is spent or created.
+    PNoProposal
+  deriving stock
+    ( -- | @since 1.0.0
+      Generic
+    )
+  deriving anyclass
+    ( -- | @since 1.0.0
+      PlutusType
+    )
+
+-- | @since 1.0.0
+instance DerivePlutusType PProposalContext where
+  type DPTStrat _ = PlutusTypeScott
+
+{- | Context required in order for redeemer handlers to peform validation.
+
+     @1.0.0
+-}
+data PStakeRedeemerHandlerContext (s :: S) = PStakeRedeemerHandlerContext
+  { stakeInput :: Term s PStakeInputContext
+  , stakeOutput :: Term s PStakeOutputContext
+  , redeemerContext :: Term s PStakeRedeemerContext
+  , sigContext :: Term s PSigContext
+  , proposalContext :: Term s PProposalContext
+  , gtAssetClass :: Term s PAssetClass
+  , extraTxContext :: Term s PTxInfo
+  }
+  deriving stock
+    ( -- | @since 1.0.0
+      Generic
+    )
+  deriving anyclass
+    ( -- | @since 1.0.0
+      PlutusType
+    )
+
+-- | @since 1.0.0
+instance DerivePlutusType PStakeRedeemerHandlerContext where
+  type DPTStrat _ = PlutusTypeScott
+
+{- | The plutarch type signature of the redeemer handlers.
+
+     A redeemer handler is a piece of validation logic that performs a unique
+      set of checks for its corresponding stake redeemer.
+
+     @since 1.0.0
+-}
+type PStakeRedeemerHandler = PStakeRedeemerHandlerContext :--> PUnit
+
+{- | A collection of stake redeemer handlers for each stake redeemers.
+
+     @since 1.0.0
+-}
+data StakeRedeemerImpl = StakeRedeemerImpl
+  { onDepositWithdraw :: ClosedTerm PStakeRedeemerHandler
+  -- ^ Handler for 'DepositWithdraw'.
+  , onDestroy :: ClosedTerm PStakeRedeemerHandler
+  -- ^ Handler for 'Destroy'.
+  , onPermitVote :: ClosedTerm PStakeRedeemerHandler
+  -- ^ Handler for 'permitVotes'.
+  , onRetractVote :: ClosedTerm PStakeRedeemerHandler
+  -- ^ Handler for 'RetractVotes'.
+  , onDelegateTo :: ClosedTerm PStakeRedeemerHandler
+  -- ^ Handler for 'DelegateTo'.
+  , onClearDelegate :: ClosedTerm PStakeRedeemerHandler
+  -- ^ handler for 'ClearDelegate'.
+  }
+
+--------------------------------------------------------------------------------
 
 {- | Retutn true if the stake was used to voted on the proposal.
 
