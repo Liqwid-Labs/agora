@@ -6955,11 +6955,11 @@
         "nixpkgs-2205": "nixpkgs-2205_14"
       },
       "locked": {
-        "lastModified": 1660165784,
-        "narHash": "sha256-uSwB6jmiP0giQM9NwCkXloabfRnbDSsd1EAKXbTQpq4=",
+        "lastModified": 1660580223,
+        "narHash": "sha256-r1i92rrUjSBdnQZpHLxeCAtVGMHYqKQHm05mzddIte8=",
         "owner": "Liqwid-Labs",
         "repo": "liqwid-nix",
-        "rev": "07d35ade0f9a1bab07413d059ccec63982592552",
+        "rev": "fa1eeba35b37ac2551a00798dffdf053879699c3",
         "type": "github"
       },
       "original": {
@@ -11979,11 +11979,11 @@
         "plutarch": "plutarch_15"
       },
       "locked": {
-        "lastModified": 1660213721,
-        "narHash": "sha256-YkDefu3XK1FelMFCgf3jOkzc3ugCS1DXUgr9rZoukPw=",
+        "lastModified": 1663152896,
+        "narHash": "sha256-0iDaw3x2I+AgTGFGQw1CCKh930qnH7tcAudrfgJzyPo=",
         "owner": "Liqwid-Labs",
         "repo": "plutarch-script-export",
-        "rev": "4d8f6af19d727c46fc8d746b1f6d3e356196610f",
+        "rev": "0d0fce14175503550b45d3194c6beebab651f352",
         "type": "github"
       },
       "original": {
@@ -12256,6 +12256,49 @@
         "owner": "Plutonomicon",
         "repo": "plutarch-plutus",
         "rev": "45b7c77a9ee9bd6c7dc25ddebcc3d12c58c4c3a2",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Plutonomicon",
+        "ref": "staging",
+        "repo": "plutarch-plutus",
+        "type": "github"
+      }
+    },
+    "plutarch_16": {
+      "inputs": {
+        "cardano-base": "cardano-base_16",
+        "cardano-crypto": "cardano-crypto_16",
+        "cardano-prelude": "cardano-prelude_16",
+        "emanote": [
+          "plutarch-script-export",
+          "plutarch",
+          "haskell-nix",
+          "nixpkgs-unstable"
+        ],
+        "flat": "flat_16",
+        "haskell-language-server": "haskell-language-server_31",
+        "haskell-nix": "haskell-nix_31",
+        "haskell-nix-extra-hackage": "haskell-nix-extra-hackage_16",
+        "hercules-ci-effects": "hercules-ci-effects_16",
+        "iohk-nix": "iohk-nix_31",
+        "nixpkgs": [
+          "plutarch-script-export",
+          "plutarch",
+          "haskell-nix",
+          "nixpkgs-unstable"
+        ],
+        "nixpkgs-latest": "nixpkgs-latest_32",
+        "plutus": "plutus_16",
+        "protolude": "protolude_16",
+        "secp256k1-haskell": "secp256k1-haskell_16"
+      },
+      "locked": {
+        "lastModified": 1660670400,
+        "narHash": "sha256-EoPMfaFCXzcHIiUYprCR51yxLb5mlsfuIJ29adBeyEU=",
+        "owner": "Plutonomicon",
+        "repo": "plutarch-plutus",
+        "rev": "f0805033ec7ad83643ba3c90902673ba6e5b90c3",
         "type": "github"
       },
       "original": {
