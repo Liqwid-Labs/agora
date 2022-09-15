@@ -311,10 +311,14 @@ governorValidator as =
           pguardC "Exactly one proposal token must be minted" $
             let vMap = pfromData $ pto txInfoF.mint
                 tnMap = plookup # ppstSymbol # vMap
-             in pmaybe
-                  # pconstant False
-                  # plam (#== AssocMap.psingleton # pconstant "" # 1)
-                  # tnMap
+                -- Ada and PST
+                onlyPST = plength # pto vMap #== 2
+                onePST =
+                  pmaybe
+                    # pconstant False
+                    # plam (#== AssocMap.psingleton # pconstant "" # 1)
+                    # tnMap
+             in onlyPST #&& onePST
 
           -- Check that a stake is spent to create the propsal,
           --   and the value it contains meets the requirement.
