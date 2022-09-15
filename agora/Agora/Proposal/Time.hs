@@ -352,10 +352,15 @@ validateProposalStartingTime = phoistAcyclic $
         )
       # (currentProposalTime # iv)
 
-{- | Get the current proposal time, from the 'PlutusLedgerApi.V1.txInfoValidPeriod' field.
+{- | Get the current proposal time, given the 'PlutusLedgerApi.V1.txInfoValidPeriod' field.
 
      If it's impossible to get a fully-bounded time, (e.g. either end of the 'PPOSIXTimeRange' is
-     an infinity) then we error out.
+     an infinity) then we return nothing.
+
+     Note that we ignore the inclusiveness of the upper bound. Due to the fact
+      that there's no place in the Cardano domain transaction type to store the
+      inclusiveness information, we can never get a time range with closed upper
+      bound. See also the ledger implementation: https://bit.ly/3BDzW5R
 
      @since 0.1.0
 -}
@@ -367,19 +372,19 @@ currentProposalTime = phoistAcyclic $
     PLowerBound lb <- pmatchC ivf.from
     PUpperBound ub <- pmatchC ivf.to
 
-    let getBound = phoistAcyclic $
-          plam $
-            flip pletAll $ \f ->
-              pif
-                f._1
-                ( pmatch f._0 $ \case
-                    PFinite (pfromData . (pfield @"_0" #) -> d) -> pjust # d
-                    _ -> ptrace "currentProposalTime: time range should be bounded" pnothing
-                )
-                (ptrace "currentProposalTime: time range should be inclusive" pnothing)
+    let lowerBound = pletAll lb $ \f ->
+          pif
+            f._1
+            ( pmatch f._0 $ \case
+                PFinite (pfromData . (pfield @"_0" #) -> d) -> pjust # d
+                _ -> ptrace "currentProposalTime: time range should be bounded" pnothing
+            )
+            (ptrace "currentProposalTime: lower bound of the time range should be inclusive" pnothing)
 
-        lowerBound = getBound # lb
-        upperBound = getBound # ub
+        upperBound = pletAll ub $ \f ->
+          pmatch f._0 $ \case
+            PFinite (pfromData . (pfield @"_0" #) -> d) -> pjust # d
+            _ -> ptrace "currentProposalTime: time range should be bounded" pnothing
 
         mkTime = phoistAcyclic $ plam $ pcon .* PCurrentTime
     pure $ pliftA2 # mkTime # lowerBound # upperBound
