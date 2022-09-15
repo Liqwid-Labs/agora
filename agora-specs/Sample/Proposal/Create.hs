@@ -290,10 +290,9 @@ createProposal ps = builder
     governorValue = sortValue $ gst <> minAda
     stakeValue =
       sortValue $
-        sortValue $
-          sst
-            <> Value.assetClassValue (untag governor.gtClassRef) (fromDiscrete stakedGTs)
-            <> minAda
+        sst
+          <> Value.assetClassValue (untag governor.gtClassRef) (fromDiscrete stakedGTs)
+          <> minAda
     proposalValue = sortValue $ pst <> minAda
 
     ---
@@ -313,7 +312,12 @@ createProposal ps = builder
         , ---
           withSig
         , ---
-          mint pst
+          mint $
+            sortValue $
+              pst
+                <>
+                -- 0 Ada entry, see #174
+                Value.singleton "" "" 0
         , ---
           timeRange $ mkTimeRange ps
         , input $
