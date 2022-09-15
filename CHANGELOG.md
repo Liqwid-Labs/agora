@@ -4,6 +4,12 @@ This format is based on [Keep A Changelog](https://keepachangelog.com/en/1.0.0).
 
 ## Unreleased (Candidate for 1.0.0)
 
+### Fixed
+
+- The 0 ADA entry in `txInfoF.mint` makes governor validator always fail.(#174)
+
+  Fixed by [#175](ttps://github.com/Liqwid-Labs/agora/pull/175)
+
 ### Modified
 
 - Standalone stake redeemers. This allows injecting custom validation logic to

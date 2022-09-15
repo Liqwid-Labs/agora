@@ -74,7 +74,7 @@ import Plutarch.Extra.AssetClass (passetClass, passetClassValueOf)
 import Plutarch.Extra.Field (pletAllC)
 import Plutarch.Extra.List (pfirstJust)
 import Plutarch.Extra.Map (ptryLookup)
-import Plutarch.Extra.Maybe (passertPJust, pmaybeData, pnothing)
+import Plutarch.Extra.Maybe (passertPJust, pmaybe, pmaybeData, pnothing)
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
 import Plutarch.Extra.ScriptContext (
   pfindOutputsToAddress,
@@ -87,7 +87,7 @@ import Plutarch.Extra.ScriptContext (
   pvalueSpent,
  )
 import Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC, ptryFromC)
-import Plutarch.Extra.Value (phasOnlyOneTokenOfCurrencySymbol, psymbolValueOf)
+import Plutarch.Extra.Value (psymbolValueOf)
 import PlutusLedgerApi.V1 (TxOutRef)
 
 --------------------------------------------------------------------------------
@@ -309,7 +309,12 @@ governorValidator as =
           -- Check that exactly one proposal token is being minted.
 
           pguardC "Exactly one proposal token must be minted" $
-            phasOnlyOneTokenOfCurrencySymbol # ppstSymbol # txInfoF.mint
+            let vMap = pfromData $ pto txInfoF.mint
+                tnMap = plookup # ppstSymbol # vMap
+             in pmaybe
+                  # pconstant False
+                  # plam (#== AssocMap.psingleton # pconstant "" # 1)
+                  # tnMap
 
           -- Check that a stake is spent to create the propsal,
           --   and the value it contains meets the requirement.
