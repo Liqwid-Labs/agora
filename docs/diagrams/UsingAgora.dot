@@ -1,6 +1,0 @@
-digraph {
-  rankdir=LR
-  Users -> Proposals [label="vote on"]
-  Proposals -> Effects [label="have one or many"]
-  Effects -> Components [label="alter"]
-}
