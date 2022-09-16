@@ -151,11 +151,11 @@ mkStakeInputDatum params =
 
 -- | Create the proposal redeemer. In this case @'Vote' _@ will always be used.
 mkProposalRedeemer :: Parameters -> ProposalRedeemer
-mkProposalRedeemer = Vote . voteFor
+mkProposalRedeemer params = Vote params.voteFor
 
 -- | Place new proposal locks on the stake.
 mkNewLock :: Parameters -> ProposalLock
-mkNewLock = Voted proposalInputDatum.proposalId . voteFor
+mkNewLock params = Voted proposalInputDatum.proposalId params.voteFor
 
 {- | The stake redeemer that is used in 'mkTestTree'. In this case it'll always be
       'PermitVote'.

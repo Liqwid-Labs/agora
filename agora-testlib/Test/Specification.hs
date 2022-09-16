@@ -198,7 +198,7 @@ applyMintingPolicy' ::
 applyMintingPolicy' policy redeemer scriptContext =
   applyMintingPolicyScript
     (mkContext scriptContext)
-    (getCompiledMintingPolicy policy)
+    policy.getCompiledMintingPolicy
     (mkRedeemer redeemer)
 
 applyValidator' ::
@@ -213,7 +213,7 @@ applyValidator' ::
 applyValidator' validator datum redeemer scriptContext =
   applyValidator
     (mkContext scriptContext)
-    (getCompiledValidator validator)
+    validator.getCompiledValidator
     (mkDatum datum)
     (mkRedeemer redeemer)
 

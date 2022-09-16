@@ -33,14 +33,7 @@ import Agora.Stake (
   PStakeDatum,
   PStakeInputContext (PStakeInput),
   PStakeOutputContext (PStakeBurnt, PStakeOutput),
-  PStakeRedeemer (
-    PClearDelegate,
-    PDelegateTo,
-    PDepositWithdraw,
-    PDestroy,
-    PPermitVote,
-    PRetractVotes
-  ),
+  PStakeRedeemer (PClearDelegate, PDelegateTo, PDepositWithdraw, PDestroy, PPermitVote, PRetractVotes),
   PStakeRedeemerContext (
     PDepositWithdrawDelta,
     PNoMetadata,
@@ -49,16 +42,10 @@ import Agora.Stake (
   PStakeRedeemerHandlerContext (
     PStakeRedeemerHandlerContext
   ),
-  StakeRedeemerImpl (
-    StakeRedeemerImpl,
-    onClearDelegate,
-    onDelegateTo,
-    onDepositWithdraw,
-    onDestroy,
-    onPermitVote,
-    onRetractVote
-  ),
+  PStakeRedeemerHandlerTerm (PStakeRedeemerHandlerTerm),
+  StakeRedeemerImpl (..),
   pstakeLocked,
+  runStakeRedeemerHandler,
  )
 import Agora.Stake.Redeemers (
   pclearDelegate,
@@ -463,16 +450,17 @@ mkStakeValidator
       pure $
         popaque $
           pmatch stakeRedeemer $ \case
-            PDestroy _ -> onDestroy impl # noMetadataContext
-            PPermitVote _ -> onPermitVote impl # noMetadataContext
-            PRetractVotes _ -> onRetractVote impl # noMetadataContext
-            PClearDelegate _ -> onClearDelegate impl # noMetadataContext
+            PDestroy _ -> runStakeRedeemerHandler impl.onDestroy # noMetadataContext
+            PPermitVote _ -> runStakeRedeemerHandler impl.onPermitVote # noMetadataContext
+            PRetractVotes _ -> runStakeRedeemerHandler impl.onRetractVote # noMetadataContext
+            PClearDelegate _ -> runStakeRedeemerHandler impl.onClearDelegate # noMetadataContext
             PDelegateTo ((pfield @"pkh" #) -> pkh) ->
-              onDelegateTo impl #$ mkRedeemerhandlerContext
+              runStakeRedeemerHandler impl.onDelegateTo
+                #$ mkRedeemerhandlerContext
                 #$ pcon
                 $ PSetDelegateTo pkh
             PDepositWithdraw ((pfield @"delta" #) -> delta) ->
-              onDepositWithdraw impl #$ mkRedeemerhandlerContext
+              runStakeRedeemerHandler impl.onDepositWithdraw #$ mkRedeemerhandlerContext
                 #$ pcon
                 $ PDepositWithdrawDelta delta
 
@@ -527,10 +515,10 @@ stakeValidator ::
 stakeValidator =
   mkStakeValidator $
     StakeRedeemerImpl
-      { onDepositWithdraw = pdepositWithdraw
-      , onDestroy = pdestroy
-      , onPermitVote = ppermitVote
-      , onRetractVote = pretractVote
-      , onDelegateTo = pdelegateTo
-      , onClearDelegate = pclearDelegate
+      { onDepositWithdraw = PStakeRedeemerHandlerTerm pdepositWithdraw
+      , onDestroy = PStakeRedeemerHandlerTerm pdestroy
+      , onPermitVote = PStakeRedeemerHandlerTerm ppermitVote
+      , onRetractVote = PStakeRedeemerHandlerTerm pretractVote
+      , onDelegateTo = PStakeRedeemerHandlerTerm pdelegateTo
+      , onClearDelegate = PStakeRedeemerHandlerTerm pclearDelegate
       }

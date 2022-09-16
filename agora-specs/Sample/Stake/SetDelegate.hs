@@ -75,7 +75,7 @@ data Parameters = Parameters
 
 -- | Select the correct stake redeemer based on the existence of the new delegate.
 mkStakeRedeemer :: Parameters -> StakeRedeemer
-mkStakeRedeemer = maybe ClearDelegate (DelegateTo . PubKeyCredential) . newDelegate
+mkStakeRedeemer params = maybe ClearDelegate (DelegateTo . PubKeyCredential) params.newDelegate
 
 -- | The owner of the input stake.
 stakeOwner :: PubKeyHash

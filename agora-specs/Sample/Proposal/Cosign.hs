@@ -128,7 +128,7 @@ mkProposalOutputDatum ps =
 mkStakeInputDatums :: Parameters -> [StakeDatum]
 mkStakeInputDatums =
   fmap (\pk -> StakeDatum perStakedGTs pk Nothing [])
-    . newCosigners
+    . (.newCosigners)
 
 -- | Create a 'TxInfo' that tries to cosign a proposal with new cosigners.
 cosign :: forall b. CombinableBuilder b => Parameters -> b
@@ -231,7 +231,7 @@ mkStakeRef idx =
 
 -- | Create a proposal redeemer which cosigns with the new cosginers.
 mkProposalRedeemer :: Parameters -> ProposalRedeemer
-mkProposalRedeemer = Cosign . sort . newCosigners
+mkProposalRedeemer = Cosign . sort . (.newCosigners)
 
 ---
 

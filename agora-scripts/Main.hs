@@ -151,11 +151,11 @@ data AgoraScripts = AgoraScripts
      @since 0.2.0
 -}
 mkPolicyInfo' :: forall redeemer. CompiledMintingPolicy redeemer -> ScriptInfo
-mkPolicyInfo' = mkScriptInfo . getMintingPolicy . getCompiledMintingPolicy
+mkPolicyInfo' = mkScriptInfo . getMintingPolicy . (.getCompiledMintingPolicy)
 
 {- | Turn a precompiled validator to a 'ScriptInfo'.
 
      @since 0.2.0
 -}
 mkValidatorInfo' :: forall redeemer datum. CompiledValidator datum redeemer -> ScriptInfo
-mkValidatorInfo' = mkScriptInfo . getValidator . getCompiledValidator
+mkValidatorInfo' = mkScriptInfo . getValidator . (.getCompiledValidator)

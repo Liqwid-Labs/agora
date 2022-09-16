@@ -147,10 +147,10 @@ gstUTXORef :: TxOutRef
 gstUTXORef = TxOutRef "f28cd7145c24e66fd5bcd2796837aeb19a48a2656e7833c88c62a2d0450bd00d" 0
 
 govPolicy :: MintingPolicy
-govPolicy = getCompiledMintingPolicy $ agoraScripts.compiledGovernorPolicy
+govPolicy = agoraScripts.compiledGovernorPolicy.getCompiledMintingPolicy
 
 govValidator :: Validator
-govValidator = getCompiledValidator $ agoraScripts.compiledGovernorValidator
+govValidator = agoraScripts.compiledGovernorValidator.getCompiledValidator
 
 govSymbol :: CurrencySymbol
 govSymbol = mintingPolicySymbol govPolicy
