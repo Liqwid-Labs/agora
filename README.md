@@ -6,7 +6,7 @@ Agora is a set of Plutus scripts that compose together to form a governance syst
 
 Goals:
 
--   Agora aims to reduce duplication in Liqwid and LiqwidX and to serve as a one-size-fits-all governance library for projects on the Cardano blockchain.
+-   Agora aims to reduce duplication in Liqwid and XplorerDAO and to serve as a one-size-fits-all governance library for projects on the Cardano blockchain.
 -   Agora aims to be modular and flexible for specific needs but presents an opinionated architecture.
 
 Non-goals:
@@ -36,8 +36,6 @@ cabal run agora-scripts -- --enable-cors-middleware
 
 Documentation for Agora is hosted on Notion. You can find the specs [here](https://liqwid.notion.site/e85c09d2c9a542b19aac8dd3d6caa98b?v=d863219cd6a14082a661c4959cabd6e7).
 
-Haddock is deployed on GitHub Pages [here](https://liqwid-labs.github.io/agora/).
-
 ### Using Agora for your protocol
 
 If you are a protocol wanting to use Agora, read [Using Agora](https://liqwid.notion.site/Using-Agora-74ceb4a70d024992abd9ff07087013e6).
@@ -64,8 +62,8 @@ Please read [CONTRIBUTING.md](./CONTRIBUTING.md). Additionally, please follow th
 
 ### v2
 
--   [ ] Rewards distribution
--   [ ] Escrow staking pool solution
+-   [ ] Flexible scripts using TxT pattern integrated with governance
+-   [ ] Different voting mechanisms
 
 ### Available support channels info
 
