@@ -30,7 +30,7 @@ import Agora.Proposal.Time (
 import Agora.Scripts (AgoraScripts, governorSTSymbol, proposalSTSymbol, stakeSTAssetClass)
 import Agora.Stake (
   PProposalLock (PVoted),
-  PStakeDatum (PStakeDatum),
+  PStakeDatum,
   pextractVoteOption,
   pgetStakeRole,
   pisCreator,
@@ -54,18 +54,16 @@ import Plutarch.Api.V2 (
   PValidator,
  )
 import Plutarch.Extra.AssetClass (passetClass, passetClassValueOf)
-import Plutarch.Extra.Category (PCategory (pidentity))
+import Plutarch.Extra.Category (PCategory (pidentity), PSemigroupoid ((#>>>)))
 import Plutarch.Extra.Comonad (pextract)
 import Plutarch.Extra.Field (pletAll, pletAllC)
-import Plutarch.Extra.Functor (pfmap)
 import Plutarch.Extra.List (pfirstJust, pisUniq', pmergeBy, pmsort)
 import Plutarch.Extra.Map (pupdate)
 import Plutarch.Extra.Maybe (
   passertPJust,
-  pfromJust,
-  pfromMaybe,
   pisJust,
   pjust,
+  pmaybe,
   pnothing,
  )
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
@@ -212,11 +210,10 @@ proposalValidator ::
   Integer ->
   ClosedTerm PValidator
 proposalValidator as maximumCosigners =
-  plam $ \datum redeemer ctx' -> unTermCont $ do
-    PScriptContext ctx' <- pmatchC ctx'
-    ctx <- pletFieldsC @'["txInfo", "purpose"] ctx'
-    txInfo <- pletC $ pfromData ctx.txInfo
-    PTxInfo txInfo' <- pmatchC txInfo
+  plam $ \datum redeemer ctx -> unTermCont $ do
+    ctxF <- pletAllC ctx
+
+    txInfo <- pletC $ pfromData ctxF.txInfo
     txInfoF <-
       pletFieldsC
         @'[ "referenceInputs"
@@ -227,32 +224,32 @@ proposalValidator as maximumCosigners =
           , "signatories"
           , "validRange"
           ]
-        txInfo'
-    PSpending ((pfield @"_0" #) -> txOutRef) <- pmatchC $ pfromData ctx.purpose
+        txInfo
 
-    PJust ((pfield @"resolved" #) -> txOut) <-
-      pmatchC $
-        pfindTxInByTxOutRef
-          # txOutRef
-          # txInfoF.inputs
-    txOutF <- pletFieldsC @'["address", "value"] $ txOut
-
-    proposalDatum <- pfromData . fst <$> ptryFromC @(PAsData PProposalDatum) datum
-    proposalRedeemer <- fst <$> ptryFromC @PProposalRedeemer redeemer
-
-    proposalF <- pletAllC $ pto proposalDatum
-
-    ownAddress <- pletC $ txOutF.address
-
-    thresholdsF <- pletAllC proposalF.thresholds
-
-    currentStatus <- pletC $ pfromData $ proposalF.status
-
-    let stCurrencySymbol = pconstant $ proposalSTSymbol as
+    currentTime <- pletC $ currentProposalTime # txInfoF.validRange
 
     authorizedBy <- pletC $ pauthorizedBy # authorizationContext txInfoF
 
-    currentTime <- pletC $ currentProposalTime # txInfoF.validRange
+    ----------------------------------------------------------------------------
+
+    PSpending ((pfield @"_0" #) -> propsalInputRef) <-
+      pmatchC $ pfromData ctxF.purpose
+
+    let proposalInput =
+          pfield @"resolved"
+            #$ passertPJust
+            # "Own input should present"
+              #$ pfindTxInByTxOutRef
+            # propsalInputRef
+            # txInfoF.inputs
+
+    proposalInputF <- pletFieldsC @'["address", "value"] proposalInput
+
+    proposalInputDatum <- pfromData . fst <$> ptryFromC @(PAsData PProposalDatum) datum
+    proposalInputDatumF <- pletAllC $ pto proposalInputDatum
+
+    thresholdsF <- pletAllC proposalInputDatumF.thresholds
+    currentStatus <- pletC $ pfromData $ proposalInputDatumF.status
 
     -- Own output is an output that
     --  * is sent to the address of the proposal validator
@@ -261,20 +258,22 @@ proposalValidator as maximumCosigners =
     --
     -- We match the proposal id here so that we can support multiple
     --  proposal inputs in one thansaction.
-    proposalOut <-
+    proposalOutputDatum <-
       pletC $
         passertPJust
           # "Own output should be present"
             #$ pfirstJust
           # plam
             ( flip pletAll $ \outputF ->
-                let isProposalUTxO =
+                let pstSymbol = pconstant $ proposalSTSymbol as
+
+                    isProposalUTxO =
                       foldl1
                         (#&&)
                         [ ptraceIfFalse "Own by proposal validator" $
-                            outputF.address #== ownAddress
+                            outputF.address #== proposalInputF.address
                         , ptraceIfFalse "Has proposal ST" $
-                            psymbolValueOf # stCurrencySymbol # outputF.value #== 1
+                            psymbolValueOf # pstSymbol # outputF.value #== 1
                         ]
 
                     handleProposalUTxO = unTermCont $ do
@@ -282,14 +281,15 @@ proposalValidator as maximumCosigners =
                       datum <-
                         pletC $
                           pfromData $
-                            pfromOutputDatum @(PAsData PProposalDatum)
-                              # outputF.datum
-                              # txInfoF.datums
+                            ptrace "Resolve proposal datum" $
+                              pfromOutputDatum @(PAsData PProposalDatum)
+                                # outputF.datum
+                                # txInfoF.datums
 
                       pure $
                         pif
                           ( pfield @"proposalId" # pto datum
-                              #== proposalF.proposalId
+                              #== proposalInputDatumF.proposalId
                           )
                           (pjust # datum)
                           pnothing
@@ -300,33 +300,11 @@ proposalValidator as maximumCosigners =
             )
           # pfromData txInfoF.outputs
 
-    proposalUnchanged <- pletC $ proposalOut #== proposalDatum
-
-    proposalOutStatus <-
-      pletC $
-        pfromData $
-          pfield @"status" # pto proposalOut
-
-    onlyStatusChanged <-
-      pletC $
-        -- Only the status of proposals is updated.
-        proposalOut
-          #== mkRecordConstr
-            PProposalDatum
-            ( #proposalId .= proposalF.proposalId
-                .& #effects .= proposalF.effects
-                .& #status .= pdata proposalOutStatus
-                .& #cosigners .= proposalF.cosigners
-                .& #thresholds .= proposalF.thresholds
-                .& #votes .= proposalF.votes
-                .& #timingConfig .= proposalF.timingConfig
-                .& #startingTime .= proposalF.startingTime
-            )
-
     --------------------------------------------------------------------------
 
-    -- Find the stake inputs/outputs by SST.
+    -- Handle stake input/output.
 
+    -- Reslove stake datum if the given UTxO is a stake UTxO.
     getStakeDatum :: Term _ (PTxOut :--> PMaybe PStakeDatum) <-
       pletC $
         plam $
@@ -334,6 +312,7 @@ proposalValidator as maximumCosigners =
             let AssetClass (stakeSym, _) = stakeSTAssetClass as
 
                 isStakeUTxO =
+                  -- A stake UTxO is a UTxO that carries SST.
                   psymbolValueOf
                     # pconstant stakeSym
                     # txOutF.value
@@ -341,13 +320,15 @@ proposalValidator as maximumCosigners =
 
                 stake =
                   pfromData $
-                    pfromJust
+                    -- If we can't resolve the stake datum, error out.
+                    passertPJust # "Stake datum should present"
                       -- Use inline datum to avoid extra map lookup.
                       #$ ptryFromOutputDatum @(PAsData PStakeDatum)
                       # txOutF.datum
                       # txInfoF.datums
              in pif isStakeUTxO (pjust # stake) pnothing
 
+    -- Witness stakes in reference inputs.
     witnessStakes' ::
       Term
         s
@@ -375,22 +356,26 @@ proposalValidator as maximumCosigners =
 
             f :: Term _ (_ :--> PTxInInfo :--> _)
             f = plam $ \ctx' ((pfield @"resolved" #) -> txOut) ->
-              pfromMaybe # ctx'
-                #$ (pfmap # (updateCtx # ctx') #$ getStakeDatum # txOut)
+              let stakeDatum = getStakeDatum # txOut
+                  updateCtx' = updateCtx # ctx'
+               in pmaybe # ctx' # updateCtx' # stakeDatum
 
-            sortOwners = plam $
-              flip pmatch $ \ctxF ->
-                pcon $
-                  PWitnessMultipleStakeContext
-                    { totalAmount = ctxF.totalAmount
-                    , orderedOwners = pmsort # ctxF.orderedOwners
-                    }
+            sortOwners =
+              plam $
+                flip pmatch $
+                  \ctxF ->
+                    pcon $
+                      ctxF
+                        { orderedOwners = pmsort # ctxF.orderedOwners
+                        }
+
+            initialCtx = pcon $ PWitnessMultipleStakeContext 0 pnil
 
             ctx =
               sortOwners
                 #$ pfoldl
                 # f
-                # pcon (PWitnessMultipleStakeContext 0 pnil)
+                # initialCtx
                 # txInfoF.referenceInputs
          in plam (# ctx)
 
@@ -403,36 +388,20 @@ proposalValidator as maximumCosigners =
           witnessStakes' #$ plam $ \sctxF ->
             unTermCont $ pmatchC sctxF >>= c >> pure (pconstant ())
 
+    -- We don't need to explicitly ensure that there's only one stake in the
+    --   inputs here - the stake validator will do it for us.
     spendSingleStake' ::
       Term
         s
         ((PSpendSingleStakeContext :--> PUnit) :--> PUnit) <-
       pletC $
-        let singleInput ::
-              Term
-                _
-                ( PMaybe PStakeDatum
-                    :--> PTxInInfo
-                    :--> PMaybe PStakeDatum
-                )
-            singleInput = plam $ \l ((pfield @"resolved" #) -> txOut) ->
-              unTermCont $ do
-                lF <- pmatchC l
-                t <- pletC $ getStakeDatum # txOut
-                tF <- pmatchC t
-
-                pure $ case (lF, tF) of
-                  (PJust _, PJust _) ->
-                    ptraceError "Can only deal with one stake"
-                  (PNothing, _) -> t
-                  (_, PNothing) -> l
-
-            stakeInput =
-              passertPJust # "Stake input not found"
-                #$ pfoldl # singleInput # pnothing # txInfoF.inputs
+        let stakeInput =
+              passertPJust # "Stake input should present" #$ pfirstJust
+                # ((pfield @"resolved" @_ @PTxInInfo) #>>> getStakeDatum)
+                # txInfoF.inputs
 
             stakeOutput =
-              pfromJust
+              passertPJust # "Stake output should present"
                 #$ pfirstJust # getStakeDatum # txInfoF.outputs
 
             ctx = pcon $ PSpendSingleStakeContext stakeInput stakeOutput
@@ -447,6 +416,10 @@ proposalValidator as maximumCosigners =
           spendSingleStake' #$ plam $ \sctx ->
             unTermCont $ pmatchC sctx >>= c >> pure (pconstant ())
 
+    ----------------------------------------------------------------------------
+
+    proposalRedeemer <- fst <$> ptryFromC @PProposalRedeemer redeemer
+
     pure $
       popaque $
         pmatch proposalRedeemer $ \case
@@ -459,11 +432,14 @@ proposalValidator as maximumCosigners =
             pguardC "Signed by all new cosigners" $
               pall # plam ((authorizedBy #) . pfromData) # newSigs
 
+            -- Assuming that new signatures encoded in the redeemer and exsiting
+            --   cosigners are sorted in ascending order, the new list of
+            --   signatures will be ordered.
             updatedSigs <-
               pletC $
                 pmergeBy # pltAsData
                   # newSigs
-                  # proposalF.cosigners
+                  # proposalInputDatumF.cosigners
 
             pguardC "Less cosigners than maximum limit" $
               plength # updatedSigs #< pconstant maximumCosigners
@@ -472,6 +448,8 @@ proposalValidator as maximumCosigners =
               pisUniq' # updatedSigs
 
             pguardC "All new cosigners are witnessed by their Stake datums" $
+              -- Also, this ensures that the cosigners field in the output
+              --   propopsal datum is ordered.
               plistEqualsBy
                 # plam (\x (pfromData -> y) -> x #== y)
                 # sctxF.orderedOwners
@@ -480,18 +458,18 @@ proposalValidator as maximumCosigners =
             let expectedDatum =
                   mkRecordConstr
                     PProposalDatum
-                    ( #proposalId .= proposalF.proposalId
-                        .& #effects .= proposalF.effects
-                        .& #status .= proposalF.status
+                    ( #proposalId .= proposalInputDatumF.proposalId
+                        .& #effects .= proposalInputDatumF.effects
+                        .& #status .= proposalInputDatumF.status
                         .& #cosigners .= pdata updatedSigs
-                        .& #thresholds .= proposalF.thresholds
-                        .& #votes .= proposalF.votes
-                        .& #timingConfig .= proposalF.timingConfig
-                        .& #startingTime .= proposalF.startingTime
+                        .& #thresholds .= proposalInputDatumF.thresholds
+                        .& #votes .= proposalInputDatumF.votes
+                        .& #timingConfig .= proposalInputDatumF.timingConfig
+                        .& #startingTime .= proposalInputDatumF.startingTime
                     )
 
             pguardC "Signatures are correctly added to cosignature list" $
-              proposalOut #== expectedDatum
+              proposalOutputDatum #== expectedDatum
 
           ----------------------------------------------------------------------
 
@@ -502,13 +480,14 @@ proposalValidator as maximumCosigners =
               currentStatus #== pconstant VotingReady
 
             pguardC "Proposal time should be wthin the voting period" $
-              isVotingPeriod # proposalF.timingConfig
-                # proposalF.startingTime
-                #$ pfromJust
+              isVotingPeriod # proposalInputDatumF.timingConfig
+                # proposalInputDatumF.startingTime
+                #$ passertPJust
+                # "Should be able to get current time"
                 # currentTime
 
             -- Ensure the transaction is voting to a valid 'ResultTag'(outcome).
-            PProposalVotes voteMap <- pmatchC proposalF.votes
+            PProposalVotes voteMap <- pmatchC proposalInputDatumF.votes
             voteFor <- pletC $ pfromData $ pfield @"resultTag" # r
 
             pguardC "Vote option should be valid" $
@@ -516,11 +495,11 @@ proposalValidator as maximumCosigners =
 
             -- Ensure that no lock with the current proposal id has been put on the stake.
             pguardC "Same stake shouldn't vote on the same proposal twice" $
-              pnot #$ pisVoter #$ pgetStakeRole # proposalF.proposalId # stakeInF.lockedBy
+              pnot #$ pisVoter #$ pgetStakeRole # proposalInputDatumF.proposalId # stakeInF.lockedBy
 
             let -- The amount of new votes should be the 'stakedAmount'.
                 -- Update the vote counter of the proposal, and leave other stuff as is.
-                expectedNewVotes = pmatch (pfromData proposalF.votes) $ \(PProposalVotes m) ->
+                expectedNewVotes =
                   pcon $
                     PProposalVotes $
                       pupdate
@@ -530,21 +509,23 @@ proposalValidator as maximumCosigners =
                               pure $ pcon $ PJust $ votes + (pextract # v)
                           )
                         # voteFor
-                        # m
+                        # pto (pfromData proposalInputDatumF.votes)
+
                 expectedProposalOut =
                   mkRecordConstr
                     PProposalDatum
-                    ( #proposalId .= proposalF.proposalId
-                        .& #effects .= proposalF.effects
-                        .& #status .= proposalF.status
-                        .& #cosigners .= proposalF.cosigners
-                        .& #thresholds .= proposalF.thresholds
+                    ( #proposalId .= proposalInputDatumF.proposalId
+                        .& #effects .= proposalInputDatumF.effects
+                        .& #status .= proposalInputDatumF.status
+                        .& #cosigners .= proposalInputDatumF.cosigners
+                        .& #thresholds .= proposalInputDatumF.thresholds
                         .& #votes .= pdata expectedNewVotes
-                        .& #timingConfig .= proposalF.timingConfig
-                        .& #startingTime .= proposalF.startingTime
+                        .& #timingConfig .= proposalInputDatumF.timingConfig
+                        .& #startingTime .= proposalInputDatumF.startingTime
                     )
 
-            pguardC "Output proposal should be valid" $ proposalOut #== expectedProposalOut
+            pguardC "Output proposal should be valid" $
+              proposalOutputDatum #== expectedProposalOut
 
             -- We validate the output stake datum here as well: We need the vote option
             -- to create a valid 'ProposalLock', however the vote option is encoded
@@ -553,31 +534,25 @@ proposalValidator as maximumCosigners =
             let newProposalLock =
                   mkRecordConstr
                     PVoted
-                    ( #votedOn .= proposalF.proposalId
+                    ( #votedOn .= proposalInputDatumF.proposalId
                         .& #votedFor .= pdata voteFor
                     )
+
                 -- Prepend the new lock to existing locks
                 expectedProposalLocks =
                   pcons
                     # pdata newProposalLock
                     # pfromData stakeInF.lockedBy
-                expectedStakeOut =
-                  mkRecordConstr
-                    PStakeDatum
-                    ( #stakedAmount .= stakeInF.stakedAmount
-                        .& #owner .= stakeInF.owner
-                        .& #delegatedTo .= stakeInF.delegatedTo
-                        .& #lockedBy .= pdata expectedProposalLocks
-                    )
 
-            pguardC "Output stake should be locked by the proposal" $ expectedStakeOut #== sctxF.outputStake
+            pguardC "Output stake should be locked by the proposal" $
+              pfield @"lockedBy" # sctxF.outputStake #== expectedProposalLocks
 
           ----------------------------------------------------------------------
 
           PUnlock _ -> spendSingleStake $ \sctxF -> do
             stakeInF <- pletAllC $ pto sctxF.inputStake
 
-            stakeRole <- pletC $ pgetStakeRole # proposalF.proposalId # stakeInF.lockedBy
+            stakeRole <- pletC $ pgetStakeRole # proposalInputDatumF.proposalId # stakeInF.lockedBy
 
             pguardC "Stake input should be relevant" $
               pnot #$ pisIrrelevant # stakeRole
@@ -604,7 +579,7 @@ proposalValidator as maximumCosigners =
                 --   proposal should be removed.
                 validateOutputLocks = plam $ \locks ->
                   plet
-                    ( pgetStakeRole # proposalF.proposalId # locks
+                    ( pgetStakeRole # proposalInputDatumF.proposalId # locks
                     )
                     $ \newStakeRole ->
                       pif
@@ -616,40 +591,34 @@ proposalValidator as maximumCosigners =
               pif
                 shouldUpdateVotes
                 ( let -- Remove votes and leave other parts of the proposal as it.
-                      expectedVotes = pretractVotes # (pextractVoteOption # stakeRole) # retractCount # proposalF.votes
+                      expectedVotes =
+                        pretractVotes
+                          # (pextractVoteOption # stakeRole)
+                          # retractCount
+                          # proposalInputDatumF.votes
 
                       expectedProposalOut =
                         mkRecordConstr
                           PProposalDatum
-                          ( #proposalId .= proposalF.proposalId
-                              .& #effects .= proposalF.effects
-                              .& #status .= proposalF.status
-                              .& #cosigners .= proposalF.cosigners
-                              .& #thresholds .= proposalF.thresholds
+                          ( #proposalId .= proposalInputDatumF.proposalId
+                              .& #effects .= proposalInputDatumF.effects
+                              .& #status .= proposalInputDatumF.status
+                              .& #cosigners .= proposalInputDatumF.cosigners
+                              .& #thresholds .= proposalInputDatumF.thresholds
                               .& #votes .= pdata expectedVotes
-                              .& #timingConfig .= proposalF.timingConfig
-                              .& #startingTime .= proposalF.startingTime
+                              .& #timingConfig .= proposalInputDatumF.timingConfig
+                              .& #startingTime .= proposalInputDatumF.startingTime
                           )
                    in ptraceIfFalse "Update votes" $
-                        expectedProposalOut #== proposalOut
+                        expectedProposalOut #== proposalOutputDatum
                 )
                 -- No change to the proposal is allowed.
-                $ ptraceIfFalse "Proposal unchanged" proposalUnchanged
+                ( ptraceIfFalse "Proposal unchanged" $
+                    proposalOutputDatum #== proposalInputDatum
+                )
 
             -- At last, we ensure that all locks belong to this proposal will be removed.
             stakeOutputLocks <- pletC $ pfield @"lockedBy" # pto sctxF.outputStake
-
-            let templateStakeOut =
-                  mkRecordConstr
-                    PStakeDatum
-                    ( #stakedAmount .= stakeInF.stakedAmount
-                        .& #owner .= stakeInF.owner
-                        .& #delegatedTo .= stakeInF.delegatedTo
-                        .& #lockedBy .= pdata stakeOutputLocks
-                    )
-
-            pguardC "Only locks updated in the output stake" $
-              templateStakeOut #== sctxF.outputStake
 
             pguardC "All relevant locks removed from the stake" $
               validateOutputLocks # stakeOutputLocks
@@ -657,15 +626,43 @@ proposalValidator as maximumCosigners =
           ----------------------------------------------------------------------
 
           PAdvanceProposal _ -> unTermCont $ do
-            currentTime' <- pletC $ pfromJust # currentTime
+            currentTime' <-
+              pletC $
+                passertPJust
+                  # "Should be able to get current time"
+                  # currentTime
 
-            let inDraftPeriod = isDraftPeriod # proposalF.timingConfig # proposalF.startingTime # currentTime'
-                inVotingPeriod = isVotingPeriod # proposalF.timingConfig # proposalF.startingTime # currentTime'
-                inExecutionPeriod = isExecutionPeriod # proposalF.timingConfig # proposalF.startingTime # currentTime'
+            applyIs <- pletC $
+              plam $ \f ->
+                f
+                  # proposalInputDatumF.timingConfig
+                  # proposalInputDatumF.startingTime
+                  # currentTime'
+            let inDraftPeriod = applyIs # isDraftPeriod
+                inVotingPeriod = applyIs # isVotingPeriod
+                inExecutionPeriod = applyIs # isExecutionPeriod
 
-            inLockedPeriod <- pletC $ isLockingPeriod # proposalF.timingConfig # proposalF.startingTime # currentTime'
+            inLockedPeriod <- pletC $ applyIs # isLockingPeriod
 
-            pguardC "Only status changes in the output proposal" onlyStatusChanged
+            proposalOutputStatus <-
+              pletC $
+                pfromData $
+                  pfield @"status" # pto proposalOutputDatum
+
+            pguardC "Only status changes in the output proposal" $
+              let expectedProposalOutputDatum =
+                    mkRecordConstr
+                      PProposalDatum
+                      ( #proposalId .= proposalInputDatumF.proposalId
+                          .& #effects .= proposalInputDatumF.effects
+                          .& #status .= pdata proposalOutputStatus
+                          .& #cosigners .= proposalInputDatumF.cosigners
+                          .& #thresholds .= proposalInputDatumF.thresholds
+                          .& #votes .= proposalInputDatumF.votes
+                          .& #timingConfig .= proposalInputDatumF.timingConfig
+                          .& #startingTime .= proposalInputDatumF.startingTime
+                      )
+               in proposalOutputDatum #== expectedProposalOutputDatum
 
             pure $
               pmatch currentStatus $ \case
@@ -682,15 +679,18 @@ proposalValidator as maximumCosigners =
                           plistEqualsBy
                             # plam (\x (pfromData -> y) -> x #== y)
                             # sctxF.orderedOwners
-                            # proposalF.cosigners
+                            # proposalInputDatumF.cosigners
 
                         -- 'Draft' -> 'VotingReady'
                         pguardC "Proposal status set to VotingReady" $
-                          proposalOutStatus #== pconstant VotingReady
+                          proposalOutputStatus #== pconstant VotingReady
                       -- Too late: failed proposal, status set to 'Finished'.
                       PFalse ->
                         pguardC "Proposal should fail: not on time" $
-                          proposalOutStatus #== pconstant Finished
+                          proposalOutputStatus #== pconstant Finished
+
+                ----------------------------------------------------------------
+
                 PVotingReady -> unTermCont $ do
                   let notTooLate = inLockedPeriod
                       notTooEarly = pnot # inVotingPeriod
@@ -701,18 +701,21 @@ proposalValidator as maximumCosigners =
                     PTrue -> do
                       -- 'VotingReady' -> 'Locked'
                       pguardC "Proposal status set to Locked" $
-                        proposalOutStatus #== pconstant Locked
+                        proposalOutputStatus #== pconstant Locked
 
                       pguardC "Winner outcome not found" $
-                        pisJust #$ pwinner' # proposalF.votes
+                        pisJust #$ pwinner' # proposalInputDatumF.votes
                           #$ punsafeCoerce
                           $ pfromData thresholdsF.execute
                     -- Too late: failed proposal, status set to 'Finished'.
                     PFalse ->
                       pguardC "Proposal should fail: not on time" $
-                        proposalOutStatus #== pconstant Finished
+                        proposalOutputStatus #== pconstant Finished
 
                   pure $ popaque $ pconstant ()
+
+                ----------------------------------------------------------------
+
                 PLocked -> unTermCont $ do
                   let notTooLate = inExecutionPeriod
                       notTooEarly = pnot # inLockedPeriod
@@ -720,7 +723,7 @@ proposalValidator as maximumCosigners =
                   pguardC "Not too early" notTooEarly
 
                   pguardC "Proposal status set to Finished" $
-                    proposalOutStatus #== pconstant Finished
+                    proposalOutputStatus #== pconstant Finished
 
                   let gstSymbol = pconstant $ governorSTSymbol as
                       gstMoved =
@@ -744,4 +747,7 @@ proposalValidator as maximumCosigners =
                       # gstMoved
 
                   pure $ popaque $ pconstant ()
+
+                ----------------------------------------------------------------
+
                 PFinished -> ptraceError "Finished proposals cannot be advanced"

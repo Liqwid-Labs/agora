@@ -723,6 +723,8 @@ newtype PProposalDatum (s :: S) = PProposalDatum
       PIsData
     , -- | @since 0.1.0
       PEq
+    , -- | @since 1.0.0
+      PDataFields
     )
 
 -- | @since 1.0.0
