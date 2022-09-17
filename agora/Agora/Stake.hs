@@ -586,6 +586,10 @@ instance DerivePlutusType PStakeRedeemerHandlerContext where
 -}
 type PStakeRedeemerHandler = PStakeRedeemerHandlerContext :--> PUnit
 
+{- | Newtype wrapper around @'ClosedTerm' 'PStakeRedeemerHandler'@ to allow type inference to work.
+
+     @since 1.0.0
+-}
 newtype PStakeRedeemerHandlerTerm = PStakeRedeemerHandlerTerm (ClosedTerm PStakeRedeemerHandler)
 
 runStakeRedeemerHandler :: PStakeRedeemerHandlerTerm -> ClosedTerm PStakeRedeemerHandler
