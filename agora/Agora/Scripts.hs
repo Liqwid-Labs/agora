@@ -64,7 +64,7 @@ data AgoraScripts = AgoraScripts
      @since 0.2.0
 -}
 governorSTSymbol :: AgoraScripts -> CurrencySymbol
-governorSTSymbol = mintingPolicySymbol . getCompiledMintingPolicy . compiledGovernorPolicy
+governorSTSymbol = mintingPolicySymbol . (.getCompiledMintingPolicy) . (.compiledGovernorPolicy)
 
 {- | Get the asset class of the governor state token.
 
@@ -78,14 +78,14 @@ governorSTAssetClass as = AssetClass (governorSTSymbol as, "")
      @since 0.2.0
 -}
 governorValidatorHash :: AgoraScripts -> ValidatorHash
-governorValidatorHash = validatorHash . getCompiledValidator . compiledGovernorValidator
+governorValidatorHash = validatorHash . (.getCompiledValidator) . (.compiledGovernorValidator)
 
 {- | Get the currency symbol of the propsoal state token.
 
      @since 0.2.0
 -}
 proposalSTSymbol :: AgoraScripts -> CurrencySymbol
-proposalSTSymbol as = mintingPolicySymbol $ getCompiledMintingPolicy as.compiledProposalPolicy
+proposalSTSymbol as = mintingPolicySymbol $ (.getCompiledMintingPolicy) as.compiledProposalPolicy
 
 {- | Get the asset class of the governor state token.
 
@@ -99,14 +99,14 @@ proposalSTAssetClass as = AssetClass (proposalSTSymbol as, "")
      @since 0.2.0
 -}
 proposalValidatoHash :: AgoraScripts -> ValidatorHash
-proposalValidatoHash = validatorHash . getCompiledValidator . compiledProposalValidator
+proposalValidatoHash = validatorHash . (.getCompiledValidator) . (.compiledProposalValidator)
 
 {- | Get the script hash of the governor validator.
 
      @since 0.2.0
 -}
 stakeSTSymbol :: AgoraScripts -> CurrencySymbol
-stakeSTSymbol = mintingPolicySymbol . getCompiledMintingPolicy . compiledStakePolicy
+stakeSTSymbol = mintingPolicySymbol . (.getCompiledMintingPolicy) . (.compiledStakePolicy)
 
 {- | Get the asset class of the stake state token.
 
@@ -125,18 +125,18 @@ stakeSTAssetClass as =
      @since 0.2.0
 -}
 stakeValidatorHash :: AgoraScripts -> ValidatorHash
-stakeValidatorHash = validatorHash . getCompiledValidator . compiledStakeValidator
+stakeValidatorHash = validatorHash . (.getCompiledValidator) . (.compiledStakeValidator)
 
 {- | Get the currency symbol of the authority token.
 
      @since 0.2.0
 -}
 authorityTokenSymbol :: AgoraScripts -> CurrencySymbol
-authorityTokenSymbol = mintingPolicySymbol . getCompiledMintingPolicy . compiledAuthorityTokenPolicy
+authorityTokenSymbol = mintingPolicySymbol . (.getCompiledMintingPolicy) . (.compiledAuthorityTokenPolicy)
 
 {- | Get the script hash of the treasury validator.
 
      @since 0.2.0
 -}
 treasuryValidatorHash :: AgoraScripts -> ValidatorHash
-treasuryValidatorHash = validatorHash . getCompiledValidator . compiledTreasuryValidator
+treasuryValidatorHash = validatorHash . (.getCompiledValidator) . (.compiledTreasuryValidator)

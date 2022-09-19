@@ -1,4 +1,5 @@
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE NoFieldSelectors #-}
 
 {- |
 Module     : Agora.Stake
@@ -27,6 +28,7 @@ module Agora.Stake (
   PStakeRedeemerHandlerContext (..),
   PProposalContext (..),
   PStakeRedeemerHandler,
+  PStakeRedeemerHandlerTerm (..),
   StakeRedeemerImpl (..),
 
   -- * Utility functions
@@ -38,6 +40,7 @@ module Agora.Stake (
   pisCreator,
   pisPureCreator,
   pisIrrelevant,
+  runStakeRedeemerHandler,
 ) where
 
 import Agora.Proposal (PProposalId, PProposalRedeemer, PResultTag, ProposalId, ResultTag)
@@ -583,22 +586,31 @@ instance DerivePlutusType PStakeRedeemerHandlerContext where
 -}
 type PStakeRedeemerHandler = PStakeRedeemerHandlerContext :--> PUnit
 
+{- | Newtype wrapper around @'ClosedTerm' 'PStakeRedeemerHandler'@ to allow type inference to work.
+
+     @since 1.0.0
+-}
+newtype PStakeRedeemerHandlerTerm = PStakeRedeemerHandlerTerm (ClosedTerm PStakeRedeemerHandler)
+
+runStakeRedeemerHandler :: PStakeRedeemerHandlerTerm -> ClosedTerm PStakeRedeemerHandler
+runStakeRedeemerHandler (PStakeRedeemerHandlerTerm t) = t
+
 {- | A collection of stake redeemer handlers for each stake redeemers.
 
      @since 1.0.0
 -}
 data StakeRedeemerImpl = StakeRedeemerImpl
-  { onDepositWithdraw :: ClosedTerm PStakeRedeemerHandler
+  { onDepositWithdraw :: PStakeRedeemerHandlerTerm
   -- ^ Handler for 'DepositWithdraw'.
-  , onDestroy :: ClosedTerm PStakeRedeemerHandler
+  , onDestroy :: PStakeRedeemerHandlerTerm
   -- ^ Handler for 'Destroy'.
-  , onPermitVote :: ClosedTerm PStakeRedeemerHandler
+  , onPermitVote :: PStakeRedeemerHandlerTerm
   -- ^ Handler for 'permitVotes'.
-  , onRetractVote :: ClosedTerm PStakeRedeemerHandler
+  , onRetractVote :: PStakeRedeemerHandlerTerm
   -- ^ Handler for 'RetractVotes'.
-  , onDelegateTo :: ClosedTerm PStakeRedeemerHandler
+  , onDelegateTo :: PStakeRedeemerHandlerTerm
   -- ^ Handler for 'DelegateTo'.
-  , onClearDelegate :: ClosedTerm PStakeRedeemerHandler
+  , onClearDelegate :: PStakeRedeemerHandlerTerm
   -- ^ handler for 'ClearDelegate'.
   }
 

@@ -245,12 +245,12 @@ mkProposalDatumPair params pid =
     mkInputVotes Creator _ =
       ProposalVotes $
         StrictMap.adjust (const 1000) defVoteFor $
-          getProposalVotes votesTemplate
+          votesTemplate.getProposalVotes
     mkInputVotes Irrelevant _ = votesTemplate
     mkInputVotes _ vc =
       ProposalVotes $
         StrictMap.adjust (const vc) defVoteFor $
-          getProposalVotes votesTemplate
+          votesTemplate.getProposalVotes
 
 -- | Create a 'TxInfo' that tries to unlock a stake.
 unlockStake :: forall b. CombinableBuilder b => Parameters -> b

@@ -81,6 +81,7 @@ common lang
     TypeSynonymInstances
     UndecidableInstances
     ViewPatterns
+    NoFieldSelectors
     OverloadedRecordDot
 
   default-language:   Haskell2010
