@@ -6,6 +6,10 @@ This format is based on [Keep A Changelog](https://keepachangelog.com/en/1.0.0).
 
 ### Modified
 
+- Fix a bug that allows an attacker to send two or more GATs to an effect in the winning effect group.
+
+  Fixed by [#181](https://github.com/Liqwid-Labs/agora/pull/181)
+
 - Workaround `currentProposalTime` always returns `PNothing`, due to the fact
  that upper bound of `txInfoValidRange` is never closed.
 
