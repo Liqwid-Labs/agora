@@ -91,10 +91,12 @@ common deps
     , ansi-terminal
     , base                    >=4.14 && <5
     , base-compat
-    , base16
+    -- , base16
+    , base16-bytestring
     , bytestring
     , cardano-binary
     , cardano-prelude
+    , cborg
     , composition-prelude
     , containers
     , data-default
