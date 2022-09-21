@@ -31,13 +31,15 @@ module Agora.Utils (
   ppureIf,
   pltBy,
   pinsertUniqueBy,
+  ptryFromRedeemer,
 ) where
 
-import Plutarch.Api.V1 (PPOSIXTime, PTokenName, PValidatorHash)
-import Plutarch.Api.V2 (PScriptHash)
+import Plutarch.Api.V1 (KeyGuarantees (Unsorted), PPOSIXTime, PRedeemer, PTokenName, PValidatorHash)
+import Plutarch.Api.V1.AssocMap (PMap, plookup)
+import Plutarch.Api.V2 (PScriptHash, PScriptPurpose)
 import Plutarch.Extra.Applicative (PApplicative (ppure))
 import Plutarch.Extra.Category (PCategory (pidentity))
-import Plutarch.Extra.Functor (PFunctor (PSubcategory))
+import Plutarch.Extra.Functor (PFunctor (PSubcategory, pfmap))
 import Plutarch.Extra.Maybe (pnothing)
 import Plutarch.Extra.Ord (PComparator, POrdering (PLT), pcompareBy, pequateBy)
 import Plutarch.Extra.Time (PCurrentTime (PCurrentTime))
@@ -369,3 +371,19 @@ pinsertUniqueBy = phoistAcyclic $
                in ensureUniqueness next
           )
           (const $ psingleton # x)
+
+-- | @since 1.0.0
+ptryFromRedeemer ::
+  forall (r :: PType) (s :: S).
+  (PTryFrom PData r) =>
+  Term
+    s
+    ( PScriptPurpose
+        :--> PMap 'Unsorted PScriptPurpose PRedeemer
+        :--> PMaybe r
+    )
+ptryFromRedeemer = phoistAcyclic $
+  plam $ \p m ->
+    pfmap
+      # plam (flip ptryFrom fst . pto)
+      # (plookup # p # m)
