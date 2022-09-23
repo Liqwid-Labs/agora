@@ -21,8 +21,7 @@ module Agora.Stake (
   PStakeRole (..),
 
   -- * Validation context
-  PStakeInputContext (..),
-  PStakeOutputContext (..),
+  PSignedBy (..),
   PSigContext (..),
   PStakeRedeemerContext (..),
   PStakeRedeemerHandlerContext (..),
@@ -43,14 +42,18 @@ module Agora.Stake (
   runStakeRedeemerHandler,
 ) where
 
-import Agora.Proposal (PProposalId, PProposalRedeemer, PResultTag, ProposalId, ResultTag)
+import Agora.Proposal (
+  PProposalId,
+  PProposalRedeemer,
+  PResultTag,
+  ProposalId,
+  ResultTag,
+ )
 import Agora.SafeMoney (GTTag)
 import Data.Tagged (Tagged)
 import Generics.SOP qualified as SOP
-import Plutarch.Api.V1 (KeyGuarantees (Sorted), PCredential)
-import Plutarch.Api.V1.Value (PValue)
+import Plutarch.Api.V1 (PCredential)
 import Plutarch.Api.V2 (
-  AmountGuarantees (Positive),
   PMaybeData,
   PTxInfo,
  )
@@ -58,7 +61,6 @@ import Plutarch.DataRepr (
   DerivePConstantViaData (DerivePConstantViaData),
   PDataFields,
  )
-import Plutarch.Extra.AssetClass (PAssetClass)
 import Plutarch.Extra.Field (pletAll)
 import Plutarch.Extra.IsData (
   DerivePConstantViaDataList (DerivePConstantViaDataList),
@@ -429,67 +431,36 @@ instance DerivePlutusType PStakeRole where
 
 --------------------------------------------------------------------------------
 
-{- | Represent the stake being spent.
-
-     @since 1.0.0
--}
-data PStakeInputContext (s :: S) = PStakeInput
-  { ownInputDatum :: Term s PStakeDatum
-  -- ^ The stake datum of said stake.
-  , ownInputValue :: Term s (PValue 'Sorted 'Positive)
-  -- ^ The value carried by the stake UTxO.
-  }
-  deriving stock
-    ( -- | @since 1.0.0
-      Generic
-    )
-  deriving anyclass
-    ( -- | @since 1.0.0
-      PlutusType
-    )
-
--- | @since 1.0.0
-instance DerivePlutusType PStakeInputContext where
-  type DPTStrat _ = PlutusTypeScott
-
-{- | Where the stake will go?
-
-     @since 1.0.0
--}
-data PStakeOutputContext (s :: S)
-  = -- | The output stake is owned by the stake validator.
-    PStakeOutput
-      { ownOutputDatum :: Term s PStakeDatum
-      -- ^ The stake datum of the output stake.
-      , ownOutputValue :: Term s (PValue 'Sorted 'Positive)
-      -- ^ The value carried by the stake output UTxO.
-      }
-  | -- | The stake is burnt in the transaction.
-    PStakeBurnt
-  deriving stock
-    ( -- | @since 1.0.0
-      Generic
-    )
-  deriving anyclass
-    ( -- | @since 1.0.0
-      PlutusType
-    )
-
--- | @since 1.0.0
-instance DerivePlutusType PStakeOutputContext where
-  type DPTStrat _ = PlutusTypeScott
-
 {- | Who authorizes the transaction?
 
      @since 1.0.0
 -}
-data PSigContext (s :: S)
+data PSignedBy (s :: S)
   = -- | The stake owner authorized the transaction.
     PSignedByOwner
   | -- | The delegate authorized the transaction.
     PSignedByDelegate
   | -- | Both owner and delegate didn't authorize.
     PUnknownSig
+  deriving stock
+    ( -- | @since 1.0.0
+      Generic
+    )
+  deriving anyclass
+    ( -- | @since 1.0.0
+      PlutusType
+    )
+
+-- | @since 1.0.0
+instance DerivePlutusType PSignedBy where
+  type DPTStrat _ = PlutusTypeScott
+
+-- | @since 1.0.0
+data PSigContext (s :: S) = PSigContext
+  { owner :: Term s PCredential
+  , delegate :: Term s (PMaybeData (PAsData PCredential))
+  , signedBy :: Term s PSignedBy
+  }
   deriving stock
     ( -- | @since 1.0.0
       Generic
@@ -555,12 +526,11 @@ instance DerivePlutusType PProposalContext where
      @1.0.0
 -}
 data PStakeRedeemerHandlerContext (s :: S) = PStakeRedeemerHandlerContext
-  { stakeInput :: Term s PStakeInputContext
-  , stakeOutput :: Term s PStakeOutputContext
+  { stakeInputDatums :: Term s (PBuiltinList PStakeDatum)
+  , stakeOutputDatums :: Term s (PBuiltinList PStakeDatum)
   , redeemerContext :: Term s PStakeRedeemerContext
   , sigContext :: Term s PSigContext
   , proposalContext :: Term s PProposalContext
-  , gtAssetClass :: Term s PAssetClass
   , extraTxContext :: Term s PTxInfo
   }
   deriving stock
@@ -589,9 +559,13 @@ type PStakeRedeemerHandler = PStakeRedeemerHandlerContext :--> PUnit
 
      @since 1.0.0
 -}
-newtype PStakeRedeemerHandlerTerm = PStakeRedeemerHandlerTerm (ClosedTerm PStakeRedeemerHandler)
+newtype PStakeRedeemerHandlerTerm
+  = PStakeRedeemerHandlerTerm
+      (ClosedTerm PStakeRedeemerHandler)
 
-runStakeRedeemerHandler :: PStakeRedeemerHandlerTerm -> ClosedTerm PStakeRedeemerHandler
+runStakeRedeemerHandler ::
+  PStakeRedeemerHandlerTerm ->
+  ClosedTerm PStakeRedeemerHandler
 runStakeRedeemerHandler (PStakeRedeemerHandlerTerm t) = t
 
 {- | A collection of stake redeemer handlers for each stake redeemers.
@@ -666,7 +640,14 @@ pisIrrelevant = phoistAcyclic $
 
      @since 0.2.0
 -}
-pgetStakeRole :: forall (s :: S). Term s (PProposalId :--> PBuiltinList (PAsData PProposalLock) :--> PStakeRole)
+pgetStakeRole ::
+  forall (s :: S).
+  Term
+    s
+    ( PProposalId
+        :--> PBuiltinList (PAsData PProposalLock)
+        :--> PStakeRole
+    )
 pgetStakeRole = phoistAcyclic $
   plam $ \pid locks ->
     pfoldl
@@ -688,7 +669,14 @@ pgetStakeRole = phoistAcyclic $
       # pcon PIrrelevant
       # locks
   where
-    pcombineStakeRole :: forall (s :: S). Term s (PStakeRole :--> PStakeRole :--> PStakeRole)
+    pcombineStakeRole ::
+      forall (s :: S).
+      Term
+        s
+        ( PStakeRole
+            :--> PStakeRole
+            :--> PStakeRole
+        )
     pcombineStakeRole = phoistAcyclic $
       plam $ \x y ->
         let cannotCombine = ptraceError "duplicate roles"
