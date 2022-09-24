@@ -39,7 +39,7 @@ import Plutarch.Extra.Maybe (
   passertPJust,
  )
 import Plutarch.Extra.ScriptContext (pfromOutputDatum, pisScriptAddress)
-import Plutarch.Extra.TermCont (pguardC, pletFieldsC)
+import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletFieldsC)
 import Plutarch.Extra.Value (pvalueOf)
 import Plutarch.Lift (PConstantDecl, PLifted, PUnsafeLiftDecl)
 import PlutusLedgerApi.V1 (TxOutRef)

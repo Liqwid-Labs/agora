@@ -49,7 +49,7 @@ import Plutarch.Extra.IsData (
   EnumIsData (EnumIsData),
   PlutusTypeEnumData,
  )
-import Plutarch.Extra.TermCont (pletFieldsC)
+import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pletFieldsC)
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (PLifted))
 import PlutusLedgerApi.V1 (TxOutRef)
 import PlutusLedgerApi.V1.Value (AssetClass)

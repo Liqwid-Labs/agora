@@ -78,10 +78,10 @@ import Plutarch.Extra.IsData (
   PlutusTypeEnumData,
   ProductIsData (ProductIsData),
  )
-import Plutarch.Extra.List (pfirstJust)
+import "liqwid-plutarch-extra" Plutarch.Extra.List (pfindJust)
 import Plutarch.Extra.Map qualified as PM
 import Plutarch.Extra.Maybe (pfromJust)
-import Plutarch.Extra.TermCont (pguardC, pletC, pmatchC)
+import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletC, pmatchC)
 import Plutarch.Lift (
   DerivePConstantViaNewtype (DerivePConstantViaNewtype),
   PConstantDecl,
@@ -941,7 +941,7 @@ pneutralOption = phoistAcyclic $
                 (PAssocMap.pnull # el)
                 (pcon $ PJust rt)
                 (pcon PNothing)
-     in pfromJust #$ pfirstJust # f # l
+     in pfromJust #$ pfindJust # f # l
 
 {- | Return true if the thresholds are valid.
 

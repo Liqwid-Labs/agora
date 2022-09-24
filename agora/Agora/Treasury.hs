@@ -15,7 +15,7 @@ module Agora.Treasury (
 import Agora.AuthorityToken (singleAuthorityTokenBurned)
 import Plutarch.Api.V1.Value (PValue)
 import Plutarch.Api.V2 (PScriptPurpose (PSpending), PValidator)
-import Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC)
+import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC)
 import Plutarch.TryFrom ()
 import PlutusLedgerApi.V1.Value (CurrencySymbol)
 

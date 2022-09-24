@@ -76,7 +76,7 @@ import Plutarch.Extra.AssetClass (
  )
 import Plutarch.Extra.Bind (PBind ((#>>=)))
 import Plutarch.Extra.Field (pletAllC)
-import Plutarch.Extra.List (pfirstJust)
+import "liqwid-plutarch-extra" Plutarch.Extra.List (pfindJust)
 import Plutarch.Extra.Maybe (
   passertPJust,
   pjust,
@@ -89,7 +89,7 @@ import Plutarch.Extra.ScriptContext (
   pfromOutputDatum,
   pvalueSpent,
  )
-import Plutarch.Extra.TermCont (
+import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (
   pguardC,
   pletC,
   pletFieldsC,
@@ -324,7 +324,7 @@ mkStakeValidator
 
       let -- Look for the output stake.
           stakeOutput =
-            pfirstJust
+            pfindJust
               # plam
                 ( \output -> unTermCont $ do
                     outputF <-
@@ -409,7 +409,7 @@ mkStakeValidator
                       (pjust # ref)
                       pnothing
 
-              proposalRef = pfirstJust # f # txInfoF.inputs
+              proposalRef = pfindJust # f # txInfoF.inputs
            in pif pstMinted (pcon PNewProposal) $
                 pmaybe
                   # pcon PNoProposal

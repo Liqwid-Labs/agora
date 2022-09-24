@@ -30,10 +30,10 @@ import Plutarch.Api.V2 (
   PTxOut (PTxOut),
  )
 import Plutarch.Extra.AssetClass (passetClass, passetClassValueOf)
-import Plutarch.Extra.List (plookup)
+import "liqwid-plutarch-extra" Plutarch.Extra.List (plookupAssoc)
 import Plutarch.Extra.ScriptContext (pisTokenSpent)
 import Plutarch.Extra.Sum (PSum (PSum))
-import Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC)
+import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC)
 import Plutarch.Extra.Traversable (pfoldMap)
 import Plutarch.Extra.Value (psymbolValueOf)
 import PlutusLedgerApi.V1.Value (AssetClass (AssetClass))
@@ -83,7 +83,7 @@ authorityTokensValidIn = phoistAcyclic $
     PValue value' <- pmatchC txOut.value
     PMap value <- pmatchC value'
     pure $
-      pmatch (plookup # pdata authorityTokenSym # value) $ \case
+      pmatch (plookupAssoc # pfstBuiltin # psndBuiltin # pdata authorityTokenSym # value) $ \case
         PJust (pfromData -> _tokenMap') ->
           pmatch (pfield @"credential" # address) $ \case
             PPubKeyCredential _ ->
