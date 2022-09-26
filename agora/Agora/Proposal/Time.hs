@@ -47,7 +47,7 @@ import Plutarch.DataRepr (
 import Plutarch.Extra.Applicative (PApply (pliftA2))
 import Plutarch.Extra.Field (pletAll, pletAllC)
 import Plutarch.Extra.Maybe (pjust, pmaybe, pnothing)
-import Plutarch.Extra.TermCont (pmatchC)
+import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pmatchC)
 import Plutarch.Extra.Time (
   PCurrentTime (PCurrentTime),
   pisCurrentTimeWithin,

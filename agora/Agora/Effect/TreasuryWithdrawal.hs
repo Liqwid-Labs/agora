@@ -32,7 +32,7 @@ import Plutarch.DataRepr (
   PDataFields,
  )
 import Plutarch.Extra.ScriptContext (pfindTxInByTxOutRef, pisPubKey)
-import Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC)
+import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC)
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (PLifted))
 import PlutusLedgerApi.V1.Credential (Credential)
 import PlutusLedgerApi.V1.Value (CurrencySymbol, Value)

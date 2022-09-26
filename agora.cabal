@@ -103,6 +103,7 @@ common deps
     , generics-sop
     , liqwid-plutarch-extra
     , plutarch
+    , plutarch-extra
     , plutarch-numeric
     , plutarch-safe-money
     , plutarch-script-export

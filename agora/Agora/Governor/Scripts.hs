@@ -64,9 +64,10 @@ import Plutarch.Api.V2 (
  )
 import Plutarch.Extra.AssetClass (passetClass, passetClassValueOf)
 import Plutarch.Extra.Field (pletAll, pletAllC)
-import Plutarch.Extra.List (pfirstJust, pmapMaybe, pmsort)
+import "liqwid-plutarch-extra" Plutarch.Extra.List (pfindJust, pmapMaybe)
 import Plutarch.Extra.Map (pkeys, ptryLookup)
 import Plutarch.Extra.Maybe (passertPJust, pjust, pmaybe, pmaybeData, pnothing)
+import Plutarch.Extra.Ord (psort)
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
 import Plutarch.Extra.ScriptContext (
   pfindTxInByTxOutRef,
@@ -76,7 +77,7 @@ import Plutarch.Extra.ScriptContext (
   pscriptHashFromAddress,
   pvalueSpent,
  )
-import Plutarch.Extra.TermCont (
+import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (
   pguardC,
   pletC,
   pletFieldsC,
@@ -145,7 +146,7 @@ governorPolicy initialSpend =
 
     let governorOutputDatum =
           passertPJust # "Governor output should present"
-            #$ pfirstJust
+            #$ pfindJust
               # plam
                 ( flip (pletFields @'["value", "datum"]) $ \txOutF ->
                     let isGovernorUTxO =
@@ -298,7 +299,7 @@ governorValidator as =
       pletC $
         passertPJust
           # "Own output should present"
-            #$ pfirstJust
+            #$ pfindJust
           # plam
             ( flip pletAll $ \outputF ->
                 let gstSymbol = pconstant $ governorSTSymbol as
@@ -412,7 +413,7 @@ governorValidator as =
 
           let stakeInputDatum =
                 passertPJust # "Stake input should present"
-                  #$ pfirstJust
+                  #$ pfindJust
                     # plam ((getStakeDatum #) . (pfield @"resolved" #))
                     # pfromData txInfoF.inputs
 
@@ -435,7 +436,7 @@ governorValidator as =
 
           let proposalOutputDatum =
                 passertPJust # "Proposal output should present"
-                  #$ pfirstJust
+                  #$ pfindJust
                     # getProposalDatum
                     # pfromData txInfoF.outputs
 
@@ -472,7 +473,7 @@ governorValidator as =
 
           let stakeOutputDatum =
                 passertPJust # "Output stake should be presented"
-                  #$ pfirstJust
+                  #$ pfindJust
                     # getStakeDatum
                     # pfromData txInfoF.outputs
 
@@ -507,7 +508,7 @@ governorValidator as =
 
           let proposalInputDatum =
                 passertPJust # "Proposal input not found"
-                  #$ pfirstJust
+                  #$ pfindJust
                     # plam ((getProposalDatum #) . (pfield @"resolved" #))
                     # pfromData txInfoF.inputs
 
@@ -584,7 +585,7 @@ governorValidator as =
 
               -- The sorted hashes of all the GAT receivers.
               actualReceivers =
-                pmsort
+                psort
                   #$ pmapMaybe
                     # getReceiverScriptHash
                     # pfromData txInfoF.outputs

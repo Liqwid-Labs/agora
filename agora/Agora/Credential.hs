@@ -14,7 +14,7 @@ import GHC.Records (HasField)
 import Plutarch.Api.V1 (PCredential (PPubKeyCredential, PScriptCredential), PPubKeyHash)
 import Plutarch.Api.V2 (PTxInInfo)
 import Plutarch.Extra.ScriptContext (ptxSignedBy)
-import Plutarch.Extra.TermCont (pmatchC)
+import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pmatchC)
 
 {- | Context required in order to check 'AuthorizationCredential'.
 

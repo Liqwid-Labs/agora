@@ -26,7 +26,7 @@ module Agora.Utils (
 
 import Plutarch.Api.V1 (PPOSIXTime, PTokenName, PValidatorHash)
 import Plutarch.Api.V2 (PScriptHash)
-import Plutarch.Extra.TermCont (pmatchC)
+import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pmatchC)
 import Plutarch.Extra.Time (PCurrentTime (PCurrentTime))
 import Plutarch.List (puncons)
 import Plutarch.Unsafe (punsafeCoerce)

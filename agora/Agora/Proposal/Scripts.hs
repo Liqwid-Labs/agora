@@ -40,7 +40,6 @@ import Agora.Stake (
  )
 import Agora.Utils (
   plistEqualsBy,
-  pltAsData,
  )
 import Plutarch.Api.V1 (PCredential)
 import Plutarch.Api.V1.AssocMap (plookup)
@@ -57,7 +56,7 @@ import Plutarch.Extra.AssetClass (passetClass, passetClassValueOf)
 import Plutarch.Extra.Category (PCategory (pidentity), PSemigroupoid ((#>>>)))
 import Plutarch.Extra.Comonad (pextract)
 import Plutarch.Extra.Field (pletAll, pletAllC)
-import Plutarch.Extra.List (pfirstJust, pisUniq', pmergeBy, pmsort)
+import "liqwid-plutarch-extra" Plutarch.Extra.List (pfindJust)
 import Plutarch.Extra.Map (pupdate)
 import Plutarch.Extra.Maybe (
   passertPJust,
@@ -66,6 +65,7 @@ import Plutarch.Extra.Maybe (
   pmaybe,
   pnothing,
  )
+import Plutarch.Extra.Ord (pallUnique, pfromOrdBy, psort, ptryMergeBy)
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
 import Plutarch.Extra.ScriptContext (
   pfindTxInByTxOutRef,
@@ -73,7 +73,7 @@ import Plutarch.Extra.ScriptContext (
   pisTokenSpent,
   ptryFromOutputDatum,
  )
-import Plutarch.Extra.TermCont (
+import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (
   pguardC,
   pletC,
   pletFieldsC,
@@ -262,7 +262,7 @@ proposalValidator as maximumCosigners =
       pletC $
         passertPJust
           # "Own output should be present"
-            #$ pfirstJust
+            #$ pfindJust
           # plam
             ( flip pletAll $ \outputF ->
                 let pstSymbol = pconstant $ proposalSTSymbol as
@@ -366,7 +366,7 @@ proposalValidator as maximumCosigners =
                   \ctxF ->
                     pcon $
                       ctxF
-                        { orderedOwners = pmsort # ctxF.orderedOwners
+                        { orderedOwners = psort # ctxF.orderedOwners
                         }
 
             initialCtx = pcon $ PWitnessMultipleStakeContext 0 pnil
@@ -396,13 +396,13 @@ proposalValidator as maximumCosigners =
         ((PSpendSingleStakeContext :--> PUnit) :--> PUnit) <-
       pletC $
         let stakeInput =
-              passertPJust # "Stake input should present" #$ pfirstJust
+              passertPJust # "Stake input should present" #$ pfindJust
                 # ((pfield @"resolved" @_ @PTxInInfo) #>>> getStakeDatum)
                 # txInfoF.inputs
 
             stakeOutput =
               passertPJust # "Stake output should present"
-                #$ pfirstJust # getStakeDatum # txInfoF.outputs
+                #$ pfindJust # getStakeDatum # txInfoF.outputs
 
             ctx = pcon $ PSpendSingleStakeContext stakeInput stakeOutput
          in plam (# ctx)
@@ -437,15 +437,16 @@ proposalValidator as maximumCosigners =
             --   signatures will be ordered.
             updatedSigs <-
               pletC $
-                pmergeBy # pltAsData
+                ptryMergeBy # (pfromOrdBy # plam pfromData)
                   # newSigs
                   # proposalInputDatumF.cosigners
 
             pguardC "Less cosigners than maximum limit" $
               plength # updatedSigs #< pconstant maximumCosigners
 
-            pguardC "Cosigners are unique" $
-              pisUniq' # updatedSigs
+            -- assuming sigs are sorted
+            PJust cosUnique <- pmatchC $ pallUnique #$ pmap # plam pfromData # updatedSigs
+            pguardC "Cosigners are unique" cosUnique
 
             pguardC "All new cosigners are witnessed by their Stake datums" $
               -- Also, this ensures that the cosigners field in the output

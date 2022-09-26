@@ -48,9 +48,6 @@ deriving via
   instance
     Aeson.ToJSON Plutus.TxId
 
-deriving anyclass instance Aeson.FromJSON Plutus.TxOutRef
-deriving anyclass instance Aeson.ToJSON Plutus.TxOutRef
-
 instance (Coercible a Plutus.LedgerBytes) => Aeson.ToJSON (AsBase16Bytes a) where
   toJSON =
     Aeson.String
