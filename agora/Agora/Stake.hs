@@ -45,6 +45,7 @@ module Agora.Stake (
 import Agora.Proposal (
   PProposalId,
   PProposalRedeemer,
+  PProposalStatus,
   PResultTag,
   ProposalId,
   ResultTag,
@@ -252,6 +253,8 @@ newtype PStakeDatum (s :: S) = PStakeDatum
       PEq
     , -- | @since 1.0.0
       PDataFields
+    , -- | @since 1.0.0
+      PShow
     )
 
 instance DerivePlutusType PStakeDatum where
@@ -503,9 +506,13 @@ instance DerivePlutusType PStakeRedeemerContext where
 -}
 data PProposalContext (s :: S)
   = -- | A proposal is spent.
-    PWithProposalRedeemer (Term s PProposalRedeemer)
+    PSpendProposal
+      (Term s PProposalId)
+      (Term s PProposalStatus)
+      (Term s PProposalRedeemer)
   | -- | A new proposal is created.
     PNewProposal
+      (Term s PProposalId)
   | -- | No proposal is spent or created.
     PNoProposal
   deriving stock

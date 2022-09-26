@@ -12,7 +12,7 @@ module Agora.Stake.Scripts (
 ) where
 
 import Agora.Credential (authorizationContext, pauthorizedBy)
-import Agora.Proposal (PProposalRedeemer)
+import Agora.Proposal (PProposalDatum, PProposalRedeemer)
 import Agora.SafeMoney (GTTag)
 import Agora.Scripts (
   AgoraScripts,
@@ -23,7 +23,7 @@ import Agora.Stake (
   PProposalContext (
     PNewProposal,
     PNoProposal,
-    PWithProposalRedeemer
+    PSpendProposal
   ),
   PSigContext (PSigContext),
   PSignedBy (
@@ -73,10 +73,8 @@ import Plutarch.Api.V2 (
   AmountGuarantees,
   PMintingPolicy,
   PScriptPurpose (PMinting, PSpending),
-  PTxInInfo,
   PTxInfo,
   PTxOut,
-  PTxOutRef,
   PValidator,
  )
 import Plutarch.Extra.AssetClass (
@@ -84,14 +82,14 @@ import Plutarch.Extra.AssetClass (
   passetClassValueOf,
   pvalueOf,
  )
-import Plutarch.Extra.Bind (PBind ((#>>=)))
 import Plutarch.Extra.Category (PSemigroupoid ((#>>>)))
+import Plutarch.Extra.Field (pletAll)
 import Plutarch.Extra.Functor (PFunctor (pfmap))
 import "liqwid-plutarch-extra" Plutarch.Extra.List (pfindJust, pmapMaybe)
 import Plutarch.Extra.Maybe (
   passertPJust,
+  pfromMaybe,
   pjust,
-  pmaybe,
   pmaybeData,
   pnothing,
  )
@@ -402,9 +400,9 @@ mkStakeValidator
       pguardC "No new SST minted" $
         foldl1
           (#||)
-          [ ptraceIfFalse "All stakes burnt" $
+          [ ptraceIfTrue "All stakes burnt" $
               mintedST #< 0 #&& pnull # stakeOutputDatums
-          , ptraceIfFalse "Nothing burnt" $
+          , ptraceIfTrue "Nothing burnt" $
               mintedST #== 0
           ]
 
@@ -420,42 +418,67 @@ mkStakeValidator
             # pconstant propCs
             # pconstant propTn
 
+      getProposalDatum <- pletC $
+        plam $
+          flip pletAll $ \txOutF ->
+            let isProposalUTxO =
+                  passetClassValueOf
+                    # txOutF.value
+                    # proposalSTClass #== 1
+                proposalDatum =
+                  pfromData $
+                    pfromOutputDatum @(PAsData PProposalDatum)
+                      # txOutF.datum
+                      # txInfoF.datums
+             in pif isProposalUTxO (pjust # proposalDatum) pnothing
+
       let pstMinted =
             passetClassValueOf # txInfoF.mint # proposalSTClass #== 1
 
+          newProposalContext =
+            pcon $
+              PNewProposal $
+                pfield @"proposalId"
+                  #$ passertPJust # "Proposal output should present"
+                  #$ pfindJust # getProposalDatum # pfromData txInfoF.outputs
+
+          spendProposalContext =
+            let getProposalRedeemer = plam $ \ref ->
+                  flip (ptryFrom @PProposalRedeemer) fst $
+                    pto $
+                      passertPJust
+                        # "Malformed script context: propsoal input not found in redeemer map"
+                          #$ plookup
+                        # pcon
+                          ( PSpending $
+                              pdcons @_0
+                                # pdata ref
+                                # pdnil
+                          )
+                        # txInfoF.redeemers
+
+                getContext = plam $
+                  flip pletAll $ \inInfoF ->
+                    pfmap
+                      # plam
+                        ( \proposalDatum ->
+                            let id = pfield @"proposalId" # proposalDatum
+                                status = pfield @"status" # proposalDatum
+                                redeemer = getProposalRedeemer # inInfoF.outRef
+                             in pcon $ PSpendProposal id status redeemer
+                        )
+                      #$ getProposalDatum
+                      # pfromData inInfoF.resolved
+             in pfindJust # getContext # pfromData txInfoF.inputs
+
+          noProposalContext = pcon PNoProposal
+
       proposalContext <-
         pletC $
-          let convertRedeemer = plam $ \(pto -> dt) ->
-                ptryFrom @PProposalRedeemer dt fst
-
-              findRedeemer = plam $ \ref ->
-                plookup
-                  # pcon
-                    ( PSpending $
-                        pdcons @_0
-                          # pdata ref
-                          # pdnil
-                    )
-                  # txInfoF.redeemers
-
-              f :: Term _ (PTxInInfo :--> PMaybe PTxOutRef)
-              f = plam $ \inInfo ->
-                let value = pfield @"value" #$ pfield @"resolved" # inInfo
-                    ref = pfield @"outRef" # inInfo
-                 in pif
-                      (passetClassValueOf # value # proposalSTClass #== 1)
-                      (pjust # ref)
-                      pnothing
-
-              proposalRef = pfindJust # f # txInfoF.inputs
-           in pif pstMinted (pcon PNewProposal) $
-                pmaybe
-                  # pcon PNoProposal
-                  # plam
-                    ( \((convertRedeemer #) -> proposalRedeemer) ->
-                        pcon $ PWithProposalRedeemer proposalRedeemer
-                    )
-                  #$ proposalRef #>>= findRedeemer
+          pif
+            pstMinted
+            newProposalContext
+            (pfromMaybe # noProposalContext # spendProposalContext)
 
       --------------------------------------------------------------------------
 

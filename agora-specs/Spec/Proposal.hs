@@ -53,7 +53,7 @@ specs =
               Create.addInvalidLocksParameters
               True
               False
-              True
+              False
           , Create.mkTestTree
               "has reached maximum proposals limit"
               Create.exceedMaximumProposalsParameters

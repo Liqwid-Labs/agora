@@ -14,12 +14,17 @@ module Agora.Stake.Redeemers (
   pdepositWithdraw,
 ) where
 
-import Agora.Proposal (PProposalRedeemer (PUnlock, PVote))
+import Agora.Proposal (
+  PProposalId,
+  PProposalRedeemer (PUnlock, PVote),
+  ProposalStatus (Finished),
+ )
 import Agora.Stake (
   PProposalContext (
     PNewProposal,
-    PWithProposalRedeemer
+    PSpendProposal
   ),
+  PProposalLock (PCreated, PVoted),
   PSigContext (owner, signedBy),
   PSignedBy (
     PSignedByDelegate,
@@ -93,26 +98,39 @@ pisSignedBy = phoistAcyclic $
 -- | Return true if only the @lockedBy@ field of the stake datum is updated.
 ponlyLocksUpdated ::
   forall (s :: S).
-  Term s (PStakeRedeemerHandlerContext :--> PBool)
+  Term
+    s
+    ( ( PBuiltinList (PAsData PProposalLock)
+          :--> PBuiltinList (PAsData PProposalLock)
+      )
+        :--> PStakeRedeemerHandlerContext
+        :--> PBool
+    )
 ponlyLocksUpdated = phoistAcyclic $
-  pbatchUpdateInputs #$ plam $ \i o ->
-    pletAll i $ \iF ->
-      let newLocks = pfield @"lockedBy" # o
-       in mkRecordConstr
-            PStakeDatum
-            ( #stakedAmount .= iF.stakedAmount
-                .& #owner .= iF.owner
-                .& #delegatedTo .= iF.delegatedTo
-                .& #lockedBy .= newLocks
-            )
-            #== o
+  plam $ \f ->
+    pbatchUpdateInputs #$ plam $ \i o ->
+      pletAll i $ \iF ->
+        let newLocks = f # pfromData iF.lockedBy
+
+            expected =
+              mkRecordConstr
+                PStakeDatum
+                ( #stakedAmount .= iF.stakedAmount
+                    .& #owner .= iF.owner
+                    .& #delegatedTo .= iF.delegatedTo
+                    .& #lockedBy .= pdata newLocks
+                )
+         in expected #== o
 
 -- | Validation logic shared between 'ppermitVote' and 'retractVote'.
 pvoteHelper ::
   forall (s :: S).
   Term
     s
-    ( (PProposalContext :--> PBool)
+    ( ( PProposalContext
+          :--> PBuiltinList (PAsData PProposalLock)
+          :--> PBuiltinList (PAsData PProposalLock)
+      )
         :--> PStakeRedeemerHandler
     )
 pvoteHelper = phoistAcyclic $
@@ -125,13 +143,20 @@ pvoteHelper = phoistAcyclic $
     -- This puts trust into the Proposal. The Proposal must necessarily check
     -- that this is not abused.
 
-    pguardC "Proposal ST spent" $
-      valProposalCtx # ctxF.proposalContext
-
     pguardC "Correct outputs" $
-      ponlyLocksUpdated # ctx
+      ponlyLocksUpdated # (valProposalCtx # ctxF.proposalContext) # ctx
 
     pure $ pconstant ()
+
+paddNewLock ::
+  forall (s :: S).
+  Term
+    s
+    ( PProposalLock
+        :--> PBuiltinList (PAsData PProposalLock)
+        :--> PBuiltinList (PAsData PProposalLock)
+    )
+paddNewLock = phoistAcyclic $ plam $ \newLock -> pcons # pdata newLock
 
 {- | Default implementation of 'Agora.Stake.PermitVote'.
 
@@ -141,11 +166,41 @@ ppermitVote :: forall (s :: S). Term s PStakeRedeemerHandler
 ppermitVote = pvoteHelper #$ phoistAcyclic $
   plam $
     flip pmatch $ \case
-      PWithProposalRedeemer r -> pmatch r $ \case
-        PVote _ -> pconstant True
-        _ -> ptrace "Expected Vote" $ pconstant False
-      PNewProposal -> pconstant True
-      _ -> pconstant False
+      PSpendProposal pid _ r -> pmatch r $ \case
+        PVote ((pfromData . (pfield @"resultTag" #)) -> voteFor) ->
+          let newLock =
+                mkRecordConstr
+                  PVoted
+                  ( #votedOn .= pdata pid
+                      .& #votedFor .= pdata voteFor
+                  )
+           in paddNewLock # newLock
+        _ -> ptraceError "Expected Vote"
+      PNewProposal pid ->
+        let newLock =
+              mkRecordConstr
+                PCreated
+                ( #created .= pdata pid
+                )
+         in paddNewLock # newLock
+      _ -> ptraceError "Expected proposal"
+
+premoveLocks ::
+  forall (s :: S).
+  Term
+    s
+    ( PProposalId :--> PBool
+        :--> PBuiltinList (PAsData PProposalLock)
+        :--> PBuiltinList (PAsData PProposalLock)
+    )
+premoveLocks = phoistAcyclic $
+  plam $ \pid rc ->
+    pfilter
+      # plam
+        ( \(pfromData -> l) -> pnot #$ pmatch l $ \case
+            PCreated ((pfield @"created" #) -> pid') -> rc #&& pid' #== pid
+            PVoted ((pfield @"votedOn" #) -> pid') -> pid' #== pid
+        )
 
 {- | Default implementation of 'Agora.Stake.RetractVotes'.
 
@@ -155,10 +210,13 @@ pretractVote :: forall (s :: S). Term s PStakeRedeemerHandler
 pretractVote = pvoteHelper #$ phoistAcyclic $
   plam $
     flip pmatch $ \case
-      PWithProposalRedeemer r -> pmatch r $ \case
-        PUnlock _ -> pconstant True
-        _ -> ptrace "Expected Unlock" $ pconstant False
-      _ -> pconstant False
+      PSpendProposal pid s r -> pmatch r $ \case
+        PUnlock _ ->
+          let allowRemovingCreatorLock =
+                s #== pconstant Finished
+           in premoveLocks # pid # allowRemovingCreatorLock
+        _ -> ptraceError "Expected unlock"
+      _ -> ptraceError "Expected spending proposal"
 
 -- | Validation logic shared by 'pdelegateTo' and 'pclearDelegate'.
 pdelegateHelper ::
