@@ -34,7 +34,7 @@
     plutarch-context-builder.url =
       "github:Liqwid-Labs/plutarch-context-builder?ref=main";
     plutarch-script-export.url =
-      "github:Liqwid-Labs/plutarch-script-export?rev=4f0da58ba67cdcfe5c7d97e6e27dc00dfb71e657";
+      "github:Liqwid-Labs/plutarch-script-export?ref=main";
     liqwid-nix.url = "github:Liqwid-Labs/liqwid-nix?ref=main";
   };
 
