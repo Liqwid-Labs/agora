@@ -61,6 +61,7 @@ import Agora.Stake.Redeemers (
   ppermitVote,
   pretractVote,
  )
+import Agora.Utils (pmapMaybe)
 import Data.Tagged (Tagged (Tagged))
 import Plutarch.Api.V1 (
   KeyGuarantees (Sorted),
@@ -73,6 +74,7 @@ import Plutarch.Api.V2 (
   AmountGuarantees,
   PMintingPolicy,
   PScriptPurpose (PMinting, PSpending),
+  PTxInInfo,
   PTxInfo,
   PTxOut,
   PValidator,
@@ -85,7 +87,7 @@ import Plutarch.Extra.AssetClass (
 import Plutarch.Extra.Category (PSemigroupoid ((#>>>)))
 import Plutarch.Extra.Field (pletAll)
 import Plutarch.Extra.Functor (PFunctor (pfmap))
-import "liqwid-plutarch-extra" Plutarch.Extra.List (pfindJust, pmapMaybe)
+import "liqwid-plutarch-extra" Plutarch.Extra.List (pfindJust)
 import Plutarch.Extra.Maybe (
   passertPJust,
   pfromMaybe,
@@ -457,6 +459,7 @@ mkStakeValidator
                           )
                         # txInfoF.redeemers
 
+                getContext :: Term _ (PTxInInfo :--> PMaybe PProposalContext)
                 getContext = plam $
                   flip pletAll $ \inInfoF ->
                     pfmap
@@ -469,7 +472,18 @@ mkStakeValidator
                         )
                       #$ getProposalDatum
                       # pfromData inInfoF.resolved
-             in pfindJust # getContext # pfromData txInfoF.inputs
+
+                contexts =
+                  pmapMaybe @PList # getContext # pfromData txInfoF.inputs
+             in precList
+                  ( \_ h t ->
+                      pif
+                        (pnull # t)
+                        (pjust # h)
+                        (ptraceError "Ambiguous proposal")
+                  )
+                  (const pnothing)
+                  # contexts
 
           noProposalContext = pcon PNoProposal
 

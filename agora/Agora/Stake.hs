@@ -533,8 +533,8 @@ instance DerivePlutusType PProposalContext where
      @1.0.0
 -}
 data PStakeRedeemerHandlerContext (s :: S) = PStakeRedeemerHandlerContext
-  { stakeInputDatums :: Term s (PBuiltinList PStakeDatum)
-  , stakeOutputDatums :: Term s (PBuiltinList PStakeDatum)
+  { stakeInputDatums :: Term s (PList PStakeDatum)
+  , stakeOutputDatums :: Term s (PList PStakeDatum)
   , redeemerContext :: Term s PStakeRedeemerContext
   , sigContext :: Term s PSigContext
   , proposalContext :: Term s PProposalContext

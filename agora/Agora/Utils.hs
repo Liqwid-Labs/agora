@@ -26,10 +26,12 @@ module Agora.Utils (
   pdeleteBy,
   pisSingleton,
   pfromSingleton,
+  pmapMaybe,
 ) where
 
 import Plutarch.Api.V1 (PPOSIXTime, PTokenName, PValidatorHash)
 import Plutarch.Api.V2 (PScriptHash)
+import Plutarch.Extra.Category (PCategory (pidentity))
 import Plutarch.Extra.Time (PCurrentTime (PCurrentTime))
 import Plutarch.Unsafe (punsafeCoerce)
 import PlutusLedgerApi.V2 (
@@ -250,3 +252,27 @@ pfromSingleton =
             (ptraceError "More than one element")
       )
       (const $ ptraceError "Empty list")
+
+-- | @since 1.0.0
+pmapMaybe ::
+  forall
+    (listO :: PType -> PType)
+    (b :: PType)
+    (listI :: PType -> PType)
+    (a :: PType)
+    (s :: S).
+  (PIsListLike listI a, PIsListLike listO b) =>
+  Term s ((a :--> PMaybe b) :--> listI a :--> listO b)
+pmapMaybe = phoistAcyclic $
+  plam $ \f ->
+    precList
+      ( \self h t ->
+          pmatch
+            (f # h)
+            ( \case
+                PJust x -> pcons # x
+                PNothing -> pidentity
+            )
+            # (self # t)
+      )
+      (const pnil)

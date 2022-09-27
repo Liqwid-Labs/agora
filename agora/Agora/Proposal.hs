@@ -617,6 +617,8 @@ newtype PProposalVotes (s :: S)
       PlutusType
     , -- | @since 0.1.0
       PIsData
+    , -- | @since 1.0.0
+      PShow
     )
 
 -- | @since 0.2.0
