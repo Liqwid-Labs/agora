@@ -147,7 +147,7 @@ mkEffectTxInfo newGovDatum =
       --
 
       governorOutputDatum' :: GovernorDatum
-      governorOutputDatum' = effectInputDatum'.newDatum
+      governorOutputDatum' = getField @"newDatum" effectInputDatum'
       governorOutputDatum :: Datum
       governorOutputDatum = Datum $ toBuiltinData governorOutputDatum'
       governorOutput :: TxOut

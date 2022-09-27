@@ -952,9 +952,9 @@ pisProposalThresholdsValid = phoistAcyclic $
   plam $ \thresholds -> unTermCont $ do
     thresholdsF <- pletAllC thresholds
 
-    PDiscrete execute' <- pmatchC thresholdsF.execute
-    PDiscrete draft' <- pmatchC thresholdsF.create
-    PDiscrete vote' <- pmatchC thresholdsF.vote
+    PDiscrete execute' <- pmatchC (getField @"execute" thresholdsF)
+    PDiscrete draft' <- pmatchC (getField @"create" thresholdsF)
+    PDiscrete vote' <- pmatchC (getField @"vote" thresholdsF)
 
     execute <- pletC $ pextract # execute'
     draft <- pletC $ pextract # draft'

@@ -1,4 +1,5 @@
 {-# LANGUAGE QuantifiedConstraints #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 {- |
 Module     : Agora.Utils
@@ -22,8 +23,10 @@ module Agora.Utils (
   pstringIntercalate,
   punwords,
   pcurrentTimeDuration,
+  compiledEffect,
 ) where
 
+import Optics.TH (makeFieldLabelsNoPrefix)
 import Plutarch.Api.V1 (PPOSIXTime, PTokenName, PValidatorHash)
 import Plutarch.Api.V2 (PScriptHash)
 import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pmatchC)
@@ -120,6 +123,8 @@ newtype CompiledValidator (datum :: Type) (redeemer :: Type) = CompiledValidator
   { getCompiledValidator :: Validator
   }
 
+makeFieldLabelsNoPrefix ''CompiledValidator
+
 {- | Type-safe wrapper for compiled plutus miting policy.
 
      @since 0.2.0
@@ -128,6 +133,8 @@ newtype CompiledMintingPolicy (redeemer :: Type) = CompiledMintingPolicy
   { getCompiledMintingPolicy :: MintingPolicy
   }
 
+makeFieldLabelsNoPrefix ''CompiledMintingPolicy
+
 {- | Type-safe wrapper for compiled plutus effect.
 
      @since 0.2.0
@@ -135,6 +142,11 @@ newtype CompiledMintingPolicy (redeemer :: Type) = CompiledMintingPolicy
 newtype CompiledEffect (datum :: Type) = CompiledEffect
   { getCompiledEffect :: Validator
   }
+
+compiledEffect :: forall (datum :: Type). Validator -> CompiledEffect datum
+compiledEffect = CompiledEffect
+
+makeFieldLabelsNoPrefix ''CompiledEffect
 
 -- | @since 1.0.0
 plistEqualsBy ::

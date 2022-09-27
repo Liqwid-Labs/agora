@@ -135,10 +135,10 @@ governorPolicy initialSpend =
         txInfo
 
     pguardC "Referenced utxo should be spent" $
-      pisUTXOSpent # pconstant initialSpend # txInfoF.inputs
+      pisUTXOSpent # pconstant initialSpend # getField @"inputs" txInfoF
 
     pguardC "Exactly one token should be minted" $
-      let vMap = pfromData $ pto txInfoF.mint
+      let vMap = pfromData $ pto (getField @"mint" txInfoF)
           tnMap =
             passertPJust # "GST symbol entry"
               #$ plookup # gstSymbol # vMap
@@ -151,15 +151,15 @@ governorPolicy initialSpend =
                 ( flip (pletFields @'["value", "datum"]) $ \txOutF ->
                     let isGovernorUTxO =
                           psymbolValueOf # gstSymbol
-                            # txOutF.value #== 1
+                            # getField @"value" txOutF #== 1
 
                         governorDatum =
                           ptrace "Resolve governor datum" $
-                            pfromOutputDatum @PGovernorDatum # txOutF.datum
-                              # txInfoF.datums
+                            pfromOutputDatum @PGovernorDatum # getField @"datum" txOutF
+                              # getField @"datums" txInfoF
                      in pif isGovernorUTxO (pjust # governorDatum) pnothing
                 )
-              # pfromData txInfoF.outputs
+              # pfromData (getField @"outputs" txInfoF)
 
     pguardC "Governor output datum valid" $
       pisGovernorDatumValid # governorOutputDatum
@@ -264,7 +264,7 @@ governorValidator as =
     ----------------------------------------------------------------------------
 
     ctxF <- pletAllC ctx
-    txInfo <- pletC $ pfromData ctxF.txInfo
+    txInfo <- pletC $ pfromData (getField @"txInfo" ctxF)
     txInfoF <-
       pletFieldsC
         @'[ "mint"
@@ -282,14 +282,14 @@ governorValidator as =
     governorInputDatumF <- pletAllC governorInputDatum
 
     PSpending ((pfield @"_0" #) -> governorInputRef) <-
-      pmatchC $ pfromData ctxF.purpose
+      pmatchC $ pfromData (getField @"purpose" ctxF)
 
     let governorInput =
           pfield @"resolved"
             #$ passertPJust # "Malformed script context: own input not found"
             #$ pfindTxInByTxOutRef
               # governorInputRef
-              # txInfoF.inputs
+              # getField @"inputs" txInfoF
 
     governorInputF <- pletFieldsC @'["address", "value"] governorInput
 
@@ -308,22 +308,22 @@ governorValidator as =
                       foldl1
                         (#&&)
                         [ ptraceIfFalse "Own by governor validator" $
-                            outputF.address #== governorInputF.address
+                            getField @"address" outputF #== getField @"address" governorInputF
                         , ptraceIfFalse "Has governor ST" $
-                            psymbolValueOf # gstSymbol # outputF.value #== 1
+                            psymbolValueOf # gstSymbol # getField @"value" outputF #== 1
                         ]
 
                     datum =
                       ptrace "Resolve governor datum" $
                         pfromOutputDatum @PGovernorDatum
-                          # outputF.datum
-                          # txInfoF.datums
+                          # getField @"datum" outputF
+                          # getField @"datums" txInfoF
                  in pif
                       isGovernorUTxO
                       (pjust # datum)
                       pnothing
             )
-          # pfromData txInfoF.outputs
+          # pfromData (getField @"outputs" txInfoF)
 
     ----------------------------------------------------------------------------
 
@@ -336,14 +336,14 @@ governorValidator as =
                 isStakeUTxO =
                   psymbolValueOf
                     # sstSymbol
-                    # txOutF.value #== 1
+                    # getField @"value" txOutF #== 1
 
                 datum =
                   ptrace "Resolve stake input datum" $
                     pfromData $
                       pfromOutputDatum
-                        # txOutF.datum
-                        # txInfoF.datums
+                        # getField @"datum" txOutF
+                        # getField @"datums" txInfoF
              in pif isStakeUTxO (pjust # datum) pnothing
 
     getProposalDatum :: Term _ (PTxOut :--> PMaybe PProposalDatum) <-
@@ -356,15 +356,15 @@ governorValidator as =
                       proposalValidatoHash as
 
                 isProposalUTxO =
-                  txOutF.address #== pdata proposalValidatorAddress
-                    #&& psymbolValueOf # pstSymbol # txOutF.value #== 1
+                  getField @"address" txOutF #== pdata proposalValidatorAddress
+                    #&& psymbolValueOf # pstSymbol # getField @"value" txOutF #== 1
 
                 proposalDatum =
                   ptrace "Resolve proposal output datum" $
                     pfromData $
                       pfromOutputDatum
-                        # txOutF.datum
-                        # txInfoF.datums
+                        # getField @"datum" txOutF
+                        # getField @"datums" txInfoF
              in pif isProposalUTxO (pjust # proposalDatum) pnothing
 
     ----------------------------------------------------------------------------
@@ -378,17 +378,17 @@ governorValidator as =
 
           let expectedNextProposalId =
                 pgetNextProposalId
-                  # governorInputDatumF.nextProposalId
+                  # getField @"nextProposalId" governorInputDatumF
               expectedNewDatum =
                 mkRecordConstr
                   PGovernorDatum
-                  ( #proposalThresholds .= governorInputDatumF.proposalThresholds
+                  ( #proposalThresholds .= getField @"proposalThresholds" governorInputDatumF
                       .& #nextProposalId .= pdata expectedNextProposalId
-                      .& #proposalTimings .= governorInputDatumF.proposalTimings
+                      .& #proposalTimings .= getField @"proposalTimings" governorInputDatumF
                       .& #createProposalTimeRangeMaxWidth
-                        .= governorInputDatumF.createProposalTimeRangeMaxWidth
+                        .= getField @"createProposalTimeRangeMaxWidth" governorInputDatumF
                       .& #maximumProposalsPerStake
-                        .= governorInputDatumF.maximumProposalsPerStake
+                        .= getField @"maximumProposalsPerStake" governorInputDatumF
                   )
 
           pguardC "Only next proposal id gets advanced" $
@@ -397,7 +397,7 @@ governorValidator as =
           -- Check that exactly one proposal token is being minted.
 
           pguardC "Exactly one proposal token must be minted" $
-            let vMap = pfromData $ pto txInfoF.mint
+            let vMap = pfromData $ pto (getField @"mint" txInfoF)
                 tnMap = plookup # pstSymbol # vMap
                 -- Ada and PST
                 onlyPST = plength # pto vMap #== 2
@@ -415,21 +415,21 @@ governorValidator as =
                 passertPJust # "Stake input should present"
                   #$ pfindJust
                     # plam ((getStakeDatum #) . (pfield @"resolved" #))
-                    # pfromData txInfoF.inputs
+                    # pfromData (getField @"inputs" txInfoF)
 
           stakeInputDatumF <- pletAllC stakeInputDatum
 
           pguardC "Proposals created by the stake must not exceed the limit" $
-            pnumCreatedProposals # stakeInputDatumF.lockedBy
-              #< governorInputDatumF.maximumProposalsPerStake
+            pnumCreatedProposals # getField @"lockedBy" stakeInputDatumF
+              #< getField @"maximumProposalsPerStake" governorInputDatumF
 
           let gtThreshold =
                 pfromData $
                   pfield @"create"
-                    # governorInputDatumF.proposalThresholds
+                    # getField @"proposalThresholds" governorInputDatumF
 
           pguardC "Require minimum amount of GTs" $
-            gtThreshold #< stakeInputDatumF.stakedAmount
+            gtThreshold #< getField @"stakedAmount" stakeInputDatumF
 
           -- Check that the newly minted PST is sent to the proposal validator,
           --   and the datum it carries is legal.
@@ -438,35 +438,35 @@ governorValidator as =
                 passertPJust # "Proposal output should present"
                   #$ pfindJust
                     # getProposalDatum
-                    # pfromData txInfoF.outputs
+                    # pfromData (getField @"outputs" txInfoF)
 
           proposalOutputDatumF <- pletAllC proposalOutputDatum
 
-          let expectedCosigners = psingleton @PBuiltinList # stakeInputDatumF.owner
+          let expectedCosigners = psingleton @PBuiltinList # getField @"owner" stakeInputDatumF
 
           pguardC "Proposal datum correct" $
             foldl1
               (#&&)
               [ ptraceIfFalse "has neutral effect" $
-                  phasNeutralEffect # proposalOutputDatumF.effects
+                  phasNeutralEffect # getField @"effects" proposalOutputDatumF
               , ptraceIfFalse "votes have valid shape" $
-                  pisEffectsVotesCompatible # proposalOutputDatumF.effects # proposalOutputDatumF.votes
+                  pisEffectsVotesCompatible # getField @"effects" proposalOutputDatumF # getField @"votes" proposalOutputDatumF
               , ptraceIfFalse "votes are empty" $
-                  pisVotesEmpty # proposalOutputDatumF.votes
+                  pisVotesEmpty # getField @"votes" proposalOutputDatumF
               , ptraceIfFalse "id correct" $
-                  proposalOutputDatumF.proposalId #== governorInputDatumF.nextProposalId
+                  getField @"proposalId" proposalOutputDatumF #== getField @"nextProposalId" governorInputDatumF
               , ptraceIfFalse "status is Draft" $
-                  proposalOutputDatumF.status #== pconstantData Draft
+                  getField @"status" proposalOutputDatumF #== pconstantData Draft
               , ptraceIfFalse "cosigners correct" $
-                  plistEquals # pfromData proposalOutputDatumF.cosigners # expectedCosigners
+                  plistEquals # pfromData (getField @"cosigners" proposalOutputDatumF) # expectedCosigners
               , ptraceIfFalse "starting time valid" $
                   validateProposalStartingTime
-                    # governorInputDatumF.createProposalTimeRangeMaxWidth
-                    # txInfoF.validRange
-                    # proposalOutputDatumF.startingTime
+                    # getField @"createProposalTimeRangeMaxWidth" governorInputDatumF
+                    # getField @"validRange" txInfoF
+                    # getField @"startingTime" proposalOutputDatumF
               , ptraceIfFalse "copy over configurations" $
-                  proposalOutputDatumF.thresholds #== governorInputDatumF.proposalThresholds
-                    #&& proposalOutputDatumF.timingConfig #== governorInputDatumF.proposalTimings
+                  getField @"thresholds" proposalOutputDatumF #== getField @"proposalThresholds" governorInputDatumF
+                    #&& getField @"timingConfig" proposalOutputDatumF #== getField @"proposalTimings" governorInputDatumF
               ]
 
           -- Check the output stake has been properly updated.
@@ -475,7 +475,7 @@ governorValidator as =
                 passertPJust # "Output stake should be presented"
                   #$ pfindJust
                     # getStakeDatum
-                    # pfromData txInfoF.outputs
+                    # pfromData (getField @"outputs" txInfoF)
 
               stakeOutputLocks =
                 pfromData $ pfield @"lockedBy" # stakeOutputDatum
@@ -484,12 +484,12 @@ governorValidator as =
               newLock =
                 mkRecordConstr
                   PCreated
-                  ( #created .= governorInputDatumF.nextProposalId
+                  ( #created .= getField @"nextProposalId" governorInputDatumF
                   )
 
               -- Append new locks to existing locks
               expectedProposalLocks =
-                pcons # pdata newLock # stakeInputDatumF.lockedBy
+                pcons # pdata newLock # getField @"lockedBy" stakeInputDatumF
 
           pguardC "Stake output locks correct" $
             plistEquals # stakeOutputLocks # expectedProposalLocks
@@ -504,13 +504,13 @@ governorValidator as =
           -- Filter out proposal inputs and ouputs using PST and the address of proposal validator.
 
           pguardC "The governor can only process one proposal at a time" $
-            (psymbolValueOf # pstSymbol #$ pvalueSpent # txInfoF.inputs) #== 1
+            (psymbolValueOf # pstSymbol #$ pvalueSpent # getField @"inputs" txInfoF) #== 1
 
           let proposalInputDatum =
                 passertPJust # "Proposal input not found"
                   #$ pfindJust
                     # plam ((getProposalDatum #) . (pfield @"resolved" #))
-                    # pfromData txInfoF.inputs
+                    # pfromData (getField @"inputs" txInfoF)
 
           proposalInputDatumF <-
             pletFieldsC @'["effects", "status", "thresholds", "votes"]
@@ -519,15 +519,15 @@ governorValidator as =
           -- Check that the proposal state is advanced so that a proposal cannot be executed twice.
 
           pguardC "Proposal must be in locked(executable) state in order to execute effects" $
-            proposalInputDatumF.status #== pconstantData Locked
+            getField @"status" proposalInputDatumF #== pconstantData Locked
 
           -- Find the highest votes and the corresponding tag.
-          let quorum = pto $ pto $ pfromData $ pfield @"execute" # proposalInputDatumF.thresholds
-              neutralOption = pneutralOption # proposalInputDatumF.effects
-              finalResultTag = pwinner # proposalInputDatumF.votes # quorum # neutralOption
+          let quorum = pto $ pto $ pfromData $ pfield @"execute" # getField @"thresholds" proposalInputDatumF
+              neutralOption = pneutralOption # getField @"effects" proposalInputDatumF
+              finalResultTag = pwinner # getField @"votes" proposalInputDatumF # quorum # neutralOption
 
           -- The effects of the winner outcome.
-          effectGroup <- pletC $ ptryLookup # finalResultTag #$ proposalInputDatumF.effects
+          effectGroup <- pletC $ ptryLookup # finalResultTag #$ getField @"effects" proposalInputDatumF
 
           let -- For a given output, check if it contains a single valid GAT.
               getReceiverScriptHash =
@@ -538,14 +538,14 @@ governorValidator as =
                       let isAuthorityUTxO =
                             psymbolValueOf
                               # atSymbol
-                              # outputF.value #== 1
+                              # getField @"value" outputF #== 1
 
                           handleAuthorityUTxO =
                             unTermCont $ do
                               receiverScriptHash <-
                                 pletC $
                                   passertPJust # "GAT receiver should be a script"
-                                    #$ pscriptHashFromAddress # outputF.address
+                                    #$ pscriptHashFromAddress # getField @"address" outputF
 
                               effect <-
                                 pletAllC $
@@ -556,15 +556,15 @@ governorValidator as =
                                     pmaybeData
                                       # pconstant ""
                                       # plam (pscriptHashToTokenName . pfromData)
-                                      # effect.scriptHash
+                                      # getField @"scriptHash" effect
                                   gatAssetClass = passetClass # atSymbol # tagToken
                                   valueGATCorrect =
                                     passetClassValueOf
-                                      # outputF.value
+                                      # getField @"value" outputF
                                       # gatAssetClass #== 1
 
                               let hasCorrectDatum =
-                                    effect.datumHash #== pfromDatumHash # outputF.datum
+                                    getField @"datumHash" effect #== pfromDatumHash # getField @"datum" outputF
 
                               pguardC "Authority output valid" $
                                 foldr1
@@ -588,7 +588,7 @@ governorValidator as =
                 psort
                   #$ pmapMaybe
                     # getReceiverScriptHash
-                    # pfromData txInfoF.outputs
+                    # pfromData (getField @"outputs" txInfoF)
 
               expectedReceivers = pkeys @PList # effectGroup
 
@@ -610,6 +610,6 @@ governorValidator as =
 
           -- Check that a GAT is burnt.
           pguardC "One valid GAT burnt" $
-            singleAuthorityTokenBurned atSymbol txInfoF.inputs txInfoF.mint
+            singleAuthorityTokenBurned atSymbol (getField @"inputs" txInfoF) (getField @"mint" txInfoF)
 
           pure $ popaque $ pconstant ()

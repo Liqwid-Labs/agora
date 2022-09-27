@@ -1,5 +1,4 @@
 {-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE NoFieldSelectors #-}
 
 {- |
 Module     : Agora.Stake
@@ -680,8 +679,8 @@ pgetStakeRole = phoistAcyclic $
                       (pcon PIrrelevant)
                   PVoted lock' -> pletAll lock' $ \lockF ->
                     pif
-                      (lockF.votedOn #== pid)
-                      (pcon $ PVoter lockF.votedFor)
+                      (getField @"votedOn" lockF #== pid)
+                      (pcon $ PVoter (getField @"votedFor" lockF))
                       (pcon PIrrelevant)
              in pcombineStakeRole # thisRole # role
         )

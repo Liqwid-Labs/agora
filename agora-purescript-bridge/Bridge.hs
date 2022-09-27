@@ -21,8 +21,8 @@ main :: IO ()
 main = do
   options <- parseOptions
 
-  unless options.quiet $ do
-    putStrLn $ "Writing purescript stuff to " <> options.output
+  unless (getField @"quiet" options) $ do
+    putStrLn $ "Writing purescript stuff to " <> getField @"output" options
     putStrLn ""
 
-  writePSTypes options.output (buildBridge defaultBridge) agoraTypes
+  writePSTypes (getField @"output" options) (buildBridge defaultBridge) agoraTypes

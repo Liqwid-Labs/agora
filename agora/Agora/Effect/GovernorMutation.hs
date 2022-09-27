@@ -147,7 +147,7 @@ mutateGovernorValidator as = makeEffect (authorityTokenSymbol as) $
     txInfoF <- pletFieldsC @'["mint", "inputs", "outputs", "datums"] txInfo
 
     let mint :: Term _ (PBuiltinList _)
-        mint = pto $ pto $ pto $ pfromData txInfoF.mint
+        mint = pto $ pto $ pto $ pfromData (getField @"mint" txInfoF)
 
     pguardC "Nothing should be minted/burnt other than GAT" $
       plength # mint #== 1
@@ -164,7 +164,7 @@ mutateGovernorValidator as = makeEffect (authorityTokenSymbol as) $
                     count
           )
         # (0 :: Term _ PInteger)
-        # pfromData txInfoF.inputs
+        # pfromData (getField @"inputs" txInfoF)
         #== 2
 
     -- Find the governor input by looking for GST.
@@ -175,35 +175,35 @@ mutateGovernorValidator as = makeEffect (authorityTokenSymbol as) $
                   let value = pfield @"value" #$ pfield @"resolved" # inInfo
                    in gstValueOf # value #== 1
               )
-            # pfromData txInfoF.inputs
+            # pfromData (getField @"inputs" txInfoF)
 
     govInInfo <- pletFieldsC @'["outRef", "resolved"] $ inputWithGST
 
     -- The effect can only modify the governor UTXO referenced in the datum.
     pguardC "Can only modify the pinned governor" $
-      govInInfo.outRef #== datumF.governorRef
+      getField @"outRef" govInInfo #== getField @"governorRef" datumF
 
     -- The transaction can only have one output, which should be sent to the governor.
     pguardC "Only governor output is allowed" $
-      plength # pfromData txInfoF.outputs #== 1
+      plength # pfromData (getField @"outputs" txInfoF) #== 1
 
-    let govAddress = pfield @"address" #$ govInInfo.resolved
-        govOutput' = phead # pfromData txInfoF.outputs
+    let govAddress = pfield @"address" #$ getField @"resolved" govInInfo
+        govOutput' = phead # pfromData (getField @"outputs" txInfoF)
 
     govOutput <- pletFieldsC @'["address", "value", "datum"] govOutput'
 
     pguardC "No output to the governor" $
-      govOutput.address #== govAddress
+      getField @"address" govOutput #== govAddress
 
     pguardC "Governor output doesn't carry the GST" $
-      gstValueOf # govOutput.value #== 1
+      gstValueOf # getField @"value" govOutput #== 1
 
     let governorOutputDatum =
           ptrace "Governor output datum not found" $
-            pfromOutputDatum @PGovernorDatum # govOutput.datum # txInfoF.datums
+            pfromOutputDatum @PGovernorDatum # getField @"datum" govOutput # getField @"datums" txInfoF
 
     -- Ensure the output governor datum is what we want.
-    pguardC "Unexpected governor datum" $ datumF.newDatum #== governorOutputDatum
+    pguardC "Unexpected governor datum" $ getField @"newDatum" datumF #== governorOutputDatum
     pguardC "New governor datum should be valid" $ pisGovernorDatumValid # governorOutputDatum
 
     return $ popaque $ pconstant ()

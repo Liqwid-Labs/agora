@@ -11,8 +11,7 @@ module Main (main) where
 import Agora.Bootstrap qualified as Bootstrap
 import Agora.Governor (Governor (Governor))
 import Agora.SafeMoney (GTTag)
-import Agora.Scripts qualified as Scripts
-import Agora.Utils (CompiledMintingPolicy (getCompiledMintingPolicy), CompiledValidator (getCompiledValidator))
+import Agora.Utils (CompiledMintingPolicy, CompiledValidator)
 import Data.Aeson qualified as Aeson
 import Data.Default (def)
 import Data.Function ((&))
@@ -20,6 +19,7 @@ import Data.Tagged (Tagged)
 import Data.Text (Text)
 import Development.GitRev (gitBranch, gitHash)
 import GHC.Generics qualified as GHC
+import Optics.Core (view)
 import Plutarch (Config (Config, tracingMode), TracingMode (DoTracing, NoTracing))
 import PlutusLedgerApi.V1 (
   MintingPolicy (getMintingPolicy),
@@ -49,14 +49,14 @@ builders :: Builders
 builders =
   def
     -- Agora scripts
-    & insertBuilder "governorPolicy" ((.governorPolicyInfo) . agoraScripts)
-    & insertBuilder "governorValidator" ((.governorValidatorInfo) . agoraScripts)
-    & insertBuilder "stakePolicy" ((.stakePolicyInfo) . agoraScripts)
-    & insertBuilder "stakeValidator" ((.stakeValidatorInfo) . agoraScripts)
-    & insertBuilder "proposalPolicy" ((.proposalPolicyInfo) . agoraScripts)
-    & insertBuilder "proposalValidator" ((.proposalValidatorInfo) . agoraScripts)
-    & insertBuilder "treasuryValidator" ((.treasuryValidatorInfo) . agoraScripts)
-    & insertBuilder "authorityTokenPolicy" ((.authorityTokenPolicyInfo) . agoraScripts)
+    & insertBuilder "governorPolicy" (view #governorPolicyInfo . agoraScripts)
+    & insertBuilder "governorValidator" (view #governorValidatorInfo . agoraScripts)
+    & insertBuilder "stakePolicy" (view #stakePolicyInfo . agoraScripts)
+    & insertBuilder "stakeValidator" (view #stakeValidatorInfo . agoraScripts)
+    & insertBuilder "proposalPolicy" (view #proposalPolicyInfo . agoraScripts)
+    & insertBuilder "proposalValidator" (view #proposalValidatorInfo . agoraScripts)
+    & insertBuilder "treasuryValidator" (view #treasuryValidatorInfo . agoraScripts)
+    & insertBuilder "authorityTokenPolicy" (view #authorityTokenPolicyInfo . agoraScripts)
     -- Trivial scripts. These are useful for testing, but they likely aren't useful
     -- to you if you are actually interested in deploying to mainnet.
     & insertBuilder
@@ -72,7 +72,7 @@ builders =
       "neverSucceedsValidator"
       (\() -> mkValidatorInfo $ plam $ \_ _ _ -> perror)
     -- Provided Effect scripts
-    & insertBuilder "treasuryWithdrawalEffect" ((.treasuryWithdrawalEffectInfo) . agoraScripts)
+    & insertBuilder "treasuryWithdrawalEffect" (view #treasuryWithdrawalEffectInfo . agoraScripts)
 
 {- | Create scripts from params.
 
@@ -81,27 +81,27 @@ builders =
 agoraScripts :: ScriptParams -> AgoraScripts
 agoraScripts params =
   AgoraScripts
-    { governorPolicyInfo = mkPolicyInfo' scripts.compiledGovernorPolicy
-    , governorValidatorInfo = mkValidatorInfo' scripts.compiledGovernorValidator
-    , stakePolicyInfo = mkPolicyInfo' scripts.compiledStakePolicy
-    , stakeValidatorInfo = mkValidatorInfo' scripts.compiledStakeValidator
-    , proposalPolicyInfo = mkPolicyInfo' scripts.compiledProposalPolicy
-    , proposalValidatorInfo = mkValidatorInfo' scripts.compiledProposalValidator
-    , treasuryValidatorInfo = mkValidatorInfo' scripts.compiledTreasuryValidator
-    , authorityTokenPolicyInfo = mkPolicyInfo' scripts.compiledAuthorityTokenPolicy
-    , treasuryWithdrawalEffectInfo = mkValidatorInfo' scripts.compiledTreasuryWithdrawalEffect
+    { governorPolicyInfo = mkPolicyInfo' (view #compiledGovernorPolicy scripts)
+    , governorValidatorInfo = mkValidatorInfo' (view #compiledGovernorValidator scripts)
+    , stakePolicyInfo = mkPolicyInfo' (view #compiledStakePolicy scripts)
+    , stakeValidatorInfo = mkValidatorInfo' (view #compiledStakeValidator scripts)
+    , proposalPolicyInfo = mkPolicyInfo' (view #compiledProposalPolicy scripts)
+    , proposalValidatorInfo = mkValidatorInfo' (view #compiledProposalValidator scripts)
+    , treasuryValidatorInfo = mkValidatorInfo' (view #compiledTreasuryValidator scripts)
+    , authorityTokenPolicyInfo = mkPolicyInfo' (view #compiledAuthorityTokenPolicy scripts)
+    , treasuryWithdrawalEffectInfo = mkValidatorInfo' (view #compiledTreasuryWithdrawalEffect scripts)
     }
   where
     governor =
       Agora.Governor.Governor
-        params.governorInitialSpend
-        params.gtClassRef
-        params.maximumCosigners
+        (view #governorInitialSpend params)
+        (view #gtClassRef params)
+        (view #maximumCosigners params)
 
     scripts = Bootstrap.agoraScripts plutarchConfig governor
 
     plutarchConfig :: Config
-    plutarchConfig = Config {tracingMode = if params.tracing then DoTracing else NoTracing}
+    plutarchConfig = Config {tracingMode = if view #tracing params then DoTracing else NoTracing}
 
 {- | Params required for creating script export.
 
@@ -151,11 +151,11 @@ data AgoraScripts = AgoraScripts
      @since 0.2.0
 -}
 mkPolicyInfo' :: forall redeemer. CompiledMintingPolicy redeemer -> ScriptInfo
-mkPolicyInfo' = mkScriptInfo . getMintingPolicy . (.getCompiledMintingPolicy)
+mkPolicyInfo' = mkScriptInfo . getMintingPolicy . view #getCompiledMintingPolicy
 
 {- | Turn a precompiled validator to a 'ScriptInfo'.
 
      @since 0.2.0
 -}
 mkValidatorInfo' :: forall redeemer datum. CompiledValidator datum redeemer -> ScriptInfo
-mkValidatorInfo' = mkScriptInfo . getValidator . (.getCompiledValidator)
+mkValidatorInfo' = mkScriptInfo . getValidator . view #getCompiledValidator

@@ -16,6 +16,7 @@ import Agora.Stake (
  )
 import Data.Bool (Bool (..))
 import Data.Maybe (Maybe (..))
+import GHC.Records (getField)
 import PlutusLedgerApi.V1 (Credential (PubKeyCredential))
 import Sample.Shared (agoraScripts)
 import Sample.Stake (
@@ -50,17 +51,17 @@ specs =
       "policy"
       [ policySucceedsWith
           "stakeCreation"
-          agoraScripts.compiledStakePolicy
+          (getField @"compiledStakePolicy" agoraScripts)
           ()
           Stake.stakeCreation
       , policyFailsWith
           "stakeCreationWrongDatum"
-          agoraScripts.compiledStakePolicy
+          (getField @"compiledStakePolicy" agoraScripts)
           ()
           Stake.stakeCreationWrongDatum
       , policyFailsWith
           "stakeCreationUnsigned"
-          agoraScripts.compiledStakePolicy
+          (getField @"compiledStakePolicy" agoraScripts)
           ()
           Stake.stakeCreationUnsigned
       ]
@@ -68,19 +69,19 @@ specs =
       "validator"
       [ validatorSucceedsWith
           "stakeDepositWithdraw deposit"
-          agoraScripts.compiledStakeValidator
+          (getField @"compiledStakeValidator" agoraScripts)
           (StakeDatum 100_000 (PubKeyCredential signer) Nothing [])
           (DepositWithdraw 100_000)
           (Stake.stakeDepositWithdraw $ DepositWithdrawExample {startAmount = 100_000, delta = 100_000})
       , validatorSucceedsWith
           "stakeDepositWithdraw withdraw"
-          agoraScripts.compiledStakeValidator
+          (getField @"compiledStakeValidator" agoraScripts)
           (StakeDatum 100_000 (PubKeyCredential signer) Nothing [])
           (DepositWithdraw $ negate 100_000)
           (Stake.stakeDepositWithdraw $ DepositWithdrawExample {startAmount = 100_000, delta = negate 100_000})
       , validatorFailsWith
           "stakeDepositWithdraw negative GT"
-          agoraScripts.compiledStakeValidator
+          (getField @"compiledStakeValidator" agoraScripts)
           (StakeDatum 100_000 (PubKeyCredential signer) Nothing [])
           (DepositWithdraw 1_000_000)
           (Stake.stakeDepositWithdraw $ DepositWithdrawExample {startAmount = 100_000, delta = negate 1_000_000})

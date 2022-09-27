@@ -82,7 +82,6 @@ common lang
     UndecidableInstances
     ViewPatterns
     NoFieldSelectors
-    OverloadedRecordDot
 
   default-language:   Haskell2010
 
@@ -102,6 +101,8 @@ common deps
     , data-default-class
     , generics-sop
     , liqwid-plutarch-extra
+    , optics-core
+    , optics-th
     , plutarch
     , plutarch-extra
     , plutarch-numeric

@@ -1,3 +1,5 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 {- |
 Module     : Agora.AuthorityToken
 Maintainer : emi@haskell.fyi
@@ -12,6 +14,7 @@ module Agora.AuthorityToken (
   AuthorityToken (..),
 ) where
 
+import Optics.TH (makeFieldLabelsNoPrefix)
 import Plutarch.Api.V1 (
   PCredential (..),
   PCurrencySymbol (..),
@@ -58,6 +61,8 @@ newtype AuthorityToken = AuthorityToken
       Generic
     )
 
+makeFieldLabelsNoPrefix ''AuthorityToken
+
 --------------------------------------------------------------------------------
 
 {- | Check that all GATs are valid in a particular TxOut.
@@ -79,8 +84,8 @@ authorityTokensValidIn = phoistAcyclic $
   plam $ \authorityTokenSym txOut'' -> unTermCont $ do
     PTxOut txOut' <- pmatchC txOut''
     txOut <- pletFieldsC @'["address", "value"] $ txOut'
-    PAddress address <- pmatchC txOut.address
-    PValue value' <- pmatchC txOut.value
+    PAddress address <- pmatchC (getField @"address" txOut)
+    PValue value' <- pmatchC (getField @"value" txOut)
     PMap value <- pmatchC value'
     pure $
       pmatch (plookupAssoc # pfstBuiltin # psndBuiltin # pdata authorityTokenSym # value) $ \case
@@ -150,15 +155,15 @@ authorityTokenPolicy params =
   plam $ \_redeemer ctx' ->
     pmatch ctx' $ \(PScriptContext ctx') -> unTermCont $ do
       ctx <- pletFieldsC @'["txInfo", "purpose"] ctx'
-      PTxInfo txInfo' <- pmatchC $ pfromData ctx.txInfo
+      PTxInfo txInfo' <- pmatchC $ pfromData (getField @"txInfo" ctx)
       txInfo <- pletFieldsC @'["inputs", "mint", "outputs"] txInfo'
-      let inputs = txInfo.inputs
-          mintedValue = pfromData txInfo.mint
-          AssetClass (govCs, govTn) = params.authority
+      let inputs = getField @"inputs" txInfo
+          mintedValue = pfromData (getField @"mint" txInfo)
+          AssetClass (govCs, govTn) = getField @"authority" params
           govAc = passetClass # pconstant govCs # pconstant govTn
           govTokenSpent = pisTokenSpent # govAc # inputs
 
-      PMinting ownSymbol' <- pmatchC $ pfromData ctx.purpose
+      PMinting ownSymbol' <- pmatchC $ pfromData (getField @"purpose" ctx)
 
       let ownSymbol = pfromData $ pfield @"_0" # ownSymbol'
           mintedATs = passetClassValueOf # mintedValue # (passetClass # ownSymbol # pconstant "")
@@ -171,7 +176,7 @@ authorityTokenPolicy params =
                 pall
                   # plam
                     (authorityTokensValidIn # ownSymbol #)
-                  # txInfo.outputs
+                  # getField @"outputs" txInfo
               pure $ popaque $ pconstant ()
           )
           (popaque $ pconstant ())

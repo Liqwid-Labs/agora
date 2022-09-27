@@ -11979,17 +11979,17 @@
         "plutarch": "plutarch_15"
       },
       "locked": {
-        "lastModified": 1664028810,
+        "lastModified": 1664220695,
         "narHash": "sha256-thMEO1P/ciHjnMFyL0bla781TG5C/nB5EEtebb3Boik=",
         "owner": "Liqwid-Labs",
         "repo": "plutarch-script-export",
-        "rev": "4f0da58ba67cdcfe5c7d97e6e27dc00dfb71e657",
+        "rev": "eba175e63516a4fed43ceab1826ea6522f28dd0f",
         "type": "github"
       },
       "original": {
         "owner": "Liqwid-Labs",
+        "ref": "main",
         "repo": "plutarch-script-export",
-        "rev": "4f0da58ba67cdcfe5c7d97e6e27dc00dfb71e657",
         "type": "github"
       }
     },

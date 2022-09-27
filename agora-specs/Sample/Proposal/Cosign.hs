@@ -1,3 +1,5 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 {- |
 Module     : Sample.Proposal.Cosign
 Maintainer : connor@mlabs.city
@@ -24,7 +26,6 @@ import Agora.Proposal (
  )
 import Agora.Proposal.Time (
   ProposalStartingTime (ProposalStartingTime),
-  ProposalTimingConfig (draftTime),
  )
 import Agora.SafeMoney (GTTag)
 import Agora.Scripts (AgoraScripts (..))
@@ -36,6 +37,9 @@ import Data.Default (def)
 import Data.List (sort)
 import Data.Map.Strict qualified as StrictMap
 import Data.Tagged (untag)
+import Optics.Core (view)
+import Optics.Optic ((%))
+import Optics.TH (makeFieldLabelsNoPrefix)
 import Plutarch.Context (
   input,
   output,
@@ -84,6 +88,8 @@ data Parameters = Parameters
   -- ^ Current state of the proposal.
   }
 
+makeFieldLabelsNoPrefix ''Parameters
+
 -- | Owner of the creator stake, doesn't really matter in this case.
 proposalCreator :: PubKeyHash
 proposalCreator = signer
@@ -105,7 +111,7 @@ mkProposalInputDatum ps =
    in ProposalDatum
         { proposalId = ProposalId 0
         , effects = effects
-        , status = ps.proposalStatus
+        , status = getField @"proposalStatus" ps
         , cosigners = [PubKeyCredential proposalCreator]
         , thresholds = def
         , votes = emptyVotesFor effects
@@ -121,14 +127,14 @@ mkProposalOutputDatum :: Parameters -> ProposalDatum
 mkProposalOutputDatum ps =
   let inputDatum = mkProposalInputDatum ps
    in inputDatum
-        { cosigners = sort $ inputDatum.cosigners <> ps.newCosigners
+        { cosigners = sort $ getField @"cosigners" inputDatum <> getField @"newCosigners" ps
         }
 
 -- | Create all the input stakes given the parameters.
 mkStakeInputDatums :: Parameters -> [StakeDatum]
 mkStakeInputDatums =
   fmap (\pk -> StakeDatum perStakedGTs pk Nothing [])
-    . (.newCosigners)
+    . view #newCosigners
 
 -- | Create a 'TxInfo' that tries to cosign a proposal with new cosigners.
 cosign :: forall b. CombinableBuilder b => Parameters -> b
@@ -147,7 +153,7 @@ cosign ps = builder
       sortValue $
         minAda
           <> Value.assetClassValue
-            (untag governor.gtClassRef)
+            (untag (getField @"gtClassRef" governor))
             (fromDiscrete perStakedGTs)
           <> sst
 
@@ -162,7 +168,7 @@ cosign ps = builder
                     , withInlineDatum stakeDatum
                     , withRef (mkStakeRef refIdx)
                     ]
-              , case stakeDatum.owner of
+              , case getField @"owner" stakeDatum of
                   PubKeyCredential k -> signedWith k
                   _ -> mempty
               ]
@@ -199,9 +205,9 @@ cosign ps = builder
     validTimeRange :: POSIXTimeRange
     validTimeRange =
       closedBoundedInterval
-        (coerce proposalInputDatum.startingTime + 1)
-        ( coerce proposalInputDatum.startingTime
-            + proposalInputDatum.timingConfig.draftTime - 1
+        (coerce (view #startingTime proposalInputDatum) + 1)
+        ( coerce (view #startingTime proposalInputDatum)
+            + view (#timingConfig % #draftTime) proposalInputDatum - 1
         )
 
     ---
@@ -231,7 +237,7 @@ mkStakeRef idx =
 
 -- | Create a proposal redeemer which cosigns with the new cosginers.
 mkProposalRedeemer :: Parameters -> ProposalRedeemer
-mkProposalRedeemer = Cosign . sort . (.newCosigners)
+mkProposalRedeemer = Cosign . sort . view #newCosigners
 
 ---
 
@@ -292,7 +298,7 @@ mkTestTree name ps isValid = proposal
        in testValidator
             isValid
             (name <> ": proposal")
-            agoraScripts.compiledProposalValidator
+            (getField @"compiledProposalValidator" agoraScripts)
             proposalInputDatum
             (mkProposalRedeemer ps)
             (spend proposalRef)

@@ -128,11 +128,11 @@ mintGST :: forall b. CombinableBuilder b => Parameters -> b
 mintGST ps = builder
   where
     gstAC =
-      if ps.mintStateTokenWithName
+      if getField @"mintStateTokenWithName" ps
         then AssetClass (govSymbol, "12345")
         else govAssetClass
     gstCount =
-      if ps.mintMoreThanOneStateToken
+      if getField @"mintMoreThanOneStateToken" ps
         then 10
         else 1
     gst = Value.assetClassValue gstAC gstCount
@@ -141,15 +141,15 @@ mintGST ps = builder
 
     governorOutputDatum =
       let th =
-            if ps.datumThresholdsValid
+            if getField @"datumThresholdsValid" ps
               then def
               else invalidProposalThresholds
           trw =
-            if ps.datumMaxTimeRangeWidthValid
+            if getField @"datumMaxTimeRangeWidthValid" ps
               then def
               else invalidMaxTimeRangeWidth
           ptc =
-            if ps.datumTimingConfigValid
+            if getField @"datumTimingConfigValid" ps
               then def
               else invalidProposalTimings
        in validGovernorOutputDatum
@@ -168,7 +168,7 @@ mintGST ps = builder
     ---
 
     witnessBuilder =
-      if ps.presentWitness
+      if getField @"presentWitness" ps
         then
           mconcat
             [ input $
@@ -189,7 +189,7 @@ mintGST ps = builder
 
     govBuilder =
       let datum =
-            if ps.withGovernorDatum
+            if getField @"withGovernorDatum" ps
               then withDatum governorOutputDatum
               else mempty
        in output $
@@ -274,6 +274,6 @@ mkTestCase name ps valid =
   testPolicy
     valid
     name
-    scripts.compiledGovernorPolicy
+    (getField @"compiledGovernorPolicy" scripts)
     ()
     (mkMinting mintGST ps govSymbol)

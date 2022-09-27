@@ -95,7 +95,7 @@ stakeCreationWrongDatum =
   let datum :: Datum
       datum = Datum (toBuiltinData $ StakeDatum 4242424242424242 (PubKeyCredential signer) Nothing []) -- Too much GT
    in ScriptContext
-        { scriptContextTxInfo = stakeCreation.scriptContextTxInfo {txInfoData = AssocMap.fromList [("", datum)]}
+        { scriptContextTxInfo = (getField @"scriptContextTxInfo" stakeCreation) {txInfoData = AssocMap.fromList [("", datum)]}
         , scriptContextPurpose = Minting stakeSymbol
         }
 
@@ -104,7 +104,7 @@ stakeCreationUnsigned :: ScriptContext
 stakeCreationUnsigned =
   ScriptContext
     { scriptContextTxInfo =
-        stakeCreation.scriptContextTxInfo
+        (getField @"scriptContextTxInfo" stakeCreation)
           { txInfoSignatories = []
           }
     , scriptContextPurpose = Minting stakeSymbol
@@ -125,10 +125,10 @@ stakeDepositWithdraw :: DepositWithdrawExample -> ScriptContext
 stakeDepositWithdraw config =
   let st = Value.assetClassValue stakeAssetClass 1 -- Stake ST
       stakeBefore :: StakeDatum
-      stakeBefore = StakeDatum config.startAmount (PubKeyCredential signer) Nothing []
+      stakeBefore = StakeDatum (getField @"startAmount" config) (PubKeyCredential signer) Nothing []
 
       stakeAfter :: StakeDatum
-      stakeAfter = stakeBefore {stakedAmount = stakeBefore.stakedAmount + config.delta}
+      stakeAfter = stakeBefore {stakedAmount = getField @"stakedAmount" stakeBefore + getField @"delta" config}
 
       stakeRef :: TxOutRef
       stakeRef = TxOutRef "0ffef57e30cc604342c738e31e0451593837b313e7bfb94b0922b142782f98e6" 1
@@ -145,7 +145,7 @@ stakeDepositWithdraw config =
                 , withValue
                     ( sortValue $
                         st
-                          <> Value.assetClassValue (untag governor.gtClassRef) (fromDiscrete stakeBefore.stakedAmount)
+                          <> Value.assetClassValue (untag (getField @"gtClassRef" governor)) (fromDiscrete (getField @"stakedAmount" stakeBefore))
                     )
                 , withDatum stakeAfter
                 , withRef stakeRef
@@ -156,7 +156,7 @@ stakeDepositWithdraw config =
                 , withValue
                     ( sortValue $
                         st
-                          <> Value.assetClassValue (untag governor.gtClassRef) (fromDiscrete stakeAfter.stakedAmount)
+                          <> Value.assetClassValue (untag (getField @"gtClassRef" governor)) (fromDiscrete (getField @"stakedAmount" stakeAfter))
                     )
                 , withDatum stakeAfter
                 ]

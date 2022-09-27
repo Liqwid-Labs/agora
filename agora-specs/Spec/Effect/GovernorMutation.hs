@@ -32,7 +32,7 @@ specs =
           "valid new governor datum"
           [ validatorSucceedsWith
               "governor validator should pass"
-              agoraScripts.compiledGovernorValidator
+              (getField @"compiledGovernorValidator" agoraScripts)
               ( GovernorDatum
                   def
                   (ProposalId 0)
@@ -55,7 +55,7 @@ specs =
           "invalid new governor datum"
           [ validatorFailsWith
               "governor validator should fail"
-              agoraScripts.compiledGovernorValidator
+              (getField @"compiledGovernorValidator" agoraScripts)
               ( GovernorDatum
                   def
                   (ProposalId 0)

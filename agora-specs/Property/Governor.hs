@@ -20,6 +20,7 @@ import Agora.Proposal.Time (
 import Data.Default.Class (Default (def))
 import Data.Tagged (Tagged (Tagged), untag)
 import Data.Universe (Finite (..), Universe (..))
+import Optics.Core (view)
 import Plutarch.Api.V2 (PScriptContext)
 import Plutarch.Builtin (pforgetData)
 import Plutarch.Context (
@@ -88,7 +89,7 @@ governorDatumValidProperty =
   classifiedPropertyNative gen (const []) expected classifier pisGovernorDatumValid
   where
     classifier :: GovernorDatum -> GovernorDatumCases
-    classifier ((.proposalThresholds) -> ProposalThresholds e c v)
+    classifier (view #proposalThresholds -> ProposalThresholds e c v)
       | e < 0 = ExecuteLE0
       | c < 0 = CreateLE0
       | v < 0 = VoteLE0
@@ -201,7 +202,7 @@ governorMintingProperty =
     opaqueToUnit = plam $ \_ -> pconstant ()
 
     actual :: Term s (PScriptContext :--> PUnit)
-    actual = plam $ \sc -> opaqueToUnit #$ governorPolicy governor.gstOutRef # pforgetData (pconstantData ()) # sc
+    actual = plam $ \sc -> opaqueToUnit #$ governorPolicy (getField @"gstOutRef" governor) # pforgetData (pconstantData ()) # sc
 
     classifier :: ScriptContext -> GovernorPolicyCases
     classifier sc

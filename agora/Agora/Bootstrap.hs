@@ -38,7 +38,7 @@ agoraScripts conf gov = scripts
     mkMintingPolicy' = mkMintingPolicy conf
     mkValidator' = mkValidator conf
 
-    compiledGovernorPolicy = mkMintingPolicy' $ governorPolicy gov.gstOutRef
+    compiledGovernorPolicy = mkMintingPolicy' $ governorPolicy (getField @"gstOutRef" gov)
     compiledGovernorValidator = mkValidator' $ governorValidator scripts
     governorSymbol = mintingPolicySymbol compiledGovernorPolicy
     governorAssetClass = AssetClass (governorSymbol, "")
@@ -48,10 +48,10 @@ agoraScripts conf gov = scripts
     authorityTokenSymbol = mintingPolicySymbol compiledAuthorityPolicy
 
     compiledProposalPolicy = mkMintingPolicy' $ proposalPolicy governorAssetClass
-    compiledProposalValidator = mkValidator' $ proposalValidator scripts gov.maximumCosigners
+    compiledProposalValidator = mkValidator' $ proposalValidator scripts (getField @"maximumCosigners" gov)
 
-    compiledStakePolicy = mkMintingPolicy' $ stakePolicy gov.gtClassRef
-    compiledStakeValidator = mkValidator' $ stakeValidator scripts gov.gtClassRef
+    compiledStakePolicy = mkMintingPolicy' $ stakePolicy (getField @"gtClassRef" gov)
+    compiledStakeValidator = mkValidator' $ stakeValidator scripts (getField @"gtClassRef" gov)
 
     compiledTreasuryValidator = mkValidator' $ treasuryValidator authorityTokenSymbol
 

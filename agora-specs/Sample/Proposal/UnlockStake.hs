@@ -147,7 +147,7 @@ data Parameters = Parameters
 
 -- | Iterate over the proposal id of every proposal, given the number of proposals.
 forEachProposalId :: Parameters -> (ProposalId -> a) -> [a]
-forEachProposalId ps = forEachProposalId' ps.proposalCount
+forEachProposalId ps = forEachProposalId' (getField @"proposalCount" ps)
   where
     forEachProposalId' :: Integer -> (ProposalId -> a) -> [a]
     forEachProposalId' 0 _ = error "zero proposal"
@@ -155,7 +155,7 @@ forEachProposalId ps = forEachProposalId' ps.proposalCount
 
 -- | Create locks for the input stake given the parameters.
 mkInputStakeLocks :: Parameters -> [ProposalLock]
-mkInputStakeLocks ps = mconcat $ forEachProposalId ps $ mkStakeLocksFor ps.stakeRole
+mkInputStakeLocks ps = mconcat $ forEachProposalId ps $ mkStakeLocksFor (getField @"stakeRole" ps)
   where
     mkStakeLocksFor :: StakeRole -> ProposalId -> [ProposalLock]
     mkStakeLocksFor sr pid =
@@ -172,8 +172,8 @@ mkOutputStakeLocks :: Parameters -> [ProposalLock]
 mkOutputStakeLocks ps =
   filter
     ( \lock -> not $ case lock of
-        Voted _ _ -> ps.removeVoterLock
-        Created _ -> ps.removeCreatorLock
+        Voted _ _ -> getField @"removeVoterLock" ps
+        Created _ -> getField @"removeCreatorLock" ps
     )
     inputLocks
   where
@@ -194,7 +194,7 @@ mkStakeOutputDatum :: Parameters -> StakeDatum
 mkStakeOutputDatum ps =
   let template = mkStakeInputDatum ps
       stakedAmount' =
-        if ps.alterOutputStake
+        if getField @"alterOutputStake" ps
           then alteredStakedGTs
           else defStakedGTs
    in template
@@ -216,13 +216,13 @@ mkProposalDatumPair ::
   ProposalId ->
   (ProposalDatum, ProposalDatum)
 mkProposalDatumPair params pid =
-  let inputVotes = mkInputVotes params.stakeRole $ fromDiscrete defStakedGTs
+  let inputVotes = mkInputVotes (getField @"stakeRole" params) $ fromDiscrete defStakedGTs
 
       input =
         ProposalDatum
           { proposalId = pid
           , effects = emptyEffectFor votesTemplate
-          , status = params.proposalStatus
+          , status = getField @"proposalStatus" params
           , cosigners = [PubKeyCredential defOwner]
           , thresholds = def
           , votes = inputVotes
@@ -231,7 +231,7 @@ mkProposalDatumPair params pid =
           }
 
       output =
-        if params.retractVotes
+        if getField @"retractVotes" params
           then input {votes = votesTemplate}
           else input
    in (input, output)
@@ -244,13 +244,11 @@ mkProposalDatumPair params pid =
       ProposalVotes
     mkInputVotes Creator _ =
       ProposalVotes $
-        StrictMap.adjust (const 1000) defVoteFor $
-          votesTemplate.getProposalVotes
+        StrictMap.adjust (const 1000) defVoteFor (getField @"getProposalVotes" votesTemplate)
     mkInputVotes Irrelevant _ = votesTemplate
     mkInputVotes _ vc =
       ProposalVotes $
-        StrictMap.adjust (const vc) defVoteFor $
-          votesTemplate.getProposalVotes
+        StrictMap.adjust (const vc) defVoteFor (getField @"getProposalVotes" votesTemplate)
 
 -- | Create a 'TxInfo' that tries to unlock a stake.
 unlockStake :: forall b. CombinableBuilder b => Parameters -> b
@@ -286,7 +284,7 @@ unlockStake ps =
         sortValue $
           mconcat
             [ Value.assetClassValue
-                (untag governor.gtClassRef)
+                (untag (getField @"gtClassRef" governor))
                 (fromDiscrete defStakedGTs)
             , sst
             , minAda
@@ -539,9 +537,9 @@ mkTestTree name ps isValid = group name [stake, proposal]
 
     stake =
       testValidator
-        (not ps.alterOutputStake)
+        (not (getField @"alterOutputStake" ps))
         "stake"
-        agoraScripts.compiledStakeValidator
+        (getField @"compiledStakeValidator" agoraScripts)
         (mkStakeInputDatum ps)
         stakeRedeemer
         (spend stakeRef)
@@ -553,7 +551,7 @@ mkTestTree name ps isValid = group name [stake, proposal]
        in testValidator
             isValid
             "proposal"
-            agoraScripts.compiledProposalValidator
+            (getField @"compiledProposalValidator" agoraScripts)
             (mkProposalInputDatum ps pid)
             proposalRedeemer
             (spend ref)

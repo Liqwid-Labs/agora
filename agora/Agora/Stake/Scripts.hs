@@ -132,15 +132,15 @@ stakePolicy ::
 stakePolicy gtClassRef =
   plam $ \_redeemer ctx' -> unTermCont $ do
     ctx <- pletFieldsC @'["txInfo", "purpose"] ctx'
-    txInfo <- pletC $ ctx.txInfo
+    txInfo <- pletC (getField @"txInfo" ctx)
     let _a :: Term _ PTxInfo
         _a = txInfo
     txInfoF <- pletFieldsC @'["mint", "inputs", "outputs", "signatories", "datums"] txInfo
 
-    PMinting ownSymbol' <- pmatchC $ pfromData ctx.purpose
+    PMinting ownSymbol' <- pmatchC $ pfromData (getField @"purpose" ctx)
     ownSymbol <- pletC $ pfield @"_0" # ownSymbol'
-    spentST <- pletC $ psymbolValueOf # ownSymbol #$ pvalueSpent # txInfoF.inputs
-    mintedST <- pletC $ psymbolValueOf # ownSymbol # txInfoF.mint
+    spentST <- pletC $ psymbolValueOf # ownSymbol #$ pvalueSpent # getField @"inputs" txInfoF
+    mintedST <- pletC $ psymbolValueOf # ownSymbol # getField @"mint" txInfoF
 
     let burning = unTermCont $ do
           pguardC "ST at inputs must be 1" $
@@ -156,17 +156,17 @@ stakePolicy gtClassRef =
                     txOutF <- pletFieldsC @'["value", "datum"] txOut
                     pure $
                       pif
-                        (psymbolValueOf # ownSymbol # txOutF.value #== 1)
+                        (psymbolValueOf # ownSymbol # getField @"value" txOutF #== 1)
                         ( let datum =
                                 pfromData $
                                   pfromOutputDatum @(PAsData PStakeDatum)
-                                    # txOutF.datum
-                                    # txInfoF.datums
+                                    # getField @"datum" txOutF
+                                    # getField @"datums" txInfoF
                            in pnot # (pstakeLocked # datum)
                         )
                         (pconstant False)
                 )
-              # pfromData txInfoF.inputs
+              # pfromData (getField @"inputs" txInfoF)
 
           pure $ popaque (pconstant ())
 
@@ -187,15 +187,15 @@ stakePolicy gtClassRef =
                         ( \output -> unTermCont $ do
                             outputF <- pletFieldsC @'["value", "address"] output
                             pure $
-                              pmatch (pfromData $ pfield @"credential" # outputF.address) $ \case
+                              pmatch (pfromData $ pfield @"credential" # getField @"address" outputF) $ \case
                                 -- Should pay to a script address
                                 PPubKeyCredential _ -> pcon PFalse
                                 PScriptCredential ((pfield @"_0" #) -> validatorHash) ->
                                   let tn :: Term _ PTokenName
                                       tn = punsafeCoerce $ pfromData validatorHash
-                                   in pvalueOf # outputF.value # ownSymbol # tn #== 1
+                                   in pvalueOf # getField @"value" outputF # ownSymbol # tn #== 1
                         )
-                      # pfromData txInfoF.outputs
+                      # pfromData (getField @"outputs" txInfoF)
 
               outputF <-
                 pletFieldsC @'["value", "address", "datum"] scriptOutputWithStakeST
@@ -203,16 +203,16 @@ stakePolicy gtClassRef =
                 pletFieldsC @'["owner", "stakedAmount"] $
                   pto $
                     pfromData $
-                      pfromOutputDatum @(PAsData PStakeDatum) # outputF.datum # txInfoF.datums
+                      pfromOutputDatum @(PAsData PStakeDatum) # getField @"datum" outputF # getField @"datums" txInfoF
 
               let hasExpectedStake =
                     ptraceIfFalse "Stake ouput has expected amount of stake token" $
-                      pvalueDiscrete' gtClassRef # outputF.value #== datumF.stakedAmount
+                      pvalueDiscrete' gtClassRef # getField @"value" outputF #== getField @"stakedAmount" datumF
               let ownerSignsTransaction =
                     ptraceIfFalse "Stake Owner should sign the transaction" $
                       pauthorizedBy
                         # authorizationContext txInfoF
-                        # datumF.owner
+                        # getField @"owner" datumF
 
               pure $ hasExpectedStake #&& ownerSignsTransaction
 
@@ -241,7 +241,7 @@ mkStakeValidator
       --------------------------------------------------------------------------
 
       ctxF <- pletFieldsC @'["txInfo", "purpose"] ctx
-      txInfo <- pletC $ pfromData ctxF.txInfo
+      txInfo <- pletC $ pfromData (getField @"txInfo" ctxF)
       txInfoF <-
         pletFieldsC
           @'[ "inputs"
@@ -262,7 +262,7 @@ mkStakeValidator
       stakeInputDatum <- pfromData . fst <$> ptryFromC datum
       stakeInputDatumF <- pletAllC $ pto stakeInputDatum
 
-      PSpending stakeInputRef <- pmatchC $ pfromData ctxF.purpose
+      PSpending stakeInputRef <- pmatchC $ pfromData (getField @"purpose" ctxF)
 
       -- The UTxO we are validating, which is also the input stake.
       stakeInput <-
@@ -271,7 +271,7 @@ mkStakeValidator
             #$ passertPJust # "Malformed script context: own input not found"
             #$ pfindTxInByTxOutRef
               # (pfield @"_0" # stakeInputRef)
-              # txInfoF.inputs
+              # getField @"inputs" txInfoF
 
       stakeInputF <- pletFieldsC @'["address", "value"] stakeInput
 
@@ -280,7 +280,7 @@ mkStakeValidator
           pcon $
             PStakeInput
               stakeInputDatum
-              stakeInputF.value
+              (getField @"value" stakeInputF)
 
       --------------------------------------------------------------------------
 
@@ -288,13 +288,13 @@ mkStakeValidator
 
       signedBy <- pletC $ pauthorizedBy # authorizationContext txInfoF
 
-      let ownerSignsTransaction = signedBy # stakeInputDatumF.owner
+      let ownerSignsTransaction = signedBy # getField @"owner" stakeInputDatumF
 
           delegateSignsTransaction =
             pmaybeData
               # pconstant False
               # plam ((signedBy #) . pfromData)
-              # pfromData stakeInputDatumF.delegatedTo
+              # pfromData (getField @"delegatedTo" stakeInputDatumF)
 
       sigContext <-
         pletC $
@@ -305,8 +305,8 @@ mkStakeValidator
       --------------------------------------------------------------------------
 
       stCurrencySymbol <- pletC $ pconstant $ stakeSTSymbol as
-      mintedST <- pletC $ psymbolValueOf # stCurrencySymbol # txInfoF.mint
-      valueSpent <- pletC $ pvalueSpent # txInfoF.inputs
+      mintedST <- pletC $ psymbolValueOf # stCurrencySymbol # getField @"mint" txInfoF
+      valueSpent <- pletC $ pvalueSpent # getField @"inputs" txInfoF
       spentST <- pletC $ psymbolValueOf # stCurrencySymbol #$ valueSpent
 
       -- The stake validator can only handle one stake in one transaction.
@@ -333,23 +333,23 @@ mkStakeValidator
 
                     let isStakeOutput =
                           -- The stake should be owned by the stake validator.
-                          outputF.address #== stakeInputF.address
+                          getField @"address" outputF #== getField @"address" stakeInputF
                             #&&
                             -- The stake UTxO carries the state thread token.
                             psymbolValueOf
                               # stCurrencySymbol
-                              # outputF.value #== 1
+                              # getField @"value" outputF #== 1
 
                         stakeOutputDatum =
                           pfromOutputDatum
-                            # outputF.datum
-                            # txInfoF.datums
+                            # getField @"datum" outputF
+                            # getField @"datums" txInfoF
 
                         context =
                           pcon $
                             PStakeOutput
                               (pfromData stakeOutputDatum)
-                              outputF.value
+                              (getField @"value" outputF)
 
                     pure $
                       pif
@@ -357,7 +357,7 @@ mkStakeValidator
                         (pjust # context)
                         pnothing
                 )
-              # pfromData txInfoF.outputs
+              # pfromData (getField @"outputs" txInfoF)
 
       stakeOutputContext <-
         pletC $
@@ -383,7 +383,7 @@ mkStakeValidator
             # pconstant propTn
 
       let pstMinted =
-            passetClassValueOf # txInfoF.mint # proposalSTClass #== 1
+            passetClassValueOf # getField @"mint" txInfoF # proposalSTClass #== 1
 
       proposalContext <-
         pletC $
@@ -398,7 +398,7 @@ mkStakeValidator
                           # pdata ref
                           # pdnil
                     )
-                  # txInfoF.redeemers
+                  # getField @"redeemers" txInfoF
 
               f :: Term _ (PTxInInfo :--> PMaybe PTxOutRef)
               f = plam $ \inInfo ->
@@ -409,7 +409,7 @@ mkStakeValidator
                       (pjust # ref)
                       pnothing
 
-              proposalRef = pfindJust # f # txInfoF.inputs
+              proposalRef = pfindJust # f # getField @"inputs" txInfoF
            in pif pstMinted (pcon PNewProposal) $
                 pmaybe
                   # pcon PNoProposal
@@ -450,17 +450,17 @@ mkStakeValidator
       pure $
         popaque $
           pmatch stakeRedeemer $ \case
-            PDestroy _ -> runStakeRedeemerHandler impl.onDestroy # noMetadataContext
-            PPermitVote _ -> runStakeRedeemerHandler impl.onPermitVote # noMetadataContext
-            PRetractVotes _ -> runStakeRedeemerHandler impl.onRetractVote # noMetadataContext
-            PClearDelegate _ -> runStakeRedeemerHandler impl.onClearDelegate # noMetadataContext
+            PDestroy _ -> runStakeRedeemerHandler (getField @"onDestroy" impl) # noMetadataContext
+            PPermitVote _ -> runStakeRedeemerHandler (getField @"onPermitVote" impl) # noMetadataContext
+            PRetractVotes _ -> runStakeRedeemerHandler (getField @"onRetractVote" impl) # noMetadataContext
+            PClearDelegate _ -> runStakeRedeemerHandler (getField @"onClearDelegate" impl) # noMetadataContext
             PDelegateTo ((pfield @"pkh" #) -> pkh) ->
-              runStakeRedeemerHandler impl.onDelegateTo
+              runStakeRedeemerHandler (getField @"onDelegateTo" impl)
                 #$ mkRedeemerhandlerContext
                 #$ pcon
                 $ PSetDelegateTo pkh
             PDepositWithdraw ((pfield @"delta" #) -> delta) ->
-              runStakeRedeemerHandler impl.onDepositWithdraw #$ mkRedeemerhandlerContext
+              runStakeRedeemerHandler (getField @"onDepositWithdraw" impl) #$ mkRedeemerhandlerContext
                 #$ pcon
                 $ PDepositWithdrawDelta delta
 

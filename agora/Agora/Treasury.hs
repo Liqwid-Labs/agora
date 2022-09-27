@@ -33,16 +33,16 @@ treasuryValidator gatCs' = plam $ \_ _ ctx' -> unTermCont $ do
   ctx <- pletFieldsC @["txInfo", "purpose"] ctx'
 
   -- Ensure that script is for spending.
-  PSpending _ <- pmatchC ctx.purpose
+  PSpending _ <- pmatchC (getField @"purpose" ctx)
 
   -- Get the minted value from txInfo.
-  txInfo <- pletFieldsC @'["mint", "inputs"] ctx.txInfo
+  txInfo <- pletFieldsC @'["mint", "inputs"] (getField @"txInfo" ctx)
   let mint :: Term _ (PValue _ _)
-      mint = txInfo.mint
+      mint = getField @"mint" txInfo
 
   gatCs <- pletC $ pconstant gatCs'
 
   pguardC "A single authority token has been burned" $
-    singleAuthorityTokenBurned gatCs txInfo.inputs mint
+    singleAuthorityTokenBurned gatCs (getField @"inputs" txInfo) mint
 
   pure . popaque $ pconstant ()

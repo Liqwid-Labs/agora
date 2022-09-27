@@ -169,7 +169,7 @@ governorInputDatum =
 mkGovernorOutputDatum :: Parameters -> GovernorDatum
 mkGovernorOutputDatum ps =
   let nextPid =
-        if ps.advanceNextProposalId
+        if getField @"advanceNextProposalId" ps
           then ProposalId $ coerce thisProposalId + 1
           else thisProposalId
    in GovernorDatum
@@ -186,7 +186,7 @@ mkGovernorOutputDatum ps =
 mkStakeInputDatum :: Parameters -> StakeDatum
 mkStakeInputDatum ps =
   let locks =
-        if ps.createdMoreThanMaximumProposals
+        if getField @"createdMoreThanMaximumProposals" ps
           then
             Created . ProposalId
               <$> take
@@ -205,13 +205,13 @@ mkStakeOutputDatum :: Parameters -> StakeDatum
 mkStakeOutputDatum ps =
   let inputDatum = mkStakeInputDatum ps
       newLocks =
-        if ps.invalidNewLocks
+        if getField @"invalidNewLocks" ps
           then
             [ Voted thisProposalId (ResultTag 0)
             , Voted thisProposalId (ResultTag 1)
             ]
           else [Created thisProposalId]
-      locks = newLocks <> inputDatum.lockedBy
+      locks = newLocks <> getField @"lockedBy" inputDatum
       newOwner = mkOwner ps
    in inputDatum
         { owner = newOwner
@@ -230,7 +230,7 @@ mkProposalOutputDatum ps =
    in ProposalDatum
         { proposalId = thisProposalId
         , effects = effects
-        , status = ps.proposalStatus
+        , status = getField @"proposalStatus" ps
         , cosigners = [mkOwner ps]
         , thresholds = def
         , votes = votes
@@ -243,25 +243,25 @@ mkProposalOutputDatum ps =
 -- | Create time range for 'TxInfo.validTimeRange'.
 mkTimeRange :: Parameters -> POSIXTimeRange
 mkTimeRange ps =
-  if ps.timeRangeClosed
+  if getField @"timeRangeClosed" ps
     then
       let s = 0
           di :: POSIXTime = coerce (def @MaxTimeRangeWidth)
-          o = if ps.timeRangeTightEnough then (-1) else 1
+          o = if getField @"timeRangeTightEnough" ps then (-1) else 1
        in closedBoundedInterval s $ o + di
     else always
 
 -- | Get the starting time of the proposal.
 mkProposalStartingTime :: Parameters -> ProposalStartingTime
 mkProposalStartingTime ps =
-  if ps.timeRangeClosed
+  if getField @"timeRangeClosed" ps
     then proposalStartingTimeFromTimeRange $ mkTimeRange ps
     else ProposalStartingTime 0
 
 -- | Who should be the 'owner' of the output stake.
 mkOwner :: Parameters -> Credential
 mkOwner ps =
-  if ps.alterOutputStakeOwner
+  if getField @"alterOutputStakeOwner" ps
     then alteredStakeOwner
     else stakeOwner
 
@@ -291,14 +291,14 @@ createProposal ps = builder
     stakeValue =
       sortValue $
         sst
-          <> Value.assetClassValue (untag governor.gtClassRef) (fromDiscrete stakedGTs)
+          <> Value.assetClassValue (untag (getField @"gtClassRef" governor)) (fromDiscrete stakedGTs)
           <> minAda
     proposalValue = sortValue $ pst <> minAda
 
     ---
 
     withSig =
-      if ps.stakeOwnerSignsTheTransaction
+      if getField @"stakeOwnerSignsTheTransaction" ps
         then case stakeOwner of
           PubKeyCredential sig -> signedWith sig
           _ -> mempty
@@ -457,7 +457,7 @@ mkTestTree
         testPolicy
           validForProposalPolicy
           "proposal"
-          agoraScripts.compiledProposalPolicy
+          (getField @"compiledProposalPolicy" agoraScripts)
           proposalPolicyRedeemer
           (mint proposalPolicySymbol)
 
@@ -465,7 +465,7 @@ mkTestTree
         testValidator
           validForGovernorValidator
           "governor"
-          agoraScripts.compiledGovernorValidator
+          (getField @"compiledGovernorValidator" agoraScripts)
           governorInputDatum
           governorRedeemer
           (spend governorRef)
@@ -474,7 +474,7 @@ mkTestTree
         testValidator
           validForStakeValidator
           "stake"
-          agoraScripts.compiledStakeValidator
+          (getField @"compiledStakeValidator" agoraScripts)
           (mkStakeInputDatum ps)
           stakeRedeemer
           (spend stakeRef)

@@ -53,7 +53,7 @@ authorizationContext ::
   r ->
   Term s PAuthorizationContext
 authorizationContext f =
-  pcon (PAuthorizationContext f.signatories f.inputs)
+  pcon (PAuthorizationContext (getField @"signatories" f) (getField @"inputs" f))
 
 {- | Check for authorization by credential.
 
@@ -66,7 +66,7 @@ pauthorizedBy = phoistAcyclic $
     pure $
       pmatch credential $ \case
         PPubKeyCredential ((pfield @"_0" #) -> pk) ->
-          ptxSignedBy # ctxF.signatories # pk
+          ptxSignedBy # getField @"signatories" ctxF # pk
         PScriptCredential ((pfield @"_0" #) -> _) ->
           pany
             # plam
@@ -74,4 +74,4 @@ pauthorizedBy = phoistAcyclic $
                   (pfield @"credential" #$ pfield @"address" #$ pfield @"resolved" # input)
                     #== credential
               )
-            # ctxF.inputs
+            # getField @"inputs" ctxF

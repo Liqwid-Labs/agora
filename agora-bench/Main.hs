@@ -25,7 +25,7 @@ main = do
   options <- parseOptions
   isTTY <- hIsTerminalDevice stdout
 
-  mapM_ (`I.writeFile` csv) options.output
+  mapM_ (`I.writeFile` csv) $ getField @"output" options
 
   I.putStr $
     if isTTY

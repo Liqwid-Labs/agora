@@ -140,10 +140,10 @@ delegate = head pubKeyHashes
 mkStakeInputDatum :: Parameters -> StakeDatum
 mkStakeInputDatum params =
   StakeDatum
-    { stakedAmount = fromInteger params.voteCount
+    { stakedAmount = fromInteger (getField @"voteCount" params)
     , owner = PubKeyCredential stakeOwner
     , delegatedTo =
-        if params.voteAsDelegate
+        if getField @"voteAsDelegate" params
           then Just (PubKeyCredential delegate)
           else Nothing
     , lockedBy = existingLocks
@@ -151,11 +151,11 @@ mkStakeInputDatum params =
 
 -- | Create the proposal redeemer. In this case @'Vote' _@ will always be used.
 mkProposalRedeemer :: Parameters -> ProposalRedeemer
-mkProposalRedeemer params = Vote params.voteFor
+mkProposalRedeemer params = Vote (getField @"voteFor" params)
 
 -- | Place new proposal locks on the stake.
 mkNewLock :: Parameters -> ProposalLock
-mkNewLock params = Voted proposalInputDatum.proposalId params.voteFor
+mkNewLock params = Voted (getField @"proposalId" proposalInputDatum) (getField @"voteFor" params)
 
 {- | The stake redeemer that is used in 'mkTestTree'. In this case it'll always be
       'PermitVote'.
@@ -176,7 +176,7 @@ vote params =
       ---
 
       updatedVotes :: StrictMap.Map ResultTag Integer
-      updatedVotes = StrictMap.adjust (+ params.voteCount) params.voteFor initialVotes
+      updatedVotes = StrictMap.adjust (+ getField @"voteCount" params) (getField @"voteFor" params) initialVotes
 
       ---
 
@@ -204,19 +204,19 @@ vote params =
 
       validTimeRange =
         closedBoundedInterval
-          ((def :: ProposalTimingConfig).draftTime + 1)
-          ((def :: ProposalTimingConfig).votingTime - 1)
+          (getField @"draftTime" (def :: ProposalTimingConfig) + 1)
+          (getField @"votingTime" (def :: ProposalTimingConfig) - 1)
 
       ---
 
       stakeValue =
         sortValue $
           sst
-            <> Value.assetClassValue (untag governor.gtClassRef) params.voteCount
+            <> Value.assetClassValue (untag (getField @"gtClassRef" governor)) (getField @"voteCount" params)
             <> minAda
 
       signer =
-        if params.voteAsDelegate
+        if getField @"voteAsDelegate" params
           then delegate
           else stakeOwner
 
@@ -286,7 +286,7 @@ mkTestTree name ps isValid = group name [proposal, stake]
       testValidator
         isValid
         "proposal"
-        agoraScripts.compiledProposalValidator
+        (getField @"compiledProposalValidator" agoraScripts)
         proposalInputDatum
         (mkProposalRedeemer ps)
         (spend proposalRef)
@@ -295,7 +295,7 @@ mkTestTree name ps isValid = group name [proposal, stake]
       let stakeInputDatum = mkStakeInputDatum ps
        in validatorSucceedsWith
             "stake"
-            agoraScripts.compiledStakeValidator
+            (getField @"compiledStakeValidator" agoraScripts)
             stakeInputDatum
             stakeRedeemer
             (spend stakeRef)

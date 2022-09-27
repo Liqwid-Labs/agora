@@ -46,8 +46,8 @@ pownOutputValueUnchanged ::
 pownOutputValueUnchanged = phoistAcyclic $
   plam $
     flip pmatch $ \ctxF -> unTermCont $ do
-      PStakeInput _ inVal <- pmatchC ctxF.stakeInput
-      PStakeOutput _ outVal <- pmatchC ctxF.stakeOutput
+      PStakeInput _ inVal <- pmatchC (getField @"stakeInput" ctxF)
+      PStakeOutput _ outVal <- pmatchC (getField @"stakeOutput" ctxF)
 
       pure $ inVal #== outVal
 
@@ -58,8 +58,8 @@ ponlyLocksUpdated ::
 ponlyLocksUpdated = phoistAcyclic $
   plam $
     flip pmatch $ \ctxF -> unTermCont $ do
-      PStakeInput inDat _ <- pmatchC ctxF.stakeInput
-      PStakeOutput outDat _ <- pmatchC ctxF.stakeOutput
+      PStakeInput inDat _ <- pmatchC (getField @"stakeInput" ctxF)
+      PStakeOutput outDat _ <- pmatchC (getField @"stakeOutput" ctxF)
 
       inDatF <- pletAllC inDat
 
@@ -67,9 +67,9 @@ ponlyLocksUpdated = phoistAcyclic $
             let templateStakeDatum =
                   mkRecordConstr
                     PStakeDatum
-                    ( #stakedAmount .= inDatF.stakedAmount
-                        .& #owner .= inDatF.owner
-                        .& #delegatedTo .= inDatF.delegatedTo
+                    ( #stakedAmount .= getField @"stakedAmount" inDatF
+                        .& #owner .= getField @"owner" inDatF
+                        .& #delegatedTo .= getField @"delegatedTo" inDatF
                         .& #lockedBy .= pfield @"lockedBy" # outDat
                     )
              in outDat #== templateStakeDatum
@@ -82,7 +82,7 @@ psignedByOwner ::
   Term s (PStakeRedeemerHandlerContext :--> PBool)
 psignedByOwner = phoistAcyclic $
   plam $
-    flip pmatch $ \ctxF -> pmatch ctxF.sigContext $ \case
+    flip pmatch $ \ctxF -> pmatch (getField @"sigContext" ctxF) $ \case
       PSignedByOwner -> pconstant True
       _ -> pconstant False
 
@@ -99,7 +99,7 @@ pvoteHelper = phoistAcyclic $
     ctxF <- pmatchC ctx
 
     pguardC "Owner or delegate signs this transaction" $
-      pmatch ctxF.sigContext $ \case
+      pmatch (getField @"sigContext" ctxF) $ \case
         PUnknownSig -> pconstant False
         _ -> pconstant True
 
@@ -107,7 +107,7 @@ pvoteHelper = phoistAcyclic $
     -- that this is not abused.
 
     pguardC "Proposal ST spent" $
-      valProposalCtx # ctxF.proposalContext
+      valProposalCtx # getField @"proposalContext" ctxF
 
     pguardC "A UTXO must exist with the correct output" $
       let valueCorrect = pownOutputValueUnchanged # ctx
@@ -161,17 +161,17 @@ pdelegateHelper = phoistAcyclic $
 
     pguardC "Owner signs this transaction" $ psignedByOwner # ctx
 
-    PStakeInput inpDat _ <- pmatchC ctxF.stakeInput
-    PStakeOutput outDat _ <- pmatchC ctxF.stakeOutput
+    PStakeInput inpDat _ <- pmatchC (getField @"stakeInput" ctxF)
+    PStakeOutput outDat _ <- pmatchC (getField @"stakeOutput" ctxF)
 
     inpDatF <- pletAllC inpDat
 
-    let maybePkh = f # ctxF.redeemerContext
+    let maybePkh = f # getField @"redeemerContext" ctxF
 
     pguardC "Cannot delegate to the owner" $
       pmaybeData
         # pcon PTrue
-        # plam (\pkh -> pnot #$ inpDatF.owner #== pkh)
+        # plam (\pkh -> pnot #$ getField @"owner" inpDatF #== pkh)
         # maybePkh
 
     pguardC "A UTXO must exist with the correct output" $
@@ -179,10 +179,10 @@ pdelegateHelper = phoistAcyclic $
             outDat
               #== mkRecordConstr
                 PStakeDatum
-                ( #stakedAmount .= inpDatF.stakedAmount
-                    .& #owner .= inpDatF.owner
+                ( #stakedAmount .= getField @"stakedAmount" inpDatF
+                    .& #owner .= getField @"owner" inpDatF
                     .& #delegatedTo .= pdata maybePkh
-                    .& #lockedBy .= inpDatF.lockedBy
+                    .& #lockedBy .= getField @"lockedBy" inpDatF
                 )
           valueCorrect = pownOutputValueUnchanged # ctx
        in foldl1
@@ -224,8 +224,8 @@ pdestroy = phoistAcyclic $
   plam $ \ctx -> unTermCont $ do
     ctxF <- pmatchC ctx
 
-    PStakeInput inpDat _ <- pmatchC ctxF.stakeInput
-    PStakeBurnt <- pmatchC ctxF.stakeOutput
+    PStakeInput inpDat _ <- pmatchC (getField @"stakeInput" ctxF)
+    PStakeBurnt <- pmatchC (getField @"stakeOutput" ctxF)
 
     pguardC "Owner signs this transaction" $
       psignedByOwner # ctx
@@ -243,8 +243,8 @@ pdepositWithdraw = phoistAcyclic $
   plam $ \ctx -> unTermCont $ do
     ctxF <- pmatchC ctx
 
-    PStakeInput inpDat inpVal <- pmatchC ctxF.stakeInput
-    PStakeOutput outDat outVal <- pmatchC ctxF.stakeOutput
+    PStakeInput inpDat inpVal <- pmatchC (getField @"stakeInput" ctxF)
+    PStakeOutput outDat outVal <- pmatchC (getField @"stakeOutput" ctxF)
 
     pguardC "Stake unlocked" $ pnot #$ pstakeLocked # inpDat
 
@@ -254,9 +254,9 @@ pdepositWithdraw = phoistAcyclic $
       "A UTXO must exist with the correct output"
       $ unTermCont $ do
         inpDatF <- pletAllC inpDat
-        PDepositWithdrawDelta delta <- pmatchC ctxF.redeemerContext
+        PDepositWithdrawDelta delta <- pmatchC (getField @"redeemerContext" ctxF)
 
-        let oldStakedAmount = pfromData $ inpDatF.stakedAmount
+        let oldStakedAmount = pfromData (getField @"stakedAmount" inpDatF)
 
         newStakedAmount <- pletC $ oldStakedAmount + delta
 
@@ -267,19 +267,19 @@ pdepositWithdraw = phoistAcyclic $
               mkRecordConstr
                 PStakeDatum
                 ( #stakedAmount .= pdata newStakedAmount
-                    .& #owner .= inpDatF.owner
-                    .& #delegatedTo .= inpDatF.delegatedTo
-                    .& #lockedBy .= inpDatF.lockedBy
+                    .& #owner .= getField @"owner" inpDatF
+                    .& #delegatedTo .= getField @"delegatedTo" inpDatF
+                    .& #lockedBy .= getField @"lockedBy" inpDatF
                 )
             datumCorrect = outDat #== expectedDatum
 
         let valueDelta :: Term _ (PValue _ 'Positive)
-            valueDelta = pdiscreteValue # ctxF.gtAssetClass # delta
+            valueDelta = pdiscreteValue # getField @"gtAssetClass" ctxF # delta
 
             expectedValue =
               inpVal <> valueDelta
 
-        gtAssetClassF <- pletAllC ctxF.gtAssetClass
+        gtAssetClassF <- pletAllC (getField @"gtAssetClass" ctxF)
 
         let valueCorrect =
               foldr1
@@ -288,8 +288,8 @@ pdepositWithdraw = phoistAcyclic $
                     # outVal
                     # expectedValue
                 , pgeqByClass
-                    # gtAssetClassF.currencySymbol
-                    # gtAssetClassF.tokenName
+                    # getField @"currencySymbol" gtAssetClassF
+                    # getField @"tokenName" gtAssetClassF
                     # outVal
                     # expectedValue
                 ]

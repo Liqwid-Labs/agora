@@ -32,6 +32,7 @@ module Agora.Proposal.Time (
 
 import Agora.Utils (pcurrentTimeDuration)
 import Control.Composition ((.*))
+import Optics.TH (makeFieldLabelsNoPrefix)
 import Plutarch.Api.V1 (
   PExtended (PFinite),
   PInterval (PInterval),
@@ -88,6 +89,8 @@ newtype ProposalStartingTime = ProposalStartingTime
       PlutusTx.UnsafeFromData
     )
 
+makeFieldLabelsNoPrefix ''ProposalStartingTime
+
 {- | Configuration of proposal timings.
 
      See: https://liqwid.notion.site/Proposals-589853145a994057aa77f397079f75e4#d25ea378768d4c76b52dd4c1b6bc0fcd
@@ -113,6 +116,7 @@ data ProposalTimingConfig = ProposalTimingConfig
       Generic
     )
 
+makeFieldLabelsNoPrefix ''ProposalTimingConfig
 PlutusTx.makeIsDataIndexed 'ProposalTimingConfig [('ProposalTimingConfig, 0)]
 
 -- | Represents the maximum width of a 'PlutusLedgerApi.V1.Time.POSIXTimeRange'.
@@ -299,10 +303,10 @@ pisProposalTimingConfigValid = phoistAcyclic $
                 )
           )
           (pconstant True)
-          [ confF.draftTime
-          , confF.votingTime
-          , confF.lockingTime
-          , confF.executingTime
+          [ getField @"draftTime" confF
+          , getField @"votingTime" confF
+          , getField @"lockingTime" confF
+          , getField @"executingTime" confF
           ]
 
 {- | Return true if the maximum time width is greater than 0.
@@ -369,20 +373,20 @@ currentProposalTime = phoistAcyclic $
   plam $ \iv -> unTermCont $ do
     PInterval iv' <- pmatchC iv
     ivf <- pletAllC iv'
-    PLowerBound lb <- pmatchC ivf.from
-    PUpperBound ub <- pmatchC ivf.to
+    PLowerBound lb <- pmatchC (getField @"from" ivf)
+    PUpperBound ub <- pmatchC (getField @"to" ivf)
 
     let lowerBound = pletAll lb $ \f ->
           pif
-            f._1
-            ( pmatch f._0 $ \case
+            (getField @"_1" f)
+            ( pmatch (getField @"_0" f) $ \case
                 PFinite (pfromData . (pfield @"_0" #) -> d) -> pjust # d
                 _ -> ptrace "currentProposalTime: time range should be bounded" pnothing
             )
             (ptrace "currentProposalTime: lower bound of the time range should be inclusive" pnothing)
 
         upperBound = pletAll ub $ \f ->
-          pmatch f._0 $ \case
+          pmatch (getField @"_0" f) $ \case
             PFinite (pfromData . (pfield @"_0" #) -> d) -> pjust # d
             _ -> ptrace "currentProposalTime: time range should be bounded" pnothing
 
@@ -422,7 +426,7 @@ isVotingPeriod ::
 isVotingPeriod = phoistAcyclic $
   plam $ \config s' -> pmatch s' $ \(PProposalStartingTime s) ->
     pletFields @'["draftTime", "votingTime"] config $ \f ->
-      pisCurrentTimeWithin # s # (s + f.draftTime + f.votingTime)
+      pisCurrentTimeWithin # s # (s + getField @"draftTime" f + getField @"votingTime" f)
 
 {- | True if the 'PProposalTime' is in the locking period.
 
@@ -440,7 +444,7 @@ isLockingPeriod ::
 isLockingPeriod = phoistAcyclic $
   plam $ \config s' -> pmatch s' $ \(PProposalStartingTime s) ->
     pletFields @'["draftTime", "votingTime", "lockingTime"] config $ \f ->
-      pisCurrentTimeWithin # s # (s + f.draftTime + f.votingTime + f.lockingTime)
+      pisCurrentTimeWithin # s # (s + getField @"draftTime" f + getField @"votingTime" f + getField @"lockingTime" f)
 
 {- | True if the 'PProposalTime' is in the execution period.
 
@@ -459,4 +463,4 @@ isExecutionPeriod = phoistAcyclic $
   plam $ \config s' -> pmatch s' $ \(PProposalStartingTime s) ->
     pletFields @'["draftTime", "votingTime", "lockingTime", "executingTime"] config $ \f ->
       pisCurrentTimeWithin # s
-        # (s + f.draftTime + f.votingTime + f.lockingTime + f.executingTime)
+        # (s + getField @"draftTime" f + getField @"votingTime" f + getField @"lockingTime" f + getField @"executingTime" f)

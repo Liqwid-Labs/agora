@@ -69,14 +69,15 @@ import Agora.Proposal.Time (
 import Agora.Scripts qualified as Scripts
 import Agora.Treasury (treasuryValidator)
 import Agora.Utils (
-  CompiledEffect (CompiledEffect),
-  CompiledMintingPolicy (getCompiledMintingPolicy),
-  CompiledValidator (getCompiledValidator),
+  CompiledEffect,
+  compiledEffect,
   validatorHashToTokenName,
  )
 import Data.Coerce (coerce)
 import Data.Default.Class (Default (..))
 import Data.Tagged (Tagged (..))
+import Optics.Core (view)
+import Optics.Optic ((%))
 import Plutarch (Config (..), TracingMode (DetTracing))
 import Plutarch.Api.V2 (
   PValidator,
@@ -147,10 +148,10 @@ gstUTXORef :: TxOutRef
 gstUTXORef = TxOutRef "f28cd7145c24e66fd5bcd2796837aeb19a48a2656e7833c88c62a2d0450bd00d" 0
 
 govPolicy :: MintingPolicy
-govPolicy = agoraScripts.compiledGovernorPolicy.getCompiledMintingPolicy
+govPolicy = view (#compiledGovernorPolicy % #getCompiledMintingPolicy) agoraScripts
 
 govValidator :: Validator
-govValidator = agoraScripts.compiledGovernorValidator.getCompiledValidator
+govValidator = view (#compiledGovernorValidator % #getCompiledValidator) agoraScripts
 
 govSymbol :: CurrencySymbol
 govSymbol = mintingPolicySymbol govPolicy
@@ -223,7 +224,7 @@ proposalStartingTimeFromTimeRange
 proposalStartingTimeFromTimeRange _ = error "Given time range should be finite and closed"
 
 mkEffect :: (PlutusTx.ToData datum) => ClosedTerm PValidator -> CompiledEffect datum
-mkEffect v = CompiledEffect $ mkValidator deterministicTracingConfing v
+mkEffect v = compiledEffect $ mkValidator deterministicTracingConfing v
 
 mkRedeemer :: forall redeemer. PlutusTx.ToData redeemer => redeemer -> Redeemer
 mkRedeemer = Redeemer . toBuiltinData

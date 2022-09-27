@@ -1,5 +1,3 @@
-{-# LANGUAGE TemplateHaskell #-}
-
 {- |
 Module: Spec.Treasury
 Description: Tests for Agora treasury.
@@ -117,7 +115,7 @@ specs =
               ()
               validCtx
                 { scriptContextTxInfo =
-                    validCtx.scriptContextTxInfo
+                    (getField @"scriptContextTxInfo" validCtx)
                       { txInfoMint =
                           Value.singleton
                             gatCs
@@ -130,8 +128,8 @@ specs =
               compiledTreasuryValidator
               ()
               ()
-              ( let txInfo = validCtx.scriptContextTxInfo
-                    inputs = txInfo.txInfoInputs
+              ( let txInfo = getField @"scriptContextTxInfo" validCtx
+                    inputs = getField @"txInfoInputs" txInfo
                     newInputs =
                       [ head inputs
                       , walletIn

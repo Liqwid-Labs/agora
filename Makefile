@@ -10,7 +10,7 @@ HASKELL_SOURCES := $(filter %.hs,$(SOURCE_FILES))
 CABAL_SOURCES := $(filter %.cabal,$(SOURCE_FILES))
 NIX_SOURCES := $(filter %.nix,$(SOURCE_FILES))
 FORMAT_EXTENSIONS := -o -XQuasiQuotes -o -XTemplateHaskell -o -XTypeApplications	\
-										-o -XImportQualifiedPost -o -XPatternSynonyms -o -XOverloadedRecordDot
+										-o -XImportQualifiedPost -o -XPatternSynonyms
 HLINT_EXTS := -XQuasiQuotes
 
 THREADS ?= 8

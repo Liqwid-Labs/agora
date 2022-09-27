@@ -75,7 +75,7 @@ data Parameters = Parameters
 
 -- | Select the correct stake redeemer based on the existence of the new delegate.
 mkStakeRedeemer :: Parameters -> StakeRedeemer
-mkStakeRedeemer params = maybe ClearDelegate (DelegateTo . PubKeyCredential) params.newDelegate
+mkStakeRedeemer params = maybe ClearDelegate (DelegateTo . PubKeyCredential) (getField @"newDelegate" params)
 
 -- | The owner of the input stake.
 stakeOwner :: PubKeyHash
@@ -87,7 +87,7 @@ mkStakeInputDatum ps =
   StakeDatum
     { stakedAmount = 5
     , owner = PubKeyCredential stakeOwner
-    , delegatedTo = PubKeyCredential <$> ps.existingDelegate
+    , delegatedTo = PubKeyCredential <$> getField @"existingDelegate" ps
     , lockedBy = []
     }
 
@@ -102,17 +102,17 @@ setDelegate ps = buildSpending' builder
 
     stakeOutput =
       let stakedAmount =
-            if ps.invalidOutputStake
-              then stakeInput.stakedAmount - 1
-              else stakeInput.stakedAmount
+            if getField @"invalidOutputStake" ps
+              then getField @"stakedAmount" stakeInput - 1
+              else getField @"stakedAmount" stakeInput
        in stakeInput
             { stakedAmount = stakedAmount
-            , delegatedTo = PubKeyCredential <$> ps.newDelegate
+            , delegatedTo = PubKeyCredential <$> getField @"newDelegate" ps
             }
 
     signer =
-      if ps.signedByOwner
-        then case stakeInput.owner of
+      if getField @"signedByOwner" ps
+        then case getField @"owner" stakeInput of
           PubKeyCredential c -> c
           _ -> signer2
         else signer2
@@ -123,8 +123,8 @@ setDelegate ps = buildSpending' builder
         mconcat
           [ st
           , Value.assetClassValue
-              (untag governor.gtClassRef)
-              (fromDiscrete stakeInput.stakedAmount)
+              (untag (getField @"gtClassRef" governor))
+              (fromDiscrete (getField @"stakedAmount" stakeInput))
           , minAda
           ]
 
@@ -159,7 +159,7 @@ mkTestCase name ps valid =
   testValidator
     valid
     name
-    agoraScripts.compiledStakeValidator
+    (getField @"compiledStakeValidator" agoraScripts)
     (mkStakeInputDatum ps)
     (mkStakeRedeemer ps)
     (setDelegate ps)

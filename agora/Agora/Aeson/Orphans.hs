@@ -1,6 +1,7 @@
+{-# LANGUAGE TemplateHaskell #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
-module Agora.Aeson.Orphans (AsBase16Bytes (..)) where
+module Agora.Aeson.Orphans (AsBase16Codec (..), AsBase16Bytes (..)) where
 
 --------------------------------------------------------------------------------
 
@@ -15,9 +16,11 @@ import Data.Aeson.Types qualified as Aeson
 import Data.ByteString.Lazy qualified as Lazy
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as T
+import Optics.TH (makeFieldLabelsNoPrefix)
 
 --------------------------------------------------------------------------------
 
+import Optics.Core (view)
 import PlutusLedgerApi.V1 qualified as Plutus
 import PlutusLedgerApi.V1.Bytes qualified as Plutus
 import PlutusLedgerApi.V1.Scripts qualified as Plutus
@@ -26,7 +29,12 @@ import PlutusLedgerApi.V1.Value qualified as Plutus
 --------------------------------------------------------------------------------
 
 newtype AsBase16Bytes a = AsBase16Bytes {unAsBase16Bytes :: a}
+
+makeFieldLabelsNoPrefix ''AsBase16Bytes
+
 newtype AsBase16Codec a = AsBase16Codec {unAsBase16Codec :: a}
+
+makeFieldLabelsNoPrefix ''AsBase16Codec
 
 deriving via
   (Plutus.CurrencySymbol, Plutus.TokenName)
@@ -68,7 +76,7 @@ instance (Codec.Serialise a) => Aeson.ToJSON (AsBase16Codec a) where
       . Plutus.encodeByteString
       . Lazy.toStrict
       . Codec.serialise @a
-      . (.unAsBase16Codec)
+      . view #unAsBase16Codec
 
 instance (Codec.Serialise a) => Aeson.FromJSON (AsBase16Codec a) where
   parseJSON v =

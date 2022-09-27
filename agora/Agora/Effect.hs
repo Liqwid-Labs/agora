@@ -60,14 +60,14 @@ makeEffect gatCs' f =
     -- - In the case of GATs which get _referenced_, this script
     --   won't be run at all, in which case. The auth check needs
     --   to be especially written with that in mind.
-    PSpending txOutRef <- pmatchC $ pfromData ctx.purpose
+    PSpending txOutRef <- pmatchC $ pfromData (getField @"purpose" ctx)
     txOutRef' <- pletC (pfield @"_0" # txOutRef)
 
-    txInfo <- pletFieldsC @'["mint", "inputs"] ctx.txInfo
+    txInfo <- pletFieldsC @'["mint", "inputs"] (getField @"txInfo" ctx)
     gatCs <- pletC $ pconstant gatCs'
 
     pguardC "A single authority token has been burned" $
-      singleAuthorityTokenBurned gatCs txInfo.inputs txInfo.mint
+      singleAuthorityTokenBurned gatCs (getField @"inputs" txInfo) (getField @"mint" txInfo)
 
     -- run effect function
-    pure $ f gatCs datum' txOutRef' ctx.txInfo
+    pure $ f gatCs datum' txOutRef' (getField @"txInfo" ctx)

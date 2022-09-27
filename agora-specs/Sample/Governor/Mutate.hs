@@ -145,12 +145,12 @@ mkGovernorBuilder ps =
   let gst = Value.assetClassValue govAssetClass 1
       value = sortValue $ gst <> minAda
       gstOutput =
-        if ps.stealGST
+        if getField @"stealGST" ps
           then pubKey $ head pubKeyHashes
           else script govValidatorHash
       withGSTDatum =
         maybe mempty withDatum $
-          mkGovernorOutputDatum ps.governorOutputDatumValidity
+          mkGovernorOutputDatum (getField @"governorOutputDatumValidity" ps)
    in mconcat
         [ input $
             mconcat
@@ -196,11 +196,11 @@ mkGATValue v q =
 
 mkMockEffectBuilder :: forall b. CombinableBuilder b => MockEffectParameters -> b
 mkMockEffectBuilder ps =
-  let mkGATValue' = mkGATValue ps.gatValidity
+  let mkGATValue' = mkGATValue (getField @"gatValidity" ps)
       inputValue = mkGATValue' 1
       outputValue = inputValue <> burnt
       burnt =
-        if ps.burnGAT
+        if getField @"burnGAT" ps
           then mkGATValue' (-1)
           else mempty
    in mconcat
@@ -222,8 +222,8 @@ mkMockEffectBuilder ps =
 mutate :: forall b. CombinableBuilder b => ParameterBundle -> b
 mutate pb =
   mconcat
-    [ mkGovernorBuilder pb.governorParameters
-    , mkMockEffectBuilder pb.mockEffectParameters
+    [ mkGovernorBuilder (getField @"governorParameters" pb)
+    , mkMockEffectBuilder (getField @"mockEffectParameters" pb)
     ]
 
 --------------------------------------------------------------------------------
@@ -234,7 +234,7 @@ mkTestCase name pb (Validity forGov) =
   testValidator
     forGov
     name
-    agoraScripts.compiledGovernorValidator
+    (getField @"compiledGovernorValidator" agoraScripts)
     governorInputDatum
     governorRedeemer
     (mkSpending mutate pb governorRef)

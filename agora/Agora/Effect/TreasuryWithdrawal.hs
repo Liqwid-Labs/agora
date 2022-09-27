@@ -132,7 +132,7 @@ treasuryWithdrawalValidator currSymbol = makeEffect currSymbol $
   \_cs (datum' :: Term _ PTreasuryWithdrawalDatum) txOutRef' txInfo' -> unTermCont $ do
     datum <- pletFieldsC @'["receivers", "treasuries"] datum'
     txInfo <- pletFieldsC @'["outputs", "inputs"] txInfo'
-    PJust ((pfield @"resolved" #) -> txOut) <- pmatchC $ pfindTxInByTxOutRef # txOutRef' # pfromData txInfo.inputs
+    PJust ((pfield @"resolved" #) -> txOut) <- pmatchC $ pfindTxInByTxOutRef # txOutRef' # pfromData (getField @"inputs" txInfo)
     effInput <- pletFieldsC @'["address", "value"] $ txOut
     outputValues <-
       pletC $
@@ -140,23 +140,23 @@ treasuryWithdrawalValidator currSymbol = makeEffect currSymbol $
           # plam
             ( \txOut' -> unTermCont $ do
                 txOut <- pletFieldsC @'["address", "value"] $ txOut'
-                let cred = pfield @"credential" # pfromData txOut.address
-                pure . pdata $ ptuple # cred # txOut.value
+                let cred = pfield @"credential" # pfromData (getField @"address" txOut)
+                pure . pdata $ ptuple # cred # getField @"value" txOut
             )
-          # pfromData txInfo.outputs
+          # pfromData (getField @"outputs" txInfo)
     inputValues <-
       pletC $
         pmap
           # plam
             ( \((pfield @"resolved" #) -> txOut') -> unTermCont $ do
                 txOut <- pletFieldsC @'["address", "value"] $ txOut'
-                let cred = pfield @"credential" # pfromData txOut.address
-                pure . pdata $ ptuple # cred # txOut.value
+                let cred = pfield @"credential" # pfromData (getField @"address" txOut)
+                pure . pdata $ ptuple # cred # getField @"value" txOut
             )
-          # txInfo.inputs
+          # getField @"inputs" txInfo
     let ofTreasury =
           pfilter
-            # plam (\((pfield @"_0" #) . pfromData -> cred) -> pelem # cred # datum.treasuries)
+            # plam (\((pfield @"_0" #) . pfromData -> cred) -> pelem # cred # getField @"treasuries" datum)
         sumValues = phoistAcyclic $
           plam $ \v ->
             pnormalize
@@ -166,26 +166,25 @@ treasuryWithdrawalValidator currSymbol = makeEffect currSymbol $
               # v
         treasuryInputValuesSum = sumValues #$ ofTreasury # inputValues
         treasuryOutputValuesSum = sumValues #$ ofTreasury # outputValues
-        receiverValuesSum = sumValues # datum.receivers
+        receiverValuesSum = sumValues # getField @"receivers" datum
         -- Constraints
         outputContentMatchesRecivers =
           pall # plam (\out -> pelem # out # outputValues)
-            #$ datum.receivers
+            #$ getField @"receivers" datum
         excessShouldBePaidToInputs =
           treasuryOutputValuesSum <> receiverValuesSum #== treasuryInputValuesSum
         shouldNotPayToEffect =
           pnot #$ pany
             # plam
-              ( \x ->
-                  effInput.address #== pfield @"address" # x
+              ( \x -> getField @"address" effInput #== pfield @"address" # x
               )
-            # pfromData txInfo.outputs
+            # pfromData (getField @"outputs" txInfo)
         inputsAreOnlyTreasuriesOrCollateral =
           pall
             # plam
               ( \((pfield @"_0" #) . pfromData -> cred) ->
-                  cred #== pfield @"credential" # effInput.address
-                    #|| pelem # cred # datum.treasuries
+                  cred #== pfield @"credential" # getField @"address" effInput
+                    #|| pelem # cred # getField @"treasuries" datum
                     #|| pisPubKey # pfromData cred
               )
             # inputValues

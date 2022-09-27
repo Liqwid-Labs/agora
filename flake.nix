@@ -93,7 +93,6 @@
           "-XTypeApplications"
           "-XImportQualifiedPost"
           "-XPatternSynonyms"
-          "-XOverloadedRecordDot"
         ])
         liqwid-nix.enableLintCheck
         liqwid-nix.enableCabalFormatCheck

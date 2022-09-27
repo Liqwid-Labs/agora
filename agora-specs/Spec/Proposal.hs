@@ -76,7 +76,7 @@ specs =
               map
                 ( \ps ->
                     Create.mkTestTree
-                      (show ps.proposalStatus)
+                      (show (getField @"proposalStatus" ps))
                       ps
                       True
                       False
@@ -105,7 +105,7 @@ specs =
                     map
                       ( \ps ->
                           Cosign.mkTestTree
-                            ("status: " <> show ps.proposalStatus)
+                            ("status: " <> show (getField @"proposalStatus" ps))
                             ps
                             False
                       )
@@ -166,9 +166,9 @@ specs =
                                 mkName b =
                                   unwords
                                     [ "from"
-                                    , show b.proposalParameters.fromStatus
+                                    , show (getField @"fromStatus" (getField @"proposalParameters" b))
                                     , "to"
-                                    , show b.proposalParameters.toStatus
+                                    , show (getField @"toStatus" (getField @"proposalParameters" b))
                                     ]
                              in [ Advance.mkTestTree'
                                     "to next state"
@@ -222,7 +222,7 @@ specs =
                                 }
                           , Advance.mkTestTree'
                               "to next state too late"
-                              (\b -> unwords ["from", show b.proposalParameters.fromStatus])
+                              (\b -> unwords ["from", show (getField @"fromStatus" $ getField @"proposalParameters" b)])
                               (Advance.mkToNextStateTooLateBundles cs es)
                               Advance.Validity
                                 { forProposalValidator = False
@@ -304,7 +304,7 @@ specs =
                   , group "voter: unlock after voting" $
                       map
                         ( \ps ->
-                            let name = show ps.proposalStatus
+                            let name = show (getField @"proposalStatus" ps)
                              in UnlockStake.mkTestTree name ps True
                         )
                         (UnlockStake.mkVoterUnlockStakeAfterVotingParameters nProposals)
@@ -323,10 +323,10 @@ specs =
                             let name =
                                   unwords
                                     [ "role:"
-                                    , show ps.stakeRole
+                                    , show (getField @"stakeRole" ps)
                                     , ","
                                     , "status:"
-                                    , show ps.proposalStatus
+                                    , show (getField @"proposalStatus" ps)
                                     ]
                              in UnlockStake.mkTestTree name ps False
                         )
@@ -337,9 +337,9 @@ specs =
                             let name =
                                   unwords
                                     [ "status:"
-                                    , show ps.proposalStatus
+                                    , show (getField @"proposalStatus" ps)
                                     , "retract votes:"
-                                    , show ps.retractVotes
+                                    , show (getField @"retractVotes" ps)
                                     ]
                              in UnlockStake.mkTestTree name ps False
                         )
@@ -349,7 +349,7 @@ specs =
                         ( \ps ->
                             let name =
                                   unwords
-                                    ["status:", show ps.proposalStatus]
+                                    ["status:", show (getField @"proposalStatus" ps)]
                              in UnlockStake.mkTestTree name ps False
                         )
                         (UnlockStake.mkRemoveCreatorLockBeforeFinishedParameters nProposals)
@@ -363,10 +363,10 @@ specs =
                             let name =
                                   unwords
                                     [ "role:"
-                                    , show ps.stakeRole
+                                    , show (getField @"stakeRole" ps)
                                     , ","
                                     , "status:"
-                                    , show ps.proposalStatus
+                                    , show (getField @"proposalStatus" ps)
                                     ]
                              in UnlockStake.mkTestTree name ps False
                         )

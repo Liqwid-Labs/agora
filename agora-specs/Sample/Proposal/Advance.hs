@@ -255,7 +255,7 @@ mkEffects ::
 mkEffects ps =
   let resultTags = map ResultTag [0 ..]
       neutralEffect = StrictMap.empty
-      finalEffects = ps.effectList <> [neutralEffect]
+      finalEffects = getField @"effectList" ps <> [neutralEffect]
    in StrictMap.fromList $ zip resultTags finalEffects
 
 -- | Set the votes of the winning group(s).
@@ -273,7 +273,7 @@ mkVotes ::
 mkVotes ps =
   let effects = mkEffects ps
       emptyVotes = emptyVotesFor effects
-   in maybe emptyVotes (`setWinner` emptyVotes) (ps.winnerAndVotes)
+   in maybe emptyVotes (`setWinner` emptyVotes) (getField @"winnerAndVotes" ps)
 
 -- | The starting time of every generated proposal.
 proposalStartingTime :: POSIXTime
@@ -288,8 +288,8 @@ mkProposalInputDatum ps =
    in ProposalDatum
         { proposalId = ProposalId 0
         , effects = effects
-        , status = ps.fromStatus
-        , cosigners = mkCosigners ps.numCosigners
+        , status = getField @"fromStatus" ps
+        , cosigners = mkCosigners (getField @"numCosigners" ps)
         , thresholds = def
         , votes = votes
         , timingConfig = def
@@ -301,11 +301,11 @@ mkProposalOutputDatum :: ProposalParameters -> ProposalDatum
 mkProposalOutputDatum ps =
   let inputDatum = mkProposalInputDatum ps
       outputCosigners =
-        if ps.invalidProposalOutputDatum
+        if getField @"invalidProposalOutputDatum" ps
           then []
-          else inputDatum.cosigners
+          else getField @"cosigners" inputDatum
    in inputDatum
-        { status = ps.toStatus
+        { status = getField @"toStatus" ps
         , cosigners = outputCosigners
         }
 
@@ -355,13 +355,13 @@ mkStakeInputDatums :: StakeParameters -> [StakeDatum]
 mkStakeInputDatums ps =
   let template =
         StakeDatum
-          { stakedAmount = fromInteger ps.perStakeGTs
+          { stakedAmount = fromInteger (getField @"perStakeGTs" ps)
           , owner = PubKeyCredential ""
           , delegatedTo = Nothing
           , lockedBy = []
           }
    in (\owner -> template {owner = owner})
-        <$> mkStakeOwners ps.numStake
+        <$> mkStakeOwners (getField @"numStake" ps)
 
 -- | Create the reference to a particular stake UTXO.
 mkStakeRef :: Index -> TxOutRef
@@ -377,11 +377,11 @@ mkStakeBuilder ps =
           minAda
             <> Value.assetClassValue stakeAssetClass 1
             <> Value.assetClassValue
-              (untag governor.gtClassRef)
-              ps.perStakeGTs
+              (untag (getField @"gtClassRef" governor))
+              (getField @"perStakeGTs" ps)
       perStake idx i =
         let withSig =
-              case (i.owner, ps.transactionSignedByOwners) of
+              case (getField @"owner" i, getField @"transactionSignedByOwners" ps) of
                 (PubKeyCredential owner, True) -> signedWith owner
                 _ -> mempty
          in mconcat
@@ -418,7 +418,7 @@ governorInputDatum =
 -- | Create the output governor datum given the parameters.
 mkGovernorOutputDatum :: GovernorParameters -> GovernorDatum
 mkGovernorOutputDatum ps =
-  if ps.invalidGovernorOutputDatum
+  if getField @"invalidGovernorOutputDatum" ps
     then governorInputDatum {maximumProposalsPerStake = 15}
     else governorInputDatum
 
@@ -470,7 +470,7 @@ mkAuthorityTokenBuilder ::
   b
 mkAuthorityTokenBuilder ps@AuthorityTokenParameters {carryDatum} =
   let tn =
-        case (ps.invalidTokenName, ps.carryAuthScript) of
+        case (getField @"invalidTokenName" ps, getField @"carryAuthScript" ps) of
           (True, Just _) -> "deadbeef"
           (True, Nothing) -> "deadbeef"
           (False, Just as) -> scriptHashToTokenName as
@@ -482,7 +482,7 @@ mkAuthorityTokenBuilder ps@AuthorityTokenParameters {carryDatum} =
         [ mint minted
         , output $
             mconcat
-              [ script ps.mintGATsFor
+              [ script (getField @"mintGATsFor" ps)
               , maybe mempty withDatum carryDatum
               , withValue value
               ]
@@ -503,12 +503,12 @@ advance ::
 advance pb =
   let mkBuilderMaybe = maybe mempty
    in mconcat
-        [ mkProposalBuilder pb.proposalParameters
-        , mkStakeBuilder pb.stakeParameters
-        , mkBuilderMaybe mkGovernorBuilder pb.governorParameters
-        , foldMap mkAuthorityTokenBuilder pb.authorityTokenParameters
-        , timeRange pb.transactionTimeRange
-        , maybe mempty signedWith pb.extraSignature
+        [ mkProposalBuilder (getField @"proposalParameters" pb)
+        , mkStakeBuilder (getField @"stakeParameters" pb)
+        , mkBuilderMaybe mkGovernorBuilder (getField @"governorParameters" pb)
+        , foldMap mkAuthorityTokenBuilder (getField @"authorityTokenParameters" pb)
+        , timeRange (getField @"transactionTimeRange" pb)
+        , maybe mempty signedWith (getField @"extraSignature" pb)
         ]
 
 --------------------------------------------------------------------------------
@@ -527,34 +527,34 @@ mkTestTree name pb val =
     spend = mkSpending advance pb
 
     proposal =
-      let proposalInputDatum = mkProposalInputDatum pb.proposalParameters
+      let proposalInputDatum = mkProposalInputDatum (getField @"proposalParameters" pb)
        in singleton $
             testValidator
-              val.forProposalValidator
+              (getField @"forProposalValidator" val)
               "proposal"
-              agoraScripts.compiledProposalValidator
+              (getField @"compiledProposalValidator" agoraScripts)
               proposalInputDatum
               proposalRedeemer
               (spend proposalRef)
     governor =
       maybe [] singleton $
         testValidator
-          (fromJust val.forGovernorValidator)
+          (fromJust (getField @"forGovernorValidator" val))
           "governor"
-          agoraScripts.compiledGovernorValidator
+          (getField @"compiledGovernorValidator" agoraScripts)
           governorInputDatum
           governorRedeemer
           (spend governorRef)
-          <$ pb.governorParameters
+          <$ getField @"governorParameters" pb
 
-    authority = case pb.authorityTokenParameters of
+    authority = case getField @"authorityTokenParameters" pb of
       [] -> []
       _ ->
         singleton
           ( testPolicy
-              (fromJust val.forAuthorityTokenPolicy)
+              (fromJust (getField @"forAuthorityTokenPolicy" val))
               "authority"
-              agoraScripts.compiledAuthorityTokenPolicy
+              (getField @"compiledAuthorityTokenPolicy" agoraScripts)
               authorityTokenRedeemer
               (mkMinting advance pb authorityTokenSymbol)
           )
@@ -587,35 +587,35 @@ mkInTimeTimeRange advanceFrom =
     Draft ->
       closedBoundedInterval
         (proposalStartingTime + 1)
-        (proposalStartingTime + (def :: ProposalTimingConfig).draftTime - 1)
+        (proposalStartingTime + getField @"draftTime" (def :: ProposalTimingConfig) - 1)
     -- [S + D + V + 1, S + D + V + L - 1]
     VotingReady ->
       closedBoundedInterval
         ( proposalStartingTime
-            + (def :: ProposalTimingConfig).draftTime
-            + (def :: ProposalTimingConfig).votingTime
+            + getField @"draftTime" (def :: ProposalTimingConfig)
+            + getField @"votingTime" (def :: ProposalTimingConfig)
             + 1
         )
         ( proposalStartingTime
-            + (def :: ProposalTimingConfig).draftTime
-            + (def :: ProposalTimingConfig).votingTime
-            + (def :: ProposalTimingConfig).lockingTime
+            + getField @"draftTime" (def :: ProposalTimingConfig)
+            + getField @"votingTime" (def :: ProposalTimingConfig)
+            + getField @"lockingTime" (def :: ProposalTimingConfig)
             - 1
         )
     -- [S + D + V + L + 1, S + + D + V + L + E - 1]
     Locked ->
       closedBoundedInterval
         ( proposalStartingTime
-            + (def :: ProposalTimingConfig).draftTime
-            + (def :: ProposalTimingConfig).votingTime
-            + (def :: ProposalTimingConfig).lockingTime
+            + getField @"draftTime" (def :: ProposalTimingConfig)
+            + getField @"votingTime" (def :: ProposalTimingConfig)
+            + getField @"lockingTime" (def :: ProposalTimingConfig)
             + 1
         )
         ( proposalStartingTime
-            + (def :: ProposalTimingConfig).draftTime
-            + (def :: ProposalTimingConfig).votingTime
-            + (def :: ProposalTimingConfig).lockingTime
-            + (def :: ProposalTimingConfig).executingTime - 1
+            + getField @"draftTime" (def :: ProposalTimingConfig)
+            + getField @"votingTime" (def :: ProposalTimingConfig)
+            + getField @"lockingTime" (def :: ProposalTimingConfig)
+            + getField @"executingTime" (def :: ProposalTimingConfig) - 1
         )
     Finished -> error "Cannot advance 'Finished' proposal"
 
@@ -628,42 +628,42 @@ mkTooLateTimeRange advanceFrom =
     -- [S + D + 1, S + D + V - 1]
     Draft ->
       closedBoundedInterval
-        (proposalStartingTime + (def :: ProposalTimingConfig).draftTime + 1)
+        (proposalStartingTime + getField @"draftTime" (def :: ProposalTimingConfig) + 1)
         ( proposalStartingTime
-            + (def :: ProposalTimingConfig).draftTime
-            + (def :: ProposalTimingConfig).votingTime - 1
+            + getField @"draftTime" (def :: ProposalTimingConfig)
+            + getField @"votingTime" (def :: ProposalTimingConfig) - 1
         )
     -- [S + D + V + L + 1, S + D + V + L + E -1]
     VotingReady ->
       closedBoundedInterval
         ( proposalStartingTime
-            + (def :: ProposalTimingConfig).draftTime
-            + (def :: ProposalTimingConfig).votingTime
-            + (def :: ProposalTimingConfig).lockingTime
+            + getField @"draftTime" (def :: ProposalTimingConfig)
+            + getField @"votingTime" (def :: ProposalTimingConfig)
+            + getField @"lockingTime" (def :: ProposalTimingConfig)
             + 1
         )
         ( proposalStartingTime
-            + (def :: ProposalTimingConfig).draftTime
-            + (def :: ProposalTimingConfig).votingTime
-            + (def :: ProposalTimingConfig).lockingTime
-            + (def :: ProposalTimingConfig).executingTime
+            + getField @"draftTime" (def :: ProposalTimingConfig)
+            + getField @"votingTime" (def :: ProposalTimingConfig)
+            + getField @"lockingTime" (def :: ProposalTimingConfig)
+            + getField @"executingTime" (def :: ProposalTimingConfig)
             - 1
         )
     -- [S + D + V + L + E + 1, S + D + V + L + E + 100]
     Locked ->
       closedBoundedInterval
         ( proposalStartingTime
-            + (def :: ProposalTimingConfig).draftTime
-            + (def :: ProposalTimingConfig).votingTime
-            + (def :: ProposalTimingConfig).lockingTime
-            + (def :: ProposalTimingConfig).executingTime
+            + getField @"draftTime" (def :: ProposalTimingConfig)
+            + getField @"votingTime" (def :: ProposalTimingConfig)
+            + getField @"lockingTime" (def :: ProposalTimingConfig)
+            + getField @"executingTime" (def :: ProposalTimingConfig)
             + 1
         )
         ( proposalStartingTime
-            + (def :: ProposalTimingConfig).draftTime
-            + (def :: ProposalTimingConfig).votingTime
-            + (def :: ProposalTimingConfig).lockingTime
-            + (def :: ProposalTimingConfig).executingTime
+            + getField @"draftTime" (def :: ProposalTimingConfig)
+            + getField @"votingTime" (def :: ProposalTimingConfig)
+            + getField @"lockingTime" (def :: ProposalTimingConfig)
+            + getField @"executingTime" (def :: ProposalTimingConfig)
             + 100
         )
     Finished -> error "Cannot advance 'Finished' proposal"
@@ -679,7 +679,7 @@ getNextState = \case
 -- | Calculate the number of GTs per stake in order to exceed the minimum limit.
 compPerStakeGTsForDraft :: NumStake -> Integer
 compPerStakeGTsForDraft nCosigners =
-  untag (def :: ProposalThresholds).vote
+  untag (getField @"vote" (def :: ProposalThresholds))
     `div` fromIntegral nCosigners + 1
 
 dummyDatum :: ()
@@ -712,7 +712,7 @@ mkMockEffects useAuthScript n = effects
 
 numberOfVotesThatExceedsTheMinimumRequirement :: Integer
 numberOfVotesThatExceedsTheMinimumRequirement =
-  untag (def @ProposalThresholds).execute + 1
+  untag (getField @"execute" (def @ProposalThresholds)) + 1
 
 mkWinnerVotes :: Index -> (Winner, Integer)
 mkWinnerVotes idx =
@@ -788,7 +788,7 @@ mkValidToNextStateBundle nCosigners nEffects authScript from =
           modify $ \b ->
             b
               { stakeParameters =
-                  b.stakeParameters
+                  (getField @"stakeParameters" b)
                     { transactionSignedByOwners = True
                     , numStake = fromIntegral nCosigners
                     }
@@ -799,7 +799,7 @@ mkValidToNextStateBundle nCosigners nEffects authScript from =
           modify $ \b ->
             b
               { proposalParameters =
-                  b.proposalParameters
+                  (getField @"proposalParameters" b)
                     { winnerAndVotes = Just $ mkWinnerVotes winner
                     }
               }
@@ -897,7 +897,7 @@ mkFromFinishedBundles nCosigners nEffects =
       let template = mkValidToNextStateBundle nCosigners nEffects authScript from
        in template
             { proposalParameters =
-                template.proposalParameters
+                (getField @"proposalParameters" template)
                   { fromStatus = Finished
                   , toStatus = Finished
                   }
@@ -927,7 +927,7 @@ mkUnexpectedOutputStakeBundles nCosigners nEffects =
       let template = mkValidToNextStateBundle nCosigners nEffects authScript from
        in template
             { stakeParameters =
-                template.stakeParameters
+                (getField @"stakeParameters" template)
                   { numStake = 1
                   }
             }
@@ -938,13 +938,13 @@ mkInsufficientCosignsBundle :: Word -> Word -> ParameterBundle
 mkInsufficientCosignsBundle nCosigners nEffects =
   template
     { stakeParameters =
-        template.stakeParameters
+        (getField @"stakeParameters" template)
           { perStakeGTs = insuffcientPerStakeGTs
           }
     }
   where
     insuffcientPerStakeGTs =
-      untag (def :: ProposalThresholds).vote
+      untag (getField @"vote" (def :: ProposalThresholds))
         `div` fromIntegral nCosigners - 1
     template = mkValidToNextStateBundle nCosigners nEffects False Draft
 
@@ -957,7 +957,7 @@ setWinnerAndVotes ::
 setWinnerAndVotes pb wv =
   pb
     { proposalParameters =
-        pb.proposalParameters
+        (getField @"proposalParameters" pb)
           { winnerAndVotes = wv
           }
     }
@@ -994,7 +994,7 @@ mkMintGATsForWrongEffectsBundle nCosigners nEffects =
         take 4 $
           zipWith
             (\a i -> a {mintGATsFor = validatorHashes !! i})
-            template.authorityTokenParameters
+            (getField @"authorityTokenParameters" template)
             [1, 3 ..]
     }
   where
@@ -1023,7 +1023,7 @@ mkMintGATsWithoutTagBundle nCosigners nEffects =
               { invalidTokenName = True
               }
         )
-          <$> template.authorityTokenParameters
+          <$> getField @"authorityTokenParameters" template
     }
   where
     template = mkValidFromLockedBundle nCosigners nEffects
@@ -1041,12 +1041,12 @@ mkGATsWithWrongDatumBundle nCosigners nEffects =
     newAut =
       ( \aut ->
           AuthorityTokenParameters
-            aut.mintGATsFor
+            (getField @"mintGATsFor" aut)
             (Just (1 :: Integer))
-            aut.carryAuthScript
+            (getField @"carryAuthScript" aut)
             False
       )
-        <$> template.authorityTokenParameters
+        <$> getField @"authorityTokenParameters" template
 
 mkBadGovernorOutputDatumBundle ::
   Word ->

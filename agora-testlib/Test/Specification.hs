@@ -57,6 +57,7 @@ import Agora.Utils (
 import Control.Composition ((.**), (.***))
 import Data.Coerce (coerce)
 import Data.Text qualified as Text
+import Optics.Core (view)
 import Plutarch.Evaluate (evalScript)
 import PlutusLedgerApi.V1.Scripts (
   Context (..),
@@ -198,7 +199,7 @@ applyMintingPolicy' ::
 applyMintingPolicy' policy redeemer scriptContext =
   applyMintingPolicyScript
     (mkContext scriptContext)
-    policy.getCompiledMintingPolicy
+    (view #getCompiledMintingPolicy policy)
     (mkRedeemer redeemer)
 
 applyValidator' ::
@@ -213,7 +214,7 @@ applyValidator' ::
 applyValidator' validator datum redeemer scriptContext =
   applyValidator
     (mkContext scriptContext)
-    validator.getCompiledValidator
+    (view #getCompiledValidator validator)
     (mkDatum datum)
     (mkRedeemer redeemer)
 

@@ -263,9 +263,9 @@ pisGovernorDatumValid = phoistAcyclic $
       foldr1
         (#&&)
         [ ptraceIfFalse "thresholds valid" $
-            pisProposalThresholdsValid # pfromData datumF.proposalThresholds
+            pisProposalThresholdsValid # pfromData (getField @"proposalThresholds" datumF)
         , ptraceIfFalse "timings valid" $
-            pisProposalTimingConfigValid # pfromData datumF.proposalTimings
+            pisProposalTimingConfigValid # pfromData (getField @"proposalTimings" datumF)
         , ptraceIfFalse "time range valid" $
-            pisMaxTimeRangeWidthValid # datumF.createProposalTimeRangeMaxWidth
+            pisMaxTimeRangeWidthValid # getField @"createProposalTimeRangeMaxWidth" datumF
         ]
