@@ -12,9 +12,6 @@ module Agora.Utils (
   validatorHashToAddress,
   pltAsData,
   withBuiltinPairAsData,
-  CompiledValidator (..),
-  CompiledMintingPolicy (..),
-  CompiledEffect (..),
   pvalidatorHashToTokenName,
   pscriptHashToTokenName,
   scriptHashToTokenName,
@@ -33,10 +30,8 @@ import Plutarch.Unsafe (punsafeCoerce)
 import PlutusLedgerApi.V2 (
   Address (Address),
   Credential (ScriptCredential),
-  MintingPolicy,
   ScriptHash (ScriptHash),
   TokenName (TokenName),
-  Validator,
   ValidatorHash (ValidatorHash),
  )
 
@@ -111,30 +106,6 @@ withBuiltinPairAsData f p =
   let a = pfromData $ pfstBuiltin # p
       b = pfromData $ psndBuiltin # p
    in f a b
-
-{- | Type-safe wrapper for compiled plutus validator.
-
-     @since 0.2.0
--}
-newtype CompiledValidator (datum :: Type) (redeemer :: Type) = CompiledValidator
-  { getCompiledValidator :: Validator
-  }
-
-{- | Type-safe wrapper for compiled plutus miting policy.
-
-     @since 0.2.0
--}
-newtype CompiledMintingPolicy (redeemer :: Type) = CompiledMintingPolicy
-  { getCompiledMintingPolicy :: MintingPolicy
-  }
-
-{- | Type-safe wrapper for compiled plutus effect.
-
-     @since 0.2.0
--}
-newtype CompiledEffect (datum :: Type) = CompiledEffect
-  { getCompiledEffect :: Validator
-  }
 
 -- | @since 1.0.0
 plistEqualsBy ::

@@ -35,6 +35,8 @@
       "github:Liqwid-Labs/plutarch-context-builder?ref=main";
     plutarch-script-export.url =
       "github:Liqwid-Labs/plutarch-script-export?ref=main";
+    ply.url =
+      "github:seungheonoh/ply?ref=seungheonoh/directTypedScript";
     liqwid-nix.url = "github:Liqwid-Labs/liqwid-nix?ref=main";
   };
 
@@ -86,6 +88,8 @@
           "${inputs.plutarch-context-builder}"
           "${inputs.liqwid-plutarch-extra}"
           "${inputs.plutarch-script-export}"
+          "${inputs.ply}/ply-core"
+          "${inputs.ply}/ply-plutarch"
         ])
         (liqwid-nix.enableFormatCheck [
           "-XQuasiQuotes"

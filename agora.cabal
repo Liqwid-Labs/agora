@@ -116,6 +116,8 @@ common deps
     , serialise
     , tagged
     , template-haskell
+    , ply-core
+    , ply-plutarch
     , text
 
   mixins:

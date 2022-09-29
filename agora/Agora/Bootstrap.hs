@@ -11,21 +11,18 @@ import Agora.Effect.TreasuryWithdrawal (treasuryWithdrawalValidator)
 import Agora.Governor (Governor, gstOutRef, gtClassRef, maximumCosigners)
 import Agora.Governor.Scripts (governorPolicy, governorValidator)
 import Agora.Proposal.Scripts (proposalPolicy, proposalValidator)
-import Agora.Scripts (AgoraScripts (AgoraScripts))
+import Agora.Scripts (AgoraScripts (AgoraScripts), policySymbolEnvelope)
 import Agora.Scripts qualified as Scripts
 import Agora.Stake.Scripts (stakePolicy, stakeValidator)
 import Agora.Treasury (treasuryValidator)
-import Agora.Utils (
-  CompiledMintingPolicy (CompiledMintingPolicy),
-  CompiledValidator (CompiledValidator),
- )
-import Plutarch (Config)
-import Plutarch.Api.V2 (
-  mintingPolicySymbol,
-  mkMintingPolicy,
-  mkValidator,
- )
 import PlutusLedgerApi.V1.Value (AssetClass (AssetClass))
+import Ply (TypedScriptEnvelope)
+import Ply.Plutarch.TypedWriter
+import Data.Text (Text)
+import Plutarch (Config)
+
+mkEnvelope' :: forall (p :: S -> Type). TypedWriter p => Config -> ClosedTerm p -> Text -> TypedScriptEnvelope
+mkEnvelope' conf term descr = either (error . show) id $ mkEnvelope conf term descr
 
 {- | Parameterize and precompiled core scripts, given the
      'Agora.Governor.Governor' parameters and plutarch configurations.
@@ -33,39 +30,33 @@ import PlutusLedgerApi.V1.Value (AssetClass (AssetClass))
      @since 0.2.0
 -}
 agoraScripts :: Config -> Governor -> AgoraScripts
-agoraScripts conf gov = scripts
+agoraScripts conf gov =
+  AgoraScripts
+  { Scripts.compiledGovernorPolicy = governorPolicy'
+  , Scripts.compiledGovernorValidator = governorValidator'
+  , Scripts.compiledStakePolicy = stakePolicy'
+  , Scripts.compiledStakeValidator = stakeValidator'
+  , Scripts.compiledProposalPolicy = proposalPolicy'
+  , Scripts.compiledProposalValidator = proposalValidator'
+  , Scripts.compiledTreasuryValidator = treasuryValidator'
+  , Scripts.compiledAuthorityTokenPolicy = authorityPolicy'
+  , Scripts.compiledTreasuryWithdrawalEffect = treasuryWithdrawalEffect'
+  }
   where
-    mkMintingPolicy' = mkMintingPolicy conf
-    mkValidator' = mkValidator conf
-
-    compiledGovernorPolicy = mkMintingPolicy' $ governorPolicy gov.gstOutRef
-    compiledGovernorValidator = mkValidator' $ governorValidator scripts
-    governorSymbol = mintingPolicySymbol compiledGovernorPolicy
+    governorPolicy' = mkEnvelope' conf (governorPolicy gov.gstOutRef) ""
+    governorValidator' = mkEnvelope' conf (governorValidator (agoraScripts conf gov)) ""
+    governorSymbol = policySymbolEnvelope governorPolicy'
     governorAssetClass = AssetClass (governorSymbol, "")
 
     authority = AuthorityToken governorAssetClass
-    compiledAuthorityPolicy = mkMintingPolicy' $ authorityTokenPolicy authority
-    authorityTokenSymbol = mintingPolicySymbol compiledAuthorityPolicy
+    authorityPolicy' = mkEnvelope' conf (authorityTokenPolicy authority) ""
+    authorityTokenSymbol = policySymbolEnvelope authorityPolicy'
 
-    compiledProposalPolicy = mkMintingPolicy' $ proposalPolicy governorAssetClass
-    compiledProposalValidator = mkValidator' $ proposalValidator scripts gov.maximumCosigners
+    proposalPolicy' = mkEnvelope' conf (proposalPolicy governorAssetClass) ""
+    proposalValidator' = mkEnvelope' conf (proposalValidator (agoraScripts conf gov) gov.maximumCosigners) ""
 
-    compiledStakePolicy = mkMintingPolicy' $ stakePolicy gov.gtClassRef
-    compiledStakeValidator = mkValidator' $ stakeValidator scripts gov.gtClassRef
+    stakePolicy' = mkEnvelope' conf (stakePolicy gov.gtClassRef) ""
+    stakeValidator' = mkEnvelope' conf (stakeValidator (agoraScripts conf gov) gov.gtClassRef) ""
 
-    compiledTreasuryValidator = mkValidator' $ treasuryValidator authorityTokenSymbol
-
-    compiledTreasuryWithdrawalEffect = mkValidator' $ treasuryWithdrawalValidator authorityTokenSymbol
-
-    scripts =
-      AgoraScripts
-        { Scripts.compiledGovernorPolicy = CompiledMintingPolicy compiledGovernorPolicy
-        , Scripts.compiledGovernorValidator = CompiledValidator compiledGovernorValidator
-        , Scripts.compiledStakePolicy = CompiledMintingPolicy compiledStakePolicy
-        , Scripts.compiledStakeValidator = CompiledValidator compiledStakeValidator
-        , Scripts.compiledProposalPolicy = CompiledMintingPolicy compiledProposalPolicy
-        , Scripts.compiledProposalValidator = CompiledValidator compiledProposalValidator
-        , Scripts.compiledTreasuryValidator = CompiledValidator compiledTreasuryValidator
-        , Scripts.compiledAuthorityTokenPolicy = CompiledMintingPolicy compiledAuthorityPolicy
-        , Scripts.compiledTreasuryWithdrawalEffect = CompiledValidator compiledTreasuryWithdrawalEffect
-        }
+    treasuryValidator' = mkEnvelope' conf (treasuryValidator authorityTokenSymbol) ""
+    treasuryWithdrawalEffect' = mkEnvelope' conf (treasuryWithdrawalValidator authorityTokenSymbol) ""

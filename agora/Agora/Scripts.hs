@@ -17,20 +17,38 @@ module Agora.Scripts (
   stakeValidatorHash,
   authorityTokenSymbol,
   treasuryValidatorHash,
+  hashEnvelope,
+  validatorHashEnvelope,
+  policySymbolEnvelope,
 ) where
 
-import Agora.Effect.TreasuryWithdrawal (TreasuryWithdrawalDatum)
-import Agora.Governor (GovernorDatum, GovernorRedeemer)
-import Agora.Proposal (ProposalDatum, ProposalRedeemer)
-import Agora.Stake (StakeDatum, StakeRedeemer)
-import Agora.Utils (
-  CompiledMintingPolicy (getCompiledMintingPolicy),
-  CompiledValidator (getCompiledValidator),
-  validatorHashToTokenName,
- )
-import Plutarch.Api.V2 (mintingPolicySymbol, validatorHash)
+import Agora.Utils (validatorHashToTokenName)
+import qualified PlutusLedgerApi.V1.Scripts as Plutus
+import qualified PlutusLedgerApi.V1.Value as Plutus
+import Plutarch.Api.V2 (scriptHash)
 import PlutusLedgerApi.V1.Value (AssetClass (AssetClass))
 import PlutusLedgerApi.V2 (CurrencySymbol, ValidatorHash)
+import Data.Coerce(coerce)
+import Data.Aeson qualified as Aeson
+import GHC.Generics qualified as GHC
+
+import Ply (
+  TypedScriptEnvelope(TypedScriptEnvelope),
+  ScriptRole(ValidatorRole, MintingPolicyRole)
+ )
+
+hashEnvelope :: TypedScriptEnvelope -> Plutus.ScriptHash
+hashEnvelope (TypedScriptEnvelope _ _ _ _ script) = scriptHash script
+
+validatorHashEnvelope :: TypedScriptEnvelope -> Plutus.ValidatorHash
+validatorHashEnvelope (TypedScriptEnvelope _ ValidatorRole _ _ script) =
+  coerce $ scriptHash script
+validatorHashEnvelope _ = error "Expected ValidatorRole"
+
+policySymbolEnvelope :: TypedScriptEnvelope -> Plutus.CurrencySymbol
+policySymbolEnvelope (TypedScriptEnvelope _ MintingPolicyRole _ _ script) =
+  coerce $ scriptHash script
+policySymbolEnvelope _ = error "Expected MintingPolicyRole"
 
 {- | Precompiled core scripts.
 
@@ -48,23 +66,38 @@ import PlutusLedgerApi.V2 (CurrencySymbol, ValidatorHash)
      @since 0.2.0
 -}
 data AgoraScripts = AgoraScripts
-  { compiledGovernorPolicy :: CompiledMintingPolicy ()
-  , compiledGovernorValidator :: CompiledValidator GovernorDatum GovernorRedeemer
-  , compiledStakePolicy :: CompiledMintingPolicy ()
-  , compiledStakeValidator :: CompiledValidator StakeDatum StakeRedeemer
-  , compiledProposalPolicy :: CompiledMintingPolicy ()
-  , compiledProposalValidator :: CompiledValidator ProposalDatum ProposalRedeemer
-  , compiledTreasuryValidator :: CompiledValidator () ()
-  , compiledAuthorityTokenPolicy :: CompiledMintingPolicy ()
-  , compiledTreasuryWithdrawalEffect :: CompiledValidator () TreasuryWithdrawalDatum
+  { compiledGovernorPolicy :: TypedScriptEnvelope
+  , compiledGovernorValidator :: TypedScriptEnvelope
+  , compiledStakePolicy :: TypedScriptEnvelope
+  , compiledStakeValidator :: TypedScriptEnvelope
+  , compiledProposalPolicy :: TypedScriptEnvelope
+  , compiledProposalValidator :: TypedScriptEnvelope
+  , compiledTreasuryValidator :: TypedScriptEnvelope
+  , compiledAuthorityTokenPolicy :: TypedScriptEnvelope
+  , compiledTreasuryWithdrawalEffect :: TypedScriptEnvelope
   }
+  deriving anyclass
+    ( -- | @since 0.2.0
+      Aeson.ToJSON
+    , -- | @since 0.2.0
+      Aeson.FromJSON
+    )
+  deriving stock
+    ( -- | @since 0.2.0
+      Show
+    , -- | @since 0.2.0
+      Eq
+    , -- | @since 0.2.0
+      GHC.Generic
+    )
+
 
 {- | Get the currency symbol of the governor state token.
 
      @since 0.2.0
 -}
 governorSTSymbol :: AgoraScripts -> CurrencySymbol
-governorSTSymbol = mintingPolicySymbol . (.getCompiledMintingPolicy) . (.compiledGovernorPolicy)
+governorSTSymbol = policySymbolEnvelope . (.compiledGovernorPolicy)
 
 {- | Get the asset class of the governor state token.
 
@@ -78,14 +111,14 @@ governorSTAssetClass as = AssetClass (governorSTSymbol as, "")
      @since 0.2.0
 -}
 governorValidatorHash :: AgoraScripts -> ValidatorHash
-governorValidatorHash = validatorHash . (.getCompiledValidator) . (.compiledGovernorValidator)
+governorValidatorHash = validatorHashEnvelope . (.compiledGovernorValidator)
 
 {- | Get the currency symbol of the propsoal state token.
 
      @since 0.2.0
 -}
 proposalSTSymbol :: AgoraScripts -> CurrencySymbol
-proposalSTSymbol as = mintingPolicySymbol $ (.getCompiledMintingPolicy) as.compiledProposalPolicy
+proposalSTSymbol = policySymbolEnvelope . (.compiledProposalPolicy)
 
 {- | Get the asset class of the governor state token.
 
@@ -99,14 +132,14 @@ proposalSTAssetClass as = AssetClass (proposalSTSymbol as, "")
      @since 0.2.0
 -}
 proposalValidatoHash :: AgoraScripts -> ValidatorHash
-proposalValidatoHash = validatorHash . (.getCompiledValidator) . (.compiledProposalValidator)
+proposalValidatoHash = validatorHashEnvelope . (.compiledProposalValidator)
 
 {- | Get the script hash of the governor validator.
 
      @since 0.2.0
 -}
 stakeSTSymbol :: AgoraScripts -> CurrencySymbol
-stakeSTSymbol = mintingPolicySymbol . (.getCompiledMintingPolicy) . (.compiledStakePolicy)
+stakeSTSymbol = policySymbolEnvelope . (.compiledStakePolicy)
 
 {- | Get the asset class of the stake state token.
 
@@ -125,18 +158,18 @@ stakeSTAssetClass as =
      @since 0.2.0
 -}
 stakeValidatorHash :: AgoraScripts -> ValidatorHash
-stakeValidatorHash = validatorHash . (.getCompiledValidator) . (.compiledStakeValidator)
+stakeValidatorHash = validatorHashEnvelope . (.compiledStakeValidator)
 
 {- | Get the currency symbol of the authority token.
 
      @since 0.2.0
 -}
 authorityTokenSymbol :: AgoraScripts -> CurrencySymbol
-authorityTokenSymbol = mintingPolicySymbol . (.getCompiledMintingPolicy) . (.compiledAuthorityTokenPolicy)
+authorityTokenSymbol = policySymbolEnvelope . (.compiledAuthorityTokenPolicy)
 
 {- | Get the script hash of the treasury validator.
 
      @since 0.2.0
 -}
 treasuryValidatorHash :: AgoraScripts -> ValidatorHash
-treasuryValidatorHash = validatorHash . (.getCompiledValidator) . (.compiledTreasuryValidator)
+treasuryValidatorHash = validatorHashEnvelope . (.compiledTreasuryValidator)

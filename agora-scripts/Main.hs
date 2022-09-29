@@ -12,7 +12,6 @@ import Agora.Bootstrap qualified as Bootstrap
 import Agora.Governor (Governor (Governor))
 import Agora.SafeMoney (GTTag)
 import Agora.Scripts qualified as Scripts
-import Agora.Utils (CompiledMintingPolicy (getCompiledMintingPolicy), CompiledValidator (getCompiledValidator))
 import Data.Aeson qualified as Aeson
 import Data.Default (def)
 import Data.Function ((&))
@@ -21,16 +20,14 @@ import Data.Text (Text)
 import Development.GitRev (gitBranch, gitHash)
 import GHC.Generics qualified as GHC
 import Plutarch (Config (Config, tracingMode), TracingMode (DoTracing, NoTracing))
-import PlutusLedgerApi.V1 (
-  MintingPolicy (getMintingPolicy),
-  TxOutRef,
-  Validator (getValidator),
- )
+import PlutusLedgerApi.V1 (TxOutRef)
 import PlutusLedgerApi.V1.Value (AssetClass)
 import ScriptExport.API (runServer)
 import ScriptExport.Options (parseOptions)
 import ScriptExport.ScriptInfo (ScriptInfo, mkPolicyInfo, mkScriptInfo, mkValidatorInfo)
 import ScriptExport.Types (Builders, insertBuilder)
+-- import Data.Aeson.Encode.Pretty (encodePretty)
+import Ply
 
 main :: IO ()
 main =
@@ -150,12 +147,16 @@ data AgoraScripts = AgoraScripts
 
      @since 0.2.0
 -}
-mkPolicyInfo' :: forall redeemer. CompiledMintingPolicy redeemer -> ScriptInfo
-mkPolicyInfo' = mkScriptInfo . getMintingPolicy . (.getCompiledMintingPolicy)
+mkPolicyInfo' :: TypedScriptEnvelope -> ScriptInfo
+mkPolicyInfo' (TypedScriptEnvelope _ MintingPolicyRole _ _ script) =
+  mkScriptInfo script
+mkPolicyInfo' _ = error "Expected MintingPolicyRole"
 
 {- | Turn a precompiled validator to a 'ScriptInfo'.
 
      @since 0.2.0
 -}
-mkValidatorInfo' :: forall redeemer datum. CompiledValidator datum redeemer -> ScriptInfo
-mkValidatorInfo' = mkScriptInfo . getValidator . (.getCompiledValidator)
+mkValidatorInfo' :: TypedScriptEnvelope -> ScriptInfo
+mkValidatorInfo' (TypedScriptEnvelope _ ValidatorRole _ _ script) =
+  mkScriptInfo script
+mkValidatorInfo' _ = error "Expected ValidatorRole"
