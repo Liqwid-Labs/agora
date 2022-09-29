@@ -12,6 +12,8 @@ import Sample.Proposal.Cosign qualified as Cosign
 import Sample.Proposal.Create qualified as Create
 import Sample.Proposal.UnlockStake qualified as UnlockStake
 import Sample.Proposal.Vote qualified as Vote
+
+-- import Sample.Proposal.UnlockStake qualified as UnlockStake
 import Test.Specification (
   SpecificationTree,
   group,
@@ -52,7 +54,7 @@ specs =
               "invalid stake locks"
               Create.addInvalidLocksParameters
               True
-              False
+              True
               False
           , Create.mkTestTree
               "has reached maximum proposals limit"
@@ -128,10 +130,54 @@ specs =
           "voting"
           [ group
               "legal"
-              [ Vote.mkTestTree "ordinary" Vote.validVoteParameters True
-              , Vote.mkTestTree "delegate" Vote.validVoteAsDelegateParameters True
+              [ group "different number of stakes" $
+                  map
+                    ( \s ->
+                        group
+                          (unwords [show s, "stakes"])
+                          [ Vote.mkTestTree
+                              "by owner"
+                              (Vote.mkValidOwnerVoteBundle s)
+                              (Vote.Validity True True)
+                          , Vote.mkTestTree
+                              "by delegatee"
+                              (Vote.mkValidDelegateeVoteBundle s)
+                              (Vote.Validity True True)
+                          ]
+                    )
+                    [1, 3, 5, 7, 9]
+              , Vote.mkTestTree
+                  "transparent non-GT tokens"
+                  Vote.transparentAssets
+                  (Vote.Validity True True)
               ]
-              -- TODO: add negative test cases
+          , group
+              "illegal"
+              [ Vote.mkTestTree
+                  "vote for nonexistent outcome"
+                  Vote.voteForNonexistentOutcome
+                  (Vote.Validity False True)
+              , Vote.mkTestTree
+                  "unauthorized tx"
+                  Vote.transactionNotAuthorized
+                  (Vote.Validity True False)
+              , Vote.mkTestTree
+                  "no proposal"
+                  Vote.noProposal
+                  (Vote.Validity False False)
+              , Vote.mkTestTree
+                  "more than one proposals"
+                  Vote.voteForNonexistentOutcome
+                  (Vote.Validity False True)
+              , Vote.mkTestTree
+                  "locks not added"
+                  Vote.invalidLocks
+                  (Vote.Validity True False)
+              , Vote.mkTestTree
+                  "attempt to burn stakes"
+                  Vote.destroyStakes
+                  (Vote.Validity True False)
+              ]
           ]
       , group
           "advancing"
