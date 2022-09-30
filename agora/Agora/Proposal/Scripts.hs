@@ -320,18 +320,14 @@ proposalValidator as maximumCosigners =
 
     spendStakes' :: Term _ ((PStakeInputsContext :--> PUnit) :--> PUnit) <-
       pletC $
-        plam $ \val -> unTermCont $ do
+        plam $
           let stakeInputs =
                 pmapMaybe
                   # (pfield @"resolved" #>>> getStakeDatum)
                   # pfromData txInfoF.inputs
 
               ctx = pcon $ PStakeInputsContext stakeInputs
-
-          pguardC "No stake burnt" $
-            passetClassValueOf # txInfoF.mint # sstAssetClass #== 0
-
-          pure $ val # ctx
+           in (# ctx)
 
     let spendStakes ::
           ( PStakeInputsContext _ ->

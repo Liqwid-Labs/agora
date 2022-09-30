@@ -22,6 +22,7 @@ import Agora.Proposal (
 import Agora.Stake (
   PProposalContext (
     PNewProposal,
+    PNoProposal,
     PSpendProposal
   ),
   PProposalLock (PCreated, PVoted),
@@ -56,6 +57,21 @@ import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
 import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletC, pmatchC)
 import Plutarch.Numeric.Additive (AdditiveMonoid (zero), AdditiveSemigroup ((+)))
 import Prelude hiding (Num ((+)))
+
+pwithoutProposal ::
+  forall (s :: S).
+  Term
+    s
+    (PStakeRedeemerHandler :--> PStakeRedeemerHandler)
+pwithoutProposal = phoistAcyclic $
+  plam $ \f ctx -> pmatch ctx $ \ctxF ->
+    pif
+      ( pmatch ctxF.proposalContext $ \case
+          PNoProposal -> pconstant True
+          _ -> pconstant False
+      )
+      (f # ctx)
+      (ptraceError "No proposal is allowed")
 
 pbatchUpdateInputs ::
   forall (s :: S).
@@ -227,7 +243,7 @@ pdelegateHelper ::
         :--> PStakeRedeemerHandler
     )
 pdelegateHelper = phoistAcyclic $
-  plam $ \f ctx -> unTermCont $ do
+  plam $ \f -> pwithoutProposal #$ plam $ \ctx -> unTermCont $ do
     ctxF <- pmatchC ctx
     sigCtxF <- pmatchC ctxF.sigContext
 
@@ -287,7 +303,7 @@ pclearDelegate = pdelegateHelper #$ phoistAcyclic $
 -}
 pdestroy :: forall (s :: S). Term s PStakeRedeemerHandler
 pdestroy = phoistAcyclic $
-  plam $ \ctx -> unTermCont $ do
+  pwithoutProposal #$ plam $ \ctx -> unTermCont $ do
     ctxF <- pmatchC ctx
 
     pguardC "Owner signs this transaction" $
@@ -304,7 +320,7 @@ pdestroy = phoistAcyclic $
 -}
 pdepositWithdraw :: forall (s :: S). Term s PStakeRedeemerHandler
 pdepositWithdraw = phoistAcyclic $
-  plam $ \ctx -> unTermCont $ do
+  pwithoutProposal #$ plam $ \ctx -> unTermCont $ do
     ctxF <- pmatchC ctx
 
     pguardC "Owner signs this transaction" $
