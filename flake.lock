@@ -11460,11 +11460,11 @@
         "plutarch": "plutarch_6"
       },
       "locked": {
-        "lastModified": 1663679353,
-        "narHash": "sha256-CK+hgOoU9qARRnaUlxlh9ZBWb0G6d8F0VslAbXd8mIM=",
+        "lastModified": 1664495234,
+        "narHash": "sha256-GEl2kRkL3MdHL1fDKbur5VVThR/w082w7KccfDL42qg=",
         "owner": "Liqwid-Labs",
         "repo": "plutarch-context-builder",
-        "rev": "3bc59acb11264c4fa43c95fa615a4dbf69e0f981",
+        "rev": "9ea4dab758a4d60e69c794fe4e349ddabc8e7018",
         "type": "github"
       },
       "original": {
