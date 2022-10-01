@@ -198,7 +198,7 @@ library agora-specs
     Sample.Proposal.Cosign
     Sample.Proposal.Create
     Sample.Proposal.Shared
-    Sample.Proposal.UnlockStake
+    Sample.Proposal.Unlock
     Sample.Proposal.Vote
     Sample.Shared
     Sample.Stake
