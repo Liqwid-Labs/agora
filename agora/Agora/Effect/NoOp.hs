@@ -9,9 +9,9 @@ module Agora.Effect.NoOp (noOpValidator, PNoOp) where
 
 import Agora.Effect (makeEffect)
 import Agora.Plutarch.Orphans ()
+import Plutarch.Api.V1 (PCurrencySymbol)
 import Plutarch.Api.V2 (PValidator)
 import Plutarch.Orphans ()
-import PlutusLedgerApi.V1.Value (CurrencySymbol)
 
 {- | Dummy datum for NoOp effect.
 
@@ -40,6 +40,7 @@ instance PTryFrom PData (PAsData PNoOp)
 
      @since 0.1.0
 -}
-noOpValidator :: CurrencySymbol -> ClosedTerm PValidator
-noOpValidator curr = makeEffect curr $
-  \_ (_datum :: Term s (PAsData PNoOp)) _ _ -> popaque (pconstant ())
+noOpValidator :: ClosedTerm (PCurrencySymbol :--> PValidator)
+noOpValidator = plam $
+  makeEffect $
+    \_ (_datum :: Term s (PAsData PNoOp)) _ _ -> popaque (pconstant ())

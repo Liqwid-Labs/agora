@@ -27,7 +27,6 @@ import Agora.Proposal.Time (
   isLockingPeriod,
   isVotingPeriod,
  )
-import Agora.Scripts (AgoraScripts, governorSTSymbol, proposalSTSymbol, stakeSTAssetClass)
 import Agora.Stake (
   PProposalLock (PVoted),
   PStakeDatum,
@@ -41,7 +40,7 @@ import Agora.Stake (
 import Agora.Utils (
   plistEqualsBy,
  )
-import Plutarch.Api.V1 (PCredential)
+import Plutarch.Api.V1 (PCredential, PCurrencySymbol)
 import Plutarch.Api.V1.AssocMap (plookup)
 import Plutarch.Api.V2 (
   PMintingPolicy,
@@ -52,7 +51,7 @@ import Plutarch.Api.V2 (
   PTxOut,
   PValidator,
  )
-import Plutarch.Extra.AssetClass (passetClass, passetClassValueOf)
+import Plutarch.Extra.AssetClass (PAssetClass, passetClass, passetClassValueOf)
 import Plutarch.Extra.Category (PCategory (pidentity), PSemigroupoid ((#>>>)))
 import Plutarch.Extra.Comonad (pextract)
 import Plutarch.Extra.Field (pletAll, pletAllC)
@@ -83,7 +82,6 @@ import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (
 import Plutarch.Extra.Value (psymbolValueOf)
 import Plutarch.SafeMoney (PDiscrete (PDiscrete))
 import Plutarch.Unsafe (punsafeCoerce)
-import PlutusLedgerApi.V1.Value (AssetClass (AssetClass))
 
 {- | Policy for Proposals.
 
@@ -103,14 +101,16 @@ import PlutusLedgerApi.V1.Value (AssetClass (AssetClass))
 
      - This policy cannot be burned.
 
+     == Arguments
+
+     Following arguments should be provided(in this order):
+     1. The assetclass of GST, see 'Agora.Governor.Scripts.governorPolicy'.
+
      @since 0.1.0
 -}
-proposalPolicy ::
-  -- | The assetclass of GST, see 'Agora.Governor.Scripts.governorPolicy'.
-  AssetClass ->
-  ClosedTerm PMintingPolicy
-proposalPolicy (AssetClass (govCs, govTn)) =
-  plam $ \_redeemer ctx' -> unTermCont $ do
+proposalPolicy :: ClosedTerm (PAssetClass :--> PMintingPolicy)
+proposalPolicy =
+  plam $ \gtAssetClass _redeemer ctx' -> unTermCont $ do
     PScriptContext ctx' <- pmatchC ctx'
     ctx <- pletAllC ctx'
     PTxInfo txInfo' <- pmatchC $ pfromData ctx.txInfo
@@ -124,7 +124,7 @@ proposalPolicy (AssetClass (govCs, govTn)) =
 
     pguardC "Governance state-thread token must move" $
       pisTokenSpent
-        # (passetClass # pconstant govCs # pconstant govTn)
+        # gtAssetClass
         # txInfo.inputs
 
     pguardC "Minted exactly one proposal ST" $
@@ -201,16 +201,26 @@ instance DerivePlutusType PSpendSingleStakeContext where
        (see 'Agora.Proposal.AdvanceProposal' docs).
      - 'Agora.Proposal.Unlock' is always valid.
 
+     == Arguments
+
+     Following arguments should be provided(in this order):
+     1. state ST symbol
+     2. governor ST symbol
+     3. proposal ST symbol
+     4. maximum number of cosigners
+
      @since 0.1.0
 -}
 proposalValidator ::
-  -- | Lazy precompiled scripts.
-  AgoraScripts ->
-  -- | See 'Agora.Governor.Governor.maximumCosigners'.
-  Integer ->
-  ClosedTerm PValidator
-proposalValidator as maximumCosigners =
-  plam $ \datum redeemer ctx -> unTermCont $ do
+  ClosedTerm
+    ( PCurrencySymbol
+        :--> PCurrencySymbol
+        :--> PCurrencySymbol
+        :--> PInteger
+        :--> PValidator
+    )
+proposalValidator =
+  plam $ \sstSymbol gstSymbol pstSymbol maximumCosigners datum redeemer ctx -> unTermCont $ do
     ctxF <- pletAllC ctx
 
     txInfo <- pletC $ pfromData ctxF.txInfo
@@ -265,9 +275,7 @@ proposalValidator as maximumCosigners =
             #$ pfindJust
           # plam
             ( flip pletAll $ \outputF ->
-                let pstSymbol = pconstant $ proposalSTSymbol as
-
-                    isProposalUTxO =
+                let isProposalUTxO =
                       foldl1
                         (#&&)
                         [ ptraceIfFalse "Own by proposal validator" $
@@ -309,12 +317,10 @@ proposalValidator as maximumCosigners =
       pletC $
         plam $
           flip (pletFields @'["value", "datum"]) $ \txOutF ->
-            let AssetClass (stakeSym, _) = stakeSTAssetClass as
-
-                isStakeUTxO =
+            let isStakeUTxO =
                   -- A stake UTxO is a UTxO that carries SST.
                   psymbolValueOf
-                    # pconstant stakeSym
+                    # sstSymbol
                     # txOutF.value
                     #== 1
 
@@ -442,7 +448,7 @@ proposalValidator as maximumCosigners =
                   # proposalInputDatumF.cosigners
 
             pguardC "Less cosigners than maximum limit" $
-              plength # updatedSigs #< pconstant maximumCosigners
+              plength # updatedSigs #< maximumCosigners
 
             -- assuming sigs are sorted
             PJust cosUnique <- pmatchC $ pallUnique #$ pmap # plam pfromData # updatedSigs
@@ -726,8 +732,7 @@ proposalValidator as maximumCosigners =
                   pguardC "Proposal status set to Finished" $
                     proposalOutputStatus #== pconstant Finished
 
-                  let gstSymbol = pconstant $ governorSTSymbol as
-                      gstMoved =
+                  let gstMoved =
                         pany
                           # plam
                             ( \( (pfield @"value" #)

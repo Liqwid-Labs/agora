@@ -110,15 +110,16 @@ common deps
     , plutus-core
     , plutus-ledger-api
     , plutus-tx
+    , ply-core
+    , ply-plutarch
     , pprelude
     , prettyprinter
     , recursion-schemes
     , serialise
     , tagged
     , template-haskell
-    , ply-core
-    , ply-plutarch
     , text
+    , filepath
 
   mixins:
 
@@ -161,7 +162,6 @@ library
     Agora.Proposal.Scripts
     Agora.Proposal.Time
     Agora.SafeMoney
-    Agora.Scripts
     Agora.Stake
     Agora.Stake.Redeemers
     Agora.Stake.Scripts

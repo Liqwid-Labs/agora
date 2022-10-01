@@ -14507,11 +14507,11 @@
         "pre-commit-hooks": "pre-commit-hooks"
       },
       "locked": {
-        "lastModified": 1664402008,
-        "narHash": "sha256-VeAH3uQtDi4IkvOBJ57Txp14CftrLQHE6bf7r0wQaCI=",
+        "lastModified": 1664601311,
+        "narHash": "sha256-366T78fZs5Cmi7wfI07w5mIEff3XveSZ7+vuwXUK7Dw=",
         "owner": "seungheonoh",
         "repo": "ply",
-        "rev": "f77e877efa65b9aa5f1b9f64cdfcc28e51b46f9e",
+        "rev": "bbf43bf5b6c78c2dc09eecebbecdeaf1dc0be1d6",
         "type": "github"
       },
       "original": {

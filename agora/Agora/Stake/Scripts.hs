@@ -13,12 +13,6 @@ module Agora.Stake.Scripts (
 
 import Agora.Credential (authorizationContext, pauthorizedBy)
 import Agora.Proposal (PProposalRedeemer)
-import Agora.SafeMoney (GTTag)
-import Agora.Scripts (
-  AgoraScripts,
-  proposalSTAssetClass,
-  stakeSTSymbol,
- )
 import Agora.Stake (
   PProposalContext (
     PNewProposal,
@@ -55,9 +49,9 @@ import Agora.Stake.Redeemers (
   ppermitVote,
   pretractVote,
  )
-import Data.Tagged (Tagged (Tagged))
 import Plutarch.Api.V1 (
   PCredential (PPubKeyCredential, PScriptCredential),
+  PCurrencySymbol,
   PTokenName,
  )
 import Plutarch.Api.V1.AssocMap (plookup)
@@ -70,7 +64,7 @@ import Plutarch.Api.V2 (
   PValidator,
  )
 import Plutarch.Extra.AssetClass (
-  passetClass,
+  PAssetClass,
   passetClassValueOf,
   pvalueOf,
  )
@@ -96,14 +90,9 @@ import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (
   pmatchC,
   ptryFromC,
  )
-import Plutarch.Extra.Value (
-  psymbolValueOf,
- )
-import Plutarch.SafeMoney (
-  pvalueDiscrete',
- )
+import Plutarch.Extra.Value (psymbolValueOf)
+import Plutarch.SafeMoney (pvalueDiscrete)
 import Plutarch.Unsafe (punsafeCoerce)
-import PlutusLedgerApi.V1.Value (AssetClass (AssetClass))
 import Prelude hiding (Num ((+)))
 
 {- | Policy for Stake state threads.
@@ -123,14 +112,18 @@ import Prelude hiding (Num ((+)))
    - Check that exactly one state thread is burned.
    - Check that datum at state thread is valid and not locked.
 
+   == Arguments
+
+   Following arguments should be provided(in this order):
+   1. governor ST assetclass
+
    @since 0.1.0
 -}
 stakePolicy ::
   -- | The (governance) token that a Stake can store.
-  Tagged GTTag AssetClass ->
-  ClosedTerm PMintingPolicy
-stakePolicy gtClassRef =
-  plam $ \_redeemer ctx' -> unTermCont $ do
+  ClosedTerm (PAssetClass :--> PMintingPolicy)
+stakePolicy =
+  plam $ \gtAssetClass _redeemer ctx' -> unTermCont $ do
     ctx <- pletFieldsC @'["txInfo", "purpose"] ctx'
     txInfo <- pletC $ ctx.txInfo
     let _a :: Term _ PTxInfo
@@ -207,7 +200,7 @@ stakePolicy gtClassRef =
 
               let hasExpectedStake =
                     ptraceIfFalse "Stake ouput has expected amount of stake token" $
-                      pvalueDiscrete' gtClassRef # outputF.value #== datumF.stakedAmount
+                      pvalueDiscrete # gtAssetClass # outputF.value #== datumF.stakedAmount
               let ownerSignsTransaction =
                     ptraceIfFalse "Stake Owner should sign the transaction" $
                       pauthorizedBy
@@ -224,245 +217,234 @@ stakePolicy gtClassRef =
 
 {- | Create a stake validator, given the implementation of stake redeemers.
 
+     == Arguments
+
+     Following arguments should be provided(in this order):
+     1. stake ST symbol
+     2. proposal ST assetclass
+     3. governor ST assetclass
+
      @since 1.0.0
 -}
 mkStakeValidator ::
   StakeRedeemerImpl ->
-  AgoraScripts ->
-  Tagged GTTag AssetClass ->
-  ClosedTerm PValidator
-mkStakeValidator
-  impl
-  as
-  (Tagged (AssetClass (gtSym, gtTn))) =
-    plam $ \datum redeemer ctx -> unTermCont $ do
-      gtAssetClass <- pletC $ passetClass # pconstant gtSym # pconstant gtTn
+  ClosedTerm (PCurrencySymbol :--> PAssetClass :--> PAssetClass :--> PValidator)
+mkStakeValidator impl =
+  plam $ \sstSymbol pstAssetClass gtAssetClass datum redeemer ctx -> unTermCont $ do
+    ctxF <- pletFieldsC @'["txInfo", "purpose"] ctx
+    txInfo <- pletC $ pfromData ctxF.txInfo
+    txInfoF <-
+      pletFieldsC
+        @'[ "inputs"
+          , "referenceInputs"
+          , "outputs"
+          , "mint"
+          , "validRange"
+          , "signatories"
+          , "redeemers"
+          , "datums"
+          ]
+        txInfo
 
-      --------------------------------------------------------------------------
+    --------------------------------------------------------------------------
 
-      ctxF <- pletFieldsC @'["txInfo", "purpose"] ctx
-      txInfo <- pletC $ pfromData ctxF.txInfo
-      txInfoF <-
-        pletFieldsC
-          @'[ "inputs"
-            , "referenceInputs"
-            , "outputs"
-            , "mint"
-            , "validRange"
-            , "signatories"
-            , "redeemers"
-            , "datums"
-            ]
-          txInfo
+    -- Assemble the stake input context.
 
-      --------------------------------------------------------------------------
+    stakeInputDatum <- pfromData . fst <$> ptryFromC datum
+    stakeInputDatumF <- pletAllC $ pto stakeInputDatum
 
-      -- Assemble the stake input context.
+    PSpending stakeInputRef <- pmatchC $ pfromData ctxF.purpose
 
-      stakeInputDatum <- pfromData . fst <$> ptryFromC datum
-      stakeInputDatumF <- pletAllC $ pto stakeInputDatum
+    -- The UTxO we are validating, which is also the input stake.
+    stakeInput <-
+      pletC $
+        pfield @"resolved"
+          #$ passertPJust # "Malformed script context: own input not found"
+          #$ pfindTxInByTxOutRef
+            # (pfield @"_0" # stakeInputRef)
+            # txInfoF.inputs
 
-      PSpending stakeInputRef <- pmatchC $ pfromData ctxF.purpose
+    stakeInputF <- pletFieldsC @'["address", "value"] stakeInput
 
-      -- The UTxO we are validating, which is also the input stake.
-      stakeInput <-
-        pletC $
-          pfield @"resolved"
-            #$ passertPJust # "Malformed script context: own input not found"
-            #$ pfindTxInByTxOutRef
-              # (pfield @"_0" # stakeInputRef)
-              # txInfoF.inputs
+    stakeInputContext <-
+      pletC $
+        pcon $
+          PStakeInput
+            stakeInputDatum
+            stakeInputF.value
 
-      stakeInputF <- pletFieldsC @'["address", "value"] stakeInput
+    --------------------------------------------------------------------------
 
-      stakeInputContext <-
-        pletC $
-          pcon $
-            PStakeInput
-              stakeInputDatum
-              stakeInputF.value
+    -- Assemble the signature context.
 
-      --------------------------------------------------------------------------
+    signedBy <- pletC $ pauthorizedBy # authorizationContext txInfoF
 
-      -- Assemble the signature context.
+    let ownerSignsTransaction = signedBy # stakeInputDatumF.owner
 
-      signedBy <- pletC $ pauthorizedBy # authorizationContext txInfoF
+        delegateSignsTransaction =
+          pmaybeData
+            # pconstant False
+            # plam ((signedBy #) . pfromData)
+            # pfromData stakeInputDatumF.delegatedTo
 
-      let ownerSignsTransaction = signedBy # stakeInputDatumF.owner
+    sigContext <-
+      pletC $
+        pif ownerSignsTransaction (pcon PSignedByOwner) $
+          pif delegateSignsTransaction (pcon PSignedByDelegate) $
+            pcon PUnknownSig
 
-          delegateSignsTransaction =
-            pmaybeData
-              # pconstant False
-              # plam ((signedBy #) . pfromData)
-              # pfromData stakeInputDatumF.delegatedTo
+    --------------------------------------------------------------------------
 
-      sigContext <-
-        pletC $
-          pif ownerSignsTransaction (pcon PSignedByOwner) $
-            pif delegateSignsTransaction (pcon PSignedByDelegate) $
-              pcon PUnknownSig
+    mintedST <- pletC $ psymbolValueOf # sstSymbol # txInfoF.mint
+    valueSpent <- pletC $ pvalueSpent # txInfoF.inputs
+    spentST <- pletC $ psymbolValueOf # sstSymbol #$ valueSpent
 
-      --------------------------------------------------------------------------
+    -- The stake validator can only handle one stake in one transaction.
 
-      stCurrencySymbol <- pletC $ pconstant $ stakeSTSymbol as
-      mintedST <- pletC $ psymbolValueOf # stCurrencySymbol # txInfoF.mint
-      valueSpent <- pletC $ pvalueSpent # txInfoF.inputs
-      spentST <- pletC $ psymbolValueOf # stCurrencySymbol #$ valueSpent
+    pguardC "ST at inputs must be 1" $
+      spentST #== 1
 
-      -- The stake validator can only handle one stake in one transaction.
+    let oneStakeBurnt =
+          ptraceIfFalse "Exactly one stake st burnt" $
+            mintedST #== (-1)
 
-      pguardC "ST at inputs must be 1" $
-        spentST #== 1
+    --------------------------------------------------------------------------
 
-      let oneStakeBurnt =
-            ptraceIfFalse "Exactly one stake st burnt" $
-              mintedST #== (-1)
+    -- Assemble the stake output context.
 
-      --------------------------------------------------------------------------
+    let -- Look for the output stake.
+        stakeOutput =
+          pfindJust
+            # plam
+              ( \output -> unTermCont $ do
+                  outputF <-
+                    pletFieldsC @'["address", "value", "datum"]
+                      output
 
-      -- Assemble the stake output context.
+                  let isStakeOutput =
+                        -- The stake should be owned by the stake validator.
+                        outputF.address #== stakeInputF.address
+                          #&&
+                          -- The stake UTxO carries the state thread token.
+                          psymbolValueOf
+                            # sstSymbol
+                            # outputF.value #== 1
 
-      let -- Look for the output stake.
-          stakeOutput =
-            pfindJust
-              # plam
-                ( \output -> unTermCont $ do
-                    outputF <-
-                      pletFieldsC @'["address", "value", "datum"]
-                        output
+                      stakeOutputDatum =
+                        pfromOutputDatum
+                          # outputF.datum
+                          # txInfoF.datums
 
-                    let isStakeOutput =
-                          -- The stake should be owned by the stake validator.
-                          outputF.address #== stakeInputF.address
-                            #&&
-                            -- The stake UTxO carries the state thread token.
-                            psymbolValueOf
-                              # stCurrencySymbol
-                              # outputF.value #== 1
+                      context =
+                        pcon $
+                          PStakeOutput
+                            (pfromData stakeOutputDatum)
+                            outputF.value
 
-                        stakeOutputDatum =
-                          pfromOutputDatum
-                            # outputF.datum
-                            # txInfoF.datums
-
-                        context =
-                          pcon $
-                            PStakeOutput
-                              (pfromData stakeOutputDatum)
-                              outputF.value
-
-                    pure $
-                      pif
-                        isStakeOutput
-                        (pjust # context)
-                        pnothing
-                )
-              # pfromData txInfoF.outputs
-
-      stakeOutputContext <-
-        pletC $
-          pmatch stakeOutput $ \case
-            -- Stake output found.
-            PJust stakeOutput' -> stakeOutput'
-            -- Stake output not found, meaning the input stake should be burnt.
-            PNothing -> unTermCont $ do
-              pguardC "One stake should be burnt" oneStakeBurnt
-
-              pure $ pcon PStakeBurnt
-
-      --------------------------------------------------------------------------
-
-      -- Assemble the proposal context.
-
-      let AssetClass (propCs, propTn) = proposalSTAssetClass as
-
-      proposalSTClass <-
-        pletC $
-          passetClass
-            # pconstant propCs
-            # pconstant propTn
-
-      let pstMinted =
-            passetClassValueOf # txInfoF.mint # proposalSTClass #== 1
-
-      proposalContext <-
-        pletC $
-          let convertRedeemer = plam $ \(pto -> dt) ->
-                ptryFrom @PProposalRedeemer dt fst
-
-              findRedeemer = plam $ \ref ->
-                plookup
-                  # pcon
-                    ( PSpending $
-                        pdcons @_0
-                          # pdata ref
-                          # pdnil
-                    )
-                  # txInfoF.redeemers
-
-              f :: Term _ (PTxInInfo :--> PMaybe PTxOutRef)
-              f = plam $ \inInfo ->
-                let value = pfield @"value" #$ pfield @"resolved" # inInfo
-                    ref = pfield @"outRef" # inInfo
-                 in pif
-                      (passetClassValueOf # value # proposalSTClass #== 1)
-                      (pjust # ref)
+                  pure $
+                    pif
+                      isStakeOutput
+                      (pjust # context)
                       pnothing
+              )
+            # pfromData txInfoF.outputs
 
-              proposalRef = pfindJust # f # txInfoF.inputs
-           in pif pstMinted (pcon PNewProposal) $
-                pmaybe
-                  # pcon PNoProposal
-                  # plam
-                    ( \((convertRedeemer #) -> proposalRedeemer) ->
-                        pcon $ PWithProposalRedeemer proposalRedeemer
-                    )
-                  #$ proposalRef #>>= findRedeemer
+    stakeOutputContext <-
+      pletC $
+        pmatch stakeOutput $ \case
+          -- Stake output found.
+          PJust stakeOutput' -> stakeOutput'
+          -- Stake output not found, meaning the input stake should be burnt.
+          PNothing -> unTermCont $ do
+            pguardC "One stake should be burnt" oneStakeBurnt
 
-      --------------------------------------------------------------------------
+            pure $ pcon PStakeBurnt
 
-      -- Assemeble the redeemer handler context.
+    --------------------------------------------------------------------------
 
-      mkRedeemerhandlerContext <- pletC $
-        plam $ \redeemerContext ->
-          pcon $
-            PStakeRedeemerHandlerContext
-              stakeInputContext
-              stakeOutputContext
-              redeemerContext
-              sigContext
-              proposalContext
-              gtAssetClass
-              txInfo
+    -- Assemble the proposal context.
 
-      noMetadataContext <-
-        pletC $
-          mkRedeemerhandlerContext
-            #$ pcon
-            $ PNoMetadata
+    let pstMinted =
+          passetClassValueOf # txInfoF.mint # pstAssetClass #== 1
 
-      --------------------------------------------------------------------------
+    proposalContext <-
+      pletC $
+        let convertRedeemer = plam $ \(pto -> dt) ->
+              ptryFrom @PProposalRedeemer dt fst
 
-      -- Call the redeemer handler.
+            findRedeemer = plam $ \ref ->
+              plookup
+                # pcon
+                  ( PSpending $
+                      pdcons @_0
+                        # pdata ref
+                        # pdnil
+                  )
+                # txInfoF.redeemers
 
-      stakeRedeemer :: Term _ PStakeRedeemer <- fst <$> ptryFromC redeemer
+            f :: Term _ (PTxInInfo :--> PMaybe PTxOutRef)
+            f = plam $ \inInfo ->
+              let value = pfield @"value" #$ pfield @"resolved" # inInfo
+                  ref = pfield @"outRef" # inInfo
+               in pif
+                    (passetClassValueOf # value # pstAssetClass #== 1)
+                    (pjust # ref)
+                    pnothing
 
-      pure $
-        popaque $
-          pmatch stakeRedeemer $ \case
-            PDestroy _ -> runStakeRedeemerHandler impl.onDestroy # noMetadataContext
-            PPermitVote _ -> runStakeRedeemerHandler impl.onPermitVote # noMetadataContext
-            PRetractVotes _ -> runStakeRedeemerHandler impl.onRetractVote # noMetadataContext
-            PClearDelegate _ -> runStakeRedeemerHandler impl.onClearDelegate # noMetadataContext
-            PDelegateTo ((pfield @"pkh" #) -> pkh) ->
-              runStakeRedeemerHandler impl.onDelegateTo
-                #$ mkRedeemerhandlerContext
-                #$ pcon
-                $ PSetDelegateTo pkh
-            PDepositWithdraw ((pfield @"delta" #) -> delta) ->
-              runStakeRedeemerHandler impl.onDepositWithdraw #$ mkRedeemerhandlerContext
-                #$ pcon
-                $ PDepositWithdrawDelta delta
+            proposalRef = pfindJust # f # txInfoF.inputs
+         in pif pstMinted (pcon PNewProposal) $
+              pmaybe
+                # pcon PNoProposal
+                # plam
+                  ( \((convertRedeemer #) -> proposalRedeemer) ->
+                      pcon $ PWithProposalRedeemer proposalRedeemer
+                  )
+                #$ proposalRef #>>= findRedeemer
+
+    --------------------------------------------------------------------------
+
+    -- Assemeble the redeemer handler context.
+
+    mkRedeemerhandlerContext <- pletC $
+      plam $ \redeemerContext ->
+        pcon $
+          PStakeRedeemerHandlerContext
+            stakeInputContext
+            stakeOutputContext
+            redeemerContext
+            sigContext
+            proposalContext
+            gtAssetClass
+            txInfo
+
+    noMetadataContext <-
+      pletC $
+        mkRedeemerhandlerContext
+          #$ pcon
+          $ PNoMetadata
+
+    --------------------------------------------------------------------------
+
+    -- Call the redeemer handler.
+
+    stakeRedeemer :: Term _ PStakeRedeemer <- fst <$> ptryFromC redeemer
+
+    pure $
+      popaque $
+        pmatch stakeRedeemer $ \case
+          PDestroy _ -> runStakeRedeemerHandler impl.onDestroy # noMetadataContext
+          PPermitVote _ -> runStakeRedeemerHandler impl.onPermitVote # noMetadataContext
+          PRetractVotes _ -> runStakeRedeemerHandler impl.onRetractVote # noMetadataContext
+          PClearDelegate _ -> runStakeRedeemerHandler impl.onClearDelegate # noMetadataContext
+          PDelegateTo ((pfield @"pkh" #) -> pkh) ->
+            runStakeRedeemerHandler impl.onDelegateTo
+              #$ mkRedeemerhandlerContext
+              #$ pcon
+              $ PSetDelegateTo pkh
+          PDepositWithdraw ((pfield @"delta" #) -> delta) ->
+            runStakeRedeemerHandler impl.onDepositWithdraw #$ mkRedeemerhandlerContext
+              #$ pcon
+              $ PDepositWithdrawDelta delta
 
 {- | Validator intended for Stake UTXOs to be locked by.
 
@@ -504,14 +486,16 @@ mkStakeValidator
      - The stake must not be locked.
      - Tx must be signed by the owner.
 
+     == Arguments
+
+     Following arguments should be provided(in this order):
+     1. stake ST symbol
+     2. proposal ST assetclass
+     3. governor ST assetclass
+
      @since 0.1.0
 -}
-stakeValidator ::
-  -- | Lazy precompiled scripts.
-  AgoraScripts ->
-  -- | See 'Agora.Governor.Governor.gtClassRef'.
-  Tagged GTTag AssetClass ->
-  ClosedTerm PValidator
+stakeValidator :: ClosedTerm (PCurrencySymbol :--> PAssetClass :--> PAssetClass :--> PValidator)
 stakeValidator =
   mkStakeValidator $
     StakeRedeemerImpl

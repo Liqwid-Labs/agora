@@ -9,7 +9,6 @@ module Agora.AuthorityToken (
   authorityTokenPolicy,
   authorityTokensValidIn,
   singleAuthorityTokenBurned,
-  AuthorityToken (..),
 ) where
 
 import Plutarch.Api.V1 (
@@ -29,34 +28,13 @@ import Plutarch.Api.V2 (
   PTxInfo (PTxInfo),
   PTxOut (PTxOut),
  )
-import Plutarch.Extra.AssetClass (passetClass, passetClassValueOf)
+import Plutarch.Extra.AssetClass (PAssetClass, passetClass, passetClassValueOf)
 import "liqwid-plutarch-extra" Plutarch.Extra.List (plookupAssoc)
 import Plutarch.Extra.ScriptContext (pisTokenSpent)
 import Plutarch.Extra.Sum (PSum (PSum))
 import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC)
 import Plutarch.Extra.Traversable (pfoldMap)
 import Plutarch.Extra.Value (psymbolValueOf)
-import PlutusLedgerApi.V1.Value (AssetClass (AssetClass))
-
---------------------------------------------------------------------------------
-
-{- | An AuthorityToken represents a proof that a particular token
-     spent in the same transaction the AuthorityToken was minted.
-     In effect, this means that the validator that locked such a token
-     must have approved the transaction in which an AuthorityToken is minted.
-     Said validator should be made aware of an AuthorityToken token's existence
-     in order to prevent incorrect minting.
-
-     @since 0.1.0
--}
-newtype AuthorityToken = AuthorityToken
-  { authority :: AssetClass
-  -- ^ Token that must move in order for minting this to be valid.
-  }
-  deriving stock
-    ( -- | @since 0.1.0
-      Generic
-    )
 
 --------------------------------------------------------------------------------
 
@@ -143,20 +121,27 @@ singleAuthorityTokenBurned gatCs inputs mint = unTermCont $ do
 
 {- | Policy given 'AuthorityToken' params.
 
+     == Authority Token
+
+     An AuthorityToken represents a proof that a particular token
+     spent in the same transaction the AuthorityToken was minted.
+     In effect, this means that the validator that locked such a token
+     must have approved the transaction in which an AuthorityToken is minted.
+     Said validator should be made aware of an AuthorityToken token's existence
+     in order to prevent incorrect minting.
+
      @since 0.1.0
 -}
-authorityTokenPolicy :: AuthorityToken -> ClosedTerm PMintingPolicy
-authorityTokenPolicy params =
-  plam $ \_redeemer ctx' ->
+authorityTokenPolicy :: ClosedTerm (PAssetClass :--> PMintingPolicy)
+authorityTokenPolicy =
+  plam $ \atAssetClass _redeemer ctx' ->
     pmatch ctx' $ \(PScriptContext ctx') -> unTermCont $ do
       ctx <- pletFieldsC @'["txInfo", "purpose"] ctx'
       PTxInfo txInfo' <- pmatchC $ pfromData ctx.txInfo
       txInfo <- pletFieldsC @'["inputs", "mint", "outputs"] txInfo'
       let inputs = txInfo.inputs
           mintedValue = pfromData txInfo.mint
-          AssetClass (govCs, govTn) = params.authority
-          govAc = passetClass # pconstant govCs # pconstant govTn
-          govTokenSpent = pisTokenSpent # govAc # inputs
+          govTokenSpent = pisTokenSpent # atAssetClass # inputs
 
       PMinting ownSymbol' <- pmatchC $ pfromData ctx.purpose
 

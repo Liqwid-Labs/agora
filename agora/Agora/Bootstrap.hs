@@ -4,59 +4,64 @@
 
      Initialize a governance system
 -}
-module Agora.Bootstrap (agoraScripts) where
+module Agora.Bootstrap (agoraScripts, writeAgoraScripts) where
 
-import Agora.AuthorityToken (AuthorityToken (AuthorityToken), authorityTokenPolicy)
+import Agora.AuthorityToken (authorityTokenPolicy)
 import Agora.Effect.TreasuryWithdrawal (treasuryWithdrawalValidator)
-import Agora.Governor (Governor, gstOutRef, gtClassRef, maximumCosigners)
+import Agora.Effect.GovernorMutation (mutateGovernorValidator)
 import Agora.Governor.Scripts (governorPolicy, governorValidator)
 import Agora.Proposal.Scripts (proposalPolicy, proposalValidator)
-import Agora.Scripts (AgoraScripts (AgoraScripts), policySymbolEnvelope)
-import Agora.Scripts qualified as Scripts
 import Agora.Stake.Scripts (stakePolicy, stakeValidator)
 import Agora.Treasury (treasuryValidator)
-import PlutusLedgerApi.V1.Value (AssetClass (AssetClass))
-import Ply (TypedScriptEnvelope)
-import Ply.Plutarch.TypedWriter
-import Data.Text (Text)
+import Data.Text (Text, unpack)
 import Plutarch (Config)
+import Plutarch.Extra.AssetClass (PAssetClass)
+import PlutusLedgerApi.V1.Value (AssetClass)
+import Ply (TypedScriptEnvelope)
+import Ply.Core.Serialize (writeEnvelope)
+import Ply.Plutarch.TypedWriter (TypedWriter, mkEnvelope)
+import Ply.Plutarch.Class (PlyArgOf)
+import Data.Map (Map, fromList, traverseWithKey)
+import System.FilePath ((</>))
+import Control.Monad (void)
 
-mkEnvelope' :: forall (p :: S -> Type). TypedWriter p => Config -> ClosedTerm p -> Text -> TypedScriptEnvelope
-mkEnvelope' conf term descr = either (error . show) id $ mkEnvelope conf term descr
+type instance PlyArgOf PAssetClass = AssetClass
 
-{- | Parameterize and precompiled core scripts, given the
-     'Agora.Governor.Governor' parameters and plutarch configurations.
+{- | Parameterize core scripts, given the 'Agora.Governor.Governor'
+     parameters and plutarch configurations.
 
      @since 0.2.0
 -}
-agoraScripts :: Config -> Governor -> AgoraScripts
-agoraScripts conf gov =
-  AgoraScripts
-  { Scripts.compiledGovernorPolicy = governorPolicy'
-  , Scripts.compiledGovernorValidator = governorValidator'
-  , Scripts.compiledStakePolicy = stakePolicy'
-  , Scripts.compiledStakeValidator = stakeValidator'
-  , Scripts.compiledProposalPolicy = proposalPolicy'
-  , Scripts.compiledProposalValidator = proposalValidator'
-  , Scripts.compiledTreasuryValidator = treasuryValidator'
-  , Scripts.compiledAuthorityTokenPolicy = authorityPolicy'
-  , Scripts.compiledTreasuryWithdrawalEffect = treasuryWithdrawalEffect'
-  }
+agoraScripts :: Config -> Map Text TypedScriptEnvelope
+agoraScripts conf =
+  fromList
+      [ envelope "agora:governorPolicy" governorPolicy
+      , envelope "agora:governorValidator" governorValidator
+      , envelope "agora:stakePolicy" stakePolicy
+      , envelope "agora:stakeValidator" stakeValidator
+      , envelope "agora:proposalPolicy" proposalPolicy
+      , envelope "agora:proposalValidator" proposalValidator
+      , envelope "agora:treasuryValidator" treasuryValidator
+      , envelope "agora:authorityTokenPolicy" authorityTokenPolicy
+      , envelope "agora:treasuryWithdrawalValidator" treasuryWithdrawalValidator
+      , envelope "agora:mutateGovernorValidator" mutateGovernorValidator
+      ]
   where
-    governorPolicy' = mkEnvelope' conf (governorPolicy gov.gstOutRef) ""
-    governorValidator' = mkEnvelope' conf (governorValidator (agoraScripts conf gov)) ""
-    governorSymbol = policySymbolEnvelope governorPolicy'
-    governorAssetClass = AssetClass (governorSymbol, "")
+    envelope ::
+      forall (pt :: S -> Type).
+      TypedWriter pt =>
+      Text ->
+      ClosedTerm pt ->
+      (Text, TypedScriptEnvelope)
+    envelope d t = (d, either (error . unpack) id $ mkEnvelope conf d t)
 
-    authority = AuthorityToken governorAssetClass
-    authorityPolicy' = mkEnvelope' conf (authorityTokenPolicy authority) ""
-    authorityTokenSymbol = policySymbolEnvelope authorityPolicy'
+{- | Write all agora scripts to the given path.
 
-    proposalPolicy' = mkEnvelope' conf (proposalPolicy governorAssetClass) ""
-    proposalValidator' = mkEnvelope' conf (proposalValidator (agoraScripts conf gov) gov.maximumCosigners) ""
-
-    stakePolicy' = mkEnvelope' conf (stakePolicy gov.gtClassRef) ""
-    stakeValidator' = mkEnvelope' conf (stakeValidator (agoraScripts conf gov) gov.gtClassRef) ""
-
-    treasuryValidator' = mkEnvelope' conf (treasuryValidator authorityTokenSymbol) ""
-    treasuryWithdrawalEffect' = mkEnvelope' conf (treasuryWithdrawalValidator authorityTokenSymbol) ""
+     @since 0.2.0
+-}
+writeAgoraScripts :: Config -> FilePath -> IO ()
+writeAgoraScripts conf path =
+  void $
+    traverseWithKey
+      (\name ts -> writeEnvelope (path </> unpack name <> ".plutus") ts) $
+      agoraScripts conf

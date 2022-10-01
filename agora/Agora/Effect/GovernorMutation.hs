@@ -25,8 +25,7 @@ import Agora.Governor (
   pisGovernorDatumValid,
  )
 import Agora.Plutarch.Orphans ()
-import Agora.Scripts (AgoraScripts, authorityTokenSymbol, governorSTAssetClass)
-import Plutarch.Api.V1 (PValue)
+import Plutarch.Api.V1 (PCurrencySymbol)
 import Plutarch.Api.V2 (
   PTxOutRef,
   PValidator,
@@ -35,15 +34,14 @@ import Plutarch.DataRepr (
   DerivePConstantViaData (DerivePConstantViaData),
   PDataFields,
  )
+import Plutarch.Extra.AssetClass (PAssetClass, passetClassValueOf)
 import Plutarch.Extra.Maybe (
   passertPJust,
  )
 import Plutarch.Extra.ScriptContext (pfromOutputDatum, pisScriptAddress)
 import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletFieldsC)
-import Plutarch.Extra.Value (pvalueOf)
 import Plutarch.Lift (PConstantDecl, PLifted, PUnsafeLiftDecl)
 import PlutusLedgerApi.V1 (TxOutRef)
-import PlutusLedgerApi.V1.Value (AssetClass (AssetClass))
 import PlutusTx qualified
 
 --------------------------------------------------------------------------------
@@ -138,78 +136,75 @@ deriving anyclass instance PTryFrom PData PMutateGovernorDatum
      @since 0.1.0
 -}
 mutateGovernorValidator ::
-  -- | Lazy precompiled scripts. This is beacuse we need the symbol of GST.
-  AgoraScripts ->
-  ClosedTerm PValidator
-mutateGovernorValidator as = makeEffect (authorityTokenSymbol as) $
-  \_gatCs (datum :: Term _ PMutateGovernorDatum) _ txInfo -> unTermCont $ do
-    datumF <- pletFieldsC @'["newDatum", "governorRef"] datum
-    txInfoF <- pletFieldsC @'["mint", "inputs", "outputs", "datums"] txInfo
+  ClosedTerm (PAssetClass :--> PCurrencySymbol :--> PValidator)
+mutateGovernorValidator =
+  plam $ \gtAssetClass -> makeEffect @PMutateGovernorDatum $
+    \_ datum _ txInfo -> unTermCont $ do
+      datumF <- pletFieldsC @'["newDatum", "governorRef"] datum
+      txInfoF <- pletFieldsC @'["mint", "inputs", "outputs", "datums"] txInfo
 
-    let mint :: Term _ (PBuiltinList _)
-        mint = pto $ pto $ pto $ pfromData txInfoF.mint
+      let gstValueOf =
+            plam $ \v -> passetClassValueOf # pfromData v # gtAssetClass
 
-    pguardC "Nothing should be minted/burnt other than GAT" $
-      plength # mint #== 1
+      let mint :: Term _ (PBuiltinList _)
+          mint = pto $ pto $ pto $ pfromData txInfoF.mint
 
-    -- Only two script inputs are alloed: one from the effect, one from the governor.
-    pguardC "Only self and governor script inputs are allowed" $
-      pfoldr
-        # phoistAcyclic
-          ( plam $ \inInfo count ->
-              let address = pfield @"address" #$ pfield @"resolved" # inInfo
-               in pif
-                    (pisScriptAddress # address)
-                    (count + 1)
-                    count
-          )
-        # (0 :: Term _ PInteger)
-        # pfromData txInfoF.inputs
-        #== 2
+      pguardC "Nothing should be minted/burnt other than GAT" $
+        plength # mint #== 1
 
-    -- Find the governor input by looking for GST.
-    let inputWithGST =
-          passertPJust # "Governor input not found" #$ pfind
-            # phoistAcyclic
-              ( plam $ \inInfo ->
-                  let value = pfield @"value" #$ pfield @"resolved" # inInfo
-                   in gstValueOf # value #== 1
-              )
-            # pfromData txInfoF.inputs
+      -- Only two script inputs are alloed: one from the effect, one from the governor.
+      pguardC "Only self and governor script inputs are allowed" $
+        pfoldr
+          # phoistAcyclic
+            ( plam $ \inInfo count ->
+                let address = pfield @"address" #$ pfield @"resolved" # inInfo
+                 in pif
+                      (pisScriptAddress # address)
+                      (count + 1)
+                      count
+            )
+          # (0 :: Term _ PInteger)
+          # pfromData txInfoF.inputs
+          #== 2
 
-    govInInfo <- pletFieldsC @'["outRef", "resolved"] $ inputWithGST
+      -- Find the governor input by looking for GST.
+      let inputWithGST =
+            passertPJust # "Governor input not found" #$ pfind
+              # ( plam $ \inInfo ->
+                    let value = pfield @"value" #$ pfield @"resolved" # inInfo
+                     in gstValueOf # value #== 1
+                )
+              # pfromData txInfoF.inputs
 
-    -- The effect can only modify the governor UTXO referenced in the datum.
-    pguardC "Can only modify the pinned governor" $
-      govInInfo.outRef #== datumF.governorRef
+      govInInfo <- pletFieldsC @'["outRef", "resolved"] $ inputWithGST
 
-    -- The transaction can only have one output, which should be sent to the governor.
-    pguardC "Only governor output is allowed" $
-      plength # pfromData txInfoF.outputs #== 1
+      -- The effect can only modify the governor UTXO referenced in the datum.
+      pguardC "Can only modify the pinned governor" $
+        govInInfo.outRef #== datumF.governorRef
 
-    let govAddress = pfield @"address" #$ govInInfo.resolved
-        govOutput' = phead # pfromData txInfoF.outputs
+      -- The transaction can only have one output, which should be sent to the governor.
+      pguardC "Only governor output is allowed" $
+        plength # pfromData txInfoF.outputs #== 1
 
-    govOutput <- pletFieldsC @'["address", "value", "datum"] govOutput'
+      let govAddress = pfield @"address" #$ govInInfo.resolved
+          govOutput' = phead # pfromData txInfoF.outputs
 
-    pguardC "No output to the governor" $
-      govOutput.address #== govAddress
+      govOutput <- pletFieldsC @'["address", "value", "datum"] govOutput'
 
-    pguardC "Governor output doesn't carry the GST" $
-      gstValueOf # govOutput.value #== 1
+      pguardC "No output to the governor" $
+        govOutput.address #== govAddress
 
-    let governorOutputDatum =
-          ptrace "Governor output datum not found" $
-            pfromOutputDatum @PGovernorDatum # govOutput.datum # txInfoF.datums
+      pguardC "Governor output doesn't carry the GST" $
+        gstValueOf # govOutput.value #== 1
 
-    -- Ensure the output governor datum is what we want.
-    pguardC "Unexpected governor datum" $ datumF.newDatum #== governorOutputDatum
-    pguardC "New governor datum should be valid" $ pisGovernorDatumValid # governorOutputDatum
+      let governorOutputDatum =
+            ptrace "Governor output datum not found" $
+              pfromOutputDatum @PGovernorDatum # govOutput.datum # txInfoF.datums
 
-    return $ popaque $ pconstant ()
-  where
-    -- Get the amount of GST in the a given value.
-    gstValueOf :: Term s (PValue _ _ :--> PInteger)
-    gstValueOf = phoistAcyclic $ plam $ \v -> pvalueOf # v # pconstant cs # pconstant tn
-      where
-        AssetClass (cs, tn) = governorSTAssetClass as
+      -- Ensure the output governor datum is what we want.
+      pguardC "Unexpected governor datum" $
+        datumF.newDatum #== governorOutputDatum
+      pguardC "New governor datum should be valid" $
+        pisGovernorDatumValid # governorOutputDatum
+
+      return $ popaque $ pconstant ()

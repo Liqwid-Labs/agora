@@ -17,6 +17,7 @@ import Agora.Effect (makeEffect)
 import Agora.Plutarch.Orphans ()
 import Plutarch.Api.V1 (
   PCredential,
+  PCurrencySymbol,
   PValue,
   ptuple,
  )
@@ -35,7 +36,7 @@ import Plutarch.Extra.ScriptContext (pfindTxInByTxOutRef, pisPubKey)
 import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC)
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (PLifted))
 import PlutusLedgerApi.V1.Credential (Credential)
-import PlutusLedgerApi.V1.Value (CurrencySymbol, Value)
+import PlutusLedgerApi.V1.Value (Value)
 import PlutusTx qualified
 
 {- | Datum that encodes behavior of Treasury Withdrawal effect.
@@ -127,71 +128,72 @@ instance PTryFrom PData PTreasuryWithdrawalDatum
 
      @since 0.1.0
 -}
-treasuryWithdrawalValidator :: forall {s :: S}. CurrencySymbol -> Term s PValidator
-treasuryWithdrawalValidator currSymbol = makeEffect currSymbol $
-  \_cs (datum' :: Term _ PTreasuryWithdrawalDatum) txOutRef' txInfo' -> unTermCont $ do
-    datum <- pletFieldsC @'["receivers", "treasuries"] datum'
-    txInfo <- pletFieldsC @'["outputs", "inputs"] txInfo'
-    PJust ((pfield @"resolved" #) -> txOut) <- pmatchC $ pfindTxInByTxOutRef # txOutRef' # pfromData txInfo.inputs
-    effInput <- pletFieldsC @'["address", "value"] $ txOut
-    outputValues <-
-      pletC $
-        pmap
-          # plam
-            ( \txOut' -> unTermCont $ do
-                txOut <- pletFieldsC @'["address", "value"] $ txOut'
-                let cred = pfield @"credential" # pfromData txOut.address
-                pure . pdata $ ptuple # cred # txOut.value
-            )
-          # pfromData txInfo.outputs
-    inputValues <-
-      pletC $
-        pmap
-          # plam
-            ( \((pfield @"resolved" #) -> txOut') -> unTermCont $ do
-                txOut <- pletFieldsC @'["address", "value"] $ txOut'
-                let cred = pfield @"credential" # pfromData txOut.address
-                pure . pdata $ ptuple # cred # txOut.value
-            )
-          # txInfo.inputs
-    let ofTreasury =
-          pfilter
-            # plam (\((pfield @"_0" #) . pfromData -> cred) -> pelem # cred # datum.treasuries)
-        sumValues = phoistAcyclic $
-          plam $ \v ->
-            pnormalize
-              #$ pfoldr
-              # plam (\(pfromData . (pfield @"_1" #) -> x) y -> x <> y)
-              # mempty
-              # v
-        treasuryInputValuesSum = sumValues #$ ofTreasury # inputValues
-        treasuryOutputValuesSum = sumValues #$ ofTreasury # outputValues
-        receiverValuesSum = sumValues # datum.receivers
-        -- Constraints
-        outputContentMatchesRecivers =
-          pall # plam (\out -> pelem # out # outputValues)
-            #$ datum.receivers
-        excessShouldBePaidToInputs =
-          treasuryOutputValuesSum <> receiverValuesSum #== treasuryInputValuesSum
-        shouldNotPayToEffect =
-          pnot #$ pany
+treasuryWithdrawalValidator :: ClosedTerm (PCurrencySymbol :--> PValidator)
+treasuryWithdrawalValidator = plam $
+  makeEffect $
+    \_cs (datum' :: Term _ PTreasuryWithdrawalDatum) txOutRef' txInfo' -> unTermCont $ do
+      datum <- pletFieldsC @'["receivers", "treasuries"] datum'
+      txInfo <- pletFieldsC @'["outputs", "inputs"] txInfo'
+      PJust ((pfield @"resolved" #) -> txOut) <- pmatchC $ pfindTxInByTxOutRef # txOutRef' # pfromData txInfo.inputs
+      effInput <- pletFieldsC @'["address", "value"] $ txOut
+      outputValues <-
+        pletC $
+          pmap
             # plam
-              ( \x ->
-                  effInput.address #== pfield @"address" # x
+              ( \txOut' -> unTermCont $ do
+                  txOut <- pletFieldsC @'["address", "value"] $ txOut'
+                  let cred = pfield @"credential" # pfromData txOut.address
+                  pure . pdata $ ptuple # cred # txOut.value
               )
             # pfromData txInfo.outputs
-        inputsAreOnlyTreasuriesOrCollateral =
-          pall
+      inputValues <-
+        pletC $
+          pmap
             # plam
-              ( \((pfield @"_0" #) . pfromData -> cred) ->
-                  cred #== pfield @"credential" # effInput.address
-                    #|| pelem # cred # datum.treasuries
-                    #|| pisPubKey # pfromData cred
+              ( \((pfield @"resolved" #) -> txOut') -> unTermCont $ do
+                  txOut <- pletFieldsC @'["address", "value"] $ txOut'
+                  let cred = pfield @"credential" # pfromData txOut.address
+                  pure . pdata $ ptuple # cred # txOut.value
               )
-            # inputValues
+            # txInfo.inputs
+      let ofTreasury =
+            pfilter
+              # plam (\((pfield @"_0" #) . pfromData -> cred) -> pelem # cred # datum.treasuries)
+          sumValues = phoistAcyclic $
+            plam $ \v ->
+              pnormalize
+                #$ pfoldr
+                # plam (\(pfromData . (pfield @"_1" #) -> x) y -> x <> y)
+                # mempty
+                # v
+          treasuryInputValuesSum = sumValues #$ ofTreasury # inputValues
+          treasuryOutputValuesSum = sumValues #$ ofTreasury # outputValues
+          receiverValuesSum = sumValues # datum.receivers
+          -- Constraints
+          outputContentMatchesRecivers =
+            pall # plam (\out -> pelem # out # outputValues)
+              #$ datum.receivers
+          excessShouldBePaidToInputs =
+            treasuryOutputValuesSum <> receiverValuesSum #== treasuryInputValuesSum
+          shouldNotPayToEffect =
+            pnot #$ pany
+              # plam
+                ( \x ->
+                    effInput.address #== pfield @"address" # x
+                )
+              # pfromData txInfo.outputs
+          inputsAreOnlyTreasuriesOrCollateral =
+            pall
+              # plam
+                ( \((pfield @"_0" #) . pfromData -> cred) ->
+                    cred #== pfield @"credential" # effInput.address
+                      #|| pelem # cred # datum.treasuries
+                      #|| pisPubKey # pfromData cred
+                )
+              # inputValues
 
-    pguardC "Transaction should not pay to effects" shouldNotPayToEffect
-    pguardC "Transaction output does not match receivers" outputContentMatchesRecivers
-    pguardC "Remainders should be returned to the treasury" excessShouldBePaidToInputs
-    pguardC "Transaction should only have treasuries specified in the datum as input" inputsAreOnlyTreasuriesOrCollateral
-    pure . popaque $ pconstant ()
+      pguardC "Transaction should not pay to effects" shouldNotPayToEffect
+      pguardC "Transaction output does not match receivers" outputContentMatchesRecivers
+      pguardC "Remainders should be returned to the treasury" excessShouldBePaidToInputs
+      pguardC "Transaction should only have treasuries specified in the datum as input" inputsAreOnlyTreasuriesOrCollateral
+      pure . popaque $ pconstant ()
