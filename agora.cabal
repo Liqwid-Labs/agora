@@ -18,10 +18,6 @@ common lang
     -Wmissing-deriving-strategies -Wno-name-shadowing -Wunused-foralls
     -fprint-explicit-foralls -fprint-explicit-kinds -Wunused-do-bind
 
-  mixins:
-    base hiding (Prelude),
-    pprelude (PPrelude as Prelude)
-
   default-extensions:
     NoStarIsType
     BangPatterns
@@ -121,7 +117,10 @@ common deps
     , text
     , filepath
 
+common plutarch-prelude
   mixins:
+    base hiding (Prelude),
+    pprelude (PPrelude as Prelude)
 
 common test-deps
   build-depends:
@@ -145,7 +144,7 @@ common exe-opts
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -O0
 
 library
-  import:          lang, deps
+  import:          lang, deps, plutarch-prelude
   exposed-modules:
     Agora.Aeson.Orphans
     Agora.AuthorityToken
@@ -180,7 +179,7 @@ library pprelude
     , plutarch
 
 library agora-testlib
-  import:          lang, deps, test-deps
+  import:          lang, deps, plutarch-prelude, test-deps
   exposed-modules:
     Test.Specification
     Test.Util
@@ -188,7 +187,7 @@ library agora-testlib
   hs-source-dirs:  agora-testlib
 
 library agora-specs
-  import:          lang, deps, test-deps
+  import:          lang, deps, plutarch-prelude, test-deps
   exposed-modules:
     Property.Generator
     Property.Governor
@@ -219,7 +218,7 @@ library agora-specs
   build-depends:   agora-testlib
 
 test-suite agora-test
-  import:         lang, deps, test-deps
+  import:         lang, deps, plutarch-prelude, test-deps
   type:           exitcode-stdio-1.0
   main-is:        Spec.hs
   hs-source-dirs: agora-test
@@ -228,7 +227,7 @@ test-suite agora-test
     , agora-testlib
 
 benchmark agora-bench
-  import:         lang, deps
+  import:         lang, deps, plutarch-prelude
   hs-source-dirs: agora-bench
   main-is:        Main.hs
   other-modules:
@@ -252,9 +251,10 @@ executable agora-scripts
   build-depends:
     , agora
     , gitrev
+  mixins: base
 
 executable agora-purescript-bridge
-  import:         lang, deps, exe-opts
+  import:         lang, deps, plutarch-prelude, exe-opts
   main-is:        Bridge.hs
   hs-source-dirs: agora-purescript-bridge
   other-modules:

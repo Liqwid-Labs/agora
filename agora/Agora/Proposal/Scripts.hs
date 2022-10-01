@@ -204,7 +204,7 @@ instance DerivePlutusType PSpendSingleStakeContext where
      == Arguments
 
      Following arguments should be provided(in this order):
-     1. state ST symbol
+     1. stake ST symbol
      2. governor ST symbol
      3. proposal ST symbol
      4. maximum number of cosigners
