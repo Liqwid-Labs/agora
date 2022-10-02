@@ -13,7 +13,6 @@ module Sample.Shared (
   signer2,
   minAda,
   deterministicTracingConfing,
-  mkEffect,
   mkRedeemer,
   fromDiscrete,
 
@@ -24,6 +23,8 @@ module Sample.Shared (
 
   -- ** Stake
   stakeAssetClass,
+  stakePolicy,
+  stakeValidator,
   stakeValidatorHash,
   stakeAddress,
   stakeSymbol,
@@ -39,12 +40,15 @@ module Sample.Shared (
   gstUTXORef,
 
   -- ** Proposal
+  proposalPolicy,
   proposalPolicySymbol,
+  proposalValidator,
   proposalValidatorHash,
   proposalValidatorAddress,
   proposalStartingTimeFromTimeRange,
 
   -- ** Authority
+  authorityTokenPolicy,
   authorityTokenSymbol,
 
   -- ** Treasury
@@ -53,42 +57,38 @@ module Sample.Shared (
   gatCs,
   mockTrEffect,
   mockTrEffectHash,
+  trValidator,
   trCredential,
   wrongEffHash,
 ) where
 
 import Agora.Bootstrap qualified as Bootstrap
-import Agora.Effect.NoOp (noOpValidator)
 import Agora.Governor (Governor (Governor))
+import Agora.Linker (linker)
 import Agora.Proposal (ProposalThresholds (..))
 import Agora.Proposal.Time (
   MaxTimeRangeWidth (..),
   ProposalStartingTime (ProposalStartingTime),
   ProposalTimingConfig (..),
  )
-import Agora.Scripts qualified as Scripts
-import Agora.Treasury (treasuryValidator)
 import Agora.Utils (
-  CompiledEffect (CompiledEffect),
-  CompiledMintingPolicy (getCompiledMintingPolicy),
-  CompiledValidator (getCompiledValidator),
   validatorHashToTokenName,
  )
 import Data.Coerce (coerce)
 import Data.Default.Class (Default (..))
+import Data.Map
 import Data.Tagged (Tagged (..))
+import Data.Text
 import Plutarch (Config (..), TracingMode (DetTracing))
 import Plutarch.Api.V2 (
-  PValidator,
   mintingPolicySymbol,
-  mkValidator,
   validatorHash,
  )
 import Plutarch.SafeMoney (Discrete (Discrete))
 import PlutusLedgerApi.V1.Address (scriptHashAddress)
 import PlutusLedgerApi.V1.Contexts (TxOut (..))
-import PlutusLedgerApi.V1.Scripts (Validator, ValidatorHash (..))
-import PlutusLedgerApi.V1.Value (AssetClass, TokenName)
+import PlutusLedgerApi.V1.Scripts (Script, Validator (Validator), ValidatorHash (..))
+import PlutusLedgerApi.V1.Value (AssetClass (AssetClass), TokenName)
 import PlutusLedgerApi.V1.Value qualified as Value (
   assetClass,
   singleton,
@@ -128,17 +128,23 @@ governor = Governor oref gt mc
           "LQ"
     mc = 20
 
-agoraScripts :: Scripts.AgoraScripts
-agoraScripts = Bootstrap.agoraScripts deterministicTracingConfing governor
+agoraScripts :: Map Text Script
+agoraScripts = linker governor $ Bootstrap.agoraScripts deterministicTracingConfing
+
+stakePolicy :: MintingPolicy
+stakePolicy = MintingPolicy $ agoraScripts ! "agora:stakePolicy"
 
 stakeSymbol :: CurrencySymbol
-stakeSymbol = Scripts.stakeSTSymbol agoraScripts
+stakeSymbol = mintingPolicySymbol stakePolicy
 
 stakeAssetClass :: AssetClass
-stakeAssetClass = Scripts.stakeSTAssetClass agoraScripts
+stakeAssetClass = AssetClass (stakeSymbol, validatorHashToTokenName stakeValidatorHash)
+
+stakeValidator :: Validator
+stakeValidator = Validator $ agoraScripts ! "agora:stakeValidator"
 
 stakeValidatorHash :: ValidatorHash
-stakeValidatorHash = Scripts.stakeValidatorHash agoraScripts
+stakeValidatorHash = validatorHash stakeValidator
 
 stakeAddress :: Address
 stakeAddress = Address (ScriptCredential stakeValidatorHash) Nothing
@@ -147,25 +153,28 @@ gstUTXORef :: TxOutRef
 gstUTXORef = TxOutRef "f28cd7145c24e66fd5bcd2796837aeb19a48a2656e7833c88c62a2d0450bd00d" 0
 
 govPolicy :: MintingPolicy
-govPolicy = agoraScripts.compiledGovernorPolicy.getCompiledMintingPolicy
+govPolicy = MintingPolicy $ agoraScripts ! "agora:governorPolicy"
 
 govValidator :: Validator
-govValidator = agoraScripts.compiledGovernorValidator.getCompiledValidator
+govValidator = Validator $ agoraScripts ! "agora:governorValidator"
 
 govSymbol :: CurrencySymbol
 govSymbol = mintingPolicySymbol govPolicy
 
 govAssetClass :: AssetClass
-govAssetClass = Scripts.governorSTAssetClass agoraScripts
+govAssetClass = AssetClass (govSymbol, "")
 
 govValidatorHash :: ValidatorHash
-govValidatorHash = Scripts.governorValidatorHash agoraScripts
+govValidatorHash = validatorHash govValidator
 
 govValidatorAddress :: Address
 govValidatorAddress = scriptHashAddress govValidatorHash
 
+proposalPolicy :: MintingPolicy
+proposalPolicy = MintingPolicy $ agoraScripts ! "agora:proposalPolicy"
+
 proposalPolicySymbol :: CurrencySymbol
-proposalPolicySymbol = Scripts.proposalSTSymbol agoraScripts
+proposalPolicySymbol = mintingPolicySymbol proposalPolicy
 
 -- | A sample 'PubKeyHash'.
 signer :: PubKeyHash
@@ -175,8 +184,11 @@ signer = "8a30896c4fd5e79843e4ca1bd2cdbaa36f8c0bc3be7401214142019c"
 signer2 :: PubKeyHash
 signer2 = "8a30896c4fd5e79843e4ca1bd2cdbaa36f8c0bc3be74012141420192"
 
+proposalValidator :: Validator
+proposalValidator = Validator $ agoraScripts ! "agora:proposalValidator"
+
 proposalValidatorHash :: ValidatorHash
-proposalValidatorHash = Scripts.proposalValidatoHash agoraScripts
+proposalValidatorHash = validatorHash proposalValidator
 
 proposalValidatorAddress :: Address
 proposalValidatorAddress = scriptHashAddress proposalValidatorHash
@@ -192,8 +204,11 @@ instance Default ProposalThresholds where
       , vote = Tagged 100
       }
 
+authorityTokenPolicy :: MintingPolicy
+authorityTokenPolicy = MintingPolicy $ agoraScripts ! "agora:authorityTokenPolicy"
+
 authorityTokenSymbol :: CurrencySymbol
-authorityTokenSymbol = Scripts.authorityTokenSymbol agoraScripts
+authorityTokenSymbol = mintingPolicySymbol authorityTokenPolicy
 
 {- | Default value of 'Agora.Governor.GovernorDatum.proposalTimings'.
      For testing purpose only.
@@ -222,9 +237,6 @@ proposalStartingTimeFromTimeRange
     ProposalStartingTime $ (l + u) `div` 2
 proposalStartingTimeFromTimeRange _ = error "Given time range should be finite and closed"
 
-mkEffect :: (PlutusTx.ToData datum) => ClosedTerm PValidator -> CompiledEffect datum
-mkEffect v = CompiledEffect $ mkValidator deterministicTracingConfing v
-
 mkRedeemer :: forall redeemer. PlutusTx.ToData redeemer => redeemer -> Redeemer
 mkRedeemer = Redeemer . toBuiltinData
 
@@ -245,10 +257,10 @@ treasuryOut =
      of a valid governance authority token (GAT).
 -}
 gatCs :: CurrencySymbol
-gatCs = "73475cb40a568e8da8a045ced110137e159f890ac4da883b6b17dc651b3a8049"
+gatCs = authorityTokenSymbol
 
 trValidator :: Validator
-trValidator = mkValidator def (treasuryValidator gatCs)
+trValidator = Validator $ agoraScripts ! "agora:treasuryValidator"
 
 -- | `ScriptCredential` used for the dummy treasury validator.
 trCredential :: Credential
@@ -260,7 +272,7 @@ gatTn = validatorHashToTokenName $ validatorHash mockTrEffect
 
 -- | Mock treasury effect script, used for testing.
 mockTrEffect :: Validator
-mockTrEffect = mkValidator def $ noOpValidator gatCs
+mockTrEffect = Validator $ agoraScripts ! "agora:noOpValidator"
 
 -- | Mock treasury effect validator hash
 mockTrEffectHash :: ValidatorHash

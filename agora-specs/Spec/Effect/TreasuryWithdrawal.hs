@@ -9,13 +9,11 @@ module Spec.Effect.TreasuryWithdrawal (specs) where
 
 import Agora.Effect.TreasuryWithdrawal (
   TreasuryWithdrawalDatum (TreasuryWithdrawalDatum),
-  treasuryWithdrawalValidator,
  )
 import PlutusLedgerApi.V1.Value qualified as Value
 import Sample.Effect.TreasuryWithdrawal (
   buildReceiversOutputFromDatum,
   buildScriptContext,
-  currSymbol,
   inputCollateral,
   inputGAT,
   inputTreasury,
@@ -24,8 +22,8 @@ import Sample.Effect.TreasuryWithdrawal (
   outputUser,
   treasuries,
   users,
+  validator,
  )
-import Sample.Shared (mkEffect)
 import Test.Specification (
   SpecificationTree,
   effectFailsWith,
@@ -40,7 +38,7 @@ specs =
       "effect"
       [ effectSucceedsWith
           "Simple"
-          (mkEffect $ treasuryWithdrawalValidator currSymbol)
+          validator
           datum1
           ( buildScriptContext
               [ inputGAT
@@ -52,7 +50,7 @@ specs =
           )
       , effectSucceedsWith
           "Simple with multiple treasuries "
-          (mkEffect $ treasuryWithdrawalValidator currSymbol)
+          validator
           datum1
           ( buildScriptContext
               [ inputGAT
@@ -69,7 +67,7 @@ specs =
           )
       , effectSucceedsWith
           "Mixed Assets"
-          (mkEffect $ treasuryWithdrawalValidator currSymbol)
+          validator
           datum2
           ( buildScriptContext
               [ inputGAT
@@ -84,7 +82,7 @@ specs =
           )
       , effectFailsWith
           "Pay to uknown 3rd party"
-          (mkEffect $ treasuryWithdrawalValidator currSymbol)
+          validator
           datum2
           ( buildScriptContext
               [ inputGAT
@@ -100,7 +98,7 @@ specs =
           )
       , effectFailsWith
           "Missing receiver"
-          (mkEffect $ treasuryWithdrawalValidator currSymbol)
+          validator
           datum2
           ( buildScriptContext
               [ inputGAT
@@ -115,7 +113,7 @@ specs =
           )
       , effectFailsWith
           "Unauthorized treasury"
-          (mkEffect $ treasuryWithdrawalValidator currSymbol)
+          validator
           datum3
           ( buildScriptContext
               [ inputGAT
@@ -127,7 +125,7 @@ specs =
           )
       , effectFailsWith
           "Prevent transactions besides the withdrawal"
-          (mkEffect $ treasuryWithdrawalValidator currSymbol)
+          validator
           datum3
           ( buildScriptContext
               [ inputGAT

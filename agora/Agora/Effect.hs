@@ -38,8 +38,8 @@ makeEffect ::
   ) ->
   Term s PCurrencySymbol ->
   Term s PValidator
-makeEffect f =
-  \atSymbol -> plam $ \datum _redeemer ctx' -> unTermCont $ do
+makeEffect f atSymbol =
+  plam $ \datum _redeemer ctx' -> unTermCont $ do
     ctx <- pletFieldsC @'["txInfo", "purpose"] ctx'
 
     -- Convert input datum, PData, into desierable type

@@ -21,18 +21,19 @@ module Sample.Governor.Initialize (
 
 import Agora.Bootstrap (agoraScripts)
 import Agora.Governor (Governor (..), GovernorDatum (..))
+import Agora.Linker (linker)
 import Agora.Proposal (ProposalId (..), ProposalThresholds (..))
 import Agora.Proposal.Time (
   MaxTimeRangeWidth (MaxTimeRangeWidth),
   ProposalTimingConfig (ProposalTimingConfig),
  )
-import Agora.Scripts (
-  AgoraScripts (compiledGovernorPolicy),
-  governorSTAssetClass,
-  governorSTSymbol,
-  governorValidatorHash,
- )
 import Data.Default (Default (..))
+import Data.Map (Map, (!))
+import Data.Text (Text)
+import Plutarch.Api.V2 (
+  mintingPolicySymbol,
+  validatorHash,
+ )
 import Plutarch.Context (
   input,
   mint,
@@ -49,10 +50,14 @@ import PlutusLedgerApi.V1.Value (AssetClass (..))
 import PlutusLedgerApi.V1.Value qualified as Value
 import PlutusLedgerApi.V2 (
   CurrencySymbol,
+  MintingPolicy (MintingPolicy),
+  Script,
   TxOutRef (TxOutRef),
+  Validator (Validator),
   ValidatorHash,
  )
 import Sample.Shared (
+  deterministicTracingConfing,
   minAda,
  )
 import Sample.Shared qualified as Shared
@@ -110,17 +115,23 @@ governor =
     { gstOutRef = witnessRef
     }
 
-scripts :: AgoraScripts
-scripts = agoraScripts Shared.deterministicTracingConfing governor
+scripts :: Map Text Script
+scripts = linker governor $ agoraScripts deterministicTracingConfing
 
-govAssetClass :: AssetClass
-govAssetClass = governorSTAssetClass scripts
+govPolicy :: MintingPolicy
+govPolicy = MintingPolicy $ scripts ! "agora:governorPolicy"
 
-govValidatorHash :: ValidatorHash
-govValidatorHash = governorValidatorHash scripts
+govValidator :: Validator
+govValidator = Validator $ scripts ! "agora:governorValidator"
 
 govSymbol :: CurrencySymbol
-govSymbol = governorSTSymbol scripts
+govSymbol = mintingPolicySymbol govPolicy
+
+govAssetClass :: AssetClass
+govAssetClass = AssetClass (govSymbol, "")
+
+govValidatorHash :: ValidatorHash
+govValidatorHash = validatorHash govValidator
 
 --------------------------------------------------------------------------------
 
@@ -274,6 +285,6 @@ mkTestCase name ps valid =
   testPolicy
     valid
     name
-    scripts.compiledGovernorPolicy
+    govPolicy
     ()
     (mkMinting mintGST ps govSymbol)

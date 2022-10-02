@@ -13,14 +13,14 @@ module Sample.Effect.GovernorMutation (
 
 import Agora.Effect.GovernorMutation (
   MutateGovernorDatum (..),
-  mutateGovernorValidator,
  )
 import Agora.Governor (GovernorDatum (..), GovernorRedeemer (MutateGovernor))
 import Agora.Proposal (ProposalId (..), ProposalThresholds (..))
 import Agora.Utils (validatorHashToTokenName)
 import Data.Default.Class (Default (def))
+import Data.Map
 import Data.Tagged (Tagged (..))
-import Plutarch.Api.V2 (mkValidator, validatorHash)
+import Plutarch.Api.V2 (validatorHash)
 import PlutusLedgerApi.V1 qualified as Interval (always)
 import PlutusLedgerApi.V1.Address (scriptHashAddress)
 import PlutusLedgerApi.V1.Value (AssetClass, assetClass)
@@ -38,14 +38,13 @@ import PlutusLedgerApi.V2 (
   TxInfo (..),
   TxOut (..),
   TxOutRef (TxOutRef),
-  Validator,
+  Validator (Validator),
   ValidatorHash (..),
  )
 import PlutusTx.AssocMap qualified as AssocMap
 import Sample.Shared (
   agoraScripts,
   authorityTokenSymbol,
-  deterministicTracingConfing,
   govAssetClass,
   govValidatorAddress,
   minAda,
@@ -56,7 +55,7 @@ import Test.Util (datumPair, toDatumHash)
 
 -- | The effect validator instance.
 effectValidator :: Validator
-effectValidator = mkValidator deterministicTracingConfing $ mutateGovernorValidator agoraScripts
+effectValidator = Validator $ agoraScripts ! "agora:mutateGovernorValidator"
 
 -- | The hash of the validator instance.
 effectValidatorHash :: ValidatorHash

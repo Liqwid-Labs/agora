@@ -21,22 +21,17 @@ Tests need to fail when:
 -}
 module Spec.Treasury (specs) where
 
-import Agora.Treasury (
-  treasuryValidator,
- )
-import Agora.Utils (CompiledValidator (CompiledValidator))
-import Plutarch.Api.V2 (mkValidator)
 import PlutusLedgerApi.V1.Credential (
   StakingCredential (StakingHash),
  )
 import PlutusLedgerApi.V1.Value qualified as Value (singleton)
-import PlutusLedgerApi.V2 (DCert (DCertDelegRegKey))
+import PlutusLedgerApi.V2 (DCert (DCertDelegRegKey), Validator)
 import PlutusLedgerApi.V2.Contexts (
   ScriptContext (scriptContextPurpose, scriptContextTxInfo),
   ScriptPurpose (Certifying, Minting, Rewarding),
   TxInfo (txInfoInputs, txInfoMint),
  )
-import Sample.Shared (deterministicTracingConfing, trCredential)
+import Sample.Shared (trCredential, trValidator)
 import Sample.Treasury (
   gatCs,
   gatTn,
@@ -51,11 +46,8 @@ import Test.Specification (
   validatorSucceedsWith,
  )
 
-compiledTreasuryValidator :: CompiledValidator () ()
-compiledTreasuryValidator =
-  CompiledValidator $
-    mkValidator deterministicTracingConfing $
-      treasuryValidator gatCs
+compiledTreasuryValidator :: Validator
+compiledTreasuryValidator = trValidator
 
 specs :: [SpecificationTree]
 specs =

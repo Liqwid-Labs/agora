@@ -96,6 +96,7 @@ common deps
     , containers
     , data-default
     , data-default-class
+    , filepath
     , generics-sop
     , liqwid-plutarch-extra
     , plutarch
@@ -115,7 +116,6 @@ common deps
     , tagged
     , template-haskell
     , text
-    , filepath
 
 common plutarch-prelude
   mixins:
@@ -156,6 +156,7 @@ library
     Agora.Effect.TreasuryWithdrawal
     Agora.Governor
     Agora.Governor.Scripts
+    Agora.Linker
     Agora.Plutarch.Orphans
     Agora.Proposal
     Agora.Proposal.Scripts
@@ -249,9 +250,11 @@ executable agora-scripts
   hs-source-dirs: agora-scripts
   other-modules:
   build-depends:
+    , aeson-pretty
     , agora
     , gitrev
-  mixins: base
+
+  mixins:         base
 
 executable agora-purescript-bridge
   import:         lang, deps, plutarch-prelude, exe-opts

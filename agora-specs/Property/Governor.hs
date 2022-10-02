@@ -201,7 +201,7 @@ governorMintingProperty =
     opaqueToUnit = plam $ \_ -> pconstant ()
 
     actual :: Term s (PScriptContext :--> PUnit)
-    actual = plam $ \sc -> opaqueToUnit #$ governorPolicy governor.gstOutRef # pforgetData (pconstantData ()) # sc
+    actual = plam $ \sc -> opaqueToUnit #$ governorPolicy # pconstant governor.gstOutRef # pforgetData (pconstantData ()) # sc
 
     classifier :: ScriptContext -> GovernorPolicyCases
     classifier sc
