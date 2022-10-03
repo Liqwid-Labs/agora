@@ -34,10 +34,10 @@ module Agora.Stake (
   pstakeLocked,
   pnumCreatedProposals,
   pextractVoteOption,
-  pgetStakeRole,
+  pgetStakeRoles,
   pisVoter,
   pisCreator,
-  pisPureCreator,
+  pisCosigner,
   pisIrrelevant,
   runStakeRedeemerHandler,
 ) where
@@ -51,6 +51,7 @@ import Agora.Proposal (
   ResultTag,
  )
 import Agora.SafeMoney (GTTag)
+import Agora.Utils (pmapMaybe, ppureIf)
 import Data.Tagged (Tagged)
 import Generics.SOP qualified as SOP
 import Plutarch.Api.V1 (PCredential)
@@ -68,6 +69,8 @@ import Plutarch.Extra.IsData (
   PlutusTypeDataList,
   ProductIsData (ProductIsData),
  )
+import "liqwid-plutarch-extra" Plutarch.Extra.List (pfindJust)
+import Plutarch.Extra.Maybe (passertPJust, pjust, pnothing)
 import Plutarch.Extra.Sum (PSum (PSum))
 import Plutarch.Extra.Traversable (pfoldMap)
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (PLifted))
@@ -128,6 +131,7 @@ data ProposalLock
       -- ^ The identifier of the proposal.
       ResultTag
       -- ^ The option which was voted on. This allows votes to be retracted.
+  | Cosigned ProposalId
   deriving stock
     ( -- | @since 0.1.0
       Show
@@ -139,6 +143,7 @@ PlutusTx.makeIsDataIndexed
   ''ProposalLock
   [ ('Created, 0)
   , ('Voted, 1)
+  , ('Cosigned, 2)
   ]
 
 {- | Haskell-level redeemer for Stake scripts.
@@ -292,8 +297,6 @@ data PStakeRedeemer (s :: S)
     )
   deriving anyclass
     ( -- | @since 0.1.0
-      SOP.Generic
-    , -- | @since 0.1.0
       PlutusType
     , -- | @since 0.1.0
       PIsData
@@ -334,6 +337,14 @@ data PProposalLock (s :: S)
           ( PDataRecord
               '[ "votedOn" ':= PProposalId
                , "votedFor" ':= PResultTag
+               ]
+          )
+      )
+  | PCosigned
+      ( Term
+          s
+          ( PDataRecord
+              '[ "cosigned" ':= PProposalId
                ]
           )
       )
@@ -403,7 +414,7 @@ pnumCreatedProposals =
 
 {- | The role of a stake for a particular proposal. Scott-encoded.
 
-     @since 0.2.0
+     @since 1.0.0
 -}
 data PStakeRole (s :: S)
   = -- | The stake was used to vote on the proposal.
@@ -412,25 +423,23 @@ data PStakeRole (s :: S)
       -- ^ The option which was voted for.
   | -- | The stake was used to create the proposal.
     PCreator
-  | -- | The stake was used to both create and vote on the proposal.
-    PBoth
-      (Term s PResultTag)
-      -- ^ The option which was voted for.
-  | -- | The stake has nothing to do with the given proposal.
-    PIrrelevant
+  | -- | The stake was used to cosign the propsoal.
+    PCosigner
   deriving stock
-    ( -- | @since 0.2.0
+    ( -- | @since 1.0.0
       Generic
     )
   deriving anyclass
-    ( -- | @since 0.2.0
+    ( -- | @since 1.0.0
       PlutusType
-    , -- | @since 0.2.0
-      PEq
     )
 
+-- | @since 1.0.0
 instance DerivePlutusType PStakeRole where
   type DPTStrat _ = PlutusTypeScott
+
+-- | @since 1.0.0
+type PStakeRoles = PList PStakeRole
 
 --------------------------------------------------------------------------------
 
@@ -603,114 +612,103 @@ data StakeRedeemerImpl = StakeRedeemerImpl
 
 {- | Retutn true if the stake was used to voted on the proposal.
 
-     @since 0.2.0
+     @since 1.0.0
 -}
-pisVoter :: forall (s :: S). Term s (PStakeRole :--> PBool)
-pisVoter = phoistAcyclic $
-  plam $ \sr -> pmatch sr $ \case
-    PVoter _ -> pconstant True
-    PBoth _ -> pconstant True
-    _ -> pconstant False
+pisVoter :: forall (s :: S). Term s (PStakeRoles :--> PBool)
+pisVoter =
+  phoistAcyclic $
+    pany
+      #$ plam
+        ( \r -> pmatch r $ \case
+            PVoter _ -> pconstant True
+            _ -> pconstant False
+        )
 
 {- | Retutn true if the stake was used to create the proposal.
 
-     @since 0.2.0
+     @since 1.0.0
 -}
-pisCreator :: forall (s :: S). Term s (PStakeRole :--> PBool)
-pisCreator = phoistAcyclic $
-  plam $ \sr -> pmatch sr $ \case
-    PCreator -> pconstant True
-    PBoth _ -> pconstant True
-    _ -> pconstant False
+pisCreator :: forall (s :: S). Term s (PStakeRoles :--> PBool)
+pisCreator =
+  phoistAcyclic $
+    pany
+      #$ plam
+        ( \r -> pmatch r $ \case
+            PCreator -> pconstant True
+            _ -> pconstant False
+        )
 
-{- | Retutn true if the stake was used to create the proposal, but not vote on
-     the proposal.
+{- | Retutn true if the stake was used to cosign the proposal.
 
-     @since 0.2.0
+     @since 1.0.0
 -}
-pisPureCreator :: forall (s :: S). Term s (PStakeRole :--> PBool)
-pisPureCreator = phoistAcyclic $
-  plam $ \sr -> pmatch sr $ \case
-    PCreator -> pconstant True
-    _ -> pconstant False
+pisCosigner :: forall (s :: S). Term s (PStakeRoles :--> PBool)
+pisCosigner =
+  phoistAcyclic $
+    pany
+      #$ plam
+        ( \r -> pmatch r $ \case
+            PCosigner -> pconstant True
+            _ -> pconstant False
+        )
 
 {- | Return true if the stake isn't related to the proposal.
 
-     @since 0.2.0
+     @since 1.0.0
 -}
-pisIrrelevant :: forall (s :: S). Term s (PStakeRole :--> PBool)
-pisIrrelevant = phoistAcyclic $
-  plam $ \sr -> pmatch sr $ \case
-    PIrrelevant -> pconstant True
-    _ -> pconstant False
+pisIrrelevant :: forall (s :: S). Term s (PStakeRoles :--> PBool)
+pisIrrelevant = pnull
 
 {- | Get the role of a stake for the proposal specified by the poroposal id,
       given the 'StakeDatum.lockedBy' field of the stake.
 
-     Note that the list of locks is cosidered valid only if it contains at most
-      two locks from the given proposal: one voter lock and one creator lock.
-
-     @since 0.2.0
+     @since 1.0.0
 -}
-pgetStakeRole ::
+pgetStakeRoles ::
   forall (s :: S).
   Term
     s
     ( PProposalId
         :--> PBuiltinList (PAsData PProposalLock)
-        :--> PStakeRole
+        :--> PStakeRoles
     )
-pgetStakeRole = phoistAcyclic $
-  plam $ \pid locks ->
-    pfoldl
+pgetStakeRoles = phoistAcyclic $
+  plam $ \pid ->
+    pmapMaybe
       # plam
-        ( \role (pfromData -> lock) ->
-            let thisRole = pmatch lock $ \case
-                  PCreated ((pfield @"created" #) -> pid') ->
-                    pif
-                      (pid' #== pid)
-                      (pcon PCreator)
-                      (pcon PIrrelevant)
-                  PVoted lock' -> pletAll lock' $ \lockF ->
-                    pif
-                      (lockF.votedOn #== pid)
-                      (pcon $ PVoter lockF.votedFor)
-                      (pcon PIrrelevant)
-             in pcombineStakeRole # thisRole # role
+        ( flip
+            pmatch
+            ( \case
+                PCreated ((pfield @"created" #) -> pid') ->
+                  ppureIf
+                    # (pid' #== pid)
+                    # pcon PCreator
+                PVoted r -> pletAll r $ \rF ->
+                  ppureIf
+                    # (rF.votedOn #== pid)
+                    # pcon (PVoter rF.votedFor)
+                PCosigned ((pfield @"cosigned" #) -> pid') ->
+                  ppureIf
+                    # (pid' #== pid)
+                    # pcon PCosigner
+            )
+            . pfromData
         )
-      # pcon PIrrelevant
-      # locks
-  where
-    pcombineStakeRole ::
-      forall (s :: S).
-      Term
-        s
-        ( PStakeRole
-            :--> PStakeRole
-            :--> PStakeRole
-        )
-    pcombineStakeRole = phoistAcyclic $
-      plam $ \x y ->
-        let cannotCombine = ptraceError "duplicate roles"
-         in pmatch x $ \case
-              PVoter r -> pmatch y $ \case
-                PCreator -> pcon $ PBoth r
-                PIrrelevant -> x
-                _ -> cannotCombine
-              PCreator -> pmatch y $ \case
-                PVoter r -> pcon $ PBoth r
-                PIrrelevant -> x
-                _ -> cannotCombine
-              PBoth _ -> cannotCombine
-              PIrrelevant -> y
 
 {- | Get the outcome that was voted for.
 
-     @since 0.2.0
+     @since 1.0.0
 -}
-pextractVoteOption :: forall (s :: S). Term s (PStakeRole :--> PResultTag)
-pextractVoteOption = phoistAcyclic $
-  plam $ \sr -> pmatch sr $ \case
-    PVoter r -> r
-    PBoth r -> r
-    _ -> ptraceError "not voter"
+pextractVoteOption :: forall (s :: S). Term s (PStakeRoles :--> PResultTag)
+pextractVoteOption =
+  phoistAcyclic $
+    plam $
+      (passertPJust # "not voter" #)
+        . ( pfindJust
+              # plam
+                ( flip pmatch $ \case
+                    PVoter r -> pjust # r
+                    _ -> pnothing
+                )
+              #
+          )

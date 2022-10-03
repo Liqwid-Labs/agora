@@ -16,7 +16,7 @@ module Agora.Stake.Redeemers (
 
 import Agora.Proposal (
   PProposalId,
-  PProposalRedeemer (PUnlock, PVote),
+  PProposalRedeemer (PCosign, PUnlock, PVote),
   ProposalStatus (Finished),
  )
 import Agora.Stake (
@@ -25,7 +25,7 @@ import Agora.Stake (
     PNoProposal,
     PSpendProposal
   ),
-  PProposalLock (PCreated, PVoted),
+  PProposalLock (PCosigned, PCreated, PVoted),
   PSigContext (owner, signedBy),
   PSignedBy (
     PSignedByDelegate,
@@ -187,35 +187,47 @@ paddNewLock = phoistAcyclic $
      @since 1.0.0
 -}
 ppermitVote :: forall (s :: S). Term s PStakeRedeemerHandler
-ppermitVote = phoistAcyclic $
-  pvoteHelper #$ phoistAcyclic $
-    plam $ \ctx -> unTermCont $ do
-      ctxF <- pmatchC ctx
+ppermitVote = pvoteHelper #$ phoistAcyclic $
+  plam $ \ctx -> unTermCont $ do
+    ctxF <- pmatchC ctx
 
-      let withOnlyOneStakeInput =
-            plam $ \lock -> unTermCont $ do
-              pguardC "Only one stake input allowed" $
-                pisSingleton # ctxF.stakeInputDatums
+    withOnlyOneStakeInput <- pletC $
+      plam $ \lock -> unTermCont $ do
+        pguardC "Only one stake input allowed" $
+          pisSingleton # ctxF.stakeInputDatums
 
-              pure lock
+        pure lock
 
-      pure $
-        paddNewLock #$ pmatch ctxF.proposalContext $ \case
-          PSpendProposal pid _ r -> pmatch r $ \case
-            PVote ((pfromData . (pfield @"resultTag" #)) -> voteFor) ->
-              mkRecordConstr
-                PVoted
-                ( #votedOn .= pdata pid
-                    .& #votedFor .= pdata voteFor
-                )
-            _ -> ptraceError "Expected Vote"
-          PNewProposal pid ->
+    pure $
+      paddNewLock #$ pmatch ctxF.proposalContext $ \case
+        PSpendProposal pid _ r -> pmatch r $ \case
+          PVote ((pfromData . (pfield @"resultTag" #)) -> voteFor) ->
+            mkRecordConstr
+              PVoted
+              ( #votedOn .= pdata pid
+                  .& #votedFor .= pdata voteFor
+              )
+          PCosign _ ->
             withOnlyOneStakeInput
               #$ mkRecordConstr
-                PCreated
-                ( #created .= pdata pid
+                PCosigned
+                ( #cosigned .= pdata pid
                 )
-          _ -> ptraceError "Expected proposal"
+          _ -> ptraceError "Expected Vote"
+        PNewProposal pid ->
+          withOnlyOneStakeInput
+            #$ mkRecordConstr
+              PCreated
+              ( #created .= pdata pid
+              )
+        _ -> ptraceError "Expected proposal"
+
+data PRemoveLocksMode (s :: S) = PRemoveVoterLockOnly | PRemoveAllLocks
+  deriving stock (Generic)
+  deriving anyclass (PlutusType, PEq)
+
+instance DerivePlutusType PRemoveLocksMode where
+  type DPTStrat _ = PlutusTypeScott
 
 {- | Remove stake locks with the proposal id given the list of existing locks.
      The first parameter controls whether to revmove creator locks or not.
@@ -225,36 +237,46 @@ premoveLocks ::
   Term
     s
     ( PProposalId
-        :--> PBool
+        :--> PRemoveLocksMode
         :--> PBuiltinList (PAsData PProposalLock)
         :--> PBuiltinList (PAsData PProposalLock)
     )
 premoveLocks = phoistAcyclic $
-  plam $ \pid rc ->
-    pfilter
-      # plam
-        ( \(pfromData -> l) -> pnot #$ pmatch l $ \case
-            PCreated ((pfield @"created" #) -> pid') -> rc #&& pid' #== pid
-            PVoted ((pfield @"votedOn" #) -> pid') -> pid' #== pid
-        )
+  plam $ \pid rl -> unTermCont $ do
+    shouldRemoveOtherLocks <- pletC $
+      plam $ \pid' ->
+        pid' #== pid #&& rl #== pcon PRemoveAllLocks
+
+    pure $
+      pfilter
+        # plam
+          ( \(pfromData -> l) -> pnot #$ pmatch l $ \case
+              PCosigned ((pfield @"cosigned" #) -> pid') ->
+                shouldRemoveOtherLocks # pid'
+              PCreated ((pfield @"created" #) -> pid') ->
+                shouldRemoveOtherLocks # pid'
+              PVoted ((pfield @"votedOn" #) -> pid') -> pid' #== pid
+          )
 
 {- | Default implementation of 'Agora.Stake.RetractVotes'.
 
      @since 1.0.0
 -}
 pretractVote :: forall (s :: S). Term s PStakeRedeemerHandler
-pretractVote = phoistAcyclic $
-  pvoteHelper #$ phoistAcyclic $
-    plam $
-      flip pmatch $ \ctxF ->
-        pmatch ctxF.proposalContext $ \case
-          PSpendProposal pid s r -> pmatch r $ \case
-            PUnlock _ ->
-              let allowRemovingCreatorLock =
-                    s #== pconstant Finished
-               in premoveLocks # pid # allowRemovingCreatorLock
-            _ -> ptraceError "Expected unlock"
-          _ -> ptraceError "Expected spending proposal"
+pretractVote = pvoteHelper #$ phoistAcyclic $
+  plam $
+    flip pmatch $ \ctxF ->
+      pmatch ctxF.proposalContext $ \case
+        PSpendProposal pid s r -> pmatch r $ \case
+          PUnlock _ ->
+            let mode =
+                  pif
+                    (s #== pconstant Finished)
+                    (pcon PRemoveAllLocks)
+                    (pcon PRemoveVoterLockOnly)
+             in premoveLocks # pid # mode
+          _ -> ptraceError "Expected unlock"
+        _ -> ptraceError "Expected spending proposal"
 
 -- | Validation logic shared by 'pdelegateTo' and 'pclearDelegate'.
 pdelegateHelper ::
