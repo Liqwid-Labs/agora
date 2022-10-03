@@ -58,6 +58,7 @@ import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletC, pmatchC)
 import Plutarch.Numeric.Additive (AdditiveMonoid (zero), AdditiveSemigroup ((+)))
 import Prelude hiding (Num ((+)))
 
+-- | A wrapper which ensures that no proposal is presented in the transaction.
 pwithoutProposal ::
   forall (s :: S).
   Term
@@ -73,6 +74,9 @@ pwithoutProposal = phoistAcyclic $
       (f # ctx)
       (ptraceError "No proposal is allowed")
 
+{- | Validate stake outputs given a function that converts an input stake datum
+      to an ouput stake datum. / O(n^2) /.
+-}
 pbatchUpdateInputs ::
   forall (s :: S).
   Term
@@ -88,6 +92,7 @@ pbatchUpdateInputs = phoistAcyclic $
       # ctxF.stakeOutputDatums
       # ctxF.stakeInputDatums
 
+-- | Extract the 'PSigContext.signedBy' field from 'PStakeRedeemerHandlerContext'.
 pgetSignedBy ::
   forall (s :: S).
   Term
@@ -99,15 +104,16 @@ pgetSignedBy = phoistAcyclic $
     sctxF <- pmatchC ctxF.sigContext
     pure sctxF.signedBy
 
+-- | Return true if the tx is authorized by either the owner or the delegatee.
 pisSignedBy ::
   forall (s :: S).
   Term
     s
-    (PBool :--> PBool :--> PStakeRedeemerHandlerContext :--> PBool)
+    (PBool :--> PStakeRedeemerHandlerContext :--> PBool)
 pisSignedBy = phoistAcyclic $
-  plam $ \byOwner byDelegate ctx ->
+  plam $ \byDelegate ctx ->
     pmatch (pgetSignedBy # ctx) $ \case
-      PSignedByOwner -> byOwner
+      PSignedByOwner -> pconstant True
       PSignedByDelegate -> byDelegate
       PUnknownSig -> pconstant False
 
@@ -154,7 +160,7 @@ pvoteHelper = phoistAcyclic $
     ctxF <- pmatchC ctx
 
     pguardC "Owner or delegate signs this transaction" $
-      pisSignedBy # pconstant True # pconstant True # ctx
+      pisSignedBy # pconstant True # ctx
 
     -- This puts trust into the Proposal. The Proposal must necessarily check
     -- that this is not abused.
@@ -164,6 +170,7 @@ pvoteHelper = phoistAcyclic $
 
     pure $ pconstant ()
 
+-- | Add new lock the the existing list of locked.
 paddNewLock ::
   forall (s :: S).
   Term
@@ -172,7 +179,10 @@ paddNewLock ::
         :--> PBuiltinList (PAsData PProposalLock)
         :--> PBuiltinList (PAsData PProposalLock)
     )
-paddNewLock = phoistAcyclic $ plam $ \newLock -> pcons # pdata newLock
+paddNewLock = phoistAcyclic $
+  plam $
+    -- Prepend the lock.
+    \newLock -> pcons # pdata newLock
 
 {- | Default implementation of 'Agora.Stake.PermitVote'.
 
@@ -201,11 +211,15 @@ ppermitVote = pvoteHelper #$ phoistAcyclic $
          in paddNewLock # newLock
       _ -> ptraceError "Expected proposal"
 
+{- | Remove stake locks with the proposal id given the list of existing locks.
+     The first parameter controls whether to revmove creator locks or not.
+-}
 premoveLocks ::
   forall (s :: S).
   Term
     s
-    ( PProposalId :--> PBool
+    ( PProposalId
+        :--> PBool
         :--> PBuiltinList (PAsData PProposalLock)
         :--> PBuiltinList (PAsData PProposalLock)
     )
@@ -248,7 +262,7 @@ pdelegateHelper = phoistAcyclic $
     sigCtxF <- pmatchC ctxF.sigContext
 
     pguardC "Owner signs this transaction" $
-      pisSignedBy # pconstant True # pconstant False # ctx
+      pisSignedBy # pconstant False # ctx
 
     let newDelegate = f # ctxF.redeemerContext
 
@@ -307,7 +321,7 @@ pdestroy = phoistAcyclic $
     ctxF <- pmatchC ctx
 
     pguardC "Owner signs this transaction" $
-      pisSignedBy # pconstant True # pconstant False # ctx
+      pisSignedBy # pconstant False # ctx
 
     pguardC "Stake unlocked" $
       pnot #$ pany # pstakeLocked # ctxF.stakeInputDatums
@@ -324,7 +338,7 @@ pdepositWithdraw = phoistAcyclic $
     ctxF <- pmatchC ctx
 
     pguardC "Owner signs this transaction" $
-      pisSignedBy # pconstant True # pconstant False # ctx
+      pisSignedBy # pconstant False # ctx
 
     ----------------------------------------------------------------------------
 

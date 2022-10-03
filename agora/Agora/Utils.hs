@@ -237,7 +237,11 @@ pisSingleton =
       (\_ _ t -> pnull # t)
       (const $ pconstant False)
 
--- | @since 1.0.0
+{- Throws an error if the given list contains zero or more than one elements.
+    Otherwise returns the only element.
+
+   @since 1.0.0
+-}
 pfromSingleton ::
   forall (a :: PType) (list :: PType -> PType) (s :: S).
   (PIsListLike list a) =>
@@ -253,7 +257,11 @@ pfromSingleton =
       )
       (const $ ptraceError "Empty list")
 
--- | @since 1.0.0
+{- | A version of 'pmap' which can throw out elements and change the list type
+      along the way.
+
+     @since 1.0.0
+-}
 pmapMaybe ::
   forall
     (listO :: PType -> PType)

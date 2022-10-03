@@ -183,6 +183,7 @@ instance DerivePlutusType PStakeInputsContext where
      When voting and unlocking, the proposal must witness a state transition
      occuring in the relevant Stake. This transition must place a lock on
      the stake that is tagged with the right 'Agora.Proposal.ResultTag', and 'Agora.Proposal.ProposalId'.
+     Note that only one proposal per transaction is supported.
 
      === Periods
 

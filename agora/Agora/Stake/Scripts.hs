@@ -74,7 +74,6 @@ import Plutarch.Api.V2 (
   AmountGuarantees,
   PMintingPolicy,
   PScriptPurpose (PMinting, PSpending),
-  PTxInInfo,
   PTxInfo,
   PTxOut,
   PValidator,
@@ -289,6 +288,7 @@ mkStakeValidator
 
       --------------------------------------------------------------------------
 
+      -- Returns stake datum if the given UTxO is a stake UTxO.
       getStakeDatum :: Term _ (PTxOut :--> PMaybe PStakeDatum) <-
         pletC $
           plam $ \txOut -> unTermCont $ do
@@ -314,6 +314,8 @@ mkStakeValidator
 
       --------------------------------------------------------------------------
 
+      -- Find all stake inputs.
+
       stakeInputDatums <-
         pletC $
           pmapMaybe
@@ -321,6 +323,8 @@ mkStakeValidator
             # pfromData txInfoF.inputs
 
       --------------------------------------------------------------------------
+
+      -- Assemble the signature context.
 
       firstStakeInputDatumF <-
         pletFieldsC @'["owner", "delegatedTo"] $
@@ -372,8 +376,14 @@ mkStakeValidator
 
       --------------------------------------------------------------------------
 
+      -- Find all stake outputs.
+
       let gtAssetClass = passetClass # pconstant gtSym # pconstant gtTn
 
+      -- First step of validating stake outputs. We make sure that every stake
+      --  output UTxO carries correct amount of GTs specified by its datum.
+      --
+      -- Note that non-GT assets are treated transparently.
       stakeOutputDatums <-
         pletC $
           pmapMaybe
@@ -381,6 +391,7 @@ mkStakeValidator
               ( \output ->
                   let validateGT = plam $ \stakeDatum ->
                         let expected = pfield @"stakedAmount" # stakeDatum
+
                             actual =
                               pvalueDiscrete
                                 # gtAssetClass
@@ -459,7 +470,6 @@ mkStakeValidator
                           )
                         # txInfoF.redeemers
 
-                getContext :: Term _ (PTxInInfo :--> PMaybe PProposalContext)
                 getContext = plam $
                   flip pletAll $ \inInfoF ->
                     pfmap
@@ -475,7 +485,8 @@ mkStakeValidator
 
                 contexts =
                   pmapMaybe @PList # getContext # pfromData txInfoF.inputs
-             in precList
+             in -- Can only handle one proposal at a time.
+                precList
                   ( \_ h t ->
                       pif
                         (pnull # t)
@@ -519,7 +530,7 @@ mkStakeValidator
 
       -- Call the redeemer handler.
 
-      stakeRedeemer :: Term _ PStakeRedeemer <- fst <$> ptryFromC redeemer
+      stakeRedeemer <- fst <$> ptryFromC redeemer
 
       pure $
         popaque $
@@ -546,6 +557,7 @@ mkStakeValidator
 
      Deposit or withdraw some GT to the stake.
 
+     - Only one stake per tx is supported.
      - Tx must be signed by the owner.
      - The 'stakedAmount' field must be updated.
      - The stake must not be locked.
@@ -557,9 +569,9 @@ mkStakeValidator
      Allow a 'ProposalLock' to be put on the stake in order to vote
      on a proposal.
 
-     - A proposal token must be spent alongside the stake.
+     - A proposal token must be spent alongside the staked.
 
-       * Its total votes must be correctly updated to include this stake's
+       * Its total votes must be correctly updated to include all stakes'
          contribution.
 
      - Tx must be signed by the owner.
@@ -568,14 +580,14 @@ mkStakeValidator
 
      Remove a 'ProposalLock' set when voting on a proposal.
 
-     - A proposal token must be spent alongside the stake.
+     - A proposal token must be spent or minted alongside the stakes.
      - Tx must be signed by the owner.
 
      === 'Destroy'
 
-     Destroy the stake in order to reclaim the min ADA.
+     Destroy stakes in order to reclaim the GTs.
 
-     - The stake must not be locked.
+     - The stakes must not be locked.
      - Tx must be signed by the owner.
 
      @since 0.1.0

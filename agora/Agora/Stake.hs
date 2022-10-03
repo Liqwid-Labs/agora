@@ -458,10 +458,13 @@ data PSignedBy (s :: S)
 instance DerivePlutusType PSignedBy where
   type DPTStrat _ = PlutusTypeScott
 
--- | @since 1.0.0
+{- | The signature context.
+
+     @since 1.0.0
+-}
 data PSigContext (s :: S) = PSigContext
   { owner :: Term s PCredential
-  , delegate :: Term s (PMaybeData (PAsData PCredential))
+  , delegatee :: Term s (PMaybeData (PAsData PCredential))
   , signedBy :: Term s PSignedBy
   }
   deriving stock
@@ -562,7 +565,8 @@ instance DerivePlutusType PStakeRedeemerHandlerContext where
 -}
 type PStakeRedeemerHandler = PStakeRedeemerHandlerContext :--> PUnit
 
-{- | Newtype wrapper around @'ClosedTerm' 'PStakeRedeemerHandler'@ to allow type inference to work.
+{- | Newtype wrapper around @'ClosedTerm' 'PStakeRedeemerHandler'@ to allow type
+     inference to work.
 
      @since 1.0.0
 -}
@@ -570,6 +574,7 @@ newtype PStakeRedeemerHandlerTerm
   = PStakeRedeemerHandlerTerm
       (ClosedTerm PStakeRedeemerHandler)
 
+-- | @since 1.0.0
 runStakeRedeemerHandler ::
   PStakeRedeemerHandlerTerm ->
   ClosedTerm PStakeRedeemerHandler
