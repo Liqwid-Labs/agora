@@ -189,6 +189,7 @@ instance Default ProposalThresholds where
     ProposalThresholds
       { execute = Tagged 1000
       , create = Tagged 1
+      , toVoting = Tagged 100
       , vote = Tagged 100
       }
 

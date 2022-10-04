@@ -25,6 +25,8 @@ module Sample.Proposal.Vote (
   moreThanOneProposals,
   invalidLocks,
   destroyStakes,
+  insufficientAmount,
+  insufficientAmount1,
 ) where
 
 import Agora.Governor (Governor (..))
@@ -523,6 +525,30 @@ destroyStakes =
           { stakeOutputParameters =
               ownerVoteWithMultipleStakes.stakeParameters.stakeOutputParameters
                 { burnStakes = True
+                }
+          }
+    }
+
+insufficientAmount :: ParameterBundle
+insufficientAmount =
+  ownerVoteWithSignleStake
+    { stakeParameters =
+        ownerVoteWithSignleStake.stakeParameters
+          { stakeInputParameters =
+              ownerVoteWithSignleStake.stakeParameters.stakeInputParameters
+                { perStakeGTs = 1
+                }
+          }
+    }
+
+insufficientAmount1 :: ParameterBundle
+insufficientAmount1 =
+  ownerVoteWithMultipleStakes
+    { stakeParameters =
+        ownerVoteWithMultipleStakes.stakeParameters
+          { stakeInputParameters =
+              ownerVoteWithMultipleStakes.stakeParameters.stakeInputParameters
+                { perStakeGTs = 1
                 }
           }
     }

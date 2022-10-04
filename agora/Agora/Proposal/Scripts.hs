@@ -458,25 +458,27 @@ proposalValidator as maximumCosigners =
           ----------------------------------------------------------------------
 
           PVote r -> spendStakes $ \sctxF -> do
-            let totalStakeAmount =
-                  pto $
-                    pfoldMap
-                      # plam
-                        ( \stake -> unTermCont $ do
-                            stakeF <- pletFieldsC @'["stakedAmount", "lockedBy"] stake
+            totalStakeAmount <-
+              pletC $
+                pto $
+                  pfoldMap
+                    # plam
+                      ( \stake -> unTermCont $ do
+                          stakeF <- pletFieldsC @'["stakedAmount", "lockedBy"] stake
 
-                            pguardC "Same stake shouldn't vote on the same proposal twice" $
-                              pnot
-                                #$ pisVoter
-                                #$ pgetStakeRole
-                                  # proposalInputDatumF.proposalId
-                                  # stakeF.lockedBy
+                          pguardC "Same stake shouldn't vote on the same proposal twice" $
+                            pnot
+                              #$ pisVoter
+                              #$ pgetStakeRole
+                                # proposalInputDatumF.proposalId
+                                # stakeF.lockedBy
 
-                            pure $ pcon $ PSum $ pfromData stakeF.stakedAmount
-                        )
-                      # sctxF.inputStakes
+                          pure $ pcon $ PSum $ pfromData stakeF.stakedAmount
+                      )
+                    # sctxF.inputStakes
 
-            -- TODO(Connor): check minimum stake amount?
+            pguardC "Exceed minimum amount" $
+              thresholdsF.vote #< totalStakeAmount
 
             pguardC "Input proposal must be in VotingReady state" $
               currentStatus #== pconstant VotingReady
@@ -657,7 +659,7 @@ proposalValidator as maximumCosigners =
                     pmatchC notTooLate >>= \case
                       PTrue -> do
                         pguardC "More cosigns than minimum amount" $
-                          punsafeCoerce (pfromData thresholdsF.vote) #< sctxF.totalAmount
+                          punsafeCoerce (pfromData thresholdsF.toVoting) #< sctxF.totalAmount
 
                         pguardC "All new cosigners are witnessed by their Stake datums" $
                           plistEqualsBy

@@ -176,6 +176,14 @@ specs =
                   "attempt to burn stakes"
                   Vote.destroyStakes
                   (Vote.Validity True False)
+              , Vote.mkTestTree
+                  "insufficient staked amount"
+                  Vote.insufficientAmount
+                  (Vote.Validity False True)
+              , Vote.mkTestTree
+                  "insufficient staked amount"
+                  Vote.insufficientAmount1
+                  (Vote.Validity False True)
               ]
           ]
       , group
