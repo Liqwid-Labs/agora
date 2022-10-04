@@ -52,7 +52,7 @@ import Plutarch.Api.V2 (
   PValidator,
  )
 import Plutarch.Extra.AssetClass (passetClass, passetClassValueOf)
-import Plutarch.Extra.Category (PCategory (pidentity), PSemigroupoid ((#>>>)))
+import Plutarch.Extra.Category (PCategory (pidentity))
 import Plutarch.Extra.Comonad (pextract)
 import Plutarch.Extra.Field (pletAll, pletAllC)
 import "liqwid-plutarch-extra" Plutarch.Extra.List (pfindJust)
@@ -324,7 +324,7 @@ proposalValidator as maximumCosigners =
         plam $
           let stakeInputs =
                 pmapMaybe
-                  # (pfield @"resolved" #>>> getStakeDatum)
+                  # plam ((getStakeDatum #) . (pfield @"resolved" #))
                   # pfromData txInfoF.inputs
 
               ctx = pcon $ PStakeInputsContext stakeInputs

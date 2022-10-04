@@ -83,7 +83,6 @@ import Plutarch.Extra.AssetClass (
   passetClassValueOf,
   pvalueOf,
  )
-import Plutarch.Extra.Category (PSemigroupoid ((#>>>)))
 import Plutarch.Extra.Field (pletAll)
 import Plutarch.Extra.Functor (PFunctor (pfmap))
 import "liqwid-plutarch-extra" Plutarch.Extra.List (pfindJust)
@@ -319,7 +318,7 @@ mkStakeValidator
       stakeInputDatums <-
         pletC $
           pmapMaybe
-            # ((pfield @"resolved") #>>> getStakeDatum)
+            # plam ((getStakeDatum #) . (pfield @"resolved" #))
             # pfromData txInfoF.inputs
 
       --------------------------------------------------------------------------
@@ -335,14 +334,16 @@ mkStakeValidator
       pguardC "All input stakes have the same owner or delegate" $
         let allHaveSameOwner =
               pall
-                # ( (pfield @"owner")
-                      #>>> plam (#== firstStakeInputDatumF.owner)
+                # plam
+                  ( (#== firstStakeInputDatumF.owner)
+                      . (pfield @"owner" #)
                   )
                 # restOfStakeInputDatums
             allHaveSameDelegate =
               pall
-                # ( (pfield @"delegatedTo")
-                      #>>> plam (#== firstStakeInputDatumF.delegatedTo)
+                # plam
+                  ( (#== firstStakeInputDatumF.delegatedTo)
+                      . (pfield @"delegatedTo" #)
                   )
                 # restOfStakeInputDatums
          in allHaveSameOwner #|| allHaveSameDelegate
