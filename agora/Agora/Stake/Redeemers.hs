@@ -48,7 +48,7 @@ import Agora.Stake (
   ),
   pstakeLocked,
  )
-import Agora.Utils (pdeleteBy, pfromSingleton)
+import Agora.Utils (pdeleteBy, pfromSingleton, pisSingleton)
 import Plutarch.Api.V1.Address (PCredential)
 import Plutarch.Api.V2 (PMaybeData)
 import Plutarch.Extra.Field (pletAll, pletAllC)
@@ -149,7 +149,7 @@ pvoteHelper ::
   forall (s :: S).
   Term
     s
-    ( ( PProposalContext
+    ( ( PStakeRedeemerHandlerContext
           :--> PBuiltinList (PAsData PProposalLock)
           :--> PBuiltinList (PAsData PProposalLock)
       )
@@ -157,8 +157,6 @@ pvoteHelper ::
     )
 pvoteHelper = phoistAcyclic $
   plam $ \valProposalCtx ctx -> unTermCont $ do
-    ctxF <- pmatchC ctx
-
     pguardC "Owner or delegate signs this transaction" $
       pisSignedBy # pconstant True # ctx
 
@@ -166,7 +164,7 @@ pvoteHelper = phoistAcyclic $
     -- that this is not abused.
 
     pguardC "Correct outputs" $
-      ponlyLocksUpdated # (valProposalCtx # ctxF.proposalContext) # ctx
+      ponlyLocksUpdated # (valProposalCtx # ctx) # ctx
 
     pure $ pconstant ()
 
@@ -189,27 +187,35 @@ paddNewLock = phoistAcyclic $
      @since 1.0.0
 -}
 ppermitVote :: forall (s :: S). Term s PStakeRedeemerHandler
-ppermitVote = pvoteHelper #$ phoistAcyclic $
-  plam $
-    flip pmatch $ \case
-      PSpendProposal pid _ r -> pmatch r $ \case
-        PVote ((pfromData . (pfield @"resultTag" #)) -> voteFor) ->
-          let newLock =
-                mkRecordConstr
-                  PVoted
-                  ( #votedOn .= pdata pid
-                      .& #votedFor .= pdata voteFor
-                  )
-           in paddNewLock # newLock
-        _ -> ptraceError "Expected Vote"
-      PNewProposal pid ->
-        let newLock =
+ppermitVote = phoistAcyclic $
+  pvoteHelper #$ phoistAcyclic $
+    plam $ \ctx -> unTermCont $ do
+      ctxF <- pmatchC ctx
+
+      let withOnlyOneStakeInput =
+            plam $ \lock -> unTermCont $ do
+              pguardC "Only one stake input allowed" $
+                pisSingleton # ctxF.stakeInputDatums
+
+              pure lock
+
+      pure $
+        paddNewLock #$ pmatch ctxF.proposalContext $ \case
+          PSpendProposal pid _ r -> pmatch r $ \case
+            PVote ((pfromData . (pfield @"resultTag" #)) -> voteFor) ->
               mkRecordConstr
+                PVoted
+                ( #votedOn .= pdata pid
+                    .& #votedFor .= pdata voteFor
+                )
+            _ -> ptraceError "Expected Vote"
+          PNewProposal pid ->
+            withOnlyOneStakeInput
+              #$ mkRecordConstr
                 PCreated
                 ( #created .= pdata pid
                 )
-         in paddNewLock # newLock
-      _ -> ptraceError "Expected proposal"
+          _ -> ptraceError "Expected proposal"
 
 {- | Remove stake locks with the proposal id given the list of existing locks.
      The first parameter controls whether to revmove creator locks or not.
@@ -237,16 +243,18 @@ premoveLocks = phoistAcyclic $
      @since 1.0.0
 -}
 pretractVote :: forall (s :: S). Term s PStakeRedeemerHandler
-pretractVote = pvoteHelper #$ phoistAcyclic $
-  plam $
-    flip pmatch $ \case
-      PSpendProposal pid s r -> pmatch r $ \case
-        PUnlock _ ->
-          let allowRemovingCreatorLock =
-                s #== pconstant Finished
-           in premoveLocks # pid # allowRemovingCreatorLock
-        _ -> ptraceError "Expected unlock"
-      _ -> ptraceError "Expected spending proposal"
+pretractVote = phoistAcyclic $
+  pvoteHelper #$ phoistAcyclic $
+    plam $
+      flip pmatch $ \ctxF ->
+        pmatch ctxF.proposalContext $ \case
+          PSpendProposal pid s r -> pmatch r $ \case
+            PUnlock _ ->
+              let allowRemovingCreatorLock =
+                    s #== pconstant Finished
+               in premoveLocks # pid # allowRemovingCreatorLock
+            _ -> ptraceError "Expected unlock"
+          _ -> ptraceError "Expected spending proposal"
 
 -- | Validation logic shared by 'pdelegateTo' and 'pclearDelegate'.
 pdelegateHelper ::
