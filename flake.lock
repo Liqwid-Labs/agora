@@ -11460,11 +11460,11 @@
         "plutarch": "plutarch_6"
       },
       "locked": {
-        "lastModified": 1663679353,
-        "narHash": "sha256-CK+hgOoU9qARRnaUlxlh9ZBWb0G6d8F0VslAbXd8mIM=",
+        "lastModified": 1664495234,
+        "narHash": "sha256-GEl2kRkL3MdHL1fDKbur5VVThR/w082w7KccfDL42qg=",
         "owner": "Liqwid-Labs",
         "repo": "plutarch-context-builder",
-        "rev": "3bc59acb11264c4fa43c95fa615a4dbf69e0f981",
+        "rev": "9ea4dab758a4d60e69c794fe4e349ddabc8e7018",
         "type": "github"
       },
       "original": {
@@ -11979,17 +11979,17 @@
         "plutarch": "plutarch_15"
       },
       "locked": {
-        "lastModified": 1664028810,
+        "lastModified": 1664220695,
         "narHash": "sha256-thMEO1P/ciHjnMFyL0bla781TG5C/nB5EEtebb3Boik=",
         "owner": "Liqwid-Labs",
         "repo": "plutarch-script-export",
-        "rev": "4f0da58ba67cdcfe5c7d97e6e27dc00dfb71e657",
+        "rev": "eba175e63516a4fed43ceab1826ea6522f28dd0f",
         "type": "github"
       },
       "original": {
         "owner": "Liqwid-Labs",
+        "ref": "main",
         "repo": "plutarch-script-export",
-        "rev": "4f0da58ba67cdcfe5c7d97e6e27dc00dfb71e657",
         "type": "github"
       }
     },

@@ -67,8 +67,7 @@ import Plutarch.DataRepr (
   ),
   PDataFields,
  )
-import Plutarch.Extra.Comonad (pextract)
-import Plutarch.Extra.Field (pletAllC)
+import Plutarch.Extra.Field (pletAll)
 import Plutarch.Extra.Function (pbuiltinUncurry)
 import Plutarch.Extra.IsData (
   DerivePConstantViaDataList (DerivePConstantViaDataList),
@@ -81,14 +80,14 @@ import Plutarch.Extra.IsData (
 import "liqwid-plutarch-extra" Plutarch.Extra.List (pfindJust)
 import Plutarch.Extra.Map qualified as PM
 import Plutarch.Extra.Maybe (pfromJust)
-import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletC, pmatchC)
+import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletC)
 import Plutarch.Lift (
   DerivePConstantViaNewtype (DerivePConstantViaNewtype),
   PConstantDecl,
   PUnsafeLiftDecl (type PLifted),
  )
 import Plutarch.Orphans ()
-import Plutarch.SafeMoney (PDiscrete (PDiscrete))
+import Plutarch.SafeMoney (PDiscrete)
 import PlutusLedgerApi.V2 (Credential, DatumHash, ScriptHash, ValidatorHash)
 import PlutusTx qualified
 
@@ -222,7 +221,7 @@ data ProposalStatus
      This data is stored centrally (in the 'Agora.Governor.Governor') and copied over
      to 'Proposal's when they are created.
 
-     @since 0.1.0
+     @since 1.0.0
 -}
 data ProposalThresholds = ProposalThresholds
   { execute :: Tagged GTTag Integer
@@ -232,9 +231,10 @@ data ProposalThresholds = ProposalThresholds
   --
   -- It is recommended this be a high enough amount, in order to prevent DOS from bad
   -- actors.
+  , toVoting :: Tagged GTTag Integer
+  -- ^ How much GT required to to move into 'Locked'.
   , vote :: Tagged GTTag Integer
-  -- ^ How much GT required to allow voting to happen.
-  -- (i.e. to move into 'VotingReady')
+  -- ^ How much GT required to vote on a outcome.
   }
   deriving stock
     ( -- | @since 0.1.0
@@ -553,7 +553,7 @@ deriving via (DerivePConstantViaEnum ProposalStatus PProposalStatus) instance (P
 
 {- | Plutarch-level version of 'ProposalThresholds'.
 
-     @since 0.1.0
+     @since 1.0.0
 -}
 newtype PProposalThresholds (s :: S) = PProposalThresholds
   { getProposalThresholds ::
@@ -562,6 +562,7 @@ newtype PProposalThresholds (s :: S) = PProposalThresholds
         ( PDataRecord
             '[ "execute" ':= PDiscrete GTTag
              , "create" ':= PDiscrete GTTag
+             , "toVoting" ':= PDiscrete GTTag
              , "vote" ':= PDiscrete GTTag
              ]
         )
@@ -617,6 +618,8 @@ newtype PProposalVotes (s :: S)
       PlutusType
     , -- | @since 0.1.0
       PIsData
+    , -- | @since 1.0.0
+      PShow
     )
 
 -- | @since 0.2.0
@@ -949,23 +952,18 @@ pneutralOption = phoistAcyclic $
 -}
 pisProposalThresholdsValid :: forall (s :: S). Term s (PProposalThresholds :--> PBool)
 pisProposalThresholdsValid = phoistAcyclic $
-  plam $ \thresholds -> unTermCont $ do
-    thresholdsF <- pletAllC thresholds
-
-    PDiscrete execute' <- pmatchC thresholdsF.execute
-    PDiscrete draft' <- pmatchC thresholdsF.create
-    PDiscrete vote' <- pmatchC thresholdsF.vote
-
-    execute <- pletC $ pextract # execute'
-    draft <- pletC $ pextract # draft'
-    vote <- pletC $ pextract # vote'
-
-    pure $
+  plam $
+    flip pletAll $ \thresholdsF ->
       foldr1
         (#&&)
-        [ ptraceIfFalse "Execute threshold is less than or equal to 0" $ 0 #<= execute
-        , ptraceIfFalse "Draft threshold is less than or equal to 0" $ 0 #<= draft
-        , ptraceIfFalse "Vote threshold is less than or equal to 0" $ 0 #<= vote
+        [ ptraceIfFalse "Execute threshold is less than or equal to 0" $
+            0 #<= pfromData thresholdsF.execute
+        , ptraceIfFalse "Create threshold is less than or equal to 0" $
+            0 #<= pfromData thresholdsF.create
+        , ptraceIfFalse "toVoting threshold is less than or equal to 0" $
+            0 #<= pfromData thresholdsF.toVoting
+        , ptraceIfFalse "Vote threshold is less than or equal to 0" $
+            0 #<= pfromData thresholdsF.vote
         ]
 
 {- | Retract votes given the option and the amount of votes.

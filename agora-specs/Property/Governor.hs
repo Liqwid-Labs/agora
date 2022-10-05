@@ -63,6 +63,7 @@ import Test.Tasty.QuickCheck (
 data GovernorDatumCases
   = ExecuteLE0
   | CreateLE0
+  | ToVotingLE0
   | VoteLE0
   | Correct
   deriving stock (Eq, Show)
@@ -88,9 +89,10 @@ governorDatumValidProperty =
   classifiedPropertyNative gen (const []) expected classifier pisGovernorDatumValid
   where
     classifier :: GovernorDatum -> GovernorDatumCases
-    classifier ((.proposalThresholds) -> ProposalThresholds e c v)
+    classifier ((.proposalThresholds) -> ProposalThresholds e c tv v)
       | e < 0 = ExecuteLE0
       | c < 0 = CreateLE0
+      | tv < 0 = ToVotingLE0
       | v < 0 = VoteLE0
       | otherwise = Correct
 
@@ -110,24 +112,27 @@ governorDatumValidProperty =
           let validGT = taggedInteger (0, 1000000000)
           execute <- validGT
           create <- validGT
+          toVoting <- validGT
           vote <- validGT
           le0 <- taggedInteger (-1000, -1)
 
           case c of
             ExecuteLE0 ->
               -- execute < 0
-              return $ ProposalThresholds le0 create vote
+              return $ ProposalThresholds le0 create toVoting vote
             CreateLE0 ->
               -- c < 0
-              return $ ProposalThresholds execute le0 vote
+              return $ ProposalThresholds execute le0 toVoting vote
+            ToVotingLE0 ->
+              return $ ProposalThresholds execute create le0 vote
             VoteLE0 ->
               -- vote < 0
-              return $ ProposalThresholds execute create le0
+              return $ ProposalThresholds execute create toVoting le0
             Correct -> do
               -- c <= vote < execute
               nv <- taggedInteger (0, untag execute - 1)
               nc <- taggedInteger (0, untag nv)
-              return $ ProposalThresholds execute nc nv
+              return $ ProposalThresholds execute nc toVoting nv
 
 data GovernorPolicyCases
   = ReferenceUTXONotSpent

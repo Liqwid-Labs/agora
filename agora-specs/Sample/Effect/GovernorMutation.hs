@@ -195,7 +195,7 @@ invalidNewGovernorDatum =
   GovernorDatum
     { proposalThresholds =
         def
-          { vote = Tagged (-1)
+          { toVoting = Tagged (-1)
           }
     , nextProposalId = ProposalId 42
     , proposalTimings = def

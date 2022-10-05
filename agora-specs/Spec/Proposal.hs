@@ -10,8 +10,9 @@ module Spec.Proposal (specs) where
 import Sample.Proposal.Advance qualified as Advance
 import Sample.Proposal.Cosign qualified as Cosign
 import Sample.Proposal.Create qualified as Create
-import Sample.Proposal.UnlockStake qualified as UnlockStake
+import Sample.Proposal.Unlock qualified as Unlock
 import Sample.Proposal.Vote qualified as Vote
+
 import Test.Specification (
   SpecificationTree,
   group,
@@ -52,8 +53,8 @@ specs =
               "invalid stake locks"
               Create.addInvalidLocksParameters
               True
-              False
               True
+              False
           , Create.mkTestTree
               "has reached maximum proposals limit"
               Create.exceedMaximumProposalsParameters
@@ -128,10 +129,62 @@ specs =
           "voting"
           [ group
               "legal"
-              [ Vote.mkTestTree "ordinary" Vote.validVoteParameters True
-              , Vote.mkTestTree "delegate" Vote.validVoteAsDelegateParameters True
+              [ group "different number of stakes" $
+                  map
+                    ( \s ->
+                        group
+                          (unwords [show s, "stakes"])
+                          [ Vote.mkTestTree
+                              "by owner"
+                              (Vote.mkValidOwnerVoteBundle s)
+                              (Vote.Validity True True)
+                          , Vote.mkTestTree
+                              "by delegatee"
+                              (Vote.mkValidDelegateeVoteBundle s)
+                              (Vote.Validity True True)
+                          ]
+                    )
+                    [1, 3, 5, 7, 9]
+              , Vote.mkTestTree
+                  "transparent non-GT tokens"
+                  Vote.transparentAssets
+                  (Vote.Validity True True)
               ]
-              -- TODO: add negative test cases
+          , group
+              "illegal"
+              [ Vote.mkTestTree
+                  "vote for nonexistent outcome"
+                  Vote.voteForNonexistentOutcome
+                  (Vote.Validity False True)
+              , Vote.mkTestTree
+                  "unauthorized tx"
+                  Vote.transactionNotAuthorized
+                  (Vote.Validity True False)
+              , Vote.mkTestTree
+                  "no proposal"
+                  Vote.noProposal
+                  (Vote.Validity False False)
+              , Vote.mkTestTree
+                  "more than one proposals"
+                  Vote.voteForNonexistentOutcome
+                  (Vote.Validity False True)
+              , Vote.mkTestTree
+                  "locks not added"
+                  Vote.invalidLocks
+                  (Vote.Validity True False)
+              , Vote.mkTestTree
+                  "attempt to burn stakes"
+                  Vote.destroyStakes
+                  (Vote.Validity True False)
+              , Vote.mkTestTree
+                  "insufficient staked amount"
+                  Vote.insufficientAmount
+                  (Vote.Validity False True)
+              , Vote.mkTestTree
+                  "insufficient staked amount"
+                  Vote.insufficientAmount1
+                  (Vote.Validity False True)
+              ]
           ]
       , group
           "advancing"
@@ -278,103 +331,72 @@ specs =
                           ]
                       ]
       , group "unlocking" $
-          let proposalCountCases = [1, 5, 10, 42]
+          let stakeCountCases = [1, 3, 5, 7, 9, 11]
 
-              mkSubgroupName nProposals = unwords ["with", show nProposals, "proposals"]
+              mkSubgroupName nStakes = unwords ["with", show nStakes, "stakes"]
 
-              mkLegalGroup nProposals =
+              mkLegalGroup nStakes =
                 group
-                  (mkSubgroupName nProposals)
-                  [ UnlockStake.mkTestTree
+                  (mkSubgroupName nStakes)
+                  [ Unlock.mkTestTree
                       "voter: retract votes while voting"
-                      (UnlockStake.mkVoterRetractVotesWhileVotingParameters nProposals)
-                      True
-                  , UnlockStake.mkTestTree
+                      (Unlock.mkValidVoterRetractVotes nStakes)
+                      (Unlock.Validity True True)
+                  , Unlock.mkTestTree
+                      "voter: retract votes while voting by delegatee"
+                      (Unlock.mkValidDelegateeRetractVotes nStakes)
+                      (Unlock.Validity True True)
+                  , Unlock.mkTestTree
                       "voter/creator: retract votes while voting"
-                      (UnlockStake.mkVoterCreatorRetractVotesWhileVotingParameters nProposals)
-                      True
-                  , UnlockStake.mkTestTree
-                      "creator: remove creator locks when finished"
-                      (UnlockStake.mkCreatorRemoveCreatorLocksWhenFinishedParameters nProposals)
-                      True
-                  , UnlockStake.mkTestTree
-                      "voter/creator: remove all locks when finished"
-                      (UnlockStake.mkVoterCreatorRemoveAllLocksWhenFinishedParameters nProposals)
-                      True
-                  , group "voter: unlock after voting" $
-                      map
-                        ( \ps ->
-                            let name = show ps.proposalStatus
-                             in UnlockStake.mkTestTree name ps True
-                        )
-                        (UnlockStake.mkVoterUnlockStakeAfterVotingParameters nProposals)
-                  , UnlockStake.mkTestTree
-                      "voter/creator: remove vote locks when locked"
-                      (UnlockStake.mkVoterCreatorRemoveVoteLocksWhenLockedParameters nProposals)
-                      True
+                      (Unlock.mkValidVoterCreatorRetractVotes nStakes)
+                      (Unlock.Validity True True)
+                  , Unlock.mkTestTree
+                      "creator: remove creator lock after voting"
+                      (Unlock.mkValidCreatorRemoveLock nStakes)
+                      (Unlock.Validity True True)
+                  , Unlock.mkTestTree
+                      "Voter: remove lock after voting"
+                      (Unlock.mkValidVoterRemoveLockAfterVoting nStakes)
+                      (Unlock.Validity True True)
                   ]
 
-              mkIllegalGroup nProposals =
+              mkIllegalGroup nStakes =
                 group
-                  (mkSubgroupName nProposals)
+                  (mkSubgroupName nStakes)
                   [ group "retract votes while not voting" $
                       map
-                        ( \ps ->
-                            let name =
-                                  unwords
-                                    [ "role:"
-                                    , show ps.stakeRole
-                                    , ","
-                                    , "status:"
-                                    , show ps.proposalStatus
-                                    ]
-                             in UnlockStake.mkTestTree name ps False
+                        ( \c ->
+                            Unlock.mkTestTree
+                              "(negative test)"
+                              c
+                              (Unlock.Validity False True)
                         )
-                        (UnlockStake.mkRetractVotesWhileNotVoting nProposals)
-                  , group "unlock an irrelevant stake" $
-                      map
-                        ( \ps ->
-                            let name =
-                                  unwords
-                                    [ "status:"
-                                    , show ps.proposalStatus
-                                    , "retract votes:"
-                                    , show ps.retractVotes
-                                    ]
-                             in UnlockStake.mkTestTree name ps False
-                        )
-                        (UnlockStake.mkUnockIrrelevantStakeParameters nProposals)
+                        (Unlock.mkRetractVotesWhileNotVoting nStakes)
                   , group "remove creator too early" $
                       map
-                        ( \ps ->
-                            let name =
-                                  unwords
-                                    ["status:", show ps.proposalStatus]
-                             in UnlockStake.mkTestTree name ps False
+                        ( \c ->
+                            Unlock.mkTestTree
+                              "(negative test)"
+                              c
+                              (Unlock.Validity True False)
                         )
-                        (UnlockStake.mkRemoveCreatorLockBeforeFinishedParameters nProposals)
-                  , UnlockStake.mkTestTree
+                        (Unlock.mkRemoveCreatorLockBeforeFinished nStakes)
+                  , Unlock.mkTestTree
+                      "unlock an irrelevant stake"
+                      (Unlock.mkUnockIrrelevantStakes nStakes)
+                      (Unlock.Validity False True)
+                  , Unlock.mkTestTree
                       "creator: retract votes"
-                      (UnlockStake.mkRetractVotesWithCreatorStakeParamaters nProposals)
-                      False
-                  , group "alter output stake datum" $
-                      map
-                        ( \ps ->
-                            let name =
-                                  unwords
-                                    [ "role:"
-                                    , show ps.stakeRole
-                                    , ","
-                                    , "status:"
-                                    , show ps.proposalStatus
-                                    ]
-                             in UnlockStake.mkTestTree name ps False
-                        )
-                        (UnlockStake.mkAlterStakeParameters nProposals)
+                      (Unlock.mkCreatorRetractVotes nStakes)
+                      (Unlock.Validity False True)
+                  , Unlock.mkTestTree
+                      "change output stake value"
+                      (Unlock.mkChangeOutputStakeValue nStakes)
+                      (Unlock.Validity True False)
                   ]
 
-              legalGroup = group "legal" $ map mkLegalGroup proposalCountCases
-              illegalGroup = group "illegal" $ map mkIllegalGroup proposalCountCases
+              legalGroup = group "legal" $ map mkLegalGroup stakeCountCases
+              illegalGroup = group "illegal" $ map mkIllegalGroup stakeCountCases
            in [legalGroup, illegalGroup]
       ]
   ]

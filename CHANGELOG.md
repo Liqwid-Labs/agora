@@ -6,6 +6,13 @@ This format is based on [Keep A Changelog](https://keepachangelog.com/en/1.0.0).
 
 ### Modified
 
+- Support voting/retracting votes with multiple stakes.
+
+  NOTE: Due to the fact that the order of stake locks is undefined, voting to
+   multiple proposals in a single tx is disallowed.
+  
+  Included by [#186](https://github.com/Liqwid-Labs/agora/pull/186)
+
 - Fix a bug that allows an attacker to send two or more GATs to an effect in the winning effect group.
 
   Fixed by [#181](https://github.com/Liqwid-Labs/agora/pull/181)
