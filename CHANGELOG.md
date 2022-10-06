@@ -6,6 +6,14 @@ This format is based on [Keep A Changelog](https://keepachangelog.com/en/1.0.0).
 
 ### Modified
 
+- Place a lock the stake while cosigning a proposal.
+
+  NOTE: This changes how cosigning works. In particular, the stake has to be
+  spent instead of just presented in the reference inputs. Also, adding multiple
+  cosignatures in one tx is no longer possible.
+
+  Included by [#192](https://github.com/Liqwid-Labs/agora/pull/192)
+
 - Support voting/retracting votes with multiple stakes.
 
   NOTE: Due to the fact that the order of stake locks is undefined, voting to
@@ -33,7 +41,7 @@ the stake validator easily. The behaviour of the default stake validator remains
 
   Included by [#172](https://github.com/Liqwid-Labs/agora/pull/172)
 
-- Witness stakes with reference input. Stake redeemer `WitnessStake` is removed. 
+- Witness stakes with reference input. Stake redeemer `WitnessStake` is removed.
 
   Included by [#168](https://github.com/Liqwid-Labs/agora/pull/168)
 
