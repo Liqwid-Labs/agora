@@ -284,6 +284,7 @@ unlock ps = builder
         not
           . ( \case
                 Created pid -> c && pid == defProposalId
+                Cosigned pid -> c && pid == defProposalId
                 Voted pid _ -> v && pid == defProposalId
             )
 

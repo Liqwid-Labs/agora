@@ -191,6 +191,7 @@ instance Default ProposalThresholds where
       , create = Tagged 1
       , toVoting = Tagged 100
       , vote = Tagged 100
+      , cosign = Tagged 100
       }
 
 authorityTokenSymbol :: CurrencySymbol

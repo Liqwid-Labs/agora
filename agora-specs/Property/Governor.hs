@@ -18,7 +18,7 @@ import Agora.Proposal.Time (
   ProposalTimingConfig (ProposalTimingConfig),
  )
 import Data.Default.Class (Default (def))
-import Data.Tagged (Tagged (Tagged), untag)
+import Data.Tagged (Tagged (Tagged))
 import Data.Universe (Finite (..), Universe (..))
 import Plutarch.Api.V2 (PScriptContext)
 import Plutarch.Builtin (pforgetData)
@@ -65,6 +65,7 @@ data GovernorDatumCases
   | CreateLE0
   | ToVotingLE0
   | VoteLE0
+  | CosignLE0
   | Correct
   deriving stock (Eq, Show)
 
@@ -73,6 +74,7 @@ instance Universe GovernorDatumCases where
     [ ExecuteLE0
     , CreateLE0
     , VoteLE0
+    , CosignLE0
     , Correct
     ]
 
@@ -89,11 +91,12 @@ governorDatumValidProperty =
   classifiedPropertyNative gen (const []) expected classifier pisGovernorDatumValid
   where
     classifier :: GovernorDatum -> GovernorDatumCases
-    classifier ((.proposalThresholds) -> ProposalThresholds e c tv v)
+    classifier ((.proposalThresholds) -> ProposalThresholds e c tv v co)
       | e < 0 = ExecuteLE0
       | c < 0 = CreateLE0
       | tv < 0 = ToVotingLE0
       | v < 0 = VoteLE0
+      | co < 0 = CosignLE0
       | otherwise = Correct
 
     expected :: GovernorDatum -> Maybe Bool
@@ -114,25 +117,25 @@ governorDatumValidProperty =
           create <- validGT
           toVoting <- validGT
           vote <- validGT
+          cosign <- validGT
           le0 <- taggedInteger (-1000, -1)
 
           case c of
             ExecuteLE0 ->
               -- execute < 0
-              return $ ProposalThresholds le0 create toVoting vote
+              return $ ProposalThresholds le0 create toVoting vote cosign
             CreateLE0 ->
               -- c < 0
-              return $ ProposalThresholds execute le0 toVoting vote
+              return $ ProposalThresholds execute le0 toVoting vote cosign
             ToVotingLE0 ->
-              return $ ProposalThresholds execute create le0 vote
+              return $ ProposalThresholds execute create le0 vote cosign
             VoteLE0 ->
               -- vote < 0
-              return $ ProposalThresholds execute create toVoting le0
-            Correct -> do
-              -- c <= vote < execute
-              nv <- taggedInteger (0, untag execute - 1)
-              nc <- taggedInteger (0, untag nv)
-              return $ ProposalThresholds execute nc toVoting nv
+              return $ ProposalThresholds execute create toVoting le0 cosign
+            CosignLE0 ->
+              return $ ProposalThresholds execute create toVoting vote le0
+            Correct ->
+              return $ ProposalThresholds execute create toVoting vote cosign
 
 data GovernorPolicyCases
   = ReferenceUTXONotSpent
