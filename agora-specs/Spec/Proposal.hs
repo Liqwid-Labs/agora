@@ -90,41 +90,39 @@ specs =
       "validator"
       [ group
           "cosignature"
-          $ let cosignerCases = [1, 5, 10]
-
-                mkLegalGroup nCosigners =
-                  Cosign.mkTestTree
-                    (unwords ["with", show nCosigners, "cosigners"])
-                    (Cosign.validCosignNParameters nCosigners)
-                    True
-                legalGroup =
-                  group "legal" $
-                    map mkLegalGroup cosignerCases
-
-                mkIllegalStatusNotDraftGroup nCosigners =
-                  group (unwords ["with", show nCosigners, "cosigners"]) $
-                    map
-                      ( \ps ->
-                          Cosign.mkTestTree
-                            ("status: " <> show ps.proposalStatus)
-                            ps
-                            False
-                      )
-                      (Cosign.statusNotDraftCosignNParameters nCosigners)
-                illegalStatusNotDraftGroup =
-                  group "proposal status not Draft" $
-                    map mkIllegalStatusNotDraftGroup cosignerCases
-
-                illegalGroup =
-                  group
-                    "illegal"
-                    [ Cosign.mkTestTree
-                        "duplicate cosigners"
-                        Cosign.duplicateCosignersParameters
-                        False
-                    , illegalStatusNotDraftGroup
-                    ]
-             in [legalGroup, illegalGroup]
+          [ Cosign.mkTestTree
+              "legal"
+              Cosign.totallyValid
+              (Cosign.Validity True True)
+          , group
+              "illegal"
+              [ Cosign.mkTestTree
+                  "insufficient staked amount"
+                  Cosign.insufficientStakedAmount
+                  (Cosign.Validity False True)
+              , Cosign.mkTestTree
+                  "proposal locks not updated"
+                  Cosign.locksNotUpdated
+                  (Cosign.Validity True False)
+              , Cosign.mkTestTree
+                  "duplicate cosigners"
+                  Cosign.duplicateCosigners
+                  (Cosign.Validity False True)
+              , Cosign.mkTestTree
+                  "cosigners not updated"
+                  Cosign.cosignersNotUpdated
+                  (Cosign.Validity False True)
+              , group "cosign after draft" $
+                  map
+                    ( \b ->
+                        Cosign.mkTestTree
+                          "(negative test)"
+                          b
+                          (Cosign.Validity False True)
+                    )
+                    Cosign.cosignAfterDraft
+              ]
+          ]
       , group
           "voting"
           [ group

@@ -235,6 +235,8 @@ data ProposalThresholds = ProposalThresholds
   -- ^ How much GT required to to move into 'Locked'.
   , vote :: Tagged GTTag Integer
   -- ^ How much GT required to vote on a outcome.
+  , cosign :: Tagged GTTag Integer
+  -- ^ How much GT required to cosign a proposal.
   }
   deriving stock
     ( -- | @since 0.1.0
@@ -366,20 +368,18 @@ data ProposalDatum = ProposalDatum
 
 {- | Haskell-level redeemer for Proposal scripts.
 
-     @since 0.1.0
+     @since 1.0.0
 -}
 data ProposalRedeemer
   = -- | Cast one or more votes towards a particular 'ResultTag'.
     Vote ResultTag
-  | -- | Add one or more public keys to the cosignature list.
-    --   Must be signed by those cosigning.
+  | -- | Add a credential to the cosignature list.
+    --   Must be authorized by the stake owner.
     --
     --   This is particularly used in the 'Draft' 'ProposalStatus',
-    --   where matching 'Agora.Stake.Stake's can be called to advance the proposal,
-    --   provided enough GT is shared among them.
-    --
-    --   This list should be sorted in ascending order.
-    Cosign [Credential]
+    --   where matching 'Agora.Stake.Stake's can be witnessed to advance the
+    --   proposal, provided enough GT is shared among them.
+    Cosign
   | -- | Allow unlocking one or more stakes with votes towards particular 'ResultTag'.
     Unlock
   | -- | Advance the proposal, performing the required checks for whether that is legal.
@@ -564,6 +564,7 @@ newtype PProposalThresholds (s :: S) = PProposalThresholds
              , "create" ':= PDiscrete GTTag
              , "toVoting" ':= PDiscrete GTTag
              , "vote" ':= PDiscrete GTTag
+             , "cosign" ':= PDiscrete GTTag
              ]
         )
   }
@@ -748,7 +749,7 @@ deriving via (DerivePConstantViaDataList ProposalDatum PProposalDatum) instance 
 -}
 data PProposalRedeemer (s :: S)
   = PVote (Term s (PDataRecord '["resultTag" ':= PResultTag]))
-  | PCosign (Term s (PDataRecord '["newCosigners" ':= PBuiltinList (PAsData PCredential)]))
+  | PCosign (Term s (PDataRecord '[]))
   | PUnlock (Term s (PDataRecord '[]))
   | PAdvanceProposal (Term s (PDataRecord '[]))
   deriving stock
@@ -813,7 +814,7 @@ pisEffectsVotesCompatible = phoistAcyclic $
   plam $ \((PM.pkeys @PList #) -> effectKeys) ((PM.pkeys #) . pto -> voteKeys) ->
     plistEquals # effectKeys # voteKeys
 
-{- | Retutns true if vote counts of /all/ the options are zero.
+{- | Returns true if vote counts of /all/ the options are zero.
 
    @since 0.2.0
 -}
@@ -964,6 +965,8 @@ pisProposalThresholdsValid = phoistAcyclic $
             0 #<= pfromData thresholdsF.toVoting
         , ptraceIfFalse "Vote threshold is less than or equal to 0" $
             0 #<= pfromData thresholdsF.vote
+        , ptraceIfFalse "Cosign threshold is less than or equal to 0" $
+            0 #<= pfromData thresholdsF.cosign
         ]
 
 {- | Retract votes given the option and the amount of votes.

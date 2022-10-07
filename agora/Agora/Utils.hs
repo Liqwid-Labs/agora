@@ -27,11 +27,19 @@ module Agora.Utils (
   pisSingleton,
   pfromSingleton,
   pmapMaybe,
+  PAlternative (..),
+  ppureIf,
+  pltBy,
+  pinsertUniqueBy,
 ) where
 
 import Plutarch.Api.V1 (PPOSIXTime, PTokenName, PValidatorHash)
 import Plutarch.Api.V2 (PScriptHash)
+import Plutarch.Extra.Applicative (PApplicative (ppure))
 import Plutarch.Extra.Category (PCategory (pidentity))
+import Plutarch.Extra.Functor (PFunctor (PSubcategory))
+import Plutarch.Extra.Maybe (pnothing)
+import Plutarch.Extra.Ord (PComparator, POrdering (PLT), pcompareBy, pequateBy)
 import Plutarch.Extra.Time (PCurrentTime (PCurrentTime))
 import Plutarch.Unsafe (punsafeCoerce)
 import PlutusLedgerApi.V2 (
@@ -284,3 +292,80 @@ pmapMaybe = phoistAcyclic $
             # (self # t)
       )
       (const pnil)
+
+infixl 3 #<|>
+
+-- | @since 1.0.0
+class (PApplicative f) => PAlternative (f :: PType -> PType) where
+  (#<|>) ::
+    forall (a :: PType) (s :: S).
+    (PSubcategory f a) =>
+    Term s (f a :--> f a :--> f a)
+  pempty ::
+    forall (a :: PType) (s :: S).
+    (PSubcategory f a) =>
+    Term s (f a)
+
+-- | @since 1.0.0
+instance PAlternative PMaybe where
+  (#<|>) = phoistAcyclic $
+    plam $ \a b -> pmatch a $ \case
+      PNothing -> b
+      PJust _ -> a
+  pempty = pnothing
+
+-- | @since 1.0.0
+ppureIf ::
+  forall
+    (f :: PType -> PType)
+    (a :: PType)
+    (s :: S).
+  (PAlternative f, PSubcategory f a) =>
+  Term s (PBool :--> a :--> f a)
+ppureIf = phoistAcyclic $
+  plam $ \cond x ->
+    pif
+      cond
+      (ppure # x)
+      pempty
+
+{- | Less then check using a `PComparator`.
+
+     @ since 1.0.0
+-}
+pltBy ::
+  forall (a :: PType) (s :: S).
+  Term
+    s
+    ( PComparator a
+        :--> a
+        :--> a
+        :--> PBool
+    )
+pltBy = phoistAcyclic $
+  plam $ \c x y ->
+    pcompareBy # c # x # y #== pcon PLT
+
+-- | @since 1.0.0
+pinsertUniqueBy ::
+  forall (list :: PType -> PType) (a :: PType) (s :: S).
+  (PIsListLike list a) =>
+  Term s (PComparator a :--> a :--> list a :--> list a)
+pinsertUniqueBy = phoistAcyclic $
+  plam $ \c x ->
+    let lt = pltBy # c
+        eq = pequateBy # c
+     in precList
+          ( \self h t ->
+              let ensureUniqueness =
+                    pif
+                      (eq # x # h)
+                      (ptraceError "inserted value already exists")
+                  next =
+                    pif
+                      (lt # x # h)
+                      (pcons # x #$ pcons # h # t)
+                      (pcons # h #$ self # t)
+               in ensureUniqueness next
+          )
+          (const $ psingleton # x)

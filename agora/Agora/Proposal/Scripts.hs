@@ -10,7 +10,6 @@ module Agora.Proposal.Scripts (
   proposalPolicy,
 ) where
 
-import Agora.Credential (authorizationContext, pauthorizedBy)
 import Agora.Proposal (
   PProposalDatum (PProposalDatum),
   PProposalRedeemer (PAdvanceProposal, PCosign, PUnlock, PVote),
@@ -31,12 +30,13 @@ import Agora.Scripts (AgoraScripts, governorSTSymbol, proposalSTSymbol, stakeSTA
 import Agora.Stake (
   PStakeDatum,
   pextractVoteOption,
-  pgetStakeRole,
+  pgetStakeRoles,
   pisIrrelevant,
-  pisPureCreator,
   pisVoter,
  )
 import Agora.Utils (
+  pfromSingleton,
+  pinsertUniqueBy,
   plistEqualsBy,
   pmapMaybe,
  )
@@ -64,7 +64,7 @@ import Plutarch.Extra.Maybe (
   pmaybe,
   pnothing,
  )
-import Plutarch.Extra.Ord (pallUnique, pfromOrdBy, psort, ptryMergeBy)
+import Plutarch.Extra.Ord (pfromOrdBy, psort)
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
 import Plutarch.Extra.ScriptContext (
   pfindTxInByTxOutRef,
@@ -225,8 +225,6 @@ proposalValidator as maximumCosigners =
         txInfo
 
     currentTime <- pletC $ currentProposalTime # txInfoF.validRange
-
-    authorizedBy <- pletC $ pauthorizedBy # authorizationContext txInfoF
 
     ----------------------------------------------------------------------------
 
@@ -406,38 +404,30 @@ proposalValidator as maximumCosigners =
     pure $
       popaque $
         pmatch proposalRedeemer $ \case
-          PCosign r -> witnessStakes $ \sctxF -> do
+          PCosign _ -> spendStakes $ \sctxF -> do
             pguardC "Should be in draft state" $
               currentStatus #== pconstant Draft
 
-            newSigs <- pletC $ pfield @"newCosigners" # r
+            stakeF <-
+              pletFieldsC @'["owner", "stakedAmount"] $
+                ptrace "Exactly one stake input" $
+                  pfromSingleton # sctxF.inputStakes
 
-            pguardC "Signed by all new cosigners" $
-              pall # plam ((authorizedBy #) . pfromData) # newSigs
+            let newCosigner = stakeF.owner
 
-            -- Assuming that new signatures encoded in the redeemer and exsiting
-            --   cosigners are sorted in ascending order, the new list of
-            --   signatures will be ordered.
             updatedSigs <-
               pletC $
-                ptryMergeBy # (pfromOrdBy # plam pfromData)
-                  # newSigs
-                  # proposalInputDatumF.cosigners
+                ptrace "Update signature set" $
+                  pinsertUniqueBy
+                    # (pfromOrdBy # plam pfromData)
+                    # newCosigner
+                    # proposalInputDatumF.cosigners
 
             pguardC "Less cosigners than maximum limit" $
               plength # updatedSigs #< pconstant maximumCosigners
 
-            -- assuming sigs are sorted
-            PJust cosUnique <- pmatchC $ pallUnique #$ pmap # plam pfromData # updatedSigs
-            pguardC "Cosigners are unique" cosUnique
-
-            pguardC "All new cosigners are witnessed by their Stake datums" $
-              -- Also, this ensures that the cosigners field in the output
-              --   propopsal datum is ordered.
-              plistEqualsBy
-                # plam (\x (pfromData -> y) -> x #== y)
-                # sctxF.orderedOwners
-                # newSigs
+            pguardC "Meet minimum GT requirement" $
+              pfromData thresholdsF.cosign #<= stakeF.stakedAmount
 
             let expectedDatum =
                   mkRecordConstr
@@ -469,7 +459,7 @@ proposalValidator as maximumCosigners =
                           pguardC "Same stake shouldn't vote on the same proposal twice" $
                             pnot
                               #$ pisVoter
-                              #$ pgetStakeRole
+                              #$ pgetStakeRoles
                                 # proposalInputDatumF.proposalId
                                 # stakeF.lockedBy
 
@@ -542,17 +532,17 @@ proposalValidator as maximumCosigners =
                               @'["stakedAmount", "lockedBy"]
                               stake
 
-                          stakeRole <-
+                          stakeRoles <-
                             pletC $
-                              pgetStakeRole
+                              pgetStakeRoles
                                 # proposalInputDatumF.proposalId
                                 # stakeF.lockedBy
 
                           pguardC "Stake input should be relevant" $
-                            pnot #$ pisIrrelevant # stakeRole
+                            pnot #$ pisIrrelevant # stakeRoles
 
                           let canRetractVotes =
-                                pnot #$ pisPureCreator # stakeRole
+                                pisVoter # stakeRoles
 
                               voteCount =
                                 pextract
@@ -561,7 +551,7 @@ proposalValidator as maximumCosigners =
 
                               newVotes =
                                 pretractVotes
-                                  # (pextractVoteOption # stakeRole)
+                                  # (pextractVoteOption # stakeRoles)
                                   # voteCount
                                   # votes
 
