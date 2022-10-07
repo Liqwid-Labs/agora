@@ -79,6 +79,7 @@ import Data.Default.Class (Default (..))
 import Data.Map
 import Data.Tagged (Tagged (..))
 import Data.Text
+import Optics (view)
 import Plutarch (Config (..), TracingMode (DetTracing))
 import Plutarch.Api.V2 (
   mintingPolicySymbol,
@@ -110,6 +111,7 @@ import PlutusLedgerApi.V2 (
   Value,
  )
 import PlutusTx qualified
+import ScriptExport.ScriptInfo (runLinker)
 
 -- Plutarch compiler configauration.
 -- TODO: add the ability to change this value. Maybe wrap everything in a
@@ -129,7 +131,15 @@ governor = Governor oref gt mc
     mc = 20
 
 agoraScripts :: Map Text Script
-agoraScripts = linker governor $ Bootstrap.agoraScripts deterministicTracingConfing
+agoraScripts =
+  either
+    (error . show)
+    (view #scripts)
+    ( runLinker
+        linker
+        (Bootstrap.agoraScripts deterministicTracingConfing)
+        governor
+    )
 
 stakePolicy :: MintingPolicy
 stakePolicy = MintingPolicy $ agoraScripts ! "agora:stakePolicy"

@@ -99,6 +99,7 @@ common deps
     , filepath
     , generics-sop
     , liqwid-plutarch-extra
+    , optics
     , plutarch
     , plutarch-extra
     , plutarch-numeric

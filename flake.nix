@@ -34,7 +34,7 @@
     plutarch-context-builder.url =
       "github:Liqwid-Labs/plutarch-context-builder?ref=main";
     plutarch-script-export.url =
-      "github:Liqwid-Labs/plutarch-script-export?ref=main";
+      "github:Liqwid-Labs/plutarch-script-export?ref=seungheonoh/facelift";
     ply.url =
       "github:seungheonoh/ply?ref=seungheonoh/directTypedScript";
     liqwid-nix.url = "github:Liqwid-Labs/liqwid-nix?ref=main";

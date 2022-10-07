@@ -30,6 +30,7 @@ import Agora.Proposal.Time (
 import Data.Default (Default (..))
 import Data.Map (Map, (!))
 import Data.Text (Text)
+import Optics (view)
 import Plutarch.Api.V2 (
   mintingPolicySymbol,
   validatorHash,
@@ -61,6 +62,7 @@ import Sample.Shared (
   minAda,
  )
 import Sample.Shared qualified as Shared
+import ScriptExport.ScriptInfo (runLinker)
 import Test.Specification (SpecificationTree, testPolicy)
 import Test.Util (CombinableBuilder, mkMinting, pubKeyHashes, sortValue)
 
@@ -116,7 +118,15 @@ governor =
     }
 
 scripts :: Map Text Script
-scripts = linker governor $ agoraScripts deterministicTracingConfing
+scripts =
+  either
+    (error . show)
+    (view #scripts)
+    ( runLinker
+        linker
+        (agoraScripts deterministicTracingConfing)
+        governor
+    )
 
 govPolicy :: MintingPolicy
 govPolicy = MintingPolicy $ scripts ! "agora:governorPolicy"

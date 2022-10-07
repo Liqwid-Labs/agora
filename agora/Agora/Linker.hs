@@ -1,68 +1,70 @@
+{-# OPTIONS_GHC -Wno-unticked-promoted-constructors #-}
+
 module Agora.Linker (linker) where
 
 import Agora.Governor (Governor (gstOutRef, gtClassRef, maximumCosigners))
 import Agora.Utils (validatorHashToAddress)
+import Data.Map (fromList)
 import Data.Tagged (untag)
-import Data.Text (Text, unpack)
 import Plutarch.Api.V2 (mintingPolicySymbol, validatorHash)
-import PlutusLedgerApi.V1 (TxOutRef, Address, CurrencySymbol, Script)
-import PlutusLedgerApi.V1.Value (AssetClass(AssetClass))
+import PlutusLedgerApi.V1 (Address, CurrencySymbol, TxOutRef)
+import PlutusLedgerApi.V1.Value (AssetClass (AssetClass))
 import Ply (
-  TypedScriptEnvelope,
-  ScriptRole(MintingPolicyRole, ValidatorRole),
-  TypedScript,
-  (#),
+  ScriptRole (MintingPolicyRole, ValidatorRole),
   toMintingPolicy,
+  toScript,
   toValidator,
-  toScript
+  (#),
  )
-import Ply.Core.TypedReader (TypedReader, mkTypedScript)
-
-import Data.Map (Map, fromList, (!?))
-import Control.Arrow (left)
-
+import ScriptExport.ScriptInfo
 import Prelude hiding ((#))
 
-linker :: Governor -> Map Text TypedScriptEnvelope -> Map Text Script
-linker governor as = either error id $ do
-  govPol <- get @'MintingPolicyRole @'[TxOutRef] "agora:governorPolicy"
-  govVal <- get @'ValidatorRole @'[Address, CurrencySymbol, CurrencySymbol, CurrencySymbol, CurrencySymbol] "agora:governorValidator"
-  stkPol <- get @'MintingPolicyRole @'[AssetClass] "agora:stakePolicy"
-  stkVal <- get @'ValidatorRole @'[CurrencySymbol, AssetClass, AssetClass] "agora:stakeValidator"
-  prpPol <- get @'MintingPolicyRole @'[AssetClass] "agora:proposalPolicy"
-  prpVal <- get @'ValidatorRole @'[CurrencySymbol, CurrencySymbol, CurrencySymbol, Integer] "agora:proposalValidator"
-  treVal <- get @'ValidatorRole @'[CurrencySymbol] "agora:treasuryValidator"
-  atkPol <- get @'MintingPolicyRole @'[AssetClass] "agora:authorityTokenPolicy"
-  noOpVal <- get @'ValidatorRole @'[CurrencySymbol] "agora:noOpValidator"
-  treaWithdrawalVal <- get @'ValidatorRole @'[CurrencySymbol] "agora:treasuryWithdrawalValidator"
-  mutateGovVal <- get @'ValidatorRole @'[AssetClass, CurrencySymbol] "agora:mutateGovernorValidator"
+{- | Links parameterized Agora scripts given parameters.
+
+ @since 0.2.0
+-}
+linker :: Linker Governor (ScriptExport Governor)
+linker = do
+  govPol <- fetchTS @MintingPolicyRole @'[TxOutRef] "agora:governorPolicy"
+  govVal <- fetchTS @ValidatorRole @'[Address, CurrencySymbol, CurrencySymbol, CurrencySymbol, CurrencySymbol] "agora:governorValidator"
+  stkPol <- fetchTS @MintingPolicyRole @'[AssetClass] "agora:stakePolicy"
+  stkVal <- fetchTS @ValidatorRole @'[CurrencySymbol, AssetClass, AssetClass] "agora:stakeValidator"
+  prpPol <- fetchTS @MintingPolicyRole @'[AssetClass] "agora:proposalPolicy"
+  prpVal <- fetchTS @ValidatorRole @'[CurrencySymbol, CurrencySymbol, CurrencySymbol, Integer] "agora:proposalValidator"
+  treVal <- fetchTS @ValidatorRole @'[CurrencySymbol] "agora:treasuryValidator"
+  atkPol <- fetchTS @MintingPolicyRole @'[AssetClass] "agora:authorityTokenPolicy"
+  noOpVal <- fetchTS @ValidatorRole @'[CurrencySymbol] "agora:noOpValidator"
+  treaWithdrawalVal <- fetchTS @ValidatorRole @'[CurrencySymbol] "agora:treasuryWithdrawalValidator"
+  mutateGovVal <- fetchTS @ValidatorRole @'[AssetClass, CurrencySymbol] "agora:mutateGovernorValidator"
+
+  governor <- exportParam
 
   let govPol' = govPol # governor.gstOutRef
       govVal' =
-        govVal #
-          propValAddress #
-          sstSymbol #
-          gstSymbol #
-          pstSymbol #
-          atSymbol
+        govVal
+          # propValAddress
+          # sstSymbol
+          # gstSymbol
+          # pstSymbol
+          # atSymbol
       gstSymbol =
         mintingPolicySymbol $
-          toMintingPolicy $
+          toMintingPolicy
             govPol'
       gstAssetClass =
         AssetClass (gstSymbol, "")
 
       at = gstAssetClass
       atPol' = atkPol # at
-      atSymbol = mintingPolicySymbol $ toMintingPolicy $ atPol'
+      atSymbol = mintingPolicySymbol $ toMintingPolicy atPol'
 
       propPol' = prpPol # gstAssetClass
       propVal' =
-        prpVal #
-          sstSymbol #
-          gstSymbol #
-          pstSymbol #
-          governor.maximumCosigners
+        prpVal
+          # sstSymbol
+          # gstSymbol
+          # pstSymbol
+          # governor.maximumCosigners
       propValAddress =
         validatorHashToAddress $ validatorHash $ toValidator propVal'
       pstSymbol = mintingPolicySymbol $ toMintingPolicy propPol'
@@ -79,25 +81,21 @@ linker governor as = either error id $ do
       mutateGovVal' = mutateGovVal # gstAssetClass # atSymbol
 
   return $
-    fromList
-    [ ("agora:governorPolicy", toScript govPol')
-    , ("agora:governorValidator", toScript govVal')
-    , ("agora:stakePolicy", toScript stakPol')
-    , ("agora:stakeValidator", toScript stakVal')
-    , ("agora:proposalPolicy", toScript propPol')
-    , ("agora:proposalValidator", toScript propVal')
-    , ("agora:treasuryValidator", toScript treaVal')
-    , ("agora:authorityTokenPolicy", toScript atPol')
-    , ("agora:noOpValidator", toScript noOpVal')
-    , ("agora:treasuryWithdrawalValidator", toScript treaWithdrawalVal')
-    , ("agora:mutateGovernorValidator", toScript mutateGovVal')
-    ]
-  where
-    get ::
-      forall (rl :: ScriptRole) (params :: [Type]).
-      TypedReader rl params =>
-      Text ->
-      Either String (TypedScript rl params)
-    get t = do
-      en <- maybe (Left $ unpack t <> " not found") Right $ as !? t
-      left show $ mkTypedScript en
+    ScriptExport
+      { version = ""
+      , scripts =
+          fromList
+            [ ("agora:governorPolicy", toScript govPol')
+            , ("agora:governorValidator", toScript govVal')
+            , ("agora:stakePolicy", toScript stakPol')
+            , ("agora:stakeValidator", toScript stakVal')
+            , ("agora:proposalPolicy", toScript propPol')
+            , ("agora:proposalValidator", toScript propVal')
+            , ("agora:treasuryValidator", toScript treaVal')
+            , ("agora:authorityTokenPolicy", toScript atPol')
+            , ("agora:noOpValidator", toScript noOpVal')
+            , ("agora:treasuryWithdrawalValidator", toScript treaWithdrawalVal')
+            , ("agora:mutateGovernorValidator", toScript mutateGovVal')
+            ]
+      , information = governor
+      }
