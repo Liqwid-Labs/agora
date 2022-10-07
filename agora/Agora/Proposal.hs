@@ -814,7 +814,7 @@ pisEffectsVotesCompatible = phoistAcyclic $
   plam $ \((PM.pkeys @PList #) -> effectKeys) ((PM.pkeys #) . pto -> voteKeys) ->
     plistEquals # effectKeys # voteKeys
 
-{- | Retutns true if vote counts of /all/ the options are zero.
+{- | Returns true if vote counts of /all/ the options are zero.
 
    @since 0.2.0
 -}

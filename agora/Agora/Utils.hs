@@ -293,11 +293,6 @@ pmapMaybe = phoistAcyclic $
       )
       (const pnil)
 
--- -- | @since 1.0.0
-
--- -- | @since 1.0.0
--- ppureIf'
-
 infixl 3 #<|>
 
 -- | @since 1.0.0
@@ -334,6 +329,10 @@ ppureIf = phoistAcyclic $
       (ppure # x)
       pempty
 
+{- | Less then check using a `PComparator`.
+
+     @ since 1.0.0
+-}
 pltBy ::
   forall (a :: PType) (s :: S).
   Term

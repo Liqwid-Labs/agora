@@ -610,7 +610,7 @@ data StakeRedeemerImpl = StakeRedeemerImpl
 
 --------------------------------------------------------------------------------
 
-{- | Retutn true if the stake was used to voted on the proposal.
+{- | Return true if the stake was used to voted on the proposal.
 
      @since 1.0.0
 -}
@@ -624,7 +624,7 @@ pisVoter =
             _ -> pconstant False
         )
 
-{- | Retutn true if the stake was used to create the proposal.
+{- | Return true if the stake was used to create the proposal.
 
      @since 1.0.0
 -}
@@ -638,7 +638,7 @@ pisCreator =
             _ -> pconstant False
         )
 
-{- | Retutn true if the stake was used to cosign the proposal.
+{- | Return true if the stake was used to cosign the proposal.
 
      @since 1.0.0
 -}

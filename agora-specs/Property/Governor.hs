@@ -91,13 +91,21 @@ governorDatumValidProperty =
   classifiedPropertyNative gen (const []) expected classifier pisGovernorDatumValid
   where
     classifier :: GovernorDatum -> GovernorDatumCases
-    classifier ((.proposalThresholds) -> ProposalThresholds e c tv v co)
-      | e < 0 = ExecuteLE0
-      | c < 0 = CreateLE0
-      | tv < 0 = ToVotingLE0
-      | v < 0 = VoteLE0
-      | co < 0 = CosignLE0
-      | otherwise = Correct
+    classifier
+      ( (.proposalThresholds) ->
+          ProposalThresholds
+            execute
+            create
+            toVoting
+            vote
+            cosign
+        )
+        | execute < 0 = ExecuteLE0
+        | create < 0 = CreateLE0
+        | toVoting < 0 = ToVotingLE0
+        | vote < 0 = VoteLE0
+        | cosign < 0 = CosignLE0
+        | otherwise = Correct
 
     expected :: GovernorDatum -> Maybe Bool
     expected c = Just $ classifier c == Correct
