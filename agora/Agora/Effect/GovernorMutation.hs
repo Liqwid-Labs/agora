@@ -170,7 +170,8 @@ mutateGovernorValidator =
       -- Find the governor input by looking for GST.
       let inputWithGST =
             passertPJust # "Governor input not found" #$ pfind
-              # plam (\inInfo ->
+              # plam
+                ( \inInfo ->
                     let value = pfield @"value" #$ pfield @"resolved" # inInfo
                      in gstValueOf # value #== 1)
               # pfromData txInfoF.inputs
