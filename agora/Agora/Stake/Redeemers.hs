@@ -52,7 +52,7 @@ import Agora.Utils (pdeleteBy, pfromSingleton, pisSingleton)
 import Plutarch.Api.V1.Address (PCredential)
 import Plutarch.Api.V2 (PMaybeData)
 import Plutarch.Extra.Field (pletAll, pletAllC)
-import Plutarch.Extra.Maybe (pdjust, pdnothing, pmaybeData)
+import Plutarch.Extra.Maybe (pdjust, pdnothing, pfromJust, pmaybeData)
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
 import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletC, pmatchC)
 import Plutarch.Numeric.Additive (AdditiveMonoid (zero), AdditiveSemigroup ((+)))
@@ -88,7 +88,7 @@ pbatchUpdateInputs ::
 pbatchUpdateInputs = phoistAcyclic $
   plam $ \f -> flip pmatch $ \ctxF ->
     pnull #$ pfoldr
-      # (pdeleteBy # f)
+      # plam (\i os -> pfromJust #$ pdeleteBy # f # i # os)
       # ctxF.stakeOutputDatums
       # ctxF.stakeInputDatums
 
