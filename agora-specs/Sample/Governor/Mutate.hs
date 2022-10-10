@@ -121,7 +121,9 @@ mkGovernorOutputDatum ValueInvalid =
         ProposalThresholds
           { execute = -1
           , create = -1
+          , toVoting = -1
           , vote = -1
+          , cosign = -1
           }
    in Just $
         toData $

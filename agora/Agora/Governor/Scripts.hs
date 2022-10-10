@@ -37,7 +37,6 @@ import Agora.Proposal (
  )
 import Agora.Proposal.Time (validateProposalStartingTime)
 import Agora.Stake (
-  PProposalLock (..),
   PStakeDatum (..),
   pnumCreatedProposals,
  )
@@ -462,31 +461,6 @@ governorValidator =
                   proposalOutputDatumF.thresholds #== governorInputDatumF.proposalThresholds
                     #&& proposalOutputDatumF.timingConfig #== governorInputDatumF.proposalTimings
               ]
-
-          -- Check the output stake has been properly updated.
-
-          let stakeOutputDatum =
-                passertPJust # "Output stake should be presented"
-                  #$ pfindJust
-                    # getStakeDatum
-                    # pfromData txInfoF.outputs
-
-              stakeOutputLocks =
-                pfromData $ pfield @"lockedBy" # stakeOutputDatum
-
-              -- The stake should be locked by the newly created proposal.
-              newLock =
-                mkRecordConstr
-                  PCreated
-                  ( #created .= governorInputDatumF.nextProposalId
-                  )
-
-              -- Append new locks to existing locks
-              expectedProposalLocks =
-                pcons # pdata newLock # stakeInputDatumF.lockedBy
-
-          pguardC "Stake output locks correct" $
-            plistEquals # stakeOutputLocks # expectedProposalLocks
 
           pure $ popaque $ pconstant ()
 

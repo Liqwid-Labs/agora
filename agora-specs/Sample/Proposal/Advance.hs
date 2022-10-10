@@ -680,7 +680,7 @@ getNextState = \case
 -- | Calculate the number of GTs per stake in order to exceed the minimum limit.
 compPerStakeGTsForDraft :: NumStake -> Integer
 compPerStakeGTsForDraft nCosigners =
-  untag (def :: ProposalThresholds).vote
+  untag (def :: ProposalThresholds).toVoting
     `div` fromIntegral nCosigners + 1
 
 dummyDatum :: ()
@@ -945,7 +945,7 @@ mkInsufficientCosignsBundle nCosigners nEffects =
     }
   where
     insuffcientPerStakeGTs =
-      untag (def :: ProposalThresholds).vote
+      untag (def :: ProposalThresholds).toVoting
         `div` fromIntegral nCosigners - 1
     template = mkValidToNextStateBundle nCosigners nEffects False Draft
 

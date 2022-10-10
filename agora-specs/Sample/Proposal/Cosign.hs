@@ -6,11 +6,22 @@ Description: Generate sample data for testing the functionalities of cosigning p
 Sample and utilities for testing the functionalities of cosigning proposals.
 -}
 module Sample.Proposal.Cosign (
-  Parameters (..),
-  validCosignNParameters,
-  duplicateCosignersParameters,
-  statusNotDraftCosignNParameters,
+  StakedAmount (..),
+  StakeOwner (..),
+  StakeParameters (..),
+  SignedBy (..),
+  TransactionParameters (..),
+  ProposalParameters (..),
+  ParameterBundle (..),
+  Validity (..),
+  cosign,
   mkTestTree,
+  totallyValid,
+  insufficientStakedAmount,
+  duplicateCosigners,
+  locksNotUpdated,
+  cosignersNotUpdated,
+  cosignAfterDraft,
 ) where
 
 import Agora.Governor (Governor (..))
@@ -19,6 +30,7 @@ import Agora.Proposal (
   ProposalId (ProposalId),
   ProposalRedeemer (Cosign),
   ProposalStatus (..),
+  ProposalThresholds (..),
   ResultTag (ResultTag),
   emptyVotesFor,
  )
@@ -28,7 +40,9 @@ import Agora.Proposal.Time (
  )
 import Agora.SafeMoney (GTTag)
 import Agora.Stake (
-  StakeDatum (StakeDatum, owner),
+  ProposalLock (Cosigned, Created),
+  StakeDatum (..),
+  StakeRedeemer (PermitVote),
  )
 import Data.Coerce (coerce)
 import Data.Default (def)
@@ -37,25 +51,25 @@ import Data.Map.Strict qualified as StrictMap
 import Data.Tagged (untag)
 import Plutarch.Context (
   input,
+  normalizeValue,
   output,
-  referenceInput,
   script,
   signedWith,
   timeRange,
   txId,
   withDatum,
   withInlineDatum,
+  withRedeemer,
   withRef,
   withValue,
  )
-import Plutarch.SafeMoney (Discrete)
+import Plutarch.SafeMoney (Discrete (Discrete))
 import PlutusLedgerApi.V1.Value qualified as Value
 import PlutusLedgerApi.V2 (
   Credential (PubKeyCredential),
-  POSIXTimeRange,
+  POSIXTime (POSIXTime),
   PubKeyHash,
-  TxOutRef (..),
-  Value,
+  TxOutRef (TxOutRef),
  )
 import Sample.Proposal.Shared (proposalTxRef, stakeTxRef)
 import Sample.Shared (
@@ -65,36 +79,81 @@ import Sample.Shared (
   proposalPolicySymbol,
   proposalValidator,
   proposalValidatorHash,
-  signer,
   stakeAssetClass,
   stakeValidatorHash,
  )
 import Test.Specification (
   SpecificationTree,
+  group,
   testValidator,
  )
-import Test.Util (CombinableBuilder, closedBoundedInterval, mkSpending, pubKeyHashes, sortValue)
+import Test.Util (
+  CombinableBuilder,
+  closedBoundedInterval,
+  mkSpending,
+  pubKeyHashes,
+ )
 
--- | Parameters for cosigning a proposal.
-data Parameters = Parameters
-  { newCosigners :: [Credential]
-  -- ^ New cosigners to be added, and the owners of the generated stakes.
-  , proposalStatus :: ProposalStatus
-  -- ^ Current state of the proposal.
+data StakedAmount = Sufficient | Insufficient
+
+data StakeOwner = Creator | Other
+
+data StakeParameters = StakeParameters
+  { gtAmount :: StakedAmount
+  , stakeOwner :: StakeOwner
+  , dontUpdateLocks :: Bool
   }
 
--- | Owner of the creator stake, doesn't really matter in this case.
-proposalCreator :: PubKeyHash
-proposalCreator = signer
+data SignedBy = Owner | Delegatee | Unknown
 
--- | The amount of GTs every generated stake has, doesn't really matter in this case.
-perStakedGTs :: Discrete GTTag
-perStakedGTs = 5
+newtype TransactionParameters = TransactionParameters
+  { signedBy :: SignedBy
+  }
 
-{- | Create input proposal datum given the parameters.
-   In particular, 'status' is set to 'proposalStstus'.
--}
-mkProposalInputDatum :: Parameters -> ProposalDatum
+data ProposalParameters = ProposalParameters
+  { proposalStatus :: ProposalStatus
+  , dontUpdateCosigners :: Bool
+  }
+
+-- | Parameters for cosigning a proposal.
+data ParameterBundle = ParameterBundle
+  { stakeParameters :: StakeParameters
+  , proposalParameters :: ProposalParameters
+  , transactionParameters :: TransactionParameters
+  }
+
+data Validity = Validity
+  { forProposalValidator :: Bool
+  , forStakeValidator :: Bool
+  }
+
+--------------------------------------------------------------------------------
+
+mkStakeAmount :: StakedAmount -> Discrete GTTag
+mkStakeAmount Sufficient = Discrete $ (def @ProposalThresholds).cosign
+mkStakeAmount Insufficient = mkStakeAmount Sufficient - 1
+
+mkStakeOwner :: StakeOwner -> PubKeyHash
+mkStakeOwner Creator = creator
+mkStakeOwner Other = pubKeyHashes !! 2
+
+mkSigner :: StakeOwner -> SignedBy -> PubKeyHash
+mkSigner so Owner = mkStakeOwner so
+mkSigner _ Delegatee = delegatee
+mkSigner _ Unknown = pubKeyHashes !! 4
+
+creator :: PubKeyHash
+creator = pubKeyHashes !! 1
+
+delegatee :: PubKeyHash
+delegatee = pubKeyHashes !! 3
+
+--------------------------------------------------------------------------------
+
+defProposalId :: ProposalId
+defProposalId = ProposalId 0
+
+mkProposalInputDatum :: ParameterBundle -> ProposalDatum
 mkProposalInputDatum ps =
   let effects =
         StrictMap.fromList
@@ -104,98 +163,136 @@ mkProposalInputDatum ps =
    in ProposalDatum
         { proposalId = ProposalId 0
         , effects = effects
-        , status = ps.proposalStatus
-        , cosigners = [PubKeyCredential proposalCreator]
+        , status = ps.proposalParameters.proposalStatus
+        , cosigners = [PubKeyCredential creator]
         , thresholds = def
         , votes = emptyVotesFor effects
         , timingConfig = def
         , startingTime = ProposalStartingTime 0
         }
 
-{- | Create the output proposal datum given the parameters.
-   The 'newCosigners' is added to the exisiting list of cosigners, note the said list should be sorted in
-     ascending order.
--}
-mkProposalOutputDatum :: Parameters -> ProposalDatum
+mkProposalOutputDatum :: ParameterBundle -> ProposalDatum
 mkProposalOutputDatum ps =
   let inputDatum = mkProposalInputDatum ps
-   in inputDatum
-        { cosigners = sort $ inputDatum.cosigners <> ps.newCosigners
+      stakeOwner =
+        PubKeyCredential $
+          mkStakeOwner ps.stakeParameters.stakeOwner
+      newCosigners =
+        if ps.proposalParameters.dontUpdateCosigners
+          then inputDatum.cosigners
+          else sort $ stakeOwner : inputDatum.cosigners
+   in inputDatum {cosigners = newCosigners}
+
+proposalRedeemer :: ProposalRedeemer
+proposalRedeemer = Cosign
+
+proposalRef :: TxOutRef
+proposalRef = TxOutRef proposalTxRef 1
+
+--------------------------------------------------------------------------------
+
+mkStakeInputDatum :: ParameterBundle -> StakeDatum
+mkStakeInputDatum ps =
+  let sps = ps.stakeParameters
+      amount = mkStakeAmount sps.gtAmount
+      owner = mkStakeOwner sps.stakeOwner
+      locks = case sps.stakeOwner of
+        Creator -> [Created defProposalId]
+        _ -> []
+   in StakeDatum
+        { stakedAmount = amount
+        , owner = PubKeyCredential owner
+        , delegatedTo = Just $ PubKeyCredential delegatee
+        , lockedBy = locks
         }
 
--- | Create all the input stakes given the parameters.
-mkStakeInputDatums :: Parameters -> [StakeDatum]
-mkStakeInputDatums =
-  fmap (\pk -> StakeDatum perStakedGTs pk Nothing [])
-    . (.newCosigners)
+mkStakeOuputDatum :: ParameterBundle -> StakeDatum
+mkStakeOuputDatum ps =
+  let sps = ps.stakeParameters
+      inpDatum = mkStakeInputDatum ps
+      locks =
+        if sps.dontUpdateLocks
+          then inpDatum.lockedBy
+          else Cosigned defProposalId : inpDatum.lockedBy
+   in inpDatum {lockedBy = locks}
+
+stakeRedeemer :: StakeRedeemer
+stakeRedeemer = PermitVote
+
+stakeRef :: TxOutRef
+stakeRef = TxOutRef stakeTxRef 0
+
+--------------------------------------------------------------------------------
 
 -- | Create a 'TxInfo' that tries to cosign a proposal with new cosigners.
-cosign :: forall b. CombinableBuilder b => Parameters -> b
+cosign :: forall b. CombinableBuilder b => ParameterBundle -> b
 cosign ps = builder
   where
     pst = Value.singleton proposalPolicySymbol "" 1
     sst = Value.assetClassValue stakeAssetClass 1
 
-    ---
+    ----------------------------------------------------------------------------
 
-    stakeInputDatums :: [StakeDatum]
-    stakeInputDatums = mkStakeInputDatums ps
+    stakeInputDatum = mkStakeInputDatum ps
+    stakeOutputDatum = mkStakeOuputDatum ps
 
-    stakeValue :: Value
     stakeValue =
-      sortValue $
+      normalizeValue $
         minAda
           <> Value.assetClassValue
             (untag governor.gtClassRef)
-            (fromDiscrete perStakedGTs)
+            ( fromDiscrete $
+                mkStakeAmount ps.stakeParameters.gtAmount
+            )
           <> sst
 
     stakeBuilder =
-      foldMap
-        ( \(stakeDatum, refIdx) ->
+      mconcat
+        [ input $
             mconcat
-              [ referenceInput $
-                  mconcat
-                    [ script stakeValidatorHash
-                    , withValue stakeValue
-                    , withInlineDatum stakeDatum
-                    , withRef (mkStakeRef refIdx)
-                    ]
-              , case stakeDatum.owner of
-                  PubKeyCredential k -> signedWith k
-                  _ -> mempty
+              [ script stakeValidatorHash
+              , withValue stakeValue
+              , withInlineDatum stakeInputDatum
+              , withRef stakeRef
+              , withRedeemer stakeRedeemer
               ]
-        )
-        $ zip
-          stakeInputDatums
-          [0 ..]
+        , output $
+            mconcat
+              [ script stakeValidatorHash
+              , withValue stakeValue
+              , withInlineDatum stakeOutputDatum
+              ]
+        ]
 
-    ---
+    ----------------------------------------------------------------------------
 
-    proposalInputDatum :: ProposalDatum
     proposalInputDatum = mkProposalInputDatum ps
-
-    proposalOutputDatum :: ProposalDatum
     proposalOutputDatum = mkProposalOutputDatum ps
+
+    proposalValue =
+      normalizeValue $
+        pst <> minAda
 
     proposalBuilder =
       mconcat
         [ input $
             mconcat
               [ script proposalValidatorHash
-              , withValue pst
+              , withValue proposalValue
               , withDatum proposalInputDatum
               , withRef proposalRef
+              , withRedeemer proposalRedeemer
               ]
         , output $
             mconcat
               [ script proposalValidatorHash
-              , withValue (sortValue (pst <> minAda))
+              , withValue proposalValue
               , withDatum proposalOutputDatum
               ]
         ]
 
-    validTimeRange :: POSIXTimeRange
+    ----------------------------------------------------------------------------
+
     validTimeRange =
       closedBoundedInterval
         (coerce proposalInputDatum.startingTime + 1)
@@ -203,7 +300,12 @@ cosign ps = builder
             + proposalInputDatum.timingConfig.draftTime - 1
         )
 
-    ---
+    sig =
+      mkSigner
+        ps.stakeParameters.stakeOwner
+        ps.transactionParameters.signedBy
+
+    ----------------------------------------------------------------------------
 
     builder =
       mconcat
@@ -211,87 +313,107 @@ cosign ps = builder
         , timeRange validTimeRange
         , proposalBuilder
         , stakeBuilder
+        , signedWith sig
         ]
 
--- | Reference index of the proposal UTXO.
-proposalRefIdx :: Integer
-proposalRefIdx = 1
+--------------------------------------------------------------------------------
 
--- | Spend the proposal ST.
-proposalRef :: TxOutRef
-proposalRef = TxOutRef proposalTxRef proposalRefIdx
-
--- | Consume the given stake.
-mkStakeRef :: Int -> TxOutRef
-mkStakeRef idx =
-  TxOutRef
-    stakeTxRef
-    $ proposalRefIdx + 1 + fromIntegral idx
-
--- | Create a proposal redeemer which cosigns with the new cosginers.
-mkProposalRedeemer :: Parameters -> ProposalRedeemer
-mkProposalRedeemer = Cosign . sort . (.newCosigners)
-
----
-
--- | Create a valid parameters that cosign the proposal with a given number of cosigners.
-validCosignNParameters :: Int -> Parameters
-validCosignNParameters n
-  | n > 0 =
-      Parameters
-        { newCosigners = take n (fmap PubKeyCredential pubKeyHashes)
-        , proposalStatus = Draft
-        }
-  | otherwise = error "Number of cosigners should be positive"
-
----
-
-{- | Parameters that make 'cosign' yield duplicate cosigners.
-   Invalid for the ptoposal validator, perfectly valid for stake validator.
--}
-duplicateCosignersParameters :: Parameters
-duplicateCosignersParameters =
-  Parameters
-    { newCosigners = [PubKeyCredential proposalCreator]
-    , proposalStatus = Draft
-    }
-
----
-
-{- | Generate a list of parameters that sets proposal status to something other than 'Draft'.
-   Invalid for the ptoposal validator, perfectly valid for stake validator.
--}
-statusNotDraftCosignNParameters :: Int -> [Parameters]
-statusNotDraftCosignNParameters n =
-  map
-    ( \st ->
-        Parameters
-          { newCosigners = take n (fmap PubKeyCredential pubKeyHashes)
-          , proposalStatus = st
-          }
-    )
-    [VotingReady, Locked, Finished]
-
----
-
--- | Create a test tree given the parameters. Both the proposal validator and stake validator will be run.
 mkTestTree ::
-  -- | The name of the test group.
   String ->
-  Parameters ->
-  -- | Are the parameters valid for the proposal validator?
-  Bool ->
+  ParameterBundle ->
+  Validity ->
   SpecificationTree
-mkTestTree name ps isValid = proposal
+mkTestTree name ps val =
+  group name [proposal, stake]
   where
     spend = mkSpending cosign ps
 
     proposal =
-      let proposalInputDatum = mkProposalInputDatum ps
-       in testValidator
-            isValid
-            (name <> ": proposal")
-            proposalValidator
-            proposalInputDatum
-            (mkProposalRedeemer ps)
-            (spend proposalRef)
+      testValidator
+        val.forProposalValidator
+        "proposal"
+        proposalValidator
+        (mkProposalInputDatum ps)
+        proposalRedeemer
+        (spend proposalRef)
+
+    stake =
+      testValidator
+        val.forStakeValidator
+        "stake"
+        proposalValidator
+        (mkStakeInputDatum ps)
+        stakeRedeemer
+        (spend stakeRef)
+
+--------------------------------------------------------------------------------
+
+totallyValid :: ParameterBundle
+totallyValid =
+  ParameterBundle
+    { stakeParameters =
+        StakeParameters
+          { gtAmount = Sufficient
+          , stakeOwner = Other
+          , dontUpdateLocks = False
+          }
+    , proposalParameters =
+        ProposalParameters
+          { proposalStatus = Draft
+          , dontUpdateCosigners = False
+          }
+    , transactionParameters =
+        TransactionParameters
+          { signedBy =
+              Owner
+          }
+    }
+
+insufficientStakedAmount :: ParameterBundle
+insufficientStakedAmount =
+  totallyValid
+    { stakeParameters =
+        totallyValid.stakeParameters
+          { gtAmount = Insufficient
+          }
+    }
+
+locksNotUpdated :: ParameterBundle
+locksNotUpdated =
+  totallyValid
+    { stakeParameters =
+        totallyValid.stakeParameters
+          { dontUpdateLocks = True
+          }
+    }
+
+duplicateCosigners :: ParameterBundle
+duplicateCosigners =
+  totallyValid
+    { stakeParameters =
+        totallyValid.stakeParameters
+          { stakeOwner = Creator
+          }
+    }
+
+cosignersNotUpdated :: ParameterBundle
+cosignersNotUpdated =
+  totallyValid
+    { proposalParameters =
+        totallyValid.proposalParameters
+          { dontUpdateCosigners = True
+          }
+    }
+
+cosignAfterDraft :: [ParameterBundle]
+cosignAfterDraft =
+  map
+    ( \s ->
+        totallyValid
+          { proposalParameters =
+              totallyValid.proposalParameters
+                { proposalStatus = s
+                }
+          }
+    )
+    [VotingReady, Locked, Finished]

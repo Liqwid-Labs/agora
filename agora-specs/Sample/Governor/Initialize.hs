@@ -100,7 +100,7 @@ validGovernorOutputDatum =
     }
 
 invalidProposalThresholds :: ProposalThresholds
-invalidProposalThresholds = ProposalThresholds (-1) (-1) (-1)
+invalidProposalThresholds = ProposalThresholds (-1) (-1) (-1) (-1) (-1)
 
 invalidMaxTimeRangeWidth :: MaxTimeRangeWidth
 invalidMaxTimeRangeWidth = MaxTimeRangeWidth 0

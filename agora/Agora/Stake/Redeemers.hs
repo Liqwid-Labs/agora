@@ -14,111 +14,173 @@ module Agora.Stake.Redeemers (
   pdepositWithdraw,
 ) where
 
-import Agora.Proposal (PProposalRedeemer (PUnlock, PVote))
+import Agora.Proposal (
+  PProposalId,
+  PProposalRedeemer (PCosign, PUnlock, PVote),
+  ProposalStatus (Finished),
+ )
 import Agora.Stake (
-  PProposalContext (PNewProposal, PWithProposalRedeemer),
-  PSigContext (PSignedByOwner, PUnknownSig),
+  PProposalContext (
+    PNewProposal,
+    PNoProposal,
+    PSpendProposal
+  ),
+  PProposalLock (PCosigned, PCreated, PVoted),
+  PSigContext (owner, signedBy),
+  PSignedBy (
+    PSignedByDelegate,
+    PSignedByOwner,
+    PUnknownSig
+  ),
   PStakeDatum (PStakeDatum),
-  PStakeInputContext (PStakeInput),
-  PStakeOutputContext (PStakeBurnt, PStakeOutput),
-  PStakeRedeemerContext (PDepositWithdrawDelta, PNoMetadata, PSetDelegateTo),
+  PStakeRedeemerContext (
+    PDepositWithdrawDelta,
+    PNoMetadata,
+    PSetDelegateTo
+  ),
   PStakeRedeemerHandler,
-  PStakeRedeemerHandlerContext (..),
+  PStakeRedeemerHandlerContext (
+    proposalContext,
+    redeemerContext,
+    sigContext,
+    stakeInputDatums,
+    stakeOutputDatums
+  ),
   pstakeLocked,
  )
+import Agora.Utils (pdeleteBy, pfromSingleton, pisSingleton)
 import Plutarch.Api.V1.Address (PCredential)
-import Plutarch.Api.V1.Value (AmountGuarantees (Positive), PValue)
 import Plutarch.Api.V2 (PMaybeData)
-import Plutarch.Extra.Field (pletAllC)
+import Plutarch.Extra.Field (pletAll, pletAllC)
 import Plutarch.Extra.Maybe (pdjust, pdnothing, pmaybeData)
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
 import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletC, pmatchC)
-import Plutarch.Extra.Value (pgeqByClass, pgeqByClass')
 import Plutarch.Numeric.Additive (AdditiveMonoid (zero), AdditiveSemigroup ((+)))
-import Plutarch.SafeMoney (pdiscreteValue)
-import PlutusLedgerApi.V1.Value (AssetClass (..))
 import Prelude hiding (Num ((+)))
 
--- | Return true if stake input and output carries the same value.
-pownOutputValueUnchanged ::
+-- | A wrapper which ensures that no proposal is presented in the transaction.
+pwithoutProposal ::
   forall (s :: S).
-  Term s (PStakeRedeemerHandlerContext :--> PBool)
-pownOutputValueUnchanged = phoistAcyclic $
-  plam $
-    flip pmatch $ \ctxF -> unTermCont $ do
-      PStakeInput _ inVal <- pmatchC ctxF.stakeInput
-      PStakeOutput _ outVal <- pmatchC ctxF.stakeOutput
+  Term
+    s
+    (PStakeRedeemerHandler :--> PStakeRedeemerHandler)
+pwithoutProposal = phoistAcyclic $
+  plam $ \f ctx -> pmatch ctx $ \ctxF ->
+    pif
+      ( pmatch ctxF.proposalContext $ \case
+          PNoProposal -> pconstant True
+          _ -> pconstant False
+      )
+      (f # ctx)
+      (ptraceError "No proposal is allowed")
 
-      pure $ inVal #== outVal
+{- | Validate stake outputs given a function that converts an input stake datum
+      to an ouput stake datum. / O(n^2) /.
+-}
+pbatchUpdateInputs ::
+  forall (s :: S).
+  Term
+    s
+    ( (PStakeDatum :--> PStakeDatum :--> PBool)
+        :--> PStakeRedeemerHandlerContext
+        :--> PBool
+    )
+pbatchUpdateInputs = phoistAcyclic $
+  plam $ \f -> flip pmatch $ \ctxF ->
+    pnull #$ pfoldr
+      # (pdeleteBy # f)
+      # ctxF.stakeOutputDatums
+      # ctxF.stakeInputDatums
+
+-- | Extract the 'PSigContext.signedBy' field from 'PStakeRedeemerHandlerContext'.
+pgetSignedBy ::
+  forall (s :: S).
+  Term
+    s
+    (PStakeRedeemerHandlerContext :--> PSignedBy)
+pgetSignedBy = phoistAcyclic $
+  plam $ \ctx -> unTermCont $ do
+    ctxF <- pmatchC ctx
+    sctxF <- pmatchC ctxF.sigContext
+    pure sctxF.signedBy
+
+-- | Return true if the tx is authorized by either the owner or the delegatee.
+pisSignedBy ::
+  forall (s :: S).
+  Term
+    s
+    (PBool :--> PStakeRedeemerHandlerContext :--> PBool)
+pisSignedBy = phoistAcyclic $
+  plam $ \byDelegate ctx ->
+    pmatch (pgetSignedBy # ctx) $ \case
+      PSignedByOwner -> pconstant True
+      PSignedByDelegate -> byDelegate
+      PUnknownSig -> pconstant False
 
 -- | Return true if only the @lockedBy@ field of the stake datum is updated.
 ponlyLocksUpdated ::
   forall (s :: S).
-  Term s (PStakeRedeemerHandlerContext :--> PBool)
+  Term
+    s
+    ( ( PBuiltinList (PAsData PProposalLock)
+          :--> PBuiltinList (PAsData PProposalLock)
+      )
+        :--> PStakeRedeemerHandlerContext
+        :--> PBool
+    )
 ponlyLocksUpdated = phoistAcyclic $
-  plam $
-    flip pmatch $ \ctxF -> unTermCont $ do
-      PStakeInput inDat _ <- pmatchC ctxF.stakeInput
-      PStakeOutput outDat _ <- pmatchC ctxF.stakeOutput
+  plam $ \f ->
+    pbatchUpdateInputs #$ plam $ \i o ->
+      pletAll i $ \iF ->
+        let newLocks = f # pfromData iF.lockedBy
 
-      inDatF <- pletAllC inDat
-
-      let onlyLocksUpdated =
-            let templateStakeDatum =
-                  mkRecordConstr
-                    PStakeDatum
-                    ( #stakedAmount .= inDatF.stakedAmount
-                        .& #owner .= inDatF.owner
-                        .& #delegatedTo .= inDatF.delegatedTo
-                        .& #lockedBy .= pfield @"lockedBy" # outDat
-                    )
-             in outDat #== templateStakeDatum
-
-      pure onlyLocksUpdated
-
--- | Return true if the transaction is signed by the owner of the stake.
-psignedByOwner ::
-  forall (s :: S).
-  Term s (PStakeRedeemerHandlerContext :--> PBool)
-psignedByOwner = phoistAcyclic $
-  plam $
-    flip pmatch $ \ctxF -> pmatch ctxF.sigContext $ \case
-      PSignedByOwner -> pconstant True
-      _ -> pconstant False
+            expected =
+              mkRecordConstr
+                PStakeDatum
+                ( #stakedAmount .= iF.stakedAmount
+                    .& #owner .= iF.owner
+                    .& #delegatedTo .= iF.delegatedTo
+                    .& #lockedBy .= pdata newLocks
+                )
+         in expected #== o
 
 -- | Validation logic shared between 'ppermitVote' and 'retractVote'.
 pvoteHelper ::
   forall (s :: S).
   Term
     s
-    ( (PProposalContext :--> PBool)
+    ( ( PStakeRedeemerHandlerContext
+          :--> PBuiltinList (PAsData PProposalLock)
+          :--> PBuiltinList (PAsData PProposalLock)
+      )
         :--> PStakeRedeemerHandler
     )
 pvoteHelper = phoistAcyclic $
   plam $ \valProposalCtx ctx -> unTermCont $ do
-    ctxF <- pmatchC ctx
-
     pguardC "Owner or delegate signs this transaction" $
-      pmatch ctxF.sigContext $ \case
-        PUnknownSig -> pconstant False
-        _ -> pconstant True
+      pisSignedBy # pconstant True # ctx
 
     -- This puts trust into the Proposal. The Proposal must necessarily check
     -- that this is not abused.
 
-    pguardC "Proposal ST spent" $
-      valProposalCtx # ctxF.proposalContext
-
-    pguardC "A UTXO must exist with the correct output" $
-      let valueCorrect = pownOutputValueUnchanged # ctx
-          outputDatumCorrect = ponlyLocksUpdated # ctx
-       in foldl1
-            (#&&)
-            [ ptraceIfFalse "valueCorrect" valueCorrect
-            , ptraceIfFalse "datumCorrect" outputDatumCorrect
-            ]
+    pguardC "Correct outputs" $
+      ponlyLocksUpdated # (valProposalCtx # ctx) # ctx
 
     pure $ pconstant ()
+
+-- | Add new lock the the existing list of locked.
+paddNewLock ::
+  forall (s :: S).
+  Term
+    s
+    ( PProposalLock
+        :--> PBuiltinList (PAsData PProposalLock)
+        :--> PBuiltinList (PAsData PProposalLock)
+    )
+paddNewLock = phoistAcyclic $
+  plam $
+    -- Prepend the lock.
+    \newLock -> pcons # pdata newLock
 
 {- | Default implementation of 'Agora.Stake.PermitVote'.
 
@@ -126,13 +188,75 @@ pvoteHelper = phoistAcyclic $
 -}
 ppermitVote :: forall (s :: S). Term s PStakeRedeemerHandler
 ppermitVote = pvoteHelper #$ phoistAcyclic $
-  plam $
-    flip pmatch $ \case
-      PWithProposalRedeemer r -> pmatch r $ \case
-        PVote _ -> pconstant True
-        _ -> ptrace "Expected Vote" $ pconstant False
-      PNewProposal -> pconstant True
-      _ -> pconstant False
+  plam $ \ctx -> unTermCont $ do
+    ctxF <- pmatchC ctx
+
+    withOnlyOneStakeInput <- pletC $
+      plam $ \lock -> unTermCont $ do
+        pguardC "Only one stake input allowed" $
+          pisSingleton # ctxF.stakeInputDatums
+
+        pure lock
+
+    pure $
+      paddNewLock #$ pmatch ctxF.proposalContext $ \case
+        PSpendProposal pid _ r -> pmatch r $ \case
+          PVote ((pfromData . (pfield @"resultTag" #)) -> voteFor) ->
+            mkRecordConstr
+              PVoted
+              ( #votedOn .= pdata pid
+                  .& #votedFor .= pdata voteFor
+              )
+          PCosign _ ->
+            withOnlyOneStakeInput
+              #$ mkRecordConstr
+                PCosigned
+                ( #cosigned .= pdata pid
+                )
+          _ -> ptraceError "Expected Vote"
+        PNewProposal pid ->
+          withOnlyOneStakeInput
+            #$ mkRecordConstr
+              PCreated
+              ( #created .= pdata pid
+              )
+        _ -> ptraceError "Expected proposal"
+
+data PRemoveLocksMode (s :: S) = PRemoveVoterLockOnly | PRemoveAllLocks
+  deriving stock (Generic)
+  deriving anyclass (PlutusType, PEq)
+
+instance DerivePlutusType PRemoveLocksMode where
+  type DPTStrat _ = PlutusTypeScott
+
+{- | Remove stake locks with the proposal id given the list of existing locks.
+     The first parameter controls whether to revmove creator locks or not.
+-}
+premoveLocks ::
+  forall (s :: S).
+  Term
+    s
+    ( PProposalId
+        :--> PRemoveLocksMode
+        :--> PBuiltinList (PAsData PProposalLock)
+        :--> PBuiltinList (PAsData PProposalLock)
+    )
+premoveLocks = phoistAcyclic $
+  plam $ \pid rl -> unTermCont $ do
+    shouldRemoveOtherLocks <- pletC $
+      plam $ \pid' ->
+        pid' #== pid #&& rl #== pcon PRemoveAllLocks
+
+    pure $
+      pfilter
+        # plam
+          ( \(pfromData -> l) -> pnot #$ pmatch l $ \case
+              PCosigned ((pfield @"cosigned" #) -> pid') ->
+                shouldRemoveOtherLocks # pid'
+              PCreated ((pfield @"created" #) -> pid') ->
+                shouldRemoveOtherLocks # pid'
+              PVoted ((pfield @"votedOn" #) -> pid') -> pid' #== pid
+          )
 
 {- | Default implementation of 'Agora.Stake.RetractVotes'.
 
@@ -141,11 +265,18 @@ ppermitVote = pvoteHelper #$ phoistAcyclic $
 pretractVote :: forall (s :: S). Term s PStakeRedeemerHandler
 pretractVote = pvoteHelper #$ phoistAcyclic $
   plam $
-    flip pmatch $ \case
-      PWithProposalRedeemer r -> pmatch r $ \case
-        PUnlock _ -> pconstant True
-        _ -> ptrace "Expected Unlock" $ pconstant False
-      _ -> pconstant False
+    flip pmatch $ \ctxF ->
+      pmatch ctxF.proposalContext $ \case
+        PSpendProposal pid s r -> pmatch r $ \case
+          PUnlock _ ->
+            let mode =
+                  pif
+                    (s #== pconstant Finished)
+                    (pcon PRemoveAllLocks)
+                    (pcon PRemoveVoterLockOnly)
+             in premoveLocks # pid # mode
+          _ -> ptraceError "Expected unlock"
+        _ -> ptraceError "Expected spending proposal"
 
 -- | Validation logic shared by 'pdelegateTo' and 'pclearDelegate'.
 pdelegateHelper ::
@@ -156,40 +287,35 @@ pdelegateHelper ::
         :--> PStakeRedeemerHandler
     )
 pdelegateHelper = phoistAcyclic $
-  plam $ \f ctx -> unTermCont $ do
+  plam $ \f -> pwithoutProposal #$ plam $ \ctx -> unTermCont $ do
     ctxF <- pmatchC ctx
+    sigCtxF <- pmatchC ctxF.sigContext
 
-    pguardC "Owner signs this transaction" $ psignedByOwner # ctx
+    pguardC "Owner signs this transaction" $
+      pisSignedBy # pconstant False # ctx
 
-    PStakeInput inpDat _ <- pmatchC ctxF.stakeInput
-    PStakeOutput outDat _ <- pmatchC ctxF.stakeOutput
-
-    inpDatF <- pletAllC inpDat
-
-    let maybePkh = f # ctxF.redeemerContext
+    let newDelegate = f # ctxF.redeemerContext
 
     pguardC "Cannot delegate to the owner" $
       pmaybeData
         # pcon PTrue
-        # plam (\pkh -> pnot #$ inpDatF.owner #== pkh)
-        # maybePkh
+        # plam (\pkh -> pnot #$ sigCtxF.owner #== pfromData pkh)
+        # newDelegate
 
-    pguardC "A UTXO must exist with the correct output" $
-      let correctOutputDatum =
-            outDat
-              #== mkRecordConstr
+    pguardC "Correct outputs" $
+      pbatchUpdateInputs
+        # plam
+          ( \i o -> pletAll i $ \iF ->
+              mkRecordConstr
                 PStakeDatum
-                ( #stakedAmount .= inpDatF.stakedAmount
-                    .& #owner .= inpDatF.owner
-                    .& #delegatedTo .= pdata maybePkh
-                    .& #lockedBy .= inpDatF.lockedBy
+                ( #stakedAmount .= iF.stakedAmount
+                    .& #owner .= iF.owner
+                    .& #delegatedTo .= pdata newDelegate
+                    .& #lockedBy .= iF.lockedBy
                 )
-          valueCorrect = pownOutputValueUnchanged # ctx
-       in foldl1
-            (#&&)
-            [ ptraceIfFalse "valueCorrect" valueCorrect
-            , ptraceIfFalse "datumCorrect" correctOutputDatum
-            ]
+                #== o
+          )
+        # ctx
 
     pure $ pconstant ()
 
@@ -221,16 +347,14 @@ pclearDelegate = pdelegateHelper #$ phoistAcyclic $
 -}
 pdestroy :: forall (s :: S). Term s PStakeRedeemerHandler
 pdestroy = phoistAcyclic $
-  plam $ \ctx -> unTermCont $ do
+  pwithoutProposal #$ plam $ \ctx -> unTermCont $ do
     ctxF <- pmatchC ctx
 
-    PStakeInput inpDat _ <- pmatchC ctxF.stakeInput
-    PStakeBurnt <- pmatchC ctxF.stakeOutput
-
     pguardC "Owner signs this transaction" $
-      psignedByOwner # ctx
+      pisSignedBy # pconstant False # ctx
 
-    pguardC "Stake unlocked" $ pnot #$ pstakeLocked # inpDat
+    pguardC "Stake unlocked" $
+      pnot #$ pany # pstakeLocked # ctxF.stakeInputDatums
 
     pure $ pconstant ()
 
@@ -240,64 +364,46 @@ pdestroy = phoistAcyclic $
 -}
 pdepositWithdraw :: forall (s :: S). Term s PStakeRedeemerHandler
 pdepositWithdraw = phoistAcyclic $
-  plam $ \ctx -> unTermCont $ do
+  pwithoutProposal #$ plam $ \ctx -> unTermCont $ do
     ctxF <- pmatchC ctx
 
-    PStakeInput inpDat inpVal <- pmatchC ctxF.stakeInput
-    PStakeOutput outDat outVal <- pmatchC ctxF.stakeOutput
+    pguardC "Owner signs this transaction" $
+      pisSignedBy # pconstant False # ctx
 
-    pguardC "Stake unlocked" $ pnot #$ pstakeLocked # inpDat
+    ----------------------------------------------------------------------------
 
-    pguardC "Owner signs this transaction" $ psignedByOwner # ctx
+    stakeInputDatum <-
+      pletC $
+        ptrace "Single stake input" $
+          pfromSingleton # ctxF.stakeInputDatums
+    stakeInputDatumF <- pletAllC stakeInputDatum
 
-    pguardC
-      "A UTXO must exist with the correct output"
-      $ unTermCont $ do
-        inpDatF <- pletAllC inpDat
-        PDepositWithdrawDelta delta <- pmatchC ctxF.redeemerContext
+    let stakeOutputDatum =
+          ptrace "Single stake output" $
+            pfromSingleton # ctxF.stakeOutputDatums
 
-        let oldStakedAmount = pfromData $ inpDatF.stakedAmount
+    ----------------------------------------------------------------------------
 
-        newStakedAmount <- pletC $ oldStakedAmount + delta
+    pguardC "Stake unlocked" $
+      pnot #$ pstakeLocked # stakeInputDatum
 
-        pguardC "New staked amount should be greater than or equal to 0" $
-          zero #<= newStakedAmount
+    ----------------------------------------------------------------------------
 
-        let expectedDatum =
-              mkRecordConstr
-                PStakeDatum
-                ( #stakedAmount .= pdata newStakedAmount
-                    .& #owner .= inpDatF.owner
-                    .& #delegatedTo .= inpDatF.delegatedTo
-                    .& #lockedBy .= inpDatF.lockedBy
-                )
-            datumCorrect = outDat #== expectedDatum
+    PDepositWithdrawDelta delta <- pmatchC ctxF.redeemerContext
 
-        let valueDelta :: Term _ (PValue _ 'Positive)
-            valueDelta = pdiscreteValue # ctxF.gtAssetClass # delta
+    newStakedAmount <- pletC $ stakeInputDatumF.stakedAmount + delta
 
-            expectedValue =
-              inpVal <> valueDelta
+    pguardC "Non-negative staked amount" $ zero #<= newStakedAmount
 
-        gtAssetClassF <- pletAllC ctxF.gtAssetClass
+    let expectedDatum =
+          mkRecordConstr
+            PStakeDatum
+            ( #stakedAmount .= pdata newStakedAmount
+                .& #owner .= stakeInputDatumF.owner
+                .& #delegatedTo .= stakeInputDatumF.delegatedTo
+                .& #lockedBy .= stakeInputDatumF.lockedBy
+            )
 
-        let valueCorrect =
-              foldr1
-                (#&&)
-                [ pgeqByClass' (AssetClass ("", ""))
-                    # outVal
-                    # expectedValue
-                , pgeqByClass
-                    # gtAssetClassF.currencySymbol
-                    # gtAssetClassF.tokenName
-                    # outVal
-                    # expectedValue
-                ]
-        --
-        pure $
-          foldl1
-            (#&&)
-            [ ptraceIfFalse "valueCorrect" valueCorrect
-            , ptraceIfFalse "datumCorrect" datumCorrect
-            ]
+    pguardC "Valid output datum" $ expectedDatum #== stakeOutputDatum
+
     pure $ pconstant ()

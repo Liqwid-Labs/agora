@@ -10,7 +10,6 @@ module Agora.Proposal.Scripts (
   proposalPolicy,
 ) where
 
-import Agora.Credential (authorizationContext, pauthorizedBy)
 import Agora.Proposal (
   PProposalDatum (PProposalDatum),
   PProposalRedeemer (PAdvanceProposal, PCosign, PUnlock, PVote),
@@ -28,17 +27,17 @@ import Agora.Proposal.Time (
   isVotingPeriod,
  )
 import Agora.Stake (
-  PProposalLock (PVoted),
   PStakeDatum,
   pextractVoteOption,
-  pgetStakeRole,
-  pisCreator,
+  pgetStakeRoles,
   pisIrrelevant,
-  pisPureCreator,
   pisVoter,
  )
 import Agora.Utils (
+  pfromSingleton,
+  pinsertUniqueBy,
   plistEqualsBy,
+  pmapMaybe,
  )
 import Plutarch.Api.V1 (PCredential, PCurrencySymbol)
 import Plutarch.Api.V1.AssocMap (plookup)
@@ -64,7 +63,7 @@ import Plutarch.Extra.Maybe (
   pmaybe,
   pnothing,
  )
-import Plutarch.Extra.Ord (pallUnique, pfromOrdBy, psort, ptryMergeBy)
+import Plutarch.Extra.Ord (pfromOrdBy, psort)
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
 import Plutarch.Extra.ScriptContext (
   pfindTxInByTxOutRef,
@@ -72,6 +71,7 @@ import Plutarch.Extra.ScriptContext (
   pisTokenSpent,
   ptryFromOutputDatum,
  )
+import Plutarch.Extra.Sum (PSum (PSum))
 import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (
   pguardC,
   pletC,
@@ -79,6 +79,7 @@ import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (
   pmatchC,
   ptryFromC,
  )
+import Plutarch.Extra.Traversable (pfoldMap)
 import Plutarch.Extra.Value (psymbolValueOf)
 import Plutarch.SafeMoney (PDiscrete (PDiscrete))
 import Plutarch.Unsafe (punsafeCoerce)
@@ -154,13 +155,9 @@ data PWitnessMultipleStakeContext (s :: S) = PWitnessMultipleStakeContext
 instance DerivePlutusType PWitnessMultipleStakeContext where
   type DPTStrat _ = PlutusTypeScott
 
-{- | Validation context for redeemers which need to modify a single stake.
-
-     @since 1.0.0
--}
-data PSpendSingleStakeContext (s :: S) = PSpendSingleStakeContext
-  { inputStake :: Term s PStakeDatum
-  , outputStake :: Term s PStakeDatum
+-- | @since 1.0.0
+newtype PStakeInputsContext (s :: S) = PStakeInputsContext
+  { inputStakes :: Term s (PList PStakeDatum)
   }
   deriving stock
     ( -- | @since 1.0.0
@@ -172,8 +169,8 @@ data PSpendSingleStakeContext (s :: S) = PSpendSingleStakeContext
     )
 
 -- | @since 1.0.0
-instance DerivePlutusType PSpendSingleStakeContext where
-  type DPTStrat _ = PlutusTypeScott
+instance DerivePlutusType PStakeInputsContext where
+  type DPTStrat _ = PlutusTypeNewtype
 
 {- | The validator for Proposals.
 
@@ -186,6 +183,7 @@ instance DerivePlutusType PSpendSingleStakeContext where
      When voting and unlocking, the proposal must witness a state transition
      occuring in the relevant Stake. This transition must place a lock on
      the stake that is tagged with the right 'Agora.Proposal.ResultTag', and 'Agora.Proposal.ProposalId'.
+     Note that only one proposal per transaction is supported.
 
      === Periods
 
@@ -238,8 +236,6 @@ proposalValidator =
 
     currentTime <- pletC $ currentProposalTime # txInfoF.validRange
 
-    authorizedBy <- pletC $ pauthorizedBy # authorizationContext txInfoF
-
     ----------------------------------------------------------------------------
 
     PSpending ((pfield @"_0" #) -> propsalInputRef) <-
@@ -266,51 +262,46 @@ proposalValidator =
     --  * has an PST
     --  * has the same proposal id as the proposal input
     --
-    -- We match the proposal id here so that we can support multiple
-    --  proposal inputs in one thansaction.
+    -- We can handle only one proposal under current design.
     proposalOutputDatum <-
       pletC $
-        passertPJust
-          # "Own output should be present"
-            #$ pfindJust
-          # plam
-            ( flip pletAll $ \outputF ->
-                let isProposalUTxO =
-                      foldl1
-                        (#&&)
-                        [ ptraceIfFalse "Own by proposal validator" $
-                            outputF.address #== proposalInputF.address
-                        , ptraceIfFalse "Has proposal ST" $
-                            psymbolValueOf # pstSymbol # outputF.value #== 1
-                        ]
+        passertPJust # "proposal input should present"
+          #$ pfindJust
+            # plam
+              ( flip pletAll $ \outputF ->
+                  let isProposalUTxO =
+                        foldl1
+                          (#&&)
+                          [ ptraceIfFalse "Own by proposal validator" $
+                              outputF.address #== proposalInputF.address
+                          , ptraceIfFalse "Has proposal ST" $
+                              psymbolValueOf # pstSymbol # outputF.value #== 1
+                          ]
 
-                    handleProposalUTxO = unTermCont $ do
-                      -- Using inline datum to avoid O(n^2) lookup.
-                      datum <-
-                        pletC $
-                          pfromData $
-                            ptrace "Resolve proposal datum" $
-                              pfromOutputDatum @(PAsData PProposalDatum)
-                                # outputF.datum
-                                # txInfoF.datums
-
-                      pure $
-                        pif
-                          ( pfield @"proposalId" # pto datum
-                              #== proposalInputDatumF.proposalId
-                          )
-                          (pjust # datum)
-                          pnothing
-                 in pif
-                      isProposalUTxO
-                      handleProposalUTxO
-                      pnothing
-            )
-          # pfromData txInfoF.outputs
+                      handleProposalUTxO =
+                        -- Using inline datum to avoid O(n^2) lookup.
+                        pfromData $
+                          ptrace "Resolve proposal datum" $
+                            pfromOutputDatum @(PAsData PProposalDatum)
+                              # outputF.datum
+                              # txInfoF.datums
+                   in pif
+                        isProposalUTxO
+                        (pjust # handleProposalUTxO)
+                        pnothing
+              )
+            # pfromData txInfoF.outputs
 
     --------------------------------------------------------------------------
+    let AssetClass (sstSymbol, sstName) = stakeSTAssetClass as
 
-    -- Handle stake input/output.
+    sstAssetClass <-
+      pletC $
+        passetClass
+          # pconstant sstSymbol
+          # pconstant sstName
+
+    -- Handle stake inputs/outputs.
 
     -- Reslove stake datum if the given UTxO is a stake UTxO.
     getStakeDatum :: Term _ (PTxOut :--> PMaybe PStakeDatum) <-
@@ -319,9 +310,9 @@ proposalValidator =
           flip (pletFields @'["value", "datum"]) $ \txOutF ->
             let isStakeUTxO =
                   -- A stake UTxO is a UTxO that carries SST.
-                  psymbolValueOf
-                    # sstSymbol
+                  passetClassValueOf
                     # txOutF.value
+                    # sstAssetClass
                     #== 1
 
                 stake =
@@ -333,6 +324,26 @@ proposalValidator =
                       # txOutF.datum
                       # txInfoF.datums
              in pif isStakeUTxO (pjust # stake) pnothing
+
+    spendStakes' :: Term _ ((PStakeInputsContext :--> PUnit) :--> PUnit) <-
+      pletC $
+        plam $
+          let stakeInputs =
+                pmapMaybe
+                  # plam ((getStakeDatum #) . (pfield @"resolved" #))
+                  # pfromData txInfoF.inputs
+
+              ctx = pcon $ PStakeInputsContext stakeInputs
+           in (# ctx)
+
+    let spendStakes ::
+          ( PStakeInputsContext _ ->
+            TermCont _ ()
+          ) ->
+          Term _ POpaque
+        spendStakes c = popaque $
+          spendStakes' #$ plam $ \sctx ->
+            unTermCont $ pmatchC sctx >>= c >> pure (pconstant ())
 
     -- Witness stakes in reference inputs.
     witnessStakes' ::
@@ -394,34 +405,6 @@ proposalValidator =
           witnessStakes' #$ plam $ \sctxF ->
             unTermCont $ pmatchC sctxF >>= c >> pure (pconstant ())
 
-    -- We don't need to explicitly ensure that there's only one stake in the
-    --   inputs here - the stake validator will do it for us.
-    spendSingleStake' ::
-      Term
-        s
-        ((PSpendSingleStakeContext :--> PUnit) :--> PUnit) <-
-      pletC $
-        let stakeInput =
-              passertPJust # "Stake input should present" #$ pfindJust
-                # ((pfield @"resolved" @_ @PTxInInfo) #>>> getStakeDatum)
-                # txInfoF.inputs
-
-            stakeOutput =
-              passertPJust # "Stake output should present"
-                #$ pfindJust # getStakeDatum # txInfoF.outputs
-
-            ctx = pcon $ PSpendSingleStakeContext stakeInput stakeOutput
-         in plam (# ctx)
-
-    let spendSingleStake ::
-          ( PSpendSingleStakeContext _ ->
-            TermCont _ ()
-          ) ->
-          Term _ POpaque
-        spendSingleStake c = popaque $
-          spendSingleStake' #$ plam $ \sctx ->
-            unTermCont $ pmatchC sctx >>= c >> pure (pconstant ())
-
     ----------------------------------------------------------------------------
 
     proposalRedeemer <- fst <$> ptryFromC @PProposalRedeemer redeemer
@@ -429,38 +412,30 @@ proposalValidator =
     pure $
       popaque $
         pmatch proposalRedeemer $ \case
-          PCosign r -> witnessStakes $ \sctxF -> do
+          PCosign _ -> spendStakes $ \sctxF -> do
             pguardC "Should be in draft state" $
               currentStatus #== pconstant Draft
 
-            newSigs <- pletC $ pfield @"newCosigners" # r
+            stakeF <-
+              pletFieldsC @'["owner", "stakedAmount"] $
+                ptrace "Exactly one stake input" $
+                  pfromSingleton # sctxF.inputStakes
 
-            pguardC "Signed by all new cosigners" $
-              pall # plam ((authorizedBy #) . pfromData) # newSigs
+            let newCosigner = stakeF.owner
 
-            -- Assuming that new signatures encoded in the redeemer and exsiting
-            --   cosigners are sorted in ascending order, the new list of
-            --   signatures will be ordered.
             updatedSigs <-
               pletC $
-                ptryMergeBy # (pfromOrdBy # plam pfromData)
-                  # newSigs
-                  # proposalInputDatumF.cosigners
+                ptrace "Update signature set" $
+                  pinsertUniqueBy
+                    # (pfromOrdBy # plam pfromData)
+                    # newCosigner
+                    # proposalInputDatumF.cosigners
 
             pguardC "Less cosigners than maximum limit" $
               plength # updatedSigs #< maximumCosigners
 
-            -- assuming sigs are sorted
-            PJust cosUnique <- pmatchC $ pallUnique #$ pmap # plam pfromData # updatedSigs
-            pguardC "Cosigners are unique" cosUnique
-
-            pguardC "All new cosigners are witnessed by their Stake datums" $
-              -- Also, this ensures that the cosigners field in the output
-              --   propopsal datum is ordered.
-              plistEqualsBy
-                # plam (\x (pfromData -> y) -> x #== y)
-                # sctxF.orderedOwners
-                # newSigs
+            pguardC "Meet minimum GT requirement" $
+              pfromData thresholdsF.cosign #<= stakeF.stakedAmount
 
             let expectedDatum =
                   mkRecordConstr
@@ -480,8 +455,28 @@ proposalValidator =
 
           ----------------------------------------------------------------------
 
-          PVote r -> spendSingleStake $ \sctxF -> do
-            stakeInF <- pletAllC $ pto sctxF.inputStake
+          PVote r -> spendStakes $ \sctxF -> do
+            totalStakeAmount <-
+              pletC $
+                pto $
+                  pfoldMap
+                    # plam
+                      ( \stake -> unTermCont $ do
+                          stakeF <- pletFieldsC @'["stakedAmount", "lockedBy"] stake
+
+                          pguardC "Same stake shouldn't vote on the same proposal twice" $
+                            pnot
+                              #$ pisVoter
+                              #$ pgetStakeRoles
+                                # proposalInputDatumF.proposalId
+                                # stakeF.lockedBy
+
+                          pure $ pcon $ PSum $ pfromData stakeF.stakedAmount
+                      )
+                    # sctxF.inputStakes
+
+            pguardC "Exceed minimum amount" $
+              thresholdsF.vote #< totalStakeAmount
 
             pguardC "Input proposal must be in VotingReady state" $
               currentStatus #== pconstant VotingReady
@@ -500,10 +495,6 @@ proposalValidator =
             pguardC "Vote option should be valid" $
               pisJust #$ plookup # voteFor # voteMap
 
-            -- Ensure that no lock with the current proposal id has been put on the stake.
-            pguardC "Same stake shouldn't vote on the same proposal twice" $
-              pnot #$ pisVoter #$ pgetStakeRole # proposalInputDatumF.proposalId # stakeInF.lockedBy
-
             let -- The amount of new votes should be the 'stakedAmount'.
                 -- Update the vote counter of the proposal, and leave other stuff as is.
                 expectedNewVotes =
@@ -512,7 +503,7 @@ proposalValidator =
                       pupdate
                         # plam
                           ( \votes -> unTermCont $ do
-                              PDiscrete v <- pmatchC stakeInF.stakedAmount
+                              PDiscrete v <- pmatchC totalStakeAmount
                               pure $ pcon $ PJust $ votes + (pextract # v)
                           )
                         # voteFor
@@ -534,76 +525,68 @@ proposalValidator =
             pguardC "Output proposal should be valid" $
               proposalOutputDatum #== expectedProposalOut
 
-            -- We validate the output stake datum here as well: We need the vote option
-            -- to create a valid 'ProposalLock', however the vote option is encoded
-            -- in the proposal redeemer, which is invisible for the stake validator.
-
-            let newProposalLock =
-                  mkRecordConstr
-                    PVoted
-                    ( #votedOn .= proposalInputDatumF.proposalId
-                        .& #votedFor .= pdata voteFor
-                    )
-
-                -- Prepend the new lock to existing locks
-                expectedProposalLocks =
-                  pcons
-                    # pdata newProposalLock
-                    # pfromData stakeInF.lockedBy
-
-            pguardC "Output stake should be locked by the proposal" $
-              pfield @"lockedBy" # sctxF.outputStake #== expectedProposalLocks
+          -- Note that the output stake locks validation now happens in the
+          -- stake validator.
 
           ----------------------------------------------------------------------
 
-          PUnlock _ -> spendSingleStake $ \sctxF -> do
-            stakeInF <- pletAllC $ pto sctxF.inputStake
+          PUnlock _ -> spendStakes $ \sctxF -> do
+            let expectedVotes =
+                  pfoldl
+                    # plam
+                      ( \votes stake -> unTermCont $ do
+                          stakeF <-
+                            pletFieldsC
+                              @'["stakedAmount", "lockedBy"]
+                              stake
 
-            stakeRole <- pletC $ pgetStakeRole # proposalInputDatumF.proposalId # stakeInF.lockedBy
+                          stakeRoles <-
+                            pletC $
+                              pgetStakeRoles
+                                # proposalInputDatumF.proposalId
+                                # stakeF.lockedBy
 
-            pguardC "Stake input should be relevant" $
-              pnot #$ pisIrrelevant # stakeRole
+                          pguardC "Stake input should be relevant" $
+                            pnot #$ pisIrrelevant # stakeRoles
 
-            retractCount <-
-              pletC $
-                pmatch stakeInF.stakedAmount $ \(PDiscrete v) -> pextract # v
+                          let canRetractVotes =
+                                pisVoter # stakeRoles
 
-            -- The votes can only change when the proposal still allows voting.
-            let shouldUpdateVotes =
+                              voteCount =
+                                pextract
+                                  #$ pto
+                                  $ pfromData stakeF.stakedAmount
+
+                              newVotes =
+                                pretractVotes
+                                  # (pextractVoteOption # stakeRoles)
+                                  # voteCount
+                                  # votes
+
+                          pure $ pif canRetractVotes newVotes votes
+                      )
+                    # proposalInputDatumF.votes
+                    # sctxF.inputStakes
+
+                currentTime' =
+                  passertPJust
+                    # "Should be able to get current time"
+                    # currentTime
+
+                inVotingPeriod =
+                  isVotingPeriod # proposalInputDatumF.timingConfig
+                    # proposalInputDatumF.startingTime
+                    # currentTime'
+
+                -- The votes can only change when the proposal still allows voting.
+                shouldUpdateVotes =
                   currentStatus #== pconstant VotingReady
-                    #&& pnot # (pisPureCreator # stakeRole)
-
-                allowRemovingCreatorLock =
-                  currentStatus #== pconstant Finished
-
-                isCreator = pisCreator # stakeRole
-
-                -- If the stake has been used for creating the proposal,
-                --  the creator lock can only be removed when the proposal
-                --  is finished.
-                --
-                -- In other cases, all the locks related to this
-                --   proposal should be removed.
-                validateOutputLocks = plam $ \locks ->
-                  plet
-                    ( pgetStakeRole # proposalInputDatumF.proposalId # locks
-                    )
-                    $ \newStakeRole ->
-                      pif
-                        (isCreator #&& pnot # allowRemovingCreatorLock)
-                        (pisPureCreator # newStakeRole)
-                        (pisIrrelevant # newStakeRole)
+                    #&& inVotingPeriod
 
             pguardC "Proposal output correct" $
               pif
                 shouldUpdateVotes
                 ( let -- Remove votes and leave other parts of the proposal as it.
-                      expectedVotes =
-                        pretractVotes
-                          # (pextractVoteOption # stakeRole)
-                          # retractCount
-                          # proposalInputDatumF.votes
-
                       expectedProposalOut =
                         mkRecordConstr
                           PProposalDatum
@@ -623,12 +606,6 @@ proposalValidator =
                 ( ptraceIfFalse "Proposal unchanged" $
                     proposalOutputDatum #== proposalInputDatum
                 )
-
-            -- At last, we ensure that all locks belong to this proposal will be removed.
-            stakeOutputLocks <- pletC $ pfield @"lockedBy" # pto sctxF.outputStake
-
-            pguardC "All relevant locks removed from the stake" $
-              validateOutputLocks # stakeOutputLocks
 
           ----------------------------------------------------------------------
 
@@ -680,7 +657,7 @@ proposalValidator =
                     pmatchC notTooLate >>= \case
                       PTrue -> do
                         pguardC "More cosigns than minimum amount" $
-                          punsafeCoerce (pfromData thresholdsF.vote) #< sctxF.totalAmount
+                          punsafeCoerce (pfromData thresholdsF.toVoting) #< sctxF.totalAmount
 
                         pguardC "All new cosigners are witnessed by their Stake datums" $
                           plistEqualsBy

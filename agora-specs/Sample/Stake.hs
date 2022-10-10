@@ -138,7 +138,6 @@ stakeDepositWithdraw config =
         mconcat
           [ txId "0b2086cbf8b6900f8cb65e012de4516cb66b5cb08a9aaba12a8b88be"
           , signedWith signer
-          , mint st
           , input $
               mconcat
                 [ script stakeValidatorHash
@@ -147,7 +146,7 @@ stakeDepositWithdraw config =
                         st
                           <> Value.assetClassValue (untag governor.gtClassRef) (fromDiscrete stakeBefore.stakedAmount)
                     )
-                , withDatum stakeAfter
+                , withDatum stakeBefore
                 , withRef stakeRef
                 ]
           , output $
