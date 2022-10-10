@@ -1,7 +1,3 @@
-import Prelude
-
---------------------------------------------------------------------------------
-
 import GHC.IO.Encoding (setLocaleEncoding, utf8)
 import Test.Tasty (defaultMain, testGroup)
 

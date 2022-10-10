@@ -60,7 +60,6 @@ import Plutarch.Lift (
  )
 import PlutusLedgerApi.V1 (POSIXTime)
 import PlutusTx qualified
-import Prelude
 
 --------------------------------------------------------------------------------
 
