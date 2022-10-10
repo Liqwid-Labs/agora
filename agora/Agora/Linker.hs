@@ -3,7 +3,7 @@
 module Agora.Linker (linker) where
 
 import Agora.Governor (Governor (gstOutRef, gtClassRef, maximumCosigners))
-import Agora.Utils (validatorHashToAddress)
+import Agora.Utils (validatorHashToAddress, validatorHashToTokenName)
 import Data.Map (fromList)
 import Data.Tagged (untag)
 import Plutarch.Api.V2 (mintingPolicySymbol, validatorHash)
@@ -30,7 +30,7 @@ linker = do
   stkPol <- fetchTS @MintingPolicyRole @'[AssetClass] "agora:stakePolicy"
   stkVal <- fetchTS @ValidatorRole @'[CurrencySymbol, AssetClass, AssetClass] "agora:stakeValidator"
   prpPol <- fetchTS @MintingPolicyRole @'[AssetClass] "agora:proposalPolicy"
-  prpVal <- fetchTS @ValidatorRole @'[CurrencySymbol, CurrencySymbol, CurrencySymbol, Integer] "agora:proposalValidator"
+  prpVal <- fetchTS @ValidatorRole @'[AssetClass, CurrencySymbol, CurrencySymbol, Integer] "agora:proposalValidator"
   treVal <- fetchTS @ValidatorRole @'[CurrencySymbol] "agora:treasuryValidator"
   atkPol <- fetchTS @MintingPolicyRole @'[AssetClass] "agora:authorityTokenPolicy"
   noOpVal <- fetchTS @ValidatorRole @'[CurrencySymbol] "agora:noOpValidator"
@@ -61,7 +61,7 @@ linker = do
       propPol' = prpPol # gstAssetClass
       propVal' =
         prpVal
-          # sstSymbol
+          # sstAssetClass
           # gstSymbol
           # pstSymbol
           # governor.maximumCosigners
@@ -73,6 +73,9 @@ linker = do
       stakPol' = stkPol # untag governor.gtClassRef
       stakVal' = stkVal # sstSymbol # pstAssetClass # untag governor.gtClassRef
       sstSymbol = mintingPolicySymbol $ toMintingPolicy stakPol'
+      stakValTokenName =
+        validatorHashToTokenName $ validatorHash $ toValidator stakVal'
+      sstAssetClass = AssetClass (sstSymbol, stakValTokenName)
 
       treaVal' = treVal # atSymbol
 

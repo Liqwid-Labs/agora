@@ -75,7 +75,6 @@ import Sample.Shared (
   proposalValidator,
   proposalValidatorHash,
   stakeAssetClass,
-  stakeValidator,
   stakeValidatorHash,
  )
 import Test.Specification (SpecificationTree, group, testValidator)

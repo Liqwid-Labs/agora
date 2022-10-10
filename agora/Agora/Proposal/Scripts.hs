@@ -51,7 +51,7 @@ import Plutarch.Api.V2 (
   PValidator,
  )
 import Plutarch.Extra.AssetClass (PAssetClass, passetClass, passetClassValueOf)
-import Plutarch.Extra.Category (PCategory (pidentity), PSemigroupoid ((#>>>)))
+import Plutarch.Extra.Category (PCategory (pidentity))
 import Plutarch.Extra.Comonad (pextract)
 import Plutarch.Extra.Field (pletAll, pletAllC)
 import "liqwid-plutarch-extra" Plutarch.Extra.List (pfindJust)
@@ -202,7 +202,7 @@ instance DerivePlutusType PStakeInputsContext where
      == Arguments
 
      Following arguments should be provided(in this order):
-     1. stake ST symbol
+     1. stake ST assetclass
      2. governor ST symbol
      3. proposal ST symbol
      4. maximum number of cosigners
@@ -211,14 +211,14 @@ instance DerivePlutusType PStakeInputsContext where
 -}
 proposalValidator ::
   ClosedTerm
-    ( PCurrencySymbol
+    ( PAssetClass
         :--> PCurrencySymbol
         :--> PCurrencySymbol
         :--> PInteger
         :--> PValidator
     )
 proposalValidator =
-  plam $ \sstSymbol gstSymbol pstSymbol maximumCosigners datum redeemer ctx -> unTermCont $ do
+  plam $ \sstClass gstSymbol pstSymbol maximumCosigners datum redeemer ctx -> unTermCont $ do
     ctxF <- pletAllC ctx
 
     txInfo <- pletC $ pfromData ctxF.txInfo
@@ -293,13 +293,6 @@ proposalValidator =
             # pfromData txInfoF.outputs
 
     --------------------------------------------------------------------------
-    let AssetClass (sstSymbol, sstName) = stakeSTAssetClass as
-
-    sstAssetClass <-
-      pletC $
-        passetClass
-          # pconstant sstSymbol
-          # pconstant sstName
 
     -- Handle stake inputs/outputs.
 
@@ -312,7 +305,7 @@ proposalValidator =
                   -- A stake UTxO is a UTxO that carries SST.
                   passetClassValueOf
                     # txOutF.value
-                    # sstAssetClass
+                    # sstClass
                     #== 1
 
                 stake =
