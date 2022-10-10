@@ -29,12 +29,12 @@ type instance PlyArgOf PAssetClass = AssetClass
 {- | Parameterize core scripts, given the 'Agora.Governor.Governor'
      parameters and plutarch configurations.
 
-     @since 0.2.0
+     @since 1.0.0
 -}
 agoraScripts :: Config -> RawScriptExport
 agoraScripts conf =
   RawScriptExport
-    { version = "0.2.0"
+    { version = "1.0.0"
     , scripts =
         fromList
           [ envelope "agora:governorPolicy" governorPolicy

@@ -50,7 +50,7 @@ import Plutarch.Extra.Value (psymbolValueOf)
      As of version 1.0.0, this has been weakened in order to be compatible
      with RATs.
 
-     @since 0.1.0
+     @since 1.0.0
 -}
 authorityTokensValidIn :: forall (s :: S). Term s (PCurrencySymbol :--> PTxOut :--> PBool)
 authorityTokensValidIn = phoistAcyclic $

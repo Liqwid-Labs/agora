@@ -106,7 +106,7 @@ import Plutarch.Unsafe (punsafeCoerce)
      Following arguments should be provided(in this order):
      1. The assetclass of GST, see 'Agora.Governor.Scripts.governorPolicy'.
 
-     @since 0.1.0
+     @since 1.0.0
 -}
 proposalPolicy :: ClosedTerm (PAssetClass :--> PMintingPolicy)
 proposalPolicy =
@@ -209,7 +209,7 @@ instance DerivePlutusType PSpendSingleStakeContext where
      3. proposal ST symbol
      4. maximum number of cosigners
 
-     @since 0.1.0
+     @since 1.0.0
 -}
 proposalValidator ::
   ClosedTerm

@@ -14799,11 +14799,11 @@
         "ply": "ply"
       },
       "locked": {
-        "lastModified": 1665114593,
-        "narHash": "sha256-M8/ste3PeFudAhRCj2jekzyT9tDhqDz57ZR5FXiwymk=",
+        "lastModified": 1665297411,
+        "narHash": "sha256-yzg5HWYro6A0wDUEkCAal5emlHJLDdjkkOycUBZpXnk=",
         "owner": "Liqwid-Labs",
         "repo": "plutarch-script-export",
-        "rev": "6207346e97d4d22aabf632ed357855090fd87447",
+        "rev": "b3f0945b6594559c53e82f3f3da5038fb6c4e065",
         "type": "github"
       },
       "original": {

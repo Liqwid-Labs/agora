@@ -133,18 +133,18 @@ deriving anyclass instance PTryFrom PData PMutateGovernorDatum
          * It has valid governor state datum.
          * The datum is exactly the same as the 'newDatum'.
 
-     @since 0.1.0
+     @since 1.0.0
 -}
 mutateGovernorValidator ::
   ClosedTerm (PAssetClass :--> PCurrencySymbol :--> PValidator)
 mutateGovernorValidator =
-  plam $ \gtAssetClass -> makeEffect @PMutateGovernorDatum $
+  plam $ \gstAssetClass -> makeEffect @PMutateGovernorDatum $
     \_ datum _ txInfo -> unTermCont $ do
       datumF <- pletFieldsC @'["newDatum", "governorRef"] datum
       txInfoF <- pletFieldsC @'["mint", "inputs", "outputs", "datums"] txInfo
 
       let gstValueOf =
-            plam $ \v -> passetClassValueOf # pfromData v # gtAssetClass
+            plam $ \v -> passetClassValueOf # pfromData v # gstAssetClass
 
       let mint :: Term _ (PBuiltinList _)
           mint = pto $ pto $ pto $ pfromData txInfoF.mint

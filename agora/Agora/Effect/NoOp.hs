@@ -38,7 +38,7 @@ instance PTryFrom PData (PAsData PNoOp)
 
 {- | Dummy effect which can only burn its GAT.
 
-     @since 0.1.0
+     @since 1.0.0
 -}
 noOpValidator :: ClosedTerm (PCurrencySymbol :--> PValidator)
 noOpValidator = plam $

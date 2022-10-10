@@ -37,7 +37,7 @@ main = do
       , toTestTree $ group "Treasury tests" Treasury.specs
       , toTestTree $ group "AuthorityToken tests" AuthorityToken.specs
       , toTestTree $ group "Governor tests" Governor.specs
-      , -- , testGroup "Governor properties" Governer.props
+      , testGroup "Governor properties" Governer.props
         testGroup
           "Utility tests"
           Utils.tests

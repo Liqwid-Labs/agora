@@ -21,7 +21,7 @@ import Prelude hiding ((#))
 
 {- | Links parameterized Agora scripts given parameters.
 
- @since 0.2.0
+ @since 1.0.0
 -}
 linker :: Linker Governor (ScriptExport Governor)
 linker = do

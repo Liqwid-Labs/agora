@@ -107,7 +107,7 @@ import Plutarch.Extra.Value (psymbolValueOf)
   NOTE: It's user's responsibility to make sure the token is sent to the corresponding governor validator.
         We /can't/ really check this in the policy, otherwise we create a cyclic reference issue.
 
-  @since 0.1.0
+  @since 1.0.0
 -}
 governorPolicy :: ClosedTerm (PTxOutRef :--> PMintingPolicy)
 governorPolicy =
@@ -252,7 +252,7 @@ governorPolicy =
      4. proposal ST symbol
      5. authority token symbol.
 
-     @since 0.1.0
+     @since 1.0.0
 -}
 governorValidator ::
   -- | Lazy precompiled scripts.

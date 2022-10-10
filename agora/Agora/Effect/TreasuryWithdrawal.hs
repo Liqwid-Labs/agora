@@ -126,7 +126,7 @@ instance PTryFrom PData PTreasuryWithdrawalDatum
 
      - The number of outputs themselves
 
-     @since 0.1.0
+     @since 1.0.0
 -}
 treasuryWithdrawalValidator :: ClosedTerm (PCurrencySymbol :--> PValidator)
 treasuryWithdrawalValidator = plam $

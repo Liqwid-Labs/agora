@@ -25,7 +25,7 @@ import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletC, pletFiel
      an effect is implemented. In such situations, it's okay to not use this
      helper.
 
-     @since 0.1.0
+     @since 1.0.0
 -}
 makeEffect ::
   forall (datum :: PType) (s :: S).

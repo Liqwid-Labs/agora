@@ -117,7 +117,7 @@ import Prelude hiding (Num ((+)))
    Following arguments should be provided(in this order):
    1. governor ST assetclass
 
-   @since 0.1.0
+   @since 1.0.0
 -}
 stakePolicy ::
   -- | The (governance) token that a Stake can store.
@@ -493,7 +493,7 @@ mkStakeValidator impl =
      2. proposal ST assetclass
      3. governor ST assetclass
 
-     @since 0.1.0
+     @since 1.0.0
 -}
 stakeValidator :: ClosedTerm (PCurrencySymbol :--> PAssetClass :--> PAssetClass :--> PValidator)
 stakeValidator =
