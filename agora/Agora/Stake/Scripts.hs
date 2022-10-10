@@ -12,7 +12,12 @@ module Agora.Stake.Scripts (
 ) where
 
 import Agora.Credential (authorizationContext, pauthorizedBy)
-import Agora.Proposal (PProposalDatum, PProposalRedeemer)
+import Agora.Proposal (
+  PProposalDatum,
+  PProposalId,
+  PProposalRedeemer,
+  ProposalStatus (Finished),
+ )
 import Agora.SafeMoney (GTTag)
 import Agora.Scripts (
   AgoraScripts,
@@ -23,7 +28,8 @@ import Agora.Stake (
   PProposalContext (
     PNewProposal,
     PNoProposal,
-    PSpendProposal
+    PSpendProposal,
+    PWitnessFinishedProposals
   ),
   PSigContext (PSigContext),
   PSignedBy (
@@ -74,6 +80,7 @@ import Plutarch.Api.V2 (
   AmountGuarantees,
   PMintingPolicy,
   PScriptPurpose (PMinting, PSpending),
+  PTxInInfo,
   PTxInfo,
   PTxOut,
   PValidator,
@@ -83,12 +90,14 @@ import Plutarch.Extra.AssetClass (
   passetClassValueOf,
   pvalueOf,
  )
+import Plutarch.Extra.Bind (PBind ((#>>=)))
+import Plutarch.Extra.Category (PCategory (pidentity))
 import Plutarch.Extra.Field (pletAll)
 import Plutarch.Extra.Functor (PFunctor (pfmap))
 import "liqwid-plutarch-extra" Plutarch.Extra.List (pfindJust)
 import Plutarch.Extra.Maybe (
   passertPJust,
-  pfromMaybe,
+  pfromJust,
   pjust,
   pmaybeData,
   pnothing,
@@ -446,15 +455,16 @@ mkStakeValidator
                       # txInfoF.datums
              in pif isProposalUTxO (pjust # proposalDatum) pnothing
 
-      let pstMinted =
-            passetClassValueOf # txInfoF.mint # proposalSTClass #== 1
-
-          newProposalContext =
-            pcon $
-              PNewProposal $
-                pfield @"proposalId"
-                  #$ passertPJust # "Proposal output should present"
-                  #$ pfindJust # getProposalDatum # pfromData txInfoF.outputs
+      let newProposalContext =
+            pif
+              (passetClassValueOf # txInfoF.mint # proposalSTClass #== 1)
+              ( pjust #$ pcon $
+                  PNewProposal $
+                    pfield @"proposalId"
+                      #$ passertPJust # "Proposal output should present"
+                      #$ pfindJust # getProposalDatum # pfromData txInfoF.outputs
+              )
+              pnothing
 
           spendProposalContext =
             let getProposalRedeemer = plam $ \ref ->
@@ -497,14 +507,45 @@ mkStakeValidator
                   (const pnothing)
                   # contexts
 
-          noProposalContext = pcon PNoProposal
+          witnessFinishedProposalContext =
+            let getProposalId :: Term _ (PTxInInfo :--> PMaybe PProposalId)
+                getProposalId = plam $ \refInp ->
+                  (getProposalDatum #$ pfromData $ pfield @"resolved" # refInp)
+                    #>>= plam
+                      ( \proposalDatum ->
+                          let id = pfield @"proposalId" # proposalDatum
+                              status = pfield @"status" # proposalDatum
+                           in pif
+                                (status #== pconstant Finished)
+                                (pjust # id)
+                                (ptrace "Proposal not finished" pnothing)
+                      )
+
+                proposalIds =
+                  pmapMaybe @PList
+                    # getProposalId
+                    # txInfoF.referenceInputs
+             in pif
+                  (pnull # proposalIds)
+                  pnothing
+                  ( pjust #$ pcon $
+                      PWitnessFinishedProposals proposalIds
+                  )
+
+          noProposalContext = pjust # pcon PNoProposal
+
+          possibleContexts =
+            foldr
+              (\e l -> pcons @PList # e # l)
+              pnil
+              [ newProposalContext
+              , spendProposalContext
+              , witnessFinishedProposalContext
+              , noProposalContext
+              ]
 
       proposalContext <-
-        pletC $
-          pif
-            pstMinted
-            newProposalContext
-            (pfromMaybe # noProposalContext # spendProposalContext)
+        pletC $ pfromJust #$ pfindJust # pidentity # possibleContexts
 
       --------------------------------------------------------------------------
 

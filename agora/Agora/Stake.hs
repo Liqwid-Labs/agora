@@ -525,6 +525,8 @@ data PProposalContext (s :: S)
   | -- | A new proposal is created.
     PNewProposal
       (Term s PProposalId)
+  | PWitnessFinishedProposals
+      (Term s (PList PProposalId))
   | -- | No proposal is spent or created.
     PNoProposal
   deriving stock

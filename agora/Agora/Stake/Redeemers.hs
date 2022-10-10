@@ -23,7 +23,8 @@ import Agora.Stake (
   PProposalContext (
     PNewProposal,
     PNoProposal,
-    PSpendProposal
+    PSpendProposal,
+    PWitnessFinishedProposals
   ),
   PProposalLock (PCosigned, PCreated, PVoted),
   PSigContext (owner, signedBy),
@@ -52,6 +53,7 @@ import Agora.Utils (pdeleteBy, pfromSingleton, pisSingleton)
 import Plutarch.Api.V1.Address (PCredential)
 import Plutarch.Api.V2 (PMaybeData)
 import Plutarch.Extra.Field (pletAll, pletAllC)
+import Plutarch.Extra.Function (pflip)
 import Plutarch.Extra.Maybe (pdjust, pdnothing, pfromJust, pmaybeData)
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
 import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletC, pmatchC)
@@ -276,6 +278,12 @@ pretractVote = pvoteHelper #$ phoistAcyclic $
                     (pcon PRemoveVoterLockOnly)
              in premoveLocks # pid # mode
           _ -> ptraceError "Expected unlock"
+        PWitnessFinishedProposals proposalIds ->
+          plam $ \locks ->
+            pfoldr
+              # (pflip # premoveLocks # pcon PRemoveAllLocks)
+              # locks
+              # proposalIds
         _ -> ptraceError "Expected spending proposal"
 
 -- | Validation logic shared by 'pdelegateTo' and 'pclearDelegate'.
