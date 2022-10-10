@@ -36,7 +36,7 @@
     plutarch-script-export.url =
       "github:Liqwid-Labs/plutarch-script-export?ref=seungheonoh/facelift";
     ply.url =
-      "github:seungheonoh/ply?ref=seungheonoh/directTypedScript";
+      "github:mlabs-haskell/ply?ref=master";
     liqwid-nix.url = "github:Liqwid-Labs/liqwid-nix?ref=main";
   };
 

@@ -173,7 +173,8 @@ mutateGovernorValidator =
               # plam
                 ( \inInfo ->
                     let value = pfield @"value" #$ pfield @"resolved" # inInfo
-                     in gstValueOf # value #== 1)
+                     in gstValueOf # value #== 1
+                )
               # pfromData txInfoF.inputs
 
       govInInfo <- pletFieldsC @'["outRef", "resolved"] $ inputWithGST

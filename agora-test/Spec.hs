@@ -7,7 +7,7 @@ import Test.Tasty (defaultMain, testGroup)
 
 --------------------------------------------------------------------------------
 
--- import Property.Governor qualified as Governer
+import Property.Governor qualified as Governer
 import Spec.AuthorityToken qualified as AuthorityToken
 import Spec.Effect.GovernorMutation qualified as GovernorMutation
 import Spec.Effect.TreasuryWithdrawal qualified as TreasuryWithdrawal
@@ -38,7 +38,7 @@ main = do
       , toTestTree $ group "AuthorityToken tests" AuthorityToken.specs
       , toTestTree $ group "Governor tests" Governor.specs
       , testGroup "Governor properties" Governer.props
-        testGroup
+      , testGroup
           "Utility tests"
           Utils.tests
       ]

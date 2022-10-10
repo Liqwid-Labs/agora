@@ -16038,16 +16038,16 @@
         "pre-commit-hooks": "pre-commit-hooks_2"
       },
       "locked": {
-        "lastModified": 1664601311,
-        "narHash": "sha256-366T78fZs5Cmi7wfI07w5mIEff3XveSZ7+vuwXUK7Dw=",
-        "owner": "seungheonoh",
+        "lastModified": 1665077183,
+        "narHash": "sha256-ADwfJQ82FVvcr/aVdMkEwE9UU4jbjp9n6wzH31YRIQY=",
+        "owner": "mlabs-haskell",
         "repo": "ply",
-        "rev": "bbf43bf5b6c78c2dc09eecebbecdeaf1dc0be1d6",
+        "rev": "2d63c6ae2629041385b0fb78db5ace2bab5923ea",
         "type": "github"
       },
       "original": {
-        "owner": "seungheonoh",
-        "ref": "seungheonoh/directTypedScript",
+        "owner": "mlabs-haskell",
+        "ref": "master",
         "repo": "ply",
         "type": "github"
       }
