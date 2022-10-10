@@ -63,7 +63,6 @@ import PlutusTx.AssocMap qualified as AssocMap
 import PlutusTx.Builtins qualified as PlutusTx
 import PlutusTx.IsData qualified as PlutusTx
 import PlutusTx.Ord qualified as PlutusTx
-import Prelude
 
 --------------------------------------------------------------------------------
 
