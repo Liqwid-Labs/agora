@@ -14799,16 +14799,16 @@
         "ply": "ply"
       },
       "locked": {
-        "lastModified": 1664220695,
-        "narHash": "sha256-thMEO1P/ciHjnMFyL0bla781TG5C/nB5EEtebb3Boik=",
+        "lastModified": 1665420245,
+        "narHash": "sha256-vNVycGSoeJiB3n9e57lGeiRsmM7g6BmHDKZveiKX7lY=",
         "owner": "Liqwid-Labs",
         "repo": "plutarch-script-export",
-        "rev": "eba175e63516a4fed43ceab1826ea6522f28dd0f",
+        "rev": "e613a4e0667cef64e3f9597e789b02eab0e4f4be",
         "type": "github"
       },
       "original": {
         "owner": "Liqwid-Labs",
-        "ref": "main",
+        "ref": "seungheonoh/facelift",
         "repo": "plutarch-script-export",
         "type": "github"
       }
@@ -16005,16 +16005,16 @@
         "pre-commit-hooks": "pre-commit-hooks"
       },
       "locked": {
-        "lastModified": 1664606087,
+        "lastModified": 1665077183,
         "narHash": "sha256-ADwfJQ82FVvcr/aVdMkEwE9UU4jbjp9n6wzH31YRIQY=",
-        "owner": "seungheonoh",
+        "owner": "mlabs-haskell",
         "repo": "ply",
-        "rev": "874f6902e94646ea6f422037d34ce9493f09abad",
+        "rev": "2d63c6ae2629041385b0fb78db5ace2bab5923ea",
         "type": "github"
       },
       "original": {
-        "owner": "seungheonoh",
-        "ref": "seungheonoh/directTypedScript",
+        "owner": "mlabs-haskell",
+        "ref": "master",
         "repo": "ply",
         "type": "github"
       }
