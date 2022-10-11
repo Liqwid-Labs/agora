@@ -24,6 +24,7 @@ module Agora.Utils (
   pcurrentTimeDuration,
   pdelete,
   pdeleteBy,
+  pmustDeleteBy,
   pisSingleton,
   pfromSingleton,
   pmapMaybe,
@@ -31,14 +32,16 @@ module Agora.Utils (
   ppureIf,
   pltBy,
   pinsertUniqueBy,
+  ptryFromRedeemer,
 ) where
 
-import Plutarch.Api.V1 (PPOSIXTime, PTokenName, PValidatorHash)
-import Plutarch.Api.V2 (PScriptHash)
+import Plutarch.Api.V1 (KeyGuarantees (Unsorted), PPOSIXTime, PRedeemer, PTokenName, PValidatorHash)
+import Plutarch.Api.V1.AssocMap (PMap, plookup)
+import Plutarch.Api.V2 (PScriptHash, PScriptPurpose)
 import Plutarch.Extra.Applicative (PApplicative (ppure))
 import Plutarch.Extra.Category (PCategory (pidentity))
-import Plutarch.Extra.Functor (PFunctor (PSubcategory))
-import Plutarch.Extra.Maybe (pnothing)
+import Plutarch.Extra.Functor (PFunctor (PSubcategory, pfmap))
+import Plutarch.Extra.Maybe (pjust, pnothing)
 import Plutarch.Extra.Ord (PComparator, POrdering (PLT), pcompareBy, pequateBy)
 import Plutarch.Extra.Time (PCurrentTime (PCurrentTime))
 import Plutarch.Unsafe (punsafeCoerce)
@@ -212,15 +215,31 @@ pcurrentTimeDuration = phoistAcyclic $
 pdelete ::
   forall (a :: PType) (list :: PType -> PType) (s :: S).
   (PEq a, PIsListLike list a) =>
-  Term s (a :--> list a :--> list a)
+  Term s (a :--> list a :--> PMaybe (list a))
 pdelete = phoistAcyclic $ pdeleteBy # plam (#==)
 
 -- | @since 1.0.0
 pdeleteBy ::
   forall (a :: PType) (list :: PType -> PType) (s :: S).
   (PIsListLike list a) =>
-  Term s ((a :--> a :--> PBool) :--> a :--> list a :--> list a)
+  Term s ((a :--> a :--> PBool) :--> a :--> list a :--> PMaybe (list a))
 pdeleteBy = phoistAcyclic $
+  plam $ \f' x -> plet (f' # x) $ \f ->
+    precList
+      ( \self h t ->
+          pif
+            (f # h)
+            (pjust # t)
+            (pfmap # (pcons # h) # (self # t))
+      )
+      (const pnothing)
+
+-- | @since 1.0.0
+pmustDeleteBy ::
+  forall (a :: PType) (list :: PType -> PType) (s :: S).
+  (PIsListLike list a) =>
+  Term s ((a :--> a :--> PBool) :--> a :--> list a :--> list a)
+pmustDeleteBy = phoistAcyclic $
   plam $ \f' x -> plet (f' # x) $ \f ->
     precList
       ( \self h t ->
@@ -229,7 +248,7 @@ pdeleteBy = phoistAcyclic $
             t
             (pcons # h #$ self # t)
       )
-      (const pnil)
+      (const $ ptraceError "Cannot delete element")
 
 {- | / O(1) /.Return true if the given list has only one element.
 
@@ -369,3 +388,19 @@ pinsertUniqueBy = phoistAcyclic $
                in ensureUniqueness next
           )
           (const $ psingleton # x)
+
+-- | @since 1.0.0
+ptryFromRedeemer ::
+  forall (r :: PType) (s :: S).
+  (PTryFrom PData r) =>
+  Term
+    s
+    ( PScriptPurpose
+        :--> PMap 'Unsorted PScriptPurpose PRedeemer
+        :--> PMaybe r
+    )
+ptryFromRedeemer = phoistAcyclic $
+  plam $ \p m ->
+    pfmap
+      # plam (flip ptryFrom fst . pto)
+      # (plookup # p # m)
