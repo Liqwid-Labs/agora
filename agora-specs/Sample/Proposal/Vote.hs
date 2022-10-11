@@ -75,6 +75,7 @@ import Sample.Shared (
   proposalValidator,
   proposalValidatorHash,
   stakeAssetClass,
+  stakeValidator,
   stakeValidatorHash,
  )
 import Test.Specification (SpecificationTree, group, testValidator)
@@ -398,7 +399,7 @@ mkTestTree name ps val = group name $ catMaybes [proposal, stake]
                 testValidator
                   val.forStakeValidator
                   "stake"
-                  proposalValidator
+                  stakeValidator
                   (mkStakeInputDatum ps.stakeParameters.stakeInputParameters)
                   (mkStakeRedeemer ps.stakeParameters.stakeOutputParameters)
                   (spend stakeRef)

@@ -74,6 +74,7 @@ import Sample.Shared (
   governor,
   minAda,
   proposalPolicySymbol,
+  proposalValidator,
   proposalValidatorHash,
   stakeAssetClass,
   stakeValidator,
@@ -387,7 +388,7 @@ mkTestTree name ps val = group name [stake, proposal]
       testValidator
         val.forProposalValidator
         "proposal"
-        stakeValidator
+        proposalValidator
         (mkProposalInputDatum ps.stakeParameters ps.proposalParameters)
         proposalRedeemer
         (spend proposalRef)

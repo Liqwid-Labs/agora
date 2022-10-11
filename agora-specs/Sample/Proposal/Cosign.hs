@@ -80,6 +80,7 @@ import Sample.Shared (
   proposalValidator,
   proposalValidatorHash,
   stakeAssetClass,
+  stakeValidator,
   stakeValidatorHash,
  )
 import Test.Specification (
@@ -341,7 +342,7 @@ mkTestTree name ps val =
       testValidator
         val.forStakeValidator
         "stake"
-        proposalValidator
+        stakeValidator
         (mkStakeInputDatum ps)
         stakeRedeemer
         (spend stakeRef)
