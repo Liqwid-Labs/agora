@@ -54,18 +54,18 @@ import Data.Coerce (coerce)
 import Data.Text qualified as Text
 import Plutarch.Evaluate (evalScript)
 import PlutusLedgerApi.V1.Scripts (
-  Context (..),
-  MintingPolicy,
-  Validator,
+  Context (Context),
   applyMintingPolicyScript,
   applyValidator,
  )
 import PlutusLedgerApi.V2 (
   Datum (..),
+  MintingPolicy,
   Redeemer (Redeemer),
   Script,
   ScriptContext,
   ToData (toBuiltinData),
+  Validator,
  )
 import PlutusTx.IsData qualified as PlutusTx (ToData)
 import Test.Tasty (TestTree, testGroup)

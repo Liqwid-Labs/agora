@@ -16,7 +16,12 @@ import Ply (
   toValidator,
   (#),
  )
-import ScriptExport.ScriptInfo
+import ScriptExport.ScriptInfo (
+  Linker,
+  ScriptExport (..),
+  exportParam,
+  fetchTS,
+ )
 import Prelude hiding ((#))
 
 {- | Links parameterized Agora scripts given parameters.

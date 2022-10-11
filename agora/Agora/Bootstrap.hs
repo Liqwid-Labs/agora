@@ -22,7 +22,7 @@ import PlutusLedgerApi.V1.Value (AssetClass)
 import Ply (TypedScriptEnvelope)
 import Ply.Plutarch.Class (PlyArgOf)
 import Ply.Plutarch.TypedWriter (TypedWriter, mkEnvelope)
-import ScriptExport.ScriptInfo
+import ScriptExport.ScriptInfo (RawScriptExport (..))
 
 type instance PlyArgOf PAssetClass = AssetClass
 

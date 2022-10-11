@@ -76,9 +76,9 @@ import Agora.Utils (
  )
 import Data.Coerce (coerce)
 import Data.Default.Class (Default (..))
-import Data.Map
+import Data.Map (Map, (!))
 import Data.Tagged (Tagged (..))
-import Data.Text
+import Data.Text (Text)
 import Optics (view)
 import Plutarch (Config (..), TracingMode (DetTracing))
 import Plutarch.Api.V2 (
@@ -87,9 +87,7 @@ import Plutarch.Api.V2 (
  )
 import Plutarch.SafeMoney (Discrete (Discrete))
 import PlutusLedgerApi.V1.Address (scriptHashAddress)
-import PlutusLedgerApi.V1.Contexts (TxOut (..))
-import PlutusLedgerApi.V1.Scripts (Script, Validator (Validator), ValidatorHash (..))
-import PlutusLedgerApi.V1.Value (AssetClass (AssetClass), TokenName)
+import PlutusLedgerApi.V1.Value (AssetClass (AssetClass), TokenName, Value)
 import PlutusLedgerApi.V1.Value qualified as Value (
   assetClass,
   singleton,
@@ -102,13 +100,23 @@ import PlutusLedgerApi.V2 (
   Interval (..),
   LowerBound (..),
   MintingPolicy (..),
+  OutputDatum (NoOutputDatum),
   POSIXTimeRange,
   PubKeyHash,
   Redeemer (..),
+  Script,
   ToData (toBuiltinData),
+  TxOut (
+    TxOut,
+    txOutAddress,
+    txOutDatum,
+    txOutReferenceScript,
+    txOutValue
+  ),
   TxOutRef (TxOutRef),
   UpperBound (..),
-  Value,
+  Validator (Validator),
+  ValidatorHash (ValidatorHash),
  )
 import PlutusTx qualified
 import ScriptExport.ScriptInfo (runLinker)
@@ -262,7 +270,8 @@ treasuryOut =
   TxOut
     { txOutAddress = Address trCredential Nothing
     , txOutValue = minAda
-    , txOutDatumHash = Nothing
+    , txOutDatum = NoOutputDatum
+    , txOutReferenceScript = Nothing
     }
 
 {- | Arbitrary 'CurrencySymbol', representing the 'CurrencySymbol'
