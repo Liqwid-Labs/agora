@@ -284,7 +284,9 @@ mkStakeValidator
                 # (pfield @"_0" # stakeInputRef)
                 # txInfoF.inputs
 
-          stakeValidatorAddress = pfield @"address" # validatedInput
+          stakeValidatorCredential =
+            pfield @"credential"
+              #$ pfield @"address" # validatedInput
 
       --------------------------------------------------------------------------
 
@@ -303,8 +305,10 @@ mkStakeValidator
                   PGT -> ptraceError "More than one SST in one UTxO"
                   -- 1
                   PEQ ->
-                    let ownedByStakeValidator =
-                          txOutF.address #== stakeValidatorAddress
+                    let ownerCredential = pfield @"credential" # txOutF.address
+
+                        isOwnedByStakeValidator =
+                          ownerCredential #== stakeValidatorCredential
 
                         datum =
                           ptrace "Resolve stake datum" $
@@ -314,7 +318,7 @@ mkStakeValidator
                                 # txInfoF.datums
                      in passert
                           "Should owned by stake validator"
-                          ownedByStakeValidator
+                          isOwnedByStakeValidator
                           (pjust # datum)
                   -- 0
                   PLT -> pnothing
