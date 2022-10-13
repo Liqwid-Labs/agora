@@ -99,6 +99,7 @@ import Plutarch.Extra.ScriptContext (
   pfromOutputDatum,
   pvalueSpent,
  )
+import Plutarch.Extra.Sum (PSum (PSum))
 import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (
   pguardC,
   pletC,
@@ -106,9 +107,11 @@ import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (
   pmatchC,
   ptryFromC,
  )
+import Plutarch.Extra.Traversable (pfoldMap)
 import Plutarch.Extra.Value (
   psymbolValueOf,
  )
+import Plutarch.Num (PNum (pnegate))
 import Plutarch.SafeMoney (
   pvalueDiscrete,
   pvalueDiscrete',
@@ -154,30 +157,35 @@ stakePolicy gtClassRef =
     mintedST <- pletC $ psymbolValueOf # ownSymbol # txInfoF.mint
 
     let burning = unTermCont $ do
-          pguardC "ST at inputs must be 1" $
-            spentST #== 1
+          let numStakeInputs =
+                pto $
+                  pfoldMap @_ @_ @(PSum PInteger)
+                    # plam
+                      ( \((pfield @"resolved" #) -> txOut) -> unTermCont $ do
+                          txOutF <- pletFieldsC @'["value", "datum"] txOut
+
+                          let isStakeUTxO =
+                                psymbolValueOf # ownSymbol # txOutF.value #== 1
+
+                          pmatchC isStakeUTxO
+                            >>= \case
+                              PTrue -> do
+                                let datum =
+                                      pfromData $
+                                        pfromOutputDatum @(PAsData PStakeDatum)
+                                          # txOutF.datum
+                                          # txInfoF.datums
+
+                                pguardC "Stake is unlocked" $
+                                  pnot # (pstakeLocked # datum)
+
+                                pure $ pcon $ PSum 1
+                              PFalse -> pure mempty
+                      )
+                    # pfromData txInfoF.inputs
 
           pguardC "ST burned" $
-            mintedST #== -1
-
-          pguardC "An unlocked input existed containing an ST" $
-            pany
-              # plam
-                ( \((pfield @"resolved" #) -> txOut) -> unTermCont $ do
-                    txOutF <- pletFieldsC @'["value", "datum"] txOut
-                    pure $
-                      pif
-                        (psymbolValueOf # ownSymbol # txOutF.value #== 1)
-                        ( let datum =
-                                pfromData $
-                                  pfromOutputDatum @(PAsData PStakeDatum)
-                                    # txOutF.datum
-                                    # txInfoF.datums
-                           in pnot # (pstakeLocked # datum)
-                        )
-                        (pconstant False)
-                )
-              # pfromData txInfoF.inputs
+            mintedST #== pnegate # numStakeInputs
 
           pure $ popaque (pconstant ())
 
