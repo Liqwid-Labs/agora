@@ -343,32 +343,38 @@ mkStakeValidator
 
       restOfStakeInputDatums <- pletC $ ptail # stakeInputDatums
 
-      pguardC "All input stakes have the same owner or delegate" $
-        let allHaveSameOwner =
-              pall
-                # plam
-                  ( (#== firstStakeInputDatumF.owner)
-                      . (pfield @"owner" #)
-                  )
-                # restOfStakeInputDatums
-            allHaveSameDelegate =
-              pall
-                # plam
-                  ( (#== firstStakeInputDatumF.delegatedTo)
-                      . (pfield @"delegatedTo" #)
-                  )
-                # restOfStakeInputDatums
-         in allHaveSameOwner #|| allHaveSameDelegate
-
       authorizedBy <- pletC $ pauthorizedBy # authorizationContext txInfoF
 
-      let ownerSignsTransaction = authorizedBy # firstStakeInputDatumF.owner
+      PPair allHaveSameOwner allHaveSameDelegatee <-
+        pmatchC $
+          pfoldr
+            # plam
+              ( \d p -> unTermCont $ do
+                  dF <- pletFieldsC @'["owner", "delegatedTo"] d
+
+                  pure $
+                    pmatch p $ \(PPair allHaveSameOwner allHaveSameDelegatee) ->
+                      let allHaveSameOwner' =
+                            allHaveSameOwner
+                              #&& dF.owner #== firstStakeInputDatumF.owner
+                          allHaveSameDelegatee' =
+                            allHaveSameDelegatee
+                              #&& dF.delegatedTo #== firstStakeInputDatumF.delegatedTo
+                       in pcon $ PPair allHaveSameOwner' allHaveSameDelegatee'
+              )
+            # pcon (PPair (pconstant True) (pconstant True))
+            # restOfStakeInputDatums
+
+      let ownerSignsTransaction =
+            allHaveSameOwner
+              #&& authorizedBy # firstStakeInputDatumF.owner
 
           delegateSignsTransaction =
-            pmaybeData
-              # pconstant False
-              # plam ((authorizedBy #) . pfromData)
-              # pfromData firstStakeInputDatumF.delegatedTo
+            allHaveSameDelegatee
+              #&& pmaybeData
+                # pconstant False
+                # plam ((authorizedBy #) . pfromData)
+                # pfromData firstStakeInputDatumF.delegatedTo
 
           signedBy =
             pif
