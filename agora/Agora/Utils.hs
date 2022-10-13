@@ -33,6 +33,7 @@ module Agora.Utils (
   pltBy,
   pinsertUniqueBy,
   ptryFromRedeemer,
+  passert,
 ) where
 
 import Plutarch.Api.V1 (KeyGuarantees (Unsorted), PPOSIXTime, PRedeemer, PTokenName, PValidatorHash)
@@ -404,3 +405,12 @@ ptryFromRedeemer = phoistAcyclic $
     pfmap
       # plam (flip ptryFrom fst . pto)
       # (plookup # p # m)
+
+-- | @since 1.0.0
+passert ::
+  forall (a :: PType) (s :: S).
+  Term s PString ->
+  Term s PBool ->
+  Term s a ->
+  Term s a
+passert msg cond x = pif cond x $ ptraceError msg

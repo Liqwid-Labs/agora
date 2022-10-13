@@ -61,7 +61,7 @@ import Agora.Stake.Redeemers (
   ppermitVote,
   pretractVote,
  )
-import Agora.Utils (pmapMaybe)
+import Agora.Utils (passert, pmapMaybe)
 import Data.Tagged (Tagged (Tagged))
 import Plutarch.Api.V1 (
   KeyGuarantees (Sorted),
@@ -93,6 +93,7 @@ import Plutarch.Extra.Maybe (
   pmaybeData,
   pnothing,
  )
+import Plutarch.Extra.Ord (POrdering (PEQ, PGT, PLT), pcompareBy, pfromOrd)
 import Plutarch.Extra.ScriptContext (
   pfindTxInByTxOutRef,
   pfromOutputDatum,
@@ -290,26 +291,33 @@ mkStakeValidator
       -- Returns stake datum if the given UTxO is a stake UTxO.
       getStakeDatum :: Term _ (PTxOut :--> PMaybe PStakeDatum) <-
         pletC $
-          plam $ \txOut -> unTermCont $ do
-            txOutF <- pletFieldsC @'["value", "datum", "address"] txOut
+          plam $
+            flip (pletFields @'["value", "datum", "address"]) $ \txOutF ->
+              pmatch
+                ( pcompareBy # pfromOrd
+                    # (sstValueOf # txOutF.value)
+                    # 1
+                )
+                $ \case
+                  -- > 1
+                  PGT -> ptraceError "More than one SST in one UTxO"
+                  -- 1
+                  PEQ ->
+                    let ownedByStakeValidator =
+                          txOutF.address #== stakeValidatorAddress
 
-            let isStakeUTxO =
-                  foldl1
-                    (#&&)
-                    [ ptraceIfFalse "Carries SST" $
-                        sstValueOf # txOutF.value #== 1
-                    , ptraceIfFalse "Owned by stake validator" $
-                        txOutF.address #== stakeValidatorAddress
-                    ]
-
-                datum =
-                  ptrace "Resolve stake datum" $
-                    pfromData $
-                      pfromOutputDatum @(PAsData PStakeDatum)
-                        # txOutF.datum
-                        # txInfoF.datums
-
-            pure $ pif isStakeUTxO (pjust # datum) pnothing
+                        datum =
+                          ptrace "Resolve stake datum" $
+                            pfromData $
+                              pfromOutputDatum @(PAsData PStakeDatum)
+                                # txOutF.datum
+                                # txInfoF.datums
+                     in passert
+                          "Should owned by stake validator"
+                          ownedByStakeValidator
+                          (pjust # datum)
+                  -- 0
+                  PLT -> pnothing
 
       --------------------------------------------------------------------------
 
