@@ -226,7 +226,7 @@ type NumStake = Int
 -- | Represent an index.
 type Index = Int
 
-{- | The validity of the generated transacrion for variuos componets.
+{- | The validity of the generated transaction for variuos componets.
      'True' means valid, 'False' means invalid.
 -}
 data Validity = Validity
