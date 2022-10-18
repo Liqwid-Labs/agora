@@ -6,6 +6,17 @@ This format is based on [Keep A Changelog](https://keepachangelog.com/en/1.0.0).
 
 ### Modified
 
+- Fix several vulnerabilities and bugs found in staking components.
+  
+  Including:
+
+  - Stake state token can be taken away
+  - Privilege escalation: Acting on behalf of delegatee role + Unlocking delegated stakes
+  - Delegatee can steal delegated inputs
+  - Stake policy doesn't allow destroying multiple stakes
+
+  Included by [#195](https://github.com/Liqwid-Labs/agora/pull/195)
+
 - Place a lock the stake while cosigning a proposal.
 
   NOTE: This changes how cosigning works. In particular, the stake has to be

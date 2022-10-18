@@ -61,7 +61,7 @@ import Agora.Stake.Redeemers (
   ppermitVote,
   pretractVote,
  )
-import Agora.Utils (pmapMaybe)
+import Agora.Utils (passert, pmapMaybe)
 import Data.Tagged (Tagged (Tagged))
 import Plutarch.Api.V1 (
   KeyGuarantees (Sorted),
@@ -93,11 +93,13 @@ import Plutarch.Extra.Maybe (
   pmaybeData,
   pnothing,
  )
+import Plutarch.Extra.Ord (POrdering (PEQ, PGT, PLT), pcompareBy, pfromOrd)
 import Plutarch.Extra.ScriptContext (
   pfindTxInByTxOutRef,
   pfromOutputDatum,
   pvalueSpent,
  )
+import Plutarch.Extra.Sum (PSum (PSum))
 import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (
   pguardC,
   pletC,
@@ -105,9 +107,11 @@ import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (
   pmatchC,
   ptryFromC,
  )
+import Plutarch.Extra.Traversable (pfoldMap)
 import Plutarch.Extra.Value (
   psymbolValueOf,
  )
+import Plutarch.Num (PNum (pnegate))
 import Plutarch.SafeMoney (
   pvalueDiscrete,
   pvalueDiscrete',
@@ -153,30 +157,35 @@ stakePolicy gtClassRef =
     mintedST <- pletC $ psymbolValueOf # ownSymbol # txInfoF.mint
 
     let burning = unTermCont $ do
-          pguardC "ST at inputs must be 1" $
-            spentST #== 1
+          let numStakeInputs =
+                pto $
+                  pfoldMap @_ @_ @(PSum PInteger)
+                    # plam
+                      ( \((pfield @"resolved" #) -> txOut) -> unTermCont $ do
+                          txOutF <- pletFieldsC @'["value", "datum"] txOut
+
+                          let isStakeUTxO =
+                                psymbolValueOf # ownSymbol # txOutF.value #== 1
+
+                          pmatchC isStakeUTxO
+                            >>= \case
+                              PTrue -> do
+                                let datum =
+                                      pfromData $
+                                        pfromOutputDatum @(PAsData PStakeDatum)
+                                          # txOutF.datum
+                                          # txInfoF.datums
+
+                                pguardC "Stake is unlocked" $
+                                  pnot # (pstakeLocked # datum)
+
+                                pure $ pcon $ PSum 1
+                              PFalse -> pure mempty
+                      )
+                    # pfromData txInfoF.inputs
 
           pguardC "ST burned" $
-            mintedST #== -1
-
-          pguardC "An unlocked input existed containing an ST" $
-            pany
-              # plam
-                ( \((pfield @"resolved" #) -> txOut) -> unTermCont $ do
-                    txOutF <- pletFieldsC @'["value", "datum"] txOut
-                    pure $
-                      pif
-                        (psymbolValueOf # ownSymbol # txOutF.value #== 1)
-                        ( let datum =
-                                pfromData $
-                                  pfromOutputDatum @(PAsData PStakeDatum)
-                                    # txOutF.datum
-                                    # txInfoF.datums
-                           in pnot # (pstakeLocked # datum)
-                        )
-                        (pconstant False)
-                )
-              # pfromData txInfoF.inputs
+            mintedST #== pnegate # numStakeInputs
 
           pure $ popaque (pconstant ())
 
@@ -283,33 +292,44 @@ mkStakeValidator
                 # (pfield @"_0" # stakeInputRef)
                 # txInfoF.inputs
 
-          stakeValidatorAddress = pfield @"address" # validatedInput
+          stakeValidatorCredential =
+            pfield @"credential"
+              #$ pfield @"address" # validatedInput
 
       --------------------------------------------------------------------------
 
       -- Returns stake datum if the given UTxO is a stake UTxO.
       getStakeDatum :: Term _ (PTxOut :--> PMaybe PStakeDatum) <-
         pletC $
-          plam $ \txOut -> unTermCont $ do
-            txOutF <- pletFieldsC @'["value", "datum", "address"] txOut
+          plam $
+            flip (pletFields @'["value", "datum", "address"]) $ \txOutF ->
+              pmatch
+                ( pcompareBy # pfromOrd
+                    # (sstValueOf # txOutF.value)
+                    # 1
+                )
+                $ \case
+                  -- > 1
+                  PGT -> ptraceError "More than one SST in one UTxO"
+                  -- 1
+                  PEQ ->
+                    let ownerCredential = pfield @"credential" # txOutF.address
 
-            let isStakeUTxO =
-                  foldl1
-                    (#&&)
-                    [ ptraceIfFalse "Carries SST" $
-                        sstValueOf # txOutF.value #== 1
-                    , ptraceIfFalse "Owned by stake validator" $
-                        txOutF.address #== stakeValidatorAddress
-                    ]
+                        isOwnedByStakeValidator =
+                          ownerCredential #== stakeValidatorCredential
 
-                datum =
-                  ptrace "Resolve stake datum" $
-                    pfromData $
-                      pfromOutputDatum @(PAsData PStakeDatum)
-                        # txOutF.datum
-                        # txInfoF.datums
-
-            pure $ pif isStakeUTxO (pjust # datum) pnothing
+                        datum =
+                          ptrace "Resolve stake datum" $
+                            pfromData $
+                              pfromOutputDatum @(PAsData PStakeDatum)
+                                # txOutF.datum
+                                # txInfoF.datums
+                     in passert
+                          "Should owned by stake validator"
+                          isOwnedByStakeValidator
+                          (pjust # datum)
+                  -- 0
+                  PLT -> pnothing
 
       --------------------------------------------------------------------------
 
@@ -331,32 +351,38 @@ mkStakeValidator
 
       restOfStakeInputDatums <- pletC $ ptail # stakeInputDatums
 
-      pguardC "All input stakes have the same owner or delegate" $
-        let allHaveSameOwner =
-              pall
-                # plam
-                  ( (#== firstStakeInputDatumF.owner)
-                      . (pfield @"owner" #)
-                  )
-                # restOfStakeInputDatums
-            allHaveSameDelegate =
-              pall
-                # plam
-                  ( (#== firstStakeInputDatumF.delegatedTo)
-                      . (pfield @"delegatedTo" #)
-                  )
-                # restOfStakeInputDatums
-         in allHaveSameOwner #|| allHaveSameDelegate
-
       authorizedBy <- pletC $ pauthorizedBy # authorizationContext txInfoF
 
-      let ownerSignsTransaction = authorizedBy # firstStakeInputDatumF.owner
+      PPair allHaveSameOwner allHaveSameDelegatee <-
+        pmatchC $
+          pfoldr
+            # plam
+              ( \d p -> unTermCont $ do
+                  dF <- pletFieldsC @'["owner", "delegatedTo"] d
+
+                  pure $
+                    pmatch p $ \(PPair allHaveSameOwner allHaveSameDelegatee) ->
+                      let allHaveSameOwner' =
+                            allHaveSameOwner
+                              #&& dF.owner #== firstStakeInputDatumF.owner
+                          allHaveSameDelegatee' =
+                            allHaveSameDelegatee
+                              #&& dF.delegatedTo #== firstStakeInputDatumF.delegatedTo
+                       in pcon $ PPair allHaveSameOwner' allHaveSameDelegatee'
+              )
+            # pcon (PPair (pconstant True) (pconstant True))
+            # restOfStakeInputDatums
+
+      let ownerSignsTransaction =
+            allHaveSameOwner
+              #&& authorizedBy # firstStakeInputDatumF.owner
 
           delegateSignsTransaction =
-            pmaybeData
-              # pconstant False
-              # plam ((authorizedBy #) . pfromData)
-              # pfromData firstStakeInputDatumF.delegatedTo
+            allHaveSameDelegatee
+              #&& pmaybeData
+                # pconstant False
+                # plam ((authorizedBy #) . pfromData)
+                # pfromData firstStakeInputDatumF.delegatedTo
 
           signedBy =
             pif
