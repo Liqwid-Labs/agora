@@ -13,22 +13,23 @@ module Agora.Treasury (
 ) where
 
 import Agora.AuthorityToken (singleAuthorityTokenBurned)
-import Plutarch.Api.V1.Value (PValue)
+import Plutarch.Api.V1.Value (PCurrencySymbol, PValue)
 import Plutarch.Api.V2 (PScriptPurpose (PSpending), PValidator)
-import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC)
-import Plutarch.TryFrom ()
-import PlutusLedgerApi.V1.Value (CurrencySymbol)
+import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletFieldsC, pmatchC)
 
 {- | Validator ensuring that transactions consuming the treasury
      do so in a valid manner.
 
+     == Arguments
+
+     Following arguments should be provided(in this order):
+     1. authority token symbol
+
      @since 0.1.0
 -}
 treasuryValidator ::
-  -- | Governance Authority Token that can unlock this validator.
-  CurrencySymbol ->
-  ClosedTerm PValidator
-treasuryValidator gatCs' = plam $ \_ _ ctx' -> unTermCont $ do
+  ClosedTerm (PCurrencySymbol :--> PValidator)
+treasuryValidator = plam $ \atSymbol _ _ ctx' -> unTermCont $ do
   -- plet required fields from script context.
   ctx <- pletFieldsC @["txInfo", "purpose"] ctx'
 
@@ -40,9 +41,7 @@ treasuryValidator gatCs' = plam $ \_ _ ctx' -> unTermCont $ do
   let mint :: Term _ (PValue _ _)
       mint = txInfo.mint
 
-  gatCs <- pletC $ pconstant gatCs'
-
   pguardC "A single authority token has been burned" $
-    singleAuthorityTokenBurned gatCs txInfo.inputs mint
+    singleAuthorityTokenBurned atSymbol txInfo.inputs mint
 
   pure . popaque $ pconstant ()

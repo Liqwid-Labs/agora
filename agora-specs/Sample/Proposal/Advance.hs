@@ -63,7 +63,6 @@ import Agora.Proposal.Time (
     votingTime
   ),
  )
-import Agora.Scripts (AgoraScripts (..))
 import Agora.Stake (
   StakeDatum (..),
  )
@@ -107,13 +106,15 @@ import Sample.Proposal.Shared (
   stakeTxRef,
  )
 import Sample.Shared (
-  agoraScripts,
+  authorityTokenPolicy,
   authorityTokenSymbol,
   govAssetClass,
+  govValidator,
   govValidatorHash,
   governor,
   minAda,
   proposalPolicySymbol,
+  proposalValidator,
   proposalValidatorHash,
   signer,
   stakeAssetClass,
@@ -532,7 +533,7 @@ mkTestTree name pb val =
             testValidator
               val.forProposalValidator
               "proposal"
-              agoraScripts.compiledProposalValidator
+              proposalValidator
               proposalInputDatum
               proposalRedeemer
               (spend proposalRef)
@@ -541,7 +542,7 @@ mkTestTree name pb val =
         testValidator
           (fromJust val.forGovernorValidator)
           "governor"
-          agoraScripts.compiledGovernorValidator
+          govValidator
           governorInputDatum
           governorRedeemer
           (spend governorRef)
@@ -554,7 +555,7 @@ mkTestTree name pb val =
           ( testPolicy
               (fromJust val.forAuthorityTokenPolicy)
               "authority"
-              agoraScripts.compiledAuthorityTokenPolicy
+              authorityTokenPolicy
               authorityTokenRedeemer
               (mkMinting advance pb authorityTokenSymbol)
           )

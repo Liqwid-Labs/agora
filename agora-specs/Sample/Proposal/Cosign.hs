@@ -39,7 +39,6 @@ import Agora.Proposal.Time (
   ProposalTimingConfig (draftTime),
  )
 import Agora.SafeMoney (GTTag)
-import Agora.Scripts (AgoraScripts (..))
 import Agora.Stake (
   ProposalLock (Cosigned, Created),
   StakeDatum (..),
@@ -74,13 +73,14 @@ import PlutusLedgerApi.V2 (
  )
 import Sample.Proposal.Shared (proposalTxRef, stakeTxRef)
 import Sample.Shared (
-  agoraScripts,
   fromDiscrete,
   governor,
   minAda,
   proposalPolicySymbol,
+  proposalValidator,
   proposalValidatorHash,
   stakeAssetClass,
+  stakeValidator,
   stakeValidatorHash,
  )
 import Test.Specification (
@@ -333,7 +333,7 @@ mkTestTree name ps val =
       testValidator
         val.forProposalValidator
         "proposal"
-        agoraScripts.compiledProposalValidator
+        proposalValidator
         (mkProposalInputDatum ps)
         proposalRedeemer
         (spend proposalRef)
@@ -342,7 +342,7 @@ mkTestTree name ps val =
       testValidator
         val.forStakeValidator
         "stake"
-        agoraScripts.compiledStakeValidator
+        stakeValidator
         (mkStakeInputDatum ps)
         stakeRedeemer
         (spend stakeRef)

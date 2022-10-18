@@ -36,14 +36,6 @@ import Agora.Proposal (
   pwinner,
  )
 import Agora.Proposal.Time (validateProposalStartingTime)
-import Agora.Scripts (
-  AgoraScripts,
-  authorityTokenSymbol,
-  governorSTSymbol,
-  proposalSTSymbol,
-  proposalValidatoHash,
-  stakeSTSymbol,
- )
 import Agora.Stake (
   PStakeDatum (..),
   pnumCreatedProposals,
@@ -51,14 +43,16 @@ import Agora.Stake (
 import Agora.Utils (
   plistEqualsBy,
   pscriptHashToTokenName,
-  validatorHashToAddress,
  )
+import Plutarch.Api.V1 (PCurrencySymbol)
 import Plutarch.Api.V1.AssocMap (plookup)
 import Plutarch.Api.V1.AssocMap qualified as AssocMap
 import Plutarch.Api.V2 (
+  PAddress,
   PMintingPolicy,
   PScriptPurpose (PMinting, PSpending),
   PTxOut,
+  PTxOutRef,
   PValidator,
  )
 import Plutarch.Extra.AssetClass (passetClass, passetClassValueOf)
@@ -84,7 +78,6 @@ import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (
   ptryFromC,
  )
 import Plutarch.Extra.Value (psymbolValueOf)
-import PlutusLedgerApi.V1 (TxOutRef)
 
 --------------------------------------------------------------------------------
 
@@ -113,11 +106,11 @@ import PlutusLedgerApi.V1 (TxOutRef)
   NOTE: It's user's responsibility to make sure the token is sent to the corresponding governor validator.
         We /can't/ really check this in the policy, otherwise we create a cyclic reference issue.
 
-  @since 0.1.0
+  @since 1.0.0
 -}
-governorPolicy :: TxOutRef -> ClosedTerm PMintingPolicy
-governorPolicy initialSpend =
-  plam $ \_ ctx -> unTermCont $ do
+governorPolicy :: ClosedTerm (PTxOutRef :--> PMintingPolicy)
+governorPolicy =
+  plam $ \initialSpend _ ctx -> unTermCont $ do
     PMinting ((pfield @"_0" #) -> gstSymbol) <-
       pmatchC (pfromData $ pfield @"purpose" # ctx)
 
@@ -134,7 +127,7 @@ governorPolicy initialSpend =
         txInfo
 
     pguardC "Referenced utxo should be spent" $
-      pisUTXOSpent # pconstant initialSpend # txInfoF.inputs
+      pisUTXOSpent # initialSpend # txInfoF.inputs
 
     pguardC "Exactly one token should be minted" $
       let vMap = pfromData $ pto txInfoF.mint
@@ -249,19 +242,29 @@ governorPolicy initialSpend =
      - Exactly one GAT is burnt in the transaction.
      - Said GAT is tagged by the effect.
 
-     @since 0.1.0
+     == Arguments
+
+     Following arguments should be provided(in this order):
+     1. proposal validator address
+     2. state ST symbol
+     3. governor ST symbol
+     4. proposal ST symbol
+     5. authority token symbol.
+
+     @since 1.0.0
 -}
 governorValidator ::
   -- | Lazy precompiled scripts.
-  AgoraScripts ->
-  ClosedTerm PValidator
-governorValidator as =
-  plam $ \datum redeemer ctx -> unTermCont $ do
-    pstSymbol <- pletC $ pconstant $ proposalSTSymbol as
-    atSymbol <- pletC $ pconstant $ authorityTokenSymbol as
-
-    ----------------------------------------------------------------------------
-
+  ClosedTerm
+    ( PAddress
+        :--> PCurrencySymbol
+        :--> PCurrencySymbol
+        :--> PCurrencySymbol
+        :--> PCurrencySymbol
+        :--> PValidator
+    )
+governorValidator =
+  plam $ \proposalValidatorAddress sstSymbol gstSymbol pstSymbol atSymbol datum redeemer ctx -> unTermCont $ do
     ctxF <- pletAllC ctx
     txInfo <- pletC $ pfromData ctxF.txInfo
     txInfoF <-
@@ -301,9 +304,7 @@ governorValidator as =
             #$ pfindJust
           # plam
             ( flip pletAll $ \outputF ->
-                let gstSymbol = pconstant $ governorSTSymbol as
-
-                    isGovernorUTxO =
+                let isGovernorUTxO =
                       foldl1
                         (#&&)
                         [ ptraceIfFalse "Own by governor validator" $
@@ -330,9 +331,7 @@ governorValidator as =
       pletC $
         plam $
           flip (pletFields @'["value", "datum"]) $ \txOutF ->
-            let sstSymbol = pconstant $ stakeSTSymbol as
-
-                isStakeUTxO =
+            let isStakeUTxO =
                   psymbolValueOf
                     # sstSymbol
                     # txOutF.value #== 1
@@ -349,12 +348,7 @@ governorValidator as =
       pletC $
         plam $
           flip (pletFields @'["value", "datum", "address"]) $ \txOutF ->
-            let proposalValidatorAddress =
-                  pconstant $
-                    validatorHashToAddress $
-                      proposalValidatoHash as
-
-                isProposalUTxO =
+            let isProposalUTxO =
                   txOutF.address #== pdata proposalValidatorAddress
                     #&& psymbolValueOf # pstSymbol # txOutF.value #== 1
 

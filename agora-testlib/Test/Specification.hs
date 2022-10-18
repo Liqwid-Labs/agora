@@ -49,26 +49,23 @@ module Test.Specification (
   toTestTree,
 ) where
 
-import Agora.Utils (
-  CompiledEffect (..),
-  CompiledMintingPolicy (..),
-  CompiledValidator (..),
- )
 import Control.Composition ((.**), (.***))
 import Data.Coerce (coerce)
 import Data.Text qualified as Text
 import Plutarch.Evaluate (evalScript)
 import PlutusLedgerApi.V1.Scripts (
-  Context (..),
+  Context (Context),
   applyMintingPolicyScript,
   applyValidator,
  )
 import PlutusLedgerApi.V2 (
   Datum (..),
+  MintingPolicy,
   Redeemer (Redeemer),
   Script,
   ScriptContext,
   ToData (toBuiltinData),
+  Validator,
  )
 import PlutusTx.IsData qualified as PlutusTx (ToData)
 import Test.Tasty (TestTree, testGroup)
@@ -191,21 +188,21 @@ mkDatum = Datum . toBuiltinData
 
 applyMintingPolicy' ::
   (PlutusTx.ToData redeemer) =>
-  CompiledMintingPolicy redeemer ->
+  MintingPolicy ->
   redeemer ->
   ScriptContext ->
   Script
 applyMintingPolicy' policy redeemer scriptContext =
   applyMintingPolicyScript
     (mkContext scriptContext)
-    policy.getCompiledMintingPolicy
+    policy
     (mkRedeemer redeemer)
 
 applyValidator' ::
   ( PlutusTx.ToData datum
   , PlutusTx.ToData redeemer
   ) =>
-  CompiledValidator datum redeemer ->
+  Validator ->
   datum ->
   redeemer ->
   ScriptContext ->
@@ -213,7 +210,7 @@ applyValidator' ::
 applyValidator' validator datum redeemer scriptContext =
   applyValidator
     (mkContext scriptContext)
-    validator.getCompiledValidator
+    validator
     (mkDatum datum)
     (mkRedeemer redeemer)
 
@@ -221,7 +218,7 @@ applyValidator' validator datum redeemer scriptContext =
 policySucceedsWith ::
   (PlutusTx.ToData redeemer) =>
   String ->
-  CompiledMintingPolicy redeemer ->
+  MintingPolicy ->
   redeemer ->
   ScriptContext ->
   SpecificationTree
@@ -232,7 +229,7 @@ policySucceedsWith tag =
 policyFailsWith ::
   (PlutusTx.ToData redeemer) =>
   String ->
-  CompiledMintingPolicy redeemer ->
+  MintingPolicy ->
   redeemer ->
   ScriptContext ->
   SpecificationTree
@@ -245,7 +242,7 @@ validatorSucceedsWith ::
   , PlutusTx.ToData redeemer
   ) =>
   String ->
-  CompiledValidator datum redeemer ->
+  Validator ->
   datum ->
   redeemer ->
   ScriptContext ->
@@ -259,7 +256,7 @@ validatorFailsWith ::
   , PlutusTx.ToData redeemer
   ) =>
   String ->
-  CompiledValidator datum redeemer ->
+  Validator ->
   datum ->
   redeemer ->
   ScriptContext ->
@@ -272,7 +269,7 @@ effectSucceedsWith ::
   ( PlutusTx.ToData datum
   ) =>
   String ->
-  CompiledEffect datum ->
+  Validator ->
   datum ->
   ScriptContext ->
   SpecificationTree
@@ -283,7 +280,7 @@ effectFailsWith ::
   ( PlutusTx.ToData datum
   ) =>
   String ->
-  CompiledEffect datum ->
+  Validator ->
   datum ->
   ScriptContext ->
   SpecificationTree
@@ -296,7 +293,7 @@ testValidator ::
   -- | Is this test case expected to succeed?
   Bool ->
   String ->
-  CompiledValidator datum redeemer ->
+  Validator ->
   datum ->
   redeemer ->
   ScriptContext ->
@@ -313,7 +310,7 @@ testPolicy ::
   -- | Is this test case expected to succeed?
   Bool ->
   String ->
-  CompiledMintingPolicy redeemer ->
+  MintingPolicy ->
   redeemer ->
   ScriptContext ->
   SpecificationTree

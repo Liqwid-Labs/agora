@@ -16,13 +16,12 @@ module Sample.Governor.Mutate (
   invalidBundles,
 ) where
 
-import Agora.Effect.NoOp (noOpValidator)
 import Agora.Governor (GovernorDatum (..), GovernorRedeemer (MutateGovernor))
 import Agora.Proposal (ProposalId (ProposalId), ProposalThresholds (..))
-import Agora.Scripts (AgoraScripts (..))
 import Agora.Utils (scriptHashToTokenName)
 import Data.Default (def)
-import Plutarch.Api.V2 (PMintingPolicy, PValidator, mintingPolicySymbol, mkMintingPolicy, mkValidator, validatorHash)
+import Data.Map ((!))
+import Plutarch.Api.V2 (PMintingPolicy, mintingPolicySymbol, mkMintingPolicy, validatorHash)
 import Plutarch.Context (
   input,
   mint,
@@ -39,6 +38,7 @@ import PlutusLedgerApi.V2 (
   Data,
   ScriptHash (ScriptHash),
   TxOutRef (TxOutRef),
+  Validator (Validator),
   ValidatorHash,
   Value,
   toData,
@@ -47,6 +47,7 @@ import Sample.Shared (
   agoraScripts,
   authorityTokenSymbol,
   govAssetClass,
+  govValidator,
   govValidatorHash,
   minAda,
  )
@@ -171,11 +172,11 @@ mkGovernorBuilder ps =
 
 --------------------------------------------------------------------------------
 
-mockEffectValidator :: ClosedTerm PValidator
-mockEffectValidator = noOpValidator authorityTokenSymbol
+mockEffectValidator :: Validator
+mockEffectValidator = Validator $ agoraScripts ! "agora:noOpValidator"
 
 mockEffectValidatorHash :: ValidatorHash
-mockEffectValidatorHash = validatorHash $ mkValidator def mockEffectValidator
+mockEffectValidatorHash = validatorHash mockEffectValidator
 
 mockAuthScript :: ClosedTerm PMintingPolicy
 mockAuthScript = plam $ \_ _ -> popaque $ pcon PUnit
@@ -236,7 +237,7 @@ mkTestCase name pb (Validity forGov) =
   testValidator
     forGov
     name
-    agoraScripts.compiledGovernorValidator
+    govValidator
     governorInputDatum
     governorRedeemer
     (mkSpending mutate pb governorRef)

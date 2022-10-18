@@ -23,6 +23,7 @@ module Agora.Governor (
   pisGovernorDatumValid,
 ) where
 
+import Agora.Aeson.Orphans ()
 import Agora.Proposal (
   PProposalId (PProposalId),
   PProposalThresholds,
@@ -39,6 +40,7 @@ import Agora.Proposal.Time (
   pisProposalTimingConfigValid,
  )
 import Agora.SafeMoney (GTTag)
+import Data.Aeson qualified as Aeson
 import Data.Tagged (Tagged)
 import Plutarch.DataRepr (
   DerivePConstantViaData (DerivePConstantViaData),
@@ -139,6 +141,12 @@ data Governor = Governor
       Generic
     , -- | @since 0.2.0
       Show
+    )
+  deriving anyclass
+    ( -- | @since 1.0.0
+      Aeson.ToJSON
+    , -- | @since 1.0.0
+      Aeson.FromJSON
     )
 
 --------------------------------------------------------------------------------

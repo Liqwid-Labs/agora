@@ -9,7 +9,6 @@ Tests for Stake policy and validator
 -}
 module Spec.Stake (specs) where
 
-import Agora.Scripts (AgoraScripts (..))
 import Agora.Stake (
   StakeDatum (StakeDatum),
   StakeRedeemer (DepositWithdraw),
@@ -17,7 +16,7 @@ import Agora.Stake (
 import Data.Bool (Bool (..))
 import Data.Maybe (Maybe (..))
 import PlutusLedgerApi.V1 (Credential (PubKeyCredential))
-import Sample.Shared (agoraScripts)
+import Sample.Shared (stakePolicy, stakeValidator)
 import Sample.Stake (
   DepositWithdrawExample (
     DepositWithdrawExample,
@@ -50,17 +49,17 @@ specs =
       "policy"
       [ policySucceedsWith
           "stakeCreation"
-          agoraScripts.compiledStakePolicy
+          stakePolicy
           ()
           Stake.stakeCreation
       , policyFailsWith
           "stakeCreationWrongDatum"
-          agoraScripts.compiledStakePolicy
+          stakePolicy
           ()
           Stake.stakeCreationWrongDatum
       , policyFailsWith
           "stakeCreationUnsigned"
-          agoraScripts.compiledStakePolicy
+          stakePolicy
           ()
           Stake.stakeCreationUnsigned
       ]
@@ -68,19 +67,19 @@ specs =
       "validator"
       [ validatorSucceedsWith
           "stakeDepositWithdraw deposit"
-          agoraScripts.compiledStakeValidator
+          stakeValidator
           (StakeDatum 100_000 (PubKeyCredential signer) Nothing [])
           (DepositWithdraw 100_000)
           (Stake.stakeDepositWithdraw $ DepositWithdrawExample {startAmount = 100_000, delta = 100_000})
       , validatorSucceedsWith
           "stakeDepositWithdraw withdraw"
-          agoraScripts.compiledStakeValidator
+          stakeValidator
           (StakeDatum 100_000 (PubKeyCredential signer) Nothing [])
           (DepositWithdraw $ negate 100_000)
           (Stake.stakeDepositWithdraw $ DepositWithdrawExample {startAmount = 100_000, delta = negate 100_000})
       , validatorFailsWith
           "stakeDepositWithdraw negative GT"
-          agoraScripts.compiledStakeValidator
+          stakeValidator
           (StakeDatum 100_000 (PubKeyCredential signer) Nothing [])
           (DepositWithdraw 1_000_000)
           (Stake.stakeDepositWithdraw $ DepositWithdrawExample {startAmount = 100_000, delta = negate 1_000_000})
