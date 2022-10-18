@@ -26,8 +26,8 @@ import Agora.Governor (
   PGovernorRedeemer,
  )
 import Agora.Plutarch.Orphans ()
-import Agora.Scripts (AgoraScripts, authorityTokenSymbol, governorSTSymbol, governorValidatorHash)
 import Agora.Utils (pfromSingleton, ptryFromRedeemer)
+import Plutarch.Api.V1 (PCurrencySymbol, PValidatorHash)
 import Plutarch.Api.V2 (
   PScriptPurpose (PSpending),
   PTxOutRef,
@@ -143,82 +143,85 @@ deriving anyclass instance PTryFrom PData PMutateGovernorDatum
      @since 1.0.0
 -}
 mutateGovernorValidator ::
-  -- | Lazy precompiled scripts. This is beacuse we need the symbol of GST.
-  AgoraScripts ->
-  ClosedTerm PValidator
-mutateGovernorValidator as = makeEffect (authorityTokenSymbol as) $
-  \_gatCs (effectDatum :: Term _ PMutateGovernorDatum) _ txInfo -> unTermCont $ do
-    effectDatumF <- pletAllC effectDatum
-    txInfoF <- pletFieldsC @'["inputs", "outputs", "datums", "redeemers"] txInfo
+  ClosedTerm
+    ( PValidatorHash
+        :--> PCurrencySymbol
+        :--> PCurrencySymbol
+        :--> PValidator
+    )
+mutateGovernorValidator =
+  plam $ \govValidatorHash gstSymbol -> makeEffect @PMutateGovernorDatum $
+    \_gatCs (effectDatum :: Term _ PMutateGovernorDatum) _ txInfo -> unTermCont $ do
+      effectDatumF <- pletAllC effectDatum
+      txInfoF <- pletFieldsC @'["inputs", "outputs", "datums", "redeemers"] txInfo
 
-    ----------------------------------------------------------------------------
+      ----------------------------------------------------------------------------
 
-    scriptInputs <-
-      pletC $
-        pfilter
+      scriptInputs <-
+        pletC $
+          pfilter
+            # plam
+              ( \inInfo ->
+                  pisScriptAddress
+                    #$ pfield @"address"
+                    #$ pfield @"resolved" # inInfo
+              )
+            # pfromData txInfoF.inputs
+
+      -- Only two script inputs are alloed: one from the effect script, another from the governor.
+      pguardC "Only self and governor script inputs are allowed" $
+        plength # scriptInputs #== 2
+
+      pguardC "Governor input should present" $
+        pany
           # plam
-            ( \inInfo ->
-                pisScriptAddress
-                  #$ pfield @"address"
-                  #$ pfield @"resolved" # inInfo
+            ( flip pletAll $ \inputF ->
+                let governorAddress =
+                      paddressFromValidatorHash
+                        # govValidatorHash
+                        # pdnothing
+
+                    isGovernorInput =
+                      foldl1
+                        (#&&)
+                        [ ptraceIfFalse "Can only modify the pinned governor" $
+                            inputF.outRef #== effectDatumF.governorRef
+                        , ptraceIfFalse "Governor UTxO should carry GST" $
+                            psymbolValueOf
+                              # gstSymbol
+                              # (pfield @"value" # inputF.resolved)
+                              #== 1
+                        , ptraceIfFalse "Governor validator run" $
+                            pfield @"address" # inputF.resolved
+                              #== governorAddress
+                        ]
+                 in isGovernorInput
             )
-          # pfromData txInfoF.inputs
+          # scriptInputs
 
-    -- Only two script inputs are alloed: one from the effect script, another from the governor.
-    pguardC "Only self and governor script inputs are allowed" $
-      plength # scriptInputs #== 2
+      let governorRedeemer =
+            pfromData $
+              passertPJust # "Govenor redeemer should be resolved"
+                #$ ptryFromRedeemer @(PAsData PGovernorRedeemer)
+                  # mkRecordConstr PSpending (#_0 .= effectDatumF.governorRef)
+                  # txInfoF.redeemers
 
-    pguardC "Governor input should present" $
-      pany
-        # plam
-          ( flip pletAll $ \inputF ->
-              let gstSymbol = pconstant $ governorSTSymbol as
-                  governorAddress =
-                    paddressFromValidatorHash
-                      # pconstant (governorValidatorHash as)
-                      # pdnothing
+      pguardC "Spend governor with redeemer MutateGovernor" $
+        governorRedeemer #== pconstant MutateGovernor
 
-                  isGovernorInput =
-                    foldl1
-                      (#&&)
-                      [ ptraceIfFalse "Can only modify the pinned governor" $
-                          inputF.outRef #== effectDatumF.governorRef
-                      , ptraceIfFalse "Governor UTxO should carry GST" $
-                          psymbolValueOf
-                            # gstSymbol
-                            # (pfield @"value" # inputF.resolved)
-                            #== 1
-                      , ptraceIfFalse "Governor validator run" $
-                          pfield @"address" # inputF.resolved
-                            #== governorAddress
-                      ]
-               in isGovernorInput
-          )
-        # scriptInputs
+      ----------------------------------------------------------------------------
 
-    let governorRedeemer =
-          pfromData $
-            passertPJust # "Govenor redeemer should be resolved"
-              #$ ptryFromRedeemer @(PAsData PGovernorRedeemer)
-                # mkRecordConstr PSpending (#_0 .= effectDatumF.governorRef)
-                # txInfoF.redeemers
+      let governorOutput =
+            ptrace "Only governor output is allowed" $
+              pfromSingleton # pfromData txInfoF.outputs
 
-    pguardC "Spend governor with redeemer MutateGovernor" $
-      governorRedeemer #== pconstant MutateGovernor
+          governorOutputDatum =
+            ptrace "Resolve governor outoput datum" $
+              pfromOutputDatum @PGovernorDatum
+                # (pfield @"datum" # governorOutput)
+                # txInfoF.datums
 
-    ----------------------------------------------------------------------------
+      pguardC "New governor datum correct" $
+        governorOutputDatum #== effectDatumF.newDatum
 
-    let governorOutput =
-          ptrace "Only governor output is allowed" $
-            pfromSingleton # pfromData txInfoF.outputs
-
-        governorOutputDatum =
-          ptrace "Resolve governor outoput datum" $
-            pfromOutputDatum @PGovernorDatum
-              # (pfield @"datum" # governorOutput)
-              # txInfoF.datums
-
-    pguardC "New governor datum correct" $
-      governorOutputDatum #== effectDatumF.newDatum
-
-    return $ popaque $ pconstant ()
+      return $ popaque $ pconstant ()

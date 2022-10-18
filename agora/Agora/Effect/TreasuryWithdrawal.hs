@@ -131,59 +131,62 @@ instance PTryFrom PData PTreasuryWithdrawalDatum
 
      @since 1.0.0
 -}
-treasuryWithdrawalValidator :: forall {s :: S}. CurrencySymbol -> Term s PValidator
-treasuryWithdrawalValidator currSymbol = makeEffect currSymbol $
-  \_cs (datum :: Term _ PTreasuryWithdrawalDatum) effectInputRef txInfo -> unTermCont $ do
-    datumF <- pletAllC datum
-    txInfoF <- pletFieldsC @'["outputs", "inputs"] txInfo
+treasuryWithdrawalValidator ::
+  forall (s :: S).
+  Term s (PCurrencySymbol :--> PValidator)
+treasuryWithdrawalValidator = plam $
+  makeEffect $
+    \_cs (datum :: Term _ PTreasuryWithdrawalDatum) effectInputRef txInfo -> unTermCont $ do
+      datumF <- pletAllC datum
+      txInfoF <- pletFieldsC @'["outputs", "inputs"] txInfo
 
-    let validateInput :: Term _ (PTxInInfo :--> PBool)
-        validateInput = plam $ \input -> unTermCont $ do
-          inputF <- pletAllC input
+      let validateInput :: Term _ (PTxInInfo :--> PBool)
+          validateInput = plam $ \input -> unTermCont $ do
+            inputF <- pletAllC input
 
-          cred <-
-            pletC $
-              pfield @"credential"
-                #$ pfield @"address" # inputF.resolved
+            cred <-
+              pletC $
+                pfield @"credential"
+                  #$ pfield @"address" # inputF.resolved
 
-          pure $
-            foldl1
-              (#||)
-              [ ptraceIfTrue "Effect input" $ inputF.outRef #== effectInputRef
-              , ptraceIfTrue "Treasury input" $ pelem # cred # datumF.treasuries
-              , ptraceIfTrue "Collateral input" $ pisPubKey # pfromData cred
-              ]
+            pure $
+              foldl1
+                (#||)
+                [ ptraceIfTrue "Effect input" $ inputF.outRef #== effectInputRef
+                , ptraceIfTrue "Treasury input" $ pelem # cred # datumF.treasuries
+                , ptraceIfTrue "Collateral input" $ pisPubKey # pfromData cred
+                ]
 
-        validateOutput ::
-          Term
-            _
-            ( PBuiltinList (PAsData (PTuple PCredential (PValue 'Sorted 'Positive)))
-                :--> PTxOut
-                :--> PBuiltinList (PAsData (PTuple PCredential (PValue 'Sorted 'Positive)))
-            )
-        validateOutput = plam $ \receivers output -> unTermCont $ do
-          outputF <- pletFieldsC @'["address", "value"] output
-          cred <- pletC $ pfield @"credential" # pfromData outputF.address
+          validateOutput ::
+            Term
+              _
+              ( PBuiltinList (PAsData (PTuple PCredential (PValue 'Sorted 'Positive)))
+                  :--> PTxOut
+                  :--> PBuiltinList (PAsData (PTuple PCredential (PValue 'Sorted 'Positive)))
+              )
+          validateOutput = plam $ \receivers output -> unTermCont $ do
+            outputF <- pletFieldsC @'["address", "value"] output
+            cred <- pletC $ pfield @"credential" # pfromData outputF.address
 
-          let credValue = pdata $ ptuple # cred # outputF.value
+            let credValue = pdata $ ptuple # cred # outputF.value
 
-              shouldSendToTreasury =
-                pif
-                  (pelem # cred # datumF.treasuries)
-                  receivers
-                  (ptraceError "Invalid receiver")
+                shouldSendToTreasury =
+                  pif
+                    (pelem # cred # datumF.treasuries)
+                    receivers
+                    (ptraceError "Invalid receiver")
 
-          pure $
-            pmatch (pdelete # credValue # receivers) $ \case
-              PJust updatedReceivers ->
-                ptrace "Receiver output" updatedReceivers
-              PNothing ->
-                ptrace "Treasury output" shouldSendToTreasury
+            pure $
+              pmatch (pdelete # credValue # receivers) $ \case
+                PJust updatedReceivers ->
+                  ptrace "Receiver output" updatedReceivers
+                PNothing ->
+                  ptrace "Treasury output" shouldSendToTreasury
 
-    pguardC "All input are valid" $
-      pall # validateInput # txInfoF.inputs
+      pguardC "All input are valid" $
+        pall # validateInput # txInfoF.inputs
 
-    pguardC "All receiver get correct output" $
-      pnull #$ pfoldl # validateOutput # datumF.receivers # txInfoF.outputs
+      pguardC "All receiver get correct output" $
+        pnull #$ pfoldl # validateOutput # datumF.receivers # txInfoF.outputs
 
-    pure . popaque $ pconstant ()
+      pure . popaque $ pconstant ()

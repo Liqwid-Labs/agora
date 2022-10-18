@@ -19,4 +19,6 @@ main = exportMain builders
 
 builders :: Builders
 builders =
-  insertScriptExportWithLinker "agora" (Bootstrap.agoraScripts def) linker def
+  mconcat
+    [ insertScriptExportWithLinker "agora" (Bootstrap.agoraScripts def) linker
+    ]

@@ -7,7 +7,7 @@ import Agora.Utils (validatorHashToAddress, validatorHashToTokenName)
 import Data.Map (fromList)
 import Data.Tagged (untag)
 import Plutarch.Api.V2 (mintingPolicySymbol, validatorHash)
-import PlutusLedgerApi.V1 (Address, CurrencySymbol, TxOutRef)
+import PlutusLedgerApi.V1 (Address, CurrencySymbol, TxOutRef, ValidatorHash)
 import PlutusLedgerApi.V1.Value (AssetClass (AssetClass))
 import Ply (
   ScriptRole (MintingPolicyRole, ValidatorRole),
@@ -19,8 +19,8 @@ import Ply (
 import ScriptExport.ScriptInfo (
   Linker,
   ScriptExport (..),
-  exportParam,
   fetchTS,
+  getParam,
  )
 import Prelude hiding ((#))
 
@@ -40,9 +40,9 @@ linker = do
   atkPol <- fetchTS @MintingPolicyRole @'[AssetClass] "agora:authorityTokenPolicy"
   noOpVal <- fetchTS @ValidatorRole @'[CurrencySymbol] "agora:noOpValidator"
   treaWithdrawalVal <- fetchTS @ValidatorRole @'[CurrencySymbol] "agora:treasuryWithdrawalValidator"
-  mutateGovVal <- fetchTS @ValidatorRole @'[AssetClass, CurrencySymbol] "agora:mutateGovernorValidator"
+  mutateGovVal <- fetchTS @ValidatorRole @'[ValidatorHash, CurrencySymbol, CurrencySymbol] "agora:mutateGovernorValidator"
 
-  governor <- exportParam
+  governor <- getParam
 
   let govPol' = govPol # governor.gstOutRef
       govVal' =
@@ -58,6 +58,7 @@ linker = do
             govPol'
       gstAssetClass =
         AssetClass (gstSymbol, "")
+      govValHash = validatorHash $ toValidator govVal'
 
       at = gstAssetClass
       atPol' = atkPol # at
@@ -86,12 +87,11 @@ linker = do
 
       noOpVal' = noOpVal # atSymbol
       treaWithdrawalVal' = treaWithdrawalVal # atSymbol
-      mutateGovVal' = mutateGovVal # gstAssetClass # atSymbol
+      mutateGovVal' = mutateGovVal # govValHash # gstSymbol # atSymbol
 
   return $
     ScriptExport
-      { version = ""
-      , scripts =
+      { scripts =
           fromList
             [ ("agora:governorPolicy", toScript govPol')
             , ("agora:governorValidator", toScript govVal')

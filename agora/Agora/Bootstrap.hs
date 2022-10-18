@@ -33,23 +33,20 @@ type instance PlyArgOf PAssetClass = AssetClass
 -}
 agoraScripts :: Config -> RawScriptExport
 agoraScripts conf =
-  RawScriptExport
-    { version = "1.0.0"
-    , scripts =
-        fromList
-          [ envelope "agora:governorPolicy" governorPolicy
-          , envelope "agora:governorValidator" governorValidator
-          , envelope "agora:stakePolicy" stakePolicy
-          , envelope "agora:stakeValidator" stakeValidator
-          , envelope "agora:proposalPolicy" proposalPolicy
-          , envelope "agora:proposalValidator" proposalValidator
-          , envelope "agora:treasuryValidator" treasuryValidator
-          , envelope "agora:authorityTokenPolicy" authorityTokenPolicy
-          , envelope "agora:noOpValidator" noOpValidator
-          , envelope "agora:treasuryWithdrawalValidator" treasuryWithdrawalValidator
-          , envelope "agora:mutateGovernorValidator" mutateGovernorValidator
-          ]
-    }
+  RawScriptExport $
+    fromList
+      [ envelope "agora:governorPolicy" governorPolicy
+      , envelope "agora:governorValidator" governorValidator
+      , envelope "agora:stakePolicy" stakePolicy
+      , envelope "agora:stakeValidator" stakeValidator
+      , envelope "agora:proposalPolicy" proposalPolicy
+      , envelope "agora:proposalValidator" proposalValidator
+      , envelope "agora:treasuryValidator" treasuryValidator
+      , envelope "agora:authorityTokenPolicy" authorityTokenPolicy
+      , envelope "agora:noOpValidator" noOpValidator
+      , envelope "agora:treasuryWithdrawalValidator" treasuryWithdrawalValidator
+      , envelope "agora:mutateGovernorValidator" mutateGovernorValidator
+      ]
   where
     envelope ::
       forall (pt :: S -> Type).

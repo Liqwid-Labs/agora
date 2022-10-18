@@ -86,7 +86,7 @@ common deps
   build-depends:
     , aeson
     , ansi-terminal
-    , base                    >=4.14 && <5
+    , base                   >=4.14 && <5
     , base-compat
     , base16
     , bytestring
@@ -99,12 +99,12 @@ common deps
     , filepath
     , generics-sop
     , liqwid-plutarch-extra
+    , liqwid-script-export
     , optics
     , plutarch
     , plutarch-extra
     , plutarch-numeric
     , plutarch-safe-money
-    , plutarch-script-export
     , plutus-core
     , plutus-ledger-api
     , plutus-tx

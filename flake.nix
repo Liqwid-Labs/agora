@@ -33,10 +33,8 @@
       "github:liqwid-labs/plutarch-quickcheck?ref=staging";
     plutarch-context-builder.url =
       "github:Liqwid-Labs/plutarch-context-builder?ref=main";
-    plutarch-script-export.url =
-      "github:Liqwid-Labs/plutarch-script-export?ref=seungheonoh/facelift";
-    ply.url =
-      "github:mlabs-haskell/ply?ref=master";
+    liqwid-script-export.url =
+      "github:Liqwid-Labs/liqwid-script-export?ref=main";
     liqwid-nix.url = "github:Liqwid-Labs/liqwid-nix?ref=main";
   };
 
@@ -87,9 +85,9 @@
           "${inputs.plutarch-quickcheck}"
           "${inputs.plutarch-context-builder}"
           "${inputs.liqwid-plutarch-extra}"
-          "${inputs.plutarch-script-export}"
-          "${inputs.ply}/ply-core"
-          "${inputs.ply}/ply-plutarch"
+          "${inputs.liqwid-script-export}"
+          "${inputs.liqwid-script-export.inputs.ply}/ply-core"
+          "${inputs.liqwid-script-export.inputs.ply}/ply-plutarch"
         ])
         (liqwid-nix.enableFormatCheck [
           "-XQuasiQuotes"
