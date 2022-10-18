@@ -16,7 +16,6 @@ import Spec.Stake qualified as Stake
 import Spec.Treasury qualified as Treasury
 import System.IO (hIsTerminalDevice, stdout)
 import Test.Specification (group)
-import Prelude
 
 --------------------------------------------------------------------------------
 

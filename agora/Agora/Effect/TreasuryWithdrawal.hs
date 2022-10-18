@@ -15,25 +15,28 @@ module Agora.Effect.TreasuryWithdrawal (
 
 import Agora.Effect (makeEffect)
 import Agora.Plutarch.Orphans ()
+import Agora.Utils (pdelete)
 import Plutarch.Api.V1 (
   PCredential,
   PCurrencySymbol,
   PValue,
   ptuple,
  )
-import Plutarch.Api.V1.Value (pnormalize)
 import Plutarch.Api.V2 (
   AmountGuarantees (Positive),
   KeyGuarantees (Sorted),
   PTuple,
+  PTxInInfo,
+  PTxOut,
   PValidator,
  )
 import Plutarch.DataRepr (
   DerivePConstantViaData (DerivePConstantViaData),
   PDataFields,
  )
-import Plutarch.Extra.ScriptContext (pfindTxInByTxOutRef, pisPubKey)
-import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC)
+import Plutarch.Extra.Field (pletAllC)
+import Plutarch.Extra.ScriptContext (pisPubKey)
+import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC)
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (PLifted))
 import PlutusLedgerApi.V1.Credential (Credential)
 import PlutusLedgerApi.V1.Value (Value)
@@ -128,72 +131,59 @@ instance PTryFrom PData PTreasuryWithdrawalDatum
 
      @since 1.0.0
 -}
-treasuryWithdrawalValidator :: ClosedTerm (PCurrencySymbol :--> PValidator)
-treasuryWithdrawalValidator = plam $
-  makeEffect $
-    \_cs (datum' :: Term _ PTreasuryWithdrawalDatum) txOutRef' txInfo' -> unTermCont $ do
-      datum <- pletFieldsC @'["receivers", "treasuries"] datum'
-      txInfo <- pletFieldsC @'["outputs", "inputs"] txInfo'
-      PJust ((pfield @"resolved" #) -> txOut) <- pmatchC $ pfindTxInByTxOutRef # txOutRef' # pfromData txInfo.inputs
-      effInput <- pletFieldsC @'["address", "value"] $ txOut
-      outputValues <-
-        pletC $
-          pmap
-            # plam
-              ( \txOut' -> unTermCont $ do
-                  txOut <- pletFieldsC @'["address", "value"] $ txOut'
-                  let cred = pfield @"credential" # pfromData txOut.address
-                  pure . pdata $ ptuple # cred # txOut.value
-              )
-            # pfromData txInfo.outputs
-      inputValues <-
-        pletC $
-          pmap
-            # plam
-              ( \((pfield @"resolved" #) -> txOut') -> unTermCont $ do
-                  txOut <- pletFieldsC @'["address", "value"] $ txOut'
-                  let cred = pfield @"credential" # pfromData txOut.address
-                  pure . pdata $ ptuple # cred # txOut.value
-              )
-            # txInfo.inputs
-      let ofTreasury =
-            pfilter
-              # plam (\((pfield @"_0" #) . pfromData -> cred) -> pelem # cred # datum.treasuries)
-          sumValues = phoistAcyclic $
-            plam $ \v ->
-              pnormalize
-                #$ pfoldr
-                # plam (\(pfromData . (pfield @"_1" #) -> x) y -> x <> y)
-                # mempty
-                # v
-          treasuryInputValuesSum = sumValues #$ ofTreasury # inputValues
-          treasuryOutputValuesSum = sumValues #$ ofTreasury # outputValues
-          receiverValuesSum = sumValues # datum.receivers
-          -- Constraints
-          outputContentMatchesRecivers =
-            pall # plam (\out -> pelem # out # outputValues)
-              #$ datum.receivers
-          excessShouldBePaidToInputs =
-            treasuryOutputValuesSum <> receiverValuesSum #== treasuryInputValuesSum
-          shouldNotPayToEffect =
-            pnot #$ pany
-              # plam
-                ( \x ->
-                    effInput.address #== pfield @"address" # x
-                )
-              # pfromData txInfo.outputs
-          inputsAreOnlyTreasuriesOrCollateral =
-            pall
-              # plam
-                ( \((pfield @"_0" #) . pfromData -> cred) ->
-                    cred #== pfield @"credential" # effInput.address
-                      #|| pelem # cred # datum.treasuries
-                      #|| pisPubKey # pfromData cred
-                )
-              # inputValues
+treasuryWithdrawalValidator :: forall {s :: S}. CurrencySymbol -> Term s PValidator
+treasuryWithdrawalValidator currSymbol = makeEffect currSymbol $
+  \_cs (datum :: Term _ PTreasuryWithdrawalDatum) effectInputRef txInfo -> unTermCont $ do
+    datumF <- pletAllC datum
+    txInfoF <- pletFieldsC @'["outputs", "inputs"] txInfo
 
-      pguardC "Transaction should not pay to effects" shouldNotPayToEffect
-      pguardC "Transaction output does not match receivers" outputContentMatchesRecivers
-      pguardC "Remainders should be returned to the treasury" excessShouldBePaidToInputs
-      pguardC "Transaction should only have treasuries specified in the datum as input" inputsAreOnlyTreasuriesOrCollateral
-      pure . popaque $ pconstant ()
+    let validateInput :: Term _ (PTxInInfo :--> PBool)
+        validateInput = plam $ \input -> unTermCont $ do
+          inputF <- pletAllC input
+
+          cred <-
+            pletC $
+              pfield @"credential"
+                #$ pfield @"address" # inputF.resolved
+
+          pure $
+            foldl1
+              (#||)
+              [ ptraceIfTrue "Effect input" $ inputF.outRef #== effectInputRef
+              , ptraceIfTrue "Treasury input" $ pelem # cred # datumF.treasuries
+              , ptraceIfTrue "Collateral input" $ pisPubKey # pfromData cred
+              ]
+
+        validateOutput ::
+          Term
+            _
+            ( PBuiltinList (PAsData (PTuple PCredential (PValue 'Sorted 'Positive)))
+                :--> PTxOut
+                :--> PBuiltinList (PAsData (PTuple PCredential (PValue 'Sorted 'Positive)))
+            )
+        validateOutput = plam $ \receivers output -> unTermCont $ do
+          outputF <- pletFieldsC @'["address", "value"] output
+          cred <- pletC $ pfield @"credential" # pfromData outputF.address
+
+          let credValue = pdata $ ptuple # cred # outputF.value
+
+              shouldSendToTreasury =
+                pif
+                  (pelem # cred # datumF.treasuries)
+                  receivers
+                  (ptraceError "Invalid receiver")
+
+          pure $
+            pmatch (pdelete # credValue # receivers) $ \case
+              PJust updatedReceivers ->
+                ptrace "Receiver output" updatedReceivers
+              PNothing ->
+                ptrace "Treasury output" shouldSendToTreasury
+
+    pguardC "All input are valid" $
+      pall # validateInput # txInfoF.inputs
+
+    pguardC "All receiver get correct output" $
+      pnull #$ pfoldl # validateOutput # datumF.receivers # txInfoF.outputs
+
+    pure . popaque $ pconstant ()

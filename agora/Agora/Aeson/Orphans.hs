@@ -5,7 +5,6 @@ module Agora.Aeson.Orphans (AsBase16Bytes (..)) where
 --------------------------------------------------------------------------------
 
 import Data.Coerce (Coercible, coerce)
-import Prelude
 
 --------------------------------------------------------------------------------
 

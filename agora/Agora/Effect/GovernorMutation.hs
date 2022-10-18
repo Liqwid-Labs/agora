@@ -21,12 +21,15 @@ module Agora.Effect.GovernorMutation (
 import Agora.Effect (makeEffect)
 import Agora.Governor (
   GovernorDatum,
+  GovernorRedeemer (MutateGovernor),
   PGovernorDatum,
-  pisGovernorDatumValid,
+  PGovernorRedeemer,
  )
 import Agora.Plutarch.Orphans ()
-import Plutarch.Api.V1 (PCurrencySymbol)
+import Agora.Scripts (AgoraScripts, authorityTokenSymbol, governorSTSymbol, governorValidatorHash)
+import Agora.Utils (pfromSingleton, ptryFromRedeemer)
 import Plutarch.Api.V2 (
+  PScriptPurpose (PSpending),
   PTxOutRef,
   PValidator,
  )
@@ -34,12 +37,12 @@ import Plutarch.DataRepr (
   DerivePConstantViaData (DerivePConstantViaData),
   PDataFields,
  )
-import Plutarch.Extra.AssetClass (PAssetClass, passetClassValueOf)
-import Plutarch.Extra.Maybe (
-  passertPJust,
- )
-import Plutarch.Extra.ScriptContext (pfromOutputDatum, pisScriptAddress)
-import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletFieldsC)
+import Plutarch.Extra.Field (pletAll, pletAllC)
+import Plutarch.Extra.Maybe (passertPJust, pdnothing)
+import Plutarch.Extra.Record (mkRecordConstr, (.=))
+import Plutarch.Extra.ScriptContext (paddressFromValidatorHash, pfromOutputDatum, pisScriptAddress)
+import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC)
+import Plutarch.Extra.Value (psymbolValueOf)
 import Plutarch.Lift (PConstantDecl, PLifted, PUnsafeLiftDecl)
 import PlutusLedgerApi.V1 (TxOutRef)
 import PlutusTx qualified
@@ -100,10 +103,14 @@ instance DerivePlutusType PMutateGovernorDatum where
   type DPTStrat _ = PlutusTypeData
 
 -- | @since 0.1.0
-instance PUnsafeLiftDecl PMutateGovernorDatum where type PLifted PMutateGovernorDatum = MutateGovernorDatum
+instance PUnsafeLiftDecl PMutateGovernorDatum where
+  type PLifted PMutateGovernorDatum = MutateGovernorDatum
 
 -- | @since 0.1.0
-deriving via (DerivePConstantViaData MutateGovernorDatum PMutateGovernorDatum) instance (PConstantDecl MutateGovernorDatum)
+deriving via
+  (DerivePConstantViaData MutateGovernorDatum PMutateGovernorDatum)
+  instance
+    (PConstantDecl MutateGovernorDatum)
 
 -- | @since 0.1.0
 deriving anyclass instance PTryFrom PData PMutateGovernorDatum
@@ -136,76 +143,82 @@ deriving anyclass instance PTryFrom PData PMutateGovernorDatum
      @since 1.0.0
 -}
 mutateGovernorValidator ::
-  ClosedTerm (PAssetClass :--> PCurrencySymbol :--> PValidator)
-mutateGovernorValidator =
-  plam $ \gstAssetClass -> makeEffect @PMutateGovernorDatum $
-    \_ datum _ txInfo -> unTermCont $ do
-      datumF <- pletFieldsC @'["newDatum", "governorRef"] datum
-      txInfoF <- pletFieldsC @'["mint", "inputs", "outputs", "datums"] txInfo
+  -- | Lazy precompiled scripts. This is beacuse we need the symbol of GST.
+  AgoraScripts ->
+  ClosedTerm PValidator
+mutateGovernorValidator as = makeEffect (authorityTokenSymbol as) $
+  \_gatCs (effectDatum :: Term _ PMutateGovernorDatum) _ txInfo -> unTermCont $ do
+    effectDatumF <- pletAllC effectDatum
+    txInfoF <- pletFieldsC @'["inputs", "outputs", "datums", "redeemers"] txInfo
 
-      let gstValueOf =
-            plam $ \v -> passetClassValueOf # pfromData v # gstAssetClass
+    ----------------------------------------------------------------------------
 
-      let mint :: Term _ (PBuiltinList _)
-          mint = pto $ pto $ pto $ pfromData txInfoF.mint
-
-      pguardC "Nothing should be minted/burnt other than GAT" $
-        plength # mint #== 1
-
-      -- Only two script inputs are alloed: one from the effect, one from the governor.
-      pguardC "Only self and governor script inputs are allowed" $
-        pfoldr
-          # phoistAcyclic
-            ( plam $ \inInfo count ->
-                let address = pfield @"address" #$ pfield @"resolved" # inInfo
-                 in pif
-                      (pisScriptAddress # address)
-                      (count + 1)
-                      count
+    scriptInputs <-
+      pletC $
+        pfilter
+          # plam
+            ( \inInfo ->
+                pisScriptAddress
+                  #$ pfield @"address"
+                  #$ pfield @"resolved" # inInfo
             )
-          # (0 :: Term _ PInteger)
           # pfromData txInfoF.inputs
-          #== 2
 
-      -- Find the governor input by looking for GST.
-      let inputWithGST =
-            passertPJust # "Governor input not found" #$ pfind
-              # plam
-                ( \inInfo ->
-                    let value = pfield @"value" #$ pfield @"resolved" # inInfo
-                     in gstValueOf # value #== 1
-                )
-              # pfromData txInfoF.inputs
+    -- Only two script inputs are alloed: one from the effect script, another from the governor.
+    pguardC "Only self and governor script inputs are allowed" $
+      plength # scriptInputs #== 2
 
-      govInInfo <- pletFieldsC @'["outRef", "resolved"] $ inputWithGST
+    pguardC "Governor input should present" $
+      pany
+        # plam
+          ( flip pletAll $ \inputF ->
+              let gstSymbol = pconstant $ governorSTSymbol as
+                  governorAddress =
+                    paddressFromValidatorHash
+                      # pconstant (governorValidatorHash as)
+                      # pdnothing
 
-      -- The effect can only modify the governor UTXO referenced in the datum.
-      pguardC "Can only modify the pinned governor" $
-        govInInfo.outRef #== datumF.governorRef
+                  isGovernorInput =
+                    foldl1
+                      (#&&)
+                      [ ptraceIfFalse "Can only modify the pinned governor" $
+                          inputF.outRef #== effectDatumF.governorRef
+                      , ptraceIfFalse "Governor UTxO should carry GST" $
+                          psymbolValueOf
+                            # gstSymbol
+                            # (pfield @"value" # inputF.resolved)
+                            #== 1
+                      , ptraceIfFalse "Governor validator run" $
+                          pfield @"address" # inputF.resolved
+                            #== governorAddress
+                      ]
+               in isGovernorInput
+          )
+        # scriptInputs
 
-      -- The transaction can only have one output, which should be sent to the governor.
-      pguardC "Only governor output is allowed" $
-        plength # pfromData txInfoF.outputs #== 1
+    let governorRedeemer =
+          pfromData $
+            passertPJust # "Govenor redeemer should be resolved"
+              #$ ptryFromRedeemer @(PAsData PGovernorRedeemer)
+                # mkRecordConstr PSpending (#_0 .= effectDatumF.governorRef)
+                # txInfoF.redeemers
 
-      let govAddress = pfield @"address" #$ govInInfo.resolved
-          govOutput' = phead # pfromData txInfoF.outputs
+    pguardC "Spend governor with redeemer MutateGovernor" $
+      governorRedeemer #== pconstant MutateGovernor
 
-      govOutput <- pletFieldsC @'["address", "value", "datum"] govOutput'
+    ----------------------------------------------------------------------------
 
-      pguardC "No output to the governor" $
-        govOutput.address #== govAddress
+    let governorOutput =
+          ptrace "Only governor output is allowed" $
+            pfromSingleton # pfromData txInfoF.outputs
 
-      pguardC "Governor output doesn't carry the GST" $
-        gstValueOf # govOutput.value #== 1
+        governorOutputDatum =
+          ptrace "Resolve governor outoput datum" $
+            pfromOutputDatum @PGovernorDatum
+              # (pfield @"datum" # governorOutput)
+              # txInfoF.datums
 
-      let governorOutputDatum =
-            ptrace "Governor output datum not found" $
-              pfromOutputDatum @PGovernorDatum # govOutput.datum # txInfoF.datums
+    pguardC "New governor datum correct" $
+      governorOutputDatum #== effectDatumF.newDatum
 
-      -- Ensure the output governor datum is what we want.
-      pguardC "Unexpected governor datum" $
-        datumF.newDatum #== governorOutputDatum
-      pguardC "New governor datum should be valid" $
-        pisGovernorDatumValid # governorOutputDatum
-
-      return $ popaque $ pconstant ()
+    return $ popaque $ pconstant ()

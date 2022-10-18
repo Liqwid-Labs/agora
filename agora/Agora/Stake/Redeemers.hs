@@ -48,7 +48,7 @@ import Agora.Stake (
   ),
   pstakeLocked,
  )
-import Agora.Utils (pdeleteBy, pfromSingleton, pisSingleton)
+import Agora.Utils (pfromSingleton, pisSingleton, pmustDeleteBy)
 import Plutarch.Api.V1.Address (PCredential)
 import Plutarch.Api.V2 (PMaybeData)
 import Plutarch.Extra.Field (pletAll, pletAllC)
@@ -88,7 +88,7 @@ pbatchUpdateInputs ::
 pbatchUpdateInputs = phoistAcyclic $
   plam $ \f -> flip pmatch $ \ctxF ->
     pnull #$ pfoldr
-      # (pdeleteBy # f)
+      # (pmustDeleteBy # f)
       # ctxF.stakeOutputDatums
       # ctxF.stakeInputDatums
 
