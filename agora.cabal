@@ -104,7 +104,6 @@ common deps
     , plutarch
     , plutarch-extra
     , plutarch-numeric
-    , plutarch-safe-money
     , plutus-core
     , plutus-ledger-api
     , plutus-tx
