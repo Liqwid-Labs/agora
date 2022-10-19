@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wno-unticked-promoted-constructors #-}
 
-module Agora.Linker (linker) where
+module Agora.Linker (linker, AgoraScriptInfo (..)) where
 
 import Agora.Governor (Governor (gstOutRef, gtClassRef, maximumCosigners))
 import Agora.Utils (validatorHashToAddress, validatorHashToTokenName)
