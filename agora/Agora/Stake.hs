@@ -27,7 +27,6 @@ module Agora.Stake (
   PStakeRedeemerHandlerContext (..),
   PProposalContext (..),
   PStakeRedeemerHandler,
-  PStakeRedeemerHandlerTerm (..),
   StakeRedeemerImpl (..),
 
   -- * Utility functions
@@ -39,7 +38,6 @@ module Agora.Stake (
   pisCreator,
   pisCosigner,
   pisIrrelevant,
-  runStakeRedeemerHandler,
 ) where
 
 import Agora.Proposal (
@@ -574,37 +572,22 @@ instance DerivePlutusType PStakeRedeemerHandlerContext where
 -}
 type PStakeRedeemerHandler = PStakeRedeemerHandlerContext :--> PUnit
 
-{- | Newtype wrapper around @'ClosedTerm' 'PStakeRedeemerHandler'@ to allow type
-     inference to work.
-
-     @since 1.0.0
--}
-newtype PStakeRedeemerHandlerTerm
-  = PStakeRedeemerHandlerTerm
-      (ClosedTerm PStakeRedeemerHandler)
-
--- | @since 1.0.0
-runStakeRedeemerHandler ::
-  PStakeRedeemerHandlerTerm ->
-  ClosedTerm PStakeRedeemerHandler
-runStakeRedeemerHandler (PStakeRedeemerHandlerTerm t) = t
-
 {- | A collection of stake redeemer handlers for each stake redeemers.
 
      @since 1.0.0
 -}
-data StakeRedeemerImpl = StakeRedeemerImpl
-  { onDepositWithdraw :: PStakeRedeemerHandlerTerm
+data StakeRedeemerImpl (s :: S) = StakeRedeemerImpl
+  { onDepositWithdraw :: Term s PStakeRedeemerHandler
   -- ^ Handler for 'DepositWithdraw'.
-  , onDestroy :: PStakeRedeemerHandlerTerm
+  , onDestroy :: Term s PStakeRedeemerHandler
   -- ^ Handler for 'Destroy'.
-  , onPermitVote :: PStakeRedeemerHandlerTerm
+  , onPermitVote :: Term s PStakeRedeemerHandler
   -- ^ Handler for 'permitVotes'.
-  , onRetractVote :: PStakeRedeemerHandlerTerm
+  , onRetractVote :: Term s PStakeRedeemerHandler
   -- ^ Handler for 'RetractVotes'.
-  , onDelegateTo :: PStakeRedeemerHandlerTerm
+  , onDelegateTo :: Term s PStakeRedeemerHandler
   -- ^ Handler for 'DelegateTo'.
-  , onClearDelegate :: PStakeRedeemerHandlerTerm
+  , onClearDelegate :: Term s PStakeRedeemerHandler
   -- ^ handler for 'ClearDelegate'.
   }
 

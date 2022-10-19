@@ -42,10 +42,8 @@ import Agora.Stake (
   PStakeRedeemerHandlerContext (
     PStakeRedeemerHandlerContext
   ),
-  PStakeRedeemerHandlerTerm (PStakeRedeemerHandlerTerm),
   StakeRedeemerImpl (..),
   pstakeLocked,
-  runStakeRedeemerHandler,
  )
 import Agora.Stake.Redeemers (
   pclearDelegate,
@@ -246,7 +244,7 @@ stakePolicy =
      @since 1.0.0
 -}
 mkStakeValidator ::
-  StakeRedeemerImpl ->
+  StakeRedeemerImpl s ->
   Term s PCurrencySymbol ->
   Term s PAssetClass ->
   Term s PAssetClass ->
@@ -539,17 +537,17 @@ mkStakeValidator impl sstSymbol pstClass gstClass =
     pure $
       popaque $
         pmatch stakeRedeemer $ \case
-          PDestroy _ -> runStakeRedeemerHandler impl.onDestroy # noMetadataContext
-          PPermitVote _ -> runStakeRedeemerHandler impl.onPermitVote # noMetadataContext
-          PRetractVotes _ -> runStakeRedeemerHandler impl.onRetractVote # noMetadataContext
-          PClearDelegate _ -> runStakeRedeemerHandler impl.onClearDelegate # noMetadataContext
+          PDestroy _ -> impl.onDestroy # noMetadataContext
+          PPermitVote _ -> impl.onPermitVote # noMetadataContext
+          PRetractVotes _ -> impl.onRetractVote # noMetadataContext
+          PClearDelegate _ -> impl.onClearDelegate # noMetadataContext
           PDelegateTo ((pfield @"pkh" #) -> pkh) ->
-            runStakeRedeemerHandler impl.onDelegateTo
+            impl.onDelegateTo
               #$ mkRedeemerhandlerContext
               #$ pcon
               $ PSetDelegateTo pkh
           PDepositWithdraw ((pfield @"delta" #) -> delta) ->
-            runStakeRedeemerHandler impl.onDepositWithdraw #$ mkRedeemerhandlerContext
+            impl.onDepositWithdraw #$ mkRedeemerhandlerContext
               #$ pcon
               $ PDepositWithdrawDelta delta
 
@@ -608,10 +606,10 @@ stakeValidator =
   plam $
     mkStakeValidator $
       StakeRedeemerImpl
-        { onDepositWithdraw = PStakeRedeemerHandlerTerm pdepositWithdraw
-        , onDestroy = PStakeRedeemerHandlerTerm pdestroy
-        , onPermitVote = PStakeRedeemerHandlerTerm ppermitVote
-        , onRetractVote = PStakeRedeemerHandlerTerm pretractVote
-        , onDelegateTo = PStakeRedeemerHandlerTerm pdelegateTo
-        , onClearDelegate = PStakeRedeemerHandlerTerm pclearDelegate
+        { onDepositWithdraw = pdepositWithdraw
+        , onDestroy = pdestroy
+        , onPermitVote = ppermitVote
+        , onRetractVote = pretractVote
+        , onDelegateTo = pdelegateTo
+        , onClearDelegate = pclearDelegate
         }
