@@ -55,10 +55,10 @@ import Plutarch.Api.V2 (
   PTxOutRef,
   PValidator,
  )
-import Plutarch.Extra.AssetClass (passetClass, passetClassValueOf)
+import Plutarch.Extra.AssetClass (passetClass)
 import Plutarch.Extra.Field (pletAll, pletAllC)
 import "liqwid-plutarch-extra" Plutarch.Extra.List (pfindJust, pmapMaybe)
-import Plutarch.Extra.Map (pkeys, ptryLookup)
+import "liqwid-plutarch-extra" Plutarch.Extra.Map (pkeys, ptryLookup)
 import Plutarch.Extra.Maybe (passertPJust, pjust, pmaybe, pmaybeData, pnothing)
 import Plutarch.Extra.Ord (psort)
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
@@ -77,7 +77,7 @@ import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (
   pmatchC,
   ptryFromC,
  )
-import Plutarch.Extra.Value (psymbolValueOf)
+import Plutarch.Extra.Value (passetClassValueOf, psymbolValueOf)
 
 --------------------------------------------------------------------------------
 
@@ -490,7 +490,7 @@ governorValidator =
             proposalInputDatumF.status #== pconstantData Locked
 
           -- Find the highest votes and the corresponding tag.
-          let quorum = pto $ pto $ pfromData $ pfield @"execute" # proposalInputDatumF.thresholds
+          let quorum = pto $ pfromData $ pfield @"execute" # proposalInputDatumF.thresholds
               neutralOption = pneutralOption # proposalInputDatumF.effects
               finalResultTag = pwinner # proposalInputDatumF.votes # quorum # neutralOption
 
@@ -528,8 +528,8 @@ governorValidator =
                                   gatAssetClass = passetClass # atSymbol # tagToken
                                   valueGATCorrect =
                                     passetClassValueOf
-                                      # outputF.value
-                                      # gatAssetClass #== 1
+                                      # gatAssetClass
+                                      # outputF.value #== 1
 
                               let hasCorrectDatum =
                                     effect.datumHash #== pfromDatumHash # outputF.datum

@@ -41,6 +41,7 @@ import Agora.Proposal (
   ResultTag (..),
  )
 import Agora.Proposal.Time (ProposalStartingTime (ProposalStartingTime), ProposalTimingConfig (..))
+import Agora.SafeMoney (GTTag)
 import Agora.Stake (
   ProposalLock (..),
   StakeDatum (..),
@@ -48,7 +49,7 @@ import Agora.Stake (
  )
 import Data.Default.Class (Default (def))
 import Data.Map.Strict qualified as StrictMap
-import Data.Tagged (Tagged (Tagged), untag)
+import Data.Tagged (Tagged, untag)
 import Plutarch.Context (
   input,
   normalizeValue,
@@ -62,8 +63,7 @@ import Plutarch.Context (
   withRef,
   withValue,
  )
-import Plutarch.SafeMoney (Discrete (Discrete))
-import PlutusLedgerApi.V1.Value qualified as Value
+import Plutarch.Extra.AssetClass (assetClassValue)
 import PlutusLedgerApi.V2 (
   Credential (PubKeyCredential),
   PubKeyHash,
@@ -73,7 +73,7 @@ import Sample.Proposal.Shared (stakeTxRef)
 import Sample.Shared (
   governor,
   minAda,
-  proposalPolicySymbol,
+  proposalAssetClass,
   proposalValidator,
   proposalValidatorHash,
   stakeAssetClass,
@@ -106,10 +106,10 @@ defVoteFor :: ResultTag
 defVoteFor = ResultTag 0
 
 -- | The default number of GTs the stake will have.
-defStakedGTs :: Integer
+defStakedGTs :: Tagged GTTag Integer
 defStakedGTs = 100000
 
-alteredStakedGTs :: Integer
+alteredStakedGTs :: Tagged GTTag Integer
 alteredStakedGTs = 100
 
 -- | Default owner of the stakes.
@@ -186,7 +186,7 @@ stakeRedeemer = RetractVotes
 mkStakeInputDatum :: StakeParameters -> StakeDatum
 mkStakeInputDatum ps =
   StakeDatum
-    { stakedAmount = Discrete $ Tagged defStakedGTs
+    { stakedAmount = defStakedGTs
     , owner = PubKeyCredential defOwner
     , delegatedTo = Just $ PubKeyCredential defDelegatee
     , lockedBy = stakeLocks
@@ -231,7 +231,7 @@ mkProposalInputDatum sps pps =
     updatVotes (ProposalVotes vt) =
       ProposalVotes $
         StrictMap.adjust
-          (+ sps.numStakes * defStakedGTs)
+          (+ sps.numStakes * untag defStakedGTs)
           defVoteFor
           vt
 
@@ -240,7 +240,7 @@ mkProposalInputDatum sps pps =
 unlock :: forall b. CombinableBuilder b => ParameterBundle -> b
 unlock ps = builder
   where
-    pst = Value.singleton proposalPolicySymbol "" 1
+    pst = assetClassValue proposalAssetClass 1
 
     proposalInputDatum =
       mkProposalInputDatum
@@ -275,7 +275,7 @@ unlock ps = builder
 
     ---
 
-    sst = Value.assetClassValue stakeAssetClass 1
+    sst = assetClassValue stakeAssetClass 1
 
     stakeInputDatum = mkStakeInputDatum ps.stakeParameters
 
@@ -302,8 +302,8 @@ unlock ps = builder
         mconcat
           [ minAda
           , sst
-          , Value.assetClassValue
-              (untag governor.gtClassRef)
+          , assetClassValue
+              governor.gtClassRef
               gt
           ]
 

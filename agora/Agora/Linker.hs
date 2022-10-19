@@ -8,8 +8,8 @@ import Data.Aeson qualified as Aeson
 import Data.Map (fromList)
 import Data.Tagged (untag)
 import Plutarch.Api.V2 (mintingPolicySymbol, validatorHash)
+import Plutarch.Extra.AssetClass (AssetClass (AssetClass))
 import PlutusLedgerApi.V1 (Address, CurrencySymbol, TxOutRef, ValidatorHash)
-import PlutusLedgerApi.V1.Value (AssetClass (AssetClass))
 import Ply (
   ScriptRole (MintingPolicyRole, ValidatorRole),
   toMintingPolicy,
@@ -72,7 +72,7 @@ linker = do
           toMintingPolicy
             govPol'
       gstAssetClass =
-        AssetClass (gstSymbol, "")
+        AssetClass gstSymbol ""
       govValHash = validatorHash $ toValidator govVal'
 
       at = gstAssetClass
@@ -89,14 +89,14 @@ linker = do
       propValAddress =
         validatorHashToAddress $ validatorHash $ toValidator propVal'
       pstSymbol = mintingPolicySymbol $ toMintingPolicy propPol'
-      pstAssetClass = AssetClass (pstSymbol, "")
+      pstAssetClass = AssetClass pstSymbol ""
 
       stakPol' = stkPol # untag governor.gtClassRef
       stakVal' = stkVal # sstSymbol # pstAssetClass # untag governor.gtClassRef
       sstSymbol = mintingPolicySymbol $ toMintingPolicy stakPol'
       stakValTokenName =
         validatorHashToTokenName $ validatorHash $ toValidator stakVal'
-      sstAssetClass = AssetClass (sstSymbol, stakValTokenName)
+      sstAssetClass = AssetClass sstSymbol stakValTokenName
 
       treaVal' = treVal # atSymbol
 

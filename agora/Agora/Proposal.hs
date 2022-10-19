@@ -78,8 +78,9 @@ import Plutarch.Extra.IsData (
   ProductIsData (ProductIsData),
  )
 import "liqwid-plutarch-extra" Plutarch.Extra.List (pfindJust)
-import Plutarch.Extra.Map qualified as PM
+import "liqwid-plutarch-extra" Plutarch.Extra.Map qualified as PM
 import Plutarch.Extra.Maybe (pfromJust)
+import Plutarch.Extra.Tagged (PTagged)
 import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletC)
 import Plutarch.Lift (
   DerivePConstantViaNewtype (DerivePConstantViaNewtype),
@@ -87,7 +88,6 @@ import Plutarch.Lift (
   PUnsafeLiftDecl (type PLifted),
  )
 import Plutarch.Orphans ()
-import Plutarch.SafeMoney (PDiscrete)
 import PlutusLedgerApi.V2 (Credential, DatumHash, ScriptHash, ValidatorHash)
 import PlutusTx qualified
 
@@ -560,11 +560,11 @@ newtype PProposalThresholds (s :: S) = PProposalThresholds
       Term
         s
         ( PDataRecord
-            '[ "execute" ':= PDiscrete GTTag
-             , "create" ':= PDiscrete GTTag
-             , "toVoting" ':= PDiscrete GTTag
-             , "vote" ':= PDiscrete GTTag
-             , "cosign" ':= PDiscrete GTTag
+            '[ "execute" ':= PTagged GTTag PInteger
+             , "create" ':= PTagged GTTag PInteger
+             , "toVoting" ':= PTagged GTTag PInteger
+             , "vote" ':= PTagged GTTag PInteger
+             , "cosign" ':= PTagged GTTag PInteger
              ]
         )
   }

@@ -48,7 +48,7 @@ import Data.Coerce (coerce)
 import Data.Default (def)
 import Data.List (sort)
 import Data.Map.Strict qualified as StrictMap
-import Data.Tagged (untag)
+import Data.Tagged (Tagged)
 import Plutarch.Context (
   input,
   normalizeValue,
@@ -63,8 +63,7 @@ import Plutarch.Context (
   withRef,
   withValue,
  )
-import Plutarch.SafeMoney (Discrete (Discrete))
-import PlutusLedgerApi.V1.Value qualified as Value
+import Plutarch.Extra.AssetClass (assetClassValue)
 import PlutusLedgerApi.V2 (
   Credential (PubKeyCredential),
   POSIXTime (POSIXTime),
@@ -73,10 +72,9 @@ import PlutusLedgerApi.V2 (
  )
 import Sample.Proposal.Shared (proposalTxRef, stakeTxRef)
 import Sample.Shared (
-  fromDiscrete,
   governor,
   minAda,
-  proposalPolicySymbol,
+  proposalAssetClass,
   proposalValidator,
   proposalValidatorHash,
   stakeAssetClass,
@@ -130,8 +128,8 @@ data Validity = Validity
 
 --------------------------------------------------------------------------------
 
-mkStakeAmount :: StakedAmount -> Discrete GTTag
-mkStakeAmount Sufficient = Discrete $ (def @ProposalThresholds).cosign
+mkStakeAmount :: StakedAmount -> Tagged GTTag Integer
+mkStakeAmount Sufficient = (def @ProposalThresholds).cosign
 mkStakeAmount Insufficient = mkStakeAmount Sufficient - 1
 
 mkStakeOwner :: StakeOwner -> PubKeyHash
@@ -229,8 +227,8 @@ stakeRef = TxOutRef stakeTxRef 0
 cosign :: forall b. CombinableBuilder b => ParameterBundle -> b
 cosign ps = builder
   where
-    pst = Value.singleton proposalPolicySymbol "" 1
-    sst = Value.assetClassValue stakeAssetClass 1
+    pst = assetClassValue proposalAssetClass 1
+    sst = assetClassValue stakeAssetClass 1
 
     ----------------------------------------------------------------------------
 
@@ -240,11 +238,9 @@ cosign ps = builder
     stakeValue =
       normalizeValue $
         minAda
-          <> Value.assetClassValue
-            (untag governor.gtClassRef)
-            ( fromDiscrete $
-                mkStakeAmount ps.stakeParameters.gtAmount
-            )
+          <> assetClassValue
+            governor.gtClassRef
+            (mkStakeAmount ps.stakeParameters.gtAmount)
           <> sst
 
     stakeBuilder =

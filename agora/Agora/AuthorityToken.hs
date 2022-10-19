@@ -28,7 +28,7 @@ import Plutarch.Api.V2 (
   PTxInfo (PTxInfo),
   PTxOut (PTxOut),
  )
-import Plutarch.Extra.AssetClass (PAssetClass, passetClass, passetClassValueOf)
+import Plutarch.Extra.AssetClass (PAssetClassData, ptoScottEncoding)
 import "liqwid-plutarch-extra" Plutarch.Extra.List (plookupAssoc)
 import Plutarch.Extra.ScriptContext (pisTokenSpent)
 import Plutarch.Extra.Sum (PSum (PSum))
@@ -132,7 +132,7 @@ singleAuthorityTokenBurned gatCs inputs mint = unTermCont $ do
 
      @since 0.1.0
 -}
-authorityTokenPolicy :: ClosedTerm (PAssetClass :--> PMintingPolicy)
+authorityTokenPolicy :: ClosedTerm (PAssetClassData :--> PMintingPolicy)
 authorityTokenPolicy =
   plam $ \atAssetClass _redeemer ctx' ->
     pmatch ctx' $ \(PScriptContext ctx') -> unTermCont $ do
@@ -141,12 +141,16 @@ authorityTokenPolicy =
       txInfo <- pletFieldsC @'["inputs", "mint", "outputs"] txInfo'
       let inputs = txInfo.inputs
           mintedValue = pfromData txInfo.mint
-          govTokenSpent = pisTokenSpent # atAssetClass # inputs
+          govTokenSpent = pisTokenSpent # (ptoScottEncoding # atAssetClass) # inputs
 
       PMinting ownSymbol' <- pmatchC $ pfromData ctx.purpose
 
       let ownSymbol = pfromData $ pfield @"_0" # ownSymbol'
-          mintedATs = passetClassValueOf # mintedValue # (passetClass # ownSymbol # pconstant "")
+          mintedATs =
+            psymbolValueOf
+              # ownSymbol
+              # mintedValue
+
       pure $
         pif
           (0 #< mintedATs)

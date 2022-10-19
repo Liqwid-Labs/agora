@@ -32,6 +32,7 @@ import Plutarch.Context (
   withRef,
   withValue,
  )
+import Plutarch.Extra.AssetClass (assetClassValue)
 import PlutusLedgerApi.V1.Value qualified as Value
 import PlutusLedgerApi.V2 (
   CurrencySymbol (CurrencySymbol),
@@ -145,7 +146,7 @@ governorRedeemer = MutateGovernor
 
 mkGovernorBuilder :: forall b. CombinableBuilder b => GovernorParameters -> b
 mkGovernorBuilder ps =
-  let gst = Value.assetClassValue governorAssetClass 1
+  let gst = assetClassValue governorAssetClass 1
       value = sortValue $ gst <> minAda
       gstOutput =
         if ps.stealGST

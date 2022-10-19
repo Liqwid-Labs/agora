@@ -42,6 +42,7 @@ import Agora.Proposal.Time (
   ProposalStartingTime (ProposalStartingTime),
   ProposalTimingConfig (draftTime, votingTime),
  )
+import Agora.SafeMoney (GTTag)
 import Agora.Stake (
   ProposalLock (Voted),
   StakeDatum (..),
@@ -50,7 +51,7 @@ import Agora.Stake (
 import Data.Default (Default (def))
 import Data.Map.Strict qualified as StrictMap
 import Data.Maybe (catMaybes)
-import Data.Tagged (untag)
+import Data.Tagged (Tagged, untag)
 import Plutarch.Context (
   input,
   mint,
@@ -64,14 +65,14 @@ import Plutarch.Context (
   withRef,
   withValue,
  )
-import PlutusLedgerApi.V1.Value qualified as Value
+import Plutarch.Extra.AssetClass (adaClass, assetClassValue)
 import PlutusLedgerApi.V2 (Credential (PubKeyCredential), PubKeyHash)
 import PlutusLedgerApi.V2.Contexts (TxOutRef (TxOutRef))
 import Sample.Proposal.Shared (proposalTxRef)
 import Sample.Shared (
   governor,
   minAda,
-  proposalPolicySymbol,
+  proposalAssetClass,
   proposalValidator,
   proposalValidatorHash,
   stakeAssetClass,
@@ -102,7 +103,7 @@ data StakeParameters = StakeParameters
   }
 
 newtype StakeInputParameters = StakeInputParameters
-  { perStakeGTs :: Integer
+  { perStakeGTs :: Tagged GTTag Integer
   }
 
 data StakeOutputParameters = StakeOutputParameters
@@ -189,7 +190,7 @@ mkStakeRedeemer params =
 mkStakeInputDatum :: StakeInputParameters -> StakeDatum
 mkStakeInputDatum params =
   StakeDatum
-    { stakedAmount = fromInteger params.perStakeGTs
+    { stakedAmount = params.perStakeGTs
     , owner = PubKeyCredential stakeOwner
     , delegatedTo = Just (PubKeyCredential delegatee)
     , lockedBy =
@@ -205,8 +206,8 @@ mkStakeRef o i = TxOutRef proposalTxRef $ o + i
 
 vote :: forall b. CombinableBuilder b => ParameterBundle -> b
 vote params =
-  let pst = Value.singleton proposalPolicySymbol "" 1
-      sst = Value.assetClassValue stakeAssetClass 1
+  let pst = assetClassValue proposalAssetClass 1
+      sst = assetClassValue stakeAssetClass 1
 
       ---
 
@@ -217,8 +218,8 @@ vote params =
       stakeInputValue =
         normalizeValue $
           sst
-            <> Value.assetClassValue
-              (untag governor.gtClassRef)
+            <> assetClassValue
+              governor.gtClassRef
               params.stakeParameters.stakeInputParameters.perStakeGTs
             <> minAda
 
@@ -246,11 +247,11 @@ vote params =
                 10_000_000
          in normalizeValue $
               sst
-                <> Value.assetClassValue
-                  (untag governor.gtClassRef)
+                <> assetClassValue
+                  governor.gtClassRef
                   gtAmount
                 <> minAda
-                <> Value.singleton "" "" adaAmount
+                <> assetClassValue adaClass adaAmount
 
       stakeRedeemer =
         mkStakeRedeemer params.stakeParameters.stakeOutputParameters
@@ -269,7 +270,7 @@ vote params =
                       , withRef $ mkStakeRef numProposals' i
                       ]
                 , if params.stakeParameters.stakeOutputParameters.burnStakes
-                    then mint $ Value.assetClassValue stakeAssetClass (-1)
+                    then mint $ assetClassValue stakeAssetClass (-1)
                     else
                       output $
                         mconcat
@@ -292,7 +293,7 @@ vote params =
                 else id
             )
               . ( +
-                    params.stakeParameters.stakeInputParameters.perStakeGTs
+                    untag params.stakeParameters.stakeInputParameters.perStakeGTs
                       * params.stakeParameters.numStakes
                 )
           )

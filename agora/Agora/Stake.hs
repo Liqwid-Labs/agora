@@ -64,16 +64,15 @@ import Plutarch.DataRepr (
 import Plutarch.Extra.Field (pletAll)
 import Plutarch.Extra.IsData (
   DerivePConstantViaDataList (DerivePConstantViaDataList),
-  PlutusTypeDataList,
   ProductIsData (ProductIsData),
  )
 import "liqwid-plutarch-extra" Plutarch.Extra.List (pfindJust)
 import Plutarch.Extra.Maybe (passertPJust, pjust, pnothing)
 import Plutarch.Extra.Sum (PSum (PSum))
+import Plutarch.Extra.Tagged (PTagged)
 import Plutarch.Extra.Traversable (pfoldMap)
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (PLifted))
 import Plutarch.Orphans ()
-import Plutarch.SafeMoney (Discrete, PDiscrete)
 import PlutusLedgerApi.V2 (Credential)
 import PlutusTx qualified
 
@@ -193,7 +192,7 @@ PlutusTx.makeIsDataIndexed
      @since 0.1.0
 -}
 data StakeDatum = StakeDatum
-  { stakedAmount :: Discrete GTTag
+  { stakedAmount :: Tagged GTTag Integer
   -- ^ Tracks the amount of governance token staked in the datum.
   --   This also acts as the voting weight for 'Agora.Proposal.Proposal's.
   , owner :: Credential
@@ -236,7 +235,7 @@ newtype PStakeDatum (s :: S) = PStakeDatum
       Term
         s
         ( PDataRecord
-            '[ "stakedAmount" ':= PDiscrete GTTag
+            '[ "stakedAmount" ':= PTagged GTTag PInteger
              , "owner" ':= PCredential
              , "delegatedTo" ':= PMaybeData (PAsData PCredential)
              , "lockedBy" ':= PBuiltinList (PAsData PProposalLock)
@@ -261,7 +260,7 @@ newtype PStakeDatum (s :: S) = PStakeDatum
     )
 
 instance DerivePlutusType PStakeDatum where
-  type DPTStrat _ = PlutusTypeDataList
+  type DPTStrat _ = PlutusTypeNewtype
 
 -- | @since 1.0.0
 instance PUnsafeLiftDecl PStakeDatum where
@@ -282,7 +281,7 @@ instance PTryFrom PData (PAsData PStakeDatum)
 -}
 data PStakeRedeemer (s :: S)
   = -- | Deposit or withdraw a discrete amount of the staked governance token.
-    PDepositWithdraw (Term s (PDataRecord '["delta" ':= PDiscrete GTTag]))
+    PDepositWithdraw (Term s (PDataRecord '["delta" ':= PTagged GTTag PInteger]))
   | -- | Destroy a stake, retrieving its LQ, the minimum ADA and any other assets.
     PDestroy (Term s (PDataRecord '[]))
   | PPermitVote (Term s (PDataRecord '[]))
@@ -493,7 +492,7 @@ instance DerivePlutusType PSigContext where
 -}
 data PStakeRedeemerContext (s :: S)
   = -- | See also 'DepositWithdraw'.
-    PDepositWithdrawDelta (Term s (PDiscrete GTTag))
+    PDepositWithdrawDelta (Term s (PTagged GTTag PInteger))
   | -- | See also 'DelegateTo'.
     PSetDelegateTo (Term s PCredential)
   | PNoMetadata

@@ -11,6 +11,7 @@ module Agora.SafeMoney (
   GovernorSTTag,
   StakeSTTag,
   ProposalSTTag,
+  AuthorityTokenTag,
   adaRef,
 ) where
 
@@ -46,6 +47,12 @@ data StakeSTTag
      @since 0.1.0
 -}
 data ProposalSTTag
+
+{- | Authority token.
+
+     @since 1.0.0
+-}
+data AuthorityTokenTag
 
 {- | Resolves ada tags.
 

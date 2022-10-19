@@ -46,6 +46,7 @@ import Plutarch.DataRepr (
   DerivePConstantViaData (DerivePConstantViaData),
   PDataFields,
  )
+import Plutarch.Extra.AssetClass (AssetClass)
 import Plutarch.Extra.IsData (
   DerivePConstantViaEnum (DerivePConstantEnum),
   EnumIsData (EnumIsData),
@@ -54,7 +55,6 @@ import Plutarch.Extra.IsData (
 import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pletFieldsC)
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (PLifted))
 import PlutusLedgerApi.V1 (TxOutRef)
-import PlutusLedgerApi.V1.Value (AssetClass)
 import PlutusTx qualified
 
 --------------------------------------------------------------------------------

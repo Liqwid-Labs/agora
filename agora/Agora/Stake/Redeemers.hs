@@ -55,8 +55,6 @@ import Plutarch.Extra.Field (pletAll, pletAllC)
 import Plutarch.Extra.Maybe (pdjust, pdnothing, pmaybeData)
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
 import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletC, pmatchC)
-import Plutarch.Numeric.Additive (AdditiveMonoid (zero), AdditiveSemigroup ((+)))
-import Prelude hiding (Num ((+)))
 
 -- | A wrapper which ensures that no proposal is presented in the transaction.
 pwithoutProposal ::
@@ -393,7 +391,7 @@ pdepositWithdraw = phoistAcyclic $
 
     newStakedAmount <- pletC $ stakeInputDatumF.stakedAmount + delta
 
-    pguardC "Non-negative staked amount" $ zero #<= newStakedAmount
+    pguardC "Non-negative staked amount" $ 0 #<= newStakedAmount
 
     let expectedDatum =
           mkRecordConstr

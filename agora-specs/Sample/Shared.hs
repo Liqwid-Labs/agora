@@ -14,7 +14,6 @@ module Sample.Shared (
   minAda,
   deterministicTracingConfing,
   mkRedeemer,
-  fromDiscrete,
 
   -- * Agora Scripts
   agoraScripts,
@@ -46,6 +45,7 @@ module Sample.Shared (
   proposalValidatorHash,
   proposalValidatorAddress,
   proposalStartingTimeFromTimeRange,
+  proposalAssetClass,
 
   -- ** Authority
   authorityTokenPolicy,
@@ -71,10 +71,10 @@ import Agora.Proposal.Time (
   ProposalStartingTime (ProposalStartingTime),
   ProposalTimingConfig (..),
  )
+import Agora.SafeMoney (GovernorSTTag, ProposalSTTag, StakeSTTag)
 import Agora.Utils (
   validatorHashToTokenName,
  )
-import Data.Coerce (coerce)
 import Data.Default.Class (Default (..))
 import Data.Map (Map, (!))
 import Data.Tagged (Tagged (..))
@@ -85,11 +85,10 @@ import Plutarch.Api.V2 (
   mintingPolicySymbol,
   validatorHash,
  )
-import Plutarch.SafeMoney (Discrete (Discrete))
+import Plutarch.Extra.AssetClass (AssetClass (AssetClass))
 import PlutusLedgerApi.V1.Address (scriptHashAddress)
-import PlutusLedgerApi.V1.Value (AssetClass (AssetClass), TokenName, Value)
+import PlutusLedgerApi.V1.Value (TokenName, Value)
 import PlutusLedgerApi.V1.Value qualified as Value (
-  assetClass,
   singleton,
  )
 import PlutusLedgerApi.V2 (
@@ -133,7 +132,7 @@ governor = Governor oref gt mc
     oref = gstUTXORef
     gt =
       Tagged $
-        Value.assetClass
+        AssetClass
           "da8c30857834c6ae7203935b89278c532b3995245295456f993e1d24"
           "LQ"
     mc = 20
@@ -155,8 +154,8 @@ stakePolicy = MintingPolicy $ agoraScripts ! "agora:stakePolicy"
 stakeSymbol :: CurrencySymbol
 stakeSymbol = mintingPolicySymbol stakePolicy
 
-stakeAssetClass :: AssetClass
-stakeAssetClass = AssetClass (stakeSymbol, validatorHashToTokenName stakeValidatorHash)
+stakeAssetClass :: Tagged StakeSTTag AssetClass
+stakeAssetClass = Tagged $ AssetClass stakeSymbol (validatorHashToTokenName stakeValidatorHash)
 
 stakeValidator :: Validator
 stakeValidator = Validator $ agoraScripts ! "agora:stakeValidator"
@@ -179,8 +178,8 @@ governorValidator = Validator $ agoraScripts ! "agora:governorValidator"
 governorSymbol :: CurrencySymbol
 governorSymbol = mintingPolicySymbol governorPolicy
 
-governorAssetClass :: AssetClass
-governorAssetClass = AssetClass (governorSymbol, "")
+governorAssetClass :: Tagged GovernorSTTag AssetClass
+governorAssetClass = Tagged $ AssetClass governorSymbol ""
 
 governorValidatorHash :: ValidatorHash
 governorValidatorHash = validatorHash governorValidator
@@ -193,6 +192,9 @@ proposalPolicy = MintingPolicy $ agoraScripts ! "agora:proposalPolicy"
 
 proposalPolicySymbol :: CurrencySymbol
 proposalPolicySymbol = mintingPolicySymbol proposalPolicy
+
+proposalAssetClass :: Tagged ProposalSTTag AssetClass
+proposalAssetClass = Tagged $ AssetClass proposalPolicySymbol ""
 
 -- | A sample 'PubKeyHash'.
 signer :: PubKeyHash
@@ -259,9 +261,6 @@ proposalStartingTimeFromTimeRange _ = error "Given time range should be finite a
 
 mkRedeemer :: forall redeemer. PlutusTx.ToData redeemer => redeemer -> Redeemer
 mkRedeemer = Redeemer . toBuiltinData
-
-fromDiscrete :: forall tag. Discrete tag -> Integer
-fromDiscrete = coerce
 
 ------------------------------------------------------------------
 
