@@ -4,6 +4,7 @@ module Agora.Linker (linker) where
 
 import Agora.Governor (Governor (gstOutRef, gtClassRef, maximumCosigners))
 import Agora.Utils (validatorHashToAddress, validatorHashToTokenName)
+import Data.Aeson qualified as Aeson
 import Data.Map (fromList)
 import Data.Tagged (untag)
 import Plutarch.Api.V2 (mintingPolicySymbol, validatorHash)
@@ -24,11 +25,25 @@ import ScriptExport.ScriptInfo (
  )
 import Prelude hiding ((#))
 
+{- | Additional information provided after linking.
+
+ @since 1.0.0
+-}
+data AgoraScriptInfo = AgoraScriptInfo
+  { governorAssetClass :: AssetClass
+  , authorityTokenSymbol :: CurrencySymbol
+  , proposalAssetClass :: AssetClass
+  , stakeAssetClass :: AssetClass
+  , governor :: Governor
+  }
+  deriving stock (Generic, Show)
+  deriving anyclass (Aeson.FromJSON, Aeson.ToJSON)
+
 {- | Links parameterized Agora scripts given parameters.
 
  @since 1.0.0
 -}
-linker :: Linker Governor (ScriptExport Governor)
+linker :: Linker Governor (ScriptExport AgoraScriptInfo)
 linker = do
   govPol <- fetchTS @MintingPolicyRole @'[TxOutRef] "agora:governorPolicy"
   govVal <- fetchTS @ValidatorRole @'[Address, CurrencySymbol, CurrencySymbol, CurrencySymbol, CurrencySymbol] "agora:governorValidator"
@@ -105,5 +120,12 @@ linker = do
             , ("agora:treasuryWithdrawalValidator", toScript treaWithdrawalVal')
             , ("agora:mutateGovernorValidator", toScript mutateGovVal')
             ]
-      , information = governor
+      , information =
+          AgoraScriptInfo
+            { governorAssetClass = gstAssetClass
+            , authorityTokenSymbol = atSymbol
+            , proposalAssetClass = pstAssetClass
+            , stakeAssetClass = sstAssetClass
+            , governor = governor
+            }
       }
