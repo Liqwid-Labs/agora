@@ -204,6 +204,7 @@ library agora-specs
     Sample.Proposal.Vote
     Sample.Shared
     Sample.Stake
+    Sample.Stake.Create
     Sample.Stake.SetDelegate
     Sample.Treasury
     Spec.AuthorityToken

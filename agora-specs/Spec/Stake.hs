@@ -13,8 +13,6 @@ import Agora.Stake (
   StakeDatum (StakeDatum),
   StakeRedeemer (DepositWithdraw),
  )
-import Data.Bool (Bool (..))
-import Data.Maybe (Maybe (..))
 import PlutusLedgerApi.V1 (Credential (PubKeyCredential))
 import Sample.Shared (stakePolicy, stakeValidator)
 import Sample.Stake (
@@ -31,6 +29,7 @@ import Sample.Stake qualified as Stake (
   stakeCreationWrongDatum,
   stakeDepositWithdraw,
  )
+import Sample.Stake.Create qualified as Create
 import Sample.Stake.SetDelegate qualified as SetDelegate
 import Test.Specification (
   SpecificationTree,
@@ -40,14 +39,62 @@ import Test.Specification (
   validatorFailsWith,
   validatorSucceedsWith,
  )
-import Prelude (Num (negate), ($))
 
 -- | The SpecificationTree exported by this module.
 specs :: [SpecificationTree]
 specs =
   [ group
       "policy"
-      [ policySucceedsWith
+      [ group
+          "create"
+          [ group
+              "valid"
+              [ Create.mkTestCase
+                  "stake owner: pub key"
+                  Create.ownerIsPubKeyTotallyValid
+                  True
+              , Create.mkTestCase
+                  "stake owner: script"
+                  Create.ownerIsScriptTotallyValid
+                  True
+              ]
+          , group
+              "invalid"
+              [ Create.mkTestCase
+                  "mint more than one sst in one tx"
+                  Create.createMoreThanOneStake
+                  False
+              , Create.mkTestCase
+                  "spend stake while minting SST"
+                  Create.spendStake
+                  False
+              , Create.mkTestCase
+                  "wrong staked amount"
+                  Create.unexpectedStakedAmount
+                  False
+              , Create.mkTestCase
+                  "no stake datum"
+                  Create.noStakeDatum
+                  False
+              , Create.mkTestCase
+                  "bad stake datum"
+                  Create.malformedStakeDatum
+                  False
+              , Create.mkTestCase
+                  "not authorized by owner"
+                  Create.notAuthorizedByOwner
+                  False
+              , Create.mkTestCase
+                  "delegatee not empty"
+                  Create.setDelegatee
+                  False
+              , Create.mkTestCase
+                  "have locks"
+                  Create.alreadyHasLocks
+                  False
+              ]
+          ]
+      , policySucceedsWith
           "stakeCreation"
           stakePolicy
           ()

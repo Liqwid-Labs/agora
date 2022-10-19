@@ -53,7 +53,7 @@ import Agora.Stake.Redeemers (
   ppermitVote,
   pretractVote,
  )
-import Agora.Utils (passert, pmapMaybe)
+import Agora.Utils (passert, pisDNothing, pmapMaybe)
 import Plutarch.Api.V1 (
   PCredential (PPubKeyCredential, PScriptCredential),
   PCurrencySymbol,
@@ -73,7 +73,7 @@ import Plutarch.Extra.AssetClass (
   PAssetClassData,
   ptoScottEncoding,
  )
-import Plutarch.Extra.Field (pletAll)
+import Plutarch.Extra.Field (pletAll, pletAllC)
 import Plutarch.Extra.Functor (PFunctor (pfmap))
 import "liqwid-plutarch-extra" Plutarch.Extra.List (pfindJust)
 import Plutarch.Extra.Maybe (
@@ -207,24 +207,31 @@ stakePolicy =
                       # pfromData txInfoF.outputs
 
               outputF <-
-                pletFieldsC @'["value", "address", "datum"] scriptOutputWithStakeST
-              datumF <-
-                pletFieldsC @'["owner", "stakedAmount"] $
-                  pto $
-                    pfromData $
-                      pfromOutputDatum @(PAsData PStakeDatum) # outputF.datum # txInfoF.datums
+                pletFieldsC @'["value", "datum"]
+                  scriptOutputWithStakeST
 
-              let hasExpectedStake =
-                    ptraceIfFalse "Stake ouput has expected amount of stake token" $
+              datumF <-
+                pletAllC $
+                  pfromData $
+                    pfromOutputDatum @(PAsData PStakeDatum)
+                      # outputF.datum
+                      # txInfoF.datums
+
+              pure $
+                foldl1
+                  (#&&)
+                  [ ptraceIfFalse "Stake ouput has expected amount of stake token" $
                       passetClassValueOf # (ptoScottEncoding # gstClass) # outputF.value
                         #== pto (pfromData datumF.stakedAmount)
-              let ownerSignsTransaction =
-                    ptraceIfFalse "Stake Owner should sign the transaction" $
+                  , ptraceIfFalse "Stake Owner should sign the transaction" $
                       pauthorizedBy
                         # authorizationContext txInfoF
                         # datumF.owner
-
-              pure $ hasExpectedStake #&& ownerSignsTransaction
+                  , ptraceIfFalse "Initial delegatee should set to nothing" $
+                      pisDNothing # datumF.delegatedTo
+                  , ptraceIfFalse "Initial locks should be empty" $
+                      pnull # pfromData datumF.lockedBy
+                  ]
 
           pure $ popaque (pconstant ())
 
