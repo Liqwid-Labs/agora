@@ -247,9 +247,12 @@ stakePolicy =
 -}
 mkStakeValidator ::
   StakeRedeemerImpl ->
-  ClosedTerm (PCurrencySymbol :--> PAssetClass :--> PAssetClass :--> PValidator)
-mkStakeValidator impl =
-  plam $ \sstSymbol pstClass gstClass _datum redeemer ctx -> unTermCont $ do
+  Term s PCurrencySymbol ->
+  Term s PAssetClass ->
+  Term s PAssetClass ->
+  Term s PValidator
+mkStakeValidator impl sstSymbol pstClass gstClass =
+  plam $ \_datum redeemer ctx -> unTermCont $ do
     ctxF <- pletFieldsC @'["txInfo", "purpose"] ctx
     txInfo <- pletC $ pfromData ctxF.txInfo
     txInfoF <-
@@ -602,12 +605,13 @@ mkStakeValidator impl =
 -}
 stakeValidator :: ClosedTerm (PCurrencySymbol :--> PAssetClass :--> PAssetClass :--> PValidator)
 stakeValidator =
-  mkStakeValidator $
-    StakeRedeemerImpl
-      { onDepositWithdraw = PStakeRedeemerHandlerTerm pdepositWithdraw
-      , onDestroy = PStakeRedeemerHandlerTerm pdestroy
-      , onPermitVote = PStakeRedeemerHandlerTerm ppermitVote
-      , onRetractVote = PStakeRedeemerHandlerTerm pretractVote
-      , onDelegateTo = PStakeRedeemerHandlerTerm pdelegateTo
-      , onClearDelegate = PStakeRedeemerHandlerTerm pclearDelegate
-      }
+  plam $
+    mkStakeValidator $
+      StakeRedeemerImpl
+        { onDepositWithdraw = PStakeRedeemerHandlerTerm pdepositWithdraw
+        , onDestroy = PStakeRedeemerHandlerTerm pdestroy
+        , onPermitVote = PStakeRedeemerHandlerTerm ppermitVote
+        , onRetractVote = PStakeRedeemerHandlerTerm pretractVote
+        , onDelegateTo = PStakeRedeemerHandlerTerm pdelegateTo
+        , onClearDelegate = PStakeRedeemerHandlerTerm pclearDelegate
+        }
