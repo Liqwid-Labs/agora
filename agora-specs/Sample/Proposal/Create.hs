@@ -72,10 +72,10 @@ import PlutusLedgerApi.V2 (
 import Sample.Proposal.Shared (stakeTxRef)
 import Sample.Shared (
   fromDiscrete,
-  govAssetClass,
-  govValidator,
-  govValidatorHash,
   governor,
+  governorAssetClass,
+  governorValidator,
+  governorValidatorHash,
   minAda,
   proposalPolicy,
   proposalPolicySymbol,
@@ -284,7 +284,7 @@ createProposal ps = builder
   where
     pst = Value.singleton proposalPolicySymbol "" 1
     sst = Value.assetClassValue stakeAssetClass 1
-    gst = Value.assetClassValue govAssetClass 1
+    gst = Value.assetClassValue governorAssetClass 1
 
     ---
 
@@ -323,14 +323,14 @@ createProposal ps = builder
           timeRange $ mkTimeRange ps
         , input $
             mconcat
-              [ script govValidatorHash
+              [ script governorValidatorHash
               , withValue governorValue
               , withDatum governorInputDatum
               , withRef governorRef
               ]
         , output $
             mconcat
-              [ script govValidatorHash
+              [ script governorValidatorHash
               , withValue governorValue
               , withDatum (mkGovernorOutputDatum ps)
               ]
@@ -466,7 +466,7 @@ mkTestTree
         testValidator
           validForGovernorValidator
           "governor"
-          govValidator
+          governorValidator
           governorInputDatum
           governorRedeemer
           (spend governorRef)

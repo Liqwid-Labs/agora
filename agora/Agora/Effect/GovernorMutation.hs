@@ -150,7 +150,7 @@ mutateGovernorValidator ::
         :--> PValidator
     )
 mutateGovernorValidator =
-  plam $ \govValidatorHash gtSymbol -> makeEffect @PMutateGovernorDatum $
+  plam $ \govValidatorHash gstSymbol -> makeEffect @PMutateGovernorDatum $
     \_gatCs (effectDatum :: Term _ PMutateGovernorDatum) _ txInfo -> unTermCont $ do
       effectDatumF <- pletAllC effectDatum
       txInfoF <- pletFieldsC @'["inputs", "outputs", "datums", "redeemers"] txInfo
@@ -188,7 +188,7 @@ mutateGovernorValidator =
                             inputF.outRef #== effectDatumF.governorRef
                         , ptraceIfFalse "Governor UTxO should carry GST" $
                             psymbolValueOf
-                              # gtSymbol
+                              # gstSymbol
                               # (pfield @"value" # inputF.resolved)
                               #== 1
                         , ptraceIfFalse "Governor validator run" $

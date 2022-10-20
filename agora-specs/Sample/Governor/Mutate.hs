@@ -46,9 +46,9 @@ import PlutusLedgerApi.V2 (
 import Sample.Shared (
   agoraScripts,
   authorityTokenSymbol,
-  govAssetClass,
-  govValidator,
-  govValidatorHash,
+  governorAssetClass,
+  governorValidator,
+  governorValidatorHash,
   minAda,
  )
 import Test.Specification (SpecificationTree, testValidator)
@@ -145,19 +145,19 @@ governorRedeemer = MutateGovernor
 
 mkGovernorBuilder :: forall b. CombinableBuilder b => GovernorParameters -> b
 mkGovernorBuilder ps =
-  let gst = Value.assetClassValue govAssetClass 1
+  let gst = Value.assetClassValue governorAssetClass 1
       value = sortValue $ gst <> minAda
       gstOutput =
         if ps.stealGST
           then pubKey $ head pubKeyHashes
-          else script govValidatorHash
+          else script governorValidatorHash
       withGSTDatum =
         maybe mempty withDatum $
           mkGovernorOutputDatum ps.governorOutputDatumValidity
    in mconcat
         [ input $
             mconcat
-              [ script govValidatorHash
+              [ script governorValidatorHash
               , withDatum governorInputDatum
               , withValue value
               , withRef governorRef
@@ -237,7 +237,7 @@ mkTestCase name pb (Validity forGov) =
   testValidator
     forGov
     name
-    govValidator
+    governorValidator
     governorInputDatum
     governorRedeemer
     (mkSpending mutate pb governorRef)

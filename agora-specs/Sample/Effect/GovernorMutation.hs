@@ -45,8 +45,8 @@ import PlutusTx.AssocMap qualified as AssocMap
 import Sample.Shared (
   agoraScripts,
   authorityTokenSymbol,
-  govAssetClass,
-  govValidatorAddress,
+  governorAssetClass,
+  governorValidatorAddress,
   minAda,
   mkRedeemer,
   signer,
@@ -99,7 +99,7 @@ mkEffectDatum newGovDatum =
 -}
 mkEffectTxInfo :: GovernorDatum -> TxInfo
 mkEffectTxInfo newGovDatum =
-  let gst = Value.assetClassValue govAssetClass 1
+  let gst = Value.assetClassValue governorAssetClass 1
       at = Value.assetClassValue atAssetClass 1
 
       -- One authority token is burnt in the process.
@@ -121,7 +121,7 @@ mkEffectTxInfo newGovDatum =
       governorInput :: TxOut
       governorInput =
         TxOut
-          { txOutAddress = govValidatorAddress
+          { txOutAddress = governorValidatorAddress
           , txOutValue = gst
           , txOutDatum = OutputDatumHash $ toDatumHash governorInputDatum
           , txOutReferenceScript = Nothing
@@ -152,7 +152,7 @@ mkEffectTxInfo newGovDatum =
       governorOutput :: TxOut
       governorOutput =
         TxOut
-          { txOutAddress = govValidatorAddress
+          { txOutAddress = governorValidatorAddress
           , txOutValue = mconcat [gst, minAda]
           , txOutDatum = OutputDatumHash $ toDatumHash governorOutputDatum
           , txOutReferenceScript = Nothing

@@ -43,10 +43,10 @@ import PlutusLedgerApi.V2 (
  )
 import Property.Generator (genInput, genOutput)
 import Sample.Shared (
-  govAssetClass,
-  govSymbol,
-  govValidatorHash,
   governor,
+  governorAssetClass,
+  governorSymbol,
+  governorValidatorHash,
   gstUTXORef,
  )
 import Test.Tasty (TestTree)
@@ -171,12 +171,12 @@ governorMintingProperty =
     {- Note:
     I don't think it's easily possible to randomize orefs. We can't really pass pass `Governor` type to `actual` function.
     -}
-    gst = assetClassValue govAssetClass 1
+    gst = assetClassValue governorAssetClass 1
     mintAmount x = mint . mconcat $ replicate x gst
     outputToGov =
       output $
         mconcat
-          [ script govValidatorHash
+          [ script governorValidatorHash
           , withValue gst
           , withDatum govDatum
           ]
@@ -205,7 +205,7 @@ governorMintingProperty =
               GovernorOutputNotFound -> referencedInput <> mintAmount 1
               GovernorPolicyCorrect -> referencedInput <> outputToGov <> mintAmount 1
 
-      return . buildMinting' $ inputs <> outputs <> comp <> withMinting govSymbol
+      return . buildMinting' $ inputs <> outputs <> comp <> withMinting governorSymbol
 
     expected :: ScriptContext -> Maybe ()
     expected sc =

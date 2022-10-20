@@ -13,7 +13,7 @@ import Sample.Effect.GovernorMutation (
   mkEffectTxInfo,
   validNewGovernorDatum,
  )
-import Sample.Shared (govValidator)
+import Sample.Shared (governorValidator)
 import Test.Specification (
   SpecificationTree,
   effectFailsWith,
@@ -31,7 +31,7 @@ specs =
           "valid new governor datum"
           [ validatorSucceedsWith
               "governor validator should pass"
-              govValidator
+              governorValidator
               ( GovernorDatum
                   def
                   (ProposalId 0)
@@ -54,7 +54,7 @@ specs =
           "invalid new governor datum"
           [ validatorFailsWith
               "governor validator should fail"
-              govValidator
+              governorValidator
               ( GovernorDatum
                   def
                   (ProposalId 0)

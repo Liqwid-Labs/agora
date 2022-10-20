@@ -31,12 +31,12 @@ module Sample.Shared (
 
   -- ** Governor
   governor,
-  govPolicy,
-  govValidator,
-  govSymbol,
-  govAssetClass,
-  govValidatorAddress,
-  govValidatorHash,
+  governorPolicy,
+  governorValidator,
+  governorSymbol,
+  governorAssetClass,
+  governorValidatorAddress,
+  governorValidatorHash,
   gstUTXORef,
 
   -- ** Proposal
@@ -170,23 +170,23 @@ stakeAddress = Address (ScriptCredential stakeValidatorHash) Nothing
 gstUTXORef :: TxOutRef
 gstUTXORef = TxOutRef "f28cd7145c24e66fd5bcd2796837aeb19a48a2656e7833c88c62a2d0450bd00d" 0
 
-govPolicy :: MintingPolicy
-govPolicy = MintingPolicy $ agoraScripts ! "agora:governorPolicy"
+governorPolicy :: MintingPolicy
+governorPolicy = MintingPolicy $ agoraScripts ! "agora:governorPolicy"
 
-govValidator :: Validator
-govValidator = Validator $ agoraScripts ! "agora:governorValidator"
+governorValidator :: Validator
+governorValidator = Validator $ agoraScripts ! "agora:governorValidator"
 
-govSymbol :: CurrencySymbol
-govSymbol = mintingPolicySymbol govPolicy
+governorSymbol :: CurrencySymbol
+governorSymbol = mintingPolicySymbol governorPolicy
 
-govAssetClass :: AssetClass
-govAssetClass = AssetClass (govSymbol, "")
+governorAssetClass :: AssetClass
+governorAssetClass = AssetClass (governorSymbol, "")
 
-govValidatorHash :: ValidatorHash
-govValidatorHash = validatorHash govValidator
+governorValidatorHash :: ValidatorHash
+governorValidatorHash = validatorHash governorValidator
 
-govValidatorAddress :: Address
-govValidatorAddress = scriptHashAddress govValidatorHash
+governorValidatorAddress :: Address
+governorValidatorAddress = scriptHashAddress governorValidatorHash
 
 proposalPolicy :: MintingPolicy
 proposalPolicy = MintingPolicy $ agoraScripts ! "agora:proposalPolicy"

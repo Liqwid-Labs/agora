@@ -108,10 +108,10 @@ import Sample.Proposal.Shared (
 import Sample.Shared (
   authorityTokenPolicy,
   authorityTokenSymbol,
-  govAssetClass,
-  govValidator,
-  govValidatorHash,
   governor,
+  governorAssetClass,
+  governorValidator,
+  governorValidatorHash,
   minAda,
   proposalPolicySymbol,
   proposalValidator,
@@ -432,19 +432,19 @@ governorRef = TxOutRef governorTxRef 2
 -}
 mkGovernorBuilder :: forall b. CombinableBuilder b => GovernorParameters -> b
 mkGovernorBuilder ps =
-  let gst = Value.assetClassValue govAssetClass 1
+  let gst = Value.assetClassValue governorAssetClass 1
       value = sortValue $ gst <> minAda
    in mconcat
         [ input $
             mconcat
-              [ script govValidatorHash
+              [ script governorValidatorHash
               , withValue value
               , withRef governorRef
               , withDatum governorInputDatum
               ]
         , output $
             mconcat
-              [ script govValidatorHash
+              [ script governorValidatorHash
               , withValue value
               , withRef governorRef
               , withDatum (mkGovernorOutputDatum ps)
@@ -542,7 +542,7 @@ mkTestTree name pb val =
         testValidator
           (fromJust val.forGovernorValidator)
           "governor"
-          govValidator
+          governorValidator
           governorInputDatum
           governorRedeemer
           (spend governorRef)
