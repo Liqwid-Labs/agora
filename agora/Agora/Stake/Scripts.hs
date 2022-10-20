@@ -43,7 +43,6 @@ import Agora.Stake (
     PStakeRedeemerHandlerContext
   ),
   StakeRedeemerImpl (..),
-  pstakeLocked,
  )
 import Agora.Stake.Redeemers (
   pclearDelegate,
@@ -151,26 +150,16 @@ stakePolicy =
                 pto $
                   pfoldMap @_ @_ @(PSum PInteger)
                     # plam
-                      ( \((pfield @"resolved" #) -> txOut) -> unTermCont $ do
-                          txOutF <- pletFieldsC @'["value", "datum"] txOut
-
+                      ( \((pfield @"resolved" #) -> txOut) ->
                           let isStakeUTxO =
-                                psymbolValueOf # ownSymbol # txOutF.value #== 1
-
-                          pmatchC isStakeUTxO
-                            >>= \case
-                              PTrue -> do
-                                let datum =
-                                      pfromData $
-                                        pfromOutputDatum @(PAsData PStakeDatum)
-                                          # txOutF.datum
-                                          # txInfoF.datums
-
-                                pguardC "Stake is unlocked" $
-                                  pnot # (pstakeLocked # datum)
-
-                                pure $ pcon $ PSum 1
-                              PFalse -> pure mempty
+                                psymbolValueOf
+                                  # ownSymbol
+                                  # (pfield @"value" # txOut)
+                                  #== 1
+                           in pif
+                                isStakeUTxO
+                                (pcon $ PSum 1)
+                                mempty
                       )
                     # pfromData txInfoF.inputs
 

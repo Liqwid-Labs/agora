@@ -123,7 +123,7 @@ specs =
               , Destroy.mkTestTree
                   "Destroy locked stakes"
                   Destroy.lockedStakes
-                  (Destroy.Validity (Just False) False)
+                  (Destroy.Validity (Just True) False)
               , Destroy.mkTestTree
                   "not authorized by owner"
                   Destroy.notAuthorized
