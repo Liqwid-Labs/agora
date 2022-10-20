@@ -14,7 +14,7 @@ import Agora.Stake (
   StakeRedeemer (DepositWithdraw),
  )
 import PlutusLedgerApi.V1 (Credential (PubKeyCredential))
-import Sample.Shared (stakePolicy, stakeValidator)
+import Sample.Shared (stakeValidator)
 import Sample.Stake (
   DepositWithdrawExample (
     DepositWithdrawExample,
@@ -24,9 +24,6 @@ import Sample.Stake (
   signer,
  )
 import Sample.Stake qualified as Stake (
-  stakeCreation,
-  stakeCreationUnsigned,
-  stakeCreationWrongDatum,
   stakeDepositWithdraw,
  )
 import Sample.Stake.Create qualified as Create
@@ -34,8 +31,6 @@ import Sample.Stake.SetDelegate qualified as SetDelegate
 import Test.Specification (
   SpecificationTree,
   group,
-  policyFailsWith,
-  policySucceedsWith,
   validatorFailsWith,
   validatorSucceedsWith,
  )
@@ -94,21 +89,6 @@ specs =
                   False
               ]
           ]
-      , policySucceedsWith
-          "stakeCreation"
-          stakePolicy
-          ()
-          Stake.stakeCreation
-      , policyFailsWith
-          "stakeCreationWrongDatum"
-          stakePolicy
-          ()
-          Stake.stakeCreationWrongDatum
-      , policyFailsWith
-          "stakeCreationUnsigned"
-          stakePolicy
-          ()
-          Stake.stakeCreationUnsigned
       ]
   , group
       "validator"
