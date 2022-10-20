@@ -205,6 +205,7 @@ library agora-specs
     Sample.Shared
     Sample.Stake
     Sample.Stake.Create
+    Sample.Stake.Destroy
     Sample.Stake.SetDelegate
     Sample.Treasury
     Spec.AuthorityToken

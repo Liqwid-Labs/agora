@@ -27,6 +27,7 @@ import Sample.Stake qualified as Stake (
   stakeDepositWithdraw,
  )
 import Sample.Stake.Create qualified as Create
+import Sample.Stake.Destroy qualified as Destroy
 import Sample.Stake.SetDelegate qualified as SetDelegate
 import Test.Specification (
   SpecificationTree,
@@ -92,7 +93,48 @@ specs =
       ]
   , group
       "validator"
-      [ validatorSucceedsWith
+      [ group
+          "destroy"
+          [ group
+              "legal"
+              [ Destroy.mkTestTree
+                  "One stake"
+                  Destroy.oneStake
+                  (Destroy.Validity (Just True) True)
+              , Destroy.mkTestTree
+                  "Multiple stake"
+                  Destroy.multipleStakes
+                  (Destroy.Validity (Just True) True)
+              ]
+          , group
+              "illegal"
+              [ Destroy.mkTestTree
+                  "Destroy only one stake to steal SST"
+                  Destroy.stealSST
+                  (Destroy.Validity (Just False) False)
+              , Destroy.mkTestTree
+                  "Destroy nothing to steal SST"
+                  Destroy.stealSST1
+                  (Destroy.Validity Nothing False)
+              , Destroy.mkTestTree
+                  "Steal SST"
+                  Destroy.stealSST3
+                  (Destroy.Validity (Just False) False)
+              , Destroy.mkTestTree
+                  "Destroy locked stakes"
+                  Destroy.lockedStakes
+                  (Destroy.Validity (Just False) False)
+              , Destroy.mkTestTree
+                  "not authorized by owner"
+                  Destroy.notAuthorized
+                  (Destroy.Validity (Just True) False)
+              , Destroy.mkTestTree
+                  "not authorized by owner"
+                  Destroy.authorizedByDelegatee
+                  (Destroy.Validity (Just True) False)
+              ]
+          ]
+      , validatorSucceedsWith
           "stakeDepositWithdraw deposit"
           stakeValidator
           (StakeDatum 100_000 (PubKeyCredential signer) Nothing [])
