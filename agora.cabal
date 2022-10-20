@@ -199,6 +199,7 @@ library agora-specs
     Sample.Proposal.Advance
     Sample.Proposal.Cosign
     Sample.Proposal.Create
+    Sample.Proposal.PrivilegeEscalate
     Sample.Proposal.Shared
     Sample.Proposal.Unlock
     Sample.Proposal.Vote
