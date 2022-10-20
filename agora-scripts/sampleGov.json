@@ -1,0 +1,7 @@
+{ "gstOutRef":
+  {"txOutRefId":"f28cd7145c24e66fd5bcd2796837aeb19a48a2656e7833c88c62a2d0450bd00d"
+   ,"txOutRefIdx":0
+  }
+ ,"gtClassRef":["da8c30857834c6ae7203935b89278c532b3995245295456f993e1d24","4c51"]
+ ,"maximumCosigners":20
+}

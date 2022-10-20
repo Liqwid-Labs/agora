@@ -11,7 +11,6 @@ import Language.PureScript.Bridge (
 
 --------------------------------------------------------------------------------
 
-import Agora.AuthorityToken qualified as AuthorityToken
 import Agora.Effect.GovernorMutation qualified as GovernorMutation
 import Agora.Effect.TreasuryWithdrawal qualified as TreasuryWithdrawalEffect
 import Agora.Governor qualified as Governor
@@ -38,8 +37,6 @@ agoraTypes =
     mkSumType (Proxy @Stake.ProposalLock)
   , mkSumType (Proxy @Stake.StakeRedeemer)
   , mkSumType (Proxy @Stake.StakeDatum)
-  , -- AuthorityToken
-    mkSumType (Proxy @AuthorityToken.AuthorityToken)
   , -- Effects
     mkSumType (Proxy @TreasuryWithdrawalEffect.TreasuryWithdrawalDatum)
   , mkSumType (Proxy @GovernorMutation.MutateGovernorDatum)

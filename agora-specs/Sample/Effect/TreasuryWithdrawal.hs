@@ -6,6 +6,7 @@ Description: Sample based testing for Treasury Withdrawal Effect
 This module provides samples for Treasury Withdrawal Effect tests.
 -}
 module Sample.Effect.TreasuryWithdrawal (
+  validator,
   inputTreasury,
   inputUser,
   inputGAT,
@@ -21,9 +22,9 @@ module Sample.Effect.TreasuryWithdrawal (
 
 import Agora.Effect.TreasuryWithdrawal (
   TreasuryWithdrawalDatum (TreasuryWithdrawalDatum),
-  treasuryWithdrawalValidator,
  )
-import Plutarch.Api.V2 (mkValidator, validatorHash)
+import Data.Map ((!))
+import Plutarch.Api.V2 (validatorHash)
 import PlutusLedgerApi.V1.Interval qualified as Interval (always)
 import PlutusLedgerApi.V1.Value qualified as Value (singleton)
 import PlutusLedgerApi.V2 (
@@ -41,18 +42,18 @@ import PlutusLedgerApi.V2 (
   TxInfo (..),
   TxOut (..),
   TxOutRef (TxOutRef),
-  Validator,
+  Validator (Validator),
   ValidatorHash (ValidatorHash),
   Value,
   toBuiltinData,
  )
 import PlutusTx.AssocMap qualified as AssocMap
-import Sample.Shared (deterministicTracingConfing)
+import Sample.Shared (agoraScripts, authorityTokenSymbol)
 import Test.Util (scriptCredentials, userCredentials)
 
 -- | A sample Currency Symbol.
 currSymbol :: CurrencySymbol
-currSymbol = "9c04a69c7133e26061fe5a15adaf4f79cd51e47ef22a2e3c91a36f04"
+currSymbol = authorityTokenSymbol
 
 -- | A sample 'PubKeyHash'.
 signer :: PubKeyHash
@@ -147,7 +148,7 @@ buildReceiversOutputFromDatum (TreasuryWithdrawalDatum xs _) = f <$> xs
 
 -- | Effect validator instance.
 validator :: Validator
-validator = mkValidator deterministicTracingConfing $ treasuryWithdrawalValidator currSymbol
+validator = Validator $ agoraScripts ! "agora:treasuryWithdrawalValidator"
 
 -- | 'TokenName' that represents the hash of the 'Agora.Stake.Stake' validator.
 validatorHashTN :: TokenName

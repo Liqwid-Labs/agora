@@ -18,8 +18,6 @@ import Plutarch.Api.V2 (
   PValidator,
  )
 import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC, ptryFromC)
-import Plutarch.TryFrom ()
-import PlutusLedgerApi.V1.Value (CurrencySymbol)
 
 {- | Helper "template" for creating effect validator.
 
@@ -27,21 +25,20 @@ import PlutusLedgerApi.V1.Value (CurrencySymbol)
      an effect is implemented. In such situations, it's okay to not use this
      helper.
 
-     @since 0.1.0
+     @since 1.0.0
 -}
 makeEffect ::
-  forall (datum :: PType).
+  forall (datum :: PType) (s :: S).
   (PTryFrom PData datum, PIsData datum) =>
-  CurrencySymbol ->
-  ( forall (s :: S).
-    Term s PCurrencySymbol ->
+  ( Term s PCurrencySymbol ->
     Term s datum ->
     Term s PTxOutRef ->
     Term s (PAsData PTxInfo) ->
     Term s POpaque
   ) ->
-  ClosedTerm PValidator
-makeEffect gatCs' f =
+  Term s PCurrencySymbol ->
+  Term s PValidator
+makeEffect f atSymbol =
   plam $ \datum _redeemer ctx' -> unTermCont $ do
     ctx <- pletFieldsC @'["txInfo", "purpose"] ctx'
 
@@ -64,10 +61,9 @@ makeEffect gatCs' f =
     txOutRef' <- pletC (pfield @"_0" # txOutRef)
 
     txInfo <- pletFieldsC @'["mint", "inputs"] ctx.txInfo
-    gatCs <- pletC $ pconstant gatCs'
 
     pguardC "A single authority token has been burned" $
-      singleAuthorityTokenBurned gatCs txInfo.inputs txInfo.mint
+      singleAuthorityTokenBurned atSymbol txInfo.inputs txInfo.mint
 
     -- run effect function
-    pure $ f gatCs datum' txOutRef' ctx.txInfo
+    pure $ f atSymbol datum' txOutRef' ctx.txInfo

@@ -63,7 +63,6 @@ import Agora.Proposal.Time (
     votingTime
   ),
  )
-import Agora.Scripts (AgoraScripts (..))
 import Agora.Stake (
   StakeDatum (..),
  )
@@ -107,13 +106,15 @@ import Sample.Proposal.Shared (
   stakeTxRef,
  )
 import Sample.Shared (
-  agoraScripts,
+  authorityTokenPolicy,
   authorityTokenSymbol,
-  govAssetClass,
-  govValidatorHash,
   governor,
+  governorAssetClass,
+  governorValidator,
+  governorValidatorHash,
   minAda,
   proposalPolicySymbol,
+  proposalValidator,
   proposalValidatorHash,
   signer,
   stakeAssetClass,
@@ -431,19 +432,19 @@ governorRef = TxOutRef governorTxRef 2
 -}
 mkGovernorBuilder :: forall b. CombinableBuilder b => GovernorParameters -> b
 mkGovernorBuilder ps =
-  let gst = Value.assetClassValue govAssetClass 1
+  let gst = Value.assetClassValue governorAssetClass 1
       value = sortValue $ gst <> minAda
    in mconcat
         [ input $
             mconcat
-              [ script govValidatorHash
+              [ script governorValidatorHash
               , withValue value
               , withRef governorRef
               , withDatum governorInputDatum
               ]
         , output $
             mconcat
-              [ script govValidatorHash
+              [ script governorValidatorHash
               , withValue value
               , withRef governorRef
               , withDatum (mkGovernorOutputDatum ps)
@@ -532,7 +533,7 @@ mkTestTree name pb val =
             testValidator
               val.forProposalValidator
               "proposal"
-              agoraScripts.compiledProposalValidator
+              proposalValidator
               proposalInputDatum
               proposalRedeemer
               (spend proposalRef)
@@ -541,7 +542,7 @@ mkTestTree name pb val =
         testValidator
           (fromJust val.forGovernorValidator)
           "governor"
-          agoraScripts.compiledGovernorValidator
+          governorValidator
           governorInputDatum
           governorRedeemer
           (spend governorRef)
@@ -554,7 +555,7 @@ mkTestTree name pb val =
           ( testPolicy
               (fromJust val.forAuthorityTokenPolicy)
               "authority"
-              agoraScripts.compiledAuthorityTokenPolicy
+              authorityTokenPolicy
               authorityTokenRedeemer
               (mkMinting advance pb authorityTokenSymbol)
           )

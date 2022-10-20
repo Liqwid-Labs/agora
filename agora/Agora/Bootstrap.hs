@@ -6,66 +6,52 @@
 -}
 module Agora.Bootstrap (agoraScripts) where
 
-import Agora.AuthorityToken (AuthorityToken (AuthorityToken), authorityTokenPolicy)
+import Agora.AuthorityToken (authorityTokenPolicy)
+import Agora.Effect.GovernorMutation (mutateGovernorValidator)
+import Agora.Effect.NoOp (noOpValidator)
 import Agora.Effect.TreasuryWithdrawal (treasuryWithdrawalValidator)
-import Agora.Governor (Governor, gstOutRef, gtClassRef, maximumCosigners)
 import Agora.Governor.Scripts (governorPolicy, governorValidator)
 import Agora.Proposal.Scripts (proposalPolicy, proposalValidator)
-import Agora.Scripts (AgoraScripts (AgoraScripts))
-import Agora.Scripts qualified as Scripts
 import Agora.Stake.Scripts (stakePolicy, stakeValidator)
 import Agora.Treasury (treasuryValidator)
-import Agora.Utils (
-  CompiledMintingPolicy (CompiledMintingPolicy),
-  CompiledValidator (CompiledValidator),
- )
+import Data.Map (fromList)
+import Data.Text (Text, unpack)
 import Plutarch (Config)
-import Plutarch.Api.V2 (
-  mintingPolicySymbol,
-  mkMintingPolicy,
-  mkValidator,
- )
-import PlutusLedgerApi.V1.Value (AssetClass (AssetClass))
+import Plutarch.Extra.AssetClass (PAssetClass)
+import PlutusLedgerApi.V1.Value (AssetClass)
+import Ply (TypedScriptEnvelope)
+import Ply.Plutarch.Class (PlyArgOf)
+import Ply.Plutarch.TypedWriter (TypedWriter, mkEnvelope)
+import ScriptExport.ScriptInfo (RawScriptExport (..))
 
-{- | Parameterize and precompiled core scripts, given the
-     'Agora.Governor.Governor' parameters and plutarch configurations.
+type instance PlyArgOf PAssetClass = AssetClass
 
-     @since 0.2.0
+{- | Parameterize core scripts, given the 'Agora.Governor.Governor'
+     parameters and plutarch configurations.
+
+     @since 1.0.0
 -}
-agoraScripts :: Config -> Governor -> AgoraScripts
-agoraScripts conf gov = scripts
+agoraScripts :: Config -> RawScriptExport
+agoraScripts conf =
+  RawScriptExport $
+    fromList
+      [ envelope "agora:governorPolicy" governorPolicy
+      , envelope "agora:governorValidator" governorValidator
+      , envelope "agora:stakePolicy" stakePolicy
+      , envelope "agora:stakeValidator" stakeValidator
+      , envelope "agora:proposalPolicy" proposalPolicy
+      , envelope "agora:proposalValidator" proposalValidator
+      , envelope "agora:treasuryValidator" treasuryValidator
+      , envelope "agora:authorityTokenPolicy" authorityTokenPolicy
+      , envelope "agora:noOpValidator" noOpValidator
+      , envelope "agora:treasuryWithdrawalValidator" treasuryWithdrawalValidator
+      , envelope "agora:mutateGovernorValidator" mutateGovernorValidator
+      ]
   where
-    mkMintingPolicy' = mkMintingPolicy conf
-    mkValidator' = mkValidator conf
-
-    compiledGovernorPolicy = mkMintingPolicy' $ governorPolicy gov.gstOutRef
-    compiledGovernorValidator = mkValidator' $ governorValidator scripts
-    governorSymbol = mintingPolicySymbol compiledGovernorPolicy
-    governorAssetClass = AssetClass (governorSymbol, "")
-
-    authority = AuthorityToken governorAssetClass
-    compiledAuthorityPolicy = mkMintingPolicy' $ authorityTokenPolicy authority
-    authorityTokenSymbol = mintingPolicySymbol compiledAuthorityPolicy
-
-    compiledProposalPolicy = mkMintingPolicy' $ proposalPolicy governorAssetClass
-    compiledProposalValidator = mkValidator' $ proposalValidator scripts gov.maximumCosigners
-
-    compiledStakePolicy = mkMintingPolicy' $ stakePolicy gov.gtClassRef
-    compiledStakeValidator = mkValidator' $ stakeValidator scripts gov.gtClassRef
-
-    compiledTreasuryValidator = mkValidator' $ treasuryValidator authorityTokenSymbol
-
-    compiledTreasuryWithdrawalEffect = mkValidator' $ treasuryWithdrawalValidator authorityTokenSymbol
-
-    scripts =
-      AgoraScripts
-        { Scripts.compiledGovernorPolicy = CompiledMintingPolicy compiledGovernorPolicy
-        , Scripts.compiledGovernorValidator = CompiledValidator compiledGovernorValidator
-        , Scripts.compiledStakePolicy = CompiledMintingPolicy compiledStakePolicy
-        , Scripts.compiledStakeValidator = CompiledValidator compiledStakeValidator
-        , Scripts.compiledProposalPolicy = CompiledMintingPolicy compiledProposalPolicy
-        , Scripts.compiledProposalValidator = CompiledValidator compiledProposalValidator
-        , Scripts.compiledTreasuryValidator = CompiledValidator compiledTreasuryValidator
-        , Scripts.compiledAuthorityTokenPolicy = CompiledMintingPolicy compiledAuthorityPolicy
-        , Scripts.compiledTreasuryWithdrawalEffect = CompiledValidator compiledTreasuryWithdrawalEffect
-        }
+    envelope ::
+      forall (pt :: S -> Type).
+      TypedWriter pt =>
+      Text ->
+      ClosedTerm pt ->
+      (Text, TypedScriptEnvelope)
+    envelope d t = (d, either (error . unpack) id $ mkEnvelope conf d t)

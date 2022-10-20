@@ -39,7 +39,6 @@ import Agora.Proposal.Time (
   ProposalStartingTime (..),
  )
 import Agora.SafeMoney (GTTag)
-import Agora.Scripts (AgoraScripts (..))
 import Agora.Stake (
   ProposalLock (..),
   StakeDatum (..),
@@ -72,18 +71,20 @@ import PlutusLedgerApi.V2 (
  )
 import Sample.Proposal.Shared (stakeTxRef)
 import Sample.Shared (
-  agoraScripts,
   fromDiscrete,
-  govAssetClass,
-  govValidatorHash,
   governor,
+  governorAssetClass,
+  governorValidator,
+  governorValidatorHash,
   minAda,
+  proposalPolicy,
   proposalPolicySymbol,
   proposalStartingTimeFromTimeRange,
   proposalValidatorHash,
   signer,
   signer2,
   stakeAssetClass,
+  stakeValidator,
   stakeValidatorHash,
  )
 import Test.Specification (SpecificationTree, group, testPolicy, testValidator)
@@ -283,7 +284,7 @@ createProposal ps = builder
   where
     pst = Value.singleton proposalPolicySymbol "" 1
     sst = Value.assetClassValue stakeAssetClass 1
-    gst = Value.assetClassValue govAssetClass 1
+    gst = Value.assetClassValue governorAssetClass 1
 
     ---
 
@@ -322,14 +323,14 @@ createProposal ps = builder
           timeRange $ mkTimeRange ps
         , input $
             mconcat
-              [ script govValidatorHash
+              [ script governorValidatorHash
               , withValue governorValue
               , withDatum governorInputDatum
               , withRef governorRef
               ]
         , output $
             mconcat
-              [ script govValidatorHash
+              [ script governorValidatorHash
               , withValue governorValue
               , withDatum (mkGovernorOutputDatum ps)
               ]
@@ -457,7 +458,7 @@ mkTestTree
         testPolicy
           validForProposalPolicy
           "proposal"
-          agoraScripts.compiledProposalPolicy
+          proposalPolicy
           proposalPolicyRedeemer
           (mint proposalPolicySymbol)
 
@@ -465,7 +466,7 @@ mkTestTree
         testValidator
           validForGovernorValidator
           "governor"
-          agoraScripts.compiledGovernorValidator
+          governorValidator
           governorInputDatum
           governorRedeemer
           (spend governorRef)
@@ -474,7 +475,7 @@ mkTestTree
         testValidator
           validForStakeValidator
           "stake"
-          agoraScripts.compiledStakeValidator
+          stakeValidator
           (mkStakeInputDatum ps)
           stakeRedeemer
           (spend stakeRef)

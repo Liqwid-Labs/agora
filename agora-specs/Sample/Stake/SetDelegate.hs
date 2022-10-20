@@ -20,7 +20,6 @@ module Sample.Stake.SetDelegate (
 ) where
 
 import Agora.Governor (Governor (gtClassRef))
-import Agora.Scripts (AgoraScripts (..))
 import Agora.Stake (
   StakeDatum (..),
   StakeRedeemer (ClearDelegate, DelegateTo),
@@ -47,13 +46,13 @@ import PlutusLedgerApi.V2 (
   TxOutRef (TxOutRef),
  )
 import Sample.Shared (
-  agoraScripts,
   fromDiscrete,
   governor,
   minAda,
   signer,
   signer2,
   stakeAssetClass,
+  stakeValidator,
   stakeValidatorHash,
  )
 import Test.Specification (SpecificationTree, testValidator)
@@ -159,7 +158,7 @@ mkTestCase name ps valid =
   testValidator
     valid
     name
-    agoraScripts.compiledStakeValidator
+    stakeValidator
     (mkStakeInputDatum ps)
     (mkStakeRedeemer ps)
     (setDelegate ps)
