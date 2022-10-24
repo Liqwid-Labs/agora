@@ -12,7 +12,7 @@ module Agora.Proposal.Scripts (
 
 import Agora.Proposal (
   PProposalDatum (PProposalDatum),
-  PProposalRedeemer (PAdvanceProposal, PCosign, PUnlock, PVote),
+  PProposalRedeemer (PAdvanceProposal, PCosign, PUnlockStake, PVote),
   PProposalStatus (PDraft, PFinished, PLocked, PVotingReady),
   PProposalVotes (PProposalVotes),
   ProposalStatus (Draft, Finished, Locked, VotingReady),
@@ -520,7 +520,7 @@ proposalValidator =
 
           ----------------------------------------------------------------------
 
-          PUnlock _ -> spendStakes $ \sctxF -> do
+          PUnlockStake _ -> spendStakes $ \sctxF -> do
             let expectedVotes =
                   pfoldl
                     # plam

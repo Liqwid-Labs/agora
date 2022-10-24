@@ -16,7 +16,7 @@ module Agora.Stake.Redeemers (
 
 import Agora.Proposal (
   PProposalId,
-  PProposalRedeemer (PCosign, PUnlock, PVote),
+  PProposalRedeemer (PCosign, PUnlockStake, PVote),
   ProposalStatus (Finished),
  )
 import Agora.Stake (
@@ -266,7 +266,7 @@ pretractVote = pvoteHelper #$ phoistAcyclic $
     flip pmatch $ \ctxF ->
       pmatch ctxF.proposalContext $ \case
         PSpendProposal pid s r -> pmatch r $ \case
-          PUnlock _ ->
+          PUnlockStake _ ->
             let mode =
                   pif
                     (s #== pconstant Finished)

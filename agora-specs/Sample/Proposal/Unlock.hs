@@ -35,7 +35,7 @@ import Agora.Proposal (
   ProposalDatum (..),
   ProposalEffectGroup,
   ProposalId (..),
-  ProposalRedeemer (Unlock),
+  ProposalRedeemer (UnlockStake),
   ProposalStatus (..),
   ProposalVotes (..),
   ResultTag (..),
@@ -210,7 +210,7 @@ proposalRef :: TxOutRef
 proposalRef = TxOutRef stakeTxRef 0
 
 proposalRedeemer :: ProposalRedeemer
-proposalRedeemer = Unlock
+proposalRedeemer = UnlockStake
 
 mkProposalInputDatum ::
   StakeParameters ->

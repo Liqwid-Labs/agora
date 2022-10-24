@@ -8,7 +8,7 @@ module Sample.Proposal.PrivilegeEscalate (
 import Agora.Proposal (
   ProposalDatum (..),
   ProposalId (ProposalId),
-  ProposalRedeemer (Unlock, Vote),
+  ProposalRedeemer (UnlockStake, Vote),
   ProposalStatus (VotingReady),
   ProposalVotes (ProposalVotes),
   ResultTag (ResultTag),
@@ -102,7 +102,7 @@ mkProposalInputOutputDatum op =
    in wrap op (,) proposal proposalWithVotes
 
 mkProposalRedeemer :: Operation -> ProposalRedeemer
-mkProposalRedeemer op = wrap op const (Vote defResultTag) Unlock
+mkProposalRedeemer op = wrap op const (Vote defResultTag) UnlockStake
 
 proposalRef :: TxOutRef
 proposalRef = TxOutRef proposalTxRef 1
