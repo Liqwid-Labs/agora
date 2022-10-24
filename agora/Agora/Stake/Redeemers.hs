@@ -351,8 +351,11 @@ pdestroy = phoistAcyclic $
     pguardC "Owner signs this transaction" $
       pisSignedBy # pconstant False # ctx
 
-    pguardC "Stake unlocked" $
+    pguardC "All stakes unlocked" $
       pnot #$ pany # pstakeLocked # ctxF.stakeInputDatums
+
+    pguardC "All stakes burnt" $
+      pnull # ctxF.stakeOutputDatums
 
     pure $ pconstant ()
 
