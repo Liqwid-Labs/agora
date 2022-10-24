@@ -423,7 +423,7 @@ proposalValidator =
                     # proposalInputDatumF.cosigners
 
             pguardC "Less cosigners than maximum limit" $
-              plength # updatedSigs #< maximumCosigners
+              plength # updatedSigs #<= maximumCosigners
 
             pguardC "Meet minimum GT requirement" $
               pfromData thresholdsF.cosign #<= stakeF.stakedAmount
@@ -467,7 +467,7 @@ proposalValidator =
                     # sctxF.inputStakes
 
             pguardC "Exceed minimum amount" $
-              thresholdsF.vote #< totalStakeAmount
+              thresholdsF.vote #<= totalStakeAmount
 
             pguardC "Input proposal must be in VotingReady state" $
               currentStatus #== pconstant VotingReady
@@ -646,7 +646,7 @@ proposalValidator =
                     pmatchC notTooLate >>= \case
                       PTrue -> do
                         pguardC "More cosigns than minimum amount" $
-                          punsafeCoerce (pfromData thresholdsF.toVoting) #< sctxF.totalAmount
+                          punsafeCoerce (pfromData thresholdsF.toVoting) #<= sctxF.totalAmount
 
                         pguardC "All new cosigners are witnessed by their Stake datums" $
                           plistEqualsBy

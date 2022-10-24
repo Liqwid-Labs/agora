@@ -891,7 +891,7 @@ pwinner' = phoistAcyclic $
 
         exceedQuorum =
           ptraceIfFalse "Highest vote count should exceed the minimum threshold" $
-            quorum #< highestVotes
+            quorum #<= highestVotes
 
     pure $
       pif
