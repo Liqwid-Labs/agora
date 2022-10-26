@@ -18,20 +18,21 @@ module Agora.Proposal.Time (
   PProposalTimingConfig (..),
   PProposalStartingTime (..),
   PMaxTimeRangeWidth (..),
+  PTimingRelation (..),
+  PPeriod (..),
 
   -- * Compute periods given config and starting time.
   validateProposalStartingTime,
   currentProposalTime,
-  isDraftPeriod,
-  isVotingPeriod,
-  isLockingPeriod,
-  isExecutionPeriod,
   pisProposalTimingConfigValid,
   pisMaxTimeRangeWidthValid,
+  pgetRelation,
+  pisWithin,
 ) where
 
 import Agora.Utils (pcurrentTimeDuration)
 import Control.Composition ((.*))
+import Data.Functor ((<&>))
 import Plutarch.Api.V1 (
   PExtended (PFinite),
   PInterval (PInterval),
@@ -46,11 +47,11 @@ import Plutarch.DataRepr (
  )
 import Plutarch.Extra.Applicative (PApply (pliftA2))
 import Plutarch.Extra.Field (pletAll, pletAllC)
+import Plutarch.Extra.IsData (PlutusTypeEnumData)
 import Plutarch.Extra.Maybe (pjust, pmaybe, pnothing)
-import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pmatchC)
+import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pletC, pmatchC)
 import Plutarch.Extra.Time (
   PCurrentTime (PCurrentTime),
-  pisCurrentTimeWithin,
   pisWithinCurrentTime,
  )
 import Plutarch.Lift (
@@ -388,74 +389,108 @@ currentProposalTime = phoistAcyclic $
         mkTime = phoistAcyclic $ plam $ pcon .* PCurrentTime
     pure $ pliftA2 # mkTime # lowerBound # upperBound
 
-{- | True if the 'PProposalTime' is in the draft period.
+{- | Represent relation between current time and a given period.
 
-     @since 0.1.0
+     Note that the "before" relation isn't present due to the fact that
+     it's considered as an error in the proposal script.
+
+     @since 1.0.0
 -}
-isDraftPeriod ::
+data PTimingRelation (s :: S)
+  = PWithin
+  | PAfter
+  deriving stock
+    ( -- | @since 1.0.0
+      Generic
+    , -- | @since 1.0.0
+      Enum
+    , -- | @since 1.0.0
+      Bounded
+    )
+  deriving anyclass
+    ( -- | @since 1.0.0
+      PlutusType
+    )
+
+-- | @since 1.0.0
+instance DerivePlutusType PTimingRelation where
+  type DPTStrat _ = PlutusTypeEnumData
+
+{- | Return truw if a relation is 'PWithin'.
+
+     @since 1.0.0
+-}
+pisWithin :: forall (s :: S). Term s (PTimingRelation :--> PBool)
+pisWithin = phoistAcyclic $
+  plam $
+    flip pmatch $ \case
+      PWithin -> pconstant True
+      _ -> pconstant False
+
+{- | Represent a proposal period.
+
+     @since 1.0.0
+-}
+data PPeriod (s :: S)
+  = PDraftingPeriod
+  | PVotingPeriod
+  | PLockingPeriod
+  | PExecutingPeriod
+  deriving stock
+    ( -- | @since 1.0.0
+      Generic
+    , -- | @since 1.0.0
+      Enum
+    , -- | @since 1.0.0
+      Bounded
+    )
+  deriving anyclass
+    ( -- | @since 1.0.0
+      PlutusType
+    )
+
+-- | @since 1.0.0
+instance DerivePlutusType PPeriod where
+  type DPTStrat _ = PlutusTypeEnumData
+
+{- | Compute the relation between current time range and the given peroid,
+     providing the starting time and timing configuration of a proposal. If the
+     relation cannot be ddetermined, error out.
+
+     @since 1.0.0
+-}
+pgetRelation ::
   forall (s :: S).
   Term
     s
     ( PProposalTimingConfig
         :--> PProposalStartingTime
         :--> PProposalTime
-        :--> PBool
+        :--> PPeriod
+        :--> PTimingRelation
     )
-isDraftPeriod = phoistAcyclic $
-  plam $ \config s' -> pmatch s' $ \(PProposalStartingTime s) ->
-    pisCurrentTimeWithin # s # (s + (pfield @"draftTime" # config))
+pgetRelation = phoistAcyclic $
+  plam $ \config startingTime currentTime period -> unTermCont $ do
+    configF <- pletAllC config
 
-{- | True if the 'PProposalTime' is in the voting period.
+    PProposalStartingTime s <- pmatchC startingTime
+    PCurrentTime lb ub <- pmatchC currentTime
 
-     @since 0.1.0
--}
-isVotingPeriod ::
-  forall (s :: S).
-  Term
-    s
-    ( PProposalTimingConfig
-        :--> PProposalStartingTime
-        :--> PProposalTime
-        :--> PBool
-    )
-isVotingPeriod = phoistAcyclic $
-  plam $ \config s' -> pmatch s' $ \(PProposalStartingTime s) ->
-    pletFields @'["draftTime", "votingTime"] config $ \f ->
-      pisCurrentTimeWithin # s # (s + f.draftTime + f.votingTime)
+    dub <- pletC $ s + configF.draftTime
+    vub <- pletC $ dub + configF.votingTime
+    lub <- pletC $ vub + configF.lockingTime
+    eub <- pletC $ lub + configF.executingTime
 
-{- | True if the 'PProposalTime' is in the locking period.
+    (plb, pub) <-
+      pmatchC period
+        <&> ( \case
+                PDraftingPeriod -> (s, dub)
+                PVotingPeriod -> (dub, vub)
+                PLockingPeriod -> (vub, lub)
+                PExecutingPeriod -> (lub, eub)
+            )
 
-     @since 0.1.0
--}
-isLockingPeriod ::
-  forall (s :: S).
-  Term
-    s
-    ( PProposalTimingConfig
-        :--> PProposalStartingTime
-        :--> PProposalTime
-        :--> PBool
-    )
-isLockingPeriod = phoistAcyclic $
-  plam $ \config s' -> pmatch s' $ \(PProposalStartingTime s) ->
-    pletFields @'["draftTime", "votingTime", "lockingTime"] config $ \f ->
-      pisCurrentTimeWithin # s # (s + f.draftTime + f.votingTime + f.lockingTime)
-
-{- | True if the 'PProposalTime' is in the execution period.
-
-     @since 0.1.0
--}
-isExecutionPeriod ::
-  forall (s :: S).
-  Term
-    s
-    ( PProposalTimingConfig
-        :--> PProposalStartingTime
-        :--> PProposalTime
-        :--> PBool
-    )
-isExecutionPeriod = phoistAcyclic $
-  plam $ \config s' -> pmatch s' $ \(PProposalStartingTime s) ->
-    pletFields @'["draftTime", "votingTime", "lockingTime", "executingTime"] config $ \f ->
-      pisCurrentTimeWithin # s
-        # (s + f.draftTime + f.votingTime + f.lockingTime + f.executingTime)
+    pure $
+      pif (plb #<= lb #&& ub #<= pub) (pcon PWithin) $
+        pif (pub #< lb) (pcon PAfter) $
+          ptraceError "pgetRelation: too early or invalid current time"
