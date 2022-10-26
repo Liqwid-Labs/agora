@@ -155,7 +155,7 @@ mutateGovernorValidator =
       effectDatumF <- pletAllC effectDatum
       txInfoF <- pletFieldsC @'["inputs", "outputs", "datums", "redeemers"] txInfo
 
-      ----------------------------------------------------------------------------
+      --------------------------------------------------------------------------
 
       scriptInputs <-
         pletC $
@@ -184,13 +184,13 @@ mutateGovernorValidator =
                     isGovernorInput =
                       foldl1
                         (#&&)
-                        [ ptraceIfFalse "Can only modify the pinned governor" $
-                            inputF.outRef #== effectDatumF.governorRef
-                        , ptraceIfFalse "Governor UTxO should carry GST" $
+                        [ ptraceIfFalse "Governor UTxO should carry GST" $
                             psymbolValueOf
                               # gstSymbol
                               # (pfield @"value" # inputF.resolved)
                               #== 1
+                        , ptraceIfFalse "Can only modify the pinned governor" $
+                            inputF.outRef #== effectDatumF.governorRef
                         , ptraceIfFalse "Governor validator run" $
                             pfield @"address" # inputF.resolved
                               #== governorAddress

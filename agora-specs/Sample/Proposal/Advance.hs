@@ -63,6 +63,7 @@ import Agora.Proposal.Time (
     votingTime
   ),
  )
+import Agora.SafeMoney (AuthorityTokenTag, GTTag)
 import Agora.Stake (
   StakeDatum (..),
  )
@@ -73,7 +74,7 @@ import Data.Default (def)
 import Data.List (singleton, sort)
 import Data.Map.Strict qualified as StrictMap
 import Data.Maybe (fromJust)
-import Data.Tagged (untag)
+import Data.Tagged (Tagged (Tagged), untag)
 import Plutarch.Context (
   input,
   mint,
@@ -87,9 +88,8 @@ import Plutarch.Context (
   withRef,
   withValue,
  )
+import Plutarch.Extra.AssetClass (AssetClass (AssetClass), assetClassValue)
 import Plutarch.Lift (PLifted, PUnsafeLiftDecl)
-import PlutusLedgerApi.V1.Value (AssetClass (..))
-import PlutusLedgerApi.V1.Value qualified as Value
 import PlutusLedgerApi.V2 (
   Credential (PubKeyCredential),
   DatumHash,
@@ -113,7 +113,7 @@ import Sample.Shared (
   governorValidator,
   governorValidatorHash,
   minAda,
-  proposalPolicySymbol,
+  proposalAssetClass,
   proposalValidator,
   proposalValidatorHash,
   signer,
@@ -217,7 +217,7 @@ data ProposalParameters = ProposalParameters
 -- | Everything about the generated stake stuff.
 data StakeParameters = StakeParameters
   { numStake :: NumStake
-  , perStakeGTs :: Integer
+  , perStakeGTs :: Tagged GTTag Integer
   , transactionSignedByOwners :: Bool
   }
 
@@ -319,7 +319,7 @@ proposalRef = TxOutRef proposalTxRef 1
 -}
 mkProposalBuilder :: forall b. CombinableBuilder b => ProposalParameters -> b
 mkProposalBuilder ps =
-  let pst = Value.singleton proposalPolicySymbol "" 1
+  let pst = assetClassValue proposalAssetClass 1
       value = sortValue $ minAda <> pst
    in mconcat
         [ input $
@@ -356,7 +356,7 @@ mkStakeInputDatums :: StakeParameters -> [StakeDatum]
 mkStakeInputDatums ps =
   let template =
         StakeDatum
-          { stakedAmount = fromInteger ps.perStakeGTs
+          { stakedAmount = ps.perStakeGTs
           , owner = PubKeyCredential ""
           , delegatedTo = Nothing
           , lockedBy = []
@@ -376,9 +376,9 @@ mkStakeBuilder ps =
   let perStakeValue =
         sortValue $
           minAda
-            <> Value.assetClassValue stakeAssetClass 1
-            <> Value.assetClassValue
-              (untag governor.gtClassRef)
+            <> assetClassValue stakeAssetClass 1
+            <> assetClassValue
+              governor.gtClassRef
               ps.perStakeGTs
       perStake idx i =
         let withSig =
@@ -432,7 +432,7 @@ governorRef = TxOutRef governorTxRef 2
 -}
 mkGovernorBuilder :: forall b. CombinableBuilder b => GovernorParameters -> b
 mkGovernorBuilder ps =
-  let gst = Value.assetClassValue governorAssetClass 1
+  let gst = assetClassValue governorAssetClass 1
       value = sortValue $ gst <> minAda
    in mconcat
         [ input $
@@ -476,8 +476,8 @@ mkAuthorityTokenBuilder ps@AuthorityTokenParameters {carryDatum} =
           (True, Nothing) -> "deadbeef"
           (False, Just as) -> scriptHashToTokenName as
           (False, Nothing) -> ""
-      ac = AssetClass (authorityTokenSymbol, tn)
-      minted = Value.assetClassValue ac 1
+      ac = Tagged @AuthorityTokenTag $ AssetClass authorityTokenSymbol tn
+      minted = assetClassValue ac 1
       value = sortValue $ minAda <> minted
    in mconcat
         [ mint minted
@@ -678,10 +678,11 @@ getNextState = \case
   Finished -> error "Cannot advance 'Finished' proposal"
 
 -- | Calculate the number of GTs per stake in order to exceed the minimum limit.
-compPerStakeGTsForDraft :: NumStake -> Integer
+compPerStakeGTsForDraft :: NumStake -> Tagged GTTag Integer
 compPerStakeGTsForDraft nCosigners =
-  untag (def :: ProposalThresholds).toVoting
-    `div` fromIntegral nCosigners + 1
+  Tagged $
+    untag (def :: ProposalThresholds).toVoting
+      `div` fromIntegral nCosigners + 1
 
 dummyDatum :: ()
 dummyDatum = ()
@@ -945,8 +946,9 @@ mkInsufficientCosignsBundle nCosigners nEffects =
     }
   where
     insuffcientPerStakeGTs =
-      untag (def :: ProposalThresholds).toVoting
-        `div` fromIntegral nCosigners - 1
+      Tagged $
+        untag (def :: ProposalThresholds).toVoting
+          `div` fromIntegral nCosigners - 1
     template = mkValidToNextStateBundle nCosigners nEffects False Draft
 
 -- * From VotingReady

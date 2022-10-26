@@ -34,7 +34,7 @@ import Plutarch.Context (
   withRef,
   withValue,
  )
-import PlutusLedgerApi.V1.Value (assetClassValue)
+import Plutarch.Extra.AssetClass (assetClassValue)
 import PlutusLedgerApi.V2 (
   ScriptContext (scriptContextTxInfo),
   TxInInfo (txInInfoOutRef),

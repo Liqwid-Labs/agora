@@ -17,14 +17,9 @@ import Agora.Treasury (treasuryValidator)
 import Data.Map (fromList)
 import Data.Text (Text, unpack)
 import Plutarch (Config)
-import Plutarch.Extra.AssetClass (PAssetClass)
-import PlutusLedgerApi.V1.Value (AssetClass)
 import Ply (TypedScriptEnvelope)
-import Ply.Plutarch.Class (PlyArgOf)
 import Ply.Plutarch.TypedWriter (TypedWriter, mkEnvelope)
 import ScriptExport.ScriptInfo (RawScriptExport (..))
-
-type instance PlyArgOf PAssetClass = AssetClass
 
 {- | Parameterize core scripts, given the 'Agora.Governor.Governor'
      parameters and plutarch configurations.

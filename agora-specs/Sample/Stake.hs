@@ -23,7 +23,7 @@ import Agora.SafeMoney (GTTag)
 import Agora.Stake (
   StakeDatum (StakeDatum, stakedAmount),
  )
-import Data.Tagged (untag)
+import Data.Tagged (Tagged)
 import Plutarch.Context (
   MintingBuilder,
   SpendingBuilder,
@@ -41,10 +41,9 @@ import Plutarch.Context (
   withSpendingOutRef,
   withValue,
  )
-import Plutarch.SafeMoney (Discrete)
+import Plutarch.Extra.AssetClass (assetClassValue)
 import PlutusLedgerApi.V1.Contexts (TxOutRef (..))
 import PlutusLedgerApi.V1.Value qualified as Value (
-  assetClassValue,
   singleton,
  )
 import PlutusLedgerApi.V2 (
@@ -57,7 +56,6 @@ import PlutusLedgerApi.V2 (
  )
 import PlutusTx.AssocMap qualified as AssocMap
 import Sample.Shared (
-  fromDiscrete,
   governor,
   signer,
   stakeAssetClass,
@@ -69,7 +67,7 @@ import Test.Util (sortValue)
 -- | This script context should be a valid transaction.
 stakeCreation :: ScriptContext
 stakeCreation =
-  let st = Value.assetClassValue stakeAssetClass 1 -- Stake ST
+  let st = assetClassValue stakeAssetClass 1 -- Stake ST
       datum :: StakeDatum
       datum = StakeDatum 424242424242 (PubKeyCredential signer) Nothing []
 
@@ -114,16 +112,16 @@ stakeCreationUnsigned =
 
 -- | Config for creating a ScriptContext that deposits or withdraws.
 data DepositWithdrawExample = DepositWithdrawExample
-  { startAmount :: Discrete GTTag
+  { startAmount :: Tagged GTTag Integer
   -- ^ The amount of GT stored before the transaction.
-  , delta :: Discrete GTTag
+  , delta :: Tagged GTTag Integer
   -- ^ The amount of GT deposited or withdrawn from the Stake.
   }
 
 -- | Create a ScriptContext that deposits or withdraws, given the config for it.
 stakeDepositWithdraw :: DepositWithdrawExample -> ScriptContext
 stakeDepositWithdraw config =
-  let st = Value.assetClassValue stakeAssetClass 1 -- Stake ST
+  let st = assetClassValue stakeAssetClass 1 -- Stake ST
       stakeBefore :: StakeDatum
       stakeBefore = StakeDatum config.startAmount (PubKeyCredential signer) Nothing []
 
@@ -144,7 +142,7 @@ stakeDepositWithdraw config =
                 , withValue
                     ( sortValue $
                         st
-                          <> Value.assetClassValue (untag governor.gtClassRef) (fromDiscrete stakeBefore.stakedAmount)
+                          <> assetClassValue governor.gtClassRef stakeBefore.stakedAmount
                     )
                 , withDatum stakeBefore
                 , withRef stakeRef
@@ -155,7 +153,7 @@ stakeDepositWithdraw config =
                 , withValue
                     ( sortValue $
                         st
-                          <> Value.assetClassValue (untag governor.gtClassRef) (fromDiscrete stakeAfter.stakedAmount)
+                          <> assetClassValue governor.gtClassRef stakeAfter.stakedAmount
                     )
                 , withDatum stakeAfter
                 ]

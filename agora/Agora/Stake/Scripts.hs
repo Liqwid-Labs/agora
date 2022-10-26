@@ -60,6 +60,7 @@ import Plutarch.Api.V1 (
   PTokenName,
  )
 import Plutarch.Api.V1.AssocMap (plookup)
+import Plutarch.Api.V1.Value (pvalueOf)
 import Plutarch.Api.V2 (
   PMintingPolicy,
   PScriptPurpose (PMinting, PSpending),
@@ -69,8 +70,8 @@ import Plutarch.Api.V2 (
  )
 import Plutarch.Extra.AssetClass (
   PAssetClass,
-  passetClassValueOf,
-  pvalueOf,
+  PAssetClassData,
+  ptoScottEncoding,
  )
 import Plutarch.Extra.Field (pletAll)
 import Plutarch.Extra.Functor (PFunctor (pfmap))
@@ -98,12 +99,10 @@ import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (
  )
 import Plutarch.Extra.Traversable (pfoldMap)
 import Plutarch.Extra.Value (
+  passetClassValueOf,
   psymbolValueOf,
  )
 import Plutarch.Num (PNum (pnegate))
-import Plutarch.SafeMoney (
-  pvalueDiscrete,
- )
 import Plutarch.Unsafe (punsafeCoerce)
 import Prelude hiding (Num ((+)))
 
@@ -133,7 +132,7 @@ import Prelude hiding (Num ((+)))
 -}
 stakePolicy ::
   -- | The (governance) token that a Stake can store.
-  ClosedTerm (PAssetClass :--> PMintingPolicy)
+  ClosedTerm (PAssetClassData :--> PMintingPolicy)
 stakePolicy =
   plam $ \gstClass _redeemer ctx' -> unTermCont $ do
     ctx <- pletFieldsC @'["txInfo", "purpose"] ctx'
@@ -217,7 +216,8 @@ stakePolicy =
 
               let hasExpectedStake =
                     ptraceIfFalse "Stake ouput has expected amount of stake token" $
-                      pvalueDiscrete # gstClass # outputF.value #== datumF.stakedAmount
+                      passetClassValueOf # (ptoScottEncoding # gstClass) # outputF.value
+                        #== pto (pfromData datumF.stakedAmount)
               let ownerSignsTransaction =
                     ptraceIfFalse "Stake Owner should sign the transaction" $
                       pauthorizedBy
@@ -400,10 +400,13 @@ mkStakeValidator impl sstSymbol pstClass gstClass =
           # plam
             ( \output ->
                 let validateGT = plam $ \stakeDatum ->
-                      let expected = pfield @"stakedAmount" # stakeDatum
+                      let expected =
+                            pto $
+                              pfromData $
+                                pfield @"stakedAmount" # stakeDatum
 
                           actual =
-                            pvalueDiscrete
+                            passetClassValueOf
                               # gstClass
                               # (pfield @"value" # output)
                        in pif
@@ -438,8 +441,8 @@ mkStakeValidator impl sstSymbol pstClass gstClass =
         flip pletAll $ \txOutF ->
           let isProposalUTxO =
                 passetClassValueOf
-                  # txOutF.value
-                  # pstClass #== 1
+                  # pstClass
+                  # txOutF.value #== 1
               proposalDatum =
                 pfromData $
                   pfromOutputDatum @(PAsData PProposalDatum)
@@ -448,7 +451,7 @@ mkStakeValidator impl sstSymbol pstClass gstClass =
            in pif isProposalUTxO (pjust # proposalDatum) pnothing
 
     let pstMinted =
-          passetClassValueOf # txInfoF.mint # pstClass #== 1
+          passetClassValueOf # pstClass # txInfoF.mint #== 1
 
         newProposalContext =
           pcon $
@@ -601,15 +604,25 @@ mkStakeValidator impl sstSymbol pstClass gstClass =
 
      @since 1.0.0
 -}
-stakeValidator :: ClosedTerm (PCurrencySymbol :--> PAssetClass :--> PAssetClass :--> PValidator)
+stakeValidator ::
+  ClosedTerm
+    ( PCurrencySymbol
+        :--> PAssetClassData
+        :--> PAssetClassData
+        :--> PValidator
+    )
 stakeValidator =
-  plam $
-    mkStakeValidator $
-      StakeRedeemerImpl
-        { onDepositWithdraw = pdepositWithdraw
-        , onDestroy = pdestroy
-        , onPermitVote = ppermitVote
-        , onRetractVote = pretractVote
-        , onDelegateTo = pdelegateTo
-        , onClearDelegate = pclearDelegate
-        }
+  plam $ \cs pstClass gstClass ->
+    mkStakeValidator
+      ( StakeRedeemerImpl
+          { onDepositWithdraw = pdepositWithdraw
+          , onDestroy = pdestroy
+          , onPermitVote = ppermitVote
+          , onRetractVote = pretractVote
+          , onDelegateTo = pdelegateTo
+          , onClearDelegate = pclearDelegate
+          }
+      )
+      cs
+      (ptoScottEncoding # pstClass)
+      (ptoScottEncoding # gstClass)

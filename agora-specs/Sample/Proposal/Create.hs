@@ -47,10 +47,11 @@ import Agora.Stake (
 import Data.Coerce (coerce)
 import Data.Default (Default (def))
 import Data.Map.Strict qualified as StrictMap
-import Data.Tagged (untag)
+import Data.Tagged (Tagged)
 import Plutarch.Context (
   input,
   mint,
+  normalizeValue,
   output,
   script,
   signedWith,
@@ -60,8 +61,7 @@ import Plutarch.Context (
   withRef,
   withValue,
  )
-import Plutarch.SafeMoney (Discrete)
-import PlutusLedgerApi.V1.Value qualified as Value
+import Plutarch.Extra.AssetClass (assetClassValue)
 import PlutusLedgerApi.V2 (
   Credential (PubKeyCredential),
   POSIXTime (POSIXTime),
@@ -71,12 +71,12 @@ import PlutusLedgerApi.V2 (
  )
 import Sample.Proposal.Shared (stakeTxRef)
 import Sample.Shared (
-  fromDiscrete,
   governor,
   governorAssetClass,
   governorValidator,
   governorValidatorHash,
   minAda,
+  proposalAssetClass,
   proposalPolicy,
   proposalPolicySymbol,
   proposalStartingTimeFromTimeRange,
@@ -127,7 +127,7 @@ thisProposalId :: ProposalId
 thisProposalId = ProposalId 25
 
 -- | The arbitrary staked amount. Doesn;t really matter in this case.
-stakedGTs :: Discrete GTTag
+stakedGTs :: Tagged GTTag Integer
 stakedGTs = 5
 
 -- | The owner of the stake.
@@ -282,9 +282,9 @@ governorRef = TxOutRef "0b2086cbf8b6900f8cb65e012de4516cb66b5cb08a9aaba12a8b88be
 createProposal :: forall b. CombinableBuilder b => Parameters -> b
 createProposal ps = builder
   where
-    pst = Value.singleton proposalPolicySymbol "" 1
-    sst = Value.assetClassValue stakeAssetClass 1
-    gst = Value.assetClassValue governorAssetClass 1
+    pst = assetClassValue proposalAssetClass 1
+    sst = assetClassValue stakeAssetClass 1
+    gst = assetClassValue governorAssetClass 1
 
     ---
 
@@ -292,7 +292,7 @@ createProposal ps = builder
     stakeValue =
       sortValue $
         sst
-          <> Value.assetClassValue (untag governor.gtClassRef) (fromDiscrete stakedGTs)
+          <> assetClassValue governor.gtClassRef stakedGTs
           <> minAda
     proposalValue = sortValue $ pst <> minAda
 
@@ -314,11 +314,8 @@ createProposal ps = builder
           withSig
         , ---
           mint $
-            sortValue $
+            normalizeValue
               pst
-                <>
-                -- 0 Ada entry, see #174
-                Value.singleton "" "" 0
         , ---
           timeRange $ mkTimeRange ps
         , input $

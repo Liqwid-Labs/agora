@@ -8,8 +8,6 @@ import Data.Bifunctor (Bifunctor (bimap))
 import Data.Map.Strict qualified as StrictMap
 import Data.Traversable (for)
 import Plutarch.Api.V1 (KeyGuarantees (Sorted), PMap)
-import Plutarch.Num (PNum)
-import Plutarch.SafeMoney (PDiscrete)
 import PlutusTx qualified
 import PlutusTx.AssocMap qualified as AssocMap
 
@@ -76,6 +74,3 @@ instance
       isSorted [] = True
       isSorted [_] = True
       isSorted (x : y : xs) = x < y && isSorted (y : xs)
-
--- | @since 1.0.0
-deriving anyclass instance PNum (PDiscrete tag)

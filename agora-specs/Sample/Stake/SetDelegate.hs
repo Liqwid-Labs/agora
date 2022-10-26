@@ -24,7 +24,6 @@ import Agora.Stake (
   StakeDatum (..),
   StakeRedeemer (ClearDelegate, DelegateTo),
  )
-import Data.Tagged (untag)
 import Plutarch.Context (
   SpendingBuilder,
   buildSpending',
@@ -38,7 +37,7 @@ import Plutarch.Context (
   withSpendingOutRef,
   withValue,
  )
-import PlutusLedgerApi.V1.Value qualified as Value
+import Plutarch.Extra.AssetClass (assetClassValue)
 import PlutusLedgerApi.V2 (
   Credential (PubKeyCredential),
   PubKeyHash,
@@ -46,7 +45,6 @@ import PlutusLedgerApi.V2 (
   TxOutRef (TxOutRef),
  )
 import Sample.Shared (
-  fromDiscrete,
   governor,
   minAda,
   signer,
@@ -116,14 +114,14 @@ setDelegate ps = buildSpending' builder
           _ -> signer2
         else signer2
 
-    st = Value.assetClassValue stakeAssetClass 1 -- Stake ST
+    st = assetClassValue stakeAssetClass 1 -- Stake ST
     stakeValue =
       sortValue $
         mconcat
           [ st
-          , Value.assetClassValue
-              (untag governor.gtClassRef)
-              (fromDiscrete stakeInput.stakedAmount)
+          , assetClassValue
+              governor.gtClassRef
+              stakeInput.stakedAmount
           , minAda
           ]
 

@@ -50,12 +50,11 @@ import Plutarch.Api.V2 (
   PTxOut,
   PValidator,
  )
-import Plutarch.Extra.AssetClass (PAssetClass, passetClass, passetClassValueOf)
+import Plutarch.Extra.AssetClass (PAssetClassData, passetClass, ptoScottEncoding)
 import Plutarch.Extra.Category (PCategory (pidentity))
-import Plutarch.Extra.Comonad (pextract)
 import Plutarch.Extra.Field (pletAll, pletAllC)
 import "liqwid-plutarch-extra" Plutarch.Extra.List (pfindJust)
-import Plutarch.Extra.Map (pupdate)
+import "plutarch-extra" Plutarch.Extra.Map (pupdate)
 import Plutarch.Extra.Maybe (
   passertPJust,
   pisJust,
@@ -80,8 +79,7 @@ import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (
   ptryFromC,
  )
 import Plutarch.Extra.Traversable (pfoldMap)
-import Plutarch.Extra.Value (psymbolValueOf)
-import Plutarch.SafeMoney (PDiscrete (PDiscrete))
+import Plutarch.Extra.Value (passetClassValueOf, psymbolValueOf)
 import Plutarch.Unsafe (punsafeCoerce)
 
 {- | Policy for Proposals.
@@ -109,7 +107,7 @@ import Plutarch.Unsafe (punsafeCoerce)
 
      @since 1.0.0
 -}
-proposalPolicy :: ClosedTerm (PAssetClass :--> PMintingPolicy)
+proposalPolicy :: ClosedTerm (PAssetClassData :--> PMintingPolicy)
 proposalPolicy =
   plam $ \gtAssetClass _redeemer ctx' -> unTermCont $ do
     PScriptContext ctx' <- pmatchC ctx'
@@ -120,12 +118,12 @@ proposalPolicy =
     PMinting ownSymbol' <- pmatchC $ pfromData ctx.purpose
     let mintedProposalST =
           passetClassValueOf
-            # pfromData txInfo.mint
             # (passetClass # (pfield @"_0" # ownSymbol') # pconstant "")
+            # txInfo.mint
 
     pguardC "Governance state-thread token must move" $
       pisTokenSpent
-        # gtAssetClass
+        # (ptoScottEncoding # gtAssetClass)
         # txInfo.inputs
 
     pguardC "Minted exactly one proposal ST" $
@@ -211,7 +209,7 @@ instance DerivePlutusType PStakeInputsContext where
 -}
 proposalValidator ::
   ClosedTerm
-    ( PAssetClass
+    ( PAssetClassData
         :--> PCurrencySymbol
         :--> PCurrencySymbol
         :--> PInteger
@@ -304,8 +302,8 @@ proposalValidator =
             let isStakeUTxO =
                   -- A stake UTxO is a UTxO that carries SST.
                   passetClassValueOf
+                    # (ptoScottEncoding # sstClass)
                     # txOutF.value
-                    # sstClass
                     #== 1
 
                 stake =
@@ -495,9 +493,8 @@ proposalValidator =
                     PProposalVotes $
                       pupdate
                         # plam
-                          ( \votes -> unTermCont $ do
-                              PDiscrete v <- pmatchC totalStakeAmount
-                              pure $ pcon $ PJust $ votes + (pextract # v)
+                          ( \votes ->
+                              pcon $ PJust $ votes + pto totalStakeAmount
                           )
                         # voteFor
                         # pto (pfromData proposalInputDatumF.votes)
@@ -546,9 +543,8 @@ proposalValidator =
                                 pisVoter # stakeRoles
 
                               voteCount =
-                                pextract
-                                  #$ pto
-                                  $ pfromData stakeF.stakedAmount
+                                pto $
+                                  pfromData stakeF.stakedAmount
 
                               newVotes =
                                 pretractVotes

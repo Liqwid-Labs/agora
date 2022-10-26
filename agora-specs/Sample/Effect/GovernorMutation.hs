@@ -16,16 +16,16 @@ import Agora.Effect.GovernorMutation (
  )
 import Agora.Governor (GovernorDatum (..), GovernorRedeemer (MutateGovernor))
 import Agora.Proposal (ProposalId (..), ProposalThresholds (..))
+import Agora.SafeMoney (AuthorityTokenTag)
 import Agora.Utils (validatorHashToTokenName)
 import Data.Default.Class (Default (def))
-import Data.Map
+import Data.Map ((!))
 import Data.Tagged (Tagged (..))
 import Plutarch.Api.V2 (validatorHash)
+import Plutarch.Extra.AssetClass (AssetClass (AssetClass), assetClassValue)
 import PlutusLedgerApi.V1 qualified as Interval (always)
 import PlutusLedgerApi.V1.Address (scriptHashAddress)
-import PlutusLedgerApi.V1.Value (AssetClass, assetClass)
 import PlutusLedgerApi.V1.Value qualified as Value (
-  assetClassValue,
   singleton,
  )
 import PlutusLedgerApi.V2 (
@@ -66,8 +66,8 @@ effectValidatorAddress :: Address
 effectValidatorAddress = scriptHashAddress effectValidatorHash
 
 -- | The assetclass of the authority token.
-atAssetClass :: AssetClass
-atAssetClass = assetClass authorityTokenSymbol tokenName
+atAssetClass :: Tagged AuthorityTokenTag AssetClass
+atAssetClass = Tagged $ AssetClass authorityTokenSymbol tokenName
   where
     tokenName = validatorHashToTokenName effectValidatorHash
 
@@ -99,11 +99,11 @@ mkEffectDatum newGovDatum =
 -}
 mkEffectTxInfo :: GovernorDatum -> TxInfo
 mkEffectTxInfo newGovDatum =
-  let gst = Value.assetClassValue governorAssetClass 1
-      at = Value.assetClassValue atAssetClass 1
+  let gst = assetClassValue governorAssetClass 1
+      at = assetClassValue atAssetClass 1
 
       -- One authority token is burnt in the process.
-      burnt = Value.assetClassValue atAssetClass (-1)
+      burnt = assetClassValue atAssetClass (-1)
 
       --
 

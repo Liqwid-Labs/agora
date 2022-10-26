@@ -25,8 +25,6 @@
 
     plutarch-numeric.url =
       "github:Liqwid-Labs/plutarch-numeric?ref=main";
-    plutarch-safe-money.url =
-      "github:Liqwid-Labs/plutarch-safe-money?ref=main";
     liqwid-plutarch-extra.url =
       "github:Liqwid-Labs/liqwid-plutarch-extra?ref=main";
     plutarch-quickcheck.url =
@@ -81,7 +79,6 @@
         liqwid-nix.plutarchProject
         (liqwid-nix.addDependencies [
           "${inputs.plutarch-numeric}"
-          "${inputs.plutarch-safe-money}"
           "${inputs.plutarch-quickcheck}"
           "${inputs.plutarch-context-builder}"
           "${inputs.liqwid-plutarch-extra}"
