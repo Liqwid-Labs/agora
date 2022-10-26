@@ -11,6 +11,7 @@ module Agora.AuthorityToken (
   singleAuthorityTokenBurned,
 ) where
 
+import Agora.Utils (passert, pnegativeSymbolValueOf, ppositiveSymbolValueOf)
 import Plutarch.Api.V1 (
   PCredential (..),
   PCurrencySymbol (..),
@@ -140,30 +141,29 @@ authorityTokenPolicy =
       PTxInfo txInfo' <- pmatchC $ pfromData ctx.txInfo
       txInfo <- pletFieldsC @'["inputs", "mint", "outputs"] txInfo'
       let inputs = txInfo.inputs
-          mintedValue = pfromData txInfo.mint
           govTokenSpent = pisTokenSpent # (ptoScottEncoding # atAssetClass) # inputs
 
       PMinting ownSymbol' <- pmatchC $ pfromData ctx.purpose
 
       let ownSymbol = pfromData $ pfield @"_0" # ownSymbol'
-          mintedATs =
-            psymbolValueOf
-              # ownSymbol
-              # mintedValue
+
+      applySymbolValueOf <- pletC $ plam $ \f -> f # ownSymbol # txInfo.mint
+
+      mintedATs <- pletC $ applySymbolValueOf # ppositiveSymbolValueOf
+      let burntATs = applySymbolValueOf # pnegativeSymbolValueOf
 
       pure $
-        pif
-          (0 #< mintedATs)
-          ( unTermCont $ do
-              pguardC "Parent token did not move in minting GATs" govTokenSpent
-              pguardC "All outputs only emit valid GATs" $
-                pall
-                  # plam
-                    (authorityTokensValidIn # ownSymbol #)
-                  # txInfo.outputs
-              pure $ popaque $ pconstant ()
-          )
-          (pif (singleAuthorityTokenBurned # ownSymbol # inputs # mintedValue) 
-            (popaque $ pconstant ())
-            perror
+        popaque $
+          pif
+            (0 #< mintedATs)
+            ( unTermCont $ do
+                pguardC "No GAT burnt" $ burntATs #== 0
+                pguardC "Parent token did not move in minting GATs" govTokenSpent
+                pguardC "All outputs only emit valid GATs" $
+                  pall
+                    # plam
+                      (authorityTokensValidIn # ownSymbol #)
+                    # txInfo.outputs
+                pure $ pconstant ()
             )
+            (passert "No GAT minted" (0 #== mintedATs) (pconstant ()))

@@ -31,16 +31,20 @@ module Agora.Utils (
   pinsertUniqueBy,
   ptryFromRedeemer,
   passert,
+  ppositiveSymbolValueOf,
+  pnegativeSymbolValueOf,
 ) where
 
 import Plutarch.Api.V1 (KeyGuarantees (Unsorted), PPOSIXTime, PRedeemer, PTokenName, PValidatorHash)
 import Plutarch.Api.V1.AssocMap (PMap, plookup)
-import Plutarch.Api.V2 (PScriptHash, PScriptPurpose)
+import Plutarch.Api.V2 (AmountGuarantees, PCurrencySymbol, PMap (PMap), PScriptHash, PScriptPurpose, PValue (PValue))
 import Plutarch.Extra.Applicative (PApplicative (ppure))
 import Plutarch.Extra.Category (PCategory (pidentity))
 import Plutarch.Extra.Functor (PFunctor (PSubcategory, pfmap))
-import Plutarch.Extra.Maybe (pjust, pnothing)
+import "liqwid-plutarch-extra" Plutarch.Extra.List (plookupAssoc)
+import Plutarch.Extra.Maybe (pexpectJustC, pjust, pnothing)
 import Plutarch.Extra.Ord (PComparator, POrdering (PLT), pcompareBy, pequateBy)
+import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pmatchC)
 import Plutarch.Extra.Time (PCurrentTime (PCurrentTime))
 import Plutarch.Unsafe (punsafeCoerce)
 import PlutusLedgerApi.V2 (
@@ -385,3 +389,62 @@ passert ::
   Term s a ->
   Term s a
 passert msg cond x = pif cond x $ ptraceError msg
+
+psymbolValueOfHelper ::
+  forall
+    (keys :: KeyGuarantees)
+    (amounts :: AmountGuarantees)
+    (s :: S).
+  Term
+    s
+    ( (PInteger :--> PBool)
+        :--> PCurrencySymbol
+        :--> ( PValue keys amounts
+                :--> PInteger
+             )
+    )
+psymbolValueOfHelper =
+  phoistAcyclic $
+    plam $ \cond sym value'' -> unTermCont $ do
+      PValue value' <- pmatchC value''
+      PMap value <- pmatchC value'
+      m' <-
+        pexpectJustC
+          0
+          ( plookupAssoc
+              # pfstBuiltin
+              # psndBuiltin
+              # pdata sym
+              # value
+          )
+      PMap m <- pmatchC (pfromData m')
+      pure $
+        pfoldr
+          # plam
+            ( \x v ->
+                plet (pfromData $ psndBuiltin # x) $ \q ->
+                  pif
+                    (cond # q)
+                    (q + v)
+                    v
+            )
+          # 0
+          # m
+
+-- | @since 1.0.0
+ppositiveSymbolValueOf ::
+  forall
+    (keys :: KeyGuarantees)
+    (amounts :: AmountGuarantees)
+    (s :: S).
+  Term s (PCurrencySymbol :--> (PValue keys amounts :--> PInteger))
+ppositiveSymbolValueOf = phoistAcyclic $ psymbolValueOfHelper #$ plam (0 #<)
+
+-- | @since 1.0.0
+pnegativeSymbolValueOf ::
+  forall
+    (keys :: KeyGuarantees)
+    (amounts :: AmountGuarantees)
+    (s :: S).
+  Term s (PCurrencySymbol :--> (PValue keys amounts :--> PInteger))
+pnegativeSymbolValueOf = phoistAcyclic $ psymbolValueOfHelper #$ plam (#< 0)
