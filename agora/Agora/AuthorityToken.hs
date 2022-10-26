@@ -163,6 +163,6 @@ authorityTokenPolicy =
                   # txInfo.outputs
               pure $ popaque $ pconstant ()
           )
-          pif (mintedATs #== -1)
+          (pif (mintedATs #== -1)
             (popaque $ pconstant ())
-            perror
+            perror)
