@@ -6,6 +6,11 @@ This format is based on [Keep A Changelog](https://keepachangelog.com/en/1.0.0).
 
 ### Modified
 
+- Fix an exploit that allows burning `m` legitimate GATs from faulty effect
+  validators to mint `n` (`n` < `m`) illegitimate GAT.
+
+  Included by [#202](https://github.com/Liqwid-Labs/agora/pull/202)
+
 - Fix a bug where `lockedBy` and `delegatedTo` fields of stake datums aren't checked
   during the creation of stakes.
 
