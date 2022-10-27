@@ -11,9 +11,6 @@ module Sample.Stake (
   signer,
 
   -- * Script contexts
-  stakeCreation,
-  stakeCreationWrongDatum,
-  stakeCreationUnsigned,
   stakeDepositWithdraw,
   DepositWithdrawExample (..),
 ) where
@@ -25,36 +22,24 @@ import Agora.Stake (
  )
 import Data.Tagged (Tagged)
 import Plutarch.Context (
-  MintingBuilder,
   SpendingBuilder,
-  buildMinting',
   buildSpending',
   input,
-  mint,
   output,
   script,
   signedWith,
   txId,
   withDatum,
-  withMinting,
   withRef,
   withSpendingOutRef,
   withValue,
  )
 import Plutarch.Extra.AssetClass (assetClassValue)
 import PlutusLedgerApi.V1.Contexts (TxOutRef (..))
-import PlutusLedgerApi.V1.Value qualified as Value (
-  singleton,
- )
 import PlutusLedgerApi.V2 (
   Credential (PubKeyCredential),
-  Datum (Datum),
   ScriptContext (..),
-  ScriptPurpose (Minting),
-  ToData (toBuiltinData),
-  TxInfo (txInfoData, txInfoSignatories),
  )
-import PlutusTx.AssocMap qualified as AssocMap
 import Sample.Shared (
   governor,
   signer,
@@ -63,52 +48,6 @@ import Sample.Shared (
   stakeValidatorHash,
  )
 import Test.Util (sortValue)
-
--- | This script context should be a valid transaction.
-stakeCreation :: ScriptContext
-stakeCreation =
-  let st = assetClassValue stakeAssetClass 1 -- Stake ST
-      datum :: StakeDatum
-      datum = StakeDatum 424242424242 (PubKeyCredential signer) Nothing []
-
-      builder :: MintingBuilder
-      builder =
-        mconcat
-          [ txId "0b2086cbf8b6900f8cb65e012de4516cb66b5cb08a9aaba12a8b88be"
-          , signedWith signer
-          , mint st
-          , output $
-              mconcat
-                [ script stakeValidatorHash
-                , withValue (st <> Value.singleton "da8c30857834c6ae7203935b89278c532b3995245295456f993e1d24" "LQ" 424242424242)
-                , withDatum datum
-                ]
-          , withMinting stakeSymbol
-          ]
-   in buildMinting' builder
-
--- | This ScriptContext should fail because the datum has too much GT.
-stakeCreationWrongDatum :: ScriptContext
-stakeCreationWrongDatum =
-  let datum :: Datum
-      datum = Datum (toBuiltinData $ StakeDatum 4242424242424242 (PubKeyCredential signer) Nothing []) -- Too much GT
-   in ScriptContext
-        { scriptContextTxInfo = stakeCreation.scriptContextTxInfo {txInfoData = AssocMap.fromList [("", datum)]}
-        , scriptContextPurpose = Minting stakeSymbol
-        }
-
--- | This ScriptContext should fail because the datum has too much GT.
-stakeCreationUnsigned :: ScriptContext
-stakeCreationUnsigned =
-  ScriptContext
-    { scriptContextTxInfo =
-        stakeCreation.scriptContextTxInfo
-          { txInfoSignatories = []
-          }
-    , scriptContextPurpose = Minting stakeSymbol
-    }
-
---------------------------------------------------------------------------------
 
 -- | Config for creating a ScriptContext that deposits or withdraws.
 data DepositWithdrawExample = DepositWithdrawExample

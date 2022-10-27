@@ -13,10 +13,8 @@ import Agora.Stake (
   StakeDatum (StakeDatum),
   StakeRedeemer (DepositWithdraw),
  )
-import Data.Bool (Bool (..))
-import Data.Maybe (Maybe (..))
 import PlutusLedgerApi.V1 (Credential (PubKeyCredential))
-import Sample.Shared (stakePolicy, stakeValidator)
+import Sample.Shared (stakeValidator)
 import Sample.Stake (
   DepositWithdrawExample (
     DepositWithdrawExample,
@@ -26,46 +24,117 @@ import Sample.Stake (
   signer,
  )
 import Sample.Stake qualified as Stake (
-  stakeCreation,
-  stakeCreationUnsigned,
-  stakeCreationWrongDatum,
   stakeDepositWithdraw,
  )
+import Sample.Stake.Create qualified as Create
+import Sample.Stake.Destroy qualified as Destroy
 import Sample.Stake.SetDelegate qualified as SetDelegate
 import Test.Specification (
   SpecificationTree,
   group,
-  policyFailsWith,
-  policySucceedsWith,
   validatorFailsWith,
   validatorSucceedsWith,
  )
-import Prelude (Num (negate), ($))
 
 -- | The SpecificationTree exported by this module.
 specs :: [SpecificationTree]
 specs =
   [ group
       "policy"
-      [ policySucceedsWith
-          "stakeCreation"
-          stakePolicy
-          ()
-          Stake.stakeCreation
-      , policyFailsWith
-          "stakeCreationWrongDatum"
-          stakePolicy
-          ()
-          Stake.stakeCreationWrongDatum
-      , policyFailsWith
-          "stakeCreationUnsigned"
-          stakePolicy
-          ()
-          Stake.stakeCreationUnsigned
+      [ group
+          "create"
+          [ group
+              "valid"
+              [ Create.mkTestCase
+                  "stake owner: pub key"
+                  Create.ownerIsPubKeyTotallyValid
+                  True
+              , Create.mkTestCase
+                  "stake owner: script"
+                  Create.ownerIsScriptTotallyValid
+                  True
+              ]
+          , group
+              "invalid"
+              [ Create.mkTestCase
+                  "mint more than one sst in one tx"
+                  Create.createMoreThanOneStake
+                  False
+              , Create.mkTestCase
+                  "spend stake while minting SST"
+                  Create.spendStake
+                  False
+              , Create.mkTestCase
+                  "wrong staked amount"
+                  Create.unexpectedStakedAmount
+                  False
+              , Create.mkTestCase
+                  "no stake datum"
+                  Create.noStakeDatum
+                  False
+              , Create.mkTestCase
+                  "bad stake datum"
+                  Create.malformedStakeDatum
+                  False
+              , Create.mkTestCase
+                  "not authorized by owner"
+                  Create.notAuthorizedByOwner
+                  False
+              , Create.mkTestCase
+                  "delegatee not empty"
+                  Create.setDelegatee
+                  False
+              , Create.mkTestCase
+                  "have locks"
+                  Create.alreadyHasLocks
+                  False
+              ]
+          ]
       ]
   , group
       "validator"
-      [ validatorSucceedsWith
+      [ group
+          "destroy"
+          [ group
+              "legal"
+              [ Destroy.mkTestTree
+                  "One stake"
+                  Destroy.oneStake
+                  (Destroy.Validity (Just True) True)
+              , Destroy.mkTestTree
+                  "Multiple stake"
+                  Destroy.multipleStakes
+                  (Destroy.Validity (Just True) True)
+              ]
+          , group
+              "illegal"
+              [ Destroy.mkTestTree
+                  "Destroy only one stake to steal SST"
+                  Destroy.stealSST
+                  (Destroy.Validity (Just False) False)
+              , Destroy.mkTestTree
+                  "Destroy nothing to steal SST"
+                  Destroy.stealSST1
+                  (Destroy.Validity Nothing False)
+              , Destroy.mkTestTree
+                  "Steal SST"
+                  Destroy.stealSST3
+                  (Destroy.Validity (Just False) False)
+              , Destroy.mkTestTree
+                  "Destroy locked stakes"
+                  Destroy.lockedStakes
+                  (Destroy.Validity (Just True) False)
+              , Destroy.mkTestTree
+                  "not authorized by owner"
+                  Destroy.notAuthorized
+                  (Destroy.Validity (Just True) False)
+              , Destroy.mkTestTree
+                  "not authorized by owner"
+                  Destroy.authorizedByDelegatee
+                  (Destroy.Validity (Just True) False)
+              ]
+          ]
+      , validatorSucceedsWith
           "stakeDepositWithdraw deposit"
           stakeValidator
           (StakeDatum 100_000 (PubKeyCredential signer) Nothing [])

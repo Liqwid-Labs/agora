@@ -6,6 +6,11 @@ This format is based on [Keep A Changelog](https://keepachangelog.com/en/1.0.0).
 
 ### Modified
 
+- Fix a bug where `lockedBy` and `delegatedTo` fields of stake datums aren't checked
+  during the creation of stakes.
+
+  Included by [#199](https://github.com/Liqwid-Labs/agora/pull/199)
+
 - Fix several vulnerabilities and bugs found in staking components.
   
   Including:

@@ -4,7 +4,15 @@ Agora/Effects/Treasury Withdrawal Effect/effect/Simple with multiple treasuries 
 Agora/Effects/Treasury Withdrawal Effect/effect/Mixed Assets,300492604,786706,4250
 Agora/Effects/Governor Mutation Effect/validator/valid new governor datum/governor validator should pass,123980615,348263,11521
 Agora/Effects/Governor Mutation Effect/validator/valid new governor datum/effect validator should pass,145816056,387807,4684
-Agora/Stake/policy/stakeCreation,59498953,158188,3481
+Agora/Stake/policy/create/valid/stake owner: pub key,76591830,196946,3583
+Agora/Stake/policy/create/valid/stake owner: script,89731086,235525,3618
+Agora/Stake/validator/destroy/legal/One stake/stake validator,107112511,299069,7414
+Agora/Stake/validator/destroy/legal/One stake/stake policy,42685276,121860,3570
+Agora/Stake/validator/destroy/legal/Multiple stake/stake validator,693758152,1779821,10667
+Agora/Stake/validator/destroy/legal/Multiple stake/stake policy,418433413,1153422,6822
+Agora/Stake/validator/destroy/illegal/Destroy locked stakes/stake policy,418433413,1153422,6883
+Agora/Stake/validator/destroy/illegal/not authorized by owner/stake policy,418433413,1153422,6791
+Agora/Stake/validator/destroy/illegal/not authorized by owner/stake policy,418433413,1153422,6822
 Agora/Stake/validator/stakeDepositWithdraw deposit,147174364,403343,7529
 Agora/Stake/validator/stakeDepositWithdraw withdraw,147174364,403343,7521
 Agora/Stake/validator/set delegate/override existing delegate,179507112,476672,7660
