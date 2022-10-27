@@ -10,6 +10,7 @@ module Spec.Proposal (specs) where
 import Sample.Proposal.Advance qualified as Advance
 import Sample.Proposal.Cosign qualified as Cosign
 import Sample.Proposal.Create qualified as Create
+import Sample.Proposal.PrivilegeEscalate qualified as PrivilegeEscalate
 import Sample.Proposal.Unlock qualified as Unlock
 import Sample.Proposal.Vote qualified as Vote
 
@@ -396,5 +397,16 @@ specs =
               legalGroup = group "legal" $ map mkLegalGroup stakeCountCases
               illegalGroup = group "illegal" $ map mkIllegalGroup stakeCountCases
            in [legalGroup, illegalGroup]
+      ]
+  , group
+      "privilege escalate"
+      [ PrivilegeEscalate.mkTestTree
+          "vote"
+          PrivilegeEscalate.Voting
+          (PrivilegeEscalate.Validity False False)
+      , PrivilegeEscalate.mkTestTree
+          "retract votes"
+          PrivilegeEscalate.RetractingVotes
+          (PrivilegeEscalate.Validity False False)
       ]
   ]

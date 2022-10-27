@@ -31,11 +31,13 @@ module Agora.Utils (
   pinsertUniqueBy,
   ptryFromRedeemer,
   passert,
+  pisNothing,
+  pisDNothing,
 ) where
 
 import Plutarch.Api.V1 (KeyGuarantees (Unsorted), PPOSIXTime, PRedeemer, PTokenName, PValidatorHash)
 import Plutarch.Api.V1.AssocMap (PMap, plookup)
-import Plutarch.Api.V2 (PScriptHash, PScriptPurpose)
+import Plutarch.Api.V2 (PMaybeData (PDNothing), PScriptHash, PScriptPurpose)
 import Plutarch.Extra.Applicative (PApplicative (ppure))
 import Plutarch.Extra.Category (PCategory (pidentity))
 import Plutarch.Extra.Functor (PFunctor (PSubcategory, pfmap))
@@ -385,3 +387,23 @@ passert ::
   Term s a ->
   Term s a
 passert msg cond x = pif cond x $ ptraceError msg
+
+-- | @since 1.0.0
+pisNothing ::
+  forall (a :: PType) (s :: S).
+  Term s (PMaybe a :--> PBool)
+pisNothing = phoistAcyclic $
+  plam $
+    flip pmatch $ \case
+      PNothing -> pconstant True
+      _ -> pconstant False
+
+-- | @since 1.0.0
+pisDNothing ::
+  forall (a :: PType) (s :: S).
+  Term s (PMaybeData a :--> PBool)
+pisDNothing = phoistAcyclic $
+  plam $
+    flip pmatch $ \case
+      PDNothing _ -> pconstant True
+      _ -> pconstant False
