@@ -6,6 +6,20 @@ This format is based on [Keep A Changelog](https://keepachangelog.com/en/1.0.0).
 
 ### Modified
 
+- Fix several vulnerabilities and bugs found in both staking and proposal components.
+
+  Including:
+
+  - Proposal thresholds should be inclusively checked.
+  - Attackers can fail any voted-on/locked proposal, or fast track to `Finished`,
+    by constructing a transaction that has a very loose valid time range.
+  - The stake validator can be fooled by stakes that doesn't belong to itself, and
+    consequently allows attack to down vote without voting.
+  - Improve doc string of `authorityTokensValidIn` to avoid confusion.
+  - Rename proposal redeemer `Unlock` to `UnlockStake` to avoid confusion.
+
+  Included by [#200](https://github.com/Liqwid-Labs/agora/pull/200)
+
 - Fix a bug where `lockedBy` and `delegatedTo` fields of stake datums aren't checked
   during the creation of stakes.
 
