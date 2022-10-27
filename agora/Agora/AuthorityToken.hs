@@ -13,8 +13,7 @@ module Agora.AuthorityToken (
 
 import Agora.Utils (
   passert,
-  pnegativeSymbolValueOf,
-  ppositiveSymbolValueOf,
+  psymbolValueOf',
  )
 import Plutarch.Api.V1 (
   PCredential (..),
@@ -35,6 +34,7 @@ import Plutarch.Api.V2 (
  )
 import Plutarch.Extra.AssetClass (PAssetClassData, ptoScottEncoding)
 import "liqwid-plutarch-extra" Plutarch.Extra.List (plookupAssoc)
+import Plutarch.Extra.Maybe (pfromJust)
 import Plutarch.Extra.ScriptContext (pisTokenSpent)
 import Plutarch.Extra.Sum (PSum (PSum))
 import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (
@@ -160,10 +160,8 @@ authorityTokenPolicy =
 
       let ownSymbol = pfromData $ pfield @"_0" # ownSymbol'
 
-      applySymbolValueOf <- pletC $ plam $ \f -> f # ownSymbol # txInfo.mint
-
-      mintedATs <- pletC $ applySymbolValueOf # ppositiveSymbolValueOf
-      let burntATs = applySymbolValueOf # pnegativeSymbolValueOf
+      PPair mintedATs burntATs <-
+        pmatchC $ pfromJust #$ psymbolValueOf' # ownSymbol # txInfo.mint
 
       pure $
         popaque $
