@@ -416,7 +416,7 @@ data PTimingRelation (s :: S)
 instance DerivePlutusType PTimingRelation where
   type DPTStrat _ = PlutusTypeEnumData
 
-{- | Return truw if a relation is 'PWithin'.
+{- | Return true if a relation is 'PWithin'.
 
      @since 1.0.0
 -}
@@ -455,7 +455,7 @@ instance DerivePlutusType PPeriod where
 
 {- | Compute the relation between current time range and the given peroid,
      providing the starting time and timing configuration of a proposal. If the
-     relation cannot be ddetermined, error out.
+     relation cannot be determined, error out.
 
      @since 1.0.0
 -}

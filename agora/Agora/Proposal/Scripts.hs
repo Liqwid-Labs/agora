@@ -478,7 +478,7 @@ proposalValidator =
                       )
                     # sctxF.inputStakes
 
-            pguardC "Exceed minimum amount" $
+            pguardC "At least minimum amount" $
               thresholdsF.vote #<= totalStakeAmount
 
             pguardC "Input proposal must be in VotingReady state" $
