@@ -241,7 +241,7 @@ proposalValidator =
           pfield @"resolved"
             #$ passertPJust
             # "Own input should present"
-              #$ pfindTxInByTxOutRef
+            #$ pfindTxInByTxOutRef
             # propsalInputRef
             # txInfoF.inputs
 
@@ -261,40 +261,43 @@ proposalValidator =
     -- We can handle only one proposal under current design.
     proposalOutputDatum <-
       pletC $
-        passertPJust # "proposal input should present"
+        passertPJust
+          # "proposal input should present"
           #$ pfindJust
-            # plam
-              ( flip pletAll $ \outputF ->
-                  let isProposalUTxO =
-                        foldl1
-                          (#&&)
-                          [ ptraceIfFalse "Own by proposal validator" $
-                              outputF.address #== proposalInputF.address
-                          , ptraceIfFalse "Has proposal ST" $
-                              psymbolValueOf # pstSymbol # outputF.value #== 1
-                          ]
+          # plam
+            ( flip pletAll $ \outputF ->
+                let isProposalUTxO =
+                      foldl1
+                        (#&&)
+                        [ ptraceIfFalse "Own by proposal validator" $
+                            outputF.address #== proposalInputF.address
+                        , ptraceIfFalse "Has proposal ST" $
+                            psymbolValueOf # pstSymbol # outputF.value #== 1
+                        ]
 
-                      handleProposalUTxO =
-                        -- Using inline datum to avoid O(n^2) lookup.
-                        pfromData $
-                          ptrace "Resolve proposal datum" $
-                            pfromOutputDatum @(PAsData PProposalDatum)
-                              # outputF.datum
-                              # txInfoF.datums
-                   in pif
-                        isProposalUTxO
-                        (pjust # handleProposalUTxO)
-                        pnothing
-              )
-            # pfromData txInfoF.outputs
+                    handleProposalUTxO =
+                      -- Using inline datum to avoid O(n^2) lookup.
+                      pfromData $
+                        ptrace "Resolve proposal datum" $
+                          pfromOutputDatum @(PAsData PProposalDatum)
+                            # outputF.datum
+                            # txInfoF.datums
+                 in pif
+                      isProposalUTxO
+                      (pjust # handleProposalUTxO)
+                      pnothing
+            )
+          # pfromData txInfoF.outputs
 
     --------------------------------------------------------------------------
 
     getTimingRelation' <-
       pletC $
         let currentTime =
-              passertPJust # "Current time should be resolved"
-                #$ currentProposalTime # txInfoF.validRange
+              passertPJust
+                # "Current time should be resolved"
+                #$ currentProposalTime
+                # txInfoF.validRange
          in pgetRelation
               # proposalInputDatumF.timingConfig
               # proposalInputDatumF.startingTime
@@ -321,7 +324,8 @@ proposalValidator =
                 stake =
                   pfromData $
                     -- If we can't resolve the stake datum, error out.
-                    passertPJust # "Stake datum should present"
+                    passertPJust
+                      # "Stake datum should present"
                       -- Use inline datum to avoid extra map lookup.
                       #$ ptryFromOutputDatum @(PAsData PStakeDatum)
                       # txOutF.datum
@@ -370,7 +374,8 @@ proposalValidator =
                           + punsafeCoerce
                             (pfromData stakeF.stakedAmount)
                     , orderedOwners =
-                        pcons # stakeF.owner
+                        pcons
+                          # stakeF.owner
                           # ctxF.orderedOwners
                     }
 
@@ -443,14 +448,22 @@ proposalValidator =
             let expectedDatum =
                   mkRecordConstr
                     PProposalDatum
-                    ( #proposalId .= proposalInputDatumF.proposalId
-                        .& #effects .= proposalInputDatumF.effects
-                        .& #status .= proposalInputDatumF.status
-                        .& #cosigners .= pdata updatedSigs
-                        .& #thresholds .= proposalInputDatumF.thresholds
-                        .& #votes .= proposalInputDatumF.votes
-                        .& #timingConfig .= proposalInputDatumF.timingConfig
-                        .& #startingTime .= proposalInputDatumF.startingTime
+                    ( #proposalId
+                        .= proposalInputDatumF.proposalId
+                        .& #effects
+                        .= proposalInputDatumF.effects
+                        .& #status
+                        .= proposalInputDatumF.status
+                        .& #cosigners
+                        .= pdata updatedSigs
+                        .& #thresholds
+                        .= proposalInputDatumF.thresholds
+                        .& #votes
+                        .= proposalInputDatumF.votes
+                        .& #timingConfig
+                        .= proposalInputDatumF.timingConfig
+                        .& #startingTime
+                        .= proposalInputDatumF.startingTime
                     )
 
             pguardC "Signatures are correctly added to cosignature list" $
@@ -471,8 +484,8 @@ proposalValidator =
                             pnot
                               #$ pisVoter
                               #$ pgetStakeRoles
-                                # proposalInputDatumF.proposalId
-                                # stakeF.lockedBy
+                              # proposalInputDatumF.proposalId
+                              # stakeF.lockedBy
 
                           pure $ pcon $ PSum $ pfromData stakeF.stakedAmount
                       )
@@ -510,14 +523,22 @@ proposalValidator =
                 expectedProposalOut =
                   mkRecordConstr
                     PProposalDatum
-                    ( #proposalId .= proposalInputDatumF.proposalId
-                        .& #effects .= proposalInputDatumF.effects
-                        .& #status .= proposalInputDatumF.status
-                        .& #cosigners .= proposalInputDatumF.cosigners
-                        .& #thresholds .= proposalInputDatumF.thresholds
-                        .& #votes .= pdata expectedNewVotes
-                        .& #timingConfig .= proposalInputDatumF.timingConfig
-                        .& #startingTime .= proposalInputDatumF.startingTime
+                    ( #proposalId
+                        .= proposalInputDatumF.proposalId
+                        .& #effects
+                        .= proposalInputDatumF.effects
+                        .& #status
+                        .= proposalInputDatumF.status
+                        .& #cosigners
+                        .= proposalInputDatumF.cosigners
+                        .& #thresholds
+                        .= proposalInputDatumF.thresholds
+                        .& #votes
+                        .= pdata expectedNewVotes
+                        .& #timingConfig
+                        .= proposalInputDatumF.timingConfig
+                        .& #startingTime
+                        .= proposalInputDatumF.startingTime
                     )
 
             pguardC "Output proposal should be valid" $
@@ -570,7 +591,8 @@ proposalValidator =
 
                 -- The votes can only change when the proposal still allows voting.
                 shouldUpdateVotes =
-                  currentStatus #== pconstant VotingReady
+                  currentStatus
+                    #== pconstant VotingReady
                     #&& inVotingPeriod
 
             pguardC "Proposal output correct" $
@@ -580,14 +602,22 @@ proposalValidator =
                       expectedProposalOut =
                         mkRecordConstr
                           PProposalDatum
-                          ( #proposalId .= proposalInputDatumF.proposalId
-                              .& #effects .= proposalInputDatumF.effects
-                              .& #status .= proposalInputDatumF.status
-                              .& #cosigners .= proposalInputDatumF.cosigners
-                              .& #thresholds .= proposalInputDatumF.thresholds
-                              .& #votes .= pdata expectedVotes
-                              .& #timingConfig .= proposalInputDatumF.timingConfig
-                              .& #startingTime .= proposalInputDatumF.startingTime
+                          ( #proposalId
+                              .= proposalInputDatumF.proposalId
+                              .& #effects
+                              .= proposalInputDatumF.effects
+                              .& #status
+                              .= proposalInputDatumF.status
+                              .& #cosigners
+                              .= proposalInputDatumF.cosigners
+                              .& #thresholds
+                              .= proposalInputDatumF.thresholds
+                              .& #votes
+                              .= pdata expectedVotes
+                              .& #timingConfig
+                              .= proposalInputDatumF.timingConfig
+                              .& #startingTime
+                              .= proposalInputDatumF.startingTime
                           )
                    in ptraceIfFalse "Update votes" $
                         expectedProposalOut #== proposalOutputDatum
@@ -609,14 +639,22 @@ proposalValidator =
               let expectedProposalOutputDatum =
                     mkRecordConstr
                       PProposalDatum
-                      ( #proposalId .= proposalInputDatumF.proposalId
-                          .& #effects .= proposalInputDatumF.effects
-                          .& #status .= pdata proposalOutputStatus
-                          .& #cosigners .= proposalInputDatumF.cosigners
-                          .& #thresholds .= proposalInputDatumF.thresholds
-                          .& #votes .= proposalInputDatumF.votes
-                          .& #timingConfig .= proposalInputDatumF.timingConfig
-                          .& #startingTime .= proposalInputDatumF.startingTime
+                      ( #proposalId
+                          .= proposalInputDatumF.proposalId
+                          .& #effects
+                          .= proposalInputDatumF.effects
+                          .& #status
+                          .= pdata proposalOutputStatus
+                          .& #cosigners
+                          .= proposalInputDatumF.cosigners
+                          .& #thresholds
+                          .= proposalInputDatumF.thresholds
+                          .& #votes
+                          .= proposalInputDatumF.votes
+                          .& #timingConfig
+                          .= proposalInputDatumF.timingConfig
+                          .& #startingTime
+                          .= proposalInputDatumF.startingTime
                       )
                in proposalOutputDatum #== expectedProposalOutputDatum
 
@@ -652,10 +690,12 @@ proposalValidator =
                       pguardC "Proposal status set to Locked" $
                         proposalOutputStatus #== pconstant Locked
 
-                      pguardC "Winner outcome not found" $
-                        pisJust #$ pwinner' # proposalInputDatumF.votes
+                      pguardC "Winner outcome not found"
+                        $ pisJust
+                          #$ pwinner'
+                          # proposalInputDatumF.votes
                           #$ punsafeCoerce
-                          $ pfromData thresholdsF.execute
+                        $ pfromData thresholdsF.execute
                     -- Too late: failed proposal, status set to 'Finished'.
                     PAfter ->
                       pguardC "Proposal should fail: not on time" $

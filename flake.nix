@@ -163,6 +163,7 @@
         liqwid-nix.enableCabalFormatCheck
         liqwid-nix.enableNixFormatCheck
         liqwid-nix.addBuildChecks
+        liqwid-nix.addCommonRunScripts
         (liqwid-nix.addCommandLineTools (pkgs: _: [
           pkgs.haskellPackages.hasktags
         ]))
