@@ -38,6 +38,7 @@ module Agora.Stake (
   pisCreator,
   pisCosigner,
   pisIrrelevant,
+  presolveStakeInputDatum,
 ) where
 
 import Agora.Proposal (
@@ -54,13 +55,19 @@ import Data.Tagged (Tagged)
 import Generics.SOP qualified as SOP
 import Plutarch.Api.V1 (PCredential)
 import Plutarch.Api.V2 (
+  KeyGuarantees (Unsorted),
+  PDatum,
+  PDatumHash,
+  PMap,
   PMaybeData,
+  PTxInInfo,
   PTxInfo,
  )
 import Plutarch.DataRepr (
   DerivePConstantViaData (DerivePConstantViaData),
   PDataFields,
  )
+import Plutarch.Extra.AssetClass (PAssetClass)
 import Plutarch.Extra.Field (pletAll)
 import Plutarch.Extra.IsData (
   DerivePConstantViaDataList (DerivePConstantViaDataList),
@@ -68,9 +75,11 @@ import Plutarch.Extra.IsData (
  )
 import "liqwid-plutarch-extra" Plutarch.Extra.List (pfindJust)
 import Plutarch.Extra.Maybe (passertPJust, pjust, pnothing)
+import Plutarch.Extra.ScriptContext (pfromOutputDatum)
 import Plutarch.Extra.Sum (PSum (PSum))
 import Plutarch.Extra.Tagged (PTagged)
 import Plutarch.Extra.Traversable (pfoldMap)
+import Plutarch.Extra.Value (passetClassValueOf)
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (PLifted))
 import Plutarch.Orphans ()
 import PlutusLedgerApi.V2 (Credential)
@@ -694,3 +703,43 @@ pextractVoteOption =
                 )
               #
           )
+
+{- | Resolve stake datum, if the given `PTxInInfo` represents a stake input.
+     Return nothing otherwise.
+
+     The first parameter is the assetclass of SST.
+
+     @since 1.0.0
+-}
+presolveStakeInputDatum ::
+  forall (s :: S).
+  Term
+    s
+    ( PAssetClass
+        :--> PMap 'Unsorted PDatumHash PDatum
+        :--> PTxInInfo
+        :--> PMaybe PStakeDatum
+    )
+presolveStakeInputDatum = phoistAcyclic $
+  plam $ \sstClass datums ->
+    flip
+      (pletFields @'["value", "datum", "address"])
+      ( \txOutF ->
+          let isStakeUTxO =
+                passetClassValueOf
+                  # sstClass
+                  # txOutF.value
+                  #== 1
+
+              datum =
+                ptrace "Resolve stake datum" $
+                  pfromData $
+                    pfromOutputDatum @(PAsData PStakeDatum)
+                      # txOutF.datum
+                      # datums
+           in pif
+                isStakeUTxO
+                (pjust # datum)
+                pnothing
+      )
+      . (pfield @"resolved" #)
