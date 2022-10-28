@@ -10,6 +10,7 @@ module Agora.Proposal.Scripts (
   proposalPolicy,
 ) where
 
+import Agora.Governor (PGovernorRedeemer (PCreateProposal))
 import Agora.Proposal (
   PProposalDatum (PProposalDatum),
   PProposalRedeemer (PAdvanceProposal, PCosign, PUnlockStake, PVote),
@@ -39,24 +40,27 @@ import Agora.Utils (
   pinsertUniqueBy,
   plistEqualsBy,
   pmapMaybe,
+  ptryFromRedeemer,
  )
 import Plutarch.Api.V1 (PCredential, PCurrencySymbol)
 import Plutarch.Api.V1.AssocMap (plookup)
 import Plutarch.Api.V2 (
   PMintingPolicy,
-  PScriptContext (PScriptContext),
   PScriptPurpose (PMinting, PSpending),
   PTxInInfo,
-  PTxInfo (PTxInfo),
   PValidator,
  )
-import Plutarch.Extra.AssetClass (PAssetClassData, passetClass, ptoScottEncoding)
+import Plutarch.Extra.AssetClass (
+  PAssetClassData,
+  ptoScottEncoding,
+ )
 import Plutarch.Extra.Category (PCategory (pidentity))
 import Plutarch.Extra.Field (pletAll, pletAllC)
 import "liqwid-plutarch-extra" Plutarch.Extra.List (pfindJust)
 import "plutarch-extra" Plutarch.Extra.Map (pupdate)
 import Plutarch.Extra.Maybe (
   passertPJust,
+  pfromJust,
   pisJust,
   pjust,
   pmaybe,
@@ -67,7 +71,6 @@ import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
 import Plutarch.Extra.ScriptContext (
   pfindTxInByTxOutRef,
   pfromOutputDatum,
-  pisTokenSpent,
  )
 import Plutarch.Extra.Sum (PSum (PSum))
 import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (
@@ -108,25 +111,53 @@ import Plutarch.Unsafe (punsafeCoerce)
 -}
 proposalPolicy :: ClosedTerm (PAssetClassData :--> PMintingPolicy)
 proposalPolicy =
-  plam $ \gtAssetClass _redeemer ctx' -> unTermCont $ do
-    PScriptContext ctx' <- pmatchC ctx'
-    ctx <- pletAllC ctx'
-    PTxInfo txInfo' <- pmatchC $ pfromData ctx.txInfo
-    txInfo <- pletFieldsC @'["inputs", "mint"] txInfo'
+  plam $ \gstAssetClass _redeemer ctx -> unTermCont $ do
+    ctxF <- pletAllC ctx
+    txInfoF <- pletFieldsC @'["inputs", "mint", "redeemers"] ctxF.txInfo
 
-    PMinting ownSymbol' <- pmatchC $ pfromData ctx.purpose
+    PMinting ((pfield @"_0" #) -> ownSymbol) <- pmatchC $ pfromData ctxF.purpose
+
     let mintedProposalST =
-          passetClassValueOf
-            # (passetClass # (pfield @"_0" # ownSymbol') # pconstant "")
-            # txInfo.mint
-
-    pguardC "Governance state-thread token must move" $
-      pisTokenSpent
-        # (ptoScottEncoding # gtAssetClass)
-        # txInfo.inputs
+          psymbolValueOf
+            # ownSymbol
+            # txInfoF.mint
 
     pguardC "Minted exactly one proposal ST" $
       mintedProposalST #== 1
+
+    let governorInputRef =
+          passertPJust
+            # "GST should move"
+            #$ pfindJust
+            # plam
+              ( flip pletAll $ \inputF ->
+                  let value = pfield @"value" # inputF.resolved
+                      isGovernorInput =
+                        passetClassValueOf
+                          # (ptoScottEncoding # gstAssetClass)
+                          # value
+                          #== 1
+                   in pif
+                        isGovernorInput
+                        (pjust # inputF.outRef)
+                        pnothing
+              )
+            # pfromData txInfoF.inputs
+
+        governorScriptPurpose =
+          mkRecordConstr
+            PSpending
+            (#_0 .= governorInputRef)
+
+        governorRedeemer =
+          pfromData $
+            pfromJust
+              #$ ptryFromRedeemer @(PAsData PGovernorRedeemer)
+              # governorScriptPurpose
+              # txInfoF.redeemers
+
+    pguardC "Govenor redeemer correct" $
+      pcon PCreateProposal #== governorRedeemer
 
     pure $ popaque (pconstant ())
 
