@@ -35,7 +35,7 @@ import Agora.Proposal (
   ProposalDatum (..),
   ProposalEffectGroup,
   ProposalId (..),
-  ProposalRedeemer (Unlock),
+  ProposalRedeemer (UnlockStake),
   ProposalStatus (..),
   ProposalVotes (..),
   ResultTag (..),
@@ -210,7 +210,7 @@ proposalRef :: TxOutRef
 proposalRef = TxOutRef stakeTxRef 0
 
 proposalRedeemer :: ProposalRedeemer
-proposalRedeemer = Unlock
+proposalRedeemer = UnlockStake
 
 mkProposalInputDatum ::
   StakeParameters ->
@@ -339,15 +339,19 @@ unlock ps = builder
 
     ---
 
+    ProposalStartingTime s = defStartingTime
+
     time = case ps.transactionParameters.timeRange of
       WhileVoting ->
-        closedBoundedInterval
-          ((def :: ProposalTimingConfig).draftTime + 1)
-          ((def :: ProposalTimingConfig).votingTime - 1)
+        let lb = s + (def :: ProposalTimingConfig).draftTime
+            ub = lb + (def :: ProposalTimingConfig).votingTime
+         in closedBoundedInterval (lb + 1) (ub - 1)
       AfterVoting ->
-        closedBoundedInterval
-          ((def :: ProposalTimingConfig).votingTime + 1)
-          ((def :: ProposalTimingConfig).lockingTime - 1)
+        let lb =
+              s + (def :: ProposalTimingConfig).draftTime
+                + (def :: ProposalTimingConfig).votingTime
+            ub = lb + (def :: ProposalTimingConfig).lockingTime
+         in closedBoundedInterval (lb + 1) (ub - 1)
 
     sig = case ps.transactionParameters.signedBy of
       Unknown -> defUnknown

@@ -16,7 +16,7 @@ module Agora.Stake.Redeemers (
 
 import Agora.Proposal (
   PProposalId,
-  PProposalRedeemer (PCosign, PUnlock, PVote),
+  PProposalRedeemer (PCosign, PUnlockStake, PVote),
   ProposalStatus (Finished),
  )
 import Agora.Stake (
@@ -266,7 +266,7 @@ pretractVote = pvoteHelper #$ phoistAcyclic $
     flip pmatch $ \ctxF ->
       pmatch ctxF.proposalContext $ \case
         PSpendProposal pid s r -> pmatch r $ \case
-          PUnlock _ ->
+          PUnlockStake _ ->
             let mode =
                   pif
                     (s #== pconstant Finished)
@@ -351,8 +351,11 @@ pdestroy = phoistAcyclic $
     pguardC "Owner signs this transaction" $
       pisSignedBy # pconstant False # ctx
 
-    pguardC "Stake unlocked" $
+    pguardC "All stakes unlocked" $
       pnot #$ pany # pstakeLocked # ctxF.stakeInputDatums
+
+    pguardC "All stakes burnt" $
+      pnull # ctxF.stakeOutputDatums
 
     pure $ pconstant ()
 

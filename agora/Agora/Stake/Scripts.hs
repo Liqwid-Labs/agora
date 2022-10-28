@@ -52,7 +52,7 @@ import Agora.Stake.Redeemers (
   ppermitVote,
   pretractVote,
  )
-import Agora.Utils (passert, pisDNothing, pmapMaybe)
+import Agora.Utils (passert, pisDNothing, pmapMaybe, pvalidatorHashToTokenName)
 import Plutarch.Api.V1 (
   PCredential (PPubKeyCredential, PScriptCredential),
   PCurrencySymbol,
@@ -70,6 +70,7 @@ import Plutarch.Api.V2 (
 import Plutarch.Extra.AssetClass (
   PAssetClass,
   PAssetClassData,
+  passetClass,
   ptoScottEncoding,
  )
 import Plutarch.Extra.Field (pletAll, pletAllC)
@@ -274,9 +275,17 @@ mkStakeValidator impl sstSymbol pstClass gstClass =
               # (pfield @"_0" # stakeInputRef)
               # txInfoF.inputs
 
-        stakeValidatorCredential =
-          pfield @"credential"
-            #$ pfield @"address" # validatedInput
+    stakeValidatorCredential <-
+      pletC $
+        pfield @"credential"
+          #$ pfield @"address" # validatedInput
+
+    let sstName = pvalidatorHashToTokenName #$ pmatch stakeValidatorCredential $
+          \case
+            PScriptCredential r -> pfield @"_0" # r
+            _ -> perror
+
+    sstClass <- pletC $ passetClass # sstSymbol # sstName
 
     --------------------------------------------------------------------------
 
@@ -287,7 +296,7 @@ mkStakeValidator impl sstSymbol pstClass gstClass =
           flip (pletFields @'["value", "datum", "address"]) $ \txOutF ->
             pmatch
               ( pcompareBy # pfromOrd
-                  # (psymbolValueOf # sstSymbol # txOutF.value)
+                  # (passetClassValueOf # sstClass # txOutF.value)
                   # 1
               )
               $ \case
@@ -417,7 +426,7 @@ mkStakeValidator impl sstSymbol pstClass gstClass =
 
     --------------------------------------------------------------------------
 
-    mintedST <- pletC $ psymbolValueOf # sstSymbol # txInfoF.mint
+    mintedST <- pletC $ passetClassValueOf # sstClass # txInfoF.mint
 
     pguardC "No new SST minted" $
       foldl1
@@ -608,7 +617,7 @@ stakeValidator ::
         :--> PValidator
     )
 stakeValidator =
-  plam $ \cs pstClass gstClass ->
+  plam $ \sstSymbol pstClass gstClass ->
     mkStakeValidator
       ( StakeRedeemerImpl
           { onDepositWithdraw = pdepositWithdraw
@@ -619,6 +628,6 @@ stakeValidator =
           , onClearDelegate = pclearDelegate
           }
       )
-      cs
+      sstSymbol
       (ptoScottEncoding # pstClass)
       (ptoScottEncoding # gstClass)

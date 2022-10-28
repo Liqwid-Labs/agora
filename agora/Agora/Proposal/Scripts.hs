@@ -12,7 +12,7 @@ module Agora.Proposal.Scripts (
 
 import Agora.Proposal (
   PProposalDatum (PProposalDatum),
-  PProposalRedeemer (PAdvanceProposal, PCosign, PUnlock, PVote),
+  PProposalRedeemer (PAdvanceProposal, PCosign, PUnlockStake, PVote),
   PProposalStatus (PDraft, PFinished, PLocked, PVotingReady),
   PProposalVotes (PProposalVotes),
   ProposalStatus (Draft, Finished, Locked, VotingReady),
@@ -20,11 +20,11 @@ import Agora.Proposal (
   pwinner',
  )
 import Agora.Proposal.Time (
+  PPeriod (PDraftingPeriod, PExecutingPeriod, PLockingPeriod, PVotingPeriod),
+  PTimingRelation (PAfter, PWithin),
   currentProposalTime,
-  isDraftPeriod,
-  isExecutionPeriod,
-  isLockingPeriod,
-  isVotingPeriod,
+  pgetRelation,
+  pisWithin,
  )
 import Agora.Stake (
   PStakeDatum,
@@ -232,8 +232,6 @@ proposalValidator =
           ]
         txInfo
 
-    currentTime <- pletC $ currentProposalTime # txInfoF.validRange
-
     ----------------------------------------------------------------------------
 
     PSpending ((pfield @"_0" #) -> propsalInputRef) <-
@@ -289,6 +287,20 @@ proposalValidator =
                         pnothing
               )
             # pfromData txInfoF.outputs
+
+    --------------------------------------------------------------------------
+
+    getTimingRelation' <-
+      pletC $
+        let currentTime =
+              passertPJust # "Current time should be resolved"
+                #$ currentProposalTime # txInfoF.validRange
+         in pgetRelation
+              # proposalInputDatumF.timingConfig
+              # proposalInputDatumF.startingTime
+              # currentTime
+
+    let getTimingRelation = (getTimingRelation' #) . pcon
 
     --------------------------------------------------------------------------
 
@@ -423,7 +435,7 @@ proposalValidator =
                     # proposalInputDatumF.cosigners
 
             pguardC "Less cosigners than maximum limit" $
-              plength # updatedSigs #< maximumCosigners
+              plength # updatedSigs #<= maximumCosigners
 
             pguardC "Meet minimum GT requirement" $
               pfromData thresholdsF.cosign #<= stakeF.stakedAmount
@@ -466,18 +478,14 @@ proposalValidator =
                       )
                     # sctxF.inputStakes
 
-            pguardC "Exceed minimum amount" $
-              thresholdsF.vote #< totalStakeAmount
+            pguardC "At least minimum amount" $
+              thresholdsF.vote #<= totalStakeAmount
 
             pguardC "Input proposal must be in VotingReady state" $
               currentStatus #== pconstant VotingReady
 
             pguardC "Proposal time should be wthin the voting period" $
-              isVotingPeriod # proposalInputDatumF.timingConfig
-                # proposalInputDatumF.startingTime
-                #$ passertPJust
-                # "Should be able to get current time"
-                # currentTime
+              pisWithin # getTimingRelation PVotingPeriod
 
             -- Ensure the transaction is voting to a valid 'ResultTag'(outcome).
             PProposalVotes voteMap <- pmatchC proposalInputDatumF.votes
@@ -520,7 +528,7 @@ proposalValidator =
 
           ----------------------------------------------------------------------
 
-          PUnlock _ -> spendStakes $ \sctxF -> do
+          PUnlockStake _ -> spendStakes $ \sctxF -> do
             let expectedVotes =
                   pfoldl
                     # plam
@@ -557,15 +565,8 @@ proposalValidator =
                     # proposalInputDatumF.votes
                     # sctxF.inputStakes
 
-                currentTime' =
-                  passertPJust
-                    # "Should be able to get current time"
-                    # currentTime
-
                 inVotingPeriod =
-                  isVotingPeriod # proposalInputDatumF.timingConfig
-                    # proposalInputDatumF.startingTime
-                    # currentTime'
+                  pisWithin # getTimingRelation PVotingPeriod
 
                 -- The votes can only change when the proposal still allows voting.
                 shouldUpdateVotes =
@@ -599,24 +600,6 @@ proposalValidator =
           ----------------------------------------------------------------------
 
           PAdvanceProposal _ -> unTermCont $ do
-            currentTime' <-
-              pletC $
-                passertPJust
-                  # "Should be able to get current time"
-                  # currentTime
-
-            applyIs <- pletC $
-              plam $ \f ->
-                f
-                  # proposalInputDatumF.timingConfig
-                  # proposalInputDatumF.startingTime
-                  # currentTime'
-            let inDraftPeriod = applyIs # isDraftPeriod
-                inVotingPeriod = applyIs # isVotingPeriod
-                inExecutionPeriod = applyIs # isExecutionPeriod
-
-            inLockedPeriod <- pletC $ applyIs # isLockingPeriod
-
             proposalOutputStatus <-
               pletC $
                 pfromData $
@@ -641,12 +624,10 @@ proposalValidator =
               pmatch currentStatus $ \case
                 PDraft ->
                   witnessStakes $ \sctxF -> do
-                    let notTooLate = inDraftPeriod
-
-                    pmatchC notTooLate >>= \case
-                      PTrue -> do
+                    pmatchC (getTimingRelation PDraftingPeriod) >>= \case
+                      PWithin -> do
                         pguardC "More cosigns than minimum amount" $
-                          punsafeCoerce (pfromData thresholdsF.toVoting) #< sctxF.totalAmount
+                          punsafeCoerce (pfromData thresholdsF.toVoting) #<= sctxF.totalAmount
 
                         pguardC "All new cosigners are witnessed by their Stake datums" $
                           plistEqualsBy
@@ -658,20 +639,15 @@ proposalValidator =
                         pguardC "Proposal status set to VotingReady" $
                           proposalOutputStatus #== pconstant VotingReady
                       -- Too late: failed proposal, status set to 'Finished'.
-                      PFalse ->
+                      PAfter ->
                         pguardC "Proposal should fail: not on time" $
                           proposalOutputStatus #== pconstant Finished
 
                 ----------------------------------------------------------------
 
                 PVotingReady -> unTermCont $ do
-                  let notTooLate = inLockedPeriod
-                      notTooEarly = pnot # inVotingPeriod
-
-                  pguardC "Cannot advance ahead of time" notTooEarly
-
-                  pmatchC notTooLate >>= \case
-                    PTrue -> do
+                  pmatchC (getTimingRelation PLockingPeriod) >>= \case
+                    PWithin -> do
                       -- 'VotingReady' -> 'Locked'
                       pguardC "Proposal status set to Locked" $
                         proposalOutputStatus #== pconstant Locked
@@ -681,7 +657,7 @@ proposalValidator =
                           #$ punsafeCoerce
                           $ pfromData thresholdsF.execute
                     -- Too late: failed proposal, status set to 'Finished'.
-                    PFalse ->
+                    PAfter ->
                       pguardC "Proposal should fail: not on time" $
                         proposalOutputStatus #== pconstant Finished
 
@@ -690,11 +666,6 @@ proposalValidator =
                 ----------------------------------------------------------------
 
                 PLocked -> unTermCont $ do
-                  let notTooLate = inExecutionPeriod
-                      notTooEarly = pnot # inLockedPeriod
-
-                  pguardC "Not too early" notTooEarly
-
                   pguardC "Proposal status set to Finished" $
                     proposalOutputStatus #== pconstant Finished
 
@@ -710,12 +681,12 @@ proposalValidator =
                           # pfromData txInfoF.inputs
 
                   pguardC "GST not moved if too late, moved otherwise" $
-                    pif
-                      notTooLate
-                      -- Not too late: GST should moved
-                      pidentity
-                      -- Not too late: GST should not moved
-                      pnot
+                    pmatch
+                      (getTimingRelation PExecutingPeriod)
+                      ( \case
+                          PWithin -> pidentity
+                          PAfter -> pnot
+                      )
                       # gstMoved
 
                   pure $ popaque $ pconstant ()

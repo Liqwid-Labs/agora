@@ -381,7 +381,7 @@ data ProposalRedeemer
     --   proposal, provided enough GT is shared among them.
     Cosign
   | -- | Allow unlocking one or more stakes with votes towards particular 'ResultTag'.
-    Unlock
+    UnlockStake
   | -- | Advance the proposal, performing the required checks for whether that is legal.
     --
     --   These are roughly the checks for each possible transition:
@@ -421,7 +421,7 @@ PlutusTx.makeIsDataIndexed
   ''ProposalRedeemer
   [ ('Vote, 0)
   , ('Cosign, 1)
-  , ('Unlock, 2)
+  , ('UnlockStake, 2)
   , ('AdvanceProposal, 3)
   ]
 
@@ -750,7 +750,7 @@ deriving via (DerivePConstantViaDataList ProposalDatum PProposalDatum) instance 
 data PProposalRedeemer (s :: S)
   = PVote (Term s (PDataRecord '["resultTag" ':= PResultTag]))
   | PCosign (Term s (PDataRecord '[]))
-  | PUnlock (Term s (PDataRecord '[]))
+  | PUnlockStake (Term s (PDataRecord '[]))
   | PAdvanceProposal (Term s (PDataRecord '[]))
   deriving stock
     ( -- | @since 0.1.0
@@ -890,8 +890,8 @@ pwinner' = phoistAcyclic $
             pfoldr # f # 0 # l #== 1
 
         exceedQuorum =
-          ptraceIfFalse "Highest vote count should exceed the minimum threshold" $
-            quorum #< highestVotes
+          ptraceIfFalse "Highest vote count should be at least the minimum threshold" $
+            quorum #<= highestVotes
 
     pure $
       pif
