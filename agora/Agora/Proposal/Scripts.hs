@@ -32,6 +32,7 @@ import Agora.Stake (
   pgetStakeRoles,
   pisIrrelevant,
   pisVoter,
+  presolveStakeInputDatum,
  )
 import Agora.Utils (
   pfromSingleton,
@@ -47,7 +48,6 @@ import Plutarch.Api.V2 (
   PScriptPurpose (PMinting, PSpending),
   PTxInInfo,
   PTxInfo (PTxInfo),
-  PTxOut,
   PValidator,
  )
 import Plutarch.Extra.AssetClass (PAssetClassData, passetClass, ptoScottEncoding)
@@ -68,7 +68,6 @@ import Plutarch.Extra.ScriptContext (
   pfindTxInByTxOutRef,
   pfromOutputDatum,
   pisTokenSpent,
-  ptryFromOutputDatum,
  )
 import Plutarch.Extra.Sum (PSum (PSum))
 import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (
@@ -309,35 +308,17 @@ proposalValidator =
 
     -- Handle stake inputs/outputs.
 
-    -- Reslove stake datum if the given UTxO is a stake UTxO.
-    getStakeDatum :: Term _ (PTxOut :--> PMaybe PStakeDatum) <-
+    resolveStakeInputDatum <-
       pletC $
-        plam $
-          flip (pletFields @'["value", "datum"]) $ \txOutF ->
-            let isStakeUTxO =
-                  -- A stake UTxO is a UTxO that carries SST.
-                  passetClassValueOf
-                    # (ptoScottEncoding # sstClass)
-                    # txOutF.value
-                    #== 1
-
-                stake =
-                  pfromData $
-                    -- If we can't resolve the stake datum, error out.
-                    passertPJust
-                      # "Stake datum should present"
-                      -- Use inline datum to avoid extra map lookup.
-                      #$ ptryFromOutputDatum @(PAsData PStakeDatum)
-                      # txOutF.datum
-                      # txInfoF.datums
-             in pif isStakeUTxO (pjust # stake) pnothing
-
+        presolveStakeInputDatum
+          # (ptoScottEncoding # sstClass)
+          # txInfoF.datums
     spendStakes' :: Term _ ((PStakeInputsContext :--> PUnit) :--> PUnit) <-
       pletC $
         plam $
           let stakeInputs =
                 pmapMaybe
-                  # plam ((getStakeDatum #) . (pfield @"resolved" #))
+                  # resolveStakeInputDatum
                   # pfromData txInfoF.inputs
 
               ctx = pcon $ PStakeInputsContext stakeInputs
@@ -380,8 +361,8 @@ proposalValidator =
                     }
 
             f :: Term _ (_ :--> PTxInInfo :--> _)
-            f = plam $ \ctx' ((pfield @"resolved" #) -> txOut) ->
-              let stakeDatum = getStakeDatum # txOut
+            f = plam $ \ctx' input ->
+              let stakeDatum = resolveStakeInputDatum # input
                   updateCtx' = updateCtx # ctx'
                in pmaybe # ctx' # updateCtx' # stakeDatum
 

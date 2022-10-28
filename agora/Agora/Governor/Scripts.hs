@@ -37,8 +37,8 @@ import Agora.Proposal (
  )
 import Agora.Proposal.Time (validateProposalStartingTime)
 import Agora.Stake (
-  PStakeDatum (..),
   pnumCreatedProposals,
+  presolveStakeInputDatum,
  )
 import Agora.Utils (
   plistEqualsBy,
@@ -55,7 +55,7 @@ import Plutarch.Api.V2 (
   PTxOutRef,
   PValidator,
  )
-import Plutarch.Extra.AssetClass (passetClass)
+import Plutarch.Extra.AssetClass (PAssetClassData, passetClass, ptoScottEncoding)
 import Plutarch.Extra.Field (pletAll, pletAllC)
 import "liqwid-plutarch-extra" Plutarch.Extra.List (pfindJust, pmapMaybe)
 import "liqwid-plutarch-extra" Plutarch.Extra.Map (pkeys, ptryLookup)
@@ -264,14 +264,14 @@ governorValidator ::
   -- | Lazy precompiled scripts.
   ClosedTerm
     ( PAddress
-        :--> PCurrencySymbol
+        :--> PAssetClassData
         :--> PCurrencySymbol
         :--> PCurrencySymbol
         :--> PCurrencySymbol
         :--> PValidator
     )
 governorValidator =
-  plam $ \proposalValidatorAddress sstSymbol gstSymbol pstSymbol atSymbol datum redeemer ctx -> unTermCont $ do
+  plam $ \proposalValidatorAddress sstClass gstSymbol pstSymbol atSymbol datum redeemer ctx -> unTermCont $ do
     ctxF <- pletAllC ctx
     txInfo <- pletC $ pfromData ctxF.txInfo
     txInfoF <-
@@ -334,24 +334,6 @@ governorValidator =
           # pfromData txInfoF.outputs
 
     ----------------------------------------------------------------------------
-
-    getStakeDatum :: Term _ (PTxOut :--> PMaybe PStakeDatum) <-
-      pletC $
-        plam $
-          flip (pletFields @'["value", "datum"]) $ \txOutF ->
-            let isStakeUTxO =
-                  psymbolValueOf
-                    # sstSymbol
-                    # txOutF.value
-                    #== 1
-
-                datum =
-                  ptrace "Resolve stake input datum" $
-                    pfromData $
-                      pfromOutputDatum
-                        # txOutF.datum
-                        # txInfoF.datums
-             in pif isStakeUTxO (pjust # datum) pnothing
 
     getProposalDatum :: Term _ (PTxOut :--> PMaybe PProposalDatum) <-
       pletC $
@@ -424,7 +406,10 @@ governorValidator =
                 passertPJust
                   # "Stake input should present"
                   #$ pfindJust
-                  # plam ((getStakeDatum #) . (pfield @"resolved" #))
+                  # ( presolveStakeInputDatum
+                        # (ptoScottEncoding # sstClass)
+                        # txInfoF.datums
+                    )
                   # pfromData txInfoF.inputs
 
           stakeInputDatumF <- pletAllC stakeInputDatum
