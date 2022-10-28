@@ -52,7 +52,13 @@ import Agora.Stake.Redeemers (
   ppermitVote,
   pretractVote,
  )
-import Agora.Utils (passert, pisDNothing, pmapMaybe, pvalidatorHashToTokenName)
+import Agora.Utils (
+  passert,
+  pisDNothing,
+  pmapMaybe,
+  psymbolValueOf',
+  pvalidatorHashToTokenName,
+ )
 import Plutarch.Api.V1 (
   PCredential (PPubKeyCredential, PScriptCredential),
   PCurrencySymbol,
@@ -78,6 +84,7 @@ import Plutarch.Extra.Functor (PFunctor (pfmap))
 import "liqwid-plutarch-extra" Plutarch.Extra.List (pfindJust)
 import Plutarch.Extra.Maybe (
   passertPJust,
+  pfromJust,
   pfromMaybe,
   pjust,
   pmaybeData,
@@ -89,7 +96,6 @@ import Plutarch.Extra.ScriptContext (
   pfromOutputDatum,
   pvalueSpent,
  )
-import Plutarch.Extra.Sum (PSum (PSum))
 import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (
   pguardC,
   pletC,
@@ -97,7 +103,6 @@ import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (
   pmatchC,
   ptryFromC,
  )
-import Plutarch.Extra.Traversable (pfoldMap)
 import Plutarch.Extra.Value (
   passetClassValueOf,
   psymbolValueOf,
@@ -144,30 +149,18 @@ stakePolicy =
     PMinting ownSymbol' <- pmatchC $ pfromData ctx.purpose
     ownSymbol <- pletC $ pfield @"_0" # ownSymbol'
     spentST <- pletC $ psymbolValueOf # ownSymbol #$ pvalueSpent # txInfoF.inputs
-    mintedST <- pletC $ psymbolValueOf # ownSymbol # txInfoF.mint
 
-    let burning = unTermCont $ do
-          let numStakeInputs =
-                pto $
-                  pfoldMap @_ @_ @(PSum PInteger)
-                    # plam
-                      ( \((pfield @"resolved" #) -> txOut) ->
-                          let isStakeUTxO =
-                                psymbolValueOf
-                                  # ownSymbol
-                                  # (pfield @"value" # txOut)
-                                  #== 1
-                           in pif
-                                isStakeUTxO
-                                (pcon $ PSum 1)
-                                mempty
-                      )
-                    # pfromData txInfoF.inputs
+    PPair mintedST burntST <-
+      pmatchC $
+        pfromJust #$ psymbolValueOf'
+          # ownSymbol
+          # txInfoF.mint
 
-          pguardC "ST burned" $
-            mintedST #== pnegate # numStakeInputs
-
-          pure $ popaque (pconstant ())
+    let burning =
+          passert
+            "All ST burned"
+            (burntST #== pnegate # spentST)
+            (popaque $ pconstant ())
 
     let minting = unTermCont $ do
           pguardC "ST at inputs must be 0" $
@@ -423,19 +416,6 @@ mkStakeValidator impl sstSymbol pstClass gstClass =
                       # (getStakeDatum # output)
             )
           # pfromData txInfoF.outputs
-
-    --------------------------------------------------------------------------
-
-    mintedST <- pletC $ passetClassValueOf # sstClass # txInfoF.mint
-
-    pguardC "No new SST minted" $
-      foldl1
-        (#||)
-        [ ptraceIfTrue "All stakes burnt" $
-            mintedST #< 0 #&& pnull # stakeOutputDatums
-        , ptraceIfTrue "Nothing burnt" $
-            mintedST #== 0
-        ]
 
     --------------------------------------------------------------------------
 
