@@ -402,6 +402,10 @@ specs =
                       "change output stake value"
                       (Unlock.mkChangeOutputStakeValue nStakes)
                       (Unlock.Validity True False)
+                  , Unlock.mkTestTree
+                      "use fake stake"
+                      (Unlock.mkUseFakeStakes nStakes)
+                      (Unlock.Validity False False)
                   ]
 
               legalGroup = group "legal" $ map mkLegalGroup stakeCountCases

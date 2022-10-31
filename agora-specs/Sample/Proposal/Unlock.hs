@@ -12,6 +12,7 @@ module Sample.Proposal.Unlock (
   SignedBy (..),
   TransactionParameters (..),
   ProposalParameters (..),
+  SSTOwner (..),
   StakeParameters (..),
   Validity (..),
   unlock,
@@ -26,6 +27,7 @@ module Sample.Proposal.Unlock (
   mkRemoveCreatorLockBeforeFinished,
   mkCreatorRetractVotes,
   mkChangeOutputStakeValue,
+  mkUseFakeStakes,
 ) where
 
 --------------------------------------------------------------------------------
@@ -47,6 +49,7 @@ import Agora.Stake (
   StakeDatum (..),
   StakeRedeemer (RetractVotes),
  )
+import Agora.Utils (validatorHashToTokenName)
 import Data.Default.Class (Default (def))
 import Data.Map.Strict qualified as StrictMap
 import Data.Tagged (Tagged, untag)
@@ -64,6 +67,7 @@ import Plutarch.Context (
   withValue,
  )
 import Plutarch.Extra.AssetClass (assetClassValue)
+import PlutusLedgerApi.V1.Value qualified as Value
 import PlutusLedgerApi.V2 (
   Credential (PubKeyCredential),
   PubKeyHash,
@@ -76,7 +80,7 @@ import Sample.Shared (
   proposalAssetClass,
   proposalValidator,
   proposalValidatorHash,
-  stakeAssetClass,
+  stakeSymbol,
   stakeValidator,
   stakeValidatorHash,
  )
@@ -162,12 +166,17 @@ data StakeRole
     Irrelevant
   deriving stock (Bounded, Enum, Show)
 
+data SSTOwner
+  = StakeValidator
+  | Attacker
+
 data StakeParameters = StakeParameters
   { numStakes :: Integer
   , stakeRole :: StakeRole
   , removeVoterLock :: Bool
   , removeCreatorLock :: Bool
   , alterOutputValue :: Bool
+  , sstOwner :: SSTOwner
   }
 
 data Validity = Validity
@@ -275,7 +284,11 @@ unlock ps = builder
 
     ---
 
-    sst = assetClassValue stakeAssetClass 1
+    sstName = case ps.stakeParameters.sstOwner of
+      StakeValidator -> validatorHashToTokenName stakeValidatorHash
+      _ -> ""
+
+    sst = Value.singleton stakeSymbol sstName 1
 
     stakeInputDatum = mkStakeInputDatum ps.stakeParameters
 
@@ -415,6 +428,7 @@ mkValidVoterRetractVotes i =
           , removeVoterLock = True
           , removeCreatorLock = False
           , alterOutputValue = False
+          , sstOwner = StakeValidator
           }
     , transactionParameters =
         TransactionParameters
@@ -543,5 +557,15 @@ mkChangeOutputStakeValue i =
         { stakeParameters =
             template.stakeParameters
               { alterOutputValue = True
+              }
+        }
+
+mkUseFakeStakes :: Integer -> ParameterBundle
+mkUseFakeStakes i =
+  let template = mkValidVoterCreatorRetractVotes i
+   in template
+        { stakeParameters =
+            template.stakeParameters
+              { sstOwner = Attacker
               }
         }
