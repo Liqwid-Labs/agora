@@ -6,6 +6,15 @@ This format is based on [Keep A Changelog](https://keepachangelog.com/en/1.0.0).
 
 ### Modified
 
+- Fix several vulnerabilities and bugs found in both proposal and governor scripts.
+
+  Including:
+
+  - Governor accepts fake stake UTxO, meaning that an attacker can DoS by
+    creating Proposals without passing the minimum GT limit.
+  - The proposal policy asserts that GST moves while minting PST, effectively
+    allowing attackers to create fake proposals.
+
 - Fix an exploit that allows arbitrary amount of SSTs to be minted. The attack is
   very similar to the GAT one. See also the discussion in
   [#202](https://github.com/Liqwid-Labs/agora/pull/202).
