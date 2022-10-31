@@ -715,20 +715,20 @@ mkMockEffects useAuthScript n = effects
             effectsPerGroup
             (zip effectScripts effectMetadata)
 
-numberOfVotesThatExceedsTheMinimumRequirement :: Integer
-numberOfVotesThatExceedsTheMinimumRequirement =
-  untag (def @ProposalThresholds).execute + 1
+numberOfVotesThatJustMeetsTheMinimumRequirement :: Integer
+numberOfVotesThatJustMeetsTheMinimumRequirement =
+  untag (def @ProposalThresholds).execute
 
 mkWinnerVotes :: Index -> (Winner, Integer)
 mkWinnerVotes idx =
   ( EffectAt idx
-  , numberOfVotesThatExceedsTheMinimumRequirement
+  , numberOfVotesThatJustMeetsTheMinimumRequirement
   )
 
 ambiguousWinnerVotes :: (Winner, Integer)
 ambiguousWinnerVotes =
   ( All
-  , numberOfVotesThatExceedsTheMinimumRequirement
+  , numberOfVotesThatJustMeetsTheMinimumRequirement
   )
 
 --------------------------------------------------------------------------------
