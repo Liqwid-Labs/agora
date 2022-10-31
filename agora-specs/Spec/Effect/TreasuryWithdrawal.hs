@@ -45,8 +45,8 @@ specs =
               , inputCollateral 10
               , inputTreasury 1 (asset1 10)
               ]
-              $ outputTreasury 1 (asset1 7) :
-              buildReceiversOutputFromDatum datum1
+              $ outputTreasury 1 (asset1 7)
+                : buildReceiversOutputFromDatum datum1
           )
       , effectSucceedsWith
           "Simple with multiple treasuries "
@@ -120,8 +120,8 @@ specs =
               , inputCollateral 10
               , inputTreasury 999 (asset1 20)
               ]
-              $ outputTreasury 999 (asset1 17) :
-              buildReceiversOutputFromDatum datum3
+              $ outputTreasury 999 (asset1 17)
+                : buildReceiversOutputFromDatum datum3
           )
       , effectFailsWith
           "Prevent transactions besides the withdrawal"

@@ -147,7 +147,8 @@ treasuryWithdrawalValidator = plam $
             cred <-
               pletC $
                 pfield @"credential"
-                  #$ pfield @"address" # inputF.resolved
+                  #$ pfield @"address"
+                  # inputF.resolved
 
             pure $
               foldl1

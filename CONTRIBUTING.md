@@ -11,6 +11,7 @@ Please follow the [Git policy](https://liqwid.notion.site/Git-Policy-9a7979b2fd5
 This document will make reference to the _Agora core team_. These are the people who work on Agora professionally and will be responsible for maintaining the project in its open source life. They include:
 
 - [Emily Martins](https://github.com/emiflake)
+- [Connor Fang](https://github.com/chfanghr)
 - [Jack Hodgkinson](https://github.com/jhodgdev)
 
 ## Issues
@@ -33,7 +34,7 @@ If you wish to work to resolve the issue, the Agora team would invite you to sub
 
 Only those within the core Agora team may contribute work to the project directly. If you wish to work on the project, you must [fork](https://docs.github.com/en/get-started/quickstart/fork-a-repo) the repository and submit your changes to your fork. Instructions for getting started with the project may be found in the [README](./README.md). Once the work on your fork is completed, you may submit a PR [here](https://github.com/Liqwid-Labs/agora/pulls).
 
-Before submitting a PR, please write an issue pertaining to the problem that your PR would solve e.g. a bug in the codebase or a missing feature. Read this document's section on _Issues_ and pay particular heed to the paragraph asking contributors to _look for pre-existing issues_. The prior experiences of existing contributors could save you a significant amount of time and effort. It is possible that a number of issues could be solved by your PR. Please reference any issues that would be ameliorated by your PR - including your own issue, if you have written one - clearly. Please label your PR using GitHub's tagging feature. Please state plainly:
+If your PR fixes an issue that isn't a very obvious bug, or has not previously been discussed, please write an issue pertaining to the problem that your PR would solve. Read this document's section on _Issues_ and pay particular heed to the paragraph asking contributors to _look for pre-existing issues_. The prior experiences of existing contributors could save you a significant amount of time and effort. It is possible that a number of issues could be solved by your PR. Please reference any issues that would be ameliorated by your PR - including your own issue, if you have written one - clearly. Please label your PR using GitHub's tagging feature. Please state plainly:
 
 - What your PR achieves.
 - How your PR works.
@@ -48,17 +49,9 @@ Agora utilises [Plutarch](https://github.com/plutonomicon/plutarch) and your wor
 
 ### Continuous integration
 
-For your PR to be merged it must pass three automated checks:
+For your PR to be merged it must pass the CI checks.
 
-1. A [`fourmolu`](https://github.com/fourmolu/fourmolu) formatting check.
-2. A [`hlint`](https://github.com/ndmitchell/hlint) linting check.
-3. A Cabal build check.
-
-Our custom `fourmolu` rules may be found in the [base of the repository](./fourmolu.yaml). You can ensure that your work will pass CI by:
-
-1. Running `make format` from the included `Makefile`.
-2. Running `make lint` from the included `Makefile` and applying any recommendations.
-3. Ensuring that `cabal build` terminates successfully on your machine in the provided Nix environment.
+These can be run locally by running `nix run .#ci`. If you are making a PR through a fork of the repository, they might not be run in CI. When this is the case, please ensure the CI checks run fine locally before you request a review.
 
 ## Standards
 

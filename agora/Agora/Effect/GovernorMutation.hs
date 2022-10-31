@@ -164,7 +164,8 @@ mutateGovernorValidator =
               ( \inInfo ->
                   pisScriptAddress
                     #$ pfield @"address"
-                    #$ pfield @"resolved" # inInfo
+                    #$ pfield @"resolved"
+                    # inInfo
               )
             # pfromData txInfoF.inputs
 
@@ -192,7 +193,8 @@ mutateGovernorValidator =
                         , ptraceIfFalse "Can only modify the pinned governor" $
                             inputF.outRef #== effectDatumF.governorRef
                         , ptraceIfFalse "Governor validator run" $
-                            pfield @"address" # inputF.resolved
+                            pfield @"address"
+                              # inputF.resolved
                               #== governorAddress
                         ]
                  in isGovernorInput
@@ -201,10 +203,11 @@ mutateGovernorValidator =
 
       let governorRedeemer =
             pfromData $
-              passertPJust # "Govenor redeemer should be resolved"
+              passertPJust
+                # "Govenor redeemer should be resolved"
                 #$ ptryFromRedeemer @(PAsData PGovernorRedeemer)
-                  # mkRecordConstr PSpending (#_0 .= effectDatumF.governorRef)
-                  # txInfoF.redeemers
+                # mkRecordConstr PSpending (#_0 .= effectDatumF.governorRef)
+                # txInfoF.redeemers
 
       pguardC "Spend governor with redeemer MutateGovernor" $
         governorRedeemer #== pconstant MutateGovernor

@@ -85,7 +85,8 @@ pbatchUpdateInputs ::
     )
 pbatchUpdateInputs = phoistAcyclic $
   plam $ \f -> flip pmatch $ \ctxF ->
-    pnull #$ pfoldr
+    pnull
+      #$ pfoldr
       # (pmustDeleteBy # f)
       # ctxF.stakeOutputDatums
       # ctxF.stakeInputDatums
@@ -135,10 +136,14 @@ ponlyLocksUpdated = phoistAcyclic $
             expected =
               mkRecordConstr
                 PStakeDatum
-                ( #stakedAmount .= iF.stakedAmount
-                    .& #owner .= iF.owner
-                    .& #delegatedTo .= iF.delegatedTo
-                    .& #lockedBy .= pdata newLocks
+                ( #stakedAmount
+                    .= iF.stakedAmount
+                    .& #owner
+                    .= iF.owner
+                    .& #delegatedTo
+                    .= iF.delegatedTo
+                    .& #lockedBy
+                    .= pdata newLocks
                 )
          in expected #== o
 
@@ -202,8 +207,10 @@ ppermitVote = pvoteHelper #$ phoistAcyclic $
           PVote ((pfromData . (pfield @"resultTag" #)) -> voteFor) ->
             mkRecordConstr
               PVoted
-              ( #votedOn .= pdata pid
-                  .& #votedFor .= pdata voteFor
+              ( #votedOn
+                  .= pdata pid
+                  .& #votedFor
+                  .= pdata voteFor
               )
           PCosign _ ->
             withOnlyOneStakeInput
@@ -306,10 +313,14 @@ pdelegateHelper = phoistAcyclic $
           ( \i o -> pletAll i $ \iF ->
               mkRecordConstr
                 PStakeDatum
-                ( #stakedAmount .= iF.stakedAmount
-                    .& #owner .= iF.owner
-                    .& #delegatedTo .= pdata newDelegate
-                    .& #lockedBy .= iF.lockedBy
+                ( #stakedAmount
+                    .= iF.stakedAmount
+                    .& #owner
+                    .= iF.owner
+                    .& #delegatedTo
+                    .= pdata newDelegate
+                    .& #lockedBy
+                    .= iF.lockedBy
                 )
                 #== o
           )
@@ -399,10 +410,14 @@ pdepositWithdraw = phoistAcyclic $
     let expectedDatum =
           mkRecordConstr
             PStakeDatum
-            ( #stakedAmount .= pdata newStakedAmount
-                .& #owner .= stakeInputDatumF.owner
-                .& #delegatedTo .= stakeInputDatumF.delegatedTo
-                .& #lockedBy .= stakeInputDatumF.lockedBy
+            ( #stakedAmount
+                .= pdata newStakedAmount
+                .& #owner
+                .= stakeInputDatumF.owner
+                .& #delegatedTo
+                .= stakeInputDatumF.delegatedTo
+                .& #lockedBy
+                .= stakeInputDatumF.lockedBy
             )
 
     pguardC "Valid output datum" $ expectedDatum #== stakeOutputDatum

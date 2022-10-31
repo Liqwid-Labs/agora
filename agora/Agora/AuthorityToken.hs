@@ -112,10 +112,11 @@ singleAuthorityTokenBurned gatCs inputs mint = unTermCont $ do
                 PTxInInfo txInInfo -> unTermCont $ do
                   resolved <- pletC $ pfield @"resolved" # txInInfo
 
-                  pguardC "While counting GATs at inputs: all GATs must be valid" $
-                    authorityTokensValidIn # gatCs
+                  pguardC "While counting GATs at inputs: all GATs must be valid"
+                    $ authorityTokensValidIn
+                      # gatCs
                       #$ pfromData
-                      $ resolved
+                    $ resolved
 
                   pure . pcon . PSum $
                     psymbolValueOf

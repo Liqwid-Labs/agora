@@ -152,7 +152,8 @@ stakePolicy =
 
     PPair mintedST burntST <-
       pmatchC $
-        pfromJust #$ psymbolValueOf'
+        pfromJust
+          #$ psymbolValueOf'
           # ownSymbol
           # txInfoF.mint
 
@@ -174,7 +175,7 @@ stakePolicy =
               let scriptOutputWithStakeST =
                     passertPJust
                       # "Output to script not found"
-                        #$ pfind
+                      #$ pfind
                       # plam
                         ( \output -> unTermCont $ do
                             outputF <- pletFieldsC @'["value", "address"] output
@@ -204,7 +205,9 @@ stakePolicy =
                 foldl1
                   (#&&)
                   [ ptraceIfFalse "Stake ouput has expected amount of stake token" $
-                      passetClassValueOf # (ptoScottEncoding # gstClass) # outputF.value
+                      passetClassValueOf
+                        # (ptoScottEncoding # gstClass)
+                        # outputF.value
                         #== pto (pfromData datumF.stakedAmount)
                   , ptraceIfFalse "Stake Owner should sign the transaction" $
                       pauthorizedBy
@@ -263,15 +266,16 @@ mkStakeValidator impl sstSymbol pstClass gstClass =
     let validatedInput =
           pfield @"resolved"
             #$ passertPJust
-              # "Malformed script context: validated input not found"
+            # "Malformed script context: validated input not found"
             #$ pfindTxInByTxOutRef
-              # (pfield @"_0" # stakeInputRef)
-              # txInfoF.inputs
+            # (pfield @"_0" # stakeInputRef)
+            # txInfoF.inputs
 
     stakeValidatorCredential <-
       pletC $
         pfield @"credential"
-          #$ pfield @"address" # validatedInput
+          #$ pfield @"address"
+          # validatedInput
 
     let sstName = pvalidatorHashToTokenName #$ pmatch stakeValidatorCredential $
           \case
@@ -288,7 +292,8 @@ mkStakeValidator impl sstSymbol pstClass gstClass =
         plam $
           flip (pletFields @'["value", "datum", "address"]) $ \txOutF ->
             pmatch
-              ( pcompareBy # pfromOrd
+              ( pcompareBy
+                  # pfromOrd
                   # (passetClassValueOf # sstClass # txOutF.value)
                   # 1
               )
@@ -348,10 +353,12 @@ mkStakeValidator impl sstSymbol pstClass gstClass =
                   pmatch p $ \(PPair allHaveSameOwner allHaveSameDelegatee) ->
                     let allHaveSameOwner' =
                           allHaveSameOwner
-                            #&& dF.owner #== firstStakeInputDatumF.owner
+                            #&& dF.owner
+                            #== firstStakeInputDatumF.owner
                         allHaveSameDelegatee' =
                           allHaveSameDelegatee
-                            #&& dF.delegatedTo #== firstStakeInputDatumF.delegatedTo
+                            #&& dF.delegatedTo
+                            #== firstStakeInputDatumF.delegatedTo
                      in pcon $ PPair allHaveSameOwner' allHaveSameDelegatee'
             )
           # pcon (PPair (pconstant True) (pconstant True))
@@ -359,14 +366,15 @@ mkStakeValidator impl sstSymbol pstClass gstClass =
 
     let ownerSignsTransaction =
           allHaveSameOwner
-            #&& authorizedBy # firstStakeInputDatumF.owner
+            #&& authorizedBy
+            # firstStakeInputDatumF.owner
 
         delegateSignsTransaction =
           allHaveSameDelegatee
             #&& pmaybeData
-              # pconstant False
-              # plam ((authorizedBy #) . pfromData)
-              # pfromData firstStakeInputDatumF.delegatedTo
+            # pconstant False
+            # plam ((authorizedBy #) . pfromData)
+            # pfromData firstStakeInputDatumF.delegatedTo
 
         signedBy =
           pif
@@ -375,7 +383,7 @@ mkStakeValidator impl sstSymbol pstClass gstClass =
             $ pif
               delegateSignsTransaction
               (pcon PSignedByDelegate)
-              $ pcon PUnknownSig
+            $ pcon PUnknownSig
 
     sigContext <-
       pletC $
@@ -427,7 +435,8 @@ mkStakeValidator impl sstSymbol pstClass gstClass =
           let isProposalUTxO =
                 passetClassValueOf
                   # pstClass
-                  # txOutF.value #== 1
+                  # txOutF.value
+                  #== 1
               proposalDatum =
                 pfromData $
                   pfromOutputDatum @(PAsData PProposalDatum)
@@ -442,8 +451,11 @@ mkStakeValidator impl sstSymbol pstClass gstClass =
           pcon $
             PNewProposal $
               pfield @"proposalId"
-                #$ passertPJust # "Proposal output should present"
-                #$ pfindJust # getProposalDatum # pfromData txInfoF.outputs
+                #$ passertPJust
+                # "Proposal output should present"
+                #$ pfindJust
+                # getProposalDatum
+                # pfromData txInfoF.outputs
 
         spendProposalContext =
           let getProposalRedeemer = plam $ \ref ->
@@ -451,7 +463,7 @@ mkStakeValidator impl sstSymbol pstClass gstClass =
                   pto $
                     passertPJust
                       # "Malformed script context: propsoal input not found in redeemer map"
-                        #$ plookup
+                      #$ plookup
                       # pcon
                         ( PSpending $
                             pdcons @_0
@@ -511,10 +523,10 @@ mkStakeValidator impl sstSymbol pstClass gstClass =
             txInfo
 
     noMetadataContext <-
-      pletC $
-        mkRedeemerhandlerContext
+      pletC
+        $ mkRedeemerhandlerContext
           #$ pcon
-          $ PNoMetadata
+        $ PNoMetadata
 
     --------------------------------------------------------------------------
 
@@ -535,7 +547,8 @@ mkStakeValidator impl sstSymbol pstClass gstClass =
               #$ pcon
               $ PSetDelegateTo pkh
           PDepositWithdraw ((pfield @"delta" #) -> delta) ->
-            impl.onDepositWithdraw #$ mkRedeemerhandlerContext
+            impl.onDepositWithdraw
+              #$ mkRedeemerhandlerContext
               #$ pcon
               $ PDepositWithdrawDelta delta
 
