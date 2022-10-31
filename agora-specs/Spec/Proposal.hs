@@ -327,6 +327,16 @@ specs =
                                 , forGovernorValidator = Just False
                                 , forAuthorityTokenPolicy = Just True
                                 }
+                          , Advance.mkTestTree'
+                              "fastforward to finished"
+                              (\b -> unwords ["from", show b.proposalParameters.fromStatus])
+                              (Advance.mkFastforwardToFinishBundles cs es)
+                              Advance.Validity
+                                { forProposalValidator = False
+                                , forStakeValidator = True
+                                , forGovernorValidator = Just False
+                                , forAuthorityTokenPolicy = Just True
+                                }
                           ]
                       ]
       , group "unlocking" $
