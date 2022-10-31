@@ -33,11 +33,25 @@ module Agora.Utils (
   passert,
   pisNothing,
   pisDNothing,
+  psymbolValueOf',
 ) where
 
-import Plutarch.Api.V1 (KeyGuarantees (Unsorted), PPOSIXTime, PRedeemer, PTokenName, PValidatorHash)
+import Plutarch.Api.V1 (
+  KeyGuarantees (Unsorted),
+  PPOSIXTime,
+  PRedeemer,
+  PValidatorHash,
+ )
 import Plutarch.Api.V1.AssocMap (PMap, plookup)
-import Plutarch.Api.V2 (PMaybeData (PDNothing), PScriptHash, PScriptPurpose)
+import Plutarch.Api.V2 (
+  AmountGuarantees,
+  PCurrencySymbol,
+  PMaybeData (PDNothing),
+  PScriptHash,
+  PScriptPurpose,
+  PTokenName,
+  PValue,
+ )
 import Plutarch.Extra.Applicative (PApplicative (ppure))
 import Plutarch.Extra.Category (PCategory (pidentity))
 import Plutarch.Extra.Functor (PFunctor (PSubcategory, pfmap))
@@ -407,3 +421,46 @@ pisDNothing = phoistAcyclic $
     flip pmatch $ \case
       PDNothing _ -> pconstant True
       _ -> pconstant False
+
+{- | Get the negative and positive amount of a particular 'CurrencySymbol', and
+     return nothing if it doesn't exist in the value.
+
+     @since 1.0.0
+-}
+psymbolValueOf' ::
+  forall
+    (keys :: KeyGuarantees)
+    (amounts :: AmountGuarantees)
+    (s :: S).
+  Term
+    s
+    ( PCurrencySymbol
+        :--> PValue keys amounts
+        :--> PMaybe
+              ( PPair
+                  -- Positive amount
+                  PInteger
+                  -- Negative amount
+                  PInteger
+              )
+    )
+psymbolValueOf' = phoistAcyclic $
+  plam $ \sym value ->
+    let tnMap = plookup # sym # pto value
+        f =
+          plam $
+            ( pfoldr
+                # plam
+                  ( \x r ->
+                      let q = pfromData $ psndBuiltin # x
+                       in pmatch r $ \(PPair p n) ->
+                            pif
+                              (0 #< q)
+                              (pcon $ PPair (p + q) n)
+                              (pcon $ PPair p (n + q))
+                  )
+                # pcon (PPair 0 0)
+                #
+            )
+              . pto
+     in pfmap # f # tnMap

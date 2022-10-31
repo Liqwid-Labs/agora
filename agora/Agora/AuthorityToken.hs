@@ -11,6 +11,10 @@ module Agora.AuthorityToken (
   singleAuthorityTokenBurned,
 ) where
 
+import Agora.Utils (
+  passert,
+  psymbolValueOf',
+ )
 import Plutarch.Api.V1 (
   PCredential (..),
   PCurrencySymbol (..),
@@ -30,9 +34,15 @@ import Plutarch.Api.V2 (
  )
 import Plutarch.Extra.AssetClass (PAssetClassData, ptoScottEncoding)
 import "liqwid-plutarch-extra" Plutarch.Extra.List (plookupAssoc)
+import Plutarch.Extra.Maybe (pfromJust)
 import Plutarch.Extra.ScriptContext (pisTokenSpent)
 import Plutarch.Extra.Sum (PSum (PSum))
-import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC)
+import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (
+  pguardC,
+  pletC,
+  pletFieldsC,
+  pmatchC,
+ )
 import Plutarch.Extra.Traversable (pfoldMap)
 import Plutarch.Extra.Value (psymbolValueOf)
 
@@ -144,27 +154,27 @@ authorityTokenPolicy =
       PTxInfo txInfo' <- pmatchC $ pfromData ctx.txInfo
       txInfo <- pletFieldsC @'["inputs", "mint", "outputs"] txInfo'
       let inputs = txInfo.inputs
-          mintedValue = pfromData txInfo.mint
           govTokenSpent = pisTokenSpent # (ptoScottEncoding # atAssetClass) # inputs
 
       PMinting ownSymbol' <- pmatchC $ pfromData ctx.purpose
 
       let ownSymbol = pfromData $ pfield @"_0" # ownSymbol'
-          mintedATs =
-            psymbolValueOf
-              # ownSymbol
-              # mintedValue
+
+      PPair mintedATs burntATs <-
+        pmatchC $ pfromJust #$ psymbolValueOf' # ownSymbol # txInfo.mint
 
       pure $
-        pif
-          (0 #< mintedATs)
-          ( unTermCont $ do
-              pguardC "Parent token did not move in minting GATs" govTokenSpent
-              pguardC "All outputs only emit valid GATs" $
-                pall
-                  # plam
-                    (authorityTokensValidIn # ownSymbol #)
-                  # txInfo.outputs
-              pure $ popaque $ pconstant ()
-          )
-          (popaque $ pconstant ())
+        popaque $
+          pif
+            (0 #< mintedATs)
+            ( unTermCont $ do
+                pguardC "No GAT burnt" $ 0 #== burntATs
+                pguardC "Parent token did not move in minting GATs" govTokenSpent
+                pguardC "All outputs only emit valid GATs" $
+                  pall
+                    # plam
+                      (authorityTokensValidIn # ownSymbol #)
+                    # txInfo.outputs
+                pure $ pconstant ()
+            )
+            (passert "No GAT minted" (0 #== mintedATs) (pconstant ()))
