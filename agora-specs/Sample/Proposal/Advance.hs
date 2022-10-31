@@ -616,7 +616,8 @@ mkInTimeTimeRange advanceFrom =
             + (def :: ProposalTimingConfig).draftTime
             + (def :: ProposalTimingConfig).votingTime
             + (def :: ProposalTimingConfig).lockingTime
-            + (def :: ProposalTimingConfig).executingTime - 1
+            + (def :: ProposalTimingConfig).executingTime
+            - 1
         )
     Finished -> error "Cannot advance 'Finished' proposal"
 
@@ -632,7 +633,8 @@ mkTooLateTimeRange advanceFrom =
         (proposalStartingTime + (def :: ProposalTimingConfig).draftTime + 1)
         ( proposalStartingTime
             + (def :: ProposalTimingConfig).draftTime
-            + (def :: ProposalTimingConfig).votingTime - 1
+            + (def :: ProposalTimingConfig).votingTime
+            - 1
         )
     -- [S + D + V + L + 1, S + D + V + L + E -1]
     VotingReady ->
@@ -682,7 +684,8 @@ compPerStakeGTsForDraft :: NumStake -> Tagged GTTag Integer
 compPerStakeGTsForDraft nCosigners =
   Tagged $
     untag (def :: ProposalThresholds).toVoting
-      `div` fromIntegral nCosigners + 1
+      `div` fromIntegral nCosigners
+      + 1
 
 dummyDatum :: ()
 dummyDatum = ()
@@ -948,7 +951,8 @@ mkInsufficientCosignsBundle nCosigners nEffects =
     insuffcientPerStakeGTs =
       Tagged $
         untag (def :: ProposalThresholds).toVoting
-          `div` fromIntegral nCosigners - 1
+          `div` fromIntegral nCosigners
+          - 1
     template = mkValidToNextStateBundle nCosigners nEffects False Draft
 
 -- * From VotingReady

@@ -152,7 +152,8 @@ stakePolicy =
 
     PPair mintedST burntST <-
       pmatchC $
-        pfromJust #$ psymbolValueOf'
+        pfromJust
+          #$ psymbolValueOf'
           # ownSymbol
           # txInfoF.mint
 

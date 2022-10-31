@@ -348,7 +348,8 @@ unlock ps = builder
          in closedBoundedInterval (lb + 1) (ub - 1)
       AfterVoting ->
         let lb =
-              s + (def :: ProposalTimingConfig).draftTime
+              s
+                + (def :: ProposalTimingConfig).draftTime
                 + (def :: ProposalTimingConfig).votingTime
             ub = lb + (def :: ProposalTimingConfig).lockingTime
          in closedBoundedInterval (lb + 1) (ub - 1)

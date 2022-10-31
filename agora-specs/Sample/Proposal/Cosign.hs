@@ -294,7 +294,8 @@ cosign ps = builder
       closedBoundedInterval
         (coerce proposalInputDatum.startingTime + 1)
         ( coerce proposalInputDatum.startingTime
-            + proposalInputDatum.timingConfig.draftTime - 1
+            + proposalInputDatum.timingConfig.draftTime
+            - 1
         )
 
     sig =
