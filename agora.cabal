@@ -209,6 +209,7 @@ library agora-specs
     Sample.Stake.Create
     Sample.Stake.Destroy
     Sample.Stake.SetDelegate
+    Sample.Stake.UnauthorizedMintingExploit
     Sample.Treasury
     Spec.AuthorityToken
     Spec.Effect.GovernorMutation
