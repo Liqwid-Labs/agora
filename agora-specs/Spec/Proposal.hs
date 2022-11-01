@@ -91,6 +91,12 @@ specs =
               True
               False
               False
+          , Create.mkTestTree
+              "wrong governor redeemer"
+              Create.wrongGovernorRedeemer
+              False
+              False
+              True
           ]
       ]
   , group

@@ -18,12 +18,13 @@ module Sample.Proposal.Create (
   timeRangeNotClosedParameters,
   invalidProposalStatusParameters,
   fakeSSTParameters,
+  wrongGovernorRedeemer,
 ) where
 
 import Agora.Governor (
   Governor (..),
   GovernorDatum (..),
-  GovernorRedeemer (CreateProposal),
+  GovernorRedeemer (CreateProposal, MutateGovernor),
  )
 import Agora.Proposal (
   ProposalDatum (..),
@@ -122,6 +123,8 @@ data Parameters = Parameters
   -- ^ The status of the newly created proposal.
   , fakeSST :: Bool
   -- ^ Whether to use SST that doesn't belong to the stake validator.
+  , wrongGovernorRedeemer :: Bool
+  -- ^ Use 'MutateGovernor' as the governor redeemer
   }
 
 --------------------------------------------------------------------------------
@@ -355,7 +358,7 @@ createProposal ps = builder
               [ script governorValidatorHash
               , withValue governorValue
               , withDatum governorInputDatum
-              , withRedeemer governorRedeemer
+              , withRedeemer $ mkGovernorRedeemer ps
               , withRef governorRef
               ]
         , output $
@@ -416,8 +419,11 @@ stakeRedeemer :: StakeRedeemer
 stakeRedeemer = PermitVote
 
 -- | Spend the governor with the 'CreateProposal' redeemer.
-governorRedeemer :: GovernorRedeemer
-governorRedeemer = CreateProposal
+mkGovernorRedeemer :: Parameters -> GovernorRedeemer
+mkGovernorRedeemer ps =
+  if ps.wrongGovernorRedeemer
+    then MutateGovernor
+    else CreateProposal
 
 -- | Mint the PST with an arbitrary redeemer. Doesn't really matter.
 proposalPolicyRedeemer :: ()
@@ -437,6 +443,7 @@ totallyValidParameters =
     , timeRangeClosed = True
     , proposalStatus = Draft
     , fakeSST = False
+    , wrongGovernorRedeemer = False
     }
 
 invalidOutputGovernorDatumParameters :: Parameters
@@ -495,6 +502,12 @@ fakeSSTParameters =
     { fakeSST = True
     }
 
+wrongGovernorRedeemer :: Parameters
+wrongGovernorRedeemer =
+  totallyValidParameters
+    { wrongGovernorRedeemer = True
+    }
+
 --------------------------------------------------------------------------------
 
 {- | Create a test tree that runs the proposal minting policy, the governor
@@ -527,7 +540,7 @@ mkTestTree
           "governor"
           governorValidator
           governorInputDatum
-          governorRedeemer
+          (mkGovernorRedeemer ps)
           (spend governorRef)
 
       stakeTest =
