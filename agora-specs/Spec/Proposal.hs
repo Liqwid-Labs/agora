@@ -85,6 +85,12 @@ specs =
                       True
                 )
                 Create.invalidProposalStatusParameters
+          , Create.mkTestTree
+              "fake SST"
+              Create.fakeSSTParameters
+              True
+              False
+              False
           ]
       ]
   , group

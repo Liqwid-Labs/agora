@@ -17,6 +17,7 @@ module Sample.Proposal.Create (
   timeRangeNotTightParameters,
   timeRangeNotClosedParameters,
   invalidProposalStatusParameters,
+  fakeSSTParameters,
 ) where
 
 import Agora.Governor (
@@ -44,6 +45,7 @@ import Agora.Stake (
   StakeDatum (..),
   StakeRedeemer (PermitVote),
  )
+import Agora.Utils (validatorHashToTokenName)
 import Data.Coerce (coerce)
 import Data.Default (Default (def))
 import Data.Map.Strict qualified as StrictMap
@@ -63,6 +65,7 @@ import Plutarch.Context (
   withValue,
  )
 import Plutarch.Extra.AssetClass (assetClassValue)
+import PlutusLedgerApi.V1.Value qualified as Value
 import PlutusLedgerApi.V2 (
   Credential (PubKeyCredential),
   POSIXTime (POSIXTime),
@@ -85,6 +88,7 @@ import Sample.Shared (
   signer,
   signer2,
   stakeAssetClass,
+  stakeSymbol,
   stakeValidator,
   stakeValidatorHash,
  )
@@ -95,6 +99,7 @@ import Test.Util (
   mkMinting,
   mkSpending,
   sortValue,
+  validatorHashes,
  )
 
 -- | Parameters for creating a proposal.
@@ -115,6 +120,8 @@ data Parameters = Parameters
   -- ^ Is 'TxInfo.validTimeRange' closed?
   , proposalStatus :: ProposalStatus
   -- ^ The status of the newly created proposal.
+  , fakeSST :: Bool
+  -- ^ Whether to use SST that doesn't belong to the stake validator.
   }
 
 --------------------------------------------------------------------------------
@@ -289,6 +296,30 @@ createProposal ps = builder
 
     ---
 
+    attacker = head validatorHashes
+
+    fakeStakeBuilder =
+      if ps.fakeSST
+        then
+          mconcat
+            [ input @b $
+                mconcat
+                  [ script attacker
+                  , withValue $
+                      Value.singleton
+                        stakeSymbol
+                        (validatorHashToTokenName attacker)
+                        1
+                  , withDatum $
+                      (mkStakeInputDatum ps)
+                        { stakedAmount = 10000000000
+                        }
+                  ]
+            ]
+        else mempty
+
+    ---
+
     governorValue = sortValue $ gst <> minAda
     stakeValue =
       sortValue $
@@ -334,19 +365,39 @@ createProposal ps = builder
               , withDatum (mkGovernorOutputDatum ps)
               ]
         , ---
-          input $
-            mconcat
-              [ script stakeValidatorHash
-              , withValue stakeValue
-              , withDatum (mkStakeInputDatum ps)
-              , withRef stakeRef
-              ]
-        , output $
-            mconcat
-              [ script stakeValidatorHash
-              , withValue stakeValue
-              , withDatum (mkStakeOutputDatum ps)
-              ]
+          if ps.fakeSST
+            then
+              mconcat
+                [ input @b $
+                    mconcat
+                      [ script attacker
+                      , withValue $
+                          Value.singleton
+                            stakeSymbol
+                            (validatorHashToTokenName attacker)
+                            1
+                      , withDatum $
+                          (mkStakeInputDatum ps)
+                            { stakedAmount = 10000000000
+                            }
+                      ]
+                ]
+            else
+              mconcat
+                [ input $
+                    mconcat
+                      [ script stakeValidatorHash
+                      , withValue stakeValue
+                      , withDatum (mkStakeInputDatum ps)
+                      , withRef stakeRef
+                      ]
+                , output $
+                    mconcat
+                      [ script stakeValidatorHash
+                      , withValue stakeValue
+                      , withDatum (mkStakeOutputDatum ps)
+                      ]
+                ]
         , ---
           output $
             mconcat
@@ -354,6 +405,8 @@ createProposal ps = builder
               , withValue proposalValue
               , withDatum (mkProposalOutputDatum ps)
               ]
+        , ---
+          fakeStakeBuilder
         ]
 
 --------------------------------------------------------------------------------
@@ -383,6 +436,7 @@ totallyValidParameters =
     , timeRangeTightEnough = True
     , timeRangeClosed = True
     , proposalStatus = Draft
+    , fakeSST = False
     }
 
 invalidOutputGovernorDatumParameters :: Parameters
@@ -434,6 +488,12 @@ invalidProposalStatusParameters =
         totallyValidParameters {proposalStatus = st}
     )
     [VotingReady, Locked, Finished]
+
+fakeSSTParameters :: Parameters
+fakeSSTParameters =
+  totallyValidParameters
+    { fakeSST = True
+    }
 
 --------------------------------------------------------------------------------
 

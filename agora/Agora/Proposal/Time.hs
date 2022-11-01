@@ -334,9 +334,7 @@ validateProposalStartingTime ::
 validateProposalStartingTime = phoistAcyclic $
   plam $ \(pto -> maxDuration) iv (pto -> st) ->
     pmaybe
-      # ptrace
-        "validateProposalStartingTime: unable to get current time"
-        (pconstant False)
+      # pconstant False
       # plam
         ( \ct ->
             let duration = pcurrentTimeDuration # ct
