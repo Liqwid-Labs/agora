@@ -46,7 +46,7 @@ data AgoraScriptInfo = AgoraScriptInfo
 linker :: Linker Governor (ScriptExport AgoraScriptInfo)
 linker = do
   govPol <- fetchTS @MintingPolicyRole @'[TxOutRef] "agora:governorPolicy"
-  govVal <- fetchTS @ValidatorRole @'[Address, CurrencySymbol, CurrencySymbol, CurrencySymbol, CurrencySymbol] "agora:governorValidator"
+  govVal <- fetchTS @ValidatorRole @'[Address, AssetClass, CurrencySymbol, CurrencySymbol, CurrencySymbol] "agora:governorValidator"
   stkPol <- fetchTS @MintingPolicyRole @'[AssetClass] "agora:stakePolicy"
   stkVal <- fetchTS @ValidatorRole @'[CurrencySymbol, AssetClass, AssetClass] "agora:stakeValidator"
   prpPol <- fetchTS @MintingPolicyRole @'[AssetClass] "agora:proposalPolicy"
@@ -63,7 +63,7 @@ linker = do
       govVal' =
         govVal
           # propValAddress
-          # sstSymbol
+          # sstAssetClass
           # gstSymbol
           # pstSymbol
           # atSymbol

@@ -58,6 +58,7 @@ import Plutarch.Context (
   timeRange,
   txId,
   withDatum,
+  withRedeemer,
   withRef,
   withValue,
  )
@@ -323,6 +324,7 @@ createProposal ps = builder
               [ script governorValidatorHash
               , withValue governorValue
               , withDatum governorInputDatum
+              , withRedeemer governorRedeemer
               , withRef governorRef
               ]
         , output $
