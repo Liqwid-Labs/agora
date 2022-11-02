@@ -59,7 +59,7 @@
       inputs.ply.follows = "ply";
     };
     plutarch-quickcheck = {
-      url = "github:liqwid-labs/plutarch-quickcheck?ref=staging";
+      url = "github:liqwid-labs/plutarch-quickcheck?ref=main";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.nixpkgs-latest.follows = "nixpkgs-latest";
       inputs.nixpkgs-2111.follows = "nixpkgs-2111";
