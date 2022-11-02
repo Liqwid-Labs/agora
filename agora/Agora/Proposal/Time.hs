@@ -30,7 +30,6 @@ module Agora.Proposal.Time (
   pisWithin,
 ) where
 
-import Agora.Utils (pcurrentTimeDuration)
 import Control.Composition ((.*))
 import Data.Functor ((<&>))
 import Plutarch.Api.V1 (
@@ -52,6 +51,7 @@ import Plutarch.Extra.Maybe (pjust, pmaybe, pnothing)
 import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pletC, pmatchC)
 import Plutarch.Extra.Time (
   PCurrentTime (PCurrentTime),
+  pcurrentTimeDuration,
   pisWithinCurrentTime,
  )
 import Plutarch.Lift (

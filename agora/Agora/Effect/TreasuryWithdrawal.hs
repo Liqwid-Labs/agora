@@ -15,7 +15,6 @@ module Agora.Effect.TreasuryWithdrawal (
 
 import Agora.Effect (makeEffect)
 import Agora.Plutarch.Orphans ()
-import Agora.Utils (pdelete)
 import Plutarch.Api.V1 (
   PCredential,
   PCurrencySymbol,
@@ -35,6 +34,7 @@ import Plutarch.DataRepr (
   PDataFields,
  )
 import Plutarch.Extra.Field (pletAllC)
+import "liqwid-plutarch-extra" Plutarch.Extra.List (pdeleteFirst)
 import Plutarch.Extra.ScriptContext (pisPubKey)
 import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC)
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (PLifted))
@@ -178,7 +178,7 @@ treasuryWithdrawalValidator = plam $
                     (ptraceError "Invalid receiver")
 
             pure $
-              pmatch (pdelete # credValue # receivers) $ \case
+              pmatch (pdeleteFirst # credValue # receivers) $ \case
                 PJust updatedReceivers ->
                   ptrace "Receiver output" updatedReceivers
                 PNothing ->

@@ -21,7 +21,6 @@ import Agora.Governor (Governor (gtClassRef))
 import Agora.Proposal (ProposalId (ProposalId))
 import Agora.SafeMoney (GTTag)
 import Agora.Stake (ProposalLock (Created), StakeDatum (..))
-import Agora.Utils (validatorHashToTokenName)
 import Data.Semigroup (stimesMonoid)
 import Data.Tagged (Tagged)
 import Plutarch.Context (
@@ -36,6 +35,7 @@ import Plutarch.Context (
   withValue,
  )
 import Plutarch.Extra.AssetClass (assetClassValue)
+import Plutarch.Extra.ScriptContext (validatorHashToTokenName)
 import Plutarch.Lift (PUnsafeLiftDecl (PLifted))
 import PlutusLedgerApi.V1.Value qualified as Value
 import PlutusLedgerApi.V2 (
