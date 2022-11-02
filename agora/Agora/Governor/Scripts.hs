@@ -40,10 +40,6 @@ import Agora.Stake (
   pnumCreatedProposals,
   presolveStakeInputDatum,
  )
-import Agora.Utils (
-  plistEqualsBy,
-  pscriptHashToTokenName,
- )
 import Plutarch.Api.V1 (PCurrencySymbol)
 import Plutarch.Api.V1.AssocMap (plookup)
 import Plutarch.Api.V1.AssocMap qualified as AssocMap
@@ -57,17 +53,18 @@ import Plutarch.Api.V2 (
  )
 import Plutarch.Extra.AssetClass (PAssetClassData, passetClass, ptoScottEncoding)
 import Plutarch.Extra.Field (pletAll, pletAllC)
-import "liqwid-plutarch-extra" Plutarch.Extra.List (pfindJust, pmapMaybe)
+import "liqwid-plutarch-extra" Plutarch.Extra.List (pfindJust, plistEqualsBy, pmapMaybe)
 import "liqwid-plutarch-extra" Plutarch.Extra.Map (pkeys, ptryLookup)
 import Plutarch.Extra.Maybe (passertPJust, pjust, pmaybe, pmaybeData, pnothing)
 import Plutarch.Extra.Ord (psort)
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
 import Plutarch.Extra.ScriptContext (
   pfindTxInByTxOutRef,
-  pfromDatumHash,
-  pfromOutputDatum,
   pisUTXOSpent,
   pscriptHashFromAddress,
+  pscriptHashToTokenName,
+  ptryFromDatumHash,
+  ptryFromOutputDatum,
   pvalueSpent,
  )
 import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (
@@ -153,7 +150,7 @@ governorPolicy =
 
                       governorDatum =
                         ptrace "Resolve governor datum" $
-                          pfromOutputDatum @PGovernorDatum
+                          ptryFromOutputDatum @PGovernorDatum
                             # txOutF.datum
                             # txInfoF.datums
                    in pif isGovernorUTxO (pjust # governorDatum) pnothing
@@ -323,7 +320,7 @@ governorValidator =
 
                     datum =
                       ptrace "Resolve governor datum" $
-                        pfromOutputDatum @PGovernorDatum
+                        ptryFromOutputDatum @PGovernorDatum
                           # outputF.datum
                           # txInfoF.datums
                  in pif
@@ -350,7 +347,7 @@ governorValidator =
                 proposalDatum =
                   ptrace "Resolve proposal output datum" $
                     pfromData $
-                      pfromOutputDatum
+                      ptryFromOutputDatum
                         # txOutF.datum
                         # txInfoF.datums
              in pif isProposalUTxO (pjust # proposalDatum) pnothing
@@ -546,7 +543,7 @@ governorValidator =
                                       #== 1
 
                               let hasCorrectDatum =
-                                    effect.datumHash #== pfromDatumHash # outputF.datum
+                                    effect.datumHash #== ptryFromDatumHash # outputF.datum
 
                               pguardC "Authority output valid" $
                                 foldr1
@@ -568,7 +565,7 @@ governorValidator =
               -- The sorted hashes of all the GAT receivers.
               actualReceivers =
                 psort
-                  #$ pmapMaybe
+                  #$ pmapMaybe @PList
                   # getReceiverScriptHash
                   # pfromData txInfoF.outputs
 

@@ -35,13 +35,6 @@ import Agora.Stake (
   pisVoter,
   presolveStakeInputDatum,
  )
-import Agora.Utils (
-  pfromSingleton,
-  pinsertUniqueBy,
-  plistEqualsBy,
-  pmapMaybe,
-  ptryFromRedeemer,
- )
 import Plutarch.Api.V1 (PCredential, PCurrencySymbol)
 import Plutarch.Api.V1.AssocMap (plookup)
 import Plutarch.Api.V2 (
@@ -56,7 +49,12 @@ import Plutarch.Extra.AssetClass (
  )
 import Plutarch.Extra.Category (PCategory (pidentity))
 import Plutarch.Extra.Field (pletAll, pletAllC)
-import "liqwid-plutarch-extra" Plutarch.Extra.List (pfindJust)
+import "liqwid-plutarch-extra" Plutarch.Extra.List (
+  pfindJust,
+  plistEqualsBy,
+  pmapMaybe,
+  ptryFromSingleton,
+ )
 import "plutarch-extra" Plutarch.Extra.Map (pupdate)
 import Plutarch.Extra.Maybe (
   passertPJust,
@@ -66,11 +64,12 @@ import Plutarch.Extra.Maybe (
   pmaybe,
   pnothing,
  )
-import Plutarch.Extra.Ord (pfromOrdBy, psort)
+import Plutarch.Extra.Ord (pfromOrdBy, pinsertUniqueBy, psort)
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
 import Plutarch.Extra.ScriptContext (
   pfindTxInByTxOutRef,
-  pfromOutputDatum,
+  ptryFromOutputDatum,
+  ptryFromRedeemer,
  )
 import Plutarch.Extra.Sum (PSum (PSum))
 import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (
@@ -309,7 +308,7 @@ proposalValidator =
                       -- Using inline datum to avoid O(n^2) lookup.
                       pfromData $
                         ptrace "Resolve proposal datum" $
-                          pfromOutputDatum @(PAsData PProposalDatum)
+                          ptryFromOutputDatum @(PAsData PProposalDatum)
                             # outputF.datum
                             # txInfoF.datums
                  in pif
@@ -348,7 +347,7 @@ proposalValidator =
       pletC $
         plam $
           let stakeInputs =
-                pmapMaybe
+                pmapMaybe @PList
                   # resolveStakeInputDatum
                   # pfromData txInfoF.inputs
 
@@ -439,7 +438,7 @@ proposalValidator =
             stakeF <-
               pletFieldsC @'["owner", "stakedAmount"] $
                 ptrace "Exactly one stake input" $
-                  pfromSingleton # sctxF.inputStakes
+                  ptryFromSingleton # sctxF.inputStakes
 
             let newCosigner = stakeF.owner
 

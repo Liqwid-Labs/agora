@@ -18,7 +18,6 @@ module Sample.Governor.Mutate (
 
 import Agora.Governor (GovernorDatum (..), GovernorRedeemer (MutateGovernor))
 import Agora.Proposal (ProposalId (ProposalId), ProposalThresholds (..))
-import Agora.Utils (scriptHashToTokenName)
 import Data.Default (def)
 import Data.Map ((!))
 import Plutarch.Api.V2 (PMintingPolicy, mintingPolicySymbol, mkMintingPolicy, validatorHash)
@@ -33,6 +32,7 @@ import Plutarch.Context (
   withValue,
  )
 import Plutarch.Extra.AssetClass (assetClassValue)
+import Plutarch.Extra.ScriptContext (scriptHashToTokenName)
 import PlutusLedgerApi.V1.Value qualified as Value
 import PlutusLedgerApi.V2 (
   CurrencySymbol (CurrencySymbol),

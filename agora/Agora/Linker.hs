@@ -3,12 +3,13 @@
 module Agora.Linker (linker, AgoraScriptInfo (..)) where
 
 import Agora.Governor (Governor (gstOutRef, gtClassRef, maximumCosigners))
-import Agora.Utils (validatorHashToAddress, validatorHashToTokenName)
+import Agora.Utils (validatorHashToAddress)
 import Data.Aeson qualified as Aeson
 import Data.Map (fromList)
 import Data.Tagged (untag)
 import Plutarch.Api.V2 (mintingPolicySymbol, validatorHash)
 import Plutarch.Extra.AssetClass (AssetClass (AssetClass))
+import Plutarch.Extra.ScriptContext (validatorHashToTokenName)
 import PlutusLedgerApi.V1 (Address, CurrencySymbol, TxOutRef, ValidatorHash)
 import Ply (
   ScriptRole (MintingPolicyRole, ValidatorRole),

@@ -52,13 +52,7 @@ import Agora.Stake.Redeemers (
   ppermitVote,
   pretractVote,
  )
-import Agora.Utils (
-  passert,
-  pisDNothing,
-  pmapMaybe,
-  psymbolValueOf',
-  pvalidatorHashToTokenName,
- )
+import Agora.Utils (pisDNothing)
 import Plutarch.Api.V1 (
   PCredential (PPubKeyCredential, PScriptCredential),
   PCurrencySymbol,
@@ -79,9 +73,10 @@ import Plutarch.Extra.AssetClass (
   passetClass,
   ptoScottEncoding,
  )
+import Plutarch.Extra.Bool (passert)
 import Plutarch.Extra.Field (pletAll, pletAllC)
 import Plutarch.Extra.Functor (PFunctor (pfmap))
-import "liqwid-plutarch-extra" Plutarch.Extra.List (pfindJust)
+import "liqwid-plutarch-extra" Plutarch.Extra.List (pfindJust, pmapMaybe)
 import Plutarch.Extra.Maybe (
   passertPJust,
   pfromJust,
@@ -93,7 +88,8 @@ import Plutarch.Extra.Maybe (
 import Plutarch.Extra.Ord (POrdering (PEQ, PGT, PLT), pcompareBy, pfromOrd)
 import Plutarch.Extra.ScriptContext (
   pfindTxInByTxOutRef,
-  pfromOutputDatum,
+  ptryFromOutputDatum,
+  pvalidatorHashToTokenName,
   pvalueSpent,
  )
 import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (
@@ -106,6 +102,7 @@ import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (
 import Plutarch.Extra.Value (
   passetClassValueOf,
   psymbolValueOf,
+  psymbolValueOf',
  )
 import Plutarch.Num (PNum (pnegate))
 import Plutarch.Unsafe (punsafeCoerce)
@@ -197,7 +194,7 @@ stakePolicy =
               datumF <-
                 pletAllC $
                   pfromData $
-                    pfromOutputDatum @(PAsData PStakeDatum)
+                    ptryFromOutputDatum @(PAsData PStakeDatum)
                       # outputF.datum
                       # txInfoF.datums
 
@@ -277,10 +274,11 @@ mkStakeValidator impl sstSymbol pstClass gstClass =
           #$ pfield @"address"
           # validatedInput
 
-    let sstName = pvalidatorHashToTokenName #$ pmatch stakeValidatorCredential $
-          \case
-            PScriptCredential r -> pfield @"_0" # r
-            _ -> perror
+    let sstName = pvalidatorHashToTokenName $
+          pmatch stakeValidatorCredential $
+            \case
+              PScriptCredential r -> pfield @"_0" # r
+              _ -> perror
 
     sstClass <- pletC $ passetClass # sstSymbol # sstName
 
@@ -310,7 +308,7 @@ mkStakeValidator impl sstSymbol pstClass gstClass =
                       datum =
                         ptrace "Resolve stake datum" $
                           pfromData $
-                            pfromOutputDatum @(PAsData PStakeDatum)
+                            ptryFromOutputDatum @(PAsData PStakeDatum)
                               # txOutF.datum
                               # txInfoF.datums
                    in passert
@@ -439,7 +437,7 @@ mkStakeValidator impl sstSymbol pstClass gstClass =
                   #== 1
               proposalDatum =
                 pfromData $
-                  pfromOutputDatum @(PAsData PProposalDatum)
+                  ptryFromOutputDatum @(PAsData PProposalDatum)
                     # txOutF.datum
                     # txInfoF.datums
            in pif isProposalUTxO (pjust # proposalDatum) pnothing

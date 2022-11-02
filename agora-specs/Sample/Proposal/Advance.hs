@@ -68,7 +68,6 @@ import Agora.SafeMoney (AuthorityTokenTag, GTTag)
 import Agora.Stake (
   StakeDatum (..),
  )
-import Agora.Utils (scriptHashToTokenName)
 import Control.Applicative (liftA2)
 import Control.Monad.State (execState, modify, when)
 import Data.Default (def)
@@ -90,6 +89,7 @@ import Plutarch.Context (
   withValue,
  )
 import Plutarch.Extra.AssetClass (AssetClass (AssetClass), assetClassValue)
+import Plutarch.Extra.ScriptContext (scriptHashToTokenName)
 import Plutarch.Lift (PLifted, PUnsafeLiftDecl)
 import PlutusLedgerApi.V2 (
   Credential (PubKeyCredential),

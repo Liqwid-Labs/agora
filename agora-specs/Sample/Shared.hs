@@ -72,9 +72,6 @@ import Agora.Proposal.Time (
   ProposalTimingConfig (..),
  )
 import Agora.SafeMoney (GovernorSTTag, ProposalSTTag, StakeSTTag)
-import Agora.Utils (
-  validatorHashToTokenName,
- )
 import Data.Default.Class (Default (..))
 import Data.Map (Map, (!))
 import Data.Tagged (Tagged (..))
@@ -86,6 +83,7 @@ import Plutarch.Api.V2 (
   validatorHash,
  )
 import Plutarch.Extra.AssetClass (AssetClass (AssetClass))
+import Plutarch.Extra.ScriptContext (validatorHashToTokenName)
 import PlutusLedgerApi.V1.Address (scriptHashAddress)
 import PlutusLedgerApi.V1.Value (TokenName, Value)
 import PlutusLedgerApi.V1.Value qualified as Value (

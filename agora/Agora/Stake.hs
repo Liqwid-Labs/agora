@@ -50,7 +50,6 @@ import Agora.Proposal (
   ResultTag,
  )
 import Agora.SafeMoney (GTTag)
-import Agora.Utils (pmapMaybe, ppureIf)
 import Data.Tagged (Tagged)
 import Generics.SOP qualified as SOP
 import Plutarch.Api.V1 (PCredential)
@@ -67,15 +66,16 @@ import Plutarch.DataRepr (
   DerivePConstantViaData (DerivePConstantViaData),
   PDataFields,
  )
+import Plutarch.Extra.Applicative (ppureIf)
 import Plutarch.Extra.AssetClass (PAssetClass)
 import Plutarch.Extra.Field (pletAll)
 import Plutarch.Extra.IsData (
   DerivePConstantViaDataList (DerivePConstantViaDataList),
   ProductIsData (ProductIsData),
  )
-import "liqwid-plutarch-extra" Plutarch.Extra.List (pfindJust)
+import "liqwid-plutarch-extra" Plutarch.Extra.List (pfindJust, pmapMaybe)
 import Plutarch.Extra.Maybe (passertPJust, pjust, pnothing)
-import Plutarch.Extra.ScriptContext (pfromOutputDatum)
+import Plutarch.Extra.ScriptContext (ptryFromOutputDatum)
 import Plutarch.Extra.Sum (PSum (PSum))
 import Plutarch.Extra.Tagged (PTagged)
 import Plutarch.Extra.Traversable (pfoldMap)
@@ -734,7 +734,7 @@ presolveStakeInputDatum = phoistAcyclic $
               datum =
                 ptrace "Resolve stake datum" $
                   pfromData $
-                    pfromOutputDatum @(PAsData PStakeDatum)
+                    ptryFromOutputDatum @(PAsData PStakeDatum)
                       # txOutF.datum
                       # datums
            in pif
