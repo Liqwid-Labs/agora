@@ -79,6 +79,7 @@ import Plutarch.Extra.Functor (PFunctor (pfmap))
 import "liqwid-plutarch-extra" Plutarch.Extra.List (pfindJust, pmapMaybe)
 import Plutarch.Extra.Maybe (
   passertPJust,
+  pdjust,
   pfromJust,
   pfromMaybe,
   pjust,
@@ -341,7 +342,7 @@ mkStakeValidator impl sstSymbol pstClass gtClass =
 
     authorizedBy <- pletC $ pauthorizedBy # authorizationContext txInfoF
 
-    PPair allHaveSameOwner allHaveSameDelegatee <-
+    PPair allHaveSameOwner allHaveSameOrOwnedByDelegatee <-
       pmatchC $
         pfoldr
           # plam
@@ -354,11 +355,15 @@ mkStakeValidator impl sstSymbol pstClass gtClass =
                           allHaveSameOwner
                             #&& dF.owner
                             #== firstStakeInputDatumF.owner
-                        allHaveSameDelegatee' =
-                          allHaveSameDelegatee
-                            #&& dF.delegatedTo
-                            #== firstStakeInputDatumF.delegatedTo
-                     in pcon $ PPair allHaveSameOwner' allHaveSameDelegatee'
+                        allHaveSameOrOwnedByDelegatee' =
+                          let delegated =
+                                dF.delegatedTo #== firstStakeInputDatumF.delegatedTo
+                              ownedByDelagtee =
+                                pdata (pdjust # dF.owner)
+                                  #== firstStakeInputDatumF.delegatedTo
+                           in allHaveSameDelegatee
+                                #&& (delegated #|| ownedByDelagtee)
+                     in pcon $ PPair allHaveSameOwner' allHaveSameOrOwnedByDelegatee'
             )
           # pcon (PPair (pconstant True) (pconstant True))
           # restOfStakeInputDatums
@@ -369,7 +374,7 @@ mkStakeValidator impl sstSymbol pstClass gtClass =
             # firstStakeInputDatumF.owner
 
         delegateSignsTransaction =
-          allHaveSameDelegatee
+          allHaveSameOrOwnedByDelegatee
             #&& pmaybeData
             # pconstant False
             # plam ((authorizedBy #) . pfromData)

@@ -160,6 +160,10 @@ specs =
                   "transparent non-GT tokens"
                   Vote.transparentAssets
                   (Vote.Validity True True)
+              , Vote.mkTestTree
+                  "Delegatee vote with own and delegated stakes in one tx"
+                  Vote.delegateeVoteWithOwnAndDelegatedStakeBundle
+                  (Vote.Validity True True)
               ]
           , group
               "illegal"
