@@ -8,6 +8,7 @@ Helpers for constructing effects.
 module Agora.Effect (makeEffect) where
 
 import Agora.AuthorityToken (singleAuthorityTokenBurned)
+import Agora.SafeMoney (AuthorityTokenTag)
 import Plutarch.Api.V1 (
   PCurrencySymbol,
  )
@@ -17,6 +18,7 @@ import Plutarch.Api.V2 (
   PTxOutRef,
   PValidator,
  )
+import Plutarch.Extra.Tagged (PTagged)
 import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC, ptryFromC)
 
 {- | Helper "template" for creating effect validator.
@@ -30,13 +32,13 @@ import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletC, pletFiel
 makeEffect ::
   forall (datum :: PType) (s :: S).
   (PTryFrom PData datum, PIsData datum) =>
-  ( Term s PCurrencySymbol ->
+  ( Term s (PTagged AuthorityTokenTag PCurrencySymbol) ->
     Term s datum ->
     Term s PTxOutRef ->
     Term s (PAsData PTxInfo) ->
     Term s POpaque
   ) ->
-  Term s PCurrencySymbol ->
+  Term s (PTagged AuthorityTokenTag PCurrencySymbol) ->
   Term s PValidator
 makeEffect f atSymbol =
   plam $ \datum _redeemer ctx' -> unTermCont $ do

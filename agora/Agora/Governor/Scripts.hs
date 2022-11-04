@@ -36,10 +36,12 @@ import Agora.Proposal (
   pwinner,
  )
 import Agora.Proposal.Time (validateProposalStartingTime)
+import Agora.SafeMoney (AuthorityTokenTag, GovernorSTTag, ProposalSTTag, StakeSTTag)
 import Agora.Stake (
   pnumCreatedProposals,
   presolveStakeInputDatum,
  )
+import Agora.Utils (psymbolValueOfT, ptoScottEncodingT, puntag)
 import Plutarch.Api.V1 (PCurrencySymbol)
 import Plutarch.Api.V1.AssocMap (plookup)
 import Plutarch.Api.V1.AssocMap qualified as AssocMap
@@ -51,7 +53,7 @@ import Plutarch.Api.V2 (
   PTxOutRef,
   PValidator,
  )
-import Plutarch.Extra.AssetClass (PAssetClassData, passetClass, ptoScottEncoding)
+import Plutarch.Extra.AssetClass (PAssetClassData, passetClass)
 import Plutarch.Extra.Field (pletAll, pletAllC)
 import "liqwid-plutarch-extra" Plutarch.Extra.List (pfindJust, plistEqualsBy, pmapMaybe)
 import "liqwid-plutarch-extra" Plutarch.Extra.Map (pkeys, ptryLookup)
@@ -67,6 +69,7 @@ import Plutarch.Extra.ScriptContext (
   ptryFromOutputDatum,
   pvalueSpent,
  )
+import Plutarch.Extra.Tagged (PTagged)
 import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (
   pguardC,
   pletC,
@@ -261,10 +264,10 @@ governorValidator ::
   -- | Lazy precompiled scripts.
   ClosedTerm
     ( PAddress
-        :--> PAssetClassData
-        :--> PCurrencySymbol
-        :--> PCurrencySymbol
-        :--> PCurrencySymbol
+        :--> PTagged StakeSTTag PAssetClassData
+        :--> PTagged GovernorSTTag PCurrencySymbol
+        :--> PTagged ProposalSTTag PCurrencySymbol
+        :--> PTagged AuthorityTokenTag PCurrencySymbol
         :--> PValidator
     )
 governorValidator =
@@ -315,7 +318,7 @@ governorValidator =
                         [ ptraceIfFalse "Own by governor validator" $
                             outputF.address #== governorInputF.address
                         , ptraceIfFalse "Has governor ST" $
-                            psymbolValueOf # gstSymbol # outputF.value #== 1
+                            psymbolValueOfT # gstSymbol # outputF.value #== 1
                         ]
 
                     datum =
@@ -339,7 +342,7 @@ governorValidator =
             let isProposalUTxO =
                   txOutF.address
                     #== pdata proposalValidatorAddress
-                    #&& psymbolValueOf
+                    #&& psymbolValueOfT
                     # pstSymbol
                     # txOutF.value
                     #== 1
@@ -386,7 +389,7 @@ governorValidator =
 
           pguardC "Exactly one proposal token must be minted" $
             let vMap = pfromData $ pto txInfoF.mint
-                tnMap = plookup # pstSymbol # vMap
+                tnMap = plookup # puntag pstSymbol # vMap
                 -- Ada and PST
                 onlyPST = plength # pto vMap #== 2
                 onePST =
@@ -404,7 +407,7 @@ governorValidator =
                   # "Stake input should present"
                   #$ pfindJust
                   # ( presolveStakeInputDatum
-                        # (ptoScottEncoding # sstClass)
+                        # (ptoScottEncodingT # sstClass)
                         # txInfoF.datums
                     )
                   # pfromData txInfoF.inputs
@@ -475,7 +478,7 @@ governorValidator =
           -- Filter out proposal inputs and ouputs using PST and the address of proposal validator.
 
           pguardC "The governor can only process one proposal at a time" $
-            (psymbolValueOf # pstSymbol #$ pvalueSpent # txInfoF.inputs) #== 1
+            (psymbolValueOfT # pstSymbol #$ pvalueSpent # txInfoF.inputs) #== 1
 
           let proposalInputDatum =
                 passertPJust
@@ -508,7 +511,7 @@ governorValidator =
                       outputF <- pletFieldsC @'["address", "datum", "value"] output
 
                       let isAuthorityUTxO =
-                            psymbolValueOf
+                            psymbolValueOfT
                               # atSymbol
                               # outputF.value
                               #== 1
@@ -535,7 +538,7 @@ governorValidator =
                                       # pconstant ""
                                       # plam (pscriptHashToTokenName . pfromData)
                                       # effect.scriptHash
-                                  gatAssetClass = passetClass # atSymbol # tagToken
+                                  gatAssetClass = passetClass # puntag atSymbol # tagToken
                                   valueGATCorrect =
                                     passetClassValueOf
                                       # gatAssetClass

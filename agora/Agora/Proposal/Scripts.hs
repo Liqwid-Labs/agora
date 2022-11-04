@@ -27,6 +27,7 @@ import Agora.Proposal.Time (
   pgetRelation,
   pisWithin,
  )
+import Agora.SafeMoney (GovernorSTTag, ProposalSTTag, StakeSTTag)
 import Agora.Stake (
   PStakeDatum,
   pextractVoteOption,
@@ -35,6 +36,7 @@ import Agora.Stake (
   pisVoter,
   presolveStakeInputDatum,
  )
+import Agora.Utils (psymbolValueOfT, ptoScottEncodingT)
 import Plutarch.Api.V1 (PCredential, PCurrencySymbol)
 import Plutarch.Api.V1.AssocMap (plookup)
 import Plutarch.Api.V2 (
@@ -45,7 +47,6 @@ import Plutarch.Api.V2 (
  )
 import Plutarch.Extra.AssetClass (
   PAssetClassData,
-  ptoScottEncoding,
  )
 import Plutarch.Extra.Category (PCategory (pidentity))
 import Plutarch.Extra.Field (pletAll, pletAllC)
@@ -72,6 +73,7 @@ import Plutarch.Extra.ScriptContext (
   ptryFromRedeemer,
  )
 import Plutarch.Extra.Sum (PSum (PSum))
+import Plutarch.Extra.Tagged (PTagged)
 import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (
   pguardC,
   pletC,
@@ -80,7 +82,7 @@ import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (
   ptryFromC,
  )
 import Plutarch.Extra.Traversable (pfoldMap)
-import Plutarch.Extra.Value (passetClassValueOf, psymbolValueOf)
+import Plutarch.Extra.Value (passetClassValueOfT, psymbolValueOf)
 import Plutarch.Unsafe (punsafeCoerce)
 
 {- | Policy for Proposals.
@@ -108,7 +110,7 @@ import Plutarch.Unsafe (punsafeCoerce)
 
      @since 1.0.0
 -}
-proposalPolicy :: ClosedTerm (PAssetClassData :--> PMintingPolicy)
+proposalPolicy :: ClosedTerm (PTagged GovernorSTTag PAssetClassData :--> PMintingPolicy)
 proposalPolicy =
   plam $ \gstAssetClass _redeemer ctx -> unTermCont $ do
     ctxF <- pletAllC ctx
@@ -132,8 +134,8 @@ proposalPolicy =
               ( flip pletAll $ \inputF ->
                   let value = pfield @"value" # inputF.resolved
                       isGovernorInput =
-                        passetClassValueOf
-                          # (ptoScottEncoding # gstAssetClass)
+                        passetClassValueOfT
+                          # (ptoScottEncodingT # gstAssetClass)
                           # value
                           #== 1
                    in pif
@@ -238,9 +240,9 @@ instance DerivePlutusType PStakeInputsContext where
 -}
 proposalValidator ::
   ClosedTerm
-    ( PAssetClassData
-        :--> PCurrencySymbol
-        :--> PCurrencySymbol
+    ( PTagged StakeSTTag PAssetClassData
+        :--> PTagged GovernorSTTag PCurrencySymbol
+        :--> PTagged ProposalSTTag PCurrencySymbol
         :--> PInteger
         :--> PValidator
     )
@@ -301,7 +303,7 @@ proposalValidator =
                         [ ptraceIfFalse "Own by proposal validator" $
                             outputF.address #== proposalInputF.address
                         , ptraceIfFalse "Has proposal ST" $
-                            psymbolValueOf # pstSymbol # outputF.value #== 1
+                            psymbolValueOfT # pstSymbol # outputF.value #== 1
                         ]
 
                     handleProposalUTxO =
@@ -341,7 +343,7 @@ proposalValidator =
     resolveStakeInputDatum <-
       pletC $
         presolveStakeInputDatum
-          # (ptoScottEncoding # sstClass)
+          # (ptoScottEncodingT # sstClass)
           # txInfoF.datums
     spendStakes' :: Term _ ((PStakeInputsContext :--> PUnit) :--> PUnit) <-
       pletC $
@@ -727,7 +729,7 @@ proposalValidator =
                                   . (pfield @"resolved" #) ->
                                   value
                                 ) ->
-                                  psymbolValueOf # gstSymbol # value #== 1
+                                  psymbolValueOfT # gstSymbol # value #== 1
                             )
                           # pfromData txInfoF.inputs
 

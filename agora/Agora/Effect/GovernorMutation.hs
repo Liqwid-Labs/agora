@@ -26,6 +26,8 @@ import Agora.Governor (
   PGovernorRedeemer,
  )
 import Agora.Plutarch.Orphans ()
+import Agora.SafeMoney (AuthorityTokenTag, GovernorSTTag)
+import Agora.Utils (psymbolValueOfT)
 import Plutarch.Api.V1 (PCurrencySymbol, PValidatorHash)
 import Plutarch.Api.V2 (
   PScriptPurpose (PSpending),
@@ -46,8 +48,8 @@ import Plutarch.Extra.ScriptContext (
   ptryFromOutputDatum,
   ptryFromRedeemer,
  )
+import Plutarch.Extra.Tagged (PTagged)
 import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC)
-import Plutarch.Extra.Value (psymbolValueOf)
 import Plutarch.Lift (PConstantDecl, PLifted, PUnsafeLiftDecl)
 import PlutusLedgerApi.V1 (TxOutRef)
 import PlutusTx qualified
@@ -150,8 +152,8 @@ deriving anyclass instance PTryFrom PData PMutateGovernorDatum
 mutateGovernorValidator ::
   ClosedTerm
     ( PValidatorHash
-        :--> PCurrencySymbol
-        :--> PCurrencySymbol
+        :--> PTagged GovernorSTTag PCurrencySymbol
+        :--> PTagged AuthorityTokenTag PCurrencySymbol
         :--> PValidator
     )
 mutateGovernorValidator =
@@ -191,7 +193,7 @@ mutateGovernorValidator =
                       foldl1
                         (#&&)
                         [ ptraceIfFalse "Governor UTxO should carry GST" $
-                            psymbolValueOf
+                            psymbolValueOfT
                               # gstSymbol
                               # (pfield @"value" # inputF.resolved)
                               #== 1

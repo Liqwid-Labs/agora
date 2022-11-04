@@ -11,6 +11,8 @@ module Agora.AuthorityToken (
   singleAuthorityTokenBurned,
 ) where
 
+import Agora.SafeMoney (AuthorityTokenTag, GovernorSTTag)
+import Agora.Utils (psymbolValueOfT, ptag, ptoScottEncodingT, puntag)
 import Plutarch.Api.V1 (
   PCredential (..),
   PCurrencySymbol (..),
@@ -28,12 +30,13 @@ import Plutarch.Api.V2 (
   PTxInfo (PTxInfo),
   PTxOut (PTxOut),
  )
-import Plutarch.Extra.AssetClass (PAssetClassData, ptoScottEncoding)
+import Plutarch.Extra.AssetClass (PAssetClassData)
 import Plutarch.Extra.Bool (passert)
 import "liqwid-plutarch-extra" Plutarch.Extra.List (plookupAssoc)
 import Plutarch.Extra.Maybe (pfromJust)
 import Plutarch.Extra.ScriptContext (pisTokenSpent)
 import Plutarch.Extra.Sum (PSum (PSum))
+import Plutarch.Extra.Tagged (PTagged)
 import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (
   pguardC,
   pletC,
@@ -41,7 +44,7 @@ import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (
   pmatchC,
  )
 import Plutarch.Extra.Traversable (pfoldMap)
-import Plutarch.Extra.Value (psymbolValueOf, psymbolValueOf')
+import Plutarch.Extra.Value (psymbolValueOf')
 
 --------------------------------------------------------------------------------
 
@@ -63,7 +66,7 @@ import Plutarch.Extra.Value (psymbolValueOf, psymbolValueOf')
 
      @since 1.0.0
 -}
-authorityTokensValidIn :: forall (s :: S). Term s (PCurrencySymbol :--> PTxOut :--> PBool)
+authorityTokensValidIn :: forall (s :: S). Term s (PTagged AuthorityTokenTag PCurrencySymbol :--> PTxOut :--> PBool)
 authorityTokensValidIn = phoistAcyclic $
   plam $ \authorityTokenSym txOut'' -> unTermCont $ do
     PTxOut txOut' <- pmatchC txOut''
@@ -72,7 +75,7 @@ authorityTokensValidIn = phoistAcyclic $
     PValue value' <- pmatchC txOut.value
     PMap value <- pmatchC value'
     pure $
-      pmatch (plookupAssoc # pfstBuiltin # psndBuiltin # pdata authorityTokenSym # value) $ \case
+      pmatch (plookupAssoc # pfstBuiltin # psndBuiltin # pdata (puntag authorityTokenSym) # value) $ \case
         PJust (pfromData -> _tokenMap') ->
           pmatch (pfield @"credential" # address) $ \case
             PPubKeyCredential _ ->
@@ -94,13 +97,13 @@ authorityTokensValidIn = phoistAcyclic $
 -}
 singleAuthorityTokenBurned ::
   forall (keys :: KeyGuarantees) (amounts :: AmountGuarantees) (s :: S).
-  Term s PCurrencySymbol ->
+  Term s (PTagged AuthorityTokenTag PCurrencySymbol) ->
   Term s (PBuiltinList PTxInInfo) ->
   Term s (PValue keys amounts) ->
   Term s PBool
 singleAuthorityTokenBurned gatCs inputs mint = unTermCont $ do
   let gatAmountMinted :: Term _ PInteger
-      gatAmountMinted = psymbolValueOf # gatCs # mint
+      gatAmountMinted = psymbolValueOfT # gatCs # mint
 
   let inputsWithGAT =
         pfoldMap
@@ -116,7 +119,7 @@ singleAuthorityTokenBurned gatCs inputs mint = unTermCont $ do
                     $ resolved
 
                   pure . pcon . PSum $
-                    psymbolValueOf
+                    psymbolValueOfT
                       # gatCs
                       #$ pfield @"value"
                       #$ resolved
@@ -144,15 +147,15 @@ singleAuthorityTokenBurned gatCs inputs mint = unTermCont $ do
 
      @since 0.1.0
 -}
-authorityTokenPolicy :: ClosedTerm (PAssetClassData :--> PMintingPolicy)
+authorityTokenPolicy :: ClosedTerm (PTagged GovernorSTTag PAssetClassData :--> PMintingPolicy)
 authorityTokenPolicy =
-  plam $ \atAssetClass _redeemer ctx' ->
+  plam $ \gstAssetClass _redeemer ctx' ->
     pmatch ctx' $ \(PScriptContext ctx') -> unTermCont $ do
       ctx <- pletFieldsC @'["txInfo", "purpose"] ctx'
       PTxInfo txInfo' <- pmatchC $ pfromData ctx.txInfo
       txInfo <- pletFieldsC @'["inputs", "mint", "outputs"] txInfo'
       let inputs = txInfo.inputs
-          govTokenSpent = pisTokenSpent # (ptoScottEncoding # atAssetClass) # inputs
+          govTokenSpent = pisTokenSpent # puntag (ptoScottEncodingT # gstAssetClass) # inputs
 
       PMinting ownSymbol' <- pmatchC $ pfromData ctx.purpose
 
@@ -171,7 +174,7 @@ authorityTokenPolicy =
                 pguardC "All outputs only emit valid GATs" $
                   pall
                     # plam
-                      (authorityTokensValidIn # ownSymbol #)
+                      (authorityTokensValidIn # ptag ownSymbol #)
                     # txInfo.outputs
                 pure $ pconstant ()
             )

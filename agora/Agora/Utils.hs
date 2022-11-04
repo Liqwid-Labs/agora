@@ -13,11 +13,23 @@ module Agora.Utils (
   punwords,
   pisNothing,
   pisDNothing,
+  ptoScottEncodingT,
+  psymbolValueOfT,
+  ptag,
+  puntag,
 ) where
 
 import Plutarch.Api.V2 (
+  AmountGuarantees,
+  KeyGuarantees,
+  PCurrencySymbol,
   PMaybeData (PDNothing),
+  PValue,
  )
+import Plutarch.Extra.AssetClass (PAssetClass, PAssetClassData, ptoScottEncoding)
+import Plutarch.Extra.Tagged (PTagged)
+import Plutarch.Extra.Value (psymbolValueOf)
+import Plutarch.Unsafe (punsafeDowncast)
 import PlutusLedgerApi.V2 (
   Address (Address),
   Credential (ScriptCredential),
@@ -67,3 +79,36 @@ pisDNothing = phoistAcyclic $
     flip pmatch $ \case
       PDNothing _ -> pconstant True
       _ -> pconstant False
+
+-- | @since 1.0.0
+ptoScottEncodingT ::
+  forall {k :: Type} (unit :: k) (s :: S).
+  Term s (PTagged unit PAssetClassData :--> PTagged unit PAssetClass)
+ptoScottEncodingT = phoistAcyclic $
+  plam $ \d ->
+    punsafeDowncast $ ptoScottEncoding #$ pto d
+
+-- | @since 1.0.0
+psymbolValueOfT ::
+  forall
+    {k :: Type}
+    (unit :: k)
+    (keys :: KeyGuarantees)
+    (amounts :: AmountGuarantees)
+    (s :: S).
+  Term s (PTagged unit PCurrencySymbol :--> (PValue keys amounts :--> PInteger))
+psymbolValueOfT = phoistAcyclic $ plam $ \tcs -> psymbolValueOf # pto tcs
+
+-- | @since 1.0.0
+ptag ::
+  forall {k :: Type} (tag :: k) (a :: PType) (s :: S).
+  Term s a ->
+  Term s (PTagged tag a)
+ptag = punsafeDowncast
+
+-- | @since 1.0.0
+puntag ::
+  forall {k :: Type} (tag :: k) (a :: PType) (s :: S).
+  Term s (PTagged tag a) ->
+  Term s a
+puntag = pto

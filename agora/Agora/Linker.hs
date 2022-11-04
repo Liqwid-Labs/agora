@@ -3,10 +3,11 @@
 module Agora.Linker (linker, AgoraScriptInfo (..)) where
 
 import Agora.Governor (Governor (gstOutRef, gtClassRef, maximumCosigners))
+import Agora.SafeMoney (AuthorityTokenTag, GTTag, GovernorSTTag, ProposalSTTag, StakeSTTag)
 import Agora.Utils (validatorHashToAddress)
 import Data.Aeson qualified as Aeson
 import Data.Map (fromList)
-import Data.Tagged (untag)
+import Data.Tagged (Tagged (Tagged))
 import Plutarch.Api.V2 (mintingPolicySymbol, validatorHash)
 import Plutarch.Extra.AssetClass (AssetClass (AssetClass))
 import Plutarch.Extra.ScriptContext (validatorHashToTokenName)
@@ -31,10 +32,10 @@ import Prelude hiding ((#))
  @since 1.0.0
 -}
 data AgoraScriptInfo = AgoraScriptInfo
-  { governorAssetClass :: AssetClass
-  , authorityTokenSymbol :: CurrencySymbol
-  , proposalAssetClass :: AssetClass
-  , stakeAssetClass :: AssetClass
+  { governorAssetClass :: Tagged GovernorSTTag AssetClass
+  , authorityTokenSymbol :: Tagged AuthorityTokenTag CurrencySymbol
+  , proposalAssetClass :: Tagged ProposalSTTag AssetClass
+  , stakeAssetClass :: Tagged StakeSTTag AssetClass
   , governor :: Governor
   }
   deriving stock (Generic, Show)
@@ -46,17 +47,72 @@ data AgoraScriptInfo = AgoraScriptInfo
 -}
 linker :: Linker Governor (ScriptExport AgoraScriptInfo)
 linker = do
-  govPol <- fetchTS @MintingPolicyRole @'[TxOutRef] "agora:governorPolicy"
-  govVal <- fetchTS @ValidatorRole @'[Address, AssetClass, CurrencySymbol, CurrencySymbol, CurrencySymbol] "agora:governorValidator"
-  stkPol <- fetchTS @MintingPolicyRole @'[AssetClass] "agora:stakePolicy"
-  stkVal <- fetchTS @ValidatorRole @'[CurrencySymbol, AssetClass, AssetClass] "agora:stakeValidator"
-  prpPol <- fetchTS @MintingPolicyRole @'[AssetClass] "agora:proposalPolicy"
-  prpVal <- fetchTS @ValidatorRole @'[AssetClass, CurrencySymbol, CurrencySymbol, Integer] "agora:proposalValidator"
-  treVal <- fetchTS @ValidatorRole @'[CurrencySymbol] "agora:treasuryValidator"
-  atkPol <- fetchTS @MintingPolicyRole @'[AssetClass] "agora:authorityTokenPolicy"
-  noOpVal <- fetchTS @ValidatorRole @'[CurrencySymbol] "agora:noOpValidator"
-  treaWithdrawalVal <- fetchTS @ValidatorRole @'[CurrencySymbol] "agora:treasuryWithdrawalValidator"
-  mutateGovVal <- fetchTS @ValidatorRole @'[ValidatorHash, CurrencySymbol, CurrencySymbol] "agora:mutateGovernorValidator"
+  govPol <-
+    fetchTS
+      @MintingPolicyRole
+      @'[TxOutRef]
+      "agora:governorPolicy"
+  govVal <-
+    fetchTS
+      @ValidatorRole
+      @'[ Address
+        , Tagged StakeSTTag AssetClass
+        , Tagged GovernorSTTag CurrencySymbol
+        , Tagged ProposalSTTag CurrencySymbol
+        , Tagged AuthorityTokenTag CurrencySymbol
+        ]
+      "agora:governorValidator"
+  stkPol <-
+    fetchTS
+      @MintingPolicyRole
+      @'[Tagged GTTag AssetClass]
+      "agora:stakePolicy"
+  stkVal <-
+    fetchTS
+      @ValidatorRole
+      @'[ Tagged StakeSTTag CurrencySymbol
+        , Tagged ProposalSTTag AssetClass
+        , Tagged GTTag AssetClass
+        ]
+      "agora:stakeValidator"
+  prpPol <-
+    fetchTS @MintingPolicyRole
+      @'[Tagged GovernorSTTag AssetClass]
+      "agora:proposalPolicy"
+  prpVal <-
+    fetchTS
+      @ValidatorRole
+      @'[ Tagged StakeSTTag AssetClass
+        , Tagged GovernorSTTag CurrencySymbol
+        , Tagged ProposalSTTag CurrencySymbol
+        , Integer
+        ]
+      "agora:proposalValidator"
+  treVal <-
+    fetchTS
+      @ValidatorRole
+      @'[Tagged AuthorityTokenTag CurrencySymbol]
+      "agora:treasuryValidator"
+  atkPol <-
+    fetchTS
+      @MintingPolicyRole
+      @'[Tagged GovernorSTTag AssetClass]
+      "agora:authorityTokenPolicy"
+  noOpVal <-
+    fetchTS
+      @ValidatorRole
+      @'[Tagged AuthorityTokenTag CurrencySymbol]
+      "agora:noOpValidator"
+  treaWithdrawalVal <-
+    fetchTS
+      @ValidatorRole
+      @'[Tagged AuthorityTokenTag CurrencySymbol]
+      "agora:treasuryWithdrawalValidator"
+  mutateGovVal <-
+    fetchTS
+      @ValidatorRole
+      @'[ValidatorHash, Tagged GovernorSTTag CurrencySymbol, Tagged AuthorityTokenTag CurrencySymbol]
+      "agora:mutateGovernorValidator"
 
   governor <- getParam
 
@@ -64,10 +120,10 @@ linker = do
       govVal' =
         govVal
           # propValAddress
-          # sstAssetClass
-          # gstSymbol
-          # pstSymbol
-          # atSymbol
+          # Tagged sstAssetClass
+          # Tagged gstSymbol
+          # Tagged pstSymbol
+          # Tagged atSymbol
       gstSymbol =
         mintingPolicySymbol $
           toMintingPolicy
@@ -76,34 +132,41 @@ linker = do
         AssetClass gstSymbol ""
       govValHash = validatorHash $ toValidator govVal'
 
-      at = gstAssetClass
-      atPol' = atkPol # at
+      atPol' = atkPol # Tagged gstAssetClass
       atSymbol = mintingPolicySymbol $ toMintingPolicy atPol'
 
-      propPol' = prpPol # gstAssetClass
+      propPol' = prpPol # Tagged gstAssetClass
       propVal' =
         prpVal
-          # sstAssetClass
-          # gstSymbol
-          # pstSymbol
+          # Tagged sstAssetClass
+          # Tagged gstSymbol
+          # Tagged pstSymbol
           # governor.maximumCosigners
       propValAddress =
         validatorHashToAddress $ validatorHash $ toValidator propVal'
       pstSymbol = mintingPolicySymbol $ toMintingPolicy propPol'
       pstAssetClass = AssetClass pstSymbol ""
 
-      stakPol' = stkPol # untag governor.gtClassRef
-      stakVal' = stkVal # sstSymbol # pstAssetClass # untag governor.gtClassRef
+      stakPol' = stkPol # governor.gtClassRef
+      stakVal' =
+        stkVal
+          # Tagged sstSymbol
+          # Tagged pstAssetClass
+          # governor.gtClassRef
       sstSymbol = mintingPolicySymbol $ toMintingPolicy stakPol'
       stakValTokenName =
         validatorHashToTokenName $ validatorHash $ toValidator stakVal'
       sstAssetClass = AssetClass sstSymbol stakValTokenName
 
-      treaVal' = treVal # atSymbol
+      treaVal' = treVal # Tagged atSymbol
 
-      noOpVal' = noOpVal # atSymbol
-      treaWithdrawalVal' = treaWithdrawalVal # atSymbol
-      mutateGovVal' = mutateGovVal # govValHash # gstSymbol # atSymbol
+      noOpVal' = noOpVal # Tagged atSymbol
+      treaWithdrawalVal' = treaWithdrawalVal # Tagged atSymbol
+      mutateGovVal' =
+        mutateGovVal
+          # govValHash
+          # Tagged gstSymbol
+          # Tagged atSymbol
 
   return $
     ScriptExport
@@ -123,10 +186,10 @@ linker = do
             ]
       , information =
           AgoraScriptInfo
-            { governorAssetClass = gstAssetClass
-            , authorityTokenSymbol = atSymbol
-            , proposalAssetClass = pstAssetClass
-            , stakeAssetClass = sstAssetClass
+            { governorAssetClass = Tagged gstAssetClass
+            , authorityTokenSymbol = Tagged atSymbol
+            , proposalAssetClass = Tagged pstAssetClass
+            , stakeAssetClass = Tagged sstAssetClass
             , governor = governor
             }
       }

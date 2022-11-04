@@ -13,8 +13,10 @@ module Agora.Treasury (
 ) where
 
 import Agora.AuthorityToken (singleAuthorityTokenBurned)
+import Agora.SafeMoney (AuthorityTokenTag)
 import Plutarch.Api.V1.Value (PCurrencySymbol, PValue)
 import Plutarch.Api.V2 (PScriptPurpose (PSpending), PValidator)
+import Plutarch.Extra.Tagged (PTagged)
 import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletFieldsC, pmatchC)
 
 {- | Validator ensuring that transactions consuming the treasury
@@ -28,7 +30,7 @@ import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletFieldsC, pm
      @since 0.1.0
 -}
 treasuryValidator ::
-  ClosedTerm (PCurrencySymbol :--> PValidator)
+  ClosedTerm (PTagged AuthorityTokenTag PCurrencySymbol :--> PValidator)
 treasuryValidator = plam $ \atSymbol _ _ ctx' -> unTermCont $ do
   -- plet required fields from script context.
   ctx <- pletFieldsC @["txInfo", "purpose"] ctx'
