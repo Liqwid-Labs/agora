@@ -17,12 +17,14 @@ module Sample.Proposal.Create (
   timeRangeNotTightParameters,
   timeRangeNotClosedParameters,
   invalidProposalStatusParameters,
+  fakeSSTParameters,
+  wrongGovernorRedeemer,
 ) where
 
 import Agora.Governor (
   Governor (..),
   GovernorDatum (..),
-  GovernorRedeemer (CreateProposal),
+  GovernorRedeemer (CreateProposal, MutateGovernor),
  )
 import Agora.Proposal (
   ProposalDatum (..),
@@ -44,6 +46,7 @@ import Agora.Stake (
   StakeDatum (..),
   StakeRedeemer (PermitVote),
  )
+import Agora.Utils (validatorHashToTokenName)
 import Data.Coerce (coerce)
 import Data.Default (Default (def))
 import Data.Map.Strict qualified as StrictMap
@@ -63,6 +66,7 @@ import Plutarch.Context (
   withValue,
  )
 import Plutarch.Extra.AssetClass (assetClassValue)
+import PlutusLedgerApi.V1.Value qualified as Value
 import PlutusLedgerApi.V2 (
   Credential (PubKeyCredential),
   POSIXTime (POSIXTime),
@@ -85,6 +89,7 @@ import Sample.Shared (
   signer,
   signer2,
   stakeAssetClass,
+  stakeSymbol,
   stakeValidator,
   stakeValidatorHash,
  )
@@ -95,6 +100,7 @@ import Test.Util (
   mkMinting,
   mkSpending,
   sortValue,
+  validatorHashes,
  )
 
 -- | Parameters for creating a proposal.
@@ -115,6 +121,10 @@ data Parameters = Parameters
   -- ^ Is 'TxInfo.validTimeRange' closed?
   , proposalStatus :: ProposalStatus
   -- ^ The status of the newly created proposal.
+  , fakeSST :: Bool
+  -- ^ Whether to use SST that doesn't belong to the stake validator.
+  , wrongGovernorRedeemer :: Bool
+  -- ^ Use 'MutateGovernor' as the governor redeemer
   }
 
 --------------------------------------------------------------------------------
@@ -289,6 +299,30 @@ createProposal ps = builder
 
     ---
 
+    attacker = head validatorHashes
+
+    fakeStakeBuilder =
+      if ps.fakeSST
+        then
+          mconcat
+            [ input @b $
+                mconcat
+                  [ script attacker
+                  , withValue $
+                      Value.singleton
+                        stakeSymbol
+                        (validatorHashToTokenName attacker)
+                        1
+                  , withDatum $
+                      (mkStakeInputDatum ps)
+                        { stakedAmount = 10000000000
+                        }
+                  ]
+            ]
+        else mempty
+
+    ---
+
     governorValue = sortValue $ gst <> minAda
     stakeValue =
       sortValue $
@@ -324,7 +358,7 @@ createProposal ps = builder
               [ script governorValidatorHash
               , withValue governorValue
               , withDatum governorInputDatum
-              , withRedeemer governorRedeemer
+              , withRedeemer $ mkGovernorRedeemer ps
               , withRef governorRef
               ]
         , output $
@@ -334,19 +368,39 @@ createProposal ps = builder
               , withDatum (mkGovernorOutputDatum ps)
               ]
         , ---
-          input $
-            mconcat
-              [ script stakeValidatorHash
-              , withValue stakeValue
-              , withDatum (mkStakeInputDatum ps)
-              , withRef stakeRef
-              ]
-        , output $
-            mconcat
-              [ script stakeValidatorHash
-              , withValue stakeValue
-              , withDatum (mkStakeOutputDatum ps)
-              ]
+          if ps.fakeSST
+            then
+              mconcat
+                [ input @b $
+                    mconcat
+                      [ script attacker
+                      , withValue $
+                          Value.singleton
+                            stakeSymbol
+                            (validatorHashToTokenName attacker)
+                            1
+                      , withDatum $
+                          (mkStakeInputDatum ps)
+                            { stakedAmount = 10000000000
+                            }
+                      ]
+                ]
+            else
+              mconcat
+                [ input $
+                    mconcat
+                      [ script stakeValidatorHash
+                      , withValue stakeValue
+                      , withDatum (mkStakeInputDatum ps)
+                      , withRef stakeRef
+                      ]
+                , output $
+                    mconcat
+                      [ script stakeValidatorHash
+                      , withValue stakeValue
+                      , withDatum (mkStakeOutputDatum ps)
+                      ]
+                ]
         , ---
           output $
             mconcat
@@ -354,6 +408,8 @@ createProposal ps = builder
               , withValue proposalValue
               , withDatum (mkProposalOutputDatum ps)
               ]
+        , ---
+          fakeStakeBuilder
         ]
 
 --------------------------------------------------------------------------------
@@ -363,8 +419,11 @@ stakeRedeemer :: StakeRedeemer
 stakeRedeemer = PermitVote
 
 -- | Spend the governor with the 'CreateProposal' redeemer.
-governorRedeemer :: GovernorRedeemer
-governorRedeemer = CreateProposal
+mkGovernorRedeemer :: Parameters -> GovernorRedeemer
+mkGovernorRedeemer ps =
+  if ps.wrongGovernorRedeemer
+    then MutateGovernor
+    else CreateProposal
 
 -- | Mint the PST with an arbitrary redeemer. Doesn't really matter.
 proposalPolicyRedeemer :: ()
@@ -383,6 +442,8 @@ totallyValidParameters =
     , timeRangeTightEnough = True
     , timeRangeClosed = True
     , proposalStatus = Draft
+    , fakeSST = False
+    , wrongGovernorRedeemer = False
     }
 
 invalidOutputGovernorDatumParameters :: Parameters
@@ -435,6 +496,18 @@ invalidProposalStatusParameters =
     )
     [VotingReady, Locked, Finished]
 
+fakeSSTParameters :: Parameters
+fakeSSTParameters =
+  totallyValidParameters
+    { fakeSST = True
+    }
+
+wrongGovernorRedeemer :: Parameters
+wrongGovernorRedeemer =
+  totallyValidParameters
+    { wrongGovernorRedeemer = True
+    }
+
 --------------------------------------------------------------------------------
 
 {- | Create a test tree that runs the proposal minting policy, the governor
@@ -467,7 +540,7 @@ mkTestTree
           "governor"
           governorValidator
           governorInputDatum
-          governorRedeemer
+          (mkGovernorRedeemer ps)
           (spend governorRef)
 
       stakeTest =

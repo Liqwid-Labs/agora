@@ -192,6 +192,7 @@ library agora-specs
   exposed-modules:
     Property.Generator
     Property.Governor
+    Sample.AuthorityToken.UnauthorizedMintingExploit
     Sample.Effect.GovernorMutation
     Sample.Effect.TreasuryWithdrawal
     Sample.Governor.Initialize
@@ -208,6 +209,7 @@ library agora-specs
     Sample.Stake.Create
     Sample.Stake.Destroy
     Sample.Stake.SetDelegate
+    Sample.Stake.UnauthorizedMintingExploit
     Sample.Treasury
     Spec.AuthorityToken
     Spec.Effect.GovernorMutation

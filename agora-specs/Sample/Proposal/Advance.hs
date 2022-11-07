@@ -35,6 +35,7 @@ module Sample.Proposal.Advance (
   mkMintGATsWithoutTagBundle,
   mkBadGovernorOutputDatumBundle,
   mkUnexpectedOutputStakeBundles,
+  mkFastforwardToFinishBundles,
 ) where
 
 import Agora.Governor (
@@ -278,7 +279,7 @@ mkVotes ps =
 
 -- | The starting time of every generated proposal.
 proposalStartingTime :: POSIXTime
-proposalStartingTime = 0
+proposalStartingTime = 100
 
 -- | Create the input proposal datum given the parameters.
 mkProposalInputDatum :: ProposalParameters -> ProposalDatum
@@ -715,20 +716,20 @@ mkMockEffects useAuthScript n = effects
             effectsPerGroup
             (zip effectScripts effectMetadata)
 
-numberOfVotesThatExceedsTheMinimumRequirement :: Integer
-numberOfVotesThatExceedsTheMinimumRequirement =
-  untag (def @ProposalThresholds).execute + 1
+numberOfVotesThatJustMeetsTheMinimumRequirement :: Integer
+numberOfVotesThatJustMeetsTheMinimumRequirement =
+  untag (def @ProposalThresholds).execute
 
 mkWinnerVotes :: Index -> (Winner, Integer)
 mkWinnerVotes idx =
   ( EffectAt idx
-  , numberOfVotesThatExceedsTheMinimumRequirement
+  , numberOfVotesThatJustMeetsTheMinimumRequirement
   )
 
 ambiguousWinnerVotes :: (Winner, Integer)
 ambiguousWinnerVotes =
   ( All
-  , numberOfVotesThatExceedsTheMinimumRequirement
+  , numberOfVotesThatJustMeetsTheMinimumRequirement
   )
 
 --------------------------------------------------------------------------------
@@ -1066,3 +1067,34 @@ mkBadGovernorOutputDatumBundle nCosigners nEffects =
   where
     template = mkValidFromLockedBundle nCosigners nEffects
     gov = GovernorParameters True
+
+mkFastforwardToFinishBundles ::
+  Word ->
+  Word ->
+  [ParameterBundle]
+mkFastforwardToFinishBundles nCosigners nEffects = updateTemplate <$> templates
+  where
+    templates = mkValidToFailedStateBundles nCosigners nEffects
+    mkMaliciousTimRange =
+      let lb = proposalStartingTime - 1
+          dub =
+            1
+              + proposalStartingTime
+              + (def :: ProposalTimingConfig).draftTime
+          vub =
+            dub
+              + (def :: ProposalTimingConfig).votingTime
+              + (def :: ProposalTimingConfig).lockingTime
+          lub =
+            vub
+              + (def :: ProposalTimingConfig).executingTime
+          go Draft = (lb, dub)
+          go VotingReady = (lb, vub)
+          go Locked = (lb, lub)
+          go Finished = error "cannot advance from Finished"
+       in uncurry closedBoundedInterval . go
+    updateTemplate template =
+      template
+        { transactionTimeRange =
+            mkMaliciousTimRange template.proposalParameters.fromStatus
+        }

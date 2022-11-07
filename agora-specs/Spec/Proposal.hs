@@ -85,6 +85,18 @@ specs =
                       True
                 )
                 Create.invalidProposalStatusParameters
+          , Create.mkTestTree
+              "fake SST"
+              Create.fakeSSTParameters
+              True
+              False
+              False
+          , Create.mkTestTree
+              "wrong governor redeemer"
+              Create.wrongGovernorRedeemer
+              False
+              False
+              True
           ]
       ]
   , group
@@ -327,6 +339,16 @@ specs =
                                 , forGovernorValidator = Just False
                                 , forAuthorityTokenPolicy = Just True
                                 }
+                          , Advance.mkTestTree'
+                              "fastforward to finished"
+                              (\b -> unwords ["from", show b.proposalParameters.fromStatus])
+                              (Advance.mkFastforwardToFinishBundles cs es)
+                              Advance.Validity
+                                { forProposalValidator = False
+                                , forStakeValidator = True
+                                , forGovernorValidator = Just False
+                                , forAuthorityTokenPolicy = Just True
+                                }
                           ]
                       ]
       , group "unlocking" $
@@ -392,6 +414,10 @@ specs =
                       "change output stake value"
                       (Unlock.mkChangeOutputStakeValue nStakes)
                       (Unlock.Validity True False)
+                  , Unlock.mkTestTree
+                      "use fake stake"
+                      (Unlock.mkUseFakeStakes nStakes)
+                      (Unlock.Validity False False)
                   ]
 
               legalGroup = group "legal" $ map mkLegalGroup stakeCountCases

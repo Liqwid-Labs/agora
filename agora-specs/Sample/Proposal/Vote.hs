@@ -35,6 +35,7 @@ import Agora.Proposal (
   ProposalId (ProposalId),
   ProposalRedeemer (Vote),
   ProposalStatus (VotingReady),
+  ProposalThresholds (vote),
   ProposalVotes (ProposalVotes),
   ResultTag (ResultTag),
  )
@@ -421,7 +422,7 @@ mkValidOwnerVoteBundle stakes =
           { numStakes = stakes
           , stakeInputParameters =
               StakeInputParameters
-                { perStakeGTs = 114514
+                { perStakeGTs = (def :: ProposalThresholds).vote
                 }
           , stakeOutputParameters =
               StakeOutputParameters
