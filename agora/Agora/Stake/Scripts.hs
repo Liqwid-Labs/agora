@@ -358,11 +358,11 @@ mkStakeValidator impl sstSymbol pstClass gtClass =
                         allHaveSameOrOwnedByDelegatee' =
                           let delegated =
                                 dF.delegatedTo #== firstStakeInputDatumF.delegatedTo
-                              ownedByDelagtee =
+                              ownedByDelegatee =
                                 pdata (pdjust # dF.owner)
                                   #== firstStakeInputDatumF.delegatedTo
                            in allHaveSameDelegatee
-                                #&& (delegated #|| ownedByDelagtee)
+                                #&& (delegated #|| ownedByDelegatee)
                      in pcon $ PPair allHaveSameOwner' allHaveSameOrOwnedByDelegatee'
             )
           # pcon (PPair (pconstant True) (pconstant True))
