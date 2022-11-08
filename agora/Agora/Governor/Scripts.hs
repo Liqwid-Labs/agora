@@ -425,7 +425,7 @@ governorValidator =
                     # governorInputDatumF.proposalThresholds
 
           pguardC "Require minimum amount of GTs" $
-            gtThreshold #< stakeInputDatumF.stakedAmount
+            gtThreshold #<= stakeInputDatumF.stakedAmount
 
           -- Check that the newly minted PST is sent to the proposal validator,
           --   and the datum it carries is legal.
