@@ -10,7 +10,7 @@ module Agora.Proposal.Scripts (
   proposalPolicy,
 ) where
 
-import Agora.Governor (PGovernorRedeemer (PCreateProposal))
+import Agora.Governor (PGovernorRedeemer (PCreateProposal), presolveGovernorRedeemer)
 import Agora.Proposal (
   PProposalDatum (PProposalDatum),
   PProposalRedeemer (PAdvanceProposal, PCosign, PUnlockStake, PVote),
@@ -70,7 +70,6 @@ import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
 import Plutarch.Extra.ScriptContext (
   pfindTxInByTxOutRef,
   ptryFromOutputDatum,
-  ptryFromRedeemer,
  )
 import Plutarch.Extra.Sum (PSum (PSum))
 import Plutarch.Extra.Tagged (PTagged)
@@ -82,7 +81,7 @@ import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (
   ptryFromC,
  )
 import Plutarch.Extra.Traversable (pfoldMap)
-import Plutarch.Extra.Value (passetClassValueOfT, psymbolValueOf)
+import Plutarch.Extra.Value (psymbolValueOf')
 import Plutarch.Unsafe (punsafeCoerce)
 
 {- | Policy for Proposals.
@@ -118,44 +117,25 @@ proposalPolicy =
 
     PMinting ((pfield @"_0" #) -> ownSymbol) <- pmatchC $ pfromData ctxF.purpose
 
-    let mintedProposalST =
-          psymbolValueOf
+    pguardC "Minted exactly one proposal ST"
+      $ pmatch
+        ( pfromJust
+            #$ psymbolValueOf'
             # ownSymbol
             # txInfoF.mint
+        )
+      $ \(PPair minted burnt) ->
+        minted
+          #== 1
+          #&& ptraceIfFalse "Burning a proposal is not supported" (burnt #== 0)
 
-    pguardC "Minted exactly one proposal ST" $
-      mintedProposalST #== 1
-
-    let governorInputRef =
+    let governorRedeemer =
           passertPJust
             # "GST should move"
-            #$ pfindJust
-            # plam
-              ( flip pletAll $ \inputF ->
-                  let value = pfield @"value" # inputF.resolved
-                      isGovernorInput =
-                        passetClassValueOfT
-                          # (ptoScottEncodingT # gstAssetClass)
-                          # value
-                          #== 1
-                   in pif
-                        isGovernorInput
-                        (pjust # inputF.outRef)
-                        pnothing
-              )
+            #$ presolveGovernorRedeemer
+            # (ptoScottEncodingT # gstAssetClass)
             # pfromData txInfoF.inputs
-
-        governorScriptPurpose =
-          mkRecordConstr
-            PSpending
-            (#_0 .= governorInputRef)
-
-        governorRedeemer =
-          pfromData $
-            pfromJust
-              #$ ptryFromRedeemer @(PAsData PGovernorRedeemer)
-              # governorScriptPurpose
-              # txInfoF.redeemers
+            # txInfoF.redeemers
 
     pguardC "Govenor redeemer correct" $
       pcon PCreateProposal #== governorRedeemer

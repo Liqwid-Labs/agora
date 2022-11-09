@@ -11,6 +11,7 @@ module Agora.AuthorityToken (
   singleAuthorityTokenBurned,
 ) where
 
+import Agora.Governor (PGovernorRedeemer (PMintGATs), presolveGovernorRedeemer)
 import Agora.SafeMoney (AuthorityTokenTag, GovernorSTTag)
 import Agora.Utils (psymbolValueOfT, ptag, ptoScottEncodingT, puntag)
 import Plutarch.Api.V1 (
@@ -24,17 +25,14 @@ import Plutarch.Api.V2 (
   KeyGuarantees,
   PAddress (PAddress),
   PMintingPolicy,
-  PScriptContext (PScriptContext),
   PScriptPurpose (PMinting),
   PTxInInfo (PTxInInfo),
-  PTxInfo (PTxInfo),
   PTxOut (PTxOut),
  )
 import Plutarch.Extra.AssetClass (PAssetClassData)
 import Plutarch.Extra.Bool (passert)
 import "liqwid-plutarch-extra" Plutarch.Extra.List (plookupAssoc)
-import Plutarch.Extra.Maybe (pfromJust)
-import Plutarch.Extra.ScriptContext (pisTokenSpent)
+import Plutarch.Extra.Maybe (passertPJust, pfromJust)
 import Plutarch.Extra.Sum (PSum (PSum))
 import Plutarch.Extra.Tagged (PTagged)
 import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (
@@ -149,33 +147,44 @@ singleAuthorityTokenBurned gatCs inputs mint = unTermCont $ do
 -}
 authorityTokenPolicy :: ClosedTerm (PTagged GovernorSTTag PAssetClassData :--> PMintingPolicy)
 authorityTokenPolicy =
-  plam $ \gstAssetClass _redeemer ctx' ->
-    pmatch ctx' $ \(PScriptContext ctx') -> unTermCont $ do
-      ctx <- pletFieldsC @'["txInfo", "purpose"] ctx'
-      PTxInfo txInfo' <- pmatchC $ pfromData ctx.txInfo
-      txInfo <- pletFieldsC @'["inputs", "mint", "outputs"] txInfo'
-      let inputs = txInfo.inputs
-          govTokenSpent = pisTokenSpent # puntag (ptoScottEncodingT # gstAssetClass) # inputs
+  plam $ \gstAssetClass _redeemer ctx -> unTermCont $ do
+    ctxF <- pletFieldsC @'["txInfo", "purpose"] ctx
+    txInfoF <-
+      pletFieldsC
+        @'[ "inputs"
+          , "mint"
+          , "outputs"
+          , "redeemers"
+          ]
+        ctxF.txInfo
 
-      PMinting ownSymbol' <- pmatchC $ pfromData ctx.purpose
+    PMinting ownSymbol' <- pmatchC $ pfromData ctxF.purpose
 
-      let ownSymbol = pfromData $ pfield @"_0" # ownSymbol'
+    let ownSymbol = pfromData $ pfield @"_0" # ownSymbol'
 
-      PPair mintedATs burntATs <-
-        pmatchC $ pfromJust #$ psymbolValueOf' # ownSymbol # txInfo.mint
+    PPair mintedATs burntATs <-
+      pmatchC $ pfromJust #$ psymbolValueOf' # ownSymbol # txInfoF.mint
 
-      pure $
-        popaque $
-          pif
-            (0 #< mintedATs)
-            ( unTermCont $ do
-                pguardC "No GAT burnt" $ 0 #== burntATs
-                pguardC "Parent token did not move in minting GATs" govTokenSpent
-                pguardC "All outputs only emit valid GATs" $
-                  pall
-                    # plam
-                      (authorityTokensValidIn # ptag ownSymbol #)
-                    # txInfo.outputs
-                pure $ pconstant ()
-            )
-            (passert "No GAT minted" (0 #== mintedATs) (pconstant ()))
+    pure $
+      popaque $
+        pif
+          (0 #< mintedATs)
+          ( unTermCont $ do
+              pguardC "No GAT burnt" $ 0 #== burntATs
+              let governorRedeemer =
+                    passertPJust
+                      # "GST should move"
+                      #$ presolveGovernorRedeemer
+                      # (ptoScottEncodingT # gstAssetClass)
+                      # pfromData txInfoF.inputs
+                      # txInfoF.redeemers
+              pguardC "Governor redeemr correct" $
+                pcon PMintGATs #== governorRedeemer
+              pguardC "All outputs only emit valid GATs" $
+                pall
+                  # plam
+                    (authorityTokensValidIn # ptag ownSymbol #)
+                  # txInfoF.outputs
+              pure $ pconstant ()
+          )
+          (passert "No GAT minted" (0 #== mintedATs) (pconstant ()))

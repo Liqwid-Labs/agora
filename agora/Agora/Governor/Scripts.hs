@@ -57,8 +57,8 @@ import Plutarch.Extra.AssetClass (PAssetClassData, passetClass)
 import Plutarch.Extra.Field (pletAll, pletAllC)
 import "liqwid-plutarch-extra" Plutarch.Extra.List (pfindJust, plistEqualsBy, pmapMaybe)
 import "liqwid-plutarch-extra" Plutarch.Extra.Map (pkeys, ptryLookup)
-import Plutarch.Extra.Maybe (passertPJust, pjust, pmaybe, pmaybeData, pnothing)
-import Plutarch.Extra.Ord (psort)
+import Plutarch.Extra.Maybe (passertPJust, pjust, pmaybeData, pnothing)
+import Plutarch.Extra.Ord (POrdering (..), pcompareBy, pfromOrd, psort)
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
 import Plutarch.Extra.ScriptContext (
   pfindTxInByTxOutRef,
@@ -335,6 +335,8 @@ governorValidator =
 
     ----------------------------------------------------------------------------
 
+    pstClass <- pletC $ passetClass # pto pstSymbol # pconstant ""
+
     getProposalDatum :: Term _ (PTxOut :--> PMaybe PProposalDatum) <-
       pletC $
         plam $
@@ -342,8 +344,8 @@ governorValidator =
             let isProposalUTxO =
                   txOutF.address
                     #== pdata proposalValidatorAddress
-                    #&& psymbolValueOfT
-                    # pstSymbol
+                    #&& passetClassValueOf
+                    # pstClass
                     # txOutF.value
                     #== 1
 
@@ -388,16 +390,7 @@ governorValidator =
           -- Check that exactly one proposal token is being minted.
 
           pguardC "Exactly one proposal token must be minted" $
-            let vMap = pfromData $ pto txInfoF.mint
-                tnMap = plookup # puntag pstSymbol # vMap
-                -- Ada and PST
-                onlyPST = plength # pto vMap #== 2
-                onePST =
-                  pmaybe
-                    # pconstant False
-                    # plam (#== AssocMap.psingleton # pconstant "" # 1)
-                    # tnMap
-             in onlyPST #&& onePST
+            passetClassValueOf # pstClass # txInfoF.mint #== 1
 
           -- Check that a stake is spent to create the propsal,
           --   and the value it contains meets the requirement.
@@ -510,14 +503,13 @@ governorValidator =
                   ( \output -> unTermCont $ do
                       outputF <- pletFieldsC @'["address", "datum", "value"] output
 
-                      let isAuthorityUTxO =
+                      let atAmount =
                             psymbolValueOfT
                               # atSymbol
                               # outputF.value
-                              #== 1
 
                           handleAuthorityUTxO =
-                            unTermCont $ do
+                            do
                               receiverScriptHash <-
                                 pletC $
                                   passertPJust
@@ -556,13 +548,21 @@ governorValidator =
                                   , ptraceIfFalse "Value correctly encodes Auth Check script" valueGATCorrect
                                   ]
 
-                              pure receiverScriptHash
+                              pure $ pjust # receiverScriptHash
 
-                      pure $
-                        pif
-                          isAuthorityUTxO
-                          (pjust # handleAuthorityUTxO)
-                          pnothing
+                      pmatchC
+                        ( pcompareBy
+                            # pfromOrd
+                            # atAmount
+                            # 1
+                        )
+                        >>= \case
+                          -- atAmount == 1
+                          PEQ -> handleAuthorityUTxO
+                          -- atAmount < 1
+                          PLT -> pure pnothing
+                          -- atAmount > 1
+                          PGT -> pure $ ptraceError "More than one GAT in one UTxO"
                   )
 
               -- The sorted hashes of all the GAT receivers.

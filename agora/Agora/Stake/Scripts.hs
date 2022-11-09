@@ -207,7 +207,7 @@ stakePolicy =
                       passetClassValueOfT
                         # (ptoScottEncodingT # gtClass)
                         # outputF.value
-                        #== (pfromData datumF.stakedAmount)
+                        #== pfromData datumF.stakedAmount
                   , ptraceIfFalse "Stake Owner should sign the transaction" $
                       pauthorizedBy
                         # authorizationContext txInfoF

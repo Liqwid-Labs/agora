@@ -36,12 +36,13 @@ module Sample.Proposal.Advance (
   mkBadGovernorOutputDatumBundle,
   mkUnexpectedOutputStakeBundles,
   mkFastforwardToFinishBundles,
+  mkBadGovernorRedeemerBundle,
 ) where
 
 import Agora.Governor (
   Governor (..),
   GovernorDatum (..),
-  GovernorRedeemer (MintGATs),
+  GovernorRedeemer (CreateProposal, MintGATs),
  )
 import Agora.Proposal (
   ProposalDatum (..),
@@ -85,6 +86,7 @@ import Plutarch.Context (
   timeRange,
   withDatum,
   withInlineDatum,
+  withRedeemer,
   withRef,
   withValue,
  )
@@ -101,6 +103,7 @@ import PlutusLedgerApi.V2 (
   TxOutRef (TxOutRef),
   ValidatorHash,
  )
+import PlutusTx qualified
 import Sample.Proposal.Shared (
   governorTxRef,
   proposalTxRef,
@@ -165,9 +168,18 @@ data ParameterBundle = ParameterBundle
   }
 
 -- | Everything about the generated governor stuff.
-newtype GovernorParameters = GovernorParameters
+data GovernorParameters = forall
+    (redeemer :: Type)
+    (predeemer :: PType).
+  ( PUnsafeLiftDecl predeemer
+  , PLifted predeemer ~ redeemer
+  , PIsData predeemer
+  , PlutusTx.ToData redeemer
+  ) =>
+  GovernorParameters
   { invalidGovernorOutputDatum :: Bool
   -- ^ The output governor datum will be changed.
+  , governorRedeemer :: redeemer
   }
 
 -- | Everything about the generated authority token stuff.
@@ -432,7 +444,7 @@ governorRef = TxOutRef governorTxRef 2
       governor validator.
 -}
 mkGovernorBuilder :: forall b. CombinableBuilder b => GovernorParameters -> b
-mkGovernorBuilder ps =
+mkGovernorBuilder ps@(GovernorParameters _ redeemer) =
   let gst = assetClassValue governorAssetClass 1
       value = sortValue $ gst <> minAda
    in mconcat
@@ -442,6 +454,7 @@ mkGovernorBuilder ps =
               , withValue value
               , withRef governorRef
               , withDatum governorInputDatum
+              , withRedeemer redeemer
               ]
         , output $
             mconcat
@@ -451,12 +464,6 @@ mkGovernorBuilder ps =
               , withDatum (mkGovernorOutputDatum ps)
               ]
         ]
-
-{- | The proposal redeemer used to spend the governor UTXO, which is always
-      'MintGATs' in this case.
--}
-governorRedeemer :: GovernorRedeemer
-governorRedeemer = MintGATs
 
 --------------------------------------------------------------------------------
 
@@ -538,16 +545,19 @@ mkTestTree name pb val =
               proposalInputDatum
               proposalRedeemer
               (spend proposalRef)
+
     governor =
       maybe [] singleton $
-        testValidator
-          (fromJust val.forGovernorValidator)
-          "governor"
-          governorValidator
-          governorInputDatum
-          governorRedeemer
-          (spend governorRef)
-          <$ pb.governorParameters
+        ( \(GovernorParameters _ governorRedeemer) ->
+            testValidator
+              (fromJust val.forGovernorValidator)
+              "governor"
+              governorValidator
+              governorInputDatum
+              governorRedeemer
+              (spend governorRef)
+        )
+          <$> pb.governorParameters
 
     authority = case pb.authorityTokenParameters of
       [] -> []
@@ -827,6 +837,7 @@ mkValidToNextStateBundle nCosigners nEffects authScript from =
                 gov =
                   GovernorParameters
                     { invalidGovernorOutputDatum = False
+                    , governorRedeemer = MintGATs
                     }
              in b
                   { governorParameters = Just gov
@@ -1066,7 +1077,19 @@ mkBadGovernorOutputDatumBundle nCosigners nEffects =
     }
   where
     template = mkValidFromLockedBundle nCosigners nEffects
-    gov = GovernorParameters True
+    gov = GovernorParameters True MintGATs
+
+mkBadGovernorRedeemerBundle ::
+  Word ->
+  Word ->
+  ParameterBundle
+mkBadGovernorRedeemerBundle nCosigners nEffects =
+  template
+    { governorParameters = Just gov
+    }
+  where
+    template = mkValidFromLockedBundle nCosigners nEffects
+    gov = GovernorParameters False CreateProposal
 
 mkFastforwardToFinishBundles ::
   Word ->

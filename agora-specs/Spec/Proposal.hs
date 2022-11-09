@@ -97,6 +97,12 @@ specs =
               False
               False
               True
+          , Create.mkTestTree
+              "wrong governor redeemer"
+              Create.wrongGovernorRedeemer1
+              False
+              False
+              True
           ]
       ]
   , group
@@ -352,6 +358,15 @@ specs =
                                 , forStakeValidator = True
                                 , forGovernorValidator = Just False
                                 , forAuthorityTokenPolicy = Just True
+                                }
+                          , Advance.mkTestTree
+                              "wrong governor redeemer"
+                              (Advance.mkBadGovernorRedeemerBundle cs es)
+                              Advance.Validity
+                                { forProposalValidator = True
+                                , forStakeValidator = True
+                                , forGovernorValidator = Just False
+                                , forAuthorityTokenPolicy = Just False
                                 }
                           ]
                       ]
