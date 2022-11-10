@@ -56,6 +56,7 @@ import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pletFieldsC)
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (PLifted))
 import PlutusLedgerApi.V1 (TxOutRef)
 import PlutusTx qualified
+import Optics.TH (makeFieldLabelsNoPrefix)
 
 --------------------------------------------------------------------------------
 
@@ -83,6 +84,10 @@ data GovernorDatum = GovernorDatum
     , -- | @since 0.1.0
       Generic
     )
+
+-- | @since 0.2.1
+makeFieldLabelsNoPrefix ''GovernorDatum
+
 
 -- | @since 0.1.0
 PlutusTx.makeIsDataIndexed ''GovernorDatum [('GovernorDatum, 0)]
@@ -181,6 +186,8 @@ newtype PGovernorDatum (s :: S) = PGovernorDatum
       PDataFields
     , -- | @since 0.1.0
       PEq
+    , -- | @since 0.2.1
+      PShow
     )
 
 -- | @since 0.2.0

@@ -143,6 +143,9 @@ common test-deps
 common exe-opts
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -O0
 
+common test-opts
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -O2
+
 library
   import:          lang, deps, plutarch-prelude
   exposed-modules:
@@ -224,7 +227,7 @@ library agora-specs
   build-depends:   agora-testlib
 
 test-suite agora-test
-  import:         lang, deps, plutarch-prelude, test-deps
+  import:         lang, deps, plutarch-prelude, test-deps, test-opts
   type:           exitcode-stdio-1.0
   main-is:        Spec.hs
   hs-source-dirs: agora-test

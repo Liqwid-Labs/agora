@@ -224,6 +224,8 @@ newtype PProposalTimingConfig (s :: S) = PProposalTimingConfig
       PIsData
     , -- | @since 0.1.0
       PDataFields
+    , -- | @since 0.2.1
+      PShow
     )
 
 instance DerivePlutusType PProposalTimingConfig where
@@ -260,6 +262,8 @@ newtype PMaxTimeRangeWidth (s :: S)
       PPartialOrd
     , -- | @since 0.1.0
       POrd
+    , -- | @since 0.2.1
+      PShow
     )
 
 instance DerivePlutusType PMaxTimeRangeWidth where
