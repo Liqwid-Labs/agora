@@ -325,16 +325,21 @@ proposalValidator =
         presolveStakeInputDatum
           # (ptoScottEncodingT # sstClass)
           # txInfoF.datums
+
     spendStakes' :: Term _ ((PStakeInputsContext :--> PUnit) :--> PUnit) <-
       pletC $
-        plam $
-          let stakeInputs =
-                pmapMaybe @PList
-                  # resolveStakeInputDatum
-                  # pfromData txInfoF.inputs
+        plam $ \val -> unTermCont $ do
+          stakeInputs <-
+            pletC $
+              pmapMaybe @PList
+                # resolveStakeInputDatum
+                # pfromData txInfoF.inputs
 
-              ctx = pcon $ PStakeInputsContext stakeInputs
-           in (# ctx)
+          pguardC "Stake inputs not null" $
+            pnot #$ pnull # stakeInputs
+
+          let ctx = pcon $ PStakeInputsContext stakeInputs
+          pure $ val # ctx
 
     let spendStakes ::
           ( PStakeInputsContext _ ->
