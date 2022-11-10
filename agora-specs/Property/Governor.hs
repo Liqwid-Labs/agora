@@ -7,19 +7,85 @@ Property model and tests for 'Governor' related functions
 -}
 module Property.Governor (props) where
 
-import Test.Tasty (TestTree)
-import Test.QuickCheck (Property, Gen, Arbitrary (arbitrary), arbitraryBoundedEnum, chooseInteger)
-import Test.Tasty.QuickCheck (testProperty)
+import Agora.Governor (
+  GovernorDatum (
+    GovernorDatum,
+    createProposalTimeRangeMaxWidth,
+    maximumProposalsPerStake,
+    nextProposalId,
+    proposalThresholds,
+    proposalTimings
+  ),
+  PGovernorDatum,
+  pisGovernorDatumValid,
+ )
+import Agora.Governor.Scripts (governorPolicy)
+import Agora.Proposal (
+  ProposalId (ProposalId),
+  ProposalThresholds (
+    ProposalThresholds
+  ),
+ )
+import Agora.Proposal.Time (
+  MaxTimeRangeWidth (MaxTimeRangeWidth),
+  ProposalTimingConfig (ProposalTimingConfig),
+ )
+import Data.Default (def)
+import Data.Tagged (Tagged (Tagged))
 import Data.Universe (Universe)
 import Data.Universe.Class (Finite)
-import Plutarch.Test.QuickCheck (Equality (OnPEq), Partiality (ByComplete), haskEquiv, TestableTerm (TestableTerm), pconstantT)
-import Agora.Governor (pisGovernorDatumValid, GovernorDatum(GovernorDatum), PGovernorDatum)
-import Agora.Proposal (ProposalThresholds(ProposalThresholds), ProposalId (ProposalId))
-import Agora.Proposal.Time (ProposalTimingConfig(ProposalTimingConfig), MaxTimeRangeWidth (MaxTimeRangeWidth))
-import Data.Tagged (Tagged(Tagged))
-import Generics.SOP.NP (NP(Nil, (:*)))
+import Generics.SOP.NP (NP (Nil, (:*)))
 import Optics (view)
-
+import Plutarch.Api.V2 (PScriptContext)
+import Plutarch.Builtin (pforgetData)
+import Plutarch.Context (
+  MintingBuilder,
+  buildMinting',
+  input,
+  mint,
+  output,
+  script,
+  withDatum,
+  withMinting,
+  withRef,
+  withValue,
+ )
+import Plutarch.Evaluate (evalTerm)
+import Plutarch.Extra.AssetClass (assetClassValue)
+import Plutarch.Extra.Compile (mustCompile)
+import Plutarch.Test.QuickCheck (
+  Equality (OnPEq),
+  Partiality (ByComplete),
+  TestableTerm (TestableTerm),
+  haskEquiv,
+  pconstantT,
+  shouldCrash,
+  shouldRun,
+ )
+import PlutusLedgerApi.V2 (Script, ScriptContext)
+import Property.Generator (genInput, genOutput)
+import Sample.Shared (
+  deterministicTracingConfig,
+  governor,
+  governorAssetClass,
+  governorSymbol,
+  governorValidatorHash,
+  gstUTXORef,
+ )
+import Test.QuickCheck (
+  Arbitrary (arbitrary),
+  Gen,
+  Property,
+  arbitraryBoundedEnum,
+  checkCoverage,
+  choose,
+  chooseInteger,
+  cover,
+  forAll,
+  listOf1,
+ )
+import Test.Tasty (TestTree, testGroup)
+import Test.Tasty.QuickCheck (testProperty)
 
 data GovernorDatumCases
   = ExecuteLE0
@@ -34,17 +100,16 @@ data GovernorDatumCases
 instance Arbitrary GovernorDatumCases where
   arbitrary = arbitraryBoundedEnum
 
-{- | Property that checks `pisGovernorDatumValid` behaves as intended by comparing it
-  to a simple haskell implementation.
+{- | Property that checks `pisGovernorDatumValid` behaves as intended by
+     comparing it to a simple haskell implementation.
 -}
 governorDatumValidProperty :: Property
 governorDatumValidProperty =
-  haskEquiv @'OnPEq @'ByComplete
+  haskEquiv @( 'OnPEq) @( 'ByComplete)
     isValidModelImpl
     (TestableTerm pisGovernorDatumValid)
     (genDatum :* Nil)
   where
-
     genDatum :: Gen (TestableTerm PGovernorDatum)
     genDatum = pconstantT <$> (arbitrary >>= genDatumForCase)
       where
@@ -53,7 +118,8 @@ governorDatumValidProperty =
           thres <- genProposalThresholds c
 
           let timing = ProposalTimingConfig 0 0 0 0
-          return $ GovernorDatum thres (ProposalId 0) timing (MaxTimeRangeWidth 1) 3
+          pure $
+            GovernorDatum thres (ProposalId 0) timing (MaxTimeRangeWidth 1) 3
           where
             taggedInteger p = Tagged <$> chooseInteger p
             genProposalThresholds :: GovernorDatumCases -> Gen ProposalThresholds
@@ -83,7 +149,7 @@ governorDatumValidProperty =
                 Correct ->
                   return $ ProposalThresholds execute create toVoting vote cosign
 
-    -- | This is a model Haskell implementation of `pisGovernorDatumValid`.
+    -- \| This is a model Haskell implementation of `pisGovernorDatumValid`.
     isValidModelImpl :: GovernorDatum -> Bool
     isValidModelImpl = correctCase . classifier
       where
@@ -108,99 +174,130 @@ governorDatumValidProperty =
             | cosign < 0 = CosignLE0
             | otherwise = Correct
 
----
+--------------------------------------------------------------------------------
 
--- data GovernorPolicyCases
---   = ReferenceUTXONotSpent
---   | IncorrectAmountOfTokenMinted
---   | GovernorOutputNotFound
---   | GovernorPolicyCorrect
---   deriving stock (Eq, Show)
+data GovernorPolicyCases
+  = ReferenceUTXONotSpent
+  | IncorrectAmountOfTokenMinted
+  | GovernorOutputNotFound
+  deriving stock (Eq, Show)
 
--- instance Universe GovernorPolicyCases where
---   universe =
---     [ ReferenceUTXONotSpent
---     , IncorrectAmountOfTokenMinted
---     , GovernorOutputNotFound
---     , GovernorPolicyCorrect
---     ]
+governorMintingPolicyTests :: [TestTree]
+governorMintingPolicyTests =
+  [ mkGovMintingCasePropertyTest
+      "Reference input spend test"
+      ReferenceUTXONotSpent
+      "Spent"
+      "Not spent"
+  , mkGovMintingCasePropertyTest
+      "Amount of token minted test"
+      IncorrectAmountOfTokenMinted
+      "Correct"
+      "Incorrect"
+  , mkGovMintingCasePropertyTest
+      "Governor output presense"
+      GovernorOutputNotFound
+      "Present"
+      "Absent"
+  ]
 
--- instance Finite GovernorPolicyCases where
---   universeF = universe
---   cardinality = Tagged 4
+{- | Creates a property by compiling governorPolicy script with given arguments
+   and checking if it runs as expected by a test.
+-}
+governorPolicyValid :: ScriptContext -> Bool -> Property
+governorPolicyValid ctx shouldSuceed =
+  let mp = mkPolicyScript ctx in if shouldSuceed then shouldRun mp else shouldCrash mp
 
--- governorMintingProperty :: Property
--- governorMintingProperty =
---   classifiedPropertyNative gen (const []) expected classifier actual
---   where
---     {- Note:
---     I don't think it's easily possible to randomize orefs. We can't really pass pass `Governor` type to `actual` function.
---     -}
---     gst = assetClassValue governorAssetClass 1
---     mintAmount x = mint . mconcat $ replicate x gst
---     outputToGov =
---       output $
---         mconcat
---           [ script governorValidatorHash
---           , withValue gst
---           , withDatum govDatum
---           ]
---     referencedInput = input $ withRef gstUTXORef
+{-# INLINEABLE mkPolicyScript #-}
+mkPolicyScript :: ScriptContext -> Script
+mkPolicyScript ctx = mustCompile (go # pconstant ctx)
+  where
+    go :: forall (s :: S). Term s (PScriptContext :--> POpaque)
+    go = loudEval $
+      plam $ \sc ->
+        governorPolicy
+          # pconstant (view #gstOutRef governor)
+          # pforgetData (pconstantData ())
+          # sc
 
---     govDatum :: GovernorDatum
---     govDatum =
---       GovernorDatum
---         { proposalThresholds = def
---         , nextProposalId = ProposalId 0
---         , proposalTimings = def
---         , createProposalTimeRangeMaxWidth = def
---         , maximumProposalsPerStake = 3
---         }
+{- | Prepares a minting policy test for given policy error case.
+ NOTE
+-}
+mkGovMintingCasePropertyTest ::
+  String ->
+  GovernorPolicyCases ->
+  String ->
+  String ->
+  TestTree
+mkGovMintingCasePropertyTest name case' positiveCaseName negativeCaseName =
+  testProperty name $
+    forAll (gen case') $
+      \(ctx, valid) ->
+        checkCoverage $
+          cover 48 valid positiveCaseName $
+            cover 48 (not valid) negativeCaseName $
+              governorPolicyValid ctx valid
+  where
+    gen :: GovernorPolicyCases -> Gen (ScriptContext, Bool)
+    gen c = do
+      inputs <- fmap mconcat . listOf1 $ genInput @MintingBuilder
+      outputs <- fmap mconcat . listOf1 $ genOutput @MintingBuilder
+      toks <- choose (2, 100)
 
---     gen :: GovernorPolicyCases -> Gen ScriptContext
---     gen c = do
---       inputs <- fmap mconcat . listOf1 $ genInput @MintingBuilder
---       outputs <- fmap mconcat . listOf1 $ genOutput @MintingBuilder
---       toks <- choose (2, 100)
+      valid <- arbitrary
+      let comp =
+            if valid
+              then referencedInput <> outputToGov <> mintAmount 1
+              else case c of
+                ReferenceUTXONotSpent -> outputToGov <> mintAmount 1
+                IncorrectAmountOfTokenMinted ->
+                  referencedInput
+                    <> outputToGov
+                    <> mintAmount toks
+                GovernorOutputNotFound -> referencedInput <> mintAmount 1
 
---       let comp =
---             case c of
---               ReferenceUTXONotSpent -> outputToGov <> mintAmount 1
---               IncorrectAmountOfTokenMinted -> referencedInput <> outputToGov <> mintAmount toks
---               GovernorOutputNotFound -> referencedInput <> mintAmount 1
---               GovernorPolicyCorrect -> referencedInput <> outputToGov <> mintAmount 1
+      let ctx =
+            buildMinting' $
+              inputs
+                <> outputs
+                <> comp
+                <> withMinting
+                  governorSymbol
+      pure (ctx, valid)
+      where
+        govDatum :: GovernorDatum
+        govDatum =
+          GovernorDatum
+            { proposalThresholds = def
+            , nextProposalId = ProposalId 0
+            , proposalTimings = def
+            , createProposalTimeRangeMaxWidth = def
+            , maximumProposalsPerStake = 3
+            }
 
---       return . buildMinting' $ inputs <> outputs <> comp <> withMinting governorSymbol
-
---     expected :: ScriptContext -> Maybe ()
---     expected sc =
---       case classifier sc of
---         GovernorPolicyCorrect -> Just ()
---         _ -> Nothing
-
---     opaqueToUnit :: Term s (POpaque :--> PUnit)
---     opaqueToUnit = plam $ \_ -> pconstant ()
-
---     actual :: Term s (PScriptContext :--> PUnit)
---     actual = plam $ \sc -> opaqueToUnit #$ governorPolicy # pconstant governor.gstOutRef # pforgetData (pconstantData ()) # sc
-
---     classifier :: ScriptContext -> GovernorPolicyCases
---     classifier sc
---       | minted /= gst = IncorrectAmountOfTokenMinted
---       | refInputNotExists = ReferenceUTXONotSpent
---       | govOutputNotExists = GovernorOutputNotFound
---       | otherwise = GovernorPolicyCorrect
---       where
---         txinfo = scriptContextTxInfo sc
---         minted = txInfoMint txinfo
---         refInputNotExists = gstUTXORef `notElem` (txInInfoOutRef <$> txInfoInputs txinfo)
---         govOutputNotExists = gst `notElem` (txOutValue <$> txInfoOutputs txinfo)
+        gst = assetClassValue governorAssetClass 1
+        mintAmount x = mint . mconcat $ replicate x gst
+        referencedInput = input $ withRef gstUTXORef
+        outputToGov =
+          output $
+            mconcat
+              [ script governorValidatorHash
+              , withValue gst
+              , withDatum govDatum
+              ]
 
 props :: [TestTree]
 props =
   [ testProperty "governorDatumValid" governorDatumValidProperty
-  -- , testProperty "governorPolicy" governorMintingProperty
+  , testGroup "governorPolicy" governorMintingPolicyTests
   ]
 
--- props :: [TestTree]
--- props = []
+loudEval ::
+  forall (p :: S -> Type).
+  ClosedTerm p ->
+  ClosedTerm p
+loudEval x =
+  case evalTerm deterministicTracingConfig x of
+    Right (Right t, _, _) -> t
+    Right (Left err, _, trace) -> error $ show err <> show trace
+    Left err -> error $ show err

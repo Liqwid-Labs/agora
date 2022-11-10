@@ -12,7 +12,7 @@ module Sample.Shared (
   signer,
   signer2,
   minAda,
-  deterministicTracingConfing,
+  deterministicTracingConfig,
   mkRedeemer,
 
   -- * Agora Scripts
@@ -121,8 +121,8 @@ import ScriptExport.ScriptInfo (runLinker)
 -- Plutarch compiler configauration.
 -- TODO: add the ability to change this value. Maybe wrap everything in a
 --        Reader monad?
-deterministicTracingConfing :: Config
-deterministicTracingConfing = Config DetTracing
+deterministicTracingConfig :: Config
+deterministicTracingConfig = Config DetTracing
 
 governor :: Governor
 governor = Governor oref gt mc
@@ -142,7 +142,7 @@ agoraScripts =
     (view #scripts)
     ( runLinker
         linker
-        (Bootstrap.agoraScripts deterministicTracingConfing)
+        (Bootstrap.agoraScripts deterministicTracingConfig)
         governor
     )
 
