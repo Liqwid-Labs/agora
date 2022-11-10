@@ -81,7 +81,6 @@ import Plutarch.Extra.Tagged (PTagged)
 import Plutarch.Extra.Traversable (pfoldMap)
 import Plutarch.Extra.Value (passetClassValueOfT)
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (PLifted))
-import Plutarch.Orphans ()
 import PlutusLedgerApi.V2 (Credential)
 import PlutusTx qualified
 

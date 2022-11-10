@@ -25,7 +25,6 @@ import Agora.Governor (
   PGovernorDatum,
   PGovernorRedeemer,
  )
-import Agora.Plutarch.Orphans ()
 import Agora.SafeMoney (AuthorityTokenTag, GovernorSTTag)
 import Agora.Utils (psymbolValueOfT)
 import Plutarch.Api.V1 (PCurrencySymbol, PValidatorHash)

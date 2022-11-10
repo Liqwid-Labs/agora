@@ -9,10 +9,13 @@
 module Main (main) where
 
 import Agora.Bootstrap qualified as Bootstrap
-import Agora.Linker
+import Agora.Linker (linker)
 import Data.Default (def)
-import ScriptExport.Export
-import ScriptExport.Types
+import ScriptExport.Export (exportMain)
+import ScriptExport.Types (
+  Builders,
+  insertScriptExportWithLinker,
+ )
 
 main :: IO ()
 main = exportMain builders

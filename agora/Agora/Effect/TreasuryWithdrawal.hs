@@ -14,7 +14,6 @@ module Agora.Effect.TreasuryWithdrawal (
 ) where
 
 import Agora.Effect (makeEffect)
-import Agora.Plutarch.Orphans ()
 import Agora.SafeMoney (AuthorityTokenTag)
 import Plutarch.Api.V1 (
   PCredential,
