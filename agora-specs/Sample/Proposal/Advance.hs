@@ -547,17 +547,20 @@ mkTestTree name pb val =
               (spend proposalRef)
 
     governor =
-      maybe [] singleton $
-        ( \(GovernorParameters _ governorRedeemer) ->
-            testValidator
-              (fromJust val.forGovernorValidator)
-              "governor"
-              governorValidator
-              governorInputDatum
-              governorRedeemer
-              (spend governorRef)
+      maybe
+        []
+        ( singleton
+            . ( \(GovernorParameters _ governorRedeemer) ->
+                  testValidator
+                    (fromJust val.forGovernorValidator)
+                    "governor"
+                    governorValidator
+                    governorInputDatum
+                    governorRedeemer
+                    (spend governorRef)
+              )
         )
-          <$> pb.governorParameters
+        (pb.governorParameters)
 
     authority = case pb.authorityTokenParameters of
       [] -> []
