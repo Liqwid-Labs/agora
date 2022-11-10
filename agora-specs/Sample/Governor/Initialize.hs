@@ -58,7 +58,7 @@ import PlutusLedgerApi.V2 (
   ValidatorHash,
  )
 import Sample.Shared (
-  deterministicTracingConfing,
+  deterministicTracingConfig,
   minAda,
  )
 import Sample.Shared qualified as Shared
@@ -124,7 +124,7 @@ scripts =
     (view #scripts)
     ( runLinker
         linker
-        (agoraScripts deterministicTracingConfing)
+        (agoraScripts deterministicTracingConfig)
         governor
     )
 
