@@ -15,7 +15,7 @@ import Agora.Governor (
   GovernorDatum (
     GovernorDatum,
     createProposalTimeRangeMaxWidth,
-    maximumProposalsPerStake,
+    maximumCreatedProposalsPerStake,
     nextProposalId,
     proposalThresholds,
     proposalTimings
@@ -274,7 +274,7 @@ mkGovMintingCasePropertyTest name case' positiveCaseName negativeCaseName =
             , nextProposalId = ProposalId 0
             , proposalTimings = def
             , createProposalTimeRangeMaxWidth = def
-            , maximumProposalsPerStake = 3
+            , maximumCreatedProposalsPerStake = 3
             }
 
         gst = assetClassValue governorAssetClass 1

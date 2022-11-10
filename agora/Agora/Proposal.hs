@@ -162,7 +162,7 @@ newtype ResultTag = ResultTag {getResultTag :: Integer}
 data ProposalStatus
   = -- | A draft proposal represents a proposal that has yet to be realized.
     --
-    --   In effect, this means one which didn't have enough LQ to be a full
+    --   In effect, this means one which didn't have enough GT to be a full
     --   proposal, and needs cosigners to enable that to happen. This is
     --   similar to a "temperature check", but only useful if multiple people
     --   want to pool governance tokens together. If the proposal doesn't get to

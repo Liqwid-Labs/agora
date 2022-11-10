@@ -380,8 +380,8 @@ governorValidator =
                       .= governorInputDatumF.proposalTimings
                       .& #createProposalTimeRangeMaxWidth
                       .= governorInputDatumF.createProposalTimeRangeMaxWidth
-                      .& #maximumProposalsPerStake
-                      .= governorInputDatumF.maximumProposalsPerStake
+                      .& #maximumCreatedProposalsPerStake
+                      .= governorInputDatumF.maximumCreatedProposalsPerStake
                   )
 
           pguardC "Only next proposal id gets advanced" $
@@ -410,7 +410,7 @@ governorValidator =
           pguardC "Proposals created by the stake must not exceed the limit" $
             pnumCreatedProposals
               # stakeInputDatumF.lockedBy
-              #< governorInputDatumF.maximumProposalsPerStake
+              #< governorInputDatumF.maximumCreatedProposalsPerStake
 
           let gtThreshold =
                 pfromData $

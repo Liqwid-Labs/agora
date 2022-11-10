@@ -105,7 +105,7 @@ governorInputDatum =
     , nextProposalId = ProposalId 0
     , proposalTimings = def
     , createProposalTimeRangeMaxWidth = def
-    , maximumProposalsPerStake = 3
+    , maximumCreatedProposalsPerStake = 3
     }
 
 mkGovernorOutputDatum ::
@@ -115,7 +115,7 @@ mkGovernorOutputDatum DatumValid =
   Just $
     toData $
       governorInputDatum
-        { maximumProposalsPerStake = 4
+        { maximumCreatedProposalsPerStake = 4
         }
 mkGovernorOutputDatum ValueInvalid =
   let invalidProposalThresholds =

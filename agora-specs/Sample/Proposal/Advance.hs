@@ -426,14 +426,14 @@ governorInputDatum =
     , nextProposalId = ProposalId 42
     , proposalTimings = def
     , createProposalTimeRangeMaxWidth = def
-    , maximumProposalsPerStake = 3
+    , maximumCreatedProposalsPerStake = 3
     }
 
 -- | Create the output governor datum given the parameters.
 mkGovernorOutputDatum :: GovernorParameters -> GovernorDatum
 mkGovernorOutputDatum ps =
   if ps.invalidGovernorOutputDatum
-    then governorInputDatum {maximumProposalsPerStake = 15}
+    then governorInputDatum {maximumCreatedProposalsPerStake = 15}
     else governorInputDatum
 
 -- | Reference to the governor UTXO.

@@ -72,7 +72,7 @@ data Parameters = Parameters
   -- ^ Whether the 'GovernorDatum.proposalThresholds' field of the output
   --    governor datum is valid or not.
   , datumMaxTimeRangeWidthValid :: Bool
-  -- ^ Whether the 'GovernorDatum.maximumProposalsPerStake'field of the
+  -- ^ Whether the 'GovernorDatum.maximumCreatedProposalsPerStake'field of the
   --    output governor datum is valid or not.
   , datumTimingConfigValid :: Bool
   -- ^ Whether the 'GovernorDatum.proposalTimings'field  of the output
@@ -96,7 +96,7 @@ validGovernorOutputDatum =
     , nextProposalId = ProposalId 0
     , proposalTimings = def
     , createProposalTimeRangeMaxWidth = def
-    , maximumProposalsPerStake = 3
+    , maximumCreatedProposalsPerStake = 3
     }
 
 invalidProposalThresholds :: ProposalThresholds

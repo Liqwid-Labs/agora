@@ -136,7 +136,7 @@ data Parameters = Parameters
 
 --------------------------------------------------------------------------------
 
--- | See 'GovernorDatum.maximumProposalsPerStake'.
+-- | See 'GovernorDatum.maximumCreatedProposalsPerStake'.
 maxProposalPerStake :: Integer
 maxProposalPerStake = 3
 
@@ -181,7 +181,7 @@ governorInputDatum =
     , nextProposalId = thisProposalId
     , proposalTimings = def
     , createProposalTimeRangeMaxWidth = def
-    , maximumProposalsPerStake = maxProposalPerStake
+    , maximumCreatedProposalsPerStake = maxProposalPerStake
     }
 
 -- | Create governor output datum given the parameters.
@@ -196,7 +196,7 @@ mkGovernorOutputDatum ps =
         , nextProposalId = nextPid
         , proposalTimings = def
         , createProposalTimeRangeMaxWidth = def
-        , maximumProposalsPerStake = maxProposalPerStake
+        , maximumCreatedProposalsPerStake = maxProposalPerStake
         }
 
 --------------------------------------------------------------------------------
