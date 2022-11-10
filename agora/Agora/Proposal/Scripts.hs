@@ -549,40 +549,41 @@ proposalValidator =
 
           PUnlockStake _ -> spendStakes $ \sctxF -> do
             let expectedVotes =
-                  pfoldl
-                    # plam
-                      ( \votes stake -> unTermCont $ do
-                          stakeF <-
-                            pletFieldsC
-                              @'["stakedAmount", "lockedBy"]
-                              stake
+                  pdata $
+                    pfoldl
+                      # plam
+                        ( \votes stake -> unTermCont $ do
+                            stakeF <-
+                              pletFieldsC
+                                @'["stakedAmount", "lockedBy"]
+                                stake
 
-                          stakeRoles <-
-                            pletC $
-                              pgetStakeRoles
-                                # proposalInputDatumF.proposalId
-                                # stakeF.lockedBy
+                            stakeRoles <-
+                              pletC $
+                                pgetStakeRoles
+                                  # proposalInputDatumF.proposalId
+                                  # stakeF.lockedBy
 
-                          pguardC "Stake input should be relevant" $
-                            pnot #$ pisIrrelevant # stakeRoles
+                            pguardC "Stake input should be relevant" $
+                              pnot #$ pisIrrelevant # stakeRoles
 
-                          let canRetractVotes =
-                                pisVoter # stakeRoles
+                            let canRetractVotes =
+                                  pisVoter # stakeRoles
 
-                              voteCount =
-                                pto $
-                                  pfromData stakeF.stakedAmount
+                                voteCount =
+                                  pto $
+                                    pfromData stakeF.stakedAmount
 
-                              newVotes =
-                                pretractVotes
-                                  # (pextractVoteOption # stakeRoles)
-                                  # voteCount
-                                  # votes
+                                newVotes =
+                                  pretractVotes
+                                    # (pextractVoteOption # stakeRoles)
+                                    # voteCount
+                                    # votes
 
-                          pure $ pif canRetractVotes newVotes votes
-                      )
-                    # proposalInputDatumF.votes
-                    # sctxF.inputStakes
+                            pure $ pif canRetractVotes newVotes votes
+                        )
+                      # proposalInputDatumF.votes
+                      # sctxF.inputStakes
 
                 inVotingPeriod =
                   pisWithin # getTimingRelation PVotingPeriod
@@ -611,14 +612,19 @@ proposalValidator =
                               .& #thresholds
                               .= proposalInputDatumF.thresholds
                               .& #votes
-                              .= pdata expectedVotes
+                              .= expectedVotes
                               .& #timingConfig
                               .= proposalInputDatumF.timingConfig
                               .& #startingTime
                               .= proposalInputDatumF.startingTime
                           )
-                   in ptraceIfFalse "Update votes" $
-                        expectedProposalOut #== proposalOutputDatum
+                   in foldl1
+                        (#&&)
+                        [ ptraceIfFalse "Votes changed" $
+                            pnot #$ expectedVotes #== proposalInputDatumF.votes
+                        , ptraceIfFalse "Proposal update correct" $
+                            expectedProposalOut #== proposalOutputDatum
+                        ]
                 )
                 -- No change to the proposal is allowed.
                 ( ptraceIfFalse "Proposal unchanged" $
