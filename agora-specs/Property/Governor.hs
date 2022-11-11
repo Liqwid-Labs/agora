@@ -291,7 +291,7 @@ props =
   ]
   where
     go :: QuickCheckTests -> QuickCheckTests
-    go = min 2000
+    go = max 20_000
 
 loudEval ::
   forall (p :: S -> Type).
