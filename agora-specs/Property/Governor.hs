@@ -1,3 +1,7 @@
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+
+{-# HLINT ignore "Redundant bracket" #-}
+
 {- |
 Module     : Property.Governor
 Maintainer : seungheon.ooh@gmail.com
@@ -105,7 +109,7 @@ instance Arbitrary GovernorDatumCases where
 -}
 governorDatumValidProperty :: Property
 governorDatumValidProperty =
-  haskEquiv @'OnPEq  @'ByComplete
+  haskEquiv @( 'OnPEq) @( 'ByComplete)
     isValidModelImpl
     (TestableTerm pisGovernorDatumValid)
     (genDatum :* Nil)
