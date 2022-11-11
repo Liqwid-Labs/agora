@@ -105,7 +105,7 @@ instance Arbitrary GovernorDatumCases where
 -}
 governorDatumValidProperty :: Property
 governorDatumValidProperty =
-  haskEquiv @( 'OnPEq) @( 'ByComplete)
+  haskEquiv @'OnPEq  @'ByComplete
     isValidModelImpl
     (TestableTerm pisGovernorDatumValid)
     (genDatum :* Nil)
