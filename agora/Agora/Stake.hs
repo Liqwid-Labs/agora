@@ -12,11 +12,13 @@ module Agora.Stake (
   -- * Haskell-land
   StakeDatum (..),
   StakeRedeemer (..),
+  ProposalAction (..),
   ProposalLock (..),
 
   -- * Plutarch-land
   PStakeDatum (..),
   PStakeRedeemer (..),
+  PProposalAction (..),
   PProposalLock (..),
   PStakeRole (..),
 
@@ -42,17 +44,18 @@ module Agora.Stake (
 ) where
 
 import Agora.Proposal (
+  PProposalDatum,
   PProposalId,
   PProposalRedeemer,
-  PProposalStatus,
   PResultTag,
   ProposalId,
   ResultTag,
  )
+import Agora.Proposal.Time (PProposalTime)
 import Agora.SafeMoney (GTTag, StakeSTTag)
 import Data.Tagged (Tagged)
 import Generics.SOP qualified as SOP
-import Plutarch.Api.V1 (PCredential)
+import Plutarch.Api.V1 (PCredential, PPOSIXTime)
 import Plutarch.Api.V2 (
   KeyGuarantees (Unsorted),
   PDatum,
@@ -68,7 +71,6 @@ import Plutarch.DataRepr (
  )
 import Plutarch.Extra.Applicative (ppureIf)
 import Plutarch.Extra.AssetClass (PAssetClass)
-import Plutarch.Extra.Field (pletAll)
 import Plutarch.Extra.IsData (
   DerivePConstantViaDataList (DerivePConstantViaDataList),
   ProductIsData (ProductIsData),
@@ -81,10 +83,47 @@ import Plutarch.Extra.Tagged (PTagged)
 import Plutarch.Extra.Traversable (pfoldMap)
 import Plutarch.Extra.Value (passetClassValueOfT)
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (PLifted))
-import PlutusLedgerApi.V2 (Credential)
+import PlutusLedgerApi.V2 (Credential, POSIXTime)
 import PlutusTx qualified
 
 --------------------------------------------------------------------------------
+
+{- | The action that was performed on a particular proposal.
+
+     @since 1.0.0
+-}
+data ProposalAction
+  = -- | The stake was used to create a proposal.
+    --
+    --   This kind of lock is placed upon the creation of a proposal, in order
+    --    to limit creation of proposals per stake.
+    --
+    --   See also: https://github.com/Liqwid-Labs/agora/issues/68
+    Created
+  | -- | The stake was used to vote on a proposal.
+    --
+    --   This kind of lock is placed while voting on a proposal, in order to
+    --    prevent depositing and withdrawing when votes are in place.
+    Voted
+      ResultTag
+      -- ^ The option which was voted on. This allows votes to be retracted.
+      POSIXTime
+      -- ^ The upper bound of the transaction time range when the lock is created.
+  | -- | The stake was used to cosign a proposal.`
+    Cosigned
+  deriving stock
+    ( -- | @since 1.0.0
+      Show
+    , -- | @since 1.0.0
+      Generic
+    )
+
+PlutusTx.makeIsDataIndexed
+  ''ProposalAction
+  [ ('Created, 0)
+  , ('Voted, 1)
+  , ('Cosigned, 2)
+  ]
 
 {- | Locks that are stored in the stake datums for various purposes.
 
@@ -111,45 +150,31 @@ import PlutusTx qualified
      └──────────────┘      └─────────────────┘
      @
 
-     @since 0.1.0
+     @since 1.0.0
 -}
-data ProposalLock
-  = -- | The stake was used to create a proposal.
-    --
-    --   This kind of lock is placed upon the creation of a proposal, in order
-    --    to limit creation of proposals per stake.
-    --
-    --   See also: https://github.com/Liqwid-Labs/agora/issues/68
-    --
-    --   @since 0.2.0
-    Created
-      ProposalId
-      -- ^ The identifier of the proposal.
-  | -- | The stake was used to vote on a proposal.
-    --
-    --   This kind of lock is placed while voting on a proposal, in order to
-    --    prevent depositing and withdrawing when votes are in place.
-    --
-    --   @since 0.2.0
-    Voted
-      ProposalId
-      -- ^ The identifier of the proposal.
-      ResultTag
-      -- ^ The option which was voted on. This allows votes to be retracted.
-  | Cosigned ProposalId
+data ProposalLock = ProposalLock
+  { proposalId :: ProposalId
+  -- ^ The identifier of the proposal.
+  , action :: ProposalAction
+  -- ^ The action that has been performed.
+  }
   deriving stock
     ( -- | @since 0.1.0
       Show
     , -- | @since 0.1.0
       Generic
     )
-
-PlutusTx.makeIsDataIndexed
-  ''ProposalLock
-  [ ('Created, 0)
-  , ('Voted, 1)
-  , ('Cosigned, 2)
-  ]
+  deriving anyclass
+    ( -- | @since 0.1.0
+      SOP.Generic
+    )
+  deriving
+    ( -- | @since 0.1.0
+      PlutusTx.ToData
+    , -- | @since 0.1.0
+      PlutusTx.FromData
+    )
+    via (ProductIsData ProposalLock)
 
 {- | Haskell-level redeemer for Stake scripts.
 
@@ -267,6 +292,7 @@ newtype PStakeDatum (s :: S) = PStakeDatum
       PShow
     )
 
+-- | @since 1.0.0
 instance DerivePlutusType PStakeDatum where
   type DPTStrat _ = PlutusTypeNewtype
 
@@ -324,32 +350,65 @@ deriving via
   instance
     (PConstantDecl StakeRedeemer)
 
-{- | Plutarch-level version of 'ProposalLock'.
+{- | Plutarch-level version of 'ProposalAction'.
 
-     @since 0.2.0
+    @since 1.0.0
 -}
-data PProposalLock (s :: S)
-  = PCreated
-      ( Term
-          s
-          ( PDataRecord
-              '["created" ':= PProposalId]
-          )
-      )
+data PProposalAction (s :: S)
+  = PCreated (Term s (PDataRecord '[]))
   | PVoted
       ( Term
           s
           ( PDataRecord
-              '[ "votedOn" ':= PProposalId
-               , "votedFor" ':= PResultTag
+              '[ "votedFor" ':= PResultTag
+               , "createdAt" ':= PPOSIXTime
                ]
           )
       )
-  | PCosigned
+  | PCosigned (Term s (PDataRecord '[]))
+  deriving stock
+    ( -- | @since 1.0.0
+      Generic
+    )
+  deriving anyclass
+    ( -- | @since 1.0.0
+      PlutusType
+    , -- | @since 1.0.0
+      PIsData
+    , -- | @since 1.0.0
+      PEq
+    , -- | @since 1.0.0
+      PShow
+    )
+
+-- | @since 1.0.0
+instance DerivePlutusType PProposalAction where
+  type DPTStrat _ = PlutusTypeData
+
+-- | @since 1.0.0
+instance PUnsafeLiftDecl PProposalAction where
+  type PLifted _ = ProposalAction
+
+-- | @since 1.0.0
+deriving via
+  (DerivePConstantViaData ProposalAction PProposalAction)
+  instance
+    (PConstantDecl ProposalAction)
+
+-- | @since 1.0.0
+instance PTryFrom PData PProposalAction
+
+{- | Plutarch-level version of 'ProposalLock'.
+
+     @since 1.0.0
+-}
+newtype PProposalLock (s :: S)
+  = PProposalLock
       ( Term
           s
           ( PDataRecord
-              '[ "cosigned" ':= PProposalId
+              '[ "proposalId" ':= PProposalId
+               , "action" ':= PProposalAction
                ]
           )
       )
@@ -364,15 +423,15 @@ data PProposalLock (s :: S)
       PIsData
     , -- | @since 0.1.0
       PEq
+    , -- | @since 1.0.0
+      PDataFields
     , -- | @since 0.2.0
       PShow
     )
 
+-- | @since 0.2.0
 instance DerivePlutusType PProposalLock where
-  type DPTStrat _ = PlutusTypeData
-
--- | @since 0.1.0
-instance PTryFrom PData PProposalLock
+  type DPTStrat _ = PlutusTypeNewtype
 
 -- | @since 0.2.0
 instance PTryFrom PData (PAsData PProposalLock)
@@ -383,7 +442,7 @@ instance PUnsafeLiftDecl PProposalLock where
 
 -- | @since 0.1.0
 deriving via
-  (DerivePConstantViaData ProposalLock PProposalLock)
+  (DerivePConstantViaDataList ProposalLock PProposalLock)
   instance
     (PConstantDecl ProposalLock)
 
@@ -411,9 +470,11 @@ pnumCreatedProposals =
       pto $
         pfoldMap
           # plam
-            ( \(pfromData -> lock) -> pmatch lock $ \case
-                PCreated _ -> pcon $ PSum 1
-                _ -> mempty
+            ( \lock ->
+                let action = pfromData $ pfield @"action" # lock
+                 in pmatch action $ \case
+                      PCreated _ -> pcon $ PSum 1
+                      _ -> mempty
             )
           # l
 
@@ -524,9 +585,9 @@ instance DerivePlutusType PStakeRedeemerContext where
 data PProposalContext (s :: S)
   = -- | A proposal is spent.
     PSpendProposal
-      (Term s PProposalId)
-      (Term s PProposalStatus)
+      (Term s PProposalDatum)
       (Term s PProposalRedeemer)
+      (Term s PProposalTime)
   | -- | A new proposal is created.
     PNewProposal
       (Term s PProposalId)
@@ -664,26 +725,17 @@ pgetStakeRoles ::
     )
 pgetStakeRoles = phoistAcyclic $
   plam $ \pid ->
-    pmapMaybe
-      # plam
-        ( flip
-            pmatch
-            ( \case
-                PCreated ((pfield @"created" #) -> pid') ->
-                  ppureIf
-                    # (pid' #== pid)
-                    # pcon PCreator
-                PVoted r -> pletAll r $ \rF ->
-                  ppureIf
-                    # (rF.votedOn #== pid)
-                    # pcon (PVoter rF.votedFor)
-                PCosigned ((pfield @"cosigned" #) -> pid') ->
-                  ppureIf
-                    # (pid' #== pid)
-                    # pcon PCosigner
-            )
-            . pfromData
-        )
+    let getStakeRole = flip (pletFields @'["proposalId", "action"]) $
+          \lockF ->
+            ppureIf
+              # (pid #== lockF.proposalId)
+              #$ pmatch lockF.action
+              $ \case
+                PCreated _ -> pcon PCreator
+                PVoted ((pfield @"votedFor" #) -> tag) ->
+                  pcon $ PVoter tag
+                PCosigned _ -> pcon PCosigner
+     in pmapMaybe # plam (getStakeRole . pfromData)
 
 {- | Get the outcome that was voted for.
 

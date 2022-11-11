@@ -13,6 +13,7 @@ module Agora.Stake.Scripts (
 
 import Agora.Credential (authorizationContext, pauthorizedBy)
 import Agora.Proposal (PProposalDatum, PProposalRedeemer)
+import Agora.Proposal.Time (pcurrentProposalTime)
 import Agora.SafeMoney (GTTag, ProposalSTTag, StakeSTTag)
 import Agora.Stake (
   PProposalContext (
@@ -256,6 +257,7 @@ mkStakeValidator impl sstSymbol pstClass gtClass =
           , "signatories"
           , "redeemers"
           , "datums"
+          , "validRange"
           ]
         txInfo
 
@@ -482,10 +484,13 @@ mkStakeValidator impl sstSymbol pstClass gtClass =
                   pfmap
                     # plam
                       ( \proposalDatum ->
-                          let id = pfield @"proposalId" # proposalDatum
-                              status = pfield @"status" # proposalDatum
-                              redeemer = getProposalRedeemer # inInfoF.outRef
-                           in pcon $ PSpendProposal id status redeemer
+                          let redeemer = getProposalRedeemer # inInfoF.outRef
+                              currentTime =
+                                passertPJust
+                                  # "Should resolve proposal time"
+                                  #$ pcurrentProposalTime
+                                  # txInfoF.validRange
+                           in pcon $ PSpendProposal proposalDatum redeemer currentTime
                       )
                     #$ getProposalDatum
                     # pfromData inInfoF.resolved

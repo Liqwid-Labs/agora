@@ -22,15 +22,15 @@ module Agora.Proposal.Time (
   PPeriod (..),
 
   -- * Compute periods given config and starting time.
-  validateProposalStartingTime,
-  currentProposalTime,
+  pvalidateProposalStartingTime,
+  pcurrentProposalTime,
   pisProposalTimingConfigValid,
   pisMaxTimeRangeWidthValid,
   pgetRelation,
   pisWithin,
+  psatisfyMaximumWidth,
 ) where
 
-import Control.Composition ((.*))
 import Data.Functor ((<&>))
 import Plutarch.Api.V1 (
   PExtended (PFinite),
@@ -45,6 +45,7 @@ import Plutarch.DataRepr (
   PDataFields,
  )
 import Plutarch.Extra.Applicative (PApply (pliftA2))
+import Plutarch.Extra.Bool (passert)
 import Plutarch.Extra.Field (pletAll, pletAllC)
 import Plutarch.Extra.IsData (PlutusTypeEnumData)
 import Plutarch.Extra.Maybe (pjust, pmaybe, pnothing)
@@ -59,6 +60,7 @@ import Plutarch.Lift (
   PConstantDecl,
   PUnsafeLiftDecl (PLifted),
  )
+import Plutarch.Num (PNum)
 import PlutusLedgerApi.V1 (POSIXTime)
 import PlutusTx qualified
 
@@ -88,33 +90,6 @@ newtype ProposalStartingTime = ProposalStartingTime
       PlutusTx.UnsafeFromData
     )
 
-{- | Configuration of proposal timings.
-
-     See: https://liqwid.notion.site/Proposals-589853145a994057aa77f397079f75e4#d25ea378768d4c76b52dd4c1b6bc0fcd
-
-     @since 0.1.0
--}
-data ProposalTimingConfig = ProposalTimingConfig
-  { draftTime :: POSIXTime
-  -- ^ "D": the length of the draft period.
-  , votingTime :: POSIXTime
-  -- ^ "V": the length of the voting period.
-  , lockingTime :: POSIXTime
-  -- ^ "L": the length of the locking period.
-  , executingTime :: POSIXTime
-  -- ^ "E": the length of the execution period.
-  }
-  deriving stock
-    ( -- | @since 0.1.0
-      Eq
-    , -- | @since 0.1.0
-      Show
-    , -- | @since 0.1.0
-      Generic
-    )
-
-PlutusTx.makeIsDataIndexed 'ProposalTimingConfig [('ProposalTimingConfig, 0)]
-
 -- | Represents the maximum width of a 'PlutusLedgerApi.V1.Time.POSIXTimeRange'.
 newtype MaxTimeRangeWidth = MaxTimeRangeWidth {getMaxWidth :: POSIXTime}
   deriving stock
@@ -134,7 +109,40 @@ newtype MaxTimeRangeWidth = MaxTimeRangeWidth {getMaxWidth :: POSIXTime}
       PlutusTx.FromData
     , -- | @since 0.1.0
       PlutusTx.UnsafeFromData
+    , -- | @since 1.0.0
+      Num
     )
+
+{- | Configuration of proposal timings.
+
+     See: https://liqwid.notion.site/Proposals-589853145a994057aa77f397079f75e4#d25ea378768d4c76b52dd4c1b6bc0fcd
+
+     @since 0.1.0
+-}
+data ProposalTimingConfig = ProposalTimingConfig
+  { draftTime :: POSIXTime
+  -- ^ "D": the length of the draft period.
+  , votingTime :: POSIXTime
+  -- ^ "V": the length of the voting period.
+  , lockingTime :: POSIXTime
+  -- ^ "L": the length of the locking period.
+  , executingTime :: POSIXTime
+  -- ^ "E": the length of the execution period.
+  , minStakeVotingTime :: POSIXTime
+  -- ^ Minimum time from creating a voting lock until it can be destroyed.
+  , votingTimeRangeMaxWidth :: MaxTimeRangeWidth
+  -- ^ The maximum width of transaction time range while voting.
+  }
+  deriving stock
+    ( -- | @since 0.1.0
+      Eq
+    , -- | @since 0.1.0
+      Show
+    , -- | @since 0.1.0
+      Generic
+    )
+
+PlutusTx.makeIsDataIndexed 'ProposalTimingConfig [('ProposalTimingConfig, 0)]
 
 --------------------------------------------------------------------------------
 
@@ -210,6 +218,8 @@ newtype PProposalTimingConfig (s :: S) = PProposalTimingConfig
              , "votingTime" ':= PPOSIXTime
              , "lockingTime" ':= PPOSIXTime
              , "executingTime" ':= PPOSIXTime
+             , "minStakeVotingTime" ':= PPOSIXTime
+             , "votingTimeRangeMaxWidth" ':= PMaxTimeRangeWidth
              ]
         )
   }
@@ -264,6 +274,8 @@ newtype PMaxTimeRangeWidth (s :: S)
       POrd
     , -- | @since 0.2.1
       PShow
+    , -- | @since 0.2.1
+      PNum
     )
 
 instance DerivePlutusType PMaxTimeRangeWidth where
@@ -307,6 +319,8 @@ pisProposalTimingConfigValid = phoistAcyclic $
           , confF.votingTime
           , confF.lockingTime
           , confF.executingTime
+          , confF.minStakeVotingTime
+          , pto confF.votingTimeRangeMaxWidth
           ]
 
 {- | Return true if the maximum time width is greater than 0.
@@ -326,7 +340,7 @@ pisMaxTimeRangeWidthValid =
 
      @since 1.0.0
 -}
-validateProposalStartingTime ::
+pvalidateProposalStartingTime ::
   forall (s :: S).
   Term
     s
@@ -335,24 +349,23 @@ validateProposalStartingTime ::
         :--> PProposalStartingTime
         :--> PBool
     )
-validateProposalStartingTime = phoistAcyclic $
-  plam $ \(pto -> maxDuration) iv (pto -> st) ->
+pvalidateProposalStartingTime = phoistAcyclic $
+  plam $ \maxWidth iv (pto -> st) ->
     pmaybe
       # pconstant False
       # plam
         ( \ct ->
-            let duration = pcurrentTimeDuration # ct
-                isTightEnough =
+            let isTightEnough =
                   ptraceIfFalse
                     "createProposalStartingTime: given time range should be tight enough"
-                    $ duration #<= maxDuration
+                    $ psatisfyMaximumWidth # maxWidth # ct
                 isInCurrentTimeRange =
                   ptraceIfFalse
                     "createProposalStartingTime: starting time should be in current time range"
                     $ pisWithinCurrentTime # st # ct
              in isTightEnough #&& isInCurrentTimeRange
         )
-      # (currentProposalTime # iv)
+      # (pcurrentProposalTime # iv)
 
 {- | Get the current proposal time, given the 'PlutusLedgerApi.V1.txInfoValidPeriod' field.
 
@@ -366,8 +379,8 @@ validateProposalStartingTime = phoistAcyclic $
 
      @since 0.1.0
 -}
-currentProposalTime :: forall (s :: S). Term s (PPOSIXTimeRange :--> PMaybe PProposalTime)
-currentProposalTime = phoistAcyclic $
+pcurrentProposalTime :: forall (s :: S). Term s (PPOSIXTimeRange :--> PMaybe PProposalTime)
+pcurrentProposalTime = phoistAcyclic $
   plam $ \iv -> unTermCont $ do
     PInterval iv' <- pmatchC iv
     ivf <- pletAllC iv'
@@ -388,7 +401,13 @@ currentProposalTime = phoistAcyclic $
             PFinite (pfromData . (pfield @"_0" #) -> d) -> pjust # d
             _ -> ptrace "currentProposalTime: time range should be bounded" pnothing
 
-        mkTime = phoistAcyclic $ plam $ pcon .* PCurrentTime
+        mkTime = phoistAcyclic $
+          plam $ \lb ub ->
+            passert
+              "Upper bound bigger than lower bound"
+              (lb #< ub)
+              (pcon $ PCurrentTime lb ub)
+
     pure $ pliftA2 # mkTime # lowerBound # upperBound
 
 {- | Represent relation between current time and a given period.
@@ -496,3 +515,22 @@ pgetRelation = phoistAcyclic $
       pif (plb #<= lb #&& ub #<= pub) (pcon PWithin) $
         pif (pub #< lb) (pcon PAfter) $
           ptraceError "pgetRelation: too early or invalid current time"
+
+{- | Return true if the width of given 'PProposalTime' is shorter than the
+     maximum.
+
+     @since 1.0.0
+-}
+psatisfyMaximumWidth ::
+  forall (s :: S).
+  Term
+    s
+    ( PMaxTimeRangeWidth
+        :--> PProposalTime
+        :--> PBool
+    )
+psatisfyMaximumWidth = phoistAcyclic $
+  plam $ \maxWidth time ->
+    let width = pcurrentTimeDuration # time
+        max = pto maxWidth
+     in width #<= max

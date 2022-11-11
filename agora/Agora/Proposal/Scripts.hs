@@ -23,9 +23,10 @@ import Agora.Proposal (
 import Agora.Proposal.Time (
   PPeriod (PDraftingPeriod, PExecutingPeriod, PLockingPeriod, PVotingPeriod),
   PTimingRelation (PAfter, PWithin),
-  currentProposalTime,
+  pcurrentProposalTime,
   pgetRelation,
   pisWithin,
+  psatisfyMaximumWidth,
  )
 import Agora.SafeMoney (GovernorSTTag, ProposalSTTag, StakeSTTag)
 import Agora.Stake (
@@ -82,6 +83,7 @@ import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (
   pmatchC,
   ptryFromC,
  )
+import Plutarch.Extra.Time (PCurrentTime)
 import Plutarch.Extra.Traversable (pfoldMap)
 import Plutarch.Extra.Value (psymbolValueOf')
 import Plutarch.Unsafe (punsafeCoerce)
@@ -306,17 +308,23 @@ proposalValidator =
 
     --------------------------------------------------------------------------
 
+    currentTime <- pletC $ pcurrentProposalTime # txInfoF.validRange
+
+    let withCurrentTime ::
+          forall (a :: PType).
+          Term _ (PCurrentTime :--> a) ->
+          Term _ a
+        withCurrentTime f =
+          pmatch currentTime $ \case
+            PJust currentTime -> f # currentTime
+            PNothing -> ptraceError "Unable to resolve current time"
+
     getTimingRelation' <-
       pletC $
-        let currentTime =
-              passertPJust
-                # "Current time should be resolved"
-                #$ currentProposalTime
-                # txInfoF.validRange
-         in pgetRelation
-              # proposalInputDatumF.timingConfig
-              # proposalInputDatumF.startingTime
-              # currentTime
+        withCurrentTime $
+          pgetRelation
+            # proposalInputDatumF.timingConfig
+            # proposalInputDatumF.startingTime
 
     let getTimingRelation = (getTimingRelation' #) . pcon
 
@@ -501,6 +509,12 @@ proposalValidator =
 
             pguardC "Proposal time should be wthin the voting period" $
               pisWithin # getTimingRelation PVotingPeriod
+
+            pguardC "Width of time should meet maximum requirement" $
+              withCurrentTime $
+                psatisfyMaximumWidth
+                  #$ pfield @"votingTimeRangeMaxWidth"
+                  # proposalInputDatumF.timingConfig
 
             -- Ensure the transaction is voting to a valid 'ResultTag'(outcome).
             PProposalVotes voteMap <- pmatchC proposalInputDatumF.votes
