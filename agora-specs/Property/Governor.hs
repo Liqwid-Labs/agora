@@ -84,8 +84,8 @@ import Test.QuickCheck (
   forAll,
   listOf1,
  )
-import Test.Tasty (TestTree, testGroup)
-import Test.Tasty.QuickCheck (testProperty)
+import Test.Tasty (TestTree, adjustOption, testGroup)
+import Test.Tasty.QuickCheck (QuickCheckTests, testProperty)
 
 data GovernorDatumCases
   = ExecuteLE0
@@ -205,8 +205,8 @@ governorMintingPolicyTests =
    and checking if it runs as expected by a test.
 -}
 governorPolicyValid :: ScriptContext -> Bool -> Property
-governorPolicyValid ctx shouldSuceed =
-  let mp = mkPolicyScript ctx in if shouldSuceed then shouldRun mp else shouldCrash mp
+governorPolicyValid ctx shouldSucceed =
+  let mp = mkPolicyScript ctx in if shouldSucceed then shouldRun mp else shouldCrash mp
 
 {-# INLINEABLE mkPolicyScript #-}
 mkPolicyScript :: ScriptContext -> Script
@@ -220,9 +220,7 @@ mkPolicyScript ctx = mustCompile (go # pconstant ctx)
           # pforgetData (pconstantData ())
           # sc
 
-{- | Prepares a minting policy test for given policy error case.
- NOTE
--}
+-- | Prepares a minting policy test for given policy error case.
 mkGovMintingCasePropertyTest ::
   String ->
   GovernorPolicyCases ->
@@ -288,9 +286,12 @@ mkGovMintingCasePropertyTest name case' positiveCaseName negativeCaseName =
 
 props :: [TestTree]
 props =
-  [ testProperty "governorDatumValid" governorDatumValidProperty
+  [ adjustOption go . testProperty "governorDatumValid" $ governorDatumValidProperty
   , testGroup "governorPolicy" governorMintingPolicyTests
   ]
+  where
+    go :: QuickCheckTests -> QuickCheckTests
+    go = min 2000
 
 loudEval ::
   forall (p :: S -> Type).
