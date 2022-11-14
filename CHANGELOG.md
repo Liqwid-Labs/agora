@@ -6,6 +6,15 @@ This format is based on [Keep A Changelog](https://keepachangelog.com/en/1.0.0).
 
 ### Modified
 
+- Mitigate potential DDoS attack(voting and unlocking repeatedly)
+
+  We fix this issue by posing cooldown time while retracting votes, encoded in  
+  `ProposalTimingConfig`'s `minStakeVotingTime` field. Also to make sure that
+  stake owners can unlock their stakes in s reasonable time, we pose a maximum
+  time range width requirement while voting, encoded in `ProposalTimingConfig`'s `votingTimeRangeMaxWidth` field.
+
+  Included by [#209](https://github.com/Liqwid-Labs/agora/pull/209)
+
 - Fix several vulnerabilities and bugs found by auditors.
 
   Including:
