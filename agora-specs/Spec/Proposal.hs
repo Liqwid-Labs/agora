@@ -437,6 +437,10 @@ specs =
                       "use fake stake"
                       (Unlock.mkUseFakeStakes nStakes)
                       (Unlock.Validity False False)
+                  , Unlock.mkTestTree
+                      "retract votes in cooldown"
+                      (Unlock.mkDisrespectCooldown nStakes)
+                      (Unlock.Validity True False)
                   ]
 
               legalGroup = group "legal" $ map mkLegalGroup stakeCountCases

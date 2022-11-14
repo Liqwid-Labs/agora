@@ -121,7 +121,7 @@ governorDatumValidProperty =
         genDatumForCase c = do
           thres <- genProposalThresholds c
 
-          let timing = ProposalTimingConfig 0 0 0 0
+          let timing = ProposalTimingConfig 0 0 0 0 0 0
           pure $
             GovernorDatum thres (ProposalId 0) timing (MaxTimeRangeWidth 1) 3
           where

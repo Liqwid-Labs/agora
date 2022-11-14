@@ -240,6 +240,8 @@ instance Default ProposalTimingConfig where
       , votingTime = 1000
       , lockingTime = 2000
       , executingTime = 3000
+      , minStakeVotingTime = 100
+      , votingTimeRangeMaxWidth = 1000000
       }
 
 {- | Default value of 'Agora.Governor.GovernorDatum.createProposalTimeRangeMaxWidth'.

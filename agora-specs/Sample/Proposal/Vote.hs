@@ -46,7 +46,8 @@ import Agora.Proposal.Time (
  )
 import Agora.SafeMoney (GTTag)
 import Agora.Stake (
-  ProposalLock (Voted),
+  ProposalAction (Voted),
+  ProposalLock (ProposalLock),
   StakeDatum (..),
   StakeRedeemer (Destroy, PermitVote),
  )
@@ -68,7 +69,7 @@ import Plutarch.Context (
   withValue,
  )
 import Plutarch.Extra.AssetClass (adaClass, assetClassValue)
-import PlutusLedgerApi.V2 (Credential (PubKeyCredential), PubKeyHash)
+import PlutusLedgerApi.V2 (Credential (PubKeyCredential), Interval, POSIXTime, PubKeyHash)
 import PlutusLedgerApi.V2.Contexts (TxOutRef (TxOutRef))
 import Sample.Proposal.Shared (proposalTxRef)
 import Sample.Shared (
@@ -145,6 +146,24 @@ delegatee = pubKeyHashes !! 1
 unknownSig :: PubKeyHash
 unknownSig = pubKeyHashes !! 2
 
+validTimeRangeLowerBound :: POSIXTime
+validTimeRangeLowerBound =
+  0
+    + (def :: ProposalTimingConfig).draftTime
+    + 1
+
+validTimeRangeUpperBound :: POSIXTime
+validTimeRangeUpperBound =
+  validTimeRangeLowerBound
+    + (def :: ProposalTimingConfig).votingTime
+    - 2
+
+validTimeRange :: Interval POSIXTime
+validTimeRange =
+  closedBoundedInterval
+    validTimeRangeLowerBound
+    validTimeRangeUpperBound
+
 --------------------------------------------------------------------------------
 
 initialVotes :: StrictMap.Map ResultTag Integer
@@ -197,8 +216,8 @@ mkStakeInputDatum params =
     , owner = PubKeyCredential stakeOwner
     , delegatedTo = Just (PubKeyCredential delegatee)
     , lockedBy =
-        [ Voted (ProposalId 0) (ResultTag 0)
-        , Voted (ProposalId 1) (ResultTag 2)
+        [ ProposalLock (ProposalId 0) $ Voted (ResultTag 0) 100
+        , ProposalLock (ProposalId 1) $ Voted (ResultTag 2) 200
         ]
     }
 
@@ -227,9 +246,11 @@ vote params =
             <> minAda
 
       newLock =
-        Voted
+        ProposalLock
           proposalInputDatum.proposalId
-          params.voteParameters.voteFor
+          $ Voted
+            params.voteParameters.voteFor
+            validTimeRangeUpperBound
 
       updatedLocks =
         if params.stakeParameters.stakeOutputParameters.dontAddNewLock
@@ -354,13 +375,6 @@ vote params =
         Owner -> stakeOwner
         Delegatee -> delegatee
         Unknown -> unknownSig
-
-      --------------------------------------------------------------------------
-
-      validTimeRange =
-        closedBoundedInterval
-          ((def :: ProposalTimingConfig).draftTime + 1)
-          ((def :: ProposalTimingConfig).votingTime - 1)
 
       --------------------------------------------------------------------------
 

@@ -40,7 +40,8 @@ import Agora.Proposal.Time (
  )
 import Agora.SafeMoney (GTTag)
 import Agora.Stake (
-  ProposalLock (Cosigned, Created),
+  ProposalAction (Cosigned, Created),
+  ProposalLock (ProposalLock),
   StakeDatum (..),
   StakeRedeemer (PermitVote),
  )
@@ -196,7 +197,7 @@ mkStakeInputDatum ps =
       amount = mkStakeAmount sps.gtAmount
       owner = mkStakeOwner sps.stakeOwner
       locks = case sps.stakeOwner of
-        Creator -> [Created defProposalId]
+        Creator -> [ProposalLock defProposalId Created]
         _ -> []
    in StakeDatum
         { stakedAmount = amount
@@ -212,7 +213,7 @@ mkStakeOuputDatum ps =
       locks =
         if sps.dontUpdateLocks
           then inpDatum.lockedBy
-          else Cosigned defProposalId : inpDatum.lockedBy
+          else ProposalLock defProposalId Cosigned : inpDatum.lockedBy
    in inpDatum {lockedBy = locks}
 
 stakeRedeemer :: StakeRedeemer
