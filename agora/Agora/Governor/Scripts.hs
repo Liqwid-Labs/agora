@@ -42,11 +42,11 @@ import Agora.Stake (
   presolveStakeInputDatum,
  )
 import Agora.Utils (psymbolValueOfT, ptoScottEncodingT, puntag)
-import Plutarch.Api.V1 (PCurrencySymbol)
+import Data.Function (on)
+import Plutarch.Api.V1 (PCurrencySymbol, PValidatorHash)
 import Plutarch.Api.V1.AssocMap (plookup)
 import Plutarch.Api.V1.AssocMap qualified as AssocMap
 import Plutarch.Api.V2 (
-  PAddress,
   PMintingPolicy,
   PScriptPurpose (PMinting, PSpending),
   PTxOut,
@@ -57,7 +57,7 @@ import Plutarch.Extra.AssetClass (PAssetClassData, passetClass)
 import Plutarch.Extra.Field (pletAll, pletAllC)
 import "liqwid-plutarch-extra" Plutarch.Extra.List (pfindJust, plistEqualsBy, pmapMaybe)
 import "liqwid-plutarch-extra" Plutarch.Extra.Map (pkeys, ptryLookup)
-import Plutarch.Extra.Maybe (passertPJust, pjust, pmaybeData, pnothing)
+import Plutarch.Extra.Maybe (passertPJust, pfromJust, pjust, pmaybeData, pnothing)
 import Plutarch.Extra.Ord (POrdering (..), pcompareBy, pfromOrd, psort)
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
 import Plutarch.Extra.ScriptContext (
@@ -67,6 +67,7 @@ import Plutarch.Extra.ScriptContext (
   pscriptHashToTokenName,
   ptryFromDatumHash,
   ptryFromOutputDatum,
+  pvalidatorHashFromAddress,
   pvalueSpent,
  )
 import Plutarch.Extra.Tagged (PTagged)
@@ -263,7 +264,7 @@ governorPolicy =
 governorValidator ::
   -- | Lazy precompiled scripts.
   ClosedTerm
-    ( PAddress
+    ( PValidatorHash
         :--> PTagged StakeSTTag PAssetClassData
         :--> PTagged GovernorSTTag PCurrencySymbol
         :--> PTagged ProposalSTTag PCurrencySymbol
@@ -271,7 +272,7 @@ governorValidator ::
         :--> PValidator
     )
 governorValidator =
-  plam $ \proposalValidatorAddress sstClass gstSymbol pstSymbol atSymbol datum redeemer ctx -> unTermCont $ do
+  plam $ \proposalValidatorHash sstClass gstSymbol pstSymbol atSymbol datum redeemer ctx -> unTermCont $ do
     ctxF <- pletAllC ctx
     txInfo <- pletC $ pfromData ctxF.txInfo
     txInfoF <-
@@ -316,7 +317,9 @@ governorValidator =
                       foldl1
                         (#&&)
                         [ ptraceIfFalse "Own by governor validator" $
-                            outputF.address #== governorInputF.address
+                            ((#==) `on` (pvalidatorHashFromAddress #))
+                              outputF.address
+                              governorInputF.address
                         , ptraceIfFalse "Has governor ST" $
                             psymbolValueOfT # gstSymbol # outputF.value #== 1
                         ]
@@ -342,8 +345,8 @@ governorValidator =
         plam $
           flip (pletFields @'["value", "datum", "address"]) $ \txOutF ->
             let isProposalUTxO =
-                  txOutF.address
-                    #== pdata proposalValidatorAddress
+                  (pfromJust #$ pvalidatorHashFromAddress # pfromData txOutF.address)
+                    #== proposalValidatorHash
                     #&& passetClassValueOf
                     # pstClass
                     # txOutF.value

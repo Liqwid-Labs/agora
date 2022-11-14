@@ -40,13 +40,13 @@ import Plutarch.DataRepr (
  )
 import Plutarch.Extra.Field (pletAll, pletAllC)
 import "liqwid-plutarch-extra" Plutarch.Extra.List (ptryFromSingleton)
-import Plutarch.Extra.Maybe (passertPJust, pdnothing)
+import Plutarch.Extra.Maybe (passertPJust, pfromJust)
 import Plutarch.Extra.Record (mkRecordConstr, (.=))
 import Plutarch.Extra.ScriptContext (
-  paddressFromValidatorHash,
   pisScriptAddress,
   ptryFromOutputDatum,
   ptryFromRedeemer,
+  pvalidatorHashFromAddress,
  )
 import Plutarch.Extra.Tagged (PTagged)
 import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC)
@@ -184,12 +184,7 @@ mutateGovernorValidator =
         pany
           # plam
             ( flip pletAll $ \inputF ->
-                let governorAddress =
-                      paddressFromValidatorHash
-                        # govValidatorHash
-                        # pdnothing
-
-                    isGovernorInput =
+                let isGovernorInput =
                       foldl1
                         (#&&)
                         [ ptraceIfFalse "Governor UTxO should carry GST" $
@@ -200,9 +195,12 @@ mutateGovernorValidator =
                         , ptraceIfFalse "Can only modify the pinned governor" $
                             inputF.outRef #== effectDatumF.governorRef
                         , ptraceIfFalse "Governor validator run" $
-                            pfield @"address"
-                              # inputF.resolved
-                              #== governorAddress
+                            let inputValidatorHash =
+                                  pfromJust
+                                    #$ pvalidatorHashFromAddress
+                                    #$ pfield @"address"
+                                    # inputF.resolved
+                             in inputValidatorHash #== govValidatorHash
                         ]
                  in isGovernorInput
             )

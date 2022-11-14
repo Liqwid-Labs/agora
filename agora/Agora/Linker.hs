@@ -4,14 +4,13 @@ module Agora.Linker (linker, AgoraScriptInfo (..)) where
 
 import Agora.Governor (Governor (gstOutRef, gtClassRef, maximumCosigners))
 import Agora.SafeMoney (AuthorityTokenTag, GTTag, GovernorSTTag, ProposalSTTag, StakeSTTag)
-import Agora.Utils (validatorHashToAddress)
 import Data.Aeson qualified as Aeson
 import Data.Map (fromList)
 import Data.Tagged (Tagged (Tagged))
 import Plutarch.Api.V2 (mintingPolicySymbol, validatorHash)
 import Plutarch.Extra.AssetClass (AssetClass (AssetClass))
 import Plutarch.Extra.ScriptContext (validatorHashToTokenName)
-import PlutusLedgerApi.V1 (Address, CurrencySymbol, TxOutRef, ValidatorHash)
+import PlutusLedgerApi.V1 (CurrencySymbol, TxOutRef, ValidatorHash)
 import Ply (
   ScriptRole (MintingPolicyRole, ValidatorRole),
   toMintingPolicy,
@@ -55,7 +54,7 @@ linker = do
   govVal <-
     fetchTS
       @ValidatorRole
-      @'[ Address
+      @'[ ValidatorHash
         , Tagged StakeSTTag AssetClass
         , Tagged GovernorSTTag CurrencySymbol
         , Tagged ProposalSTTag CurrencySymbol
@@ -111,7 +110,10 @@ linker = do
   mutateGovVal <-
     fetchTS
       @ValidatorRole
-      @'[ValidatorHash, Tagged GovernorSTTag CurrencySymbol, Tagged AuthorityTokenTag CurrencySymbol]
+      @'[ ValidatorHash
+        , Tagged GovernorSTTag CurrencySymbol
+        , Tagged AuthorityTokenTag CurrencySymbol
+        ]
       "agora:mutateGovernorValidator"
 
   governor <- getParam
@@ -119,7 +121,7 @@ linker = do
   let govPol' = govPol # governor.gstOutRef
       govVal' =
         govVal
-          # propValAddress
+          # propValHash
           # Tagged sstAssetClass
           # Tagged gstSymbol
           # Tagged pstSymbol
@@ -142,8 +144,7 @@ linker = do
           # Tagged gstSymbol
           # Tagged pstSymbol
           # governor.maximumCosigners
-      propValAddress =
-        validatorHashToAddress $ validatorHash $ toValidator propVal'
+      propValHash = validatorHash $ toValidator propVal'
       pstSymbol = mintingPolicySymbol $ toMintingPolicy propPol'
       pstAssetClass = AssetClass pstSymbol ""
 

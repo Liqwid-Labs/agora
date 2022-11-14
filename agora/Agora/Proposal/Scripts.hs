@@ -37,6 +37,7 @@ import Agora.Stake (
   presolveStakeInputDatum,
  )
 import Agora.Utils (psymbolValueOfT, ptoScottEncodingT)
+import Data.Function (on)
 import Plutarch.Api.V1 (PCredential, PCurrencySymbol)
 import Plutarch.Api.V1.AssocMap (plookup)
 import Plutarch.Api.V2 (
@@ -70,6 +71,7 @@ import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
 import Plutarch.Extra.ScriptContext (
   pfindTxInByTxOutRef,
   ptryFromOutputDatum,
+  pvalidatorHashFromAddress,
  )
 import Plutarch.Extra.Sum (PSum (PSum))
 import Plutarch.Extra.Tagged (PTagged)
@@ -281,7 +283,9 @@ proposalValidator =
                       foldl1
                         (#&&)
                         [ ptraceIfFalse "Own by proposal validator" $
-                            outputF.address #== proposalInputF.address
+                            ((#==) `on` (pvalidatorHashFromAddress #))
+                              outputF.address
+                              proposalInputF.address
                         , ptraceIfFalse "Has proposal ST" $
                             psymbolValueOfT # pstSymbol # outputF.value #== 1
                         ]

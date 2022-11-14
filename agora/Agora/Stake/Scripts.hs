@@ -90,6 +90,7 @@ import Plutarch.Extra.Ord (POrdering (PEQ, PGT, PLT), pcompareBy, pfromOrd)
 import Plutarch.Extra.ScriptContext (
   pfindTxInByTxOutRef,
   ptryFromOutputDatum,
+  pvalidatorHashFromAddress,
   pvalidatorHashToTokenName,
   pvalueSpent,
  )
@@ -270,17 +271,14 @@ mkStakeValidator impl sstSymbol pstClass gtClass =
             # (pfield @"_0" # stakeInputRef)
             # txInfoF.inputs
 
-    stakeValidatorCredential <-
+    stakeValidatorHash <-
       pletC $
-        pfield @"credential"
+        pfromJust
+          #$ pvalidatorHashFromAddress
           #$ pfield @"address"
           # validatedInput
 
-    let sstName = pvalidatorHashToTokenName $
-          pmatch stakeValidatorCredential $
-            \case
-              PScriptCredential r -> pfield @"_0" # r
-              _ -> perror
+    let sstName = pvalidatorHashToTokenName stakeValidatorHash
 
     sstClass <- pletC $ passetClass # puntag sstSymbol # sstName
 
@@ -302,10 +300,13 @@ mkStakeValidator impl sstSymbol pstClass gtClass =
                 PGT -> ptraceError "More than one SST in one UTxO"
                 -- 1
                 PEQ ->
-                  let ownerCredential = pfield @"credential" # txOutF.address
+                  let ownerValidatoHash =
+                        pfromJust
+                          #$ pvalidatorHashFromAddress
+                          # txOutF.address
 
                       isOwnedByStakeValidator =
-                        ownerCredential #== stakeValidatorCredential
+                        ownerValidatoHash #== stakeValidatorHash
 
                       datum =
                         ptrace "Resolve stake datum" $
