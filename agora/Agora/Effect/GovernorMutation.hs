@@ -26,7 +26,6 @@ import Agora.Governor (
   PGovernorRedeemer,
  )
 import Agora.Plutarch.Orphans ()
-import Agora.Utils (pfromSingleton, ptryFromRedeemer)
 import Plutarch.Api.V1 (PCurrencySymbol, PValidatorHash)
 import Plutarch.Api.V2 (
   PScriptPurpose (PSpending),
@@ -38,9 +37,15 @@ import Plutarch.DataRepr (
   PDataFields,
  )
 import Plutarch.Extra.Field (pletAll, pletAllC)
+import "liqwid-plutarch-extra" Plutarch.Extra.List (ptryFromSingleton)
 import Plutarch.Extra.Maybe (passertPJust, pdnothing)
 import Plutarch.Extra.Record (mkRecordConstr, (.=))
-import Plutarch.Extra.ScriptContext (paddressFromValidatorHash, pfromOutputDatum, pisScriptAddress)
+import Plutarch.Extra.ScriptContext (
+  paddressFromValidatorHash,
+  pisScriptAddress,
+  ptryFromOutputDatum,
+  ptryFromRedeemer,
+ )
 import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC)
 import Plutarch.Extra.Value (psymbolValueOf)
 import Plutarch.Lift (PConstantDecl, PLifted, PUnsafeLiftDecl)
@@ -216,11 +221,11 @@ mutateGovernorValidator =
 
       let governorOutput =
             ptrace "Only governor output is allowed" $
-              pfromSingleton # pfromData txInfoF.outputs
+              ptryFromSingleton # pfromData txInfoF.outputs
 
           governorOutputDatum =
             ptrace "Resolve governor outoput datum" $
-              pfromOutputDatum @PGovernorDatum
+              ptryFromOutputDatum @PGovernorDatum
                 # (pfield @"datum" # governorOutput)
                 # txInfoF.datums
 

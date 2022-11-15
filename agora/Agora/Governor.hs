@@ -42,6 +42,7 @@ import Agora.Proposal.Time (
 import Agora.SafeMoney (GTTag)
 import Data.Aeson qualified as Aeson
 import Data.Tagged (Tagged)
+import Optics.TH (makeFieldLabelsNoPrefix)
 import Plutarch.DataRepr (
   DerivePConstantViaData (DerivePConstantViaData),
   PDataFields,
@@ -83,6 +84,9 @@ data GovernorDatum = GovernorDatum
     , -- | @since 0.1.0
       Generic
     )
+
+-- | @since 0.2.1
+makeFieldLabelsNoPrefix ''GovernorDatum
 
 -- | @since 0.1.0
 PlutusTx.makeIsDataIndexed ''GovernorDatum [('GovernorDatum, 0)]
@@ -149,6 +153,8 @@ data Governor = Governor
       Aeson.FromJSON
     )
 
+makeFieldLabelsNoPrefix ''Governor
+
 --------------------------------------------------------------------------------
 
 {- | Plutarch-level datum for the Governor script.
@@ -181,6 +187,8 @@ newtype PGovernorDatum (s :: S) = PGovernorDatum
       PDataFields
     , -- | @since 0.1.0
       PEq
+    , -- | @since 0.2.1
+      PShow
     )
 
 -- | @since 0.2.0

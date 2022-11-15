@@ -48,10 +48,10 @@ import Agora.Stake (
   ),
   pstakeLocked,
  )
-import Agora.Utils (pfromSingleton, pisSingleton, pmustDeleteBy)
 import Plutarch.Api.V1.Address (PCredential)
 import Plutarch.Api.V2 (PMaybeData)
 import Plutarch.Extra.Field (pletAll, pletAllC)
+import "liqwid-plutarch-extra" Plutarch.Extra.List (pisSingleton, ptryDeleteFirstBy, ptryFromSingleton)
 import Plutarch.Extra.Maybe (pdjust, pdnothing, pmaybeData)
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
 import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletC, pmatchC)
@@ -87,7 +87,7 @@ pbatchUpdateInputs = phoistAcyclic $
   plam $ \f -> flip pmatch $ \ctxF ->
     pnull
       #$ pfoldr
-      # (pmustDeleteBy # f)
+      # plam (\x -> ptryDeleteFirstBy # (f # x))
       # ctxF.stakeOutputDatums
       # ctxF.stakeInputDatums
 
@@ -387,12 +387,12 @@ pdepositWithdraw = phoistAcyclic $
     stakeInputDatum <-
       pletC $
         ptrace "Single stake input" $
-          pfromSingleton # ctxF.stakeInputDatums
+          ptryFromSingleton # ctxF.stakeInputDatums
     stakeInputDatumF <- pletAllC stakeInputDatum
 
     let stakeOutputDatum =
           ptrace "Single stake output" $
-            pfromSingleton # ctxF.stakeOutputDatums
+            ptryFromSingleton # ctxF.stakeOutputDatums
 
     ----------------------------------------------------------------------------
 

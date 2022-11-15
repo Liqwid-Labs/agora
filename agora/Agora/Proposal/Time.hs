@@ -30,7 +30,6 @@ module Agora.Proposal.Time (
   pisWithin,
 ) where
 
-import Agora.Utils (pcurrentTimeDuration)
 import Control.Composition ((.*))
 import Data.Functor ((<&>))
 import Plutarch.Api.V1 (
@@ -52,6 +51,7 @@ import Plutarch.Extra.Maybe (pjust, pmaybe, pnothing)
 import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pletC, pmatchC)
 import Plutarch.Extra.Time (
   PCurrentTime (PCurrentTime),
+  pcurrentTimeDuration,
   pisWithinCurrentTime,
  )
 import Plutarch.Lift (
@@ -224,6 +224,8 @@ newtype PProposalTimingConfig (s :: S) = PProposalTimingConfig
       PIsData
     , -- | @since 0.1.0
       PDataFields
+    , -- | @since 0.2.1
+      PShow
     )
 
 instance DerivePlutusType PProposalTimingConfig where
@@ -260,6 +262,8 @@ newtype PMaxTimeRangeWidth (s :: S)
       PPartialOrd
     , -- | @since 0.1.0
       POrd
+    , -- | @since 0.2.1
+      PShow
     )
 
 instance DerivePlutusType PMaxTimeRangeWidth where

@@ -579,6 +579,8 @@ newtype PProposalThresholds (s :: S) = PProposalThresholds
       PIsData
     , -- | @since 0.1.0
       PDataFields
+    , -- | @since 0.2.1
+      PShow
     )
 
 -- | @since 0.2.0

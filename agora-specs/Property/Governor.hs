@@ -1,3 +1,7 @@
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+
+{-# HLINT ignore "Redundant bracket" #-}
+
 {- |
 Module     : Property.Governor
 Maintainer : seungheon.ooh@gmail.com
@@ -7,19 +11,35 @@ Property model and tests for 'Governor' related functions
 -}
 module Property.Governor (props) where
 
-import Agora.Governor (Governor (gstOutRef), GovernorDatum (..), pisGovernorDatumValid)
+import Agora.Governor (
+  GovernorDatum (
+    GovernorDatum,
+    createProposalTimeRangeMaxWidth,
+    maximumProposalsPerStake,
+    nextProposalId,
+    proposalThresholds,
+    proposalTimings
+  ),
+  PGovernorDatum,
+  pisGovernorDatumValid,
+ )
 import Agora.Governor.Scripts (governorPolicy)
 import Agora.Proposal (
   ProposalId (ProposalId),
-  ProposalThresholds (ProposalThresholds),
+  ProposalThresholds (
+    ProposalThresholds
+  ),
  )
 import Agora.Proposal.Time (
   MaxTimeRangeWidth (MaxTimeRangeWidth),
   ProposalTimingConfig (ProposalTimingConfig),
  )
-import Data.Default.Class (Default (def))
+import Data.Default (def)
 import Data.Tagged (Tagged (Tagged))
-import Data.Universe (Finite (..), Universe (..))
+import Data.Universe (Universe)
+import Data.Universe.Class (Finite)
+import Generics.SOP.NP (NP (Nil, (:*)))
+import Optics (view)
 import Plutarch.Api.V2 (PScriptContext)
 import Plutarch.Builtin (pforgetData)
 import Plutarch.Context (
@@ -34,31 +54,42 @@ import Plutarch.Context (
   withRef,
   withValue,
  )
+import Plutarch.Evaluate (evalTerm)
 import Plutarch.Extra.AssetClass (assetClassValue)
-import PlutusLedgerApi.V2 (
-  ScriptContext (scriptContextTxInfo),
-  TxInInfo (txInInfoOutRef),
-  TxInfo (txInfoInputs, txInfoMint, txInfoOutputs),
-  TxOut (txOutValue),
+import Plutarch.Extra.Compile (mustCompile)
+import Plutarch.Test.QuickCheck (
+  Equality (OnPEq),
+  Partiality (ByComplete),
+  TestableTerm (TestableTerm),
+  haskEquiv,
+  pconstantT,
+  shouldCrash,
+  shouldRun,
  )
+import PlutusLedgerApi.V2 (Script, ScriptContext)
 import Property.Generator (genInput, genOutput)
 import Sample.Shared (
+  deterministicTracingConfig,
   governor,
   governorAssetClass,
   governorSymbol,
   governorValidatorHash,
   gstUTXORef,
  )
-import Test.Tasty (TestTree)
-import Test.Tasty.Plutarch.Property (classifiedPropertyNative)
-import Test.Tasty.QuickCheck (
+import Test.QuickCheck (
+  Arbitrary (arbitrary),
   Gen,
   Property,
+  arbitraryBoundedEnum,
+  checkCoverage,
   choose,
   chooseInteger,
+  cover,
+  forAll,
   listOf1,
-  testProperty,
  )
+import Test.Tasty (TestTree, adjustOption, testGroup)
+import Test.Tasty.QuickCheck (QuickCheckTests, testProperty)
 
 data GovernorDatumCases
   = ExecuteLE0
@@ -67,172 +98,211 @@ data GovernorDatumCases
   | VoteLE0
   | CosignLE0
   | Correct
-  deriving stock (Eq, Show)
+  deriving stock (Eq, Show, Enum, Bounded)
+  deriving anyclass (Universe, Finite)
 
-instance Universe GovernorDatumCases where
-  universe =
-    [ ExecuteLE0
-    , CreateLE0
-    , VoteLE0
-    , CosignLE0
-    , Correct
-    ]
+instance Arbitrary GovernorDatumCases where
+  arbitrary = arbitraryBoundedEnum
 
-instance Finite GovernorDatumCases where
-  universeF = universe
-  cardinality = Tagged 6
-
-{- | Property that checks `governorDatumValid`.
- `governorDatumValid` determines if given governor datum is valid or not. This property
- ensures `governorDatumValid` is checking the datum correctly and ruling out improper datum.
+{- | Property that checks `pisGovernorDatumValid` behaves as intended by
+     comparing it to a simple haskell implementation.
 -}
 governorDatumValidProperty :: Property
 governorDatumValidProperty =
-  classifiedPropertyNative gen (const []) expected classifier pisGovernorDatumValid
+  haskEquiv @( 'OnPEq) @( 'ByComplete)
+    isValidModelImpl
+    (TestableTerm pisGovernorDatumValid)
+    (genDatum :* Nil)
   where
-    classifier :: GovernorDatum -> GovernorDatumCases
-    classifier
-      ( (.proposalThresholds) ->
-          ProposalThresholds
-            execute
-            create
-            toVoting
-            vote
-            cosign
-        )
-        | execute < 0 = ExecuteLE0
-        | create < 0 = CreateLE0
-        | toVoting < 0 = ToVotingLE0
-        | vote < 0 = VoteLE0
-        | cosign < 0 = CosignLE0
-        | otherwise = Correct
-
-    expected :: GovernorDatum -> Maybe Bool
-    expected c = Just $ classifier c == Correct
-
-    gen :: GovernorDatumCases -> Gen GovernorDatum
-    gen c = do
-      thres <- genProposalThresholds c
-
-      let timing = ProposalTimingConfig 0 0 0 0
-      return $ GovernorDatum thres (ProposalId 0) timing (MaxTimeRangeWidth 1) 3
+    genDatum :: Gen (TestableTerm PGovernorDatum)
+    genDatum = pconstantT <$> (arbitrary >>= genDatumForCase)
       where
-        taggedInteger p = Tagged <$> chooseInteger p
-        genProposalThresholds :: GovernorDatumCases -> Gen ProposalThresholds
-        genProposalThresholds c = do
-          let validGT = taggedInteger (0, 1000000000)
-          execute <- validGT
-          create <- validGT
-          toVoting <- validGT
-          vote <- validGT
-          cosign <- validGT
-          le0 <- taggedInteger (-1000, -1)
+        genDatumForCase :: GovernorDatumCases -> Gen GovernorDatum
+        genDatumForCase c = do
+          thres <- genProposalThresholds c
 
-          case c of
-            ExecuteLE0 ->
-              -- execute < 0
-              return $ ProposalThresholds le0 create toVoting vote cosign
-            CreateLE0 ->
-              -- c < 0
-              return $ ProposalThresholds execute le0 toVoting vote cosign
-            ToVotingLE0 ->
-              return $ ProposalThresholds execute create le0 vote cosign
-            VoteLE0 ->
-              -- vote < 0
-              return $ ProposalThresholds execute create toVoting le0 cosign
-            CosignLE0 ->
-              return $ ProposalThresholds execute create toVoting vote le0
-            Correct ->
-              return $ ProposalThresholds execute create toVoting vote cosign
+          let timing = ProposalTimingConfig 0 0 0 0
+          pure $
+            GovernorDatum thres (ProposalId 0) timing (MaxTimeRangeWidth 1) 3
+          where
+            taggedInteger p = Tagged <$> chooseInteger p
+            genProposalThresholds :: GovernorDatumCases -> Gen ProposalThresholds
+            genProposalThresholds c = do
+              let validGT = taggedInteger (0, 1000000000)
+              execute <- validGT
+              create <- validGT
+              toVoting <- validGT
+              vote <- validGT
+              cosign <- validGT
+              le0 <- taggedInteger (-1000, -1)
+
+              case c of
+                ExecuteLE0 ->
+                  -- execute < 0
+                  return $ ProposalThresholds le0 create toVoting vote cosign
+                CreateLE0 ->
+                  -- c < 0
+                  return $ ProposalThresholds execute le0 toVoting vote cosign
+                ToVotingLE0 ->
+                  return $ ProposalThresholds execute create le0 vote cosign
+                VoteLE0 ->
+                  -- vote < 0
+                  return $ ProposalThresholds execute create toVoting le0 cosign
+                CosignLE0 ->
+                  return $ ProposalThresholds execute create toVoting vote le0
+                Correct ->
+                  return $ ProposalThresholds execute create toVoting vote cosign
+
+    -- \| This is a model Haskell implementation of `pisGovernorDatumValid`.
+    isValidModelImpl :: GovernorDatum -> Bool
+    isValidModelImpl = correctCase . classifier
+      where
+        correctCase = \case
+          Correct -> True
+          _ -> False
+
+        classifier :: GovernorDatum -> GovernorDatumCases
+        classifier
+          ( view #proposalThresholds ->
+              ProposalThresholds
+                execute
+                create
+                toVoting
+                vote
+                cosign
+            )
+            | execute < 0 = ExecuteLE0
+            | create < 0 = CreateLE0
+            | toVoting < 0 = ToVotingLE0
+            | vote < 0 = VoteLE0
+            | cosign < 0 = CosignLE0
+            | otherwise = Correct
+
+--------------------------------------------------------------------------------
 
 data GovernorPolicyCases
   = ReferenceUTXONotSpent
   | IncorrectAmountOfTokenMinted
   | GovernorOutputNotFound
-  | GovernorPolicyCorrect
   deriving stock (Eq, Show)
 
-instance Universe GovernorPolicyCases where
-  universe =
-    [ ReferenceUTXONotSpent
-    , IncorrectAmountOfTokenMinted
-    , GovernorOutputNotFound
-    , GovernorPolicyCorrect
-    ]
+governorMintingPolicyTests :: [TestTree]
+governorMintingPolicyTests =
+  [ mkGovMintingCasePropertyTest
+      "Reference input spend test"
+      ReferenceUTXONotSpent
+      "Spent"
+      "Not spent"
+  , mkGovMintingCasePropertyTest
+      "Amount of token minted test"
+      IncorrectAmountOfTokenMinted
+      "Correct"
+      "Incorrect"
+  , mkGovMintingCasePropertyTest
+      "Governor output presense"
+      GovernorOutputNotFound
+      "Present"
+      "Absent"
+  ]
 
-instance Finite GovernorPolicyCases where
-  universeF = universe
-  cardinality = Tagged 4
+{- | Creates a property by compiling governorPolicy script with given arguments
+   and checking if it runs as expected by a test.
+-}
+governorPolicyValid :: ScriptContext -> Bool -> Property
+governorPolicyValid ctx shouldSucceed =
+  let mp = mkPolicyScript ctx in if shouldSucceed then shouldRun mp else shouldCrash mp
 
-governorMintingProperty :: Property
-governorMintingProperty =
-  classifiedPropertyNative gen (const []) expected classifier actual
+{-# INLINEABLE mkPolicyScript #-}
+mkPolicyScript :: ScriptContext -> Script
+mkPolicyScript ctx = mustCompile (go # pconstant ctx)
   where
-    {- Note:
-    I don't think it's easily possible to randomize orefs. We can't really pass pass `Governor` type to `actual` function.
-    -}
-    gst = assetClassValue governorAssetClass 1
-    mintAmount x = mint . mconcat $ replicate x gst
-    outputToGov =
-      output $
-        mconcat
-          [ script governorValidatorHash
-          , withValue gst
-          , withDatum govDatum
-          ]
-    referencedInput = input $ withRef gstUTXORef
+    go :: forall (s :: S). Term s (PScriptContext :--> POpaque)
+    go = loudEval $
+      plam $ \sc ->
+        governorPolicy
+          # pconstant (view #gstOutRef governor)
+          # pforgetData (pconstantData ())
+          # sc
 
-    govDatum :: GovernorDatum
-    govDatum =
-      GovernorDatum
-        { proposalThresholds = def
-        , nextProposalId = ProposalId 0
-        , proposalTimings = def
-        , createProposalTimeRangeMaxWidth = def
-        , maximumProposalsPerStake = 3
-        }
-
-    gen :: GovernorPolicyCases -> Gen ScriptContext
+-- | Prepares a minting policy test for given policy error case.
+mkGovMintingCasePropertyTest ::
+  String ->
+  GovernorPolicyCases ->
+  String ->
+  String ->
+  TestTree
+mkGovMintingCasePropertyTest name case' positiveCaseName negativeCaseName =
+  testProperty name $
+    forAll (gen case') $
+      \(ctx, valid) ->
+        checkCoverage $
+          cover 48 valid positiveCaseName $
+            cover 48 (not valid) negativeCaseName $
+              governorPolicyValid ctx valid
+  where
+    gen :: GovernorPolicyCases -> Gen (ScriptContext, Bool)
     gen c = do
       inputs <- fmap mconcat . listOf1 $ genInput @MintingBuilder
       outputs <- fmap mconcat . listOf1 $ genOutput @MintingBuilder
       toks <- choose (2, 100)
 
+      valid <- arbitrary
       let comp =
-            case c of
-              ReferenceUTXONotSpent -> outputToGov <> mintAmount 1
-              IncorrectAmountOfTokenMinted -> referencedInput <> outputToGov <> mintAmount toks
-              GovernorOutputNotFound -> referencedInput <> mintAmount 1
-              GovernorPolicyCorrect -> referencedInput <> outputToGov <> mintAmount 1
+            if valid
+              then referencedInput <> outputToGov <> mintAmount 1
+              else case c of
+                ReferenceUTXONotSpent -> outputToGov <> mintAmount 1
+                IncorrectAmountOfTokenMinted ->
+                  referencedInput
+                    <> outputToGov
+                    <> mintAmount toks
+                GovernorOutputNotFound -> referencedInput <> mintAmount 1
 
-      return . buildMinting' $ inputs <> outputs <> comp <> withMinting governorSymbol
-
-    expected :: ScriptContext -> Maybe ()
-    expected sc =
-      case classifier sc of
-        GovernorPolicyCorrect -> Just ()
-        _ -> Nothing
-
-    opaqueToUnit :: Term s (POpaque :--> PUnit)
-    opaqueToUnit = plam $ \_ -> pconstant ()
-
-    actual :: Term s (PScriptContext :--> PUnit)
-    actual = plam $ \sc -> opaqueToUnit #$ governorPolicy # pconstant governor.gstOutRef # pforgetData (pconstantData ()) # sc
-
-    classifier :: ScriptContext -> GovernorPolicyCases
-    classifier sc
-      | minted /= gst = IncorrectAmountOfTokenMinted
-      | refInputNotExists = ReferenceUTXONotSpent
-      | govOutputNotExists = GovernorOutputNotFound
-      | otherwise = GovernorPolicyCorrect
+      let ctx =
+            buildMinting' $
+              inputs
+                <> outputs
+                <> comp
+                <> withMinting
+                  governorSymbol
+      pure (ctx, valid)
       where
-        txinfo = scriptContextTxInfo sc
-        minted = txInfoMint txinfo
-        refInputNotExists = gstUTXORef `notElem` (txInInfoOutRef <$> txInfoInputs txinfo)
-        govOutputNotExists = gst `notElem` (txOutValue <$> txInfoOutputs txinfo)
+        govDatum :: GovernorDatum
+        govDatum =
+          GovernorDatum
+            { proposalThresholds = def
+            , nextProposalId = ProposalId 0
+            , proposalTimings = def
+            , createProposalTimeRangeMaxWidth = def
+            , maximumProposalsPerStake = 3
+            }
+
+        gst = assetClassValue governorAssetClass 1
+        mintAmount x = mint . mconcat $ replicate x gst
+        referencedInput = input $ withRef gstUTXORef
+        outputToGov =
+          output $
+            mconcat
+              [ script governorValidatorHash
+              , withValue gst
+              , withDatum govDatum
+              ]
 
 props :: [TestTree]
 props =
-  [ testProperty "governorDatumValid" governorDatumValidProperty
-  , testProperty "governorPolicy" governorMintingProperty
+  [ adjustOption go . testProperty "governorDatumValid" $ governorDatumValidProperty
+  , testGroup "governorPolicy" governorMintingPolicyTests
   ]
+  where
+    go :: QuickCheckTests -> QuickCheckTests
+    go = max 20_000
+
+loudEval ::
+  forall (p :: S -> Type).
+  ClosedTerm p ->
+  ClosedTerm p
+loudEval x =
+  case evalTerm deterministicTracingConfig x of
+    Right (Right t, _, _) -> t
+    Right (Left err, _, trace) -> error $ show err <> show trace
+    Left err -> error $ show err

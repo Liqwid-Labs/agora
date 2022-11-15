@@ -11,10 +11,6 @@ module Agora.AuthorityToken (
   singleAuthorityTokenBurned,
 ) where
 
-import Agora.Utils (
-  passert,
-  psymbolValueOf',
- )
 import Plutarch.Api.V1 (
   PCredential (..),
   PCurrencySymbol (..),
@@ -33,6 +29,7 @@ import Plutarch.Api.V2 (
   PTxOut (PTxOut),
  )
 import Plutarch.Extra.AssetClass (PAssetClassData, ptoScottEncoding)
+import Plutarch.Extra.Bool (passert)
 import "liqwid-plutarch-extra" Plutarch.Extra.List (plookupAssoc)
 import Plutarch.Extra.Maybe (pfromJust)
 import Plutarch.Extra.ScriptContext (pisTokenSpent)
@@ -44,7 +41,7 @@ import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (
   pmatchC,
  )
 import Plutarch.Extra.Traversable (pfoldMap)
-import Plutarch.Extra.Value (psymbolValueOf)
+import Plutarch.Extra.Value (psymbolValueOf, psymbolValueOf')
 
 --------------------------------------------------------------------------------
 

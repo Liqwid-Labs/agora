@@ -46,7 +46,6 @@ import Agora.Stake (
   StakeDatum (..),
   StakeRedeemer (PermitVote),
  )
-import Agora.Utils (validatorHashToTokenName)
 import Data.Coerce (coerce)
 import Data.Default (Default (def))
 import Data.Map.Strict qualified as StrictMap
@@ -66,6 +65,7 @@ import Plutarch.Context (
   withValue,
  )
 import Plutarch.Extra.AssetClass (assetClassValue)
+import Plutarch.Extra.ScriptContext (validatorHashToTokenName)
 import PlutusLedgerApi.V1.Value qualified as Value
 import PlutusLedgerApi.V2 (
   Credential (PubKeyCredential),
