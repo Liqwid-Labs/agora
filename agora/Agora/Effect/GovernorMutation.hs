@@ -26,7 +26,7 @@ import Agora.Governor (
   PGovernorRedeemer,
  )
 import Agora.SafeMoney (AuthorityTokenTag, GovernorSTTag)
-import Agora.Utils (psymbolValueOfT)
+import Agora.Utils (ptaggedSymbolValueOf)
 import Plutarch.Api.V1 (PCurrencySymbol, PValidatorHash)
 import Plutarch.Api.V2 (
   PScriptPurpose (PSpending),
@@ -187,7 +187,7 @@ mutateGovernorValidator =
                       foldl1
                         (#&&)
                         [ ptraceIfFalse "Governor UTxO should carry GST" $
-                            psymbolValueOfT
+                            ptaggedSymbolValueOf
                               # gstSymbol
                               # (pfield @"value" # inputF.resolved)
                               #== 1

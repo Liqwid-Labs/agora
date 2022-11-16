@@ -41,7 +41,7 @@ import Agora.Stake (
   pnumCreatedProposals,
   presolveStakeInputDatum,
  )
-import Agora.Utils (psymbolValueOfT, ptoScottEncodingT, puntag)
+import Agora.Utils (ptaggedSymbolValueOf, ptoScottEncodingT, puntag)
 import Data.Function (on)
 import Plutarch.Api.V1 (PCurrencySymbol, PValidatorHash)
 import Plutarch.Api.V1.AssocMap (plookup)
@@ -321,7 +321,7 @@ governorValidator =
                               outputF.address
                               governorInputF.address
                         , ptraceIfFalse "Has governor ST" $
-                            psymbolValueOfT # gstSymbol # outputF.value #== 1
+                            ptaggedSymbolValueOf # gstSymbol # outputF.value #== 1
                         ]
 
                     datum =
@@ -474,7 +474,7 @@ governorValidator =
           -- Filter out proposal inputs and ouputs using PST and the address of proposal validator.
 
           pguardC "The governor can only process one proposal at a time" $
-            (psymbolValueOfT # pstSymbol #$ pvalueSpent # txInfoF.inputs) #== 1
+            (ptaggedSymbolValueOf # pstSymbol #$ pvalueSpent # txInfoF.inputs) #== 1
 
           let proposalInputDatum =
                 passertPJust
@@ -507,7 +507,7 @@ governorValidator =
                       outputF <- pletFieldsC @'["address", "datum", "value"] output
 
                       let atAmount =
-                            psymbolValueOfT
+                            ptaggedSymbolValueOf
                               # atSymbol
                               # outputF.value
 

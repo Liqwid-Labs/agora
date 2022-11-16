@@ -298,7 +298,11 @@ pisGovernorDatumValid = phoistAcyclic $
             pisMaxTimeRangeWidthValid # datumF.createProposalTimeRangeMaxWidth
         ]
 
--- | @since 1.0.0
+{- | Find the governor input and resolve the corresponding governor redeemer,
+     given the assetclass of GST.
+
+     @since 1.0.0
+-}
 presolveGovernorRedeemer ::
   forall (s :: S).
   Term

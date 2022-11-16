@@ -36,7 +36,7 @@ import Agora.Stake (
   pisVoter,
   presolveStakeInputDatum,
  )
-import Agora.Utils (psymbolValueOfT, ptoScottEncodingT)
+import Agora.Utils (ptaggedSymbolValueOf, ptoScottEncodingT)
 import Data.Function (on)
 import Plutarch.Api.V1 (PCredential, PCurrencySymbol)
 import Plutarch.Api.V1.AssocMap (plookup)
@@ -287,7 +287,7 @@ proposalValidator =
                               outputF.address
                               proposalInputF.address
                         , ptraceIfFalse "Has proposal ST" $
-                            psymbolValueOfT # pstSymbol # outputF.value #== 1
+                            ptaggedSymbolValueOf # pstSymbol # outputF.value #== 1
                         ]
 
                     handleProposalUTxO =
@@ -724,7 +724,7 @@ proposalValidator =
                                   . (pfield @"resolved" #) ->
                                   value
                                 ) ->
-                                  psymbolValueOfT # gstSymbol # value #== 1
+                                  ptaggedSymbolValueOf # gstSymbol # value #== 1
                             )
                           # pfromData txInfoF.inputs
 

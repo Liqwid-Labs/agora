@@ -14,7 +14,7 @@ module Agora.Utils (
   pisNothing,
   pisDNothing,
   ptoScottEncodingT,
-  psymbolValueOfT,
+  ptaggedSymbolValueOf,
   ptag,
   puntag,
 ) where
@@ -88,8 +88,11 @@ ptoScottEncodingT = phoistAcyclic $
   plam $ \d ->
     punsafeDowncast $ ptoScottEncoding #$ pto d
 
--- | @since 1.0.0
-psymbolValueOfT ::
+{- | Get the sum of all values belonging to a particular tagged 'CurrencySymbol'.
+
+     @since 1.0.0
+-}
+ptaggedSymbolValueOf ::
   forall
     {k :: Type}
     (unit :: k)
@@ -97,7 +100,7 @@ psymbolValueOfT ::
     (amounts :: AmountGuarantees)
     (s :: S).
   Term s (PTagged unit PCurrencySymbol :--> (PValue keys amounts :--> PInteger))
-psymbolValueOfT = phoistAcyclic $ plam $ \tcs -> psymbolValueOf # pto tcs
+ptaggedSymbolValueOf = phoistAcyclic $ plam $ \tcs -> psymbolValueOf # pto tcs
 
 -- | @since 1.0.0
 ptag ::

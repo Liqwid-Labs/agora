@@ -13,7 +13,7 @@ module Agora.AuthorityToken (
 
 import Agora.Governor (PGovernorRedeemer (PMintGATs), presolveGovernorRedeemer)
 import Agora.SafeMoney (AuthorityTokenTag, GovernorSTTag)
-import Agora.Utils (psymbolValueOfT, ptag, ptoScottEncodingT, puntag)
+import Agora.Utils (ptag, ptaggedSymbolValueOf, ptoScottEncodingT, puntag)
 import Plutarch.Api.V1 (
   PCredential (..),
   PCurrencySymbol (..),
@@ -101,7 +101,7 @@ singleAuthorityTokenBurned ::
   Term s PBool
 singleAuthorityTokenBurned gatCs inputs mint = unTermCont $ do
   let gatAmountMinted :: Term _ PInteger
-      gatAmountMinted = psymbolValueOfT # gatCs # mint
+      gatAmountMinted = ptaggedSymbolValueOf # gatCs # mint
 
   let inputsWithGAT =
         pfoldMap
@@ -117,12 +117,13 @@ singleAuthorityTokenBurned gatCs inputs mint = unTermCont $ do
                     $ resolved
 
                   pure . pcon . PSum $
-                    psymbolValueOfT
+                    ptaggedSymbolValueOf
                       # gatCs
                       #$ pfield @"value"
                       #$ resolved
             )
           # inputs
+
   pure $
     foldr1
       (#&&)

@@ -27,7 +27,7 @@ import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletFieldsC, pm
      Following arguments should be provided(in this order):
      1. authority token symbol
 
-     @since 0.1.0
+     @since 1.0.0
 -}
 treasuryValidator ::
   ClosedTerm (PTagged AuthorityTokenTag PCurrencySymbol :--> PValidator)
