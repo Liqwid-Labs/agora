@@ -6,10 +6,14 @@ import Plutarch.Lift (PConstantDecl (..), PUnsafeLiftDecl (PLifted))
 
 import Data.Bifunctor (Bifunctor (bimap))
 import Data.Map.Strict qualified as StrictMap
+import Data.Tagged (Tagged (Tagged))
 import Data.Traversable (for)
 import Plutarch.Api.V1 (KeyGuarantees (Sorted), PMap)
+import Plutarch.Extra.Tagged (PTagged)
 import PlutusTx qualified
 import PlutusTx.AssocMap qualified as AssocMap
+import Ply (PlyArg)
+import Ply.Plutarch.Class (PlyArgOf)
 
 -- | @since 1.0.0
 instance
@@ -74,3 +78,9 @@ instance
       isSorted [] = True
       isSorted [_] = True
       isSorted (x : y : xs) = x < y && isSorted (y : xs)
+
+-- | @since 1.0.0
+type instance PlyArgOf (PTagged tag a) = Tagged tag (PlyArgOf a)
+
+-- | @since 1.0.0
+deriving newtype instance PlyArg a => PlyArg (Tagged tag a)

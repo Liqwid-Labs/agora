@@ -97,6 +97,12 @@ specs =
               False
               False
               True
+          , Create.mkTestTree
+              "wrong governor redeemer"
+              Create.wrongGovernorRedeemer1
+              False
+              False
+              True
           ]
       ]
   , group
@@ -159,6 +165,10 @@ specs =
               , Vote.mkTestTree
                   "transparent non-GT tokens"
                   Vote.transparentAssets
+                  (Vote.Validity True True)
+              , Vote.mkTestTree
+                  "Delegatee vote with own and delegated stakes in one tx"
+                  Vote.delegateeVoteWithOwnAndDelegatedStakeBundle
                   (Vote.Validity True True)
               ]
           , group
@@ -348,6 +358,15 @@ specs =
                                 , forStakeValidator = True
                                 , forGovernorValidator = Just False
                                 , forAuthorityTokenPolicy = Just True
+                                }
+                          , Advance.mkTestTree
+                              "wrong governor redeemer"
+                              (Advance.mkBadGovernorRedeemerBundle cs es)
+                              Advance.Validity
+                                { forProposalValidator = True
+                                , forStakeValidator = True
+                                , forGovernorValidator = Just False
+                                , forAuthorityTokenPolicy = Just False
                                 }
                           ]
                       ]

@@ -18,6 +18,7 @@ module Sample.Proposal.Vote (
   mkTestTree,
   mkValidOwnerVoteBundle,
   mkValidDelegateeVoteBundle,
+  delegateeVoteWithOwnAndDelegatedStakeBundle,
   transparentAssets,
   transactionNotAuthorized,
   voteForNonexistentOutcome,
@@ -99,6 +100,7 @@ newtype VoteParameters = VoteParameters {voteFor :: ResultTag}
 
 data StakeParameters = StakeParameters
   { numStakes :: Integer
+  , mixInDelegateeAsOwner :: Bool
   , stakeInputParameters :: StakeInputParameters
   , stakeOutputParameters :: StakeOutputParameters
   }
@@ -257,6 +259,16 @@ vote params =
       stakeRedeemer =
         mkStakeRedeemer params.stakeParameters.stakeOutputParameters
 
+      mixOwner i datum =
+        if params.stakeParameters.mixInDelegateeAsOwner
+          && i == 2
+          then
+            datum
+              { owner = PubKeyCredential delegatee
+              , delegatedTo = Nothing
+              }
+          else datum
+
       stakeBuilder :: b
       stakeBuilder =
         foldMap
@@ -266,7 +278,7 @@ vote params =
                     mconcat
                       [ script stakeValidatorHash
                       , withValue stakeInputValue
-                      , withInlineDatum stakeInputDatum
+                      , withInlineDatum $ mixOwner i stakeInputDatum
                       , withRedeemer stakeRedeemer
                       , withRef $ mkStakeRef numProposals' i
                       ]
@@ -277,7 +289,7 @@ vote params =
                         mconcat
                           [ script stakeValidatorHash
                           , withValue stakeOutputValue
-                          , withInlineDatum stakeOutputDatum
+                          , withInlineDatum $ mixOwner i stakeOutputDatum
                           ]
                 ]
           )
@@ -420,6 +432,7 @@ mkValidOwnerVoteBundle stakes =
     , stakeParameters =
         StakeParameters
           { numStakes = stakes
+          , mixInDelegateeAsOwner = False
           , stakeInputParameters =
               StakeInputParameters
                 { perStakeGTs = (def :: ProposalThresholds).vote
@@ -450,6 +463,16 @@ mkValidDelegateeVoteBundle stakes =
         { transactionParameters =
             template.transactionParameters
               { signedBy = Delegatee
+              }
+        }
+
+delegateeVoteWithOwnAndDelegatedStakeBundle :: ParameterBundle
+delegateeVoteWithOwnAndDelegatedStakeBundle =
+  let template = mkValidDelegateeVoteBundle 5
+   in template
+        { stakeParameters =
+            template.stakeParameters
+              { mixInDelegateeAsOwner = True
               }
         }
 

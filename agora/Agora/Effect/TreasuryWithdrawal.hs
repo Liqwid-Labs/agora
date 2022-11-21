@@ -14,7 +14,7 @@ module Agora.Effect.TreasuryWithdrawal (
 ) where
 
 import Agora.Effect (makeEffect)
-import Agora.Plutarch.Orphans ()
+import Agora.SafeMoney (AuthorityTokenTag)
 import Plutarch.Api.V1 (
   PCredential,
   PCurrencySymbol,
@@ -36,6 +36,7 @@ import Plutarch.DataRepr (
 import Plutarch.Extra.Field (pletAllC)
 import "liqwid-plutarch-extra" Plutarch.Extra.List (pdeleteFirst)
 import Plutarch.Extra.ScriptContext (pisPubKey)
+import Plutarch.Extra.Tagged (PTagged)
 import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC)
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (PLifted))
 import PlutusLedgerApi.V1.Credential (Credential)
@@ -133,7 +134,7 @@ instance PTryFrom PData PTreasuryWithdrawalDatum
 -}
 treasuryWithdrawalValidator ::
   forall (s :: S).
-  Term s (PCurrencySymbol :--> PValidator)
+  Term s (PTagged AuthorityTokenTag PCurrencySymbol :--> PValidator)
 treasuryWithdrawalValidator = plam $
   makeEffect $
     \_cs (datum :: Term _ PTreasuryWithdrawalDatum) effectInputRef txInfo -> unTermCont $ do

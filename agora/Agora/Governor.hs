@@ -21,6 +21,7 @@ module Agora.Governor (
   pgetNextProposalId,
   getNextProposalId,
   pisGovernorDatumValid,
+  presolveGovernorRedeemer,
 ) where
 
 import Agora.Aeson.Orphans ()
@@ -39,21 +40,33 @@ import Agora.Proposal.Time (
   pisMaxTimeRangeWidthValid,
   pisProposalTimingConfigValid,
  )
-import Agora.SafeMoney (GTTag)
+import Agora.SafeMoney (GTTag, GovernorSTTag)
 import Data.Aeson qualified as Aeson
 import Data.Tagged (Tagged)
 import Optics.TH (makeFieldLabelsNoPrefix)
+import Plutarch.Api.V1.Scripts (PRedeemer)
+import Plutarch.Api.V2 (KeyGuarantees (Unsorted), PMap, PScriptPurpose (PSpending), PTxInInfo)
 import Plutarch.DataRepr (
   DerivePConstantViaData (DerivePConstantViaData),
   PDataFields,
  )
-import Plutarch.Extra.AssetClass (AssetClass)
+import Plutarch.Extra.AssetClass (AssetClass, PAssetClass)
+import Plutarch.Extra.Bind (PBind ((#>>=)))
+import Plutarch.Extra.Field (pletAll)
+import Plutarch.Extra.Function (pflip)
+import Plutarch.Extra.Functor (PFunctor (pfmap))
 import Plutarch.Extra.IsData (
   DerivePConstantViaEnum (DerivePConstantEnum),
   EnumIsData (EnumIsData),
   PlutusTypeEnumData,
  )
+import "liqwid-plutarch-extra" Plutarch.Extra.List (pfindJust)
+import Plutarch.Extra.Maybe (pjust, pnothing)
+import Plutarch.Extra.Record (mkRecordConstr, (.=))
+import Plutarch.Extra.ScriptContext (ptryFromRedeemer)
+import Plutarch.Extra.Tagged (PTagged)
 import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pletFieldsC)
+import Plutarch.Extra.Value (passetClassValueOfT)
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (PLifted))
 import PlutusLedgerApi.V1 (TxOutRef)
 import PlutusTx qualified
@@ -74,9 +87,8 @@ data GovernorDatum = GovernorDatum
   --   Will get copied over upon the creation of proposals.
   , createProposalTimeRangeMaxWidth :: MaxTimeRangeWidth
   -- ^ The maximum valid duration of a transaction that creats a proposal.
-  , maximumProposalsPerStake :: Integer
-  -- ^ The maximum number of unfinished proposals that a stake is allowed to be
-  --   associated to.
+  , maximumCreatedProposalsPerStake :: Integer
+  -- ^ The maximum number of proposals created by any given stakes.
   }
   deriving stock
     ( -- | @since 0.1.0
@@ -170,7 +182,7 @@ newtype PGovernorDatum (s :: S) = PGovernorDatum
              , "nextProposalId" ':= PProposalId
              , "proposalTimings" ':= PProposalTimingConfig
              , "createProposalTimeRangeMaxWidth" ':= PMaxTimeRangeWidth
-             , "maximumProposalsPerStake" ':= PInteger
+             , "maximumCreatedProposalsPerStake" ':= PInteger
              ]
         )
   }
@@ -285,3 +297,53 @@ pisGovernorDatumValid = phoistAcyclic $
         , ptraceIfFalse "time range valid" $
             pisMaxTimeRangeWidthValid # datumF.createProposalTimeRangeMaxWidth
         ]
+
+{- | Find the governor input and resolve the corresponding governor redeemer,
+     given the assetclass of GST.
+
+     @since 1.0.0
+-}
+presolveGovernorRedeemer ::
+  forall (s :: S).
+  Term
+    s
+    ( PTagged GovernorSTTag PAssetClass
+        :--> PBuiltinList PTxInInfo
+        :--> PMap 'Unsorted PScriptPurpose PRedeemer
+        :--> PMaybe PGovernorRedeemer
+    )
+presolveGovernorRedeemer = phoistAcyclic $
+  plam $ \gstClass inputs redeemers ->
+    let governorInputRef =
+          pfindJust
+            # plam
+              ( flip pletAll $ \inputF ->
+                  let value = pfield @"value" # inputF.resolved
+                      isGovernorInput =
+                        passetClassValueOfT
+                          # gstClass
+                          # value
+                          #== 1
+                   in pif
+                        isGovernorInput
+                        (pjust # inputF.outRef)
+                        pnothing
+              )
+            # inputs
+
+        governorScriptPurpose =
+          pfmap
+            # plam
+              ( \ref ->
+                  mkRecordConstr
+                    PSpending
+                    (#_0 .= ref)
+              )
+            # governorInputRef
+
+        governorRedeemer =
+          governorScriptPurpose
+            #>>= pflip
+            # ptryFromRedeemer @(PAsData PGovernorRedeemer)
+            # redeemers
+     in pfmap # plam pfromData # governorRedeemer

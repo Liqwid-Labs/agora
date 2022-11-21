@@ -114,7 +114,7 @@ mkEffectTxInfo newGovDatum =
           , nextProposalId = ProposalId 0
           , proposalTimings = def
           , createProposalTimeRangeMaxWidth = def
-          , maximumProposalsPerStake = 3
+          , maximumCreatedProposalsPerStake = 3
           }
       governorInputDatum :: Datum
       governorInputDatum = Datum $ toBuiltinData governorInputDatum'
@@ -186,7 +186,7 @@ validNewGovernorDatum =
     , nextProposalId = ProposalId 42
     , proposalTimings = def
     , createProposalTimeRangeMaxWidth = def
-    , maximumProposalsPerStake = 3
+    , maximumCreatedProposalsPerStake = 3
     }
 
 invalidNewGovernorDatum :: GovernorDatum
@@ -199,5 +199,5 @@ invalidNewGovernorDatum =
     , nextProposalId = ProposalId 42
     , proposalTimings = def
     , createProposalTimeRangeMaxWidth = def
-    , maximumProposalsPerStake = 3
+    , maximumCreatedProposalsPerStake = 3
     }

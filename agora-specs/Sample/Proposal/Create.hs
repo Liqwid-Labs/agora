@@ -19,12 +19,17 @@ module Sample.Proposal.Create (
   invalidProposalStatusParameters,
   fakeSSTParameters,
   wrongGovernorRedeemer,
+  wrongGovernorRedeemer1,
 ) where
 
 import Agora.Governor (
   Governor (..),
   GovernorDatum (..),
-  GovernorRedeemer (CreateProposal, MutateGovernor),
+  GovernorRedeemer (
+    CreateProposal,
+    MintGATs,
+    MutateGovernor
+  ),
  )
 import Agora.Proposal (
   ProposalDatum (..),
@@ -71,6 +76,8 @@ import PlutusLedgerApi.V2 (
   Credential (PubKeyCredential),
   POSIXTime (POSIXTime),
   POSIXTimeRange,
+  Redeemer (Redeemer),
+  ToData (toBuiltinData),
   TxOutRef (TxOutRef),
   always,
  )
@@ -123,13 +130,13 @@ data Parameters = Parameters
   -- ^ The status of the newly created proposal.
   , fakeSST :: Bool
   -- ^ Whether to use SST that doesn't belong to the stake validator.
-  , wrongGovernorRedeemer :: Bool
-  -- ^ Use 'MutateGovernor' as the governor redeemer
+  , governorRedeemer :: Redeemer
+  -- ^ The redeemer used to spend the governor.
   }
 
 --------------------------------------------------------------------------------
 
--- | See 'GovernorDatum.maximumProposalsPerStake'.
+-- | See 'GovernorDatum.maximumCreatedProposalsPerStake'.
 maxProposalPerStake :: Integer
 maxProposalPerStake = 3
 
@@ -174,7 +181,7 @@ governorInputDatum =
     , nextProposalId = thisProposalId
     , proposalTimings = def
     , createProposalTimeRangeMaxWidth = def
-    , maximumProposalsPerStake = maxProposalPerStake
+    , maximumCreatedProposalsPerStake = maxProposalPerStake
     }
 
 -- | Create governor output datum given the parameters.
@@ -189,7 +196,7 @@ mkGovernorOutputDatum ps =
         , nextProposalId = nextPid
         , proposalTimings = def
         , createProposalTimeRangeMaxWidth = def
-        , maximumProposalsPerStake = maxProposalPerStake
+        , maximumCreatedProposalsPerStake = maxProposalPerStake
         }
 
 --------------------------------------------------------------------------------
@@ -358,7 +365,7 @@ createProposal ps = builder
               [ script governorValidatorHash
               , withValue governorValue
               , withDatum governorInputDatum
-              , withRedeemer $ mkGovernorRedeemer ps
+              , withRedeemer ps.governorRedeemer
               , withRef governorRef
               ]
         , output $
@@ -418,13 +425,6 @@ createProposal ps = builder
 stakeRedeemer :: StakeRedeemer
 stakeRedeemer = PermitVote
 
--- | Spend the governor with the 'CreateProposal' redeemer.
-mkGovernorRedeemer :: Parameters -> GovernorRedeemer
-mkGovernorRedeemer ps =
-  if ps.wrongGovernorRedeemer
-    then MutateGovernor
-    else CreateProposal
-
 -- | Mint the PST with an arbitrary redeemer. Doesn't really matter.
 proposalPolicyRedeemer :: ()
 proposalPolicyRedeemer = ()
@@ -443,7 +443,7 @@ totallyValidParameters =
     , timeRangeClosed = True
     , proposalStatus = Draft
     , fakeSST = False
-    , wrongGovernorRedeemer = False
+    , governorRedeemer = Redeemer $ toBuiltinData CreateProposal
     }
 
 invalidOutputGovernorDatumParameters :: Parameters
@@ -505,7 +505,13 @@ fakeSSTParameters =
 wrongGovernorRedeemer :: Parameters
 wrongGovernorRedeemer =
   totallyValidParameters
-    { wrongGovernorRedeemer = True
+    { governorRedeemer = Redeemer $ toBuiltinData MintGATs
+    }
+
+wrongGovernorRedeemer1 :: Parameters
+wrongGovernorRedeemer1 =
+  totallyValidParameters
+    { governorRedeemer = Redeemer $ toBuiltinData MutateGovernor
     }
 
 --------------------------------------------------------------------------------
@@ -540,7 +546,7 @@ mkTestTree
           "governor"
           governorValidator
           governorInputDatum
-          (mkGovernorRedeemer ps)
+          ps.governorRedeemer
           (spend governorRef)
 
       stakeTest =

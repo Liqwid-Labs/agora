@@ -50,6 +50,7 @@ import Agora.Stake (
  )
 import Plutarch.Api.V1.Address (PCredential)
 import Plutarch.Api.V2 (PMaybeData)
+import Plutarch.Extra.Bool (passert)
 import Plutarch.Extra.Field (pletAll, pletAllC)
 import "liqwid-plutarch-extra" Plutarch.Extra.List (pisSingleton, ptryDeleteFirstBy, ptryFromSingleton)
 import Plutarch.Extra.Maybe (pdjust, pdnothing, pmaybeData)
@@ -159,17 +160,13 @@ pvoteHelper ::
         :--> PStakeRedeemerHandler
     )
 pvoteHelper = phoistAcyclic $
-  plam $ \valProposalCtx ctx -> unTermCont $ do
-    pguardC "Owner or delegate signs this transaction" $
-      pisSignedBy # pconstant True # ctx
-
+  plam $ \valProposalCtx ctx ->
     -- This puts trust into the Proposal. The Proposal must necessarily check
     -- that this is not abused.
-
-    pguardC "Correct outputs" $
-      ponlyLocksUpdated # (valProposalCtx # ctx) # ctx
-
-    pure $ pconstant ()
+    passert
+      "Correct outputs"
+      (ponlyLocksUpdated # (valProposalCtx # ctx) # ctx)
+      (pconstant ())
 
 -- | Add new lock the the existing list of locked.
 paddNewLock ::
@@ -199,19 +196,25 @@ ppermitVote = pvoteHelper #$ phoistAcyclic $
         pguardC "Only one stake input allowed" $
           pisSingleton # ctxF.stakeInputDatums
 
+        pguardC "Owner signs this transaction" $
+          pisSignedBy # pconstant False # ctx
+
         pure lock
 
     pure $
       paddNewLock #$ pmatch ctxF.proposalContext $ \case
         PSpendProposal pid _ r -> pmatch r $ \case
           PVote ((pfromData . (pfield @"resultTag" #)) -> voteFor) ->
-            mkRecordConstr
-              PVoted
-              ( #votedOn
-                  .= pdata pid
-                  .& #votedFor
-                  .= pdata voteFor
-              )
+            passert
+              "Owner or delegatee signs the transaction"
+              (pisSignedBy # pconstant True # ctx)
+              $ mkRecordConstr
+                PVoted
+                ( #votedOn
+                    .= pdata pid
+                    .& #votedFor
+                    .= pdata voteFor
+                )
           PCosign _ ->
             withOnlyOneStakeInput
               #$ mkRecordConstr
@@ -269,8 +272,8 @@ premoveLocks = phoistAcyclic $
 -}
 pretractVote :: forall (s :: S). Term s PStakeRedeemerHandler
 pretractVote = pvoteHelper #$ phoistAcyclic $
-  plam $
-    flip pmatch $ \ctxF ->
+  plam $ \ctx ->
+    pmatch ctx $ \ctxF ->
       pmatch ctxF.proposalContext $ \case
         PSpendProposal pid s r -> pmatch r $ \case
           PUnlockStake _ ->
@@ -279,7 +282,11 @@ pretractVote = pvoteHelper #$ phoistAcyclic $
                     (s #== pconstant Finished)
                     (pcon PRemoveAllLocks)
                     (pcon PRemoveVoterLockOnly)
-             in premoveLocks # pid # mode
+                authorized = pisSignedBy # pconstant True # ctx
+             in passert
+                  "Authorized by owner or delegatee"
+                  authorized
+                  $ premoveLocks # pid # mode
           _ -> ptraceError "Expected unlock"
         _ -> ptraceError "Expected spending proposal"
 

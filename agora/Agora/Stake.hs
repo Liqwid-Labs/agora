@@ -49,7 +49,7 @@ import Agora.Proposal (
   ProposalId,
   ResultTag,
  )
-import Agora.SafeMoney (GTTag)
+import Agora.SafeMoney (GTTag, StakeSTTag)
 import Data.Tagged (Tagged)
 import Generics.SOP qualified as SOP
 import Plutarch.Api.V1 (PCredential)
@@ -79,9 +79,8 @@ import Plutarch.Extra.ScriptContext (ptryFromOutputDatum)
 import Plutarch.Extra.Sum (PSum (PSum))
 import Plutarch.Extra.Tagged (PTagged)
 import Plutarch.Extra.Traversable (pfoldMap)
-import Plutarch.Extra.Value (passetClassValueOf)
+import Plutarch.Extra.Value (passetClassValueOfT)
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (PLifted))
-import Plutarch.Orphans ()
 import PlutusLedgerApi.V2 (Credential)
 import PlutusTx qualified
 
@@ -160,7 +159,7 @@ data StakeRedeemer
   = -- | Deposit or withdraw a discrete amount of the staked governance token.
     --   Stake must be unlocked.
     DepositWithdraw (Tagged GTTag Integer)
-  | -- | Destroy a stake, retrieving its LQ, the minimum ADA and any other assets.
+  | -- | Destroy a stake, retrieving its GT, the minimum ADA and any other assets.
     --   Stake must be unlocked.
     Destroy
   | -- | Permit a Vote to be added onto a 'Agora.Proposal.Proposal'.
@@ -291,7 +290,7 @@ instance PTryFrom PData (PAsData PStakeDatum)
 data PStakeRedeemer (s :: S)
   = -- | Deposit or withdraw a discrete amount of the staked governance token.
     PDepositWithdraw (Term s (PDataRecord '["delta" ':= PTagged GTTag PInteger]))
-  | -- | Destroy a stake, retrieving its LQ, the minimum ADA and any other assets.
+  | -- | Destroy a stake, retrieving its GT, the minimum ADA and any other assets.
     PDestroy (Term s (PDataRecord '[]))
   | PPermitVote (Term s (PDataRecord '[]))
   | PRetractVotes (Term s (PDataRecord '[]))
@@ -715,7 +714,7 @@ presolveStakeInputDatum ::
   forall (s :: S).
   Term
     s
-    ( PAssetClass
+    ( PTagged StakeSTTag PAssetClass
         :--> PMap 'Unsorted PDatumHash PDatum
         :--> PTxInInfo
         :--> PMaybe PStakeDatum
@@ -726,7 +725,7 @@ presolveStakeInputDatum = phoistAcyclic $
       (pletFields @'["value", "datum", "address"])
       ( \txOutF ->
           let isStakeUTxO =
-                passetClassValueOf
+                passetClassValueOfT
                   # sstClass
                   # txOutF.value
                   #== 1

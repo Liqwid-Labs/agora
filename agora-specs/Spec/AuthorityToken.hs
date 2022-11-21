@@ -10,6 +10,7 @@ Tests for Authority token functions
 module Spec.AuthorityToken (specs) where
 
 import Agora.AuthorityToken (singleAuthorityTokenBurned)
+import Data.Tagged (Tagged (Tagged))
 import Plutarch.Extra.Compile (mustCompile)
 import Plutarch.Unsafe (punsafeCoerce)
 import PlutusLedgerApi.V1 (
@@ -45,7 +46,7 @@ mkInputs = fmap (TxInInfo (TxOutRef "" 0))
 singleAuthorityTokenBurnedTest :: Value -> [TxOut] -> Script
 singleAuthorityTokenBurnedTest mint outs =
   let actual :: ClosedTerm PBool
-      actual = singleAuthorityTokenBurned (pconstant currencySymbol) (punsafeCoerce $ pconstant $ mkInputs outs) (pconstant mint)
+      actual = singleAuthorityTokenBurned (pconstant $ Tagged currencySymbol) (punsafeCoerce $ pconstant $ mkInputs outs) (pconstant mint)
       s :: ClosedTerm POpaque
       s =
         pif
