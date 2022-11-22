@@ -47,7 +47,8 @@ import Agora.Proposal.Time (
  )
 import Agora.SafeMoney (GTTag)
 import Agora.Stake (
-  ProposalLock (..),
+  ProposalAction (Created, Voted),
+  ProposalLock (ProposalLock),
   StakeDatum (..),
   StakeRedeemer (PermitVote),
  )
@@ -160,7 +161,7 @@ alteredStakeOwner = PubKeyCredential signer2
 
 -- | Locks the stake that the input stake already has.
 defLocks :: [ProposalLock]
-defLocks = [Created (ProposalId 0)]
+defLocks = [ProposalLock (ProposalId 0) Created]
 
 -- | The effect of the newly created proposal.
 defEffects :: StrictMap.Map ResultTag ProposalEffectGroup
@@ -207,7 +208,7 @@ mkStakeInputDatum ps =
   let locks =
         if ps.createdMoreThanMaximumProposals
           then
-            Created . ProposalId
+            flip ProposalLock Created . ProposalId
               <$> take
                 (fromInteger maxProposalPerStake)
                 [1 ..]
@@ -226,10 +227,10 @@ mkStakeOutputDatum ps =
       newLocks =
         if ps.invalidNewLocks
           then
-            [ Voted thisProposalId (ResultTag 0)
-            , Voted thisProposalId (ResultTag 1)
+            [ ProposalLock thisProposalId $ Voted (ResultTag 0) 100
+            , ProposalLock thisProposalId $ Voted (ResultTag 1) 100
             ]
-          else [Created thisProposalId]
+          else [ProposalLock thisProposalId Created]
       locks = newLocks <> inputDatum.lockedBy
       newOwner = mkOwner ps
    in inputDatum

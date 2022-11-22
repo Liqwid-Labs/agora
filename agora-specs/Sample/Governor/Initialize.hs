@@ -106,7 +106,7 @@ invalidMaxTimeRangeWidth :: MaxTimeRangeWidth
 invalidMaxTimeRangeWidth = MaxTimeRangeWidth 0
 
 invalidProposalTimings :: ProposalTimingConfig
-invalidProposalTimings = ProposalTimingConfig (-1) (-1) (-1) (-1)
+invalidProposalTimings = ProposalTimingConfig (-1) (-1) (-1) (-1) (-1) (-1)
 
 witnessRef :: TxOutRef
 witnessRef = TxOutRef "b0353c22b0bd6c5296a8eef160ba25d90b5dc82a9bb8bdaa6823ffc19515d6ad" 0

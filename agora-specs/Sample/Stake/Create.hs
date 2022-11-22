@@ -20,7 +20,7 @@ module Sample.Stake.Create (
 import Agora.Governor (Governor (gtClassRef))
 import Agora.Proposal (ProposalId (ProposalId))
 import Agora.SafeMoney (GTTag)
-import Agora.Stake (ProposalLock (Created), StakeDatum (..))
+import Agora.Stake (ProposalAction (Created), ProposalLock (ProposalLock), StakeDatum (..))
 import Data.Semigroup (stimesMonoid)
 import Data.Tagged (Tagged)
 import Plutarch.Context (
@@ -255,6 +255,6 @@ alreadyHasLocks =
               { stakedAmount = 114514
               , owner = PubKeyCredential signer
               , delegatedTo = Nothing
-              , lockedBy = [Created $ ProposalId 0]
+              , lockedBy = [ProposalLock (ProposalId 0) Created]
               }
     }

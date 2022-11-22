@@ -19,13 +19,15 @@ import Agora.Proposal (
   PProposalRedeemer (PCosign, PUnlockStake, PVote),
   ProposalStatus (Finished),
  )
+import Agora.Proposal.Time (PProposalTime)
 import Agora.Stake (
+  PProposalAction (PCosigned, PCreated, PVoted),
   PProposalContext (
     PNewProposal,
     PNoProposal,
     PSpendProposal
   ),
-  PProposalLock (PCosigned, PCreated, PVoted),
+  PProposalLock (PProposalLock),
   PSigContext (owner, signedBy),
   PSignedBy (
     PSignedByDelegate,
@@ -48,14 +50,20 @@ import Agora.Stake (
   ),
   pstakeLocked,
  )
+import Data.Functor ((<&>))
 import Plutarch.Api.V1.Address (PCredential)
-import Plutarch.Api.V2 (PMaybeData)
+import Plutarch.Api.V2 (PMaybeData, PPOSIXTime)
 import Plutarch.Extra.Bool (passert)
 import Plutarch.Extra.Field (pletAll, pletAllC)
-import "liqwid-plutarch-extra" Plutarch.Extra.List (pisSingleton, ptryDeleteFirstBy, ptryFromSingleton)
-import Plutarch.Extra.Maybe (pdjust, pdnothing, pmaybeData)
+import "liqwid-plutarch-extra" Plutarch.Extra.List (
+  pisSingleton,
+  ptryDeleteFirstBy,
+  ptryFromSingleton,
+ )
+import Plutarch.Extra.Maybe (pdjust, pdnothing, pjust, pmaybe, pmaybeData, pnothing)
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
-import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletC, pmatchC)
+import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC)
+import Plutarch.Extra.Time (PCurrentTime (PCurrentTime))
 
 -- | A wrapper which ensures that no proposal is presented in the transaction.
 pwithoutProposal ::
@@ -203,32 +211,53 @@ ppermitVote = pvoteHelper #$ phoistAcyclic $
 
     pure $
       paddNewLock #$ pmatch ctxF.proposalContext $ \case
-        PSpendProposal pid _ r -> pmatch r $ \case
-          PVote ((pfromData . (pfield @"resultTag" #)) -> voteFor) ->
-            passert
-              "Owner or delegatee signs the transaction"
-              (pisSignedBy # pconstant True # ctx)
-              $ mkRecordConstr
-                PVoted
-                ( #votedOn
-                    .= pdata pid
-                    .& #votedFor
-                    .= pdata voteFor
+        PSpendProposal proposal redeemer currentTime -> unTermCont $ do
+          mkLock <- pletC $
+            plam $ \action ->
+              mkRecordConstr
+                PProposalLock
+                ( #proposalId
+                    .= pfield @"proposalId"
+                    # proposal
+                    .& #action
+                    .= pdata action
                 )
-          PCosign _ ->
-            withOnlyOneStakeInput
-              #$ mkRecordConstr
-                PCosigned
-                ( #cosigned .= pdata pid
-                )
-          _ -> ptraceError "Expected Vote"
-        PNewProposal pid ->
-          withOnlyOneStakeInput
-            #$ mkRecordConstr
-              PCreated
-              ( #created .= pdata pid
-              )
-        _ -> ptraceError "Expected proposal"
+
+          pure $
+            pmatch redeemer $ \case
+              PVote ((pfromData . (pfield @"resultTag" #)) -> voteFor) ->
+                unTermCont $ do
+                  pguardC "Owner or delegatee signs the transaction" $
+                    pisSignedBy # pconstant True # ctx
+
+                  PCurrentTime _ upperBound <- pmatchC currentTime
+
+                  let action =
+                        mkRecordConstr
+                          PVoted
+                          ( #votedFor
+                              .= pdata voteFor
+                              .& #createdAt
+                              .= pdata upperBound
+                          )
+
+                  pure $ mkLock # action
+              PCosign _ ->
+                let action = pcon $ PCosigned pdnil
+                 in withOnlyOneStakeInput #$ mkLock # action
+              _ -> ptraceError "Expected Vote or Cosign"
+        PNewProposal proposalId ->
+          let action = pcon $ PCreated pdnil
+              lock =
+                mkRecordConstr
+                  PProposalLock
+                  ( #proposalId
+                      .= pdata proposalId
+                      .& #action
+                      .= pdata action
+                  )
+           in withOnlyOneStakeInput # lock
+        _ -> ptraceError "Expected a proposal to be spent or created"
 
 data PRemoveLocksMode (s :: S) = PRemoveVoterLockOnly | PRemoveAllLocks
   deriving stock (Generic)
@@ -238,33 +267,59 @@ instance DerivePlutusType PRemoveLocksMode where
   type DPTStrat _ = PlutusTypeScott
 
 {- | Remove stake locks with the proposal id given the list of existing locks.
-     The first parameter controls whether to revmove creator locks or not.
+     The first parameter controls whether to remove creator locks or not. If
+     one of the locks performed voting action, the unlock cooldown will be
+     checked if it's given.
 -}
 premoveLocks ::
   forall (s :: S).
   Term
     s
     ( PProposalId
+        :--> PMaybe PPOSIXTime
+        :--> PProposalTime
         :--> PRemoveLocksMode
         :--> PBuiltinList (PAsData PProposalLock)
         :--> PBuiltinList (PAsData PProposalLock)
     )
-premoveLocks = phoistAcyclic $
-  plam $ \pid rl -> unTermCont $ do
-    shouldRemoveOtherLocks <- pletC $
-      plam $ \pid' ->
-        pid' #== pid #&& rl #== pcon PRemoveAllLocks
+premoveLocks =
+  phoistAcyclic $
+    plam $ \proposalId unlockCooldown currentTime mode -> unTermCont $ do
+      shouldRemoveAllLocks <- pletC $ mode #== pcon PRemoveAllLocks
 
-    pure $
-      pfilter
-        # plam
-          ( \(pfromData -> l) -> pnot #$ pmatch l $ \case
-              PCosigned ((pfield @"cosigned" #) -> pid') ->
-                shouldRemoveOtherLocks # pid'
-              PCreated ((pfield @"created" #) -> pid') ->
-                shouldRemoveOtherLocks # pid'
-              PVoted ((pfield @"votedOn" #) -> pid') -> pid' #== pid
-          )
+      PCurrentTime lowerBound _ <- pmatchC currentTime
+
+      let handleVoter
+            ( (pfield @"createdAt" #) ->
+                createdAt
+              ) =
+              let notInCooldown =
+                    pmaybe
+                      # pconstant True
+                      # plam (\c -> createdAt + c #<= lowerBound)
+                      # unlockCooldown
+               in foldl1
+                    (#||)
+                    [ shouldRemoveAllLocks
+                    , ptraceIfFalse "Stake lock in cooldown" notInCooldown
+                    ]
+
+          handleLock =
+            plam $
+              flip
+                pletAll
+                ( \lockF ->
+                    foldl1
+                      (#&&)
+                      [ proposalId #== lockF.proposalId
+                      , pmatch lockF.action $ \case
+                          PVoted r -> handleVoter r
+                          _ -> shouldRemoveAllLocks
+                      ]
+                )
+                . pfromData
+
+      pure $ pfilter # handleLock
 
 {- | Default implementation of 'Agora.Stake.RetractVotes'.
 
@@ -275,18 +330,38 @@ pretractVote = pvoteHelper #$ phoistAcyclic $
   plam $ \ctx ->
     pmatch ctx $ \ctxF ->
       pmatch ctxF.proposalContext $ \case
-        PSpendProposal pid s r -> pmatch r $ \case
-          PUnlockStake _ ->
-            let mode =
-                  pif
-                    (s #== pconstant Finished)
-                    (pcon PRemoveAllLocks)
-                    (pcon PRemoveVoterLockOnly)
-                authorized = pisSignedBy # pconstant True # ctx
-             in passert
-                  "Authorized by owner or delegatee"
-                  authorized
-                  $ premoveLocks # pid # mode
+        PSpendProposal proposal redeemer currentTime -> pmatch redeemer $ \case
+          PUnlockStake _ -> unTermCont $ do
+            proposalF <-
+              pletFieldsC
+                @'[ "proposalId"
+                  , "status"
+                  , "timingConfig"
+                  ]
+                proposal
+
+            (mode, unlockCooldown) <-
+              pmatchC (proposalF.status #== pconstant Finished) <&> \case
+                PTrue ->
+                  ( pcon PRemoveAllLocks
+                  , pnothing
+                  )
+                _ ->
+                  ( pcon PRemoveVoterLockOnly
+                  , pjust
+                      #$ pfield @"minStakeVotingTime"
+                      # proposalF.timingConfig
+                  )
+
+            pguardC "Authorized by either opwner or delegatee" $
+              pisSignedBy # pconstant True # ctx
+
+            pure $
+              premoveLocks
+                # proposalF.proposalId
+                # unlockCooldown
+                # currentTime
+                # mode
           _ -> ptraceError "Expected unlock"
         _ -> ptraceError "Expected spending proposal"
 

@@ -35,7 +35,7 @@ import Agora.Proposal (
   pneutralOption,
   pwinner,
  )
-import Agora.Proposal.Time (validateProposalStartingTime)
+import Agora.Proposal.Time (pvalidateProposalStartingTime)
 import Agora.SafeMoney (AuthorityTokenTag, GovernorSTTag, ProposalSTTag, StakeSTTag)
 import Agora.Stake (
   pnumCreatedProposals,
@@ -453,7 +453,7 @@ governorValidator =
               , ptraceIfFalse "cosigners correct" $
                   plistEquals # pfromData proposalOutputDatumF.cosigners # expectedCosigners
               , ptraceIfFalse "starting time valid" $
-                  validateProposalStartingTime
+                  pvalidateProposalStartingTime
                     # governorInputDatumF.createProposalTimeRangeMaxWidth
                     # txInfoF.validRange
                     # proposalOutputDatumF.startingTime
