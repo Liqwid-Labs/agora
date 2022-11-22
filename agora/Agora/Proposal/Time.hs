@@ -274,7 +274,7 @@ newtype PMaxTimeRangeWidth (s :: S)
       POrd
     , -- | @since 0.2.1
       PShow
-    , -- | @since 0.2.1
+    , -- | @since 1.0.0
       PNum
     )
 

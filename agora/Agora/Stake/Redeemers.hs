@@ -267,7 +267,7 @@ instance DerivePlutusType PRemoveLocksMode where
   type DPTStrat _ = PlutusTypeScott
 
 {- | Remove stake locks with the proposal id given the list of existing locks.
-     The first parameter controls whether to revmove creator locks or not. If
+     The first parameter controls whether to remove creator locks or not. If
      one of the locks performed voting action, the unlock cooldown will be
      checked if it's given.
 -}
