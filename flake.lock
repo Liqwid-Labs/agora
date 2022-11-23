@@ -744,11 +744,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1666051771,
-        "narHash": "sha256-gWNP538VYPGSABTMiditBSfyNH1mOc4mekINTzYz5Hk=",
+        "lastModified": 1667498866,
+        "narHash": "sha256-rzP1HxKacT7hz4YzJ4LTxh+TEZyzrtCgPRbXzJHSv28=",
         "owner": "Liqwid-Labs",
         "repo": "liqwid-script-export",
-        "rev": "17e8aad4bcea21478ed22e08b0ccbc4a65079d7a",
+        "rev": "fd8bd015741137ad206c8c8bbca0428da5a13504",
         "type": "github"
       },
       "original": {

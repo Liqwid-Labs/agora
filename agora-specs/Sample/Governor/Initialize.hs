@@ -121,7 +121,7 @@ scripts :: Map Text Script
 scripts =
   either
     (error . show)
-    (view #scripts)
+    (fmap (view #script) . view #scripts)
     ( runLinker
         linker
         (agoraScripts deterministicTracingConfig)

@@ -14,7 +14,6 @@ import PlutusLedgerApi.V1 (CurrencySymbol, TxOutRef, ValidatorHash)
 import Ply (
   ScriptRole (MintingPolicyRole, ValidatorRole),
   toMintingPolicy,
-  toScript,
   toValidator,
   (#),
  )
@@ -23,6 +22,7 @@ import ScriptExport.ScriptInfo (
   ScriptExport (..),
   fetchTS,
   getParam,
+  toRoledScript,
  )
 import Prelude hiding ((#))
 
@@ -173,17 +173,17 @@ linker = do
     ScriptExport
       { scripts =
           fromList
-            [ ("agora:governorPolicy", toScript govPol')
-            , ("agora:governorValidator", toScript govVal')
-            , ("agora:stakePolicy", toScript stakPol')
-            , ("agora:stakeValidator", toScript stakVal')
-            , ("agora:proposalPolicy", toScript propPol')
-            , ("agora:proposalValidator", toScript propVal')
-            , ("agora:treasuryValidator", toScript treaVal')
-            , ("agora:authorityTokenPolicy", toScript atPol')
-            , ("agora:noOpValidator", toScript noOpVal')
-            , ("agora:treasuryWithdrawalValidator", toScript treaWithdrawalVal')
-            , ("agora:mutateGovernorValidator", toScript mutateGovVal')
+            [ ("agora:governorPolicy", toRoledScript govPol')
+            , ("agora:governorValidator", toRoledScript govVal')
+            , ("agora:stakePolicy", toRoledScript stakPol')
+            , ("agora:stakeValidator", toRoledScript stakVal')
+            , ("agora:proposalPolicy", toRoledScript propPol')
+            , ("agora:proposalValidator", toRoledScript propVal')
+            , ("agora:treasuryValidator", toRoledScript treaVal')
+            , ("agora:authorityTokenPolicy", toRoledScript atPol')
+            , ("agora:noOpValidator", toRoledScript noOpVal')
+            , ("agora:treasuryWithdrawalValidator", toRoledScript treaWithdrawalVal')
+            , ("agora:mutateGovernorValidator", toRoledScript mutateGovVal')
             ]
       , information =
           AgoraScriptInfo

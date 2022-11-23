@@ -139,7 +139,7 @@ agoraScripts :: Map Text Script
 agoraScripts =
   either
     (error . show)
-    (view #scripts)
+    (fmap (view #script) . view #scripts)
     ( runLinker
         linker
         (Bootstrap.agoraScripts deterministicTracingConfig)
