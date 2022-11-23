@@ -29,6 +29,7 @@ import Sample.Stake qualified as Stake (
 import Sample.Stake.Create qualified as Create
 import Sample.Stake.Destroy qualified as Destroy
 import Sample.Stake.SetDelegate qualified as SetDelegate
+import Sample.Stake.UnauthorizedMintingExploit qualified as UnauthorizedMintingExploit
 import Test.Specification (
   SpecificationTree,
   group,
@@ -179,5 +180,13 @@ specs =
               SetDelegate.invalidOutputStakeDatumParameters
               False
           ]
+      , group
+          "unauthorized SST minting exploit"
+          $ map
+            ( UnauthorizedMintingExploit.mkTestCase
+                "(negative test)"
+                . UnauthorizedMintingExploit.Parameters
+            )
+            [1 .. 20]
       ]
   ]

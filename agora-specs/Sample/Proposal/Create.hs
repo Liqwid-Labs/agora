@@ -17,12 +17,19 @@ module Sample.Proposal.Create (
   timeRangeNotTightParameters,
   timeRangeNotClosedParameters,
   invalidProposalStatusParameters,
+  fakeSSTParameters,
+  wrongGovernorRedeemer,
+  wrongGovernorRedeemer1,
 ) where
 
 import Agora.Governor (
   Governor (..),
   GovernorDatum (..),
-  GovernorRedeemer (CreateProposal),
+  GovernorRedeemer (
+    CreateProposal,
+    MintGATs,
+    MutateGovernor
+  ),
  )
 import Agora.Proposal (
   ProposalDatum (..),
@@ -40,7 +47,8 @@ import Agora.Proposal.Time (
  )
 import Agora.SafeMoney (GTTag)
 import Agora.Stake (
-  ProposalLock (..),
+  ProposalAction (Created, Voted),
+  ProposalLock (ProposalLock),
   StakeDatum (..),
   StakeRedeemer (PermitVote),
  )
@@ -63,10 +71,14 @@ import Plutarch.Context (
   withValue,
  )
 import Plutarch.Extra.AssetClass (assetClassValue)
+import Plutarch.Extra.ScriptContext (validatorHashToTokenName)
+import PlutusLedgerApi.V1.Value qualified as Value
 import PlutusLedgerApi.V2 (
   Credential (PubKeyCredential),
   POSIXTime (POSIXTime),
   POSIXTimeRange,
+  Redeemer (Redeemer),
+  ToData (toBuiltinData),
   TxOutRef (TxOutRef),
   always,
  )
@@ -85,6 +97,7 @@ import Sample.Shared (
   signer,
   signer2,
   stakeAssetClass,
+  stakeSymbol,
   stakeValidator,
   stakeValidatorHash,
  )
@@ -95,6 +108,7 @@ import Test.Util (
   mkMinting,
   mkSpending,
   sortValue,
+  validatorHashes,
  )
 
 -- | Parameters for creating a proposal.
@@ -115,11 +129,15 @@ data Parameters = Parameters
   -- ^ Is 'TxInfo.validTimeRange' closed?
   , proposalStatus :: ProposalStatus
   -- ^ The status of the newly created proposal.
+  , fakeSST :: Bool
+  -- ^ Whether to use SST that doesn't belong to the stake validator.
+  , governorRedeemer :: Redeemer
+  -- ^ The redeemer used to spend the governor.
   }
 
 --------------------------------------------------------------------------------
 
--- | See 'GovernorDatum.maximumProposalsPerStake'.
+-- | See 'GovernorDatum.maximumCreatedProposalsPerStake'.
 maxProposalPerStake :: Integer
 maxProposalPerStake = 3
 
@@ -143,7 +161,7 @@ alteredStakeOwner = PubKeyCredential signer2
 
 -- | Locks the stake that the input stake already has.
 defLocks :: [ProposalLock]
-defLocks = [Created (ProposalId 0)]
+defLocks = [ProposalLock (ProposalId 0) Created]
 
 -- | The effect of the newly created proposal.
 defEffects :: StrictMap.Map ResultTag ProposalEffectGroup
@@ -164,7 +182,7 @@ governorInputDatum =
     , nextProposalId = thisProposalId
     , proposalTimings = def
     , createProposalTimeRangeMaxWidth = def
-    , maximumProposalsPerStake = maxProposalPerStake
+    , maximumCreatedProposalsPerStake = maxProposalPerStake
     }
 
 -- | Create governor output datum given the parameters.
@@ -179,7 +197,7 @@ mkGovernorOutputDatum ps =
         , nextProposalId = nextPid
         , proposalTimings = def
         , createProposalTimeRangeMaxWidth = def
-        , maximumProposalsPerStake = maxProposalPerStake
+        , maximumCreatedProposalsPerStake = maxProposalPerStake
         }
 
 --------------------------------------------------------------------------------
@@ -190,7 +208,7 @@ mkStakeInputDatum ps =
   let locks =
         if ps.createdMoreThanMaximumProposals
           then
-            Created . ProposalId
+            flip ProposalLock Created . ProposalId
               <$> take
                 (fromInteger maxProposalPerStake)
                 [1 ..]
@@ -209,10 +227,10 @@ mkStakeOutputDatum ps =
       newLocks =
         if ps.invalidNewLocks
           then
-            [ Voted thisProposalId (ResultTag 0)
-            , Voted thisProposalId (ResultTag 1)
+            [ ProposalLock thisProposalId $ Voted (ResultTag 0) 100
+            , ProposalLock thisProposalId $ Voted (ResultTag 1) 100
             ]
-          else [Created thisProposalId]
+          else [ProposalLock thisProposalId Created]
       locks = newLocks <> inputDatum.lockedBy
       newOwner = mkOwner ps
    in inputDatum
@@ -289,6 +307,30 @@ createProposal ps = builder
 
     ---
 
+    attacker = head validatorHashes
+
+    fakeStakeBuilder =
+      if ps.fakeSST
+        then
+          mconcat
+            [ input @b $
+                mconcat
+                  [ script attacker
+                  , withValue $
+                      Value.singleton
+                        stakeSymbol
+                        (validatorHashToTokenName attacker)
+                        1
+                  , withDatum $
+                      (mkStakeInputDatum ps)
+                        { stakedAmount = 10000000000
+                        }
+                  ]
+            ]
+        else mempty
+
+    ---
+
     governorValue = sortValue $ gst <> minAda
     stakeValue =
       sortValue $
@@ -324,7 +366,7 @@ createProposal ps = builder
               [ script governorValidatorHash
               , withValue governorValue
               , withDatum governorInputDatum
-              , withRedeemer governorRedeemer
+              , withRedeemer ps.governorRedeemer
               , withRef governorRef
               ]
         , output $
@@ -334,19 +376,39 @@ createProposal ps = builder
               , withDatum (mkGovernorOutputDatum ps)
               ]
         , ---
-          input $
-            mconcat
-              [ script stakeValidatorHash
-              , withValue stakeValue
-              , withDatum (mkStakeInputDatum ps)
-              , withRef stakeRef
-              ]
-        , output $
-            mconcat
-              [ script stakeValidatorHash
-              , withValue stakeValue
-              , withDatum (mkStakeOutputDatum ps)
-              ]
+          if ps.fakeSST
+            then
+              mconcat
+                [ input @b $
+                    mconcat
+                      [ script attacker
+                      , withValue $
+                          Value.singleton
+                            stakeSymbol
+                            (validatorHashToTokenName attacker)
+                            1
+                      , withDatum $
+                          (mkStakeInputDatum ps)
+                            { stakedAmount = 10000000000
+                            }
+                      ]
+                ]
+            else
+              mconcat
+                [ input $
+                    mconcat
+                      [ script stakeValidatorHash
+                      , withValue stakeValue
+                      , withDatum (mkStakeInputDatum ps)
+                      , withRef stakeRef
+                      ]
+                , output $
+                    mconcat
+                      [ script stakeValidatorHash
+                      , withValue stakeValue
+                      , withDatum (mkStakeOutputDatum ps)
+                      ]
+                ]
         , ---
           output $
             mconcat
@@ -354,6 +416,8 @@ createProposal ps = builder
               , withValue proposalValue
               , withDatum (mkProposalOutputDatum ps)
               ]
+        , ---
+          fakeStakeBuilder
         ]
 
 --------------------------------------------------------------------------------
@@ -361,10 +425,6 @@ createProposal ps = builder
 -- | Spend the stake with the 'PermitVote' redeemer.
 stakeRedeemer :: StakeRedeemer
 stakeRedeemer = PermitVote
-
--- | Spend the governor with the 'CreateProposal' redeemer.
-governorRedeemer :: GovernorRedeemer
-governorRedeemer = CreateProposal
 
 -- | Mint the PST with an arbitrary redeemer. Doesn't really matter.
 proposalPolicyRedeemer :: ()
@@ -383,6 +443,8 @@ totallyValidParameters =
     , timeRangeTightEnough = True
     , timeRangeClosed = True
     , proposalStatus = Draft
+    , fakeSST = False
+    , governorRedeemer = Redeemer $ toBuiltinData CreateProposal
     }
 
 invalidOutputGovernorDatumParameters :: Parameters
@@ -435,6 +497,24 @@ invalidProposalStatusParameters =
     )
     [VotingReady, Locked, Finished]
 
+fakeSSTParameters :: Parameters
+fakeSSTParameters =
+  totallyValidParameters
+    { fakeSST = True
+    }
+
+wrongGovernorRedeemer :: Parameters
+wrongGovernorRedeemer =
+  totallyValidParameters
+    { governorRedeemer = Redeemer $ toBuiltinData MintGATs
+    }
+
+wrongGovernorRedeemer1 :: Parameters
+wrongGovernorRedeemer1 =
+  totallyValidParameters
+    { governorRedeemer = Redeemer $ toBuiltinData MutateGovernor
+    }
+
 --------------------------------------------------------------------------------
 
 {- | Create a test tree that runs the proposal minting policy, the governor
@@ -467,7 +547,7 @@ mkTestTree
           "governor"
           governorValidator
           governorInputDatum
-          governorRedeemer
+          ps.governorRedeemer
           (spend governorRef)
 
       stakeTest =

@@ -20,7 +20,8 @@ module Sample.Stake.Destroy (
 
 import Agora.Proposal (ProposalId (..))
 import Agora.Stake (
-  ProposalLock (Created),
+  ProposalAction (Created),
+  ProposalLock (ProposalLock),
   StakeDatum (..),
   StakeRedeemer (Destroy),
  )
@@ -105,7 +106,7 @@ mkStakeInputDatum ps =
     { stakedAmount = 114514
     , owner = PubKeyCredential owner
     , delegatedTo = Just $ PubKeyCredential delegatee
-    , lockedBy = [Created $ ProposalId 0 | ps.notUnlocked]
+    , lockedBy = [ProposalLock (ProposalId 0) Created | ps.notUnlocked]
     }
 
 mkStakeRef :: Int -> TxOutRef

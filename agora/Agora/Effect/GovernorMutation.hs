@@ -25,8 +25,8 @@ import Agora.Governor (
   PGovernorDatum,
   PGovernorRedeemer,
  )
-import Agora.Plutarch.Orphans ()
-import Agora.Utils (pfromSingleton, ptryFromRedeemer)
+import Agora.SafeMoney (AuthorityTokenTag, GovernorSTTag)
+import Agora.Utils (ptaggedSymbolValueOf)
 import Plutarch.Api.V1 (PCurrencySymbol, PValidatorHash)
 import Plutarch.Api.V2 (
   PScriptPurpose (PSpending),
@@ -38,11 +38,17 @@ import Plutarch.DataRepr (
   PDataFields,
  )
 import Plutarch.Extra.Field (pletAll, pletAllC)
-import Plutarch.Extra.Maybe (passertPJust, pdnothing)
+import "liqwid-plutarch-extra" Plutarch.Extra.List (ptryFromSingleton)
+import Plutarch.Extra.Maybe (passertPJust, pfromJust)
 import Plutarch.Extra.Record (mkRecordConstr, (.=))
-import Plutarch.Extra.ScriptContext (paddressFromValidatorHash, pfromOutputDatum, pisScriptAddress)
+import Plutarch.Extra.ScriptContext (
+  pisScriptAddress,
+  ptryFromOutputDatum,
+  ptryFromRedeemer,
+  pvalidatorHashFromAddress,
+ )
+import Plutarch.Extra.Tagged (PTagged)
 import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC)
-import Plutarch.Extra.Value (psymbolValueOf)
 import Plutarch.Lift (PConstantDecl, PLifted, PUnsafeLiftDecl)
 import PlutusLedgerApi.V1 (TxOutRef)
 import PlutusTx qualified
@@ -145,8 +151,8 @@ deriving anyclass instance PTryFrom PData PMutateGovernorDatum
 mutateGovernorValidator ::
   ClosedTerm
     ( PValidatorHash
-        :--> PCurrencySymbol
-        :--> PCurrencySymbol
+        :--> PTagged GovernorSTTag PCurrencySymbol
+        :--> PTagged AuthorityTokenTag PCurrencySymbol
         :--> PValidator
     )
 mutateGovernorValidator =
@@ -177,25 +183,23 @@ mutateGovernorValidator =
         pany
           # plam
             ( flip pletAll $ \inputF ->
-                let governorAddress =
-                      paddressFromValidatorHash
-                        # govValidatorHash
-                        # pdnothing
-
-                    isGovernorInput =
+                let isGovernorInput =
                       foldl1
                         (#&&)
                         [ ptraceIfFalse "Governor UTxO should carry GST" $
-                            psymbolValueOf
+                            ptaggedSymbolValueOf
                               # gstSymbol
                               # (pfield @"value" # inputF.resolved)
                               #== 1
                         , ptraceIfFalse "Can only modify the pinned governor" $
                             inputF.outRef #== effectDatumF.governorRef
                         , ptraceIfFalse "Governor validator run" $
-                            pfield @"address"
-                              # inputF.resolved
-                              #== governorAddress
+                            let inputValidatorHash =
+                                  pfromJust
+                                    #$ pvalidatorHashFromAddress
+                                    #$ pfield @"address"
+                                    # inputF.resolved
+                             in inputValidatorHash #== govValidatorHash
                         ]
                  in isGovernorInput
             )
@@ -216,11 +220,11 @@ mutateGovernorValidator =
 
       let governorOutput =
             ptrace "Only governor output is allowed" $
-              pfromSingleton # pfromData txInfoF.outputs
+              ptryFromSingleton # pfromData txInfoF.outputs
 
           governorOutputDatum =
             ptrace "Resolve governor outoput datum" $
-              pfromOutputDatum @PGovernorDatum
+              ptryFromOutputDatum @PGovernorDatum
                 # (pfield @"datum" # governorOutput)
                 # txInfoF.datums
 

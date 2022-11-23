@@ -10,7 +10,7 @@ module Agora.Proposal.Scripts (
   proposalPolicy,
 ) where
 
-import Agora.Governor (PGovernorRedeemer (PCreateProposal))
+import Agora.Governor (PGovernorRedeemer (PCreateProposal), presolveGovernorRedeemer)
 import Agora.Proposal (
   PProposalDatum (PProposalDatum),
   PProposalRedeemer (PAdvanceProposal, PCosign, PUnlockStake, PVote),
@@ -23,10 +23,12 @@ import Agora.Proposal (
 import Agora.Proposal.Time (
   PPeriod (PDraftingPeriod, PExecutingPeriod, PLockingPeriod, PVotingPeriod),
   PTimingRelation (PAfter, PWithin),
-  currentProposalTime,
+  pcurrentProposalTime,
   pgetRelation,
   pisWithin,
+  psatisfyMaximumWidth,
  )
+import Agora.SafeMoney (GovernorSTTag, ProposalSTTag, StakeSTTag)
 import Agora.Stake (
   PStakeDatum,
   pextractVoteOption,
@@ -35,13 +37,8 @@ import Agora.Stake (
   pisVoter,
   presolveStakeInputDatum,
  )
-import Agora.Utils (
-  pfromSingleton,
-  pinsertUniqueBy,
-  plistEqualsBy,
-  pmapMaybe,
-  ptryFromRedeemer,
- )
+import Agora.Utils (ptaggedSymbolValueOf, ptoScottEncodingT)
+import Data.Function (on)
 import Plutarch.Api.V1 (PCredential, PCurrencySymbol)
 import Plutarch.Api.V1.AssocMap (plookup)
 import Plutarch.Api.V2 (
@@ -52,11 +49,15 @@ import Plutarch.Api.V2 (
  )
 import Plutarch.Extra.AssetClass (
   PAssetClassData,
-  ptoScottEncoding,
  )
 import Plutarch.Extra.Category (PCategory (pidentity))
 import Plutarch.Extra.Field (pletAll, pletAllC)
-import "liqwid-plutarch-extra" Plutarch.Extra.List (pfindJust)
+import "liqwid-plutarch-extra" Plutarch.Extra.List (
+  pfindJust,
+  plistEqualsBy,
+  pmapMaybe,
+  ptryFromSingleton,
+ )
 import "plutarch-extra" Plutarch.Extra.Map (pupdate)
 import Plutarch.Extra.Maybe (
   passertPJust,
@@ -66,13 +67,15 @@ import Plutarch.Extra.Maybe (
   pmaybe,
   pnothing,
  )
-import Plutarch.Extra.Ord (pfromOrdBy, psort)
+import Plutarch.Extra.Ord (pfromOrdBy, pinsertUniqueBy, psort)
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
 import Plutarch.Extra.ScriptContext (
   pfindTxInByTxOutRef,
-  pfromOutputDatum,
+  ptryFromOutputDatum,
+  pvalidatorHashFromAddress,
  )
 import Plutarch.Extra.Sum (PSum (PSum))
+import Plutarch.Extra.Tagged (PTagged)
 import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (
   pguardC,
   pletC,
@@ -80,8 +83,9 @@ import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (
   pmatchC,
   ptryFromC,
  )
+import Plutarch.Extra.Time (PCurrentTime)
 import Plutarch.Extra.Traversable (pfoldMap)
-import Plutarch.Extra.Value (passetClassValueOf, psymbolValueOf)
+import Plutarch.Extra.Value (psymbolValueOf')
 import Plutarch.Unsafe (punsafeCoerce)
 
 {- | Policy for Proposals.
@@ -109,7 +113,7 @@ import Plutarch.Unsafe (punsafeCoerce)
 
      @since 1.0.0
 -}
-proposalPolicy :: ClosedTerm (PAssetClassData :--> PMintingPolicy)
+proposalPolicy :: ClosedTerm (PTagged GovernorSTTag PAssetClassData :--> PMintingPolicy)
 proposalPolicy =
   plam $ \gstAssetClass _redeemer ctx -> unTermCont $ do
     ctxF <- pletAllC ctx
@@ -117,44 +121,25 @@ proposalPolicy =
 
     PMinting ((pfield @"_0" #) -> ownSymbol) <- pmatchC $ pfromData ctxF.purpose
 
-    let mintedProposalST =
-          psymbolValueOf
+    pguardC "Minted exactly one proposal ST"
+      $ pmatch
+        ( pfromJust
+            #$ psymbolValueOf'
             # ownSymbol
             # txInfoF.mint
+        )
+      $ \(PPair minted burnt) ->
+        minted
+          #== 1
+          #&& ptraceIfFalse "Burning a proposal is not supported" (burnt #== 0)
 
-    pguardC "Minted exactly one proposal ST" $
-      mintedProposalST #== 1
-
-    let governorInputRef =
+    let governorRedeemer =
           passertPJust
             # "GST should move"
-            #$ pfindJust
-            # plam
-              ( flip pletAll $ \inputF ->
-                  let value = pfield @"value" # inputF.resolved
-                      isGovernorInput =
-                        passetClassValueOf
-                          # (ptoScottEncoding # gstAssetClass)
-                          # value
-                          #== 1
-                   in pif
-                        isGovernorInput
-                        (pjust # inputF.outRef)
-                        pnothing
-              )
+            #$ presolveGovernorRedeemer
+            # (ptoScottEncodingT # gstAssetClass)
             # pfromData txInfoF.inputs
-
-        governorScriptPurpose =
-          mkRecordConstr
-            PSpending
-            (#_0 .= governorInputRef)
-
-        governorRedeemer =
-          pfromData $
-            pfromJust
-              #$ ptryFromRedeemer @(PAsData PGovernorRedeemer)
-              # governorScriptPurpose
-              # txInfoF.redeemers
+            # txInfoF.redeemers
 
     pguardC "Govenor redeemer correct" $
       pcon PCreateProposal #== governorRedeemer
@@ -239,9 +224,9 @@ instance DerivePlutusType PStakeInputsContext where
 -}
 proposalValidator ::
   ClosedTerm
-    ( PAssetClassData
-        :--> PCurrencySymbol
-        :--> PCurrencySymbol
+    ( PTagged StakeSTTag PAssetClassData
+        :--> PTagged GovernorSTTag PCurrencySymbol
+        :--> PTagged ProposalSTTag PCurrencySymbol
         :--> PInteger
         :--> PValidator
     )
@@ -300,16 +285,18 @@ proposalValidator =
                       foldl1
                         (#&&)
                         [ ptraceIfFalse "Own by proposal validator" $
-                            outputF.address #== proposalInputF.address
+                            ((#==) `on` (pvalidatorHashFromAddress #))
+                              outputF.address
+                              proposalInputF.address
                         , ptraceIfFalse "Has proposal ST" $
-                            psymbolValueOf # pstSymbol # outputF.value #== 1
+                            ptaggedSymbolValueOf # pstSymbol # outputF.value #== 1
                         ]
 
                     handleProposalUTxO =
                       -- Using inline datum to avoid O(n^2) lookup.
                       pfromData $
                         ptrace "Resolve proposal datum" $
-                          pfromOutputDatum @(PAsData PProposalDatum)
+                          ptryFromOutputDatum @(PAsData PProposalDatum)
                             # outputF.datum
                             # txInfoF.datums
                  in pif
@@ -321,17 +308,23 @@ proposalValidator =
 
     --------------------------------------------------------------------------
 
+    currentTime <- pletC $ pcurrentProposalTime # txInfoF.validRange
+
+    let withCurrentTime ::
+          forall (a :: PType).
+          Term _ (PCurrentTime :--> a) ->
+          Term _ a
+        withCurrentTime f =
+          pmatch currentTime $ \case
+            PJust currentTime -> f # currentTime
+            PNothing -> ptraceError "Unable to resolve current time"
+
     getTimingRelation' <-
       pletC $
-        let currentTime =
-              passertPJust
-                # "Current time should be resolved"
-                #$ currentProposalTime
-                # txInfoF.validRange
-         in pgetRelation
-              # proposalInputDatumF.timingConfig
-              # proposalInputDatumF.startingTime
-              # currentTime
+        withCurrentTime $
+          pgetRelation
+            # proposalInputDatumF.timingConfig
+            # proposalInputDatumF.startingTime
 
     let getTimingRelation = (getTimingRelation' #) . pcon
 
@@ -342,18 +335,23 @@ proposalValidator =
     resolveStakeInputDatum <-
       pletC $
         presolveStakeInputDatum
-          # (ptoScottEncoding # sstClass)
+          # (ptoScottEncodingT # sstClass)
           # txInfoF.datums
+
     spendStakes' :: Term _ ((PStakeInputsContext :--> PUnit) :--> PUnit) <-
       pletC $
-        plam $
-          let stakeInputs =
-                pmapMaybe
-                  # resolveStakeInputDatum
-                  # pfromData txInfoF.inputs
+        plam $ \val -> unTermCont $ do
+          stakeInputs <-
+            pletC $
+              pmapMaybe @PList
+                # resolveStakeInputDatum
+                # pfromData txInfoF.inputs
 
-              ctx = pcon $ PStakeInputsContext stakeInputs
-           in (# ctx)
+          pguardC "Stake inputs not null" $
+            pnot #$ pnull # stakeInputs
+
+          let ctx = pcon $ PStakeInputsContext stakeInputs
+          pure $ val # ctx
 
     let spendStakes ::
           ( PStakeInputsContext _ ->
@@ -439,7 +437,7 @@ proposalValidator =
             stakeF <-
               pletFieldsC @'["owner", "stakedAmount"] $
                 ptrace "Exactly one stake input" $
-                  pfromSingleton # sctxF.inputStakes
+                  ptryFromSingleton # sctxF.inputStakes
 
             let newCosigner = stakeF.owner
 
@@ -512,6 +510,12 @@ proposalValidator =
             pguardC "Proposal time should be wthin the voting period" $
               pisWithin # getTimingRelation PVotingPeriod
 
+            pguardC "Width of time should meet maximum requirement" $
+              withCurrentTime $
+                psatisfyMaximumWidth
+                  #$ pfield @"votingTimeRangeMaxWidth"
+                  # proposalInputDatumF.timingConfig
+
             -- Ensure the transaction is voting to a valid 'ResultTag'(outcome).
             PProposalVotes voteMap <- pmatchC proposalInputDatumF.votes
             voteFor <- pletC $ pfromData $ pfield @"resultTag" # r
@@ -563,40 +567,41 @@ proposalValidator =
 
           PUnlockStake _ -> spendStakes $ \sctxF -> do
             let expectedVotes =
-                  pfoldl
-                    # plam
-                      ( \votes stake -> unTermCont $ do
-                          stakeF <-
-                            pletFieldsC
-                              @'["stakedAmount", "lockedBy"]
-                              stake
+                  pdata $
+                    pfoldl
+                      # plam
+                        ( \votes stake -> unTermCont $ do
+                            stakeF <-
+                              pletFieldsC
+                                @'["stakedAmount", "lockedBy"]
+                                stake
 
-                          stakeRoles <-
-                            pletC $
-                              pgetStakeRoles
-                                # proposalInputDatumF.proposalId
-                                # stakeF.lockedBy
+                            stakeRoles <-
+                              pletC $
+                                pgetStakeRoles
+                                  # proposalInputDatumF.proposalId
+                                  # stakeF.lockedBy
 
-                          pguardC "Stake input should be relevant" $
-                            pnot #$ pisIrrelevant # stakeRoles
+                            pguardC "Stake input should be relevant" $
+                              pnot #$ pisIrrelevant # stakeRoles
 
-                          let canRetractVotes =
-                                pisVoter # stakeRoles
+                            let canRetractVotes =
+                                  pisVoter # stakeRoles
 
-                              voteCount =
-                                pto $
-                                  pfromData stakeF.stakedAmount
+                                voteCount =
+                                  pto $
+                                    pfromData stakeF.stakedAmount
 
-                              newVotes =
-                                pretractVotes
-                                  # (pextractVoteOption # stakeRoles)
-                                  # voteCount
-                                  # votes
+                                newVotes =
+                                  pretractVotes
+                                    # (pextractVoteOption # stakeRoles)
+                                    # voteCount
+                                    # votes
 
-                          pure $ pif canRetractVotes newVotes votes
-                      )
-                    # proposalInputDatumF.votes
-                    # sctxF.inputStakes
+                            pure $ pif canRetractVotes newVotes votes
+                        )
+                      # proposalInputDatumF.votes
+                      # sctxF.inputStakes
 
                 inVotingPeriod =
                   pisWithin # getTimingRelation PVotingPeriod
@@ -625,14 +630,19 @@ proposalValidator =
                               .& #thresholds
                               .= proposalInputDatumF.thresholds
                               .& #votes
-                              .= pdata expectedVotes
+                              .= expectedVotes
                               .& #timingConfig
                               .= proposalInputDatumF.timingConfig
                               .& #startingTime
                               .= proposalInputDatumF.startingTime
                           )
-                   in ptraceIfFalse "Update votes" $
-                        expectedProposalOut #== proposalOutputDatum
+                   in foldl1
+                        (#&&)
+                        [ ptraceIfFalse "Votes changed" $
+                            pnot #$ expectedVotes #== proposalInputDatumF.votes
+                        , ptraceIfFalse "Proposal update correct" $
+                            expectedProposalOut #== proposalOutputDatum
+                        ]
                 )
                 -- No change to the proposal is allowed.
                 ( ptraceIfFalse "Proposal unchanged" $
@@ -728,7 +738,7 @@ proposalValidator =
                                   . (pfield @"resolved" #) ->
                                   value
                                 ) ->
-                                  psymbolValueOf # gstSymbol # value #== 1
+                                  ptaggedSymbolValueOf # gstSymbol # value #== 1
                             )
                           # pfromData txInfoF.inputs
 

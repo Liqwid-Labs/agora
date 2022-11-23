@@ -8,10 +8,10 @@ A dumb effect that only burns its GAT.
 module Agora.Effect.NoOp (noOpValidator, PNoOp) where
 
 import Agora.Effect (makeEffect)
-import Agora.Plutarch.Orphans ()
+import Agora.SafeMoney (AuthorityTokenTag)
 import Plutarch.Api.V1 (PCurrencySymbol)
 import Plutarch.Api.V2 (PValidator)
-import Plutarch.Orphans ()
+import Plutarch.Extra.Tagged (PTagged)
 
 {- | Dummy datum for NoOp effect.
 
@@ -40,7 +40,7 @@ instance PTryFrom PData (PAsData PNoOp)
 
      @since 1.0.0
 -}
-noOpValidator :: ClosedTerm (PCurrencySymbol :--> PValidator)
+noOpValidator :: ClosedTerm (PTagged AuthorityTokenTag PCurrencySymbol :--> PValidator)
 noOpValidator = plam $
   makeEffect $
     \_ (_datum :: Term s (PAsData PNoOp)) _ _ -> popaque (pconstant ())

@@ -17,12 +17,12 @@ import Agora.Effect.GovernorMutation (
 import Agora.Governor (GovernorDatum (..), GovernorRedeemer (MutateGovernor))
 import Agora.Proposal (ProposalId (..), ProposalThresholds (..))
 import Agora.SafeMoney (AuthorityTokenTag)
-import Agora.Utils (validatorHashToTokenName)
 import Data.Default.Class (Default (def))
 import Data.Map ((!))
 import Data.Tagged (Tagged (..))
 import Plutarch.Api.V2 (validatorHash)
 import Plutarch.Extra.AssetClass (AssetClass (AssetClass), assetClassValue)
+import Plutarch.Extra.ScriptContext (validatorHashToTokenName)
 import PlutusLedgerApi.V1 qualified as Interval (always)
 import PlutusLedgerApi.V1.Address (scriptHashAddress)
 import PlutusLedgerApi.V1.Value qualified as Value (
@@ -114,7 +114,7 @@ mkEffectTxInfo newGovDatum =
           , nextProposalId = ProposalId 0
           , proposalTimings = def
           , createProposalTimeRangeMaxWidth = def
-          , maximumProposalsPerStake = 3
+          , maximumCreatedProposalsPerStake = 3
           }
       governorInputDatum :: Datum
       governorInputDatum = Datum $ toBuiltinData governorInputDatum'
@@ -186,7 +186,7 @@ validNewGovernorDatum =
     , nextProposalId = ProposalId 42
     , proposalTimings = def
     , createProposalTimeRangeMaxWidth = def
-    , maximumProposalsPerStake = 3
+    , maximumCreatedProposalsPerStake = 3
     }
 
 invalidNewGovernorDatum :: GovernorDatum
@@ -199,5 +199,5 @@ invalidNewGovernorDatum =
     , nextProposalId = ProposalId 42
     , proposalTimings = def
     , createProposalTimeRangeMaxWidth = def
-    , maximumProposalsPerStake = 3
+    , maximumCreatedProposalsPerStake = 3
     }

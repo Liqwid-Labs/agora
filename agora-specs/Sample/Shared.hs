@@ -12,7 +12,7 @@ module Sample.Shared (
   signer,
   signer2,
   minAda,
-  deterministicTracingConfing,
+  deterministicTracingConfig,
   mkRedeemer,
 
   -- * Agora Scripts
@@ -72,9 +72,6 @@ import Agora.Proposal.Time (
   ProposalTimingConfig (..),
  )
 import Agora.SafeMoney (GovernorSTTag, ProposalSTTag, StakeSTTag)
-import Agora.Utils (
-  validatorHashToTokenName,
- )
 import Data.Default.Class (Default (..))
 import Data.Map (Map, (!))
 import Data.Tagged (Tagged (..))
@@ -86,6 +83,7 @@ import Plutarch.Api.V2 (
   validatorHash,
  )
 import Plutarch.Extra.AssetClass (AssetClass (AssetClass))
+import Plutarch.Extra.ScriptContext (validatorHashToTokenName)
 import PlutusLedgerApi.V1.Address (scriptHashAddress)
 import PlutusLedgerApi.V1.Value (TokenName, Value)
 import PlutusLedgerApi.V1.Value qualified as Value (
@@ -123,8 +121,8 @@ import ScriptExport.ScriptInfo (runLinker)
 -- Plutarch compiler configauration.
 -- TODO: add the ability to change this value. Maybe wrap everything in a
 --        Reader monad?
-deterministicTracingConfing :: Config
-deterministicTracingConfing = Config DetTracing
+deterministicTracingConfig :: Config
+deterministicTracingConfig = Config DetTracing
 
 governor :: Governor
 governor = Governor oref gt mc
@@ -144,7 +142,7 @@ agoraScripts =
     (fmap (view #script) . view #scripts)
     ( runLinker
         linker
-        (Bootstrap.agoraScripts deterministicTracingConfing)
+        (Bootstrap.agoraScripts deterministicTracingConfig)
         governor
     )
 
@@ -242,6 +240,8 @@ instance Default ProposalTimingConfig where
       , votingTime = 1000
       , lockingTime = 2000
       , executingTime = 3000
+      , minStakeVotingTime = 100
+      , votingTimeRangeMaxWidth = 1000000
       }
 
 {- | Default value of 'Agora.Governor.GovernorDatum.createProposalTimeRangeMaxWidth'.

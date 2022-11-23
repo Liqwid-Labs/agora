@@ -85,6 +85,24 @@ specs =
                       True
                 )
                 Create.invalidProposalStatusParameters
+          , Create.mkTestTree
+              "fake SST"
+              Create.fakeSSTParameters
+              True
+              False
+              False
+          , Create.mkTestTree
+              "wrong governor redeemer"
+              Create.wrongGovernorRedeemer
+              False
+              False
+              True
+          , Create.mkTestTree
+              "wrong governor redeemer"
+              Create.wrongGovernorRedeemer1
+              False
+              False
+              True
           ]
       ]
   , group
@@ -147,6 +165,10 @@ specs =
               , Vote.mkTestTree
                   "transparent non-GT tokens"
                   Vote.transparentAssets
+                  (Vote.Validity True True)
+              , Vote.mkTestTree
+                  "Delegatee vote with own and delegated stakes in one tx"
+                  Vote.delegateeVoteWithOwnAndDelegatedStakeBundle
                   (Vote.Validity True True)
               ]
           , group
@@ -327,6 +349,25 @@ specs =
                                 , forGovernorValidator = Just False
                                 , forAuthorityTokenPolicy = Just True
                                 }
+                          , Advance.mkTestTree'
+                              "fastforward to finished"
+                              (\b -> unwords ["from", show b.proposalParameters.fromStatus])
+                              (Advance.mkFastforwardToFinishBundles cs es)
+                              Advance.Validity
+                                { forProposalValidator = False
+                                , forStakeValidator = True
+                                , forGovernorValidator = Just False
+                                , forAuthorityTokenPolicy = Just True
+                                }
+                          , Advance.mkTestTree
+                              "wrong governor redeemer"
+                              (Advance.mkBadGovernorRedeemerBundle cs es)
+                              Advance.Validity
+                                { forProposalValidator = True
+                                , forStakeValidator = True
+                                , forGovernorValidator = Just False
+                                , forAuthorityTokenPolicy = Just False
+                                }
                           ]
                       ]
       , group "unlocking" $
@@ -391,6 +432,14 @@ specs =
                   , Unlock.mkTestTree
                       "change output stake value"
                       (Unlock.mkChangeOutputStakeValue nStakes)
+                      (Unlock.Validity True False)
+                  , Unlock.mkTestTree
+                      "use fake stake"
+                      (Unlock.mkUseFakeStakes nStakes)
+                      (Unlock.Validity False False)
+                  , Unlock.mkTestTree
+                      "retract votes in cooldown"
+                      (Unlock.mkDisrespectCooldown nStakes)
                       (Unlock.Validity True False)
                   ]
 

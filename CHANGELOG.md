@@ -6,6 +6,35 @@ This format is based on [Keep A Changelog](https://keepachangelog.com/en/1.0.0).
 
 ### Modified
 
+- Mitigate potential DDoS attack(voting and unlocking repeatedly)
+
+  We fix this issue by posing cooldown time while retracting votes, encoded in  
+  `ProposalTimingConfig`'s `minStakeVotingTime` field. Also to make sure that
+  stake owners can unlock their stakes in s reasonable time, we pose a maximum
+  time range width requirement while voting, encoded in `ProposalTimingConfig`'s `votingTimeRangeMaxWidth` field.
+
+  Included by [#209](https://github.com/Liqwid-Labs/agora/pull/209)
+
+- Fix several vulnerabilities and bugs found by auditors.
+
+  Including:
+  - A bug that allows multiple GATs to be minted into a single UTxO and sent
+    to a malicious script.
+  - A bug that allows delegates to create or cosign proposals with delegated
+    stakes.
+  - Potential DDoS attack: calling `UnlockStake` without any stake.
+  - Potential DDoS attack: calling `UnlockStake` on a `VotingReady` proposal
+    without actually changing the votes.
+  - Ignore staking credential in proposal, stake and governor.
+  - Improve naming and doc strings to avoid confusion.
+
+  Included by [#208](https://github.com/Liqwid-Labs/agora/pull/208)
+
+- Allow delegates to vote and retract vote with their stakes along side with
+  stakes delegated to them in the same transaction.
+
+  Included by [#208](https://github.com/Liqwid-Labs/agora/pull/208)
+
 - Fix several vulnerabilities and bugs found in both proposal and governor scripts.
 
   Including:
@@ -150,7 +179,7 @@ the stake validator easily. The behaviour of the default stake validator remains
 
   Included by [#146](https://github.com/Liqwid-Labs/agora/pull/146).
 
-- Draft phase and cosigning for Proposals. 
+- Draft phase and cosigning for Proposals.
 
   Included by [#136](https://github.com/Liqwid-Labs/agora/pull/136).
 
@@ -158,7 +187,7 @@ the stake validator easily. The behaviour of the default stake validator remains
 
   Included by [#134](https://github.com/Liqwid-Labs/agora/pull/134).
   
-- Fixed bug that made it impossible to create proposals. Added new stake locking mechanism for creating proposals. 
+- Fixed bug that made it impossible to create proposals. Added new stake locking mechanism for creating proposals.
   
   Included by [#142](https://github.com/Liqwid-Labs/agora/pull/142).
   

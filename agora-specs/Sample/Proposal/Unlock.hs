@@ -12,6 +12,7 @@ module Sample.Proposal.Unlock (
   SignedBy (..),
   TransactionParameters (..),
   ProposalParameters (..),
+  SSTOwner (..),
   StakeParameters (..),
   Validity (..),
   unlock,
@@ -26,6 +27,8 @@ module Sample.Proposal.Unlock (
   mkRemoveCreatorLockBeforeFinished,
   mkCreatorRetractVotes,
   mkChangeOutputStakeValue,
+  mkUseFakeStakes,
+  mkDisrespectCooldown,
 ) where
 
 --------------------------------------------------------------------------------
@@ -40,13 +43,18 @@ import Agora.Proposal (
   ProposalVotes (..),
   ResultTag (..),
  )
-import Agora.Proposal.Time (ProposalStartingTime (ProposalStartingTime), ProposalTimingConfig (..))
+import Agora.Proposal.Time (
+  ProposalStartingTime (ProposalStartingTime),
+  ProposalTimingConfig (..),
+ )
 import Agora.SafeMoney (GTTag)
 import Agora.Stake (
+  ProposalAction (Created, Voted),
   ProposalLock (..),
   StakeDatum (..),
   StakeRedeemer (RetractVotes),
  )
+import Data.Coerce (coerce)
 import Data.Default.Class (Default (def))
 import Data.Map.Strict qualified as StrictMap
 import Data.Tagged (Tagged, untag)
@@ -64,8 +72,11 @@ import Plutarch.Context (
   withValue,
  )
 import Plutarch.Extra.AssetClass (assetClassValue)
+import Plutarch.Extra.ScriptContext (validatorHashToTokenName)
+import PlutusLedgerApi.V1.Value qualified as Value
 import PlutusLedgerApi.V2 (
   Credential (PubKeyCredential),
+  POSIXTime,
   PubKeyHash,
   TxOutRef (..),
  )
@@ -76,7 +87,7 @@ import Sample.Shared (
   proposalAssetClass,
   proposalValidator,
   proposalValidatorHash,
-  stakeAssetClass,
+  stakeSymbol,
   stakeValidator,
   stakeValidatorHash,
  )
@@ -138,7 +149,7 @@ data ParameterBundle = ParameterBundle
 
 data SignedBy = Owner | Delegatee | Unknown
 
-data TimeRange = WhileVoting | AfterVoting
+data TimeRange = WhileVoting {offset :: POSIXTime} | AfterVoting
 
 data TransactionParameters = TransactionParameters
   { signedBy :: SignedBy
@@ -162,12 +173,18 @@ data StakeRole
     Irrelevant
   deriving stock (Bounded, Enum, Show)
 
+data SSTOwner
+  = StakeValidator
+  | Attacker
+
 data StakeParameters = StakeParameters
   { numStakes :: Integer
   , stakeRole :: StakeRole
   , removeVoterLock :: Bool
   , removeCreatorLock :: Bool
   , alterOutputValue :: Bool
+  , sstOwner :: SSTOwner
+  , votingLockCreatedAt :: POSIXTime
   }
 
 data Validity = Validity
@@ -194,14 +211,20 @@ mkStakeInputDatum ps =
   where
     stakeLocks = mkStakeLocks' ps.stakeRole
 
-    mkStakeLocks' Voter = [Voted defProposalId defVoteFor]
-    mkStakeLocks' Creator = [Created defProposalId]
+    mkStakeLocks' Voter =
+      [ ProposalLock defProposalId $
+          Voted defVoteFor ps.votingLockCreatedAt
+      ]
+    mkStakeLocks' Creator = [ProposalLock defProposalId Created]
     mkStakeLocks' Both = mkStakeLocks' Voter <> mkStakeLocks' Creator
     mkStakeLocks' Irrelevant =
       let ProposalId pid = defProposalId
           ResultTag vid = defVoteFor
-       in [ Voted (ProposalId $ pid + 1) (ResultTag $ vid + 1)
-          , Created (ProposalId $ pid + 1)
+       in [ ProposalLock (ProposalId $ pid + 1) $
+              Voted
+                (ResultTag $ vid + 1)
+                ps.votingLockCreatedAt
+          , ProposalLock (ProposalId $ pid + 1) Created
           ]
 
 --------------------------------------------------------------------------------
@@ -275,18 +298,21 @@ unlock ps = builder
 
     ---
 
-    sst = assetClassValue stakeAssetClass 1
+    sstName = case ps.stakeParameters.sstOwner of
+      StakeValidator -> validatorHashToTokenName stakeValidatorHash
+      _ -> ""
+
+    sst = Value.singleton stakeSymbol sstName 1
 
     stakeInputDatum = mkStakeInputDatum ps.stakeParameters
 
+    -- TODO respect timing
     removeLocks v c =
-      filter $
-        not
-          . ( \case
-                Created pid -> c && pid == defProposalId
-                Cosigned pid -> c && pid == defProposalId
-                Voted pid _ -> v && pid == defProposalId
-            )
+      filter $ \(ProposalLock pid action) ->
+        pid == defProposalId
+          && case action of
+            Voted _ _ -> v
+            _ -> c
 
     stakeOutputDatum =
       stakeInputDatum
@@ -342,9 +368,14 @@ unlock ps = builder
     ProposalStartingTime s = defStartingTime
 
     time = case ps.transactionParameters.timeRange of
-      WhileVoting ->
-        let lb = s + (def :: ProposalTimingConfig).draftTime
-            ub = lb + (def :: ProposalTimingConfig).votingTime
+      WhileVoting offset ->
+        let lb =
+              ps.stakeParameters.votingLockCreatedAt
+                + offset
+            ub =
+              s
+                + (def :: ProposalTimingConfig).draftTime
+                + (def :: ProposalTimingConfig).votingTime
          in closedBoundedInterval (lb + 1) (ub - 1)
       AfterVoting ->
         let lb =
@@ -415,12 +446,22 @@ mkValidVoterRetractVotes i =
           , removeVoterLock = True
           , removeCreatorLock = False
           , alterOutputValue = False
+          , sstOwner = StakeValidator
+          , votingLockCreatedAt =
+              coerce defStartingTime
+                + (def :: ProposalTimingConfig).draftTime
+                + 1
           }
     , transactionParameters =
         TransactionParameters
           { signedBy = Owner
           , timeRange =
               WhileVoting
+                { offset =
+                    coerce
+                      (def :: ProposalTimingConfig).minStakeVotingTime
+                      + 5
+                }
           }
     }
 
@@ -530,10 +571,6 @@ mkCreatorRetractVotes i =
             template.stakeParameters
               { stakeRole = Creator
               }
-        , transactionParameters =
-            template.transactionParameters
-              { timeRange = WhileVoting
-              }
         }
 
 mkChangeOutputStakeValue :: Integer -> ParameterBundle
@@ -543,5 +580,31 @@ mkChangeOutputStakeValue i =
         { stakeParameters =
             template.stakeParameters
               { alterOutputValue = True
+              }
+        }
+
+mkUseFakeStakes :: Integer -> ParameterBundle
+mkUseFakeStakes i =
+  let template = mkValidVoterCreatorRetractVotes i
+   in template
+        { stakeParameters =
+            template.stakeParameters
+              { sstOwner = Attacker
+              }
+        }
+
+mkDisrespectCooldown :: Integer -> ParameterBundle
+mkDisrespectCooldown i =
+  let template = mkValidVoterCreatorRetractVotes i
+   in template
+        { transactionParameters =
+            template.transactionParameters
+              { timeRange =
+                  WhileVoting
+                    { offset =
+                        coerce
+                          (def :: ProposalTimingConfig).minStakeVotingTime
+                          - 5
+                    }
               }
         }

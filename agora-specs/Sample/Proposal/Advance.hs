@@ -35,12 +35,14 @@ module Sample.Proposal.Advance (
   mkMintGATsWithoutTagBundle,
   mkBadGovernorOutputDatumBundle,
   mkUnexpectedOutputStakeBundles,
+  mkFastforwardToFinishBundles,
+  mkBadGovernorRedeemerBundle,
 ) where
 
 import Agora.Governor (
   Governor (..),
   GovernorDatum (..),
-  GovernorRedeemer (MintGATs),
+  GovernorRedeemer (CreateProposal, MintGATs),
  )
 import Agora.Proposal (
   ProposalDatum (..),
@@ -67,7 +69,6 @@ import Agora.SafeMoney (AuthorityTokenTag, GTTag)
 import Agora.Stake (
   StakeDatum (..),
  )
-import Agora.Utils (scriptHashToTokenName)
 import Control.Applicative (liftA2)
 import Control.Monad.State (execState, modify, when)
 import Data.Default (def)
@@ -85,10 +86,12 @@ import Plutarch.Context (
   timeRange,
   withDatum,
   withInlineDatum,
+  withRedeemer,
   withRef,
   withValue,
  )
 import Plutarch.Extra.AssetClass (AssetClass (AssetClass), assetClassValue)
+import Plutarch.Extra.ScriptContext (scriptHashToTokenName)
 import Plutarch.Lift (PLifted, PUnsafeLiftDecl)
 import PlutusLedgerApi.V2 (
   Credential (PubKeyCredential),
@@ -100,6 +103,7 @@ import PlutusLedgerApi.V2 (
   TxOutRef (TxOutRef),
   ValidatorHash,
  )
+import PlutusTx qualified
 import Sample.Proposal.Shared (
   governorTxRef,
   proposalTxRef,
@@ -164,9 +168,18 @@ data ParameterBundle = ParameterBundle
   }
 
 -- | Everything about the generated governor stuff.
-newtype GovernorParameters = GovernorParameters
+data GovernorParameters = forall
+    (redeemer :: Type)
+    (predeemer :: PType).
+  ( PUnsafeLiftDecl predeemer
+  , PLifted predeemer ~ redeemer
+  , PIsData predeemer
+  , PlutusTx.ToData redeemer
+  ) =>
+  GovernorParameters
   { invalidGovernorOutputDatum :: Bool
   -- ^ The output governor datum will be changed.
+  , governorRedeemer :: redeemer
   }
 
 -- | Everything about the generated authority token stuff.
@@ -278,7 +291,7 @@ mkVotes ps =
 
 -- | The starting time of every generated proposal.
 proposalStartingTime :: POSIXTime
-proposalStartingTime = 0
+proposalStartingTime = 100
 
 -- | Create the input proposal datum given the parameters.
 mkProposalInputDatum :: ProposalParameters -> ProposalDatum
@@ -413,14 +426,14 @@ governorInputDatum =
     , nextProposalId = ProposalId 42
     , proposalTimings = def
     , createProposalTimeRangeMaxWidth = def
-    , maximumProposalsPerStake = 3
+    , maximumCreatedProposalsPerStake = 3
     }
 
 -- | Create the output governor datum given the parameters.
 mkGovernorOutputDatum :: GovernorParameters -> GovernorDatum
 mkGovernorOutputDatum ps =
   if ps.invalidGovernorOutputDatum
-    then governorInputDatum {maximumProposalsPerStake = 15}
+    then governorInputDatum {maximumCreatedProposalsPerStake = 15}
     else governorInputDatum
 
 -- | Reference to the governor UTXO.
@@ -431,7 +444,7 @@ governorRef = TxOutRef governorTxRef 2
       governor validator.
 -}
 mkGovernorBuilder :: forall b. CombinableBuilder b => GovernorParameters -> b
-mkGovernorBuilder ps =
+mkGovernorBuilder ps@(GovernorParameters _ redeemer) =
   let gst = assetClassValue governorAssetClass 1
       value = sortValue $ gst <> minAda
    in mconcat
@@ -441,6 +454,7 @@ mkGovernorBuilder ps =
               , withValue value
               , withRef governorRef
               , withDatum governorInputDatum
+              , withRedeemer redeemer
               ]
         , output $
             mconcat
@@ -450,12 +464,6 @@ mkGovernorBuilder ps =
               , withDatum (mkGovernorOutputDatum ps)
               ]
         ]
-
-{- | The proposal redeemer used to spend the governor UTXO, which is always
-      'MintGATs' in this case.
--}
-governorRedeemer :: GovernorRedeemer
-governorRedeemer = MintGATs
 
 --------------------------------------------------------------------------------
 
@@ -537,16 +545,22 @@ mkTestTree name pb val =
               proposalInputDatum
               proposalRedeemer
               (spend proposalRef)
+
     governor =
-      maybe [] singleton $
-        testValidator
-          (fromJust val.forGovernorValidator)
-          "governor"
-          governorValidator
-          governorInputDatum
-          governorRedeemer
-          (spend governorRef)
-          <$ pb.governorParameters
+      maybe
+        []
+        ( singleton
+            . ( \(GovernorParameters _ governorRedeemer) ->
+                  testValidator
+                    (fromJust val.forGovernorValidator)
+                    "governor"
+                    governorValidator
+                    governorInputDatum
+                    governorRedeemer
+                    (spend governorRef)
+              )
+        )
+        (pb.governorParameters)
 
     authority = case pb.authorityTokenParameters of
       [] -> []
@@ -715,20 +729,20 @@ mkMockEffects useAuthScript n = effects
             effectsPerGroup
             (zip effectScripts effectMetadata)
 
-numberOfVotesThatExceedsTheMinimumRequirement :: Integer
-numberOfVotesThatExceedsTheMinimumRequirement =
-  untag (def @ProposalThresholds).execute + 1
+numberOfVotesThatJustMeetsTheMinimumRequirement :: Integer
+numberOfVotesThatJustMeetsTheMinimumRequirement =
+  untag (def @ProposalThresholds).execute
 
 mkWinnerVotes :: Index -> (Winner, Integer)
 mkWinnerVotes idx =
   ( EffectAt idx
-  , numberOfVotesThatExceedsTheMinimumRequirement
+  , numberOfVotesThatJustMeetsTheMinimumRequirement
   )
 
 ambiguousWinnerVotes :: (Winner, Integer)
 ambiguousWinnerVotes =
   ( All
-  , numberOfVotesThatExceedsTheMinimumRequirement
+  , numberOfVotesThatJustMeetsTheMinimumRequirement
   )
 
 --------------------------------------------------------------------------------
@@ -826,6 +840,7 @@ mkValidToNextStateBundle nCosigners nEffects authScript from =
                 gov =
                   GovernorParameters
                     { invalidGovernorOutputDatum = False
+                    , governorRedeemer = MintGATs
                     }
              in b
                   { governorParameters = Just gov
@@ -1065,4 +1080,47 @@ mkBadGovernorOutputDatumBundle nCosigners nEffects =
     }
   where
     template = mkValidFromLockedBundle nCosigners nEffects
-    gov = GovernorParameters True
+    gov = GovernorParameters True MintGATs
+
+mkBadGovernorRedeemerBundle ::
+  Word ->
+  Word ->
+  ParameterBundle
+mkBadGovernorRedeemerBundle nCosigners nEffects =
+  template
+    { governorParameters = Just gov
+    }
+  where
+    template = mkValidFromLockedBundle nCosigners nEffects
+    gov = GovernorParameters False CreateProposal
+
+mkFastforwardToFinishBundles ::
+  Word ->
+  Word ->
+  [ParameterBundle]
+mkFastforwardToFinishBundles nCosigners nEffects = updateTemplate <$> templates
+  where
+    templates = mkValidToFailedStateBundles nCosigners nEffects
+    mkMaliciousTimRange =
+      let lb = proposalStartingTime - 1
+          dub =
+            1
+              + proposalStartingTime
+              + (def :: ProposalTimingConfig).draftTime
+          vub =
+            dub
+              + (def :: ProposalTimingConfig).votingTime
+              + (def :: ProposalTimingConfig).lockingTime
+          lub =
+            vub
+              + (def :: ProposalTimingConfig).executingTime
+          go Draft = (lb, dub)
+          go VotingReady = (lb, vub)
+          go Locked = (lb, lub)
+          go Finished = error "cannot advance from Finished"
+       in uncurry closedBoundedInterval . go
+    updateTemplate template =
+      template
+        { transactionTimeRange =
+            mkMaliciousTimRange template.proposalParameters.fromStatus
+        }

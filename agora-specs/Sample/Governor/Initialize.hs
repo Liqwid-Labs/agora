@@ -58,7 +58,7 @@ import PlutusLedgerApi.V2 (
   ValidatorHash,
  )
 import Sample.Shared (
-  deterministicTracingConfing,
+  deterministicTracingConfig,
   minAda,
  )
 import Sample.Shared qualified as Shared
@@ -72,7 +72,7 @@ data Parameters = Parameters
   -- ^ Whether the 'GovernorDatum.proposalThresholds' field of the output
   --    governor datum is valid or not.
   , datumMaxTimeRangeWidthValid :: Bool
-  -- ^ Whether the 'GovernorDatum.maximumProposalsPerStake'field of the
+  -- ^ Whether the 'GovernorDatum.maximumCreatedProposalsPerStake'field of the
   --    output governor datum is valid or not.
   , datumTimingConfigValid :: Bool
   -- ^ Whether the 'GovernorDatum.proposalTimings'field  of the output
@@ -96,7 +96,7 @@ validGovernorOutputDatum =
     , nextProposalId = ProposalId 0
     , proposalTimings = def
     , createProposalTimeRangeMaxWidth = def
-    , maximumProposalsPerStake = 3
+    , maximumCreatedProposalsPerStake = 3
     }
 
 invalidProposalThresholds :: ProposalThresholds
@@ -106,7 +106,7 @@ invalidMaxTimeRangeWidth :: MaxTimeRangeWidth
 invalidMaxTimeRangeWidth = MaxTimeRangeWidth 0
 
 invalidProposalTimings :: ProposalTimingConfig
-invalidProposalTimings = ProposalTimingConfig (-1) (-1) (-1) (-1)
+invalidProposalTimings = ProposalTimingConfig (-1) (-1) (-1) (-1) (-1) (-1)
 
 witnessRef :: TxOutRef
 witnessRef = TxOutRef "b0353c22b0bd6c5296a8eef160ba25d90b5dc82a9bb8bdaa6823ffc19515d6ad" 0
@@ -124,7 +124,7 @@ scripts =
     (fmap (view #script) . view #scripts)
     ( runLinker
         linker
-        (agoraScripts deterministicTracingConfing)
+        (agoraScripts deterministicTracingConfig)
         governor
     )
 

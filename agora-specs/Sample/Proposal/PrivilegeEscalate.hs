@@ -20,9 +20,10 @@ import Agora.Proposal.Time (
  )
 import Agora.SafeMoney (GTTag)
 import Agora.Stake (
-  ProposalLock (
+  ProposalAction (
     Voted
   ),
+  ProposalLock (ProposalLock),
   StakeDatum (..),
   StakeRedeemer (PermitVote, RetractVotes),
  )
@@ -128,8 +129,19 @@ mkStakeInputOutputDatums op =
 
       allStakes = take 10 $ firstStake : otherStakes
 
+      createdAt = (def :: ProposalTimingConfig).votingTime - 1
+
       stakeWithLock =
-        (\stake -> stake {lockedBy = [Voted defProposalId defResultTag]})
+        ( \stake ->
+            stake
+              { lockedBy =
+                  [ ProposalLock defProposalId $
+                      Voted
+                        defResultTag
+                        createdAt
+                  ]
+              }
+        )
           <$> allStakes
    in wrap op (,) allStakes stakeWithLock
 

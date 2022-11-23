@@ -10,7 +10,7 @@ Tests for Authority token functions
 module Spec.AuthorityToken (specs) where
 
 import Agora.AuthorityToken (singleAuthorityTokenBurned)
-import Plutarch (ClosedTerm, POpaque, perror, popaque)
+import Data.Tagged (Tagged (Tagged))
 import Plutarch.Extra.Compile (mustCompile)
 import Plutarch.Unsafe (punsafeCoerce)
 import PlutusLedgerApi.V1 (
@@ -29,20 +29,12 @@ import PlutusLedgerApi.V1.Value qualified as Value (
   singleton,
  )
 import PlutusTx.AssocMap qualified as AssocMap (empty)
+import Sample.AuthorityToken.UnauthorizedMintingExploit qualified as UnauthorizedMintingExploit
 import Test.Specification (
   SpecificationTree,
   group,
   scriptFails,
   scriptSucceeds,
- )
-import Prelude (
-  Maybe (Nothing),
-  PBool,
-  Semigroup ((<>)),
-  fmap,
-  pconstant,
-  pif,
-  ($),
  )
 
 currencySymbol :: CurrencySymbol
@@ -54,7 +46,7 @@ mkInputs = fmap (TxInInfo (TxOutRef "" 0))
 singleAuthorityTokenBurnedTest :: Value -> [TxOut] -> Script
 singleAuthorityTokenBurnedTest mint outs =
   let actual :: ClosedTerm PBool
-      actual = singleAuthorityTokenBurned (pconstant currencySymbol) (punsafeCoerce $ pconstant $ mkInputs outs) (pconstant mint)
+      actual = singleAuthorityTokenBurned (pconstant $ Tagged currencySymbol) (punsafeCoerce $ pconstant $ mkInputs outs) (pconstant mint)
       s :: ClosedTerm POpaque
       s =
         pif
@@ -150,4 +142,15 @@ specs =
               ]
           )
       ]
+  , group "unauthorized minting exploit"
+      $ map
+        ( UnauthorizedMintingExploit.mkTestCase "(negative test)"
+            . uncurry UnauthorizedMintingExploit.Parameters
+        )
+      $ let l = [1 .. 10]
+         in [ (burnt, minted)
+            | burnt <- l
+            , minted <- l
+            , minted < burnt
+            ]
   ]

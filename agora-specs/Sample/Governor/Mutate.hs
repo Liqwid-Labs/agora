@@ -18,7 +18,6 @@ module Sample.Governor.Mutate (
 
 import Agora.Governor (GovernorDatum (..), GovernorRedeemer (MutateGovernor))
 import Agora.Proposal (ProposalId (ProposalId), ProposalThresholds (..))
-import Agora.Utils (scriptHashToTokenName)
 import Data.Default (def)
 import Data.Map ((!))
 import Plutarch.Api.V2 (PMintingPolicy, mintingPolicySymbol, mkMintingPolicy, validatorHash)
@@ -33,6 +32,7 @@ import Plutarch.Context (
   withValue,
  )
 import Plutarch.Extra.AssetClass (assetClassValue)
+import Plutarch.Extra.ScriptContext (scriptHashToTokenName)
 import PlutusLedgerApi.V1.Value qualified as Value
 import PlutusLedgerApi.V2 (
   CurrencySymbol (CurrencySymbol),
@@ -105,7 +105,7 @@ governorInputDatum =
     , nextProposalId = ProposalId 0
     , proposalTimings = def
     , createProposalTimeRangeMaxWidth = def
-    , maximumProposalsPerStake = 3
+    , maximumCreatedProposalsPerStake = 3
     }
 
 mkGovernorOutputDatum ::
@@ -115,7 +115,7 @@ mkGovernorOutputDatum DatumValid =
   Just $
     toData $
       governorInputDatum
-        { maximumProposalsPerStake = 4
+        { maximumCreatedProposalsPerStake = 4
         }
 mkGovernorOutputDatum ValueInvalid =
   let invalidProposalThresholds =

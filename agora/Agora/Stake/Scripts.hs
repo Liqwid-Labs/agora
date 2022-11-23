@@ -13,6 +13,8 @@ module Agora.Stake.Scripts (
 
 import Agora.Credential (authorizationContext, pauthorizedBy)
 import Agora.Proposal (PProposalDatum, PProposalRedeemer)
+import Agora.Proposal.Time (pcurrentProposalTime)
+import Agora.SafeMoney (GTTag, ProposalSTTag, StakeSTTag)
 import Agora.Stake (
   PProposalContext (
     PNewProposal,
@@ -52,13 +54,7 @@ import Agora.Stake.Redeemers (
   ppermitVote,
   pretractVote,
  )
-import Agora.Utils (
-  passert,
-  pisDNothing,
-  pmapMaybe,
-  psymbolValueOf',
-  pvalidatorHashToTokenName,
- )
+import Agora.Utils (pisDNothing, ptoScottEncodingT, puntag)
 import Plutarch.Api.V1 (
   PCredential (PPubKeyCredential, PScriptCredential),
   PCurrencySymbol,
@@ -77,13 +73,14 @@ import Plutarch.Extra.AssetClass (
   PAssetClass,
   PAssetClassData,
   passetClass,
-  ptoScottEncoding,
  )
+import Plutarch.Extra.Bool (passert)
 import Plutarch.Extra.Field (pletAll, pletAllC)
 import Plutarch.Extra.Functor (PFunctor (pfmap))
-import "liqwid-plutarch-extra" Plutarch.Extra.List (pfindJust)
+import "liqwid-plutarch-extra" Plutarch.Extra.List (pfindJust, pmapMaybe)
 import Plutarch.Extra.Maybe (
   passertPJust,
+  pdjust,
   pfromJust,
   pfromMaybe,
   pjust,
@@ -93,9 +90,12 @@ import Plutarch.Extra.Maybe (
 import Plutarch.Extra.Ord (POrdering (PEQ, PGT, PLT), pcompareBy, pfromOrd)
 import Plutarch.Extra.ScriptContext (
   pfindTxInByTxOutRef,
-  pfromOutputDatum,
+  ptryFromOutputDatum,
+  pvalidatorHashFromAddress,
+  pvalidatorHashToTokenName,
   pvalueSpent,
  )
+import Plutarch.Extra.Tagged (PTagged)
 import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (
   pguardC,
   pletC,
@@ -105,7 +105,9 @@ import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (
  )
 import Plutarch.Extra.Value (
   passetClassValueOf,
+  passetClassValueOfT,
   psymbolValueOf,
+  psymbolValueOf',
  )
 import Plutarch.Num (PNum (pnegate))
 import Plutarch.Unsafe (punsafeCoerce)
@@ -131,15 +133,14 @@ import Prelude hiding (Num ((+)))
    == Arguments
 
    Following arguments should be provided(in this order):
-   1. governor ST assetclass
+   1. governance token assetclass
 
    @since 1.0.0
 -}
 stakePolicy ::
-  -- | The (governance) token that a Stake can store.
-  ClosedTerm (PAssetClassData :--> PMintingPolicy)
+  ClosedTerm (PTagged GTTag PAssetClassData :--> PMintingPolicy)
 stakePolicy =
-  plam $ \gstClass _redeemer ctx' -> unTermCont $ do
+  plam $ \gtClass _redeemer ctx' -> unTermCont $ do
     ctx <- pletFieldsC @'["txInfo", "purpose"] ctx'
     txInfo <- pletC $ ctx.txInfo
     let _a :: Term _ PTxInfo
@@ -197,7 +198,7 @@ stakePolicy =
               datumF <-
                 pletAllC $
                   pfromData $
-                    pfromOutputDatum @(PAsData PStakeDatum)
+                    ptryFromOutputDatum @(PAsData PStakeDatum)
                       # outputF.datum
                       # txInfoF.datums
 
@@ -205,10 +206,10 @@ stakePolicy =
                 foldl1
                   (#&&)
                   [ ptraceIfFalse "Stake ouput has expected amount of stake token" $
-                      passetClassValueOf
-                        # (ptoScottEncoding # gstClass)
+                      passetClassValueOfT
+                        # (ptoScottEncodingT # gtClass)
                         # outputF.value
-                        #== pto (pfromData datumF.stakedAmount)
+                        #== pfromData datumF.stakedAmount
                   , ptraceIfFalse "Stake Owner should sign the transaction" $
                       pauthorizedBy
                         # authorizationContext txInfoF
@@ -232,17 +233,17 @@ stakePolicy =
      Following arguments should be provided(in this order):
      1. stake ST symbol
      2. proposal ST assetclass
-     3. governor ST assetclass
+     3. governance token assetclass
 
      @since 1.0.0
 -}
 mkStakeValidator ::
   StakeRedeemerImpl s ->
-  Term s PCurrencySymbol ->
-  Term s PAssetClass ->
-  Term s PAssetClass ->
+  Term s (PTagged StakeSTTag PCurrencySymbol) ->
+  Term s (PTagged ProposalSTTag PAssetClass) ->
+  Term s (PTagged GTTag PAssetClass) ->
   Term s PValidator
-mkStakeValidator impl sstSymbol pstClass gstClass =
+mkStakeValidator impl sstSymbol pstClass gtClass =
   plam $ \_datum redeemer ctx -> unTermCont $ do
     ctxF <- pletFieldsC @'["txInfo", "purpose"] ctx
     txInfo <- pletC $ pfromData ctxF.txInfo
@@ -256,6 +257,7 @@ mkStakeValidator impl sstSymbol pstClass gstClass =
           , "signatories"
           , "redeemers"
           , "datums"
+          , "validRange"
           ]
         txInfo
 
@@ -271,18 +273,16 @@ mkStakeValidator impl sstSymbol pstClass gstClass =
             # (pfield @"_0" # stakeInputRef)
             # txInfoF.inputs
 
-    stakeValidatorCredential <-
+    stakeValidatorHash <-
       pletC $
-        pfield @"credential"
+        pfromJust
+          #$ pvalidatorHashFromAddress
           #$ pfield @"address"
           # validatedInput
 
-    let sstName = pvalidatorHashToTokenName #$ pmatch stakeValidatorCredential $
-          \case
-            PScriptCredential r -> pfield @"_0" # r
-            _ -> perror
+    let sstName = pvalidatorHashToTokenName stakeValidatorHash
 
-    sstClass <- pletC $ passetClass # sstSymbol # sstName
+    sstClass <- pletC $ passetClass # puntag sstSymbol # sstName
 
     --------------------------------------------------------------------------
 
@@ -302,15 +302,18 @@ mkStakeValidator impl sstSymbol pstClass gstClass =
                 PGT -> ptraceError "More than one SST in one UTxO"
                 -- 1
                 PEQ ->
-                  let ownerCredential = pfield @"credential" # txOutF.address
+                  let ownerValidatoHash =
+                        pfromJust
+                          #$ pvalidatorHashFromAddress
+                          # txOutF.address
 
                       isOwnedByStakeValidator =
-                        ownerCredential #== stakeValidatorCredential
+                        ownerValidatoHash #== stakeValidatorHash
 
                       datum =
                         ptrace "Resolve stake datum" $
                           pfromData $
-                            pfromOutputDatum @(PAsData PStakeDatum)
+                            ptryFromOutputDatum @(PAsData PStakeDatum)
                               # txOutF.datum
                               # txInfoF.datums
                    in passert
@@ -342,7 +345,7 @@ mkStakeValidator impl sstSymbol pstClass gstClass =
 
     authorizedBy <- pletC $ pauthorizedBy # authorizationContext txInfoF
 
-    PPair allHaveSameOwner allHaveSameDelegatee <-
+    PPair allHaveSameOwner allHaveSameOrOwnedByDelegatee <-
       pmatchC $
         pfoldr
           # plam
@@ -355,11 +358,15 @@ mkStakeValidator impl sstSymbol pstClass gstClass =
                           allHaveSameOwner
                             #&& dF.owner
                             #== firstStakeInputDatumF.owner
-                        allHaveSameDelegatee' =
-                          allHaveSameDelegatee
-                            #&& dF.delegatedTo
-                            #== firstStakeInputDatumF.delegatedTo
-                     in pcon $ PPair allHaveSameOwner' allHaveSameDelegatee'
+                        allHaveSameOrOwnedByDelegatee' =
+                          let delegated =
+                                dF.delegatedTo #== firstStakeInputDatumF.delegatedTo
+                              ownedByDelegatee =
+                                pdata (pdjust # dF.owner)
+                                  #== firstStakeInputDatumF.delegatedTo
+                           in allHaveSameDelegatee
+                                #&& (delegated #|| ownedByDelegatee)
+                     in pcon $ PPair allHaveSameOwner' allHaveSameOrOwnedByDelegatee'
             )
           # pcon (PPair (pconstant True) (pconstant True))
           # restOfStakeInputDatums
@@ -370,7 +377,7 @@ mkStakeValidator impl sstSymbol pstClass gstClass =
             # firstStakeInputDatumF.owner
 
         delegateSignsTransaction =
-          allHaveSameDelegatee
+          allHaveSameOrOwnedByDelegatee
             #&& pmaybeData
             # pconstant False
             # plam ((authorizedBy #) . pfromData)
@@ -407,13 +414,12 @@ mkStakeValidator impl sstSymbol pstClass gstClass =
             ( \output ->
                 let validateGT = plam $ \stakeDatum ->
                       let expected =
-                            pto $
-                              pfromData $
-                                pfield @"stakedAmount" # stakeDatum
+                            pfromData $
+                              pfield @"stakedAmount" # stakeDatum
 
                           actual =
-                            passetClassValueOf
-                              # gstClass
+                            passetClassValueOfT
+                              # gtClass
                               # (pfield @"value" # output)
                        in pif
                             (expected #== actual)
@@ -433,19 +439,20 @@ mkStakeValidator impl sstSymbol pstClass gstClass =
       plam $
         flip pletAll $ \txOutF ->
           let isProposalUTxO =
-                passetClassValueOf
+                passetClassValueOfT
                   # pstClass
                   # txOutF.value
                   #== 1
+
               proposalDatum =
                 pfromData $
-                  pfromOutputDatum @(PAsData PProposalDatum)
+                  ptryFromOutputDatum @(PAsData PProposalDatum)
                     # txOutF.datum
                     # txInfoF.datums
            in pif isProposalUTxO (pjust # proposalDatum) pnothing
 
     let pstMinted =
-          passetClassValueOf # pstClass # txInfoF.mint #== 1
+          passetClassValueOfT # pstClass # txInfoF.mint #== 1
 
         newProposalContext =
           pcon $
@@ -477,10 +484,13 @@ mkStakeValidator impl sstSymbol pstClass gstClass =
                   pfmap
                     # plam
                       ( \proposalDatum ->
-                          let id = pfield @"proposalId" # proposalDatum
-                              status = pfield @"status" # proposalDatum
-                              redeemer = getProposalRedeemer # inInfoF.outRef
-                           in pcon $ PSpendProposal id status redeemer
+                          let redeemer = getProposalRedeemer # inInfoF.outRef
+                              currentTime =
+                                passertPJust
+                                  # "Should resolve proposal time"
+                                  #$ pcurrentProposalTime
+                                  # txInfoF.validRange
+                           in pcon $ PSpendProposal proposalDatum redeemer currentTime
                       )
                     #$ getProposalDatum
                     # pfromData inInfoF.resolved
@@ -598,15 +608,15 @@ mkStakeValidator impl sstSymbol pstClass gstClass =
      Following arguments should be provided(in this order):
      1. stake ST symbol
      2. proposal ST assetclass
-     3. governor ST assetclass
+     3. governance token assetclass
 
      @since 1.0.0
 -}
 stakeValidator ::
   ClosedTerm
-    ( PCurrencySymbol
-        :--> PAssetClassData
-        :--> PAssetClassData
+    ( PTagged StakeSTTag PCurrencySymbol
+        :--> PTagged ProposalSTTag PAssetClassData
+        :--> PTagged GTTag PAssetClassData
         :--> PValidator
     )
 stakeValidator =
@@ -622,5 +632,5 @@ stakeValidator =
           }
       )
       sstSymbol
-      (ptoScottEncoding # pstClass)
-      (ptoScottEncoding # gstClass)
+      (ptoScottEncodingT # pstClass)
+      (ptoScottEncodingT # gstClass)

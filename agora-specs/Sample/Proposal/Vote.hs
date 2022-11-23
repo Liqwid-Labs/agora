@@ -18,6 +18,7 @@ module Sample.Proposal.Vote (
   mkTestTree,
   mkValidOwnerVoteBundle,
   mkValidDelegateeVoteBundle,
+  delegateeVoteWithOwnAndDelegatedStakeBundle,
   transparentAssets,
   transactionNotAuthorized,
   voteForNonexistentOutcome,
@@ -35,6 +36,7 @@ import Agora.Proposal (
   ProposalId (ProposalId),
   ProposalRedeemer (Vote),
   ProposalStatus (VotingReady),
+  ProposalThresholds (vote),
   ProposalVotes (ProposalVotes),
   ResultTag (ResultTag),
  )
@@ -44,7 +46,8 @@ import Agora.Proposal.Time (
  )
 import Agora.SafeMoney (GTTag)
 import Agora.Stake (
-  ProposalLock (Voted),
+  ProposalAction (Voted),
+  ProposalLock (ProposalLock),
   StakeDatum (..),
   StakeRedeemer (Destroy, PermitVote),
  )
@@ -66,7 +69,7 @@ import Plutarch.Context (
   withValue,
  )
 import Plutarch.Extra.AssetClass (adaClass, assetClassValue)
-import PlutusLedgerApi.V2 (Credential (PubKeyCredential), PubKeyHash)
+import PlutusLedgerApi.V2 (Credential (PubKeyCredential), Interval, POSIXTime, PubKeyHash)
 import PlutusLedgerApi.V2.Contexts (TxOutRef (TxOutRef))
 import Sample.Proposal.Shared (proposalTxRef)
 import Sample.Shared (
@@ -98,6 +101,7 @@ newtype VoteParameters = VoteParameters {voteFor :: ResultTag}
 
 data StakeParameters = StakeParameters
   { numStakes :: Integer
+  , mixInDelegateeAsOwner :: Bool
   , stakeInputParameters :: StakeInputParameters
   , stakeOutputParameters :: StakeOutputParameters
   }
@@ -141,6 +145,24 @@ delegatee = pubKeyHashes !! 1
 
 unknownSig :: PubKeyHash
 unknownSig = pubKeyHashes !! 2
+
+validTimeRangeLowerBound :: POSIXTime
+validTimeRangeLowerBound =
+  0
+    + (def :: ProposalTimingConfig).draftTime
+    + 1
+
+validTimeRangeUpperBound :: POSIXTime
+validTimeRangeUpperBound =
+  validTimeRangeLowerBound
+    + (def :: ProposalTimingConfig).votingTime
+    - 2
+
+validTimeRange :: Interval POSIXTime
+validTimeRange =
+  closedBoundedInterval
+    validTimeRangeLowerBound
+    validTimeRangeUpperBound
 
 --------------------------------------------------------------------------------
 
@@ -194,8 +216,8 @@ mkStakeInputDatum params =
     , owner = PubKeyCredential stakeOwner
     , delegatedTo = Just (PubKeyCredential delegatee)
     , lockedBy =
-        [ Voted (ProposalId 0) (ResultTag 0)
-        , Voted (ProposalId 1) (ResultTag 2)
+        [ ProposalLock (ProposalId 0) $ Voted (ResultTag 0) 100
+        , ProposalLock (ProposalId 1) $ Voted (ResultTag 2) 200
         ]
     }
 
@@ -224,9 +246,11 @@ vote params =
             <> minAda
 
       newLock =
-        Voted
+        ProposalLock
           proposalInputDatum.proposalId
-          params.voteParameters.voteFor
+          $ Voted
+            params.voteParameters.voteFor
+            validTimeRangeUpperBound
 
       updatedLocks =
         if params.stakeParameters.stakeOutputParameters.dontAddNewLock
@@ -256,6 +280,16 @@ vote params =
       stakeRedeemer =
         mkStakeRedeemer params.stakeParameters.stakeOutputParameters
 
+      mixOwner i datum =
+        if params.stakeParameters.mixInDelegateeAsOwner
+          && i == 2
+          then
+            datum
+              { owner = PubKeyCredential delegatee
+              , delegatedTo = Nothing
+              }
+          else datum
+
       stakeBuilder :: b
       stakeBuilder =
         foldMap
@@ -265,7 +299,7 @@ vote params =
                     mconcat
                       [ script stakeValidatorHash
                       , withValue stakeInputValue
-                      , withInlineDatum stakeInputDatum
+                      , withInlineDatum $ mixOwner i stakeInputDatum
                       , withRedeemer stakeRedeemer
                       , withRef $ mkStakeRef numProposals' i
                       ]
@@ -276,7 +310,7 @@ vote params =
                         mconcat
                           [ script stakeValidatorHash
                           , withValue stakeOutputValue
-                          , withInlineDatum stakeOutputDatum
+                          , withInlineDatum $ mixOwner i stakeOutputDatum
                           ]
                 ]
           )
@@ -341,13 +375,6 @@ vote params =
         Owner -> stakeOwner
         Delegatee -> delegatee
         Unknown -> unknownSig
-
-      --------------------------------------------------------------------------
-
-      validTimeRange =
-        closedBoundedInterval
-          ((def :: ProposalTimingConfig).draftTime + 1)
-          ((def :: ProposalTimingConfig).votingTime - 1)
 
       --------------------------------------------------------------------------
 
@@ -419,9 +446,10 @@ mkValidOwnerVoteBundle stakes =
     , stakeParameters =
         StakeParameters
           { numStakes = stakes
+          , mixInDelegateeAsOwner = False
           , stakeInputParameters =
               StakeInputParameters
-                { perStakeGTs = 114514
+                { perStakeGTs = (def :: ProposalThresholds).vote
                 }
           , stakeOutputParameters =
               StakeOutputParameters
@@ -449,6 +477,16 @@ mkValidDelegateeVoteBundle stakes =
         { transactionParameters =
             template.transactionParameters
               { signedBy = Delegatee
+              }
+        }
+
+delegateeVoteWithOwnAndDelegatedStakeBundle :: ParameterBundle
+delegateeVoteWithOwnAndDelegatedStakeBundle =
+  let template = mkValidDelegateeVoteBundle 5
+   in template
+        { stakeParameters =
+            template.stakeParameters
+              { mixInDelegateeAsOwner = True
               }
         }
 
