@@ -226,6 +226,23 @@ stakePolicy =
 
 --------------------------------------------------------------------------------
 
+data PAuthCheckHelper (s :: S) = PAuthCheckHelper
+  { allHaveTheSameOwner :: Term s PBool
+  , allOwnByOrDelegatedToTheFirstOwner :: Term s PBool
+  , allOwnByOrDelegatedToTheFirstDelegatee :: Term s PBool
+  }
+  deriving stock
+    ( Generic
+    )
+  deriving anyclass
+    ( PlutusType
+    )
+
+instance DerivePlutusType PAuthCheckHelper where
+  type DPTStrat _ = PlutusTypeScott
+
+--------------------------------------------------------------------------------
+
 {- | Create a stake validator, given the implementation of stake redeemers.
 
      == Arguments
@@ -345,39 +362,61 @@ mkStakeValidator impl sstSymbol pstClass gtClass =
 
     authorizedBy <- pletC $ pauthorizedBy # authorizationContext txInfoF
 
-    PPair allHaveSameOwner allHaveSameOrOwnedByDelegatee <-
+    authCheckHelperF <-
       pmatchC $
         pfoldr
           # plam
-            ( \d p -> unTermCont $ do
-                dF <- pletFieldsC @'["owner", "delegatedTo"] d
+            ( \stake helper -> unTermCont $ do
+                stakeF <- pletFieldsC @'["owner", "delegatedTo"] stake
+                helperF <- pmatchC helper
 
-                pure $
-                  pmatch p $ \(PPair allHaveSameOwner allHaveSameDelegatee) ->
-                    let allHaveSameOwner' =
-                          allHaveSameOwner
-                            #&& dF.owner
-                            #== firstStakeInputDatumF.owner
-                        allHaveSameOrOwnedByDelegatee' =
-                          let delegated =
-                                dF.delegatedTo #== firstStakeInputDatumF.delegatedTo
-                              ownedByDelegatee =
-                                pdata (pdjust # dF.owner)
-                                  #== firstStakeInputDatumF.delegatedTo
-                           in allHaveSameDelegatee
-                                #&& (delegated #|| ownedByDelegatee)
-                     in pcon $ PPair allHaveSameOwner' allHaveSameOrOwnedByDelegatee'
+                haveTheSameOwnerAsTheFirstStake <-
+                  pletC $
+                    stakeF.owner #== firstStakeInputDatumF.owner
+
+                let ownerOfTheFirstStakeIsTheDelegatee =
+                      haveTheSameOwnerAsTheFirstStake
+                        #|| stakeF.delegatedTo
+                        #== pdata (pdjust # firstStakeInputDatumF.owner)
+
+                    delegateeOfTheFirstStakeIsTheDelegatee =
+                      pdata (pdjust # stakeF.owner)
+                        #== firstStakeInputDatumF.delegatedTo
+                        #|| stakeF.delegatedTo
+                        #== firstStakeInputDatumF.delegatedTo
+
+                    helper' =
+                      pcon $
+                        PAuthCheckHelper
+                          ( helperF.allHaveTheSameOwner
+                              #&& haveTheSameOwnerAsTheFirstStake
+                          )
+                          ( helperF.allOwnByOrDelegatedToTheFirstOwner
+                              #&& ownerOfTheFirstStakeIsTheDelegatee
+                          )
+                          ( helperF.allOwnByOrDelegatedToTheFirstDelegatee
+                              #&& delegateeOfTheFirstStakeIsTheDelegatee
+                          )
+
+                pure helper'
             )
-          # pcon (PPair (pconstant True) (pconstant True))
+          # pcon
+            ( PAuthCheckHelper
+                (pconstant True)
+                (pconstant True)
+                (pconstant True)
+            )
           # restOfStakeInputDatums
 
     let ownerSignsTransaction =
-          allHaveSameOwner
+          authCheckHelperF.allHaveTheSameOwner
             #&& authorizedBy
             # firstStakeInputDatumF.owner
 
         delegateSignsTransaction =
-          allHaveSameOrOwnedByDelegatee
+          ( authCheckHelperF.allOwnByOrDelegatedToTheFirstOwner
+              #|| authCheckHelperF.allOwnByOrDelegatedToTheFirstDelegatee
+          )
             #&& pmaybeData
             # pconstant False
             # plam ((authorizedBy #) . pfromData)
