@@ -424,7 +424,7 @@ specs =
                   , Unlock.mkTestTree
                       "unlock an irrelevant stake"
                       (Unlock.mkUnockIrrelevantStakes nStakes)
-                      (Unlock.Validity False True)
+                      (Unlock.Validity False False)
                   , Unlock.mkTestTree
                       "creator: retract votes"
                       (Unlock.mkCreatorRetractVotes nStakes)
