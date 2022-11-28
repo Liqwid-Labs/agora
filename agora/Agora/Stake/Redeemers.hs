@@ -293,15 +293,12 @@ premoveLocks =
                 createdAt
               ) =
               let notInCooldown = createdAt + unlockCooldown #<= lowerBound
-               in foldl1
-                    (#||)
-                    [ shouldRemoveAllLocks
-                    , -- Fail the transaction if a voter lock is in cooldown.∏
-                      passert
-                        "Voter lock shouldn't be in cooldown"
-                        notInCooldown
-                        (pconstant True)
-                    ]
+               in pif shouldRemoveAllLocks (pconstant True) $
+                    -- Fail the transaction if a voter lock is in cooldown.
+                    passert
+                      "Voter lock shouldn't be in cooldown"
+                      notInCooldown
+                      (pconstant True)
 
           shouldRemoveLock =
             flip
