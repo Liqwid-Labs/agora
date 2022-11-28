@@ -6,6 +6,17 @@ This format is based on [Keep A Changelog](https://keepachangelog.com/en/1.0.0).
 
 ### Modified
 
+- Fix several vulnerabilities and bugs found by auditors.
+
+  Including:
+  - Stake locks can be removed without retracting votes. This is a bug
+    introduced in the refactoring of `premoveLocks` by #209.
+  - Stake can retract all votes in its cooldown period.
+  - Inconsistent delegate authority checking may fail in some cases, where the
+    delegate votes with own and delegated stakes.
+  
+  Included by [#212](https://github.com/Liqwid-Labs/agora/pull/212)
+
 - Mitigate potential DDoS attack(voting and unlocking repeatedly)
 
   We fix this issue by posing cooldown time while retracting votes, encoded in  
