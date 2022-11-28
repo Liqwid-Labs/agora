@@ -414,13 +414,16 @@ mkStakeValidator impl sstSymbol pstClass gtClass =
             # firstStakeInputDatumF.owner
 
         delegateSignsTransaction =
-          ( authCheckHelperF.allOwnByOrDelegatedToTheFirstOwner
-              #|| authCheckHelperF.allOwnByOrDelegatedToTheFirstDelegatee
+          ( authCheckHelperF.allOwnByOrDelegatedToTheFirstDelegatee
+              #&& pmaybeData
+              # pconstant False
+              # plam ((authorizedBy #) . pfromData)
+              # pfromData firstStakeInputDatumF.delegatedTo
           )
-            #&& pmaybeData
-            # pconstant False
-            # plam ((authorizedBy #) . pfromData)
-            # pfromData firstStakeInputDatumF.delegatedTo
+            #|| ( authCheckHelperF.allOwnByOrDelegatedToTheFirstOwner
+                    #&& authorizedBy
+                    # firstStakeInputDatumF.owner
+                )
 
         signedBy =
           pif
