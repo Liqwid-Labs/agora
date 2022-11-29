@@ -50,7 +50,6 @@ import Agora.Stake (
   ),
   pstakeLocked,
  )
-import Data.Functor ((<&>))
 import Plutarch.Api.V1.Address (PCredential)
 import Plutarch.Api.V2 (PMaybeData, PPOSIXTime)
 import Plutarch.Extra.Bool (passert)
@@ -60,7 +59,7 @@ import "liqwid-plutarch-extra" Plutarch.Extra.List (
   ptryDeleteFirstBy,
   ptryFromSingleton,
  )
-import Plutarch.Extra.Maybe (pdjust, pdnothing, pjust, pmaybe, pmaybeData, pnothing)
+import Plutarch.Extra.Maybe (pdjust, pdnothing, pmaybeData)
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
 import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC)
 import Plutarch.Extra.Time (PCurrentTime (PCurrentTime))
@@ -269,14 +268,14 @@ instance DerivePlutusType PRemoveLocksMode where
 {- | Remove stake locks with the proposal id given the list of existing locks.
      The first parameter controls whether to remove creator locks or not. If
      one of the locks performed voting action, the unlock cooldown will be
-     checked if it's given.
+     checked.
 -}
 premoveLocks ::
   forall (s :: S).
   Term
     s
     ( PProposalId
-        :--> PMaybe PPOSIXTime
+        :--> PPOSIXTime
         :--> PProposalTime
         :--> PRemoveLocksMode
         :--> PBuiltinList (PAsData PProposalLock)
@@ -293,31 +292,30 @@ premoveLocks =
             ( (pfield @"createdAt" #) ->
                 createdAt
               ) =
-              let notInCooldown =
-                    pmaybe
-                      # pconstant True
-                      # plam (\c -> createdAt + c #<= lowerBound)
-                      # unlockCooldown
-               in foldl1
-                    (#||)
-                    [ shouldRemoveAllLocks
-                    , ptraceIfFalse "Stake lock in cooldown" notInCooldown
-                    ]
+              let notInCooldown = createdAt + unlockCooldown #<= lowerBound
+               in pif shouldRemoveAllLocks (pconstant True) $
+                    -- Fail the transaction if a voter lock is in cooldown.
+                    passert
+                      "Voter lock shouldn't be in cooldown"
+                      notInCooldown
+                      (pconstant True)
 
-          handleLock =
-            plam $
-              flip
-                pletAll
-                ( \lockF ->
-                    foldl1
-                      (#&&)
-                      [ proposalId #== lockF.proposalId
-                      , pmatch lockF.action $ \case
-                          PVoted r -> handleVoter r
-                          _ -> shouldRemoveAllLocks
-                      ]
-                )
-                . pfromData
+          shouldRemoveLock =
+            flip
+              pletAll
+              ( \lockF ->
+                  foldl1
+                    (#&&)
+                    [ proposalId #== lockF.proposalId
+                    , pmatch lockF.action $ \case
+                        PVoted r -> handleVoter r
+                        _ -> shouldRemoveAllLocks
+                    ]
+              )
+              . pfromData
+
+          -- Return true, given a lock that should be kept.
+          handleLock = plam $ (pnot #) . shouldRemoveLock
 
       pure $ pfilter # handleLock
 
@@ -340,18 +338,13 @@ pretractVote = pvoteHelper #$ phoistAcyclic $
                   ]
                 proposal
 
-            (mode, unlockCooldown) <-
-              pmatchC (proposalF.status #== pconstant Finished) <&> \case
-                PTrue ->
-                  ( pcon PRemoveAllLocks
-                  , pnothing
-                  )
-                _ ->
-                  ( pcon PRemoveVoterLockOnly
-                  , pjust
-                      #$ pfield @"minStakeVotingTime"
-                      # proposalF.timingConfig
-                  )
+            let unlockCooldown =
+                  pfield @"minStakeVotingTime"
+                    # proposalF.timingConfig
+
+                mode = pmatch (proposalF.status #== pconstant Finished) $ \case
+                  PTrue -> pcon PRemoveAllLocks
+                  _ -> pcon PRemoveVoterLockOnly
 
             pguardC "Authorized by either opwner or delegatee" $
               pisSignedBy # pconstant True # ctx

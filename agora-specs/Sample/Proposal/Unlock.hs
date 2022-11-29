@@ -310,9 +310,11 @@ unlock ps = builder
     removeLocks v c =
       filter $ \(ProposalLock pid action) ->
         pid == defProposalId
-          && case action of
-            Voted _ _ -> v
-            _ -> c
+          && not
+            ( case action of
+                Voted _ _ -> v
+                _ -> c
+            )
 
     stakeOutputDatum =
       stakeInputDatum
