@@ -44,8 +44,8 @@ import Sample.Shared (
   governor,
   signer,
   stakeAssetClass,
+  stakeScriptHash,
   stakeSymbol,
-  stakeValidatorHash,
  )
 import Test.Util (sortValue)
 
@@ -77,7 +77,7 @@ stakeDepositWithdraw config =
           , signedWith signer
           , input $
               mconcat
-                [ script stakeValidatorHash
+                [ script stakeScriptHash
                 , withValue
                     ( sortValue $
                         st
@@ -88,7 +88,7 @@ stakeDepositWithdraw config =
                 ]
           , output $
               mconcat
-                [ script stakeValidatorHash
+                [ script stakeScriptHash
                 , withValue
                     ( sortValue $
                         st

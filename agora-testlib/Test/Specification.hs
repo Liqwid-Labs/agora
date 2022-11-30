@@ -53,23 +53,21 @@ import Control.Composition ((.**), (.***))
 import Data.Coerce (coerce)
 import Data.Text qualified as Text
 import Plutarch.Evaluate (evalScript)
-import PlutusLedgerApi.V1.Scripts (
-  Context (Context),
-  applyMintingPolicyScript,
-  applyValidator,
- )
+import Plutarch.Script (Script (Script))
+import PlutusCore.Data qualified as PLC
+import PlutusCore.MkPlc qualified as PLC
 import PlutusLedgerApi.V2 (
   Datum (..),
-  MintingPolicy,
   Redeemer (Redeemer),
-  Script,
   ScriptContext,
   ToData (toBuiltinData),
-  Validator,
+  toData,
  )
+import PlutusPrelude (over)
 import PlutusTx.IsData qualified as PlutusTx (ToData)
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.HUnit (assertFailure, testCase)
+import UntypedPlutusCore qualified as UPLC
 
 {- | Expectations upon execution of script
  @Success@ indicates a successful execution.
@@ -169,9 +167,6 @@ scriptSucceeds name script = Terminal $ Specification name Success script
 scriptFails :: String -> Script -> SpecificationTree
 scriptFails name script = Terminal $ Specification name Failure script
 
-mkContext :: ScriptContext -> Context
-mkContext = Context . toBuiltinData
-
 mkRedeemer ::
   forall redeemer.
   (PlutusTx.ToData redeemer) =>
@@ -188,37 +183,39 @@ mkDatum = Datum . toBuiltinData
 
 applyMintingPolicy' ::
   (PlutusTx.ToData redeemer) =>
-  MintingPolicy ->
+  Script ->
   redeemer ->
   ScriptContext ->
   Script
 applyMintingPolicy' policy redeemer scriptContext =
-  applyMintingPolicyScript
-    (mkContext scriptContext)
+  applyArguments
     policy
-    (mkRedeemer redeemer)
+    [ toData $ mkRedeemer redeemer
+    , toData scriptContext
+    ]
 
 applyValidator' ::
   ( PlutusTx.ToData datum
   , PlutusTx.ToData redeemer
   ) =>
-  Validator ->
+  Script ->
   datum ->
   redeemer ->
   ScriptContext ->
   Script
 applyValidator' validator datum redeemer scriptContext =
-  applyValidator
-    (mkContext scriptContext)
+  applyArguments
     validator
-    (mkDatum datum)
-    (mkRedeemer redeemer)
+    [ toData $ mkDatum datum
+    , toData $ mkRedeemer redeemer
+    , toData scriptContext
+    ]
 
 -- | Check that a policy script succeeds, given a name and arguments.
 policySucceedsWith ::
   (PlutusTx.ToData redeemer) =>
   String ->
-  MintingPolicy ->
+  Script ->
   redeemer ->
   ScriptContext ->
   SpecificationTree
@@ -229,7 +226,7 @@ policySucceedsWith tag =
 policyFailsWith ::
   (PlutusTx.ToData redeemer) =>
   String ->
-  MintingPolicy ->
+  Script ->
   redeemer ->
   ScriptContext ->
   SpecificationTree
@@ -242,7 +239,7 @@ validatorSucceedsWith ::
   , PlutusTx.ToData redeemer
   ) =>
   String ->
-  Validator ->
+  Script ->
   datum ->
   redeemer ->
   ScriptContext ->
@@ -256,7 +253,7 @@ validatorFailsWith ::
   , PlutusTx.ToData redeemer
   ) =>
   String ->
-  Validator ->
+  Script ->
   datum ->
   redeemer ->
   ScriptContext ->
@@ -269,7 +266,7 @@ effectSucceedsWith ::
   ( PlutusTx.ToData datum
   ) =>
   String ->
-  Validator ->
+  Script ->
   datum ->
   ScriptContext ->
   SpecificationTree
@@ -280,7 +277,7 @@ effectFailsWith ::
   ( PlutusTx.ToData datum
   ) =>
   String ->
-  Validator ->
+  Script ->
   datum ->
   ScriptContext ->
   SpecificationTree
@@ -293,7 +290,7 @@ testValidator ::
   -- | Is this test case expected to succeed?
   Bool ->
   String ->
-  Validator ->
+  Script ->
   datum ->
   redeemer ->
   ScriptContext ->
@@ -310,7 +307,7 @@ testPolicy ::
   -- | Is this test case expected to succeed?
   Bool ->
   String ->
-  MintingPolicy ->
+  Script ->
   redeemer ->
   ScriptContext ->
   SpecificationTree
@@ -318,3 +315,11 @@ testPolicy isValid =
   if isValid
     then policySucceedsWith
     else policyFailsWith
+
+--------------------------------------------------------------------------------
+
+applyArguments :: Script -> [PLC.Data] -> Script
+applyArguments (Script p) args =
+  let termArgs = fmap (PLC.mkConstant ()) args
+      applied t = PLC.mkIterApp () t termArgs
+   in Script $ over UPLC.progTerm applied p

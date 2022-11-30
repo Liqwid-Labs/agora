@@ -24,7 +24,7 @@ module Sample.Shared (
   stakeAssetClass,
   stakePolicy,
   stakeValidator,
-  stakeValidatorHash,
+  stakeScriptHash,
   stakeAddress,
   stakeSymbol,
 
@@ -35,14 +35,14 @@ module Sample.Shared (
   governorSymbol,
   governorAssetClass,
   governorValidatorAddress,
-  governorValidatorHash,
+  governorScriptHash,
   gstUTXORef,
 
   -- ** Proposal
   proposalPolicy,
   proposalPolicySymbol,
   proposalValidator,
-  proposalValidatorHash,
+  proposalScriptHash,
   proposalValidatorAddress,
   proposalStartingTimeFromTimeRange,
   proposalAssetClass,
@@ -77,13 +77,10 @@ import Data.Map (Map, (!))
 import Data.Tagged (Tagged (..))
 import Data.Text (Text)
 import Optics (view)
-import Plutarch (Config (..), TracingMode (DetTracing))
-import Plutarch.Api.V2 (
-  mintingPolicySymbol,
-  validatorHash,
- )
+import Plutarch (Config (..), Script, TracingMode (DetTracing))
+import Plutarch.Api.V1 (scriptHash)
 import Plutarch.Extra.AssetClass (AssetClass (AssetClass))
-import Plutarch.Extra.ScriptContext (validatorHashToTokenName)
+import Plutarch.Extra.ScriptContext (scriptHashToTokenName)
 import PlutusLedgerApi.V1.Address (scriptHashAddress)
 import PlutusLedgerApi.V1.Value (TokenName, Value)
 import PlutusLedgerApi.V1.Value qualified as Value (
@@ -92,16 +89,15 @@ import PlutusLedgerApi.V1.Value qualified as Value (
 import PlutusLedgerApi.V2 (
   Address (Address),
   Credential (ScriptCredential),
-  CurrencySymbol,
+  CurrencySymbol (CurrencySymbol),
   Extended (..),
   Interval (..),
   LowerBound (..),
-  MintingPolicy (..),
   OutputDatum (NoOutputDatum),
   POSIXTimeRange,
   PubKeyHash,
   Redeemer (..),
-  Script,
+  ScriptHash (getScriptHash),
   ToData (toBuiltinData),
   TxOut (
     TxOut,
@@ -112,8 +108,6 @@ import PlutusLedgerApi.V2 (
   ),
   TxOutRef (TxOutRef),
   UpperBound (..),
-  Validator (Validator),
-  ValidatorHash (ValidatorHash),
  )
 import PlutusTx qualified
 import ScriptExport.ScriptInfo (runLinker)
@@ -146,50 +140,50 @@ agoraScripts =
         governor
     )
 
-stakePolicy :: MintingPolicy
-stakePolicy = MintingPolicy $ agoraScripts ! "agora:stakePolicy"
+stakePolicy :: Script
+stakePolicy = agoraScripts ! "agora:stakePolicy"
 
 stakeSymbol :: CurrencySymbol
-stakeSymbol = mintingPolicySymbol stakePolicy
+stakeSymbol = CurrencySymbol . getScriptHash $ scriptHash stakePolicy
 
 stakeAssetClass :: Tagged StakeSTTag AssetClass
-stakeAssetClass = Tagged $ AssetClass stakeSymbol (validatorHashToTokenName stakeValidatorHash)
+stakeAssetClass = Tagged $ AssetClass stakeSymbol (scriptHashToTokenName stakeScriptHash)
 
-stakeValidator :: Validator
-stakeValidator = Validator $ agoraScripts ! "agora:stakeValidator"
+stakeValidator :: Script
+stakeValidator = agoraScripts ! "agora:stakeValidator"
 
-stakeValidatorHash :: ValidatorHash
-stakeValidatorHash = validatorHash stakeValidator
+stakeScriptHash :: ScriptHash
+stakeScriptHash = scriptHash stakeValidator
 
 stakeAddress :: Address
-stakeAddress = Address (ScriptCredential stakeValidatorHash) Nothing
+stakeAddress = Address (ScriptCredential stakeScriptHash) Nothing
 
 gstUTXORef :: TxOutRef
 gstUTXORef = TxOutRef "f28cd7145c24e66fd5bcd2796837aeb19a48a2656e7833c88c62a2d0450bd00d" 0
 
-governorPolicy :: MintingPolicy
-governorPolicy = MintingPolicy $ agoraScripts ! "agora:governorPolicy"
+governorPolicy :: Script
+governorPolicy = agoraScripts ! "agora:governorPolicy"
 
-governorValidator :: Validator
-governorValidator = Validator $ agoraScripts ! "agora:governorValidator"
+governorValidator :: Script
+governorValidator = agoraScripts ! "agora:governorValidator"
 
 governorSymbol :: CurrencySymbol
-governorSymbol = mintingPolicySymbol governorPolicy
+governorSymbol = CurrencySymbol . getScriptHash $ scriptHash governorPolicy
 
 governorAssetClass :: Tagged GovernorSTTag AssetClass
 governorAssetClass = Tagged $ AssetClass governorSymbol ""
 
-governorValidatorHash :: ValidatorHash
-governorValidatorHash = validatorHash governorValidator
+governorScriptHash :: ScriptHash
+governorScriptHash = scriptHash governorValidator
 
 governorValidatorAddress :: Address
-governorValidatorAddress = scriptHashAddress governorValidatorHash
+governorValidatorAddress = scriptHashAddress governorScriptHash
 
-proposalPolicy :: MintingPolicy
-proposalPolicy = MintingPolicy $ agoraScripts ! "agora:proposalPolicy"
+proposalPolicy :: Script
+proposalPolicy = agoraScripts ! "agora:proposalPolicy"
 
 proposalPolicySymbol :: CurrencySymbol
-proposalPolicySymbol = mintingPolicySymbol proposalPolicy
+proposalPolicySymbol = CurrencySymbol . getScriptHash $ scriptHash proposalPolicy
 
 proposalAssetClass :: Tagged ProposalSTTag AssetClass
 proposalAssetClass = Tagged $ AssetClass proposalPolicySymbol ""
@@ -202,14 +196,14 @@ signer = "8a30896c4fd5e79843e4ca1bd2cdbaa36f8c0bc3be7401214142019c"
 signer2 :: PubKeyHash
 signer2 = "8a30896c4fd5e79843e4ca1bd2cdbaa36f8c0bc3be74012141420192"
 
-proposalValidator :: Validator
-proposalValidator = Validator $ agoraScripts ! "agora:proposalValidator"
+proposalValidator :: Script
+proposalValidator = agoraScripts ! "agora:proposalValidator"
 
-proposalValidatorHash :: ValidatorHash
-proposalValidatorHash = validatorHash proposalValidator
+proposalScriptHash :: ScriptHash
+proposalScriptHash = scriptHash proposalValidator
 
 proposalValidatorAddress :: Address
-proposalValidatorAddress = scriptHashAddress proposalValidatorHash
+proposalValidatorAddress = scriptHashAddress proposalScriptHash
 
 {- | Default value of 'Agora.Proposal.ProposalThresholds'.
      For testing purpose only.
@@ -224,11 +218,11 @@ instance Default ProposalThresholds where
       , cosign = Tagged 100
       }
 
-authorityTokenPolicy :: MintingPolicy
-authorityTokenPolicy = MintingPolicy $ agoraScripts ! "agora:authorityTokenPolicy"
+authorityTokenPolicy :: Script
+authorityTokenPolicy = agoraScripts ! "agora:authorityTokenPolicy"
 
 authorityTokenSymbol :: CurrencySymbol
-authorityTokenSymbol = mintingPolicySymbol authorityTokenPolicy
+authorityTokenSymbol = CurrencySymbol . getScriptHash $ scriptHash authorityTokenPolicy
 
 {- | Default value of 'Agora.Governor.GovernorDatum.proposalTimings'.
      For testing purpose only.
@@ -279,32 +273,30 @@ treasuryOut =
 gatCs :: CurrencySymbol
 gatCs = authorityTokenSymbol
 
-trValidator :: Validator
-trValidator = Validator $ agoraScripts ! "agora:treasuryValidator"
+trValidator :: Script
+trValidator = agoraScripts ! "agora:treasuryValidator"
 
 -- | `ScriptCredential` used for the dummy treasury validator.
 trCredential :: Credential
-trCredential = ScriptCredential $ validatorHash trValidator
+trCredential = ScriptCredential $ scriptHash trValidator
 
 -- | `TokenName` for GAT generated from address of `mockTrEffect`.
 gatTn :: TokenName
-gatTn = validatorHashToTokenName $ validatorHash mockTrEffect
+gatTn = scriptHashToTokenName $ scriptHash mockTrEffect
 
 -- | Mock treasury effect script, used for testing.
-mockTrEffect :: Validator
-mockTrEffect = Validator $ agoraScripts ! "agora:noOpValidator"
+mockTrEffect :: Script
+mockTrEffect = agoraScripts ! "agora:noOpValidator"
 
 -- | Mock treasury effect validator hash
-mockTrEffectHash :: ValidatorHash
-mockTrEffectHash = validatorHash mockTrEffect
+mockTrEffectHash :: ScriptHash
+mockTrEffectHash = scriptHash mockTrEffect
 
 {- | A SHA-256 hash which (in all certainty) should not match the
      hash of the dummy effect script.
 -}
-wrongEffHash :: ValidatorHash
-wrongEffHash =
-  ValidatorHash
-    "a21bc4a1d95600f9fa0a00b97ed0fa49a152a72de76253cb706f90b4b40f837b"
+wrongEffHash :: ScriptHash
+wrongEffHash = "a21bc4a1d95600f9fa0a00b97ed0fa49a152a72de76253cb706f90b4b40f837b"
 
 ------------------------------------------------------------------
 

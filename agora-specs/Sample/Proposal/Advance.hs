@@ -101,7 +101,6 @@ import PlutusLedgerApi.V2 (
   PubKeyHash,
   ScriptHash,
   TxOutRef (TxOutRef),
-  ValidatorHash,
  )
 import PlutusTx qualified
 import Sample.Proposal.Shared (
@@ -114,15 +113,15 @@ import Sample.Shared (
   authorityTokenSymbol,
   governor,
   governorAssetClass,
+  governorScriptHash,
   governorValidator,
-  governorValidatorHash,
   minAda,
   proposalAssetClass,
+  proposalScriptHash,
   proposalValidator,
-  proposalValidatorHash,
   signer,
   stakeAssetClass,
-  stakeValidatorHash,
+  stakeScriptHash,
  )
 import Test.Specification (
   SpecificationTree,
@@ -191,7 +190,7 @@ data AuthorityTokenParameters = forall
   , PIsData pdatum
   ) =>
   AuthorityTokenParameters
-  { mintGATsFor :: ValidatorHash
+  { mintGATsFor :: ScriptHash
   -- ^ GATs will be minted and sent to the given group of effects.
   , carryDatum :: Maybe datum
   -- ^ The datum that GAT UTxOs will be carrying.
@@ -337,14 +336,14 @@ mkProposalBuilder ps =
    in mconcat
         [ input $
             mconcat
-              [ script proposalValidatorHash
+              [ script proposalScriptHash
               , withRef proposalRef
               , withDatum (mkProposalInputDatum ps)
               , withValue value
               ]
         , output $
             mconcat
-              [ script proposalValidatorHash
+              [ script proposalScriptHash
               , withDatum (mkProposalOutputDatum ps)
               , withValue value
               ]
@@ -402,7 +401,7 @@ mkStakeBuilder ps =
               [ withSig
               , referenceInput $
                   mconcat
-                    [ script stakeValidatorHash
+                    [ script stakeScriptHash
                     , withRef (mkStakeRef idx)
                     , withValue perStakeValue
                     , withInlineDatum i
@@ -450,7 +449,7 @@ mkGovernorBuilder ps@(GovernorParameters _ redeemer) =
    in mconcat
         [ input $
             mconcat
-              [ script governorValidatorHash
+              [ script governorScriptHash
               , withValue value
               , withRef governorRef
               , withDatum governorInputDatum
@@ -458,7 +457,7 @@ mkGovernorBuilder ps@(GovernorParameters _ redeemer) =
               ]
         , output $
             mconcat
-              [ script governorValidatorHash
+              [ script governorScriptHash
               , withValue value
               , withRef governorRef
               , withDatum (mkGovernorOutputDatum ps)

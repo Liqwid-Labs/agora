@@ -27,8 +27,9 @@ import Agora.Governor (
  )
 import Agora.SafeMoney (AuthorityTokenTag, GovernorSTTag)
 import Agora.Utils (ptaggedSymbolValueOf)
-import Plutarch.Api.V1 (PCurrencySymbol, PValidatorHash)
+import Plutarch.Api.V1 (PCurrencySymbol)
 import Plutarch.Api.V2 (
+  PScriptHash,
   PScriptPurpose (PSpending),
   PTxOutRef,
   PValidator,
@@ -43,9 +44,9 @@ import Plutarch.Extra.Maybe (passertPJust, pfromJust)
 import Plutarch.Extra.Record (mkRecordConstr, (.=))
 import Plutarch.Extra.ScriptContext (
   pisScriptAddress,
+  pscriptHashFromAddress,
   ptryFromOutputDatum,
   ptryFromRedeemer,
-  pvalidatorHashFromAddress,
  )
 import Plutarch.Extra.Tagged (PTagged)
 import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC)
@@ -150,7 +151,7 @@ deriving anyclass instance PTryFrom PData PMutateGovernorDatum
 -}
 mutateGovernorValidator ::
   ClosedTerm
-    ( PValidatorHash
+    ( PScriptHash
         :--> PTagged GovernorSTTag PCurrencySymbol
         :--> PTagged AuthorityTokenTag PCurrencySymbol
         :--> PValidator
@@ -194,12 +195,12 @@ mutateGovernorValidator =
                         , ptraceIfFalse "Can only modify the pinned governor" $
                             inputF.outRef #== effectDatumF.governorRef
                         , ptraceIfFalse "Governor validator run" $
-                            let inputValidatorHash =
+                            let inputScriptHash =
                                   pfromJust
-                                    #$ pvalidatorHashFromAddress
+                                    #$ pscriptHashFromAddress
                                     #$ pfield @"address"
                                     # inputF.resolved
-                             in inputValidatorHash #== govValidatorHash
+                             in inputScriptHash #== govValidatorHash
                         ]
                  in isGovernorInput
             )

@@ -24,7 +24,8 @@ import Agora.Effect.TreasuryWithdrawal (
   TreasuryWithdrawalDatum (TreasuryWithdrawalDatum),
  )
 import Data.Map ((!))
-import Plutarch.Api.V2 (validatorHash)
+import Plutarch.Api.V2 (scriptHash)
+import Plutarch.Script (Script)
 import PlutusLedgerApi.V1.Interval qualified as Interval (always)
 import PlutusLedgerApi.V1.Value qualified as Value (singleton)
 import PlutusLedgerApi.V2 (
@@ -36,14 +37,13 @@ import PlutusLedgerApi.V2 (
   PubKeyHash,
   Redeemer (Redeemer),
   ScriptContext (..),
+  ScriptHash (ScriptHash),
   ScriptPurpose (Spending),
   TokenName (TokenName),
   TxInInfo (TxInInfo),
   TxInfo (..),
   TxOut (..),
   TxOutRef (TxOutRef),
-  Validator (Validator),
-  ValidatorHash (ValidatorHash),
   Value,
   toBuiltinData,
  )
@@ -72,7 +72,7 @@ inputGAT =
   TxInInfo
     (TxOutRef "0b2086cbf8b6900f8cb65e012de4516cb66b5cb08a9aaba12a8b88be" 1)
     TxOut
-      { txOutAddress = Address (ScriptCredential $ validatorHash validator) Nothing
+      { txOutAddress = Address (ScriptCredential $ scriptHash validator) Nothing
       , txOutValue = Value.singleton currSymbol validatorHashTN 1 -- Stake ST
       , txOutDatum = OutputDatumHash (DatumHash "")
       , txOutReferenceScript = Nothing
@@ -147,12 +147,12 @@ buildReceiversOutputFromDatum (TreasuryWithdrawalDatum xs _) = f <$> xs
         }
 
 -- | Effect validator instance.
-validator :: Validator
-validator = Validator $ agoraScripts ! "agora:treasuryWithdrawalValidator"
+validator :: Script
+validator = agoraScripts ! "agora:treasuryWithdrawalValidator"
 
 -- | 'TokenName' that represents the hash of the 'Agora.Stake.Stake' validator.
 validatorHashTN :: TokenName
-validatorHashTN = let ValidatorHash vh = validatorHash validator in TokenName vh
+validatorHashTN = let ScriptHash hash = scriptHash validator in TokenName hash
 
 buildScriptContext :: [TxInInfo] -> [TxOut] -> ScriptContext
 buildScriptContext inputs outputs =

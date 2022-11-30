@@ -2,7 +2,7 @@ module Sample.Effect.GovernorMutation (
   mkEffectTxInfo,
   effectValidator,
   effectValidatorAddress,
-  effectValidatorHash,
+  effectScriptHash,
   atAssetClass,
   govRef,
   effectRef,
@@ -20,9 +20,10 @@ import Agora.SafeMoney (AuthorityTokenTag)
 import Data.Default.Class (Default (def))
 import Data.Map ((!))
 import Data.Tagged (Tagged (..))
-import Plutarch.Api.V2 (validatorHash)
+import Plutarch.Api.V2 (scriptHash)
 import Plutarch.Extra.AssetClass (AssetClass (AssetClass), assetClassValue)
-import Plutarch.Extra.ScriptContext (validatorHashToTokenName)
+import Plutarch.Extra.ScriptContext (scriptHashToTokenName)
+import Plutarch.Script (Script)
 import PlutusLedgerApi.V1 qualified as Interval (always)
 import PlutusLedgerApi.V1.Address (scriptHashAddress)
 import PlutusLedgerApi.V1.Value qualified as Value (
@@ -32,14 +33,13 @@ import PlutusLedgerApi.V2 (
   Address,
   Datum (..),
   OutputDatum (OutputDatumHash),
+  ScriptHash,
   ScriptPurpose (Spending),
   ToData (..),
   TxInInfo (..),
   TxInfo (..),
   TxOut (..),
   TxOutRef (TxOutRef),
-  Validator (Validator),
-  ValidatorHash (..),
  )
 import PlutusTx.AssocMap qualified as AssocMap
 import Sample.Shared (
@@ -54,22 +54,22 @@ import Sample.Shared (
 import Test.Util (datumPair, toDatumHash)
 
 -- | The effect validator instance.
-effectValidator :: Validator
-effectValidator = Validator $ agoraScripts ! "agora:mutateGovernorValidator"
+effectValidator :: Script
+effectValidator = agoraScripts ! "agora:mutateGovernorValidator"
 
 -- | The hash of the validator instance.
-effectValidatorHash :: ValidatorHash
-effectValidatorHash = validatorHash effectValidator
+effectScriptHash :: ScriptHash
+effectScriptHash = scriptHash effectValidator
 
 -- | The address of the validator.
 effectValidatorAddress :: Address
-effectValidatorAddress = scriptHashAddress effectValidatorHash
+effectValidatorAddress = scriptHashAddress effectScriptHash
 
 -- | The assetclass of the authority token.
 atAssetClass :: Tagged AuthorityTokenTag AssetClass
 atAssetClass = Tagged $ AssetClass authorityTokenSymbol tokenName
   where
-    tokenName = validatorHashToTokenName effectValidatorHash
+    tokenName = scriptHashToTokenName effectScriptHash
 
 -- | The mock reference of the governor state UTXO.
 govRef :: TxOutRef

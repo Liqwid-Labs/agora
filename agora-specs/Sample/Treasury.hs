@@ -37,7 +37,7 @@ import PlutusLedgerApi.V2 (
   Credential (PubKeyCredential),
   OutputDatum (NoOutputDatum),
   PubKeyHash (PubKeyHash),
-  ValidatorHash (ValidatorHash),
+  ScriptHash (ScriptHash),
  )
 import PlutusLedgerApi.V2.Contexts (
   ScriptContext (..),
@@ -101,7 +101,7 @@ treasuryRef =
 -}
 walletIn :: TxInInfo
 walletIn =
-  let (ValidatorHash addressBs) = mockTrEffectHash
+  let (ScriptHash addressBs) = mockTrEffectHash
    in TxInInfo
         { txInInfoOutRef =
             TxOutRef

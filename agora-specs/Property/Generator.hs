@@ -42,9 +42,9 @@ import PlutusLedgerApi.V2 (
   Address (Address),
   Credential (..),
   PubKeyHash (PubKeyHash),
+  ScriptHash (ScriptHash),
   TxId (..),
   TxOutRef (..),
-  ValidatorHash (ValidatorHash),
   Value,
   toBuiltin,
  )
@@ -76,7 +76,7 @@ genUserCredential = PubKeyCredential . PubKeyHash . toBuiltin <$> genHashByteStr
 
 -- | Random script credential.
 genScriptCredential :: Gen Credential
-genScriptCredential = ScriptCredential . ValidatorHash . toBuiltin <$> genHashByteString
+genScriptCredential = ScriptCredential . ScriptHash . toBuiltin <$> genHashByteString
 
 -- | Random credential: combination of user and script credential generators.
 genCredential :: Gen Credential

@@ -12,16 +12,16 @@ module Spec.AuthorityToken (specs) where
 import Agora.AuthorityToken (singleAuthorityTokenBurned)
 import Data.Tagged (Tagged (Tagged))
 import Plutarch.Extra.Compile (mustCompile)
+import Plutarch.Script (Script)
 import Plutarch.Unsafe (punsafeCoerce)
 import PlutusLedgerApi.V1 (
   Address (Address),
   Credential (PubKeyCredential, ScriptCredential),
   CurrencySymbol,
-  Script,
+  ScriptHash (ScriptHash),
   TxInInfo (TxInInfo),
   TxOut (TxOut),
   TxOutRef (TxOutRef),
-  ValidatorHash (ValidatorHash),
   Value,
  )
 import PlutusLedgerApi.V1.Value qualified as Value (
@@ -68,7 +68,7 @@ specs =
                   <> Value.singleton "aa" "USDC" 100_000
               )
               [ TxOut
-                  (Address (ScriptCredential (ValidatorHash "deadbeef")) Nothing)
+                  (Address (ScriptCredential (ScriptHash "deadbeef")) Nothing)
                   (Value.singleton currencySymbol "deadbeef" 1)
                   Nothing
               ]
@@ -84,7 +84,7 @@ specs =
                   (Value.singleton "aaabcc" "hello-token" 1)
                   Nothing
               , TxOut
-                  (Address (ScriptCredential (ValidatorHash "deadbeef")) Nothing)
+                  (Address (ScriptCredential (ScriptHash "deadbeef")) Nothing)
                   (Value.singleton currencySymbol "deadbeef" 1)
                   Nothing
               , TxOut
@@ -99,7 +99,7 @@ specs =
               ( Value.singleton currencySymbol "i'm not deadbeef!" (-1)
               )
               [ TxOut
-                  (Address (ScriptCredential (ValidatorHash "deadbeef")) Nothing)
+                  (Address (ScriptCredential (ScriptHash "deadbeef")) Nothing)
                   (Value.singleton currencySymbol "i'm not deadbeef!" 1)
                   Nothing
               ]
@@ -136,7 +136,7 @@ specs =
                   <> Value.singleton "aa" "USDC" 100_000
               )
               [ TxOut
-                  (Address (ScriptCredential (ValidatorHash "deadbeef")) Nothing)
+                  (Address (ScriptCredential (ScriptHash "deadbeef")) Nothing)
                   (Value.singleton currencySymbol "deadbeef" 2)
                   Nothing
               ]

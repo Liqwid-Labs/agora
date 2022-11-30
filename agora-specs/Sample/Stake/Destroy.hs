@@ -53,9 +53,9 @@ import Sample.Shared (
   signer2,
   stakeAssetClass,
   stakePolicy,
+  stakeScriptHash,
   stakeSymbol,
   stakeValidator,
-  stakeValidatorHash,
  )
 import Test.Specification (
   SpecificationTree,
@@ -125,7 +125,7 @@ destroy ps =
 
       stakeUTxOTemplate =
         mconcat
-          [ script stakeValidatorHash
+          [ script stakeScriptHash
           , withDatum stakeInputDatum
           , withValue $ normalizeValue $ sst <> minAda
           ]

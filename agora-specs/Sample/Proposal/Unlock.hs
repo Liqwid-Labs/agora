@@ -72,7 +72,7 @@ import Plutarch.Context (
   withValue,
  )
 import Plutarch.Extra.AssetClass (assetClassValue)
-import Plutarch.Extra.ScriptContext (validatorHashToTokenName)
+import Plutarch.Extra.ScriptContext (scriptHashToTokenName)
 import PlutusLedgerApi.V1.Value qualified as Value
 import PlutusLedgerApi.V2 (
   Credential (PubKeyCredential),
@@ -85,11 +85,11 @@ import Sample.Shared (
   governor,
   minAda,
   proposalAssetClass,
+  proposalScriptHash,
   proposalValidator,
-  proposalValidatorHash,
+  stakeScriptHash,
   stakeSymbol,
   stakeValidator,
-  stakeValidatorHash,
  )
 import Test.Specification (SpecificationTree, group, testValidator)
 import Test.Util (CombinableBuilder, closedBoundedInterval, mkSpending, pubKeyHashes)
@@ -282,7 +282,7 @@ unlock ps = builder
       mconcat
         [ input $
             mconcat
-              [ script proposalValidatorHash
+              [ script proposalScriptHash
               , withValue proposalValue
               , withDatum proposalInputDatum
               , withRef proposalRef
@@ -290,7 +290,7 @@ unlock ps = builder
               ]
         , output $
             mconcat
-              [ script proposalValidatorHash
+              [ script proposalScriptHash
               , withValue proposalValue
               , withDatum proposalOutputDatum
               ]
@@ -299,7 +299,7 @@ unlock ps = builder
     ---
 
     sstName = case ps.stakeParameters.sstOwner of
-      StakeValidator -> validatorHashToTokenName stakeValidatorHash
+      StakeValidator -> scriptHashToTokenName stakeScriptHash
       _ -> ""
 
     sst = Value.singleton stakeSymbol sstName 1
@@ -350,14 +350,14 @@ unlock ps = builder
             mconcat
               [ input $
                   mconcat
-                    [ script stakeValidatorHash
+                    [ script stakeScriptHash
                     , withValue stakeInputValue
                     , withDatum stakeInputDatum
                     , withRef $ mkStakeRef i
                     ]
               , output $
                   mconcat
-                    [ script stakeValidatorHash
+                    [ script stakeScriptHash
                     , withValue stakeOutputValue
                     , withDatum stakeOutputDatum
                     ]

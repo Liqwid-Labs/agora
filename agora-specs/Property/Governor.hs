@@ -57,6 +57,7 @@ import Plutarch.Context (
 import Plutarch.Evaluate (evalTerm)
 import Plutarch.Extra.AssetClass (assetClassValue)
 import Plutarch.Extra.Compile (mustCompile)
+import Plutarch.Script (Script)
 import Plutarch.Test.QuickCheck (
   Equality (OnPEq),
   Partiality (ByComplete),
@@ -66,14 +67,14 @@ import Plutarch.Test.QuickCheck (
   shouldCrash,
   shouldRun,
  )
-import PlutusLedgerApi.V2 (Script, ScriptContext)
+import PlutusLedgerApi.V2 (ScriptContext)
 import Property.Generator (genInput, genOutput)
 import Sample.Shared (
   deterministicTracingConfig,
   governor,
   governorAssetClass,
+  governorScriptHash,
   governorSymbol,
-  governorValidatorHash,
   gstUTXORef,
  )
 import Test.QuickCheck (
@@ -109,7 +110,7 @@ instance Arbitrary GovernorDatumCases where
 -}
 governorDatumValidProperty :: Property
 governorDatumValidProperty =
-  haskEquiv @( 'OnPEq) @( 'ByComplete)
+  haskEquiv @('OnPEq) @('ByComplete)
     isValidModelImpl
     (TestableTerm pisGovernorDatumValid)
     (genDatum :* Nil)
@@ -283,7 +284,7 @@ mkGovMintingCasePropertyTest name case' positiveCaseName negativeCaseName =
         outputToGov =
           output $
             mconcat
-              [ script governorValidatorHash
+              [ script governorScriptHash
               , withValue gst
               , withDatum govDatum
               ]

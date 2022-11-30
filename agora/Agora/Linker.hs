@@ -7,14 +7,12 @@ import Agora.SafeMoney (AuthorityTokenTag, GTTag, GovernorSTTag, ProposalSTTag, 
 import Data.Aeson qualified as Aeson
 import Data.Map (fromList)
 import Data.Tagged (Tagged (Tagged))
-import Plutarch.Api.V2 (mintingPolicySymbol, validatorHash)
+import Plutarch.Api.V1 (scriptHash)
 import Plutarch.Extra.AssetClass (AssetClass (AssetClass))
-import Plutarch.Extra.ScriptContext (validatorHashToTokenName)
-import PlutusLedgerApi.V1 (CurrencySymbol, TxOutRef, ValidatorHash)
+import Plutarch.Extra.ScriptContext (scriptHashToTokenName)
+import PlutusLedgerApi.V1 (CurrencySymbol (CurrencySymbol), ScriptHash, TxOutRef, getScriptHash)
 import Ply (
   ScriptRole (MintingPolicyRole, ValidatorRole),
-  toMintingPolicy,
-  toValidator,
   (#),
  )
 import ScriptExport.ScriptInfo (
@@ -23,6 +21,7 @@ import ScriptExport.ScriptInfo (
   fetchTS,
   getParam,
   toRoledScript,
+  toScript,
  )
 import Prelude hiding ((#))
 
@@ -54,7 +53,7 @@ linker = do
   govVal <-
     fetchTS
       @ValidatorRole
-      @'[ ValidatorHash
+      @'[ ScriptHash
         , Tagged StakeSTTag AssetClass
         , Tagged GovernorSTTag CurrencySymbol
         , Tagged ProposalSTTag CurrencySymbol
@@ -110,7 +109,7 @@ linker = do
   mutateGovVal <-
     fetchTS
       @ValidatorRole
-      @'[ ValidatorHash
+      @'[ ScriptHash
         , Tagged GovernorSTTag CurrencySymbol
         , Tagged AuthorityTokenTag CurrencySymbol
         ]
@@ -126,16 +125,13 @@ linker = do
           # Tagged gstSymbol
           # Tagged pstSymbol
           # Tagged atSymbol
-      gstSymbol =
-        mintingPolicySymbol $
-          toMintingPolicy
-            govPol'
+      gstSymbol = CurrencySymbol . getScriptHash . scriptHash $ toScript govPol'
       gstAssetClass =
         AssetClass gstSymbol ""
-      govValHash = validatorHash $ toValidator govVal'
+      govValHash = scriptHash $ toScript govVal'
 
       atPol' = atkPol # Tagged gstAssetClass
-      atSymbol = mintingPolicySymbol $ toMintingPolicy atPol'
+      atSymbol = CurrencySymbol . getScriptHash . scriptHash $ toScript atPol'
 
       propPol' = prpPol # Tagged gstAssetClass
       propVal' =
@@ -144,8 +140,8 @@ linker = do
           # Tagged gstSymbol
           # Tagged pstSymbol
           # governor.maximumCosigners
-      propValHash = validatorHash $ toValidator propVal'
-      pstSymbol = mintingPolicySymbol $ toMintingPolicy propPol'
+      propValHash = scriptHash $ toScript propVal'
+      pstSymbol = CurrencySymbol . getScriptHash . scriptHash $ toScript propPol'
       pstAssetClass = AssetClass pstSymbol ""
 
       stakPol' = stkPol # governor.gtClassRef
@@ -154,9 +150,9 @@ linker = do
           # Tagged sstSymbol
           # Tagged pstAssetClass
           # governor.gtClassRef
-      sstSymbol = mintingPolicySymbol $ toMintingPolicy stakPol'
+      sstSymbol = CurrencySymbol . getScriptHash . scriptHash $ toScript stakPol'
       stakValTokenName =
-        validatorHashToTokenName $ validatorHash $ toValidator stakVal'
+        scriptHashToTokenName $ scriptHash $ toScript stakVal'
       sstAssetClass = AssetClass sstSymbol stakValTokenName
 
       treaVal' = treVal # Tagged atSymbol
