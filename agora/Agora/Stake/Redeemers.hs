@@ -62,7 +62,7 @@ import "liqwid-plutarch-extra" Plutarch.Extra.List (
 import Plutarch.Extra.Maybe (pdjust, pdnothing, pmaybeData)
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
 import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC)
-import Plutarch.Extra.Time (PCurrentTime (PCurrentTime))
+import Plutarch.Extra.Time (PFullyBoundedTimeRange (PFullyBoundedTimeRange))
 
 -- | A wrapper which ensures that no proposal is presented in the transaction.
 pwithoutProposal ::
@@ -229,7 +229,7 @@ ppermitVote = pvoteHelper #$ phoistAcyclic $
                   pguardC "Owner or delegatee signs the transaction" $
                     pisSignedBy # pconstant True # ctx
 
-                  PCurrentTime _ upperBound <- pmatchC currentTime
+                  PFullyBoundedTimeRange _ upperBound <- pmatchC currentTime
 
                   let action =
                         mkRecordConstr
@@ -286,7 +286,7 @@ premoveLocks =
     plam $ \proposalId unlockCooldown currentTime mode -> unTermCont $ do
       shouldRemoveAllLocks <- pletC $ mode #== pcon PRemoveAllLocks
 
-      PCurrentTime lowerBound _ <- pmatchC currentTime
+      PFullyBoundedTimeRange lowerBound _ <- pmatchC currentTime
 
       let handleVoter
             ( (pfield @"createdAt" #) ->

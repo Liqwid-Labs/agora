@@ -51,9 +51,9 @@ import Plutarch.Extra.IsData (PlutusTypeEnumData)
 import Plutarch.Extra.Maybe (pjust, pmaybe, pnothing)
 import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pletC, pmatchC)
 import Plutarch.Extra.Time (
-  PCurrentTime (PCurrentTime),
-  pcurrentTimeDuration,
-  pisWithinCurrentTime,
+  PFullyBoundedTimeRange (PFullyBoundedTimeRange),
+  pisWithinTimeRange,
+  ptimeRangeDuration,
  )
 import Plutarch.Lift (
   DerivePConstantViaNewtype (DerivePConstantViaNewtype),
@@ -173,7 +173,7 @@ PlutusTx.makeIsDataIndexed 'ProposalTimingConfig [('ProposalTimingConfig, 0)]
 
      @since 0.1.0
 -}
-type PProposalTime = PCurrentTime
+type PProposalTime = PFullyBoundedTimeRange
 
 -- | Plutarch-level version of 'ProposalStartingTime'.
 newtype PProposalStartingTime (s :: S) = PProposalStartingTime (Term s PPOSIXTime)
@@ -362,7 +362,7 @@ pvalidateProposalStartingTime = phoistAcyclic $
                 isInCurrentTimeRange =
                   ptraceIfFalse
                     "createProposalStartingTime: starting time should be in current time range"
-                    $ pisWithinCurrentTime # st # ct
+                    $ pisWithinTimeRange # st # ct
              in isTightEnough #&& isInCurrentTimeRange
         )
       # (pcurrentProposalTime # iv)
@@ -406,7 +406,7 @@ pcurrentProposalTime = phoistAcyclic $
             passert
               "Upper bound bigger than lower bound"
               (lb #< ub)
-              (pcon $ PCurrentTime lb ub)
+              (pcon $ PFullyBoundedTimeRange lb ub)
 
     pure $ pliftA2 # mkTime # lowerBound # upperBound
 
@@ -495,7 +495,7 @@ pgetRelation = phoistAcyclic $
     configF <- pletAllC config
 
     PProposalStartingTime s <- pmatchC startingTime
-    PCurrentTime lb ub <- pmatchC currentTime
+    PFullyBoundedTimeRange lb ub <- pmatchC currentTime
 
     dub <- pletC $ s + configF.draftTime
     vub <- pletC $ dub + configF.votingTime
@@ -531,6 +531,6 @@ psatisfyMaximumWidth ::
     )
 psatisfyMaximumWidth = phoistAcyclic $
   plam $ \maxWidth time ->
-    let width = pcurrentTimeDuration # time
+    let width = ptimeRangeDuration # time
         max = pto maxWidth
      in width #<= max
