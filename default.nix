@@ -1,3 +1,0 @@
-{
-  imports = [ ./flake-module.nix ];
-}
