@@ -16,28 +16,21 @@
     nixpkgs-latest.url = "github:NixOS/nixpkgs";
 
     liqwid-nix = {
-      url = "github:Liqwid-Labs/liqwid-nix/liqwid-nix-2.0";
+      url = "github:Liqwid-Labs/liqwid-nix/emiflake/ux-improvements";
       inputs.nixpkgs-latest.follows = "nixpkgs-latest";
     };
 
-    ply.url = "github:emiflake/ply?ref=emiflake/add-missing-instance";
+    ply.url = "github:mlabs-haskell/ply?ref=master";
     plutarch-numeric.url = "github:Liqwid-Labs/plutarch-numeric/emiflake/liqwid-nix-2.0";
-    plutarch-numeric.inputs.ply.follows = "ply";
     liqwid-plutarch-extra.url = "github:Liqwid-Labs/liqwid-plutarch-extra/emiflake/liqwid-nix-2.0";
-    liqwid-plutarch-extra.inputs.ply.follows = "ply";
-    plutarch-quickcheck.url = "github:liqwid-labs/plutarch-quickcheck/emiflake/liqwid-nix-2.0";
-    plutarch-quickcheck.inputs.ply.follows = "ply";
+    plutarch-quickcheck.url = "github:Liqwid-Labs/plutarch-quickcheck/emiflake/liqwid-nix-2.0";
     plutarch-context-builder.url = "github:Liqwid-Labs/plutarch-context-builder/emiflake/liqwid-nix-2.0";
-    plutarch-context-builder.inputs.ply.follows = "ply";
     liqwid-script-export.url = "github:Liqwid-Labs/liqwid-script-export/emiflake/liqwid-nix-2.0";
-    liqwid-script-export.inputs.ply.follows = "ply";
   };
 
   outputs = { self, liqwid-nix, flake-parts, ... }:
     flake-parts.lib.mkFlake { inherit self; } {
-      imports = [
-        liqwid-nix.onchain
-        liqwid-nix.run
+      imports = liqwid-nix.allModules ++ [
         ./.
       ];
       systems = [ "x86_64-linux" "aarch64-darwin" "x86_64-darwin" "aarch64-linux" ];

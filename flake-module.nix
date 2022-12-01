@@ -9,9 +9,7 @@
     {
       onchain.default = {
         src = ./.;
-        ghc = {
-          version = "ghc923";
-        };
+        ghc.version = "ghc925";
         shell = { };
         enableBuildChecks = true;
         extraHackageDeps = [
