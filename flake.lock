@@ -692,11 +692,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1668121695,
-        "narHash": "sha256-2ltW7mvn14zm9f67OmxXIPJHAXR6vxBdN/6Q6nRh7a8=",
+        "lastModified": 1669819820,
+        "narHash": "sha256-D+WLcMDL8iPb05XnD8C7ay2azV3ImJgaJjjzJpSDokw=",
         "owner": "Liqwid-Labs",
         "repo": "liqwid-plutarch-extra",
-        "rev": "0cb63aa7d4fd2006cf590edc7fca0f3fcdb71a55",
+        "rev": "e68f7449b54865de3a59540a19702147ef5fbf67",
         "type": "github"
       },
       "original": {

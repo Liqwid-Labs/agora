@@ -83,7 +83,7 @@ import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (
   pmatchC,
   ptryFromC,
  )
-import Plutarch.Extra.Time (PCurrentTime)
+import Plutarch.Extra.Time (PFullyBoundedTimeRange)
 import Plutarch.Extra.Traversable (pfoldMap)
 import Plutarch.Extra.Value (psymbolValueOf')
 import Plutarch.Unsafe (punsafeCoerce)
@@ -310,18 +310,18 @@ proposalValidator =
 
     currentTime <- pletC $ pcurrentProposalTime # txInfoF.validRange
 
-    let withCurrentTime ::
+    let withBoundedValidTimeRange ::
           forall (a :: PType).
-          Term _ (PCurrentTime :--> a) ->
+          Term _ (PFullyBoundedTimeRange :--> a) ->
           Term _ a
-        withCurrentTime f =
+        withBoundedValidTimeRange f =
           pmatch currentTime $ \case
             PJust currentTime -> f # currentTime
             PNothing -> ptraceError "Unable to resolve current time"
 
     getTimingRelation' <-
       pletC $
-        withCurrentTime $
+        withBoundedValidTimeRange $
           pgetRelation
             # proposalInputDatumF.timingConfig
             # proposalInputDatumF.startingTime
@@ -511,7 +511,7 @@ proposalValidator =
               pisWithin # getTimingRelation PVotingPeriod
 
             pguardC "Width of time should meet maximum requirement" $
-              withCurrentTime $
+              withBoundedValidTimeRange $
                 psatisfyMaximumWidth
                   #$ pfield @"votingTimeRangeMaxWidth"
                   # proposalInputDatumF.timingConfig
