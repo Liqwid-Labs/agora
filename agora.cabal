@@ -103,7 +103,6 @@ common deps
     , optics
     , plutarch
     , plutarch-extra
-    , plutarch-numeric
     , plutus-core
     , plutus-ledger-api
     , plutus-tx
