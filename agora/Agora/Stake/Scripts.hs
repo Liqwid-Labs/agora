@@ -90,9 +90,9 @@ import Plutarch.Extra.Maybe (
 import Plutarch.Extra.Ord (POrdering (PEQ, PGT, PLT), pcompareBy, pfromOrd)
 import Plutarch.Extra.ScriptContext (
   pfindTxInByTxOutRef,
+  pscriptHashFromAddress,
+  pscriptHashToTokenName,
   ptryFromOutputDatum,
-  pvalidatorHashFromAddress,
-  pvalidatorHashToTokenName,
   pvalueSpent,
  )
 import Plutarch.Extra.Tagged (PTagged)
@@ -122,7 +122,7 @@ import Prelude hiding (Num ((+)))
    - Check that exactly one state thread is minted.
    - Check that an output exists with a state thread and a valid datum.
    - Check that no state thread is an input.
-   - assert @'PlutusLedgerApi.V1.TokenName' == 'PlutusLedgerApi.V1.ValidatorHash'@
+   - assert @'PlutusLedgerApi.V1.TokenName' == 'PlutusLedgerApi.V1.ScriptHash'@
      of the script that we pay to.
 
    === For burning:
@@ -290,14 +290,14 @@ mkStakeValidator impl sstSymbol pstClass gtClass =
             # (pfield @"_0" # stakeInputRef)
             # txInfoF.inputs
 
-    stakeValidatorHash <-
+    stakeScriptHash <-
       pletC $
         pfromJust
-          #$ pvalidatorHashFromAddress
+          #$ pscriptHashFromAddress
           #$ pfield @"address"
           # validatedInput
 
-    let sstName = pvalidatorHashToTokenName stakeValidatorHash
+    let sstName = pscriptHashToTokenName stakeScriptHash
 
     sstClass <- pletC $ passetClass # puntag sstSymbol # sstName
 
@@ -321,11 +321,11 @@ mkStakeValidator impl sstSymbol pstClass gtClass =
                 PEQ ->
                   let ownerValidatoHash =
                         pfromJust
-                          #$ pvalidatorHashFromAddress
+                          #$ pscriptHashFromAddress
                           # txOutF.address
 
                       isOwnedByStakeValidator =
-                        ownerValidatoHash #== stakeValidatorHash
+                        ownerValidatoHash #== stakeScriptHash
 
                       datum =
                         ptrace "Resolve stake datum" $

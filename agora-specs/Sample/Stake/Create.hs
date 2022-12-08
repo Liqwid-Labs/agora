@@ -35,7 +35,7 @@ import Plutarch.Context (
   withValue,
  )
 import Plutarch.Extra.AssetClass (assetClassValue)
-import Plutarch.Extra.ScriptContext (validatorHashToTokenName)
+import Plutarch.Extra.ScriptContext (scriptHashToTokenName)
 import Plutarch.Lift (PUnsafeLiftDecl (PLifted))
 import PlutusLedgerApi.V1.Value qualified as Value
 import PlutusLedgerApi.V2 (
@@ -49,8 +49,8 @@ import Sample.Shared (
   signer,
   signer2,
   stakePolicy,
+  stakeScriptHash,
   stakeSymbol,
-  stakeValidatorHash,
  )
 import Test.Specification (SpecificationTree, testPolicy)
 import Test.Util (CombinableBuilder, mkMinting, validatorHashes)
@@ -93,7 +93,7 @@ create ps@Parameters {stakeDatum} =
       sstName =
         if ps.invalidSSTName
           then "114514"
-          else validatorHashToTokenName stakeValidatorHash
+          else scriptHashToTokenName stakeScriptHash
 
       sst = Value.singleton stakeSymbol sstName 1
 
@@ -105,7 +105,7 @@ create ps@Parameters {stakeDatum} =
 
       stakeBuilder =
         mconcat
-          [ script stakeValidatorHash
+          [ script stakeScriptHash
           , withValue $ normalizeValue $ sst <> perStakeGTs
           , withStakeDatum
           ]

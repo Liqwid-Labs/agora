@@ -57,7 +57,6 @@ import PlutusLedgerApi.V2 (
   ScriptContext,
   ScriptHash (ScriptHash),
   TxOutRef,
-  ValidatorHash (ValidatorHash),
  )
 import PlutusTx.AssocMap qualified as AssocMap
 import PlutusTx.Builtins qualified as PlutusTx
@@ -157,8 +156,8 @@ userCredentials :: [Credential]
 userCredentials = PubKeyCredential <$> pubKeyHashes
 
 -- | An infinite list of *valid* validator hashes.
-validatorHashes :: [ValidatorHash]
-validatorHashes = ValidatorHash . PlutusTx.toBuiltin <$> blake2b_224Hashes
+validatorHashes :: [ScriptHash]
+validatorHashes = ScriptHash . PlutusTx.toBuiltin <$> blake2b_224Hashes
 
 -- | An infinite list of *valid* script credentials.
 scriptCredentials :: [Credential]

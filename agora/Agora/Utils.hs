@@ -8,7 +8,7 @@ Description: Plutarch utility functions that should be upstreamed or don't belon
 Plutarch utility functions that should be upstreamed or don't belong anywhere else.
 -}
 module Agora.Utils (
-  validatorHashToAddress,
+  scriptHashToAddress,
   pstringIntercalate,
   punwords,
   pisNothing,
@@ -33,15 +33,15 @@ import Plutarch.Unsafe (punsafeDowncast)
 import PlutusLedgerApi.V2 (
   Address (Address),
   Credential (ScriptCredential),
-  ValidatorHash,
+  ScriptHash,
  )
 
-{- | Create an 'Address' from a given 'ValidatorHash' with no 'PlutusLedgerApi.V1.Credential.StakingCredential'.
+{- | Create an 'Address' from a given 'ScriptHash' with no 'PlutusLedgerApi.V1.Credential.StakingCredential'.
 
-     @since 0.1.0
+     @since 1.0.0
 -}
-validatorHashToAddress :: ValidatorHash -> Address
-validatorHashToAddress vh = Address (ScriptCredential vh) Nothing
+scriptHashToAddress :: ScriptHash -> Address
+scriptHashToAddress vh = Address (ScriptCredential vh) Nothing
 
 -- | @since 1.0.0
 pstringIntercalate ::

@@ -53,7 +53,7 @@ import Agora.SafeMoney (GTTag)
 import Data.Map.Strict qualified as StrictMap
 import Data.Tagged (Tagged)
 import Generics.SOP qualified as SOP
-import Plutarch.Api.V1 (PCredential, PMap, PValidatorHash)
+import Plutarch.Api.V1 (PCredential, PMap)
 import Plutarch.Api.V1.AssocMap qualified as PAssocMap
 import Plutarch.Api.V2 (
   KeyGuarantees (Sorted),
@@ -88,7 +88,7 @@ import Plutarch.Lift (
   PUnsafeLiftDecl (type PLifted),
  )
 import Plutarch.Orphans ()
-import PlutusLedgerApi.V2 (Credential, DatumHash, ScriptHash, ValidatorHash)
+import PlutusLedgerApi.V2 (Credential, DatumHash, ScriptHash)
 import PlutusTx qualified
 
 --------------------------------------------------------------------------------
@@ -315,7 +315,7 @@ data ProposalEffectMetadata = ProposalEffectMetadata
     via (ProductIsData ProposalEffectMetadata)
 
 -- | @since 1.0.0
-type ProposalEffectGroup = StrictMap.Map ValidatorHash ProposalEffectMetadata
+type ProposalEffectGroup = StrictMap.Map ScriptHash ProposalEffectMetadata
 
 {- | Haskell-level datum for Proposal scripts.
 
@@ -695,7 +695,7 @@ instance PTryFrom PData (PAsData PProposalEffectMetadata)
 type PProposalEffectGroup =
   PMap
     'Sorted
-    PValidatorHash
+    PScriptHash
     PProposalEffectMetadata
 
 {- | Plutarch-level version of 'ProposalDatum'.

@@ -76,11 +76,11 @@ import Sample.Shared (
   governor,
   minAda,
   proposalAssetClass,
+  proposalScriptHash,
   proposalValidator,
-  proposalValidatorHash,
   stakeAssetClass,
+  stakeScriptHash,
   stakeValidator,
-  stakeValidatorHash,
  )
 import Test.Specification (SpecificationTree, group, testValidator)
 import Test.Util (
@@ -297,7 +297,7 @@ vote params =
               mconcat
                 [ input $
                     mconcat
-                      [ script stakeValidatorHash
+                      [ script stakeScriptHash
                       , withValue stakeInputValue
                       , withInlineDatum $ mixOwner i stakeInputDatum
                       , withRedeemer stakeRedeemer
@@ -308,7 +308,7 @@ vote params =
                     else
                       output $
                         mconcat
-                          [ script stakeValidatorHash
+                          [ script stakeScriptHash
                           , withValue stakeOutputValue
                           , withInlineDatum $ mixOwner i stakeOutputDatum
                           ]
@@ -353,7 +353,7 @@ vote params =
               mconcat
                 [ input $
                     mconcat
-                      [ script proposalValidatorHash
+                      [ script proposalScriptHash
                       , withValue proposalValue
                       , withRedeemer proposalRedeemer
                       , withInlineDatum proposalInputDatum
@@ -361,7 +361,7 @@ vote params =
                       ]
                 , output $
                     mconcat
-                      [ script proposalValidatorHash
+                      [ script proposalScriptHash
                       , withValue proposalValue
                       , withInlineDatum proposalOutputDatum
                       ]

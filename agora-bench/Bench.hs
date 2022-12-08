@@ -2,18 +2,16 @@
 
 module Bench (Benchmark (..), benchmarkScript, specificationTreeToBenchmarks) where
 
-import Codec.Serialise (serialise)
-import Data.ByteString.Lazy qualified as LBS
 import Data.ByteString.Short qualified as SBS
 import Data.Csv (DefaultOrdered, ToNamedRecord, header, headerOrder, namedRecord, toNamedRecord, (.=))
 import Data.List (intercalate)
 import Data.Text (Text, pack)
 import Plutarch.Evaluate (evalScript)
+import Plutarch.Script (Script, serialiseScript)
 import PlutusLedgerApi.V2 (
   ExBudget (ExBudget),
   ExCPU (..),
   ExMemory (..),
-  Script,
  )
 import Prettyprinter (Pretty (pretty), indent, vsep)
 import Test.Specification (
@@ -66,7 +64,7 @@ benchmarkScript name script = Benchmark (pack name) cpu mem size
   where
     (_res, ExBudget cpu mem, _traces) = evalScript script
 
-    size = SBS.length . SBS.toShort . LBS.toStrict . serialise $ script
+    size = SBS.length . serialiseScript $ script
 
 specificationTreeToBenchmarks :: SpecificationTree -> [Benchmark]
 specificationTreeToBenchmarks = go []

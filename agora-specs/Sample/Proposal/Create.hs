@@ -71,7 +71,7 @@ import Plutarch.Context (
   withValue,
  )
 import Plutarch.Extra.AssetClass (assetClassValue)
-import Plutarch.Extra.ScriptContext (validatorHashToTokenName)
+import Plutarch.Extra.ScriptContext (scriptHashToTokenName)
 import PlutusLedgerApi.V1.Value qualified as Value
 import PlutusLedgerApi.V2 (
   Credential (PubKeyCredential),
@@ -86,20 +86,20 @@ import Sample.Proposal.Shared (stakeTxRef)
 import Sample.Shared (
   governor,
   governorAssetClass,
+  governorScriptHash,
   governorValidator,
-  governorValidatorHash,
   minAda,
   proposalAssetClass,
   proposalPolicy,
   proposalPolicySymbol,
+  proposalScriptHash,
   proposalStartingTimeFromTimeRange,
-  proposalValidatorHash,
   signer,
   signer2,
   stakeAssetClass,
+  stakeScriptHash,
   stakeSymbol,
   stakeValidator,
-  stakeValidatorHash,
  )
 import Test.Specification (SpecificationTree, group, testPolicy, testValidator)
 import Test.Util (
@@ -319,7 +319,7 @@ createProposal ps = builder
                   , withValue $
                       Value.singleton
                         stakeSymbol
-                        (validatorHashToTokenName attacker)
+                        (scriptHashToTokenName attacker)
                         1
                   , withDatum $
                       (mkStakeInputDatum ps)
@@ -363,7 +363,7 @@ createProposal ps = builder
           timeRange $ mkTimeRange ps
         , input $
             mconcat
-              [ script governorValidatorHash
+              [ script governorScriptHash
               , withValue governorValue
               , withDatum governorInputDatum
               , withRedeemer ps.governorRedeemer
@@ -371,7 +371,7 @@ createProposal ps = builder
               ]
         , output $
             mconcat
-              [ script governorValidatorHash
+              [ script governorScriptHash
               , withValue governorValue
               , withDatum (mkGovernorOutputDatum ps)
               ]
@@ -385,7 +385,7 @@ createProposal ps = builder
                       , withValue $
                           Value.singleton
                             stakeSymbol
-                            (validatorHashToTokenName attacker)
+                            (scriptHashToTokenName attacker)
                             1
                       , withDatum $
                           (mkStakeInputDatum ps)
@@ -397,14 +397,14 @@ createProposal ps = builder
               mconcat
                 [ input $
                     mconcat
-                      [ script stakeValidatorHash
+                      [ script stakeScriptHash
                       , withValue stakeValue
                       , withDatum (mkStakeInputDatum ps)
                       , withRef stakeRef
                       ]
                 , output $
                     mconcat
-                      [ script stakeValidatorHash
+                      [ script stakeScriptHash
                       , withValue stakeValue
                       , withDatum (mkStakeOutputDatum ps)
                       ]
@@ -412,7 +412,7 @@ createProposal ps = builder
         , ---
           output $
             mconcat
-              [ script proposalValidatorHash
+              [ script proposalScriptHash
               , withValue proposalValue
               , withDatum (mkProposalOutputDatum ps)
               ]

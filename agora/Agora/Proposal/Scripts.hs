@@ -71,8 +71,8 @@ import Plutarch.Extra.Ord (pfromOrdBy, pinsertUniqueBy, psort)
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
 import Plutarch.Extra.ScriptContext (
   pfindTxInByTxOutRef,
+  pscriptHashFromAddress,
   ptryFromOutputDatum,
-  pvalidatorHashFromAddress,
  )
 import Plutarch.Extra.Sum (PSum (PSum))
 import Plutarch.Extra.Tagged (PTagged)
@@ -285,7 +285,7 @@ proposalValidator =
                       foldl1
                         (#&&)
                         [ ptraceIfFalse "Own by proposal validator" $
-                            ((#==) `on` (pvalidatorHashFromAddress #))
+                            ((#==) `on` (pscriptHashFromAddress #))
                               outputF.address
                               proposalInputF.address
                         , ptraceIfFalse "Has proposal ST" $
@@ -523,39 +523,40 @@ proposalValidator =
             pguardC "Vote option should be valid" $
               pisJust #$ plookup # voteFor # voteMap
 
-            let -- The amount of new votes should be the 'stakedAmount'.
-                -- Update the vote counter of the proposal, and leave other stuff as is.
-                expectedNewVotes =
-                  pcon $
-                    PProposalVotes $
-                      pupdate
-                        # plam
-                          ( \votes ->
-                              pcon $ PJust $ votes + pto totalStakeAmount
-                          )
-                        # voteFor
-                        # pto (pfromData proposalInputDatumF.votes)
+            let
+              -- The amount of new votes should be the 'stakedAmount'.
+              -- Update the vote counter of the proposal, and leave other stuff as is.
+              expectedNewVotes =
+                pcon $
+                  PProposalVotes $
+                    pupdate
+                      # plam
+                        ( \votes ->
+                            pcon $ PJust $ votes + pto totalStakeAmount
+                        )
+                      # voteFor
+                      # pto (pfromData proposalInputDatumF.votes)
 
-                expectedProposalOut =
-                  mkRecordConstr
-                    PProposalDatum
-                    ( #proposalId
-                        .= proposalInputDatumF.proposalId
-                        .& #effects
-                        .= proposalInputDatumF.effects
-                        .& #status
-                        .= proposalInputDatumF.status
-                        .& #cosigners
-                        .= proposalInputDatumF.cosigners
-                        .& #thresholds
-                        .= proposalInputDatumF.thresholds
-                        .& #votes
-                        .= pdata expectedNewVotes
-                        .& #timingConfig
-                        .= proposalInputDatumF.timingConfig
-                        .& #startingTime
-                        .= proposalInputDatumF.startingTime
-                    )
+              expectedProposalOut =
+                mkRecordConstr
+                  PProposalDatum
+                  ( #proposalId
+                      .= proposalInputDatumF.proposalId
+                      .& #effects
+                      .= proposalInputDatumF.effects
+                      .& #status
+                      .= proposalInputDatumF.status
+                      .& #cosigners
+                      .= proposalInputDatumF.cosigners
+                      .& #thresholds
+                      .= proposalInputDatumF.thresholds
+                      .& #votes
+                      .= pdata expectedNewVotes
+                      .& #timingConfig
+                      .= proposalInputDatumF.timingConfig
+                      .& #startingTime
+                      .= proposalInputDatumF.startingTime
+                  )
 
             pguardC "Output proposal should be valid" $
               proposalOutputDatum #== expectedProposalOut
@@ -615,34 +616,36 @@ proposalValidator =
             pguardC "Proposal output correct" $
               pif
                 shouldUpdateVotes
-                ( let -- Remove votes and leave other parts of the proposal as it.
-                      expectedProposalOut =
-                        mkRecordConstr
-                          PProposalDatum
-                          ( #proposalId
-                              .= proposalInputDatumF.proposalId
-                              .& #effects
-                              .= proposalInputDatumF.effects
-                              .& #status
-                              .= proposalInputDatumF.status
-                              .& #cosigners
-                              .= proposalInputDatumF.cosigners
-                              .& #thresholds
-                              .= proposalInputDatumF.thresholds
-                              .& #votes
-                              .= expectedVotes
-                              .& #timingConfig
-                              .= proposalInputDatumF.timingConfig
-                              .& #startingTime
-                              .= proposalInputDatumF.startingTime
-                          )
-                   in foldl1
-                        (#&&)
-                        [ ptraceIfFalse "Votes changed" $
-                            pnot #$ expectedVotes #== proposalInputDatumF.votes
-                        , ptraceIfFalse "Proposal update correct" $
-                            expectedProposalOut #== proposalOutputDatum
-                        ]
+                ( let
+                    -- Remove votes and leave other parts of the proposal as it.
+                    expectedProposalOut =
+                      mkRecordConstr
+                        PProposalDatum
+                        ( #proposalId
+                            .= proposalInputDatumF.proposalId
+                            .& #effects
+                            .= proposalInputDatumF.effects
+                            .& #status
+                            .= proposalInputDatumF.status
+                            .& #cosigners
+                            .= proposalInputDatumF.cosigners
+                            .& #thresholds
+                            .= proposalInputDatumF.thresholds
+                            .& #votes
+                            .= expectedVotes
+                            .& #timingConfig
+                            .= proposalInputDatumF.timingConfig
+                            .& #startingTime
+                            .= proposalInputDatumF.startingTime
+                        )
+                   in
+                    foldl1
+                      (#&&)
+                      [ ptraceIfFalse "Votes changed" $
+                          pnot #$ expectedVotes #== proposalInputDatumF.votes
+                      , ptraceIfFalse "Proposal update correct" $
+                          expectedProposalOut #== proposalOutputDatum
+                      ]
                 )
                 -- No change to the proposal is allowed.
                 ( ptraceIfFalse "Proposal unchanged" $

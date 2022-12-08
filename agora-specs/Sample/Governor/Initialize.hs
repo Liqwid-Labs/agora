@@ -31,10 +31,8 @@ import Data.Default (Default (..))
 import Data.Map (Map, (!))
 import Data.Text (Text)
 import Optics (view)
-import Plutarch.Api.V2 (
-  mintingPolicySymbol,
-  validatorHash,
- )
+import Plutarch (Script)
+import Plutarch.Api.V2 (scriptHash)
 import Plutarch.Context (
   input,
   mint,
@@ -50,12 +48,10 @@ import Plutarch.Context (
 import PlutusLedgerApi.V1.Value (AssetClass (..))
 import PlutusLedgerApi.V1.Value qualified as Value
 import PlutusLedgerApi.V2 (
-  CurrencySymbol,
-  MintingPolicy (MintingPolicy),
-  Script,
+  CurrencySymbol (CurrencySymbol),
+  ScriptHash,
   TxOutRef (TxOutRef),
-  Validator (Validator),
-  ValidatorHash,
+  getScriptHash,
  )
 import Sample.Shared (
   deterministicTracingConfig,
@@ -128,20 +124,20 @@ scripts =
         governor
     )
 
-govPolicy :: MintingPolicy
-govPolicy = MintingPolicy $ scripts ! "agora:governorPolicy"
+govPolicy :: Script
+govPolicy = scripts ! "agora:governorPolicy"
 
-govValidator :: Validator
-govValidator = Validator $ scripts ! "agora:governorValidator"
+govValidator :: Script
+govValidator = scripts ! "agora:governorValidator"
 
 govSymbol :: CurrencySymbol
-govSymbol = mintingPolicySymbol govPolicy
+govSymbol = CurrencySymbol . getScriptHash $ scriptHash govPolicy
 
 govAssetClass :: AssetClass
 govAssetClass = AssetClass (govSymbol, "")
 
-govValidatorHash :: ValidatorHash
-govValidatorHash = validatorHash govValidator
+govScriptHash :: ScriptHash
+govScriptHash = scriptHash govValidator
 
 --------------------------------------------------------------------------------
 
@@ -215,7 +211,7 @@ mintGST ps = builder
               else mempty
        in output $
             mconcat
-              [ script govValidatorHash
+              [ script govScriptHash
               , withValue governorValue
               , datum
               ]

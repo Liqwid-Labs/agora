@@ -50,8 +50,8 @@ import Sample.Shared (
   signer,
   signer2,
   stakeAssetClass,
+  stakeScriptHash,
   stakeValidator,
-  stakeValidatorHash,
  )
 import Test.Specification (SpecificationTree, testValidator)
 import Test.Util (pubKeyHashes, sortValue)
@@ -132,14 +132,14 @@ setDelegate ps = buildSpending' builder
         , signedWith signer
         , input $
             mconcat
-              [ script stakeValidatorHash
+              [ script stakeScriptHash
               , withValue stakeValue
               , withDatum stakeInput
               , withRef stakeRef
               ]
         , output $
             mconcat
-              [ script stakeValidatorHash
+              [ script stakeScriptHash
               , withValue stakeValue
               , withDatum stakeOutput
               ]

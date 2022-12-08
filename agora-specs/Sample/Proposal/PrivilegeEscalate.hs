@@ -49,11 +49,11 @@ import Sample.Proposal.Shared (proposalTxRef, stakeTxRef)
 import Sample.Shared (
   minAda,
   proposalAssetClass,
+  proposalScriptHash,
   proposalValidator,
-  proposalValidatorHash,
   stakeAssetClass,
+  stakeScriptHash,
   stakeValidator,
-  stakeValidatorHash,
  )
 import Test.Specification (SpecificationTree, group, testValidator)
 import Test.Util (CombinableBuilder, closedBoundedInterval, mkSpending, pubKeyHashes)
@@ -166,7 +166,7 @@ privilegeEscalate op =
                 mconcat @b
                   [ input $
                       mconcat
-                        [ script stakeValidatorHash
+                        [ script stakeScriptHash
                         , withDatum stakeInput
                         , withValue stakeValue
                         , withRef $ mkStakeRef index
@@ -174,7 +174,7 @@ privilegeEscalate op =
                         ]
                   , output $
                       mconcat
-                        [ script stakeValidatorHash
+                        [ script stakeScriptHash
                         , withDatum stakeOutput
                         , withValue stakeValue
                         ]
@@ -196,7 +196,7 @@ privilegeEscalate op =
         mconcat @b
           [ input $
               mconcat
-                [ script proposalValidatorHash
+                [ script proposalScriptHash
                 , withDatum proposalInput
                 , withRedeemer $ mkProposalRedeemer op
                 , withValue proposalValue
@@ -204,7 +204,7 @@ privilegeEscalate op =
                 ]
           , output $
               mconcat
-                [ script proposalValidatorHash
+                [ script proposalScriptHash
                 , withDatum proposalOutput
                 , withValue proposalValue
                 ]

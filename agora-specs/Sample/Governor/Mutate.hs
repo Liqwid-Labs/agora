@@ -20,7 +20,9 @@ import Agora.Governor (GovernorDatum (..), GovernorRedeemer (MutateGovernor))
 import Agora.Proposal (ProposalId (ProposalId), ProposalThresholds (..))
 import Data.Default (def)
 import Data.Map ((!))
-import Plutarch.Api.V2 (PMintingPolicy, mintingPolicySymbol, mkMintingPolicy, validatorHash)
+import Data.Text qualified as T
+import Plutarch (Script)
+import Plutarch.Api.V2 (PMintingPolicy, scriptHash)
 import Plutarch.Context (
   input,
   mint,
@@ -35,12 +37,9 @@ import Plutarch.Extra.AssetClass (assetClassValue)
 import Plutarch.Extra.ScriptContext (scriptHashToTokenName)
 import PlutusLedgerApi.V1.Value qualified as Value
 import PlutusLedgerApi.V2 (
-  CurrencySymbol (CurrencySymbol),
   Data,
-  ScriptHash (ScriptHash),
+  ScriptHash,
   TxOutRef (TxOutRef),
-  Validator (Validator),
-  ValidatorHash,
   Value,
   toData,
  )
@@ -48,8 +47,8 @@ import Sample.Shared (
   agoraScripts,
   authorityTokenSymbol,
   governorAssetClass,
+  governorScriptHash,
   governorValidator,
-  governorValidatorHash,
   minAda,
  )
 import Test.Specification (SpecificationTree, testValidator)
@@ -151,14 +150,14 @@ mkGovernorBuilder ps =
       gstOutput =
         if ps.stealGST
           then pubKey $ head pubKeyHashes
-          else script governorValidatorHash
+          else script governorScriptHash
       withGSTDatum =
         maybe mempty withDatum $
           mkGovernorOutputDatum ps.governorOutputDatumValidity
    in mconcat
         [ input $
             mconcat
-              [ script governorValidatorHash
+              [ script governorScriptHash
               , withDatum governorInputDatum
               , withValue value
               , withRef governorRef
@@ -173,19 +172,18 @@ mkGovernorBuilder ps =
 
 --------------------------------------------------------------------------------
 
-mockEffectValidator :: Validator
-mockEffectValidator = Validator $ agoraScripts ! "agora:noOpValidator"
+mockEffectValidator :: Script
+mockEffectValidator = agoraScripts ! "agora:noOpValidator"
 
-mockEffectValidatorHash :: ValidatorHash
-mockEffectValidatorHash = validatorHash mockEffectValidator
+mockEffectScriptHash :: ScriptHash
+mockEffectScriptHash = scriptHash mockEffectValidator
 
 mockAuthScript :: ClosedTerm PMintingPolicy
 mockAuthScript = plam $ \_ _ -> popaque $ pcon PUnit
 
 mockAuthScriptHash :: ScriptHash
 mockAuthScriptHash =
-  let CurrencySymbol h = mintingPolicySymbol $ mkMintingPolicy def mockAuthScript
-   in ScriptHash h
+  scriptHash . either (error . T.unpack) id $ compile def mockAuthScript
 
 mkGATValue :: GATValidity -> Integer -> Value
 mkGATValue NoGAT _ = mempty
@@ -211,12 +209,12 @@ mkMockEffectBuilder ps =
         [ mint burnt
         , input $
             mconcat
-              [ script mockEffectValidatorHash
+              [ script mockEffectScriptHash
               , withValue inputValue
               ]
         , output $
             mconcat
-              [ script mockEffectValidatorHash
+              [ script mockEffectScriptHash
               , withValue outputValue
               ]
         ]

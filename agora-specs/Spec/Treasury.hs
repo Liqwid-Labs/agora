@@ -21,11 +21,12 @@ Tests need to fail when:
 -}
 module Spec.Treasury (specs) where
 
+import Plutarch.Script (Script)
 import PlutusLedgerApi.V1.Credential (
   StakingCredential (StakingHash),
  )
 import PlutusLedgerApi.V1.Value qualified as Value (singleton)
-import PlutusLedgerApi.V2 (DCert (DCertDelegRegKey), Validator)
+import PlutusLedgerApi.V2 (DCert (DCertDelegRegKey))
 import PlutusLedgerApi.V2.Contexts (
   ScriptContext (scriptContextPurpose, scriptContextTxInfo),
   ScriptPurpose (Certifying, Minting, Rewarding),
@@ -46,7 +47,7 @@ import Test.Specification (
   validatorSucceedsWith,
  )
 
-compiledTreasuryValidator :: Validator
+compiledTreasuryValidator :: Script
 compiledTreasuryValidator = trValidator
 
 specs :: [SpecificationTree]

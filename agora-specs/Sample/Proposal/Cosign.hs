@@ -76,11 +76,11 @@ import Sample.Shared (
   governor,
   minAda,
   proposalAssetClass,
+  proposalScriptHash,
   proposalValidator,
-  proposalValidatorHash,
   stakeAssetClass,
+  stakeScriptHash,
   stakeValidator,
-  stakeValidatorHash,
  )
 import Test.Specification (
   SpecificationTree,
@@ -248,7 +248,7 @@ cosign ps = builder
       mconcat
         [ input $
             mconcat
-              [ script stakeValidatorHash
+              [ script stakeScriptHash
               , withValue stakeValue
               , withInlineDatum stakeInputDatum
               , withRef stakeRef
@@ -256,7 +256,7 @@ cosign ps = builder
               ]
         , output $
             mconcat
-              [ script stakeValidatorHash
+              [ script stakeScriptHash
               , withValue stakeValue
               , withInlineDatum stakeOutputDatum
               ]
@@ -275,7 +275,7 @@ cosign ps = builder
       mconcat
         [ input $
             mconcat
-              [ script proposalValidatorHash
+              [ script proposalScriptHash
               , withValue proposalValue
               , withDatum proposalInputDatum
               , withRef proposalRef
@@ -283,7 +283,7 @@ cosign ps = builder
               ]
         , output $
             mconcat
-              [ script proposalValidatorHash
+              [ script proposalScriptHash
               , withValue proposalValue
               , withDatum proposalOutputDatum
               ]
