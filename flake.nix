@@ -19,9 +19,6 @@
       inputs.nixpkgs-latest.follows = "nixpkgs-latest";
     };
 
-    liqwid-plutarch-extra.url = "github:Liqwid-Labs/liqwid-plutarch-extra";
-    plutarch-quickcheck.url = "github:Liqwid-Labs/plutarch-quickcheck";
-    plutarch-context-builder.url = "github:Liqwid-Labs/plutarch-context-builder";
     liqwid-script-export.url = "github:Liqwid-Labs/liqwid-script-export";
   };
 
@@ -42,9 +39,9 @@
             shell = { };
             enableBuildChecks = true;
             extraHackageDeps = [
-              "${self.inputs.plutarch-quickcheck}"
-              "${self.inputs.plutarch-context-builder}"
-              "${self.inputs.liqwid-plutarch-extra}"
+              "${self.inputs.liqwid-script-export.inputs.liqwid-plutarch-extra.inputs.plutarch-quickcheck}"
+              "${self.inputs.liqwid-script-export.inputs.liqwid-plutarch-extra.inputs.plutarch-context-builder}"
+              "${self.inputs.liqwid-script-export.inputs.liqwid-plutarch-extra}"
               "${self.inputs.liqwid-script-export}"
               "${self.inputs.liqwid-script-export.inputs.ply}/ply-core"
               "${self.inputs.liqwid-script-export.inputs.ply}/ply-plutarch"
