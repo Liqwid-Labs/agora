@@ -8172,22 +8172,6 @@
     "haskell-language-server": {
       "flake": false,
       "locked": {
-        "lastModified": 1669648791,
-        "narHash": "sha256-3RbN8CP9LXlFraW0dcEaN+5+ztU6IEqiWD9uLPdyoQ8=",
-        "owner": "haskell",
-        "repo": "haskell-language-server",
-        "rev": "aeb57a8eb56964c8666d7cd05b6ba46d531de7c7",
-        "type": "github"
-      },
-      "original": {
-        "owner": "haskell",
-        "repo": "haskell-language-server",
-        "type": "github"
-      }
-    },
-    "haskell-language-server_10": {
-      "flake": false,
-      "locked": {
         "lastModified": 1663135728,
         "narHash": "sha256-ghyyig0GZXRXS56FxH8unpDceU06i/uGBCBmRwneZPw=",
         "owner": "haskell",
@@ -8202,7 +8186,7 @@
         "type": "github"
       }
     },
-    "haskell-language-server_11": {
+    "haskell-language-server_10": {
       "flake": false,
       "locked": {
         "lastModified": 1669648791,
@@ -8218,7 +8202,7 @@
         "type": "github"
       }
     },
-    "haskell-language-server_12": {
+    "haskell-language-server_11": {
       "flake": false,
       "locked": {
         "lastModified": 1663135728,
@@ -8238,16 +8222,15 @@
     "haskell-language-server_2": {
       "flake": false,
       "locked": {
-        "lastModified": 1663135728,
-        "narHash": "sha256-ghyyig0GZXRXS56FxH8unpDceU06i/uGBCBmRwneZPw=",
+        "lastModified": 1669648791,
+        "narHash": "sha256-3RbN8CP9LXlFraW0dcEaN+5+ztU6IEqiWD9uLPdyoQ8=",
         "owner": "haskell",
         "repo": "haskell-language-server",
-        "rev": "ddb21a0c8d4e657c4b81ce250239bccf28fc9524",
+        "rev": "aeb57a8eb56964c8666d7cd05b6ba46d531de7c7",
         "type": "github"
       },
       "original": {
         "owner": "haskell",
-        "ref": "1.8.0.0",
         "repo": "haskell-language-server",
         "type": "github"
       }
@@ -8255,15 +8238,16 @@
     "haskell-language-server_3": {
       "flake": false,
       "locked": {
-        "lastModified": 1669648791,
-        "narHash": "sha256-3RbN8CP9LXlFraW0dcEaN+5+ztU6IEqiWD9uLPdyoQ8=",
+        "lastModified": 1663135728,
+        "narHash": "sha256-ghyyig0GZXRXS56FxH8unpDceU06i/uGBCBmRwneZPw=",
         "owner": "haskell",
         "repo": "haskell-language-server",
-        "rev": "aeb57a8eb56964c8666d7cd05b6ba46d531de7c7",
+        "rev": "ddb21a0c8d4e657c4b81ce250239bccf28fc9524",
         "type": "github"
       },
       "original": {
         "owner": "haskell",
+        "ref": "1.8.0.0",
         "repo": "haskell-language-server",
         "type": "github"
       }
@@ -8271,23 +8255,6 @@
     "haskell-language-server_4": {
       "flake": false,
       "locked": {
-        "lastModified": 1663135728,
-        "narHash": "sha256-ghyyig0GZXRXS56FxH8unpDceU06i/uGBCBmRwneZPw=",
-        "owner": "haskell",
-        "repo": "haskell-language-server",
-        "rev": "ddb21a0c8d4e657c4b81ce250239bccf28fc9524",
-        "type": "github"
-      },
-      "original": {
-        "owner": "haskell",
-        "ref": "1.8.0.0",
-        "repo": "haskell-language-server",
-        "type": "github"
-      }
-    },
-    "haskell-language-server_5": {
-      "flake": false,
-      "locked": {
         "lastModified": 1669648791,
         "narHash": "sha256-3RbN8CP9LXlFraW0dcEaN+5+ztU6IEqiWD9uLPdyoQ8=",
         "owner": "haskell",
@@ -8301,7 +8268,7 @@
         "type": "github"
       }
     },
-    "haskell-language-server_6": {
+    "haskell-language-server_5": {
       "flake": false,
       "locked": {
         "lastModified": 1663135728,
@@ -8318,7 +8285,7 @@
         "type": "github"
       }
     },
-    "haskell-language-server_7": {
+    "haskell-language-server_6": {
       "flake": false,
       "locked": {
         "lastModified": 1669377714,
@@ -8334,7 +8301,7 @@
         "type": "github"
       }
     },
-    "haskell-language-server_8": {
+    "haskell-language-server_7": {
       "flake": false,
       "locked": {
         "lastModified": 1663135728,
@@ -8351,7 +8318,7 @@
         "type": "github"
       }
     },
-    "haskell-language-server_9": {
+    "haskell-language-server_8": {
       "flake": false,
       "locked": {
         "lastModified": 1669648791,
@@ -8363,6 +8330,23 @@
       },
       "original": {
         "owner": "haskell",
+        "repo": "haskell-language-server",
+        "type": "github"
+      }
+    },
+    "haskell-language-server_9": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1663135728,
+        "narHash": "sha256-ghyyig0GZXRXS56FxH8unpDceU06i/uGBCBmRwneZPw=",
+        "owner": "haskell",
+        "repo": "haskell-language-server",
+        "rev": "ddb21a0c8d4e657c4b81ce250239bccf28fc9524",
+        "type": "github"
+      },
+      "original": {
+        "owner": "haskell",
+        "ref": "1.8.0.0",
         "repo": "haskell-language-server",
         "type": "github"
       }
@@ -8412,10 +8396,12 @@
     "haskell-nix-extra-hackage": {
       "inputs": {
         "haskell-nix": [
+          "liqwid-script-export",
           "liqwid-nix",
           "haskell-nix"
         ],
         "nixpkgs": [
+          "liqwid-script-export",
           "liqwid-nix",
           "nixpkgs"
         ]
@@ -8438,11 +8424,13 @@
       "inputs": {
         "haskell-nix": [
           "liqwid-script-export",
+          "liqwid-plutarch-extra",
           "liqwid-nix",
           "haskell-nix"
         ],
         "nixpkgs": [
           "liqwid-script-export",
+          "liqwid-plutarch-extra",
           "liqwid-nix",
           "nixpkgs"
         ]
@@ -8466,12 +8454,14 @@
         "haskell-nix": [
           "liqwid-script-export",
           "liqwid-plutarch-extra",
+          "plutarch-context-builder",
           "liqwid-nix",
           "haskell-nix"
         ],
         "nixpkgs": [
           "liqwid-script-export",
           "liqwid-plutarch-extra",
+          "plutarch-context-builder",
           "liqwid-nix",
           "nixpkgs"
         ]
@@ -8495,14 +8485,14 @@
         "haskell-nix": [
           "liqwid-script-export",
           "liqwid-plutarch-extra",
-          "plutarch-context-builder",
+          "plutarch-quickcheck",
           "liqwid-nix",
           "haskell-nix"
         ],
         "nixpkgs": [
           "liqwid-script-export",
           "liqwid-plutarch-extra",
-          "plutarch-context-builder",
+          "plutarch-quickcheck",
           "liqwid-nix",
           "nixpkgs"
         ]
@@ -8522,37 +8512,6 @@
       }
     },
     "haskell-nix-extra-hackage_5": {
-      "inputs": {
-        "haskell-nix": [
-          "liqwid-script-export",
-          "liqwid-plutarch-extra",
-          "plutarch-quickcheck",
-          "liqwid-nix",
-          "haskell-nix"
-        ],
-        "nixpkgs": [
-          "liqwid-script-export",
-          "liqwid-plutarch-extra",
-          "plutarch-quickcheck",
-          "liqwid-nix",
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1658790167,
-        "narHash": "sha256-QRZCAz/k5hEvXiHc2aVDDc2jgPTeiRXUtARg0GA9rDU=",
-        "owner": "mlabs-haskell",
-        "repo": "haskell-nix-extra-hackage",
-        "rev": "ee50d7eb739819efdb27bda9f444e007c12e9833",
-        "type": "github"
-      },
-      "original": {
-        "owner": "mlabs-haskell",
-        "repo": "haskell-nix-extra-hackage",
-        "type": "github"
-      }
-    },
-    "haskell-nix-extra-hackage_6": {
       "inputs": {
         "haskell-nix": [
           "liqwid-script-export",
@@ -10779,9 +10738,7 @@
       "inputs": {
         "flake-parts": "flake-parts_2",
         "ghc-next-packages": "ghc-next-packages",
-        "haskell-language-server": "haskell-language-server",
         "haskell-nix": "haskell-nix",
-        "haskell-nix-extra-hackage": "haskell-nix-extra-hackage",
         "iohk-nix": "iohk-nix",
         "nixpkgs": [
           "liqwid-nix",
@@ -10794,16 +10751,16 @@
         "plutarch": "plutarch"
       },
       "locked": {
-        "lastModified": 1670239838,
-        "narHash": "sha256-lkWcUF0OruZ7UCHTQbeeDu8GTSWvFjnWYL5GWWIUBMI=",
+        "lastModified": 1670849797,
+        "narHash": "sha256-oxQB90ardmb9AyonQuJWIwxF0u3so/8DUcildATWUBQ=",
         "owner": "Liqwid-Labs",
         "repo": "liqwid-nix",
-        "rev": "5eec525d8c6842717bdabaf6b2255fd3158f05d7",
+        "rev": "3b7739853008caf75f941ba73e4ab7f00f7c4d1b",
         "type": "github"
       },
       "original": {
         "owner": "Liqwid-Labs",
-        "ref": "v2.0.0",
+        "ref": "v2.0.1",
         "repo": "liqwid-nix",
         "type": "github"
       }
@@ -10812,9 +10769,9 @@
       "inputs": {
         "flake-parts": "flake-parts_6",
         "ghc-next-packages": "ghc-next-packages_3",
-        "haskell-language-server": "haskell-language-server_3",
+        "haskell-language-server": "haskell-language-server_2",
         "haskell-nix": "haskell-nix_4",
-        "haskell-nix-extra-hackage": "haskell-nix-extra-hackage_2",
+        "haskell-nix-extra-hackage": "haskell-nix-extra-hackage",
         "iohk-nix": "iohk-nix_4",
         "nixpkgs": [
           "liqwid-script-export",
@@ -10847,9 +10804,9 @@
       "inputs": {
         "flake-parts": "flake-parts_10",
         "ghc-next-packages": "ghc-next-packages_5",
-        "haskell-language-server": "haskell-language-server_5",
+        "haskell-language-server": "haskell-language-server_4",
         "haskell-nix": "haskell-nix_7",
-        "haskell-nix-extra-hackage": "haskell-nix-extra-hackage_3",
+        "haskell-nix-extra-hackage": "haskell-nix-extra-hackage_2",
         "iohk-nix": "iohk-nix_7",
         "nixpkgs": [
           "liqwid-script-export",
@@ -10884,9 +10841,9 @@
       "inputs": {
         "flake-parts": "flake-parts_14",
         "ghc-next-packages": "ghc-next-packages_7",
-        "haskell-language-server": "haskell-language-server_7",
+        "haskell-language-server": "haskell-language-server_6",
         "haskell-nix": "haskell-nix_10",
-        "haskell-nix-extra-hackage": "haskell-nix-extra-hackage_4",
+        "haskell-nix-extra-hackage": "haskell-nix-extra-hackage_3",
         "iohk-nix": "iohk-nix_10",
         "nixpkgs": [
           "liqwid-script-export",
@@ -10923,9 +10880,9 @@
       "inputs": {
         "flake-parts": "flake-parts_18",
         "ghc-next-packages": "ghc-next-packages_9",
-        "haskell-language-server": "haskell-language-server_9",
+        "haskell-language-server": "haskell-language-server_8",
         "haskell-nix": "haskell-nix_13",
-        "haskell-nix-extra-hackage": "haskell-nix-extra-hackage_5",
+        "haskell-nix-extra-hackage": "haskell-nix-extra-hackage_4",
         "iohk-nix": "iohk-nix_13",
         "nixpkgs": [
           "liqwid-script-export",
@@ -10962,9 +10919,9 @@
       "inputs": {
         "flake-parts": "flake-parts_22",
         "ghc-next-packages": "ghc-next-packages_11",
-        "haskell-language-server": "haskell-language-server_11",
+        "haskell-language-server": "haskell-language-server_10",
         "haskell-nix": "haskell-nix_16",
-        "haskell-nix-extra-hackage": "haskell-nix-extra-hackage_6",
+        "haskell-nix-extra-hackage": "haskell-nix-extra-hackage_5",
         "iohk-nix": "iohk-nix_16",
         "nixpkgs": [
           "liqwid-script-export",
@@ -18517,7 +18474,7 @@
         "__old__pre-commit-hooks-nix": "__old__pre-commit-hooks-nix",
         "gitignore-nix": "gitignore-nix",
         "hackage-nix": "hackage-nix",
-        "haskell-language-server": "haskell-language-server_2",
+        "haskell-language-server": "haskell-language-server",
         "haskell-nix": "haskell-nix_3",
         "iohk-nix": "iohk-nix_3",
         "nixpkgs": "nixpkgs_9",
@@ -18552,7 +18509,7 @@
         "__old__pre-commit-hooks-nix": "__old__pre-commit-hooks-nix_2",
         "gitignore-nix": "gitignore-nix_2",
         "hackage-nix": "hackage-nix_2",
-        "haskell-language-server": "haskell-language-server_4",
+        "haskell-language-server": "haskell-language-server_3",
         "haskell-nix": "haskell-nix_6",
         "iohk-nix": "iohk-nix_6",
         "nixpkgs": "nixpkgs_21",
@@ -18587,7 +18544,7 @@
         "__old__pre-commit-hooks-nix": "__old__pre-commit-hooks-nix_3",
         "gitignore-nix": "gitignore-nix_3",
         "hackage-nix": "hackage-nix_3",
-        "haskell-language-server": "haskell-language-server_6",
+        "haskell-language-server": "haskell-language-server_5",
         "haskell-nix": "haskell-nix_9",
         "iohk-nix": "iohk-nix_9",
         "nixpkgs": "nixpkgs_33",
@@ -18622,7 +18579,7 @@
         "__old__pre-commit-hooks-nix": "__old__pre-commit-hooks-nix_4",
         "gitignore-nix": "gitignore-nix_4",
         "hackage-nix": "hackage-nix_4",
-        "haskell-language-server": "haskell-language-server_8",
+        "haskell-language-server": "haskell-language-server_7",
         "haskell-nix": "haskell-nix_12",
         "iohk-nix": "iohk-nix_12",
         "nixpkgs": "nixpkgs_45",
@@ -18657,7 +18614,7 @@
         "__old__pre-commit-hooks-nix": "__old__pre-commit-hooks-nix_5",
         "gitignore-nix": "gitignore-nix_5",
         "hackage-nix": "hackage-nix_5",
-        "haskell-language-server": "haskell-language-server_10",
+        "haskell-language-server": "haskell-language-server_9",
         "haskell-nix": "haskell-nix_15",
         "iohk-nix": "iohk-nix_15",
         "nixpkgs": "nixpkgs_57",
@@ -18692,7 +18649,7 @@
         "__old__pre-commit-hooks-nix": "__old__pre-commit-hooks-nix_6",
         "gitignore-nix": "gitignore-nix_6",
         "hackage-nix": "hackage-nix_6",
-        "haskell-language-server": "haskell-language-server_12",
+        "haskell-language-server": "haskell-language-server_11",
         "haskell-nix": "haskell-nix_18",
         "iohk-nix": "iohk-nix_18",
         "nixpkgs": "nixpkgs_74",

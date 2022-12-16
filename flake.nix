@@ -15,7 +15,7 @@
     nixpkgs-latest.url = "github:NixOS/nixpkgs";
 
     liqwid-nix = {
-      url = "github:Liqwid-Labs/liqwid-nix/v2.0.0";
+      url = "github:Liqwid-Labs/liqwid-nix/v2.0.1";
       inputs.nixpkgs-latest.follows = "nixpkgs-latest";
     };
 
