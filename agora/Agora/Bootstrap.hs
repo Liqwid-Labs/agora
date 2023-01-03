@@ -17,6 +17,7 @@ import Agora.Treasury (treasuryValidator)
 import Data.Map (fromList)
 import Data.Text (Text, unpack)
 import Plutarch (Config)
+import Plutarch.Api.V2 (PMintingPolicy)
 import Ply (TypedScriptEnvelope)
 import Ply.Plutarch.TypedWriter (TypedWriter, mkEnvelope)
 import ScriptExport.ScriptInfo (RawScriptExport (..))
@@ -41,6 +42,10 @@ agoraScripts conf =
       , envelope "agora:noOpValidator" noOpValidator
       , envelope "agora:treasuryWithdrawalValidator" treasuryWithdrawalValidator
       , envelope "agora:mutateGovernorValidator" mutateGovernorValidator
+      , -- NOTE(Emily, Jan 3rd 2023): Adding this in here because it's useful for testnet GT.
+        -- In reality, it shouldn't be used by anyone on mainnet, but removing it is not
+        -- productive for off-chain testing.
+        envelope @PMintingPolicy "agora:alwaysSucceedsPolicy" $ plam $ \_ _ -> popaque $ pcon PUnit
       ]
   where
     envelope ::
