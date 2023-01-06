@@ -15,7 +15,7 @@
     nixpkgs-latest.url = "github:NixOS/nixpkgs";
 
     liqwid-nix = {
-      url = "github:Liqwid-Labs/liqwid-nix/v2.1.1";
+      url = "github:Liqwid-Labs/liqwid-nix/v2.2.0";
       inputs.nixpkgs-latest.follows = "nixpkgs-latest";
     };
 
@@ -29,10 +29,18 @@
       ];
       systems = [ "x86_64-linux" "aarch64-darwin" "x86_64-darwin" "aarch64-linux" ];
       perSystem = { config, self', inputs', pkgs, system, ... }:
+        let
+          pkgs = import inputs.nixpkgs-latest { inherit system; };
+        in
         {
           onchain.default = {
             src = ./.;
             ghc.version = "ghc925";
+            fourmolu.package = pkgs.haskell.packages.ghc943.fourmolu_0_10_1_0;
+            hlint = { };
+            cabalFmt = { };
+            hasktags = { };
+            applyRefact = { };
             shell = { };
             enableBuildChecks = true;
             extraHackageDeps = [

@@ -31,18 +31,18 @@ import Plutarch.Api.V2 (
  )
 import Plutarch.Extra.AssetClass (PAssetClassData)
 import Plutarch.Extra.Bool (passert)
-import "liqwid-plutarch-extra" Plutarch.Extra.List (plookupAssoc)
 import Plutarch.Extra.Maybe (passertPJust, pfromJust)
 import Plutarch.Extra.Sum (PSum (PSum))
 import Plutarch.Extra.Tagged (PTagged)
+import Plutarch.Extra.Traversable (pfoldMap)
+import Plutarch.Extra.Value (psymbolValueOf')
+import "liqwid-plutarch-extra" Plutarch.Extra.List (plookupAssoc)
 import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (
   pguardC,
   pletC,
   pletFieldsC,
   pmatchC,
  )
-import Plutarch.Extra.Traversable (pfoldMap)
-import Plutarch.Extra.Value (psymbolValueOf')
 
 --------------------------------------------------------------------------------
 

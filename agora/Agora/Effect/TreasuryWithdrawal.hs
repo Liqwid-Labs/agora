@@ -34,14 +34,14 @@ import Plutarch.DataRepr (
   PDataFields,
  )
 import Plutarch.Extra.Field (pletAllC)
-import "liqwid-plutarch-extra" Plutarch.Extra.List (pdeleteFirst)
 import Plutarch.Extra.ScriptContext (pisPubKey)
 import Plutarch.Extra.Tagged (PTagged)
-import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC)
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (PLifted))
 import PlutusLedgerApi.V1.Credential (Credential)
 import PlutusLedgerApi.V1.Value (Value)
 import PlutusTx qualified
+import "liqwid-plutarch-extra" Plutarch.Extra.List (pdeleteFirst)
+import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC)
 
 {- | Datum that encodes behavior of Treasury Withdrawal effect.
 

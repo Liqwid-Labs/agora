@@ -54,15 +54,15 @@ import Plutarch.Api.V1.Address (PCredential)
 import Plutarch.Api.V2 (PMaybeData, PPOSIXTime)
 import Plutarch.Extra.Bool (passert)
 import Plutarch.Extra.Field (pletAll, pletAllC)
+import Plutarch.Extra.Maybe (pdjust, pdnothing, pmaybeData)
+import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
+import Plutarch.Extra.Time (PFullyBoundedTimeRange (PFullyBoundedTimeRange))
 import "liqwid-plutarch-extra" Plutarch.Extra.List (
   pisSingleton,
   ptryDeleteFirstBy,
   ptryFromSingleton,
  )
-import Plutarch.Extra.Maybe (pdjust, pdnothing, pmaybeData)
-import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
 import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC)
-import Plutarch.Extra.Time (PFullyBoundedTimeRange (PFullyBoundedTimeRange))
 
 -- | A wrapper which ensures that no proposal is presented in the transaction.
 pwithoutProposal ::

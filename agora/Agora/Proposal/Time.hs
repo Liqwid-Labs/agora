@@ -49,7 +49,6 @@ import Plutarch.Extra.Bool (passert)
 import Plutarch.Extra.Field (pletAll, pletAllC)
 import Plutarch.Extra.IsData (PlutusTypeEnumData)
 import Plutarch.Extra.Maybe (pjust, pmaybe, pnothing)
-import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pletC, pmatchC)
 import Plutarch.Extra.Time (
   PFullyBoundedTimeRange (PFullyBoundedTimeRange),
   pisWithinTimeRange,
@@ -63,6 +62,7 @@ import Plutarch.Lift (
 import Plutarch.Num (PNum)
 import PlutusLedgerApi.V1 (POSIXTime)
 import PlutusTx qualified
+import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pletC, pmatchC)
 
 --------------------------------------------------------------------------------
 

@@ -60,16 +60,16 @@ import Plutarch.Extra.IsData (
   EnumIsData (EnumIsData),
   PlutusTypeEnumData,
  )
-import "liqwid-plutarch-extra" Plutarch.Extra.List (pfindJust)
 import Plutarch.Extra.Maybe (pjust, pnothing)
 import Plutarch.Extra.Record (mkRecordConstr, (.=))
 import Plutarch.Extra.ScriptContext (ptryFromRedeemer)
 import Plutarch.Extra.Tagged (PTagged)
-import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pletFieldsC)
 import Plutarch.Extra.Value (passetClassValueOfT)
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (PLifted))
 import PlutusLedgerApi.V1 (TxOutRef)
 import PlutusTx qualified
+import "liqwid-plutarch-extra" Plutarch.Extra.List (pfindJust)
+import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pletFieldsC)
 
 --------------------------------------------------------------------------------
 
