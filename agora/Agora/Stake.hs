@@ -75,7 +75,6 @@ import Plutarch.Extra.IsData (
   DerivePConstantViaDataList (DerivePConstantViaDataList),
   ProductIsData (ProductIsData),
  )
-import "liqwid-plutarch-extra" Plutarch.Extra.List (pfindJust, pmapMaybe)
 import Plutarch.Extra.Maybe (passertPJust, pjust, pnothing)
 import Plutarch.Extra.ScriptContext (ptryFromOutputDatum)
 import Plutarch.Extra.Sum (PSum (PSum))
@@ -85,6 +84,7 @@ import Plutarch.Extra.Value (passetClassValueOfT)
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (PLifted))
 import PlutusLedgerApi.V2 (Credential, POSIXTime)
 import PlutusTx qualified
+import "liqwid-plutarch-extra" Plutarch.Extra.List (pfindJust, pmapMaybe)
 
 --------------------------------------------------------------------------------
 

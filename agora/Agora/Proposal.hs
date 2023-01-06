@@ -77,11 +77,8 @@ import Plutarch.Extra.IsData (
   PlutusTypeEnumData,
   ProductIsData (ProductIsData),
  )
-import "liqwid-plutarch-extra" Plutarch.Extra.List (pfindJust)
-import "liqwid-plutarch-extra" Plutarch.Extra.Map qualified as PM
 import Plutarch.Extra.Maybe (pfromJust)
 import Plutarch.Extra.Tagged (PTagged)
-import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletC)
 import Plutarch.Lift (
   DerivePConstantViaNewtype (DerivePConstantViaNewtype),
   PConstantDecl,
@@ -90,6 +87,9 @@ import Plutarch.Lift (
 import Plutarch.Orphans ()
 import PlutusLedgerApi.V2 (Credential, DatumHash, ScriptHash)
 import PlutusTx qualified
+import "liqwid-plutarch-extra" Plutarch.Extra.List (pfindJust)
+import "liqwid-plutarch-extra" Plutarch.Extra.Map qualified as PM
+import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletC)
 
 --------------------------------------------------------------------------------
 -- Haskell-land

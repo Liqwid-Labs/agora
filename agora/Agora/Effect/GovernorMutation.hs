@@ -39,7 +39,6 @@ import Plutarch.DataRepr (
   PDataFields,
  )
 import Plutarch.Extra.Field (pletAll, pletAllC)
-import "liqwid-plutarch-extra" Plutarch.Extra.List (ptryFromSingleton)
 import Plutarch.Extra.Maybe (passertPJust, pfromJust)
 import Plutarch.Extra.Record (mkRecordConstr, (.=))
 import Plutarch.Extra.ScriptContext (
@@ -49,10 +48,11 @@ import Plutarch.Extra.ScriptContext (
   ptryFromRedeemer,
  )
 import Plutarch.Extra.Tagged (PTagged)
-import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC)
 import Plutarch.Lift (PConstantDecl, PLifted, PUnsafeLiftDecl)
 import PlutusLedgerApi.V1 (TxOutRef)
 import PlutusTx qualified
+import "liqwid-plutarch-extra" Plutarch.Extra.List (ptryFromSingleton)
+import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC)
 
 --------------------------------------------------------------------------------
 

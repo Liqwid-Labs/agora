@@ -56,8 +56,6 @@ import Plutarch.Api.V2 (
  )
 import Plutarch.Extra.AssetClass (PAssetClassData, passetClass)
 import Plutarch.Extra.Field (pletAll, pletAllC)
-import "liqwid-plutarch-extra" Plutarch.Extra.List (pfindJust, plistEqualsBy, pmapMaybe)
-import "liqwid-plutarch-extra" Plutarch.Extra.Map (pkeys, ptryLookup)
 import Plutarch.Extra.Maybe (passertPJust, pfromJust, pjust, pmaybeData, pnothing)
 import Plutarch.Extra.Ord (POrdering (..), pcompareBy, pfromOrd, psort)
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
@@ -71,6 +69,9 @@ import Plutarch.Extra.ScriptContext (
   pvalueSpent,
  )
 import Plutarch.Extra.Tagged (PTagged)
+import Plutarch.Extra.Value (passetClassValueOf, psymbolValueOf)
+import "liqwid-plutarch-extra" Plutarch.Extra.List (pfindJust, plistEqualsBy, pmapMaybe)
+import "liqwid-plutarch-extra" Plutarch.Extra.Map (pkeys, ptryLookup)
 import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (
   pguardC,
   pletC,
@@ -78,7 +79,6 @@ import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (
   pmatchC,
   ptryFromC,
  )
-import Plutarch.Extra.Value (passetClassValueOf, psymbolValueOf)
 
 --------------------------------------------------------------------------------
 

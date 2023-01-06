@@ -52,13 +52,6 @@ import Plutarch.Extra.AssetClass (
  )
 import Plutarch.Extra.Category (PCategory (pidentity))
 import Plutarch.Extra.Field (pletAll, pletAllC)
-import "liqwid-plutarch-extra" Plutarch.Extra.List (
-  pfindJust,
-  plistEqualsBy,
-  pmapMaybe,
-  ptryFromSingleton,
- )
-import "plutarch-extra" Plutarch.Extra.Map (pupdate)
 import Plutarch.Extra.Maybe (
   passertPJust,
   pfromJust,
@@ -76,6 +69,16 @@ import Plutarch.Extra.ScriptContext (
  )
 import Plutarch.Extra.Sum (PSum (PSum))
 import Plutarch.Extra.Tagged (PTagged)
+import Plutarch.Extra.Time (PFullyBoundedTimeRange)
+import Plutarch.Extra.Traversable (pfoldMap)
+import Plutarch.Extra.Value (psymbolValueOf')
+import Plutarch.Unsafe (punsafeCoerce)
+import "liqwid-plutarch-extra" Plutarch.Extra.List (
+  pfindJust,
+  plistEqualsBy,
+  pmapMaybe,
+  ptryFromSingleton,
+ )
 import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (
   pguardC,
   pletC,
@@ -83,10 +86,7 @@ import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (
   pmatchC,
   ptryFromC,
  )
-import Plutarch.Extra.Time (PFullyBoundedTimeRange)
-import Plutarch.Extra.Traversable (pfoldMap)
-import Plutarch.Extra.Value (psymbolValueOf')
-import Plutarch.Unsafe (punsafeCoerce)
+import "plutarch-extra" Plutarch.Extra.Map (pupdate)
 
 {- | Policy for Proposals.
 

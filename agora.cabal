@@ -19,7 +19,6 @@ common lang
     -fprint-explicit-foralls -fprint-explicit-kinds -Wunused-do-bind
 
   default-extensions:
-    NoFieldSelectors
     NoStarIsType
     BangPatterns
     BinaryLiterals
@@ -59,7 +58,6 @@ common lang
     NamedWildCards
     NumericUnderscores
     OverloadedLabels
-    OverloadedRecordDot
     OverloadedStrings
     PackageImports
     PartialTypeSignatures
@@ -79,6 +77,8 @@ common lang
     TypeSynonymInstances
     UndecidableInstances
     ViewPatterns
+    NoFieldSelectors
+    OverloadedRecordDot
 
   default-language:   Haskell2010
 

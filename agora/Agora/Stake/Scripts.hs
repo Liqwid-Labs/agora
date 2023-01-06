@@ -77,7 +77,6 @@ import Plutarch.Extra.AssetClass (
 import Plutarch.Extra.Bool (passert)
 import Plutarch.Extra.Field (pletAll, pletAllC)
 import Plutarch.Extra.Functor (PFunctor (pfmap))
-import "liqwid-plutarch-extra" Plutarch.Extra.List (pfindJust, pmapMaybe)
 import Plutarch.Extra.Maybe (
   passertPJust,
   pdjust,
@@ -96,13 +95,6 @@ import Plutarch.Extra.ScriptContext (
   pvalueSpent,
  )
 import Plutarch.Extra.Tagged (PTagged)
-import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (
-  pguardC,
-  pletC,
-  pletFieldsC,
-  pmatchC,
-  ptryFromC,
- )
 import Plutarch.Extra.Value (
   passetClassValueOf,
   passetClassValueOfT,
@@ -111,6 +103,14 @@ import Plutarch.Extra.Value (
  )
 import Plutarch.Num (PNum (pnegate))
 import Plutarch.Unsafe (punsafeCoerce)
+import "liqwid-plutarch-extra" Plutarch.Extra.List (pfindJust, pmapMaybe)
+import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (
+  pguardC,
+  pletC,
+  pletFieldsC,
+  pmatchC,
+  ptryFromC,
+ )
 import Prelude hiding (Num ((+)))
 
 {- | Policy for Stake state threads.
