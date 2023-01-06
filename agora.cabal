@@ -1,6 +1,6 @@
 cabal-version:      3.0
 name:               agora
-version:            0.2.0
+version:            1.0.0
 extra-source-files: CHANGELOG.md
 author:             Emily Martins <emi@haskell.fyi>
 license:            Apache-2.0
