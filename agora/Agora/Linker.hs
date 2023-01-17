@@ -114,6 +114,11 @@ linker = do
         , Tagged AuthorityTokenTag CurrencySymbol
         ]
       "agora:mutateGovernorValidator"
+  alwaysSucceedsPolicy' <-
+    fetchTS
+      @MintingPolicyRole
+      @'[]
+      "agora:alwaysSucceedsPolicy"
 
   governor <- getParam
 
@@ -180,6 +185,7 @@ linker = do
             , ("agora:noOpValidator", toRoledScript noOpVal')
             , ("agora:treasuryWithdrawalValidator", toRoledScript treaWithdrawalVal')
             , ("agora:mutateGovernorValidator", toRoledScript mutateGovVal')
+            , ("agora:alwaysSucceedsPolicy", toRoledScript alwaysSucceedsPolicy')
             ]
       , information =
           AgoraScriptInfo
