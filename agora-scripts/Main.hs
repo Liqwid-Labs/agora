@@ -11,6 +11,7 @@ module Main (main) where
 import Agora.Bootstrap qualified as Bootstrap
 import Agora.Linker (linker)
 import Data.Default (def)
+import Plutarch (Config (Config), TracingMode (DoTracingAndBinds))
 import ScriptExport.Export (exportMain)
 import ScriptExport.Types (
   Builders,
@@ -24,4 +25,10 @@ builders :: Builders
 builders =
   mconcat
     [ insertScriptExportWithLinker "agora" (Bootstrap.agoraScripts def) linker
+    , insertScriptExportWithLinker
+        "agoraDebug"
+        ( Bootstrap.agoraScripts
+            (Config DoTracingAndBinds)
+        )
+        linker
     ]
