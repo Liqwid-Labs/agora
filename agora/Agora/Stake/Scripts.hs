@@ -109,7 +109,7 @@ import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (
   pletC,
   pletFieldsC,
   pmatchC,
-  ptryFromC,
+  ptryFromC, ptraceC,
  )
 import Prelude hiding (Num ((+)))
 
@@ -274,10 +274,10 @@ mkStakeValidator impl sstSymbol pstClass gtClass =
           , "signatories"
           , "redeemers"
           , "datums"
-          , "validRange"
           ]
         txInfo
 
+    ptraceC $ "Valid range: " <> pshow txInfoF.validRange
     --------------------------------------------------------------------------
 
     PSpending stakeInputRef <- pmatchC $ pfromData ctxF.purpose
@@ -350,6 +350,8 @@ mkStakeValidator impl sstSymbol pstClass gtClass =
           # plam ((getStakeDatum #) . (pfield @"resolved" #))
           # pfromData txInfoF.inputs
 
+    ptraceC $ "Input stakes: " <> pshow stakeInputDatums
+  
     --------------------------------------------------------------------------
 
     -- Assemble the signature context.
@@ -472,6 +474,8 @@ mkStakeValidator impl sstSymbol pstClass gtClass =
                       # (getStakeDatum # output)
             )
           # pfromData txInfoF.outputs
+
+    ptraceC $ "Output stakes: " <> pshow stakeOutputDatums
 
     --------------------------------------------------------------------------
 

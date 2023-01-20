@@ -42,7 +42,6 @@ import Agora.Stake (
   presolveStakeInputDatum,
  )
 import Agora.Utils (ptaggedSymbolValueOf, ptoScottEncodingT, puntag)
-import Data.Function (on)
 import Plutarch.Api.V1 (PCurrencySymbol)
 import Plutarch.Api.V1.AssocMap (plookup)
 import Plutarch.Api.V1.AssocMap qualified as AssocMap
@@ -56,6 +55,8 @@ import Plutarch.Api.V2 (
  )
 import Plutarch.Extra.AssetClass (PAssetClassData, passetClass)
 import Plutarch.Extra.Field (pletAll, pletAllC)
+import "liqwid-plutarch-extra" Plutarch.Extra.List (pfindJust, plistEqualsBy, pmapMaybe)
+import "liqwid-plutarch-extra" Plutarch.Extra.Map (pkeys, ptryLookup)
 import Plutarch.Extra.Maybe (passertPJust, pfromJust, pjust, pmaybeData, pnothing)
 import Plutarch.Extra.Ord (POrdering (..), pcompareBy, pfromOrd, psort)
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
@@ -69,9 +70,6 @@ import Plutarch.Extra.ScriptContext (
   pvalueSpent,
  )
 import Plutarch.Extra.Tagged (PTagged)
-import Plutarch.Extra.Value (passetClassValueOf, psymbolValueOf)
-import "liqwid-plutarch-extra" Plutarch.Extra.List (pfindJust, plistEqualsBy, pmapMaybe)
-import "liqwid-plutarch-extra" Plutarch.Extra.Map (pkeys, ptryLookup)
 import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (
   pguardC,
   pletC,
@@ -79,6 +77,8 @@ import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (
   pmatchC,
   ptryFromC,
  )
+import "plutarch-extra" Plutarch.Extra.TermCont (ptraceC)
+import Plutarch.Extra.Value (passetClassValueOf, psymbolValueOf)
 
 --------------------------------------------------------------------------------
 
@@ -306,6 +306,14 @@ governorValidator =
 
     ----------------------------------------------------------------------------
 
+    ptraceC $ "GST symbol: " <> pshow gstSymbol
+
+    governorScriptHash <-
+      pletC $
+        pfromJust #$ pscriptHashFromAddress # governorInputF.address
+
+    ptraceC $ "Governor script hash: " <> pshow governorScriptHash
+
     governorOutputDatum <-
       pletC $
         passertPJust
@@ -316,12 +324,17 @@ governorValidator =
                 let isGovernorUTxO =
                       foldl1
                         (#&&)
-                        [ ptraceIfFalse "Own by governor validator" $
-                            ((#==) `on` (pscriptHashFromAddress #))
-                              outputF.address
-                              governorInputF.address
-                        , ptraceIfFalse "Has governor ST" $
+                        [ ptraceIfFalse "Has governor ST" $
                             ptaggedSymbolValueOf # gstSymbol # outputF.value #== 1
+                        , let outputOwnerCredential =
+                                pfromJust
+                                  #$ pscriptHashFromAddress
+                                  # outputF.address
+                           in ptraceIfFalse
+                                ( "Should owned by governor validator but got sent to: "
+                                    <> pshow outputOwnerCredential
+                                )
+                                $ outputOwnerCredential #== governorScriptHash
                         ]
 
                     datum =
@@ -500,83 +513,82 @@ governorValidator =
           -- The effects of the winner outcome.
           effectGroup <- pletC $ ptryLookup # finalResultTag #$ proposalInputDatumF.effects
 
-          let
-            -- For a given output, check if it contains a single valid GAT.
-            getReceiverScriptHash =
-              plam
-                ( \output -> unTermCont $ do
-                    outputF <- pletFieldsC @'["address", "datum", "value"] output
+          let -- For a given output, check if it contains a single valid GAT.
+              getReceiverScriptHash =
+                plam
+                  ( \output -> unTermCont $ do
+                      outputF <- pletFieldsC @'["address", "datum", "value"] output
 
-                    let atAmount =
-                          ptaggedSymbolValueOf
-                            # atSymbol
-                            # outputF.value
+                      let atAmount =
+                            ptaggedSymbolValueOf
+                              # atSymbol
+                              # outputF.value
 
-                        handleAuthorityUTxO =
-                          do
-                            receiverScriptHash <-
-                              pletC $
-                                passertPJust
-                                  # "GAT receiver should be a script"
-                                  #$ pscriptHashFromAddress
-                                  # outputF.address
+                          handleAuthorityUTxO =
+                            do
+                              receiverScriptHash <-
+                                pletC $
+                                  passertPJust
+                                    # "GAT receiver should be a script"
+                                    #$ pscriptHashFromAddress
+                                    # outputF.address
 
-                            effect <-
-                              pletAllC $
-                                passertPJust
-                                  # "Receiver should be in the effect group"
-                                  #$ AssocMap.plookup
-                                  # receiverScriptHash
-                                  # effectGroup
+                              effect <-
+                                pletAllC $
+                                  passertPJust
+                                    # "Receiver should be in the effect group"
+                                    #$ AssocMap.plookup
+                                    # receiverScriptHash
+                                    # effectGroup
 
-                            let tagToken =
-                                  pmaybeData
-                                    # pconstant ""
-                                    # plam (pscriptHashToTokenName . pfromData)
-                                    # effect.scriptHash
-                                gatAssetClass = passetClass # puntag atSymbol # tagToken
-                                valueGATCorrect =
-                                  passetClassValueOf
-                                    # gatAssetClass
-                                    # outputF.value
-                                    #== 1
+                              let tagToken =
+                                    pmaybeData
+                                      # pconstant ""
+                                      # plam (pscriptHashToTokenName . pfromData)
+                                      # effect.scriptHash
+                                  gatAssetClass = passetClass # puntag atSymbol # tagToken
+                                  valueGATCorrect =
+                                    passetClassValueOf
+                                      # gatAssetClass
+                                      # outputF.value
+                                      #== 1
 
-                            let hasCorrectDatum =
-                                  effect.datumHash #== ptryFromDatumHash # outputF.datum
+                              let hasCorrectDatum =
+                                    effect.datumHash #== ptryFromDatumHash # outputF.datum
 
-                            pguardC "Authority output valid" $
-                              foldr1
-                                (#&&)
-                                [ ptraceIfFalse "GAT valid" $ authorityTokensValidIn # atSymbol # output
-                                , ptraceIfFalse "Correct datum" hasCorrectDatum
-                                , ptraceIfFalse "Value correctly encodes Auth Check script" valueGATCorrect
-                                ]
+                              pguardC "Authority output valid" $
+                                foldr1
+                                  (#&&)
+                                  [ ptraceIfFalse "GAT valid" $ authorityTokensValidIn # atSymbol # output
+                                  , ptraceIfFalse "Correct datum" hasCorrectDatum
+                                  , ptraceIfFalse "Value correctly encodes Auth Check script" valueGATCorrect
+                                  ]
 
-                            pure $ pjust # receiverScriptHash
+                              pure $ pjust # receiverScriptHash
 
-                    pmatchC
-                      ( pcompareBy
-                          # pfromOrd
-                          # atAmount
-                          # 1
-                      )
-                      >>= \case
-                        -- atAmount == 1
-                        PEQ -> handleAuthorityUTxO
-                        -- atAmount < 1
-                        PLT -> pure pnothing
-                        -- atAmount > 1
-                        PGT -> pure $ ptraceError "More than one GAT in one UTxO"
-                )
+                      pmatchC
+                        ( pcompareBy
+                            # pfromOrd
+                            # atAmount
+                            # 1
+                        )
+                        >>= \case
+                          -- atAmount == 1
+                          PEQ -> handleAuthorityUTxO
+                          -- atAmount < 1
+                          PLT -> pure pnothing
+                          -- atAmount > 1
+                          PGT -> pure $ ptraceError "More than one GAT in one UTxO"
+                  )
 
-            -- The sorted hashes of all the GAT receivers.
-            actualReceivers =
-              psort
-                #$ pmapMaybe @PList
-                # getReceiverScriptHash
-                # pfromData txInfoF.outputs
+              -- The sorted hashes of all the GAT receivers.
+              actualReceivers =
+                psort
+                  #$ pmapMaybe @PList
+                  # getReceiverScriptHash
+                  # pfromData txInfoF.outputs
 
-            expectedReceivers = pkeys @PList # effectGroup
+              expectedReceivers = pkeys @PList # effectGroup
 
           -- This check ensures that it's impossible to send more than one GATs
           -- to a validator in the winning effect group.

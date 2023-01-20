@@ -468,6 +468,7 @@ data PPeriod (s :: S)
   deriving anyclass
     ( -- | @since 1.0.0
       PlutusType
+      , PShow
     )
 
 -- | @since 1.0.0
@@ -514,7 +515,14 @@ pgetRelation = phoistAcyclic $
     pure $
       pif (plb #<= lb #&& ub #<= pub) (pcon PWithin) $
         pif (pub #< lb) (pcon PAfter) $
-          ptraceError "pgetRelation: too early or invalid current time"
+          ptraceError $ mconcat [
+            "pgetRelation: too early or invalid current time:",
+            " period=", pshow period,
+            " plb=", pshow plb,
+            " pub=", pshow pub,
+            " lb=", pshow lb,
+            " ub=", pshow ub
+            ]
 
 {- | Return true if the width of given 'PProposalTime' is shorter than the
      maximum.

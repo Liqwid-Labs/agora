@@ -87,6 +87,7 @@ import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (
   ptryFromC,
  )
 import "plutarch-extra" Plutarch.Extra.Map (pupdate)
+import "plutarch-extra" Plutarch.Extra.TermCont (ptraceC)
 
 {- | Policy for Proposals.
 
@@ -132,6 +133,8 @@ proposalPolicy =
         minted
           #== 1
           #&& ptraceIfFalse "Burning a proposal is not supported" (burnt #== 0)
+    
+    ptraceC $ "Expected GST AssetClass: " <> pshow gstAssetClass
 
     let governorRedeemer =
           passertPJust

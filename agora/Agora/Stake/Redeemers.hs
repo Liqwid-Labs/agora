@@ -62,7 +62,7 @@ import "liqwid-plutarch-extra" Plutarch.Extra.List (
   ptryDeleteFirstBy,
   ptryFromSingleton,
  )
-import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC)
+import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC, pmatchC, ptraceC)
 
 -- | A wrapper which ensures that no proposal is presented in the transaction.
 pwithoutProposal ::
@@ -240,7 +240,10 @@ ppermitVote = pvoteHelper #$ phoistAcyclic $
                               .= pdata upperBound
                           )
 
-                  pure $ mkLock # action
+                      lock = mkLock # action
+                  
+                  ptraceC $ "Expected lock: " <> pshow lock
+                  pure lock
               PCosign _ ->
                 let action = pcon $ PCosigned pdnil
                  in withOnlyOneStakeInput #$ mkLock # action
