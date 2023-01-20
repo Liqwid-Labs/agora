@@ -7,10 +7,10 @@ import Agora.SafeMoney (AuthorityTokenTag, GTTag, GovernorSTTag, ProposalSTTag, 
 import Data.Aeson qualified as Aeson
 import Data.Map (fromList)
 import Data.Tagged (Tagged (Tagged))
-import Plutarch.Api.V1 (scriptHash)
+import Plutarch.Api.V2 (scriptHash)
 import Plutarch.Extra.AssetClass (AssetClass (AssetClass))
 import Plutarch.Extra.ScriptContext (scriptHashToTokenName)
-import PlutusLedgerApi.V1 (CurrencySymbol (CurrencySymbol), ScriptHash, TxOutRef, getScriptHash)
+import PlutusLedgerApi.V2 (CurrencySymbol (CurrencySymbol), ScriptHash, TxOutRef, getScriptHash)
 import Ply (
   ScriptRole (MintingPolicyRole, ValidatorRole),
   (#),
