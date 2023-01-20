@@ -100,4 +100,4 @@ build: requires_nix_shell
 
 ci:
 	@ [[ "$$(uname -sm)" == "Linux x86_64" ]] || (echo "NOTE: CI only builds on Linux x86_64. Your system is $$(uname -sm), continuing...")
-	nix build .#check.$(shell nix eval -f '<nixpkgs>' system)
+	nix build .#checks.$(shell nix eval -f '<nixpkgs>' system).required
