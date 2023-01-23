@@ -8,13 +8,16 @@
 -}
 module Main (main) where
 
+import Agora.Bootstrap (alwaysSucceedsPolicyRoledScript)
 import Agora.Bootstrap qualified as Bootstrap
 import Agora.Linker (linker)
+import Data.Aeson qualified as Aeson
 import Data.Default (def)
 import Plutarch (Config (Config), TracingMode (DoTracingAndBinds))
 import ScriptExport.Export (exportMain)
 import ScriptExport.Types (
   Builders,
+  insertBuilder,
   insertScriptExportWithLinker,
  )
 
@@ -31,4 +34,9 @@ builders =
             (Config DoTracingAndBinds)
         )
         linker
+    , -- Note: To be compatible with current off-chain setup, we are not using
+      --  static builder here.
+      insertBuilder
+        "alwaysSucceedsPolicy"
+        (const @_ @Aeson.Value alwaysSucceedsPolicyRoledScript)
     ]
