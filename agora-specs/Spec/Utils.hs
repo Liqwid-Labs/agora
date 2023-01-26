@@ -7,7 +7,8 @@ Tests for utility functions in 'Agora.Utils'.
 -}
 module Spec.Utils (tests) where
 
-import Test.Tasty (TestTree)
+import Property.Utils qualified as Props
+import Test.Tasty (TestTree, testGroup)
 
 tests :: [TestTree]
-tests = []
+tests = [testGroup "properties" Props.props]
