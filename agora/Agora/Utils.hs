@@ -17,8 +17,10 @@ module Agora.Utils (
   ptaggedSymbolValueOf,
   ptag,
   puntag,
+  phashDatum,
 ) where
 
+import Plutarch.Api.V1.Scripts (PDatumHash (PDatumHash))
 import Plutarch.Api.V2 (
   AmountGuarantees,
   KeyGuarantees,
@@ -26,6 +28,8 @@ import Plutarch.Api.V2 (
   PMaybeData (PDNothing),
   PValue,
  )
+import Plutarch.Builtin (pforgetData, pserialiseData)
+import Plutarch.Crypto (pblake2b_256)
 import Plutarch.Extra.AssetClass (PAssetClass, PAssetClassData, ptoScottEncoding)
 import Plutarch.Extra.Tagged (PTagged)
 import Plutarch.Extra.Value (psymbolValueOf)
@@ -115,3 +119,23 @@ puntag ::
   Term s (PTagged tag a) ->
   Term s a
 puntag = pto
+
+{- | Hash the given datum using the correct algorithm(blake2b_256).
+
+     Note: check the discussion here: https://github.com/input-output-hk/cardano-ledger/issues/2941.
+
+     @since 1.0.0
+-}
+phashDatum ::
+  forall (a :: PType) (s :: S).
+  PIsData a =>
+  Term s (a :--> PDatumHash)
+phashDatum =
+  phoistAcyclic $
+    plam $
+      pcon
+        . PDatumHash
+        . (pblake2b_256 #)
+        . (pserialiseData #)
+        . pforgetData
+        . pdata

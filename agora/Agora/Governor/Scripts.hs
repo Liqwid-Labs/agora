@@ -41,7 +41,7 @@ import Agora.Stake (
   pnumCreatedProposals,
   presolveStakeInputDatum,
  )
-import Agora.Utils (ptaggedSymbolValueOf, ptoScottEncodingT, puntag)
+import Agora.Utils (phashDatum, ptaggedSymbolValueOf, ptoScottEncodingT, puntag)
 import Data.Function (on)
 import Plutarch.Api.V1 (PCurrencySymbol)
 import Plutarch.Api.V1.AssocMap (plookup)
@@ -54,6 +54,7 @@ import Plutarch.Api.V2 (
   PTxOutRef,
   PValidator,
  )
+import Plutarch.Api.V2.Tx (POutputDatum (..))
 import Plutarch.Extra.AssetClass (PAssetClassData, passetClass)
 import Plutarch.Extra.Field (pletAll, pletAllC)
 import Plutarch.Extra.Maybe (passertPJust, pfromJust, pjust, pmaybeData, pnothing)
@@ -64,7 +65,6 @@ import Plutarch.Extra.ScriptContext (
   pisUTXOSpent,
   pscriptHashFromAddress,
   pscriptHashToTokenName,
-  ptryFromDatumHash,
   ptryFromOutputDatum,
   pvalueSpent,
  )
@@ -541,8 +541,13 @@ governorValidator =
                                     # outputF.value
                                     #== 1
 
-                            let hasCorrectDatum =
-                                  effect.datumHash #== ptryFromDatumHash # outputF.datum
+                            let outputDatumHash = pmatch outputF.datum $ \case
+                                  POutputDatum d -> phashDatum # d
+                                  POutputDatumHash h -> pfield @"datumHash" # h
+                                  _ -> ptraceError "expcted effect datum, got nothing"
+
+                                hasCorrectDatum =
+                                  effect.datumHash #== outputDatumHash
 
                             pguardC "Authority output valid" $
                               foldr1
