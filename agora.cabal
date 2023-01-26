@@ -194,6 +194,7 @@ library agora-specs
   exposed-modules:
     Property.Generator
     Property.Governor
+    Property.Utils
     Sample.AuthorityToken.UnauthorizedMintingExploit
     Sample.Effect.GovernorMutation
     Sample.Effect.TreasuryWithdrawal
