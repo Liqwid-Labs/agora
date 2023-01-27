@@ -3598,11 +3598,11 @@
         "ply": "ply"
       },
       "locked": {
-        "lastModified": 1673364584,
-        "narHash": "sha256-NnRH/pSsuCt7JI01IXeumS5ikWZ0rgGcxbeOxtadqvo=",
+        "lastModified": 1674486053,
+        "narHash": "sha256-Efxo9CGKS68NANSWUyonmI6FVO+H27piIfsZk021rBU=",
         "owner": "Liqwid-Labs",
         "repo": "liqwid-libs",
-        "rev": "313314c969a47334835c4f4c7eb98a9f40fd36a8",
+        "rev": "0898f8fdeeeacf3dd3a0e693711a2cfadcdc6629",
         "type": "github"
       },
       "original": {
