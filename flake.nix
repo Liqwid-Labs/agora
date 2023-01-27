@@ -15,14 +15,14 @@
     nixpkgs-latest.url = "github:NixOS/nixpkgs";
 
     liqwid-nix = {
-      url = "github:Liqwid-Labs/liqwid-nix/v2.2.1";
+      url = "github:Liqwid-Labs/liqwid-nix/v2.3.0";
       inputs.nixpkgs-latest.follows = "nixpkgs-latest";
     };
 
     liqwid-libs.url = "github:Liqwid-Labs/liqwid-libs";
   };
 
-  outputs = inputs@{ flake-parts, ... }:
+  outputs = inputs@{ self, flake-parts, ... }:
     flake-parts.lib.mkFlake { inherit inputs; } {
       imports = [
         inputs.liqwid-nix.flakeModule
@@ -54,5 +54,10 @@
           };
           ci.required = [ "all_onchain" ];
         };
+
+      flake.hydraJobs.x86_64-linux = (
+        self.checks.x86_64-linux
+        // self.packages.x86_64-linux
+      );
     };
 }
