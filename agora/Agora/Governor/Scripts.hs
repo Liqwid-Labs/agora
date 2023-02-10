@@ -77,6 +77,7 @@ import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (
   pletC,
   pletFieldsC,
   pmatchC,
+  ptraceC,
   ptryFromC,
  )
 
@@ -542,12 +543,14 @@ governorValidator =
                                     #== 1
 
                             let outputDatumHash = pmatch outputF.datum $ \case
-                                  POutputDatum d -> phashDatum # d
-                                  POutputDatumHash h -> pfield @"datumHash" # h
+                                  POutputDatum d -> ptrace "inline datum" $ phashDatum # d
+                                  POutputDatumHash h -> ptrace "datum hash" $ pfield @"datumHash" # h
                                   _ -> ptraceError "expcted effect datum, got nothing"
 
                                 hasCorrectDatum =
                                   effect.datumHash #== outputDatumHash
+
+                            ptraceC $ "expected datum hash: " <> pshow effect.datumHash <> " got" <> pshow outputDatumHash
 
                             pguardC "Authority output valid" $
                               foldr1
