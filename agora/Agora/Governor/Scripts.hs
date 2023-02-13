@@ -46,14 +46,7 @@ import Data.Function (on)
 import Plutarch.Api.V1 (PCurrencySymbol)
 import Plutarch.Api.V1.AssocMap (plookup)
 import Plutarch.Api.V1.AssocMap qualified as AssocMap
-import Plutarch.Api.V2 (
-  PMintingPolicy,
-  PScriptHash,
-  PScriptPurpose (PMinting, PSpending),
-  PTxOut,
-  PTxOutRef,
-  PValidator,
- )
+import Plutarch.Api.V2 (PDatum, PMintingPolicy, PScriptHash, PScriptPurpose (PMinting, PSpending), PTxOut, PTxOutRef, PValidator)
 import Plutarch.Api.V2.Tx (POutputDatum (..))
 import Plutarch.Extra.AssetClass (PAssetClassData, passetClass)
 import Plutarch.Extra.Field (pletAll, pletAllC)
@@ -542,7 +535,7 @@ governorValidator =
                                     #== 1
 
                             let outputDatumHash = pmatch outputF.datum $ \case
-                                  POutputDatum d -> phashDatum # d
+                                  POutputDatum d -> phashDatum #$ pfield @"outputDatum" @PDatum # d
                                   POutputDatumHash h -> pfield @"datumHash" # h
                                   _ -> ptraceError "expcted effect datum, got nothing"
 
