@@ -46,14 +46,7 @@ import Data.Function (on)
 import Plutarch.Api.V1 (PCurrencySymbol)
 import Plutarch.Api.V1.AssocMap (plookup)
 import Plutarch.Api.V1.AssocMap qualified as AssocMap
-import Plutarch.Api.V2 (
-  PMintingPolicy,
-  PScriptHash,
-  PScriptPurpose (PMinting, PSpending),
-  PTxOut,
-  PTxOutRef,
-  PValidator,
- )
+import Plutarch.Api.V2 (PDatum, PMintingPolicy, PScriptHash, PScriptPurpose (PMinting, PSpending), PTxOut, PTxOutRef, PValidator)
 import Plutarch.Api.V2.Tx (POutputDatum (..))
 import Plutarch.Extra.AssetClass (PAssetClassData, passetClass)
 import Plutarch.Extra.Field (pletAll, pletAllC)
@@ -80,7 +73,6 @@ import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (
   ptraceC,
   ptryFromC,
  )
-import Plutarch.Api.V2 (PDatum)
 
 --------------------------------------------------------------------------------
 

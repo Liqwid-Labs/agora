@@ -24,6 +24,7 @@ module Sample.Proposal.Advance (
   mkValidToNextStateBundle,
   mkValidToNextStateBundles,
   mkValidToFailedStateBundles,
+  mkValidToFinishedInlineGATDatumBundles,
   mkInsufficientVotesBundle,
   mkAmbiguousWinnerBundle,
   mkFromFinishedBundles,
@@ -199,6 +200,8 @@ data AuthorityTokenParameters = forall
   , invalidTokenName :: Bool
   -- ^ If set to true, GATs won't be tagged by their corresponding effect
   --    hashes.
+  , shouldInlineDatum :: Bool
+  -- ^ If set to true, the effect datum will be inlined.
   }
 
 -- | Represent the winning effect group(s).
@@ -476,7 +479,7 @@ mkAuthorityTokenBuilder ::
   CombinableBuilder b =>
   AuthorityTokenParameters ->
   b
-mkAuthorityTokenBuilder ps@AuthorityTokenParameters {carryDatum} =
+mkAuthorityTokenBuilder ps@AuthorityTokenParameters {carryDatum, shouldInlineDatum} =
   let tn =
         case (ps.invalidTokenName, ps.carryAuthScript) of
           (True, Just _) -> "deadbeef"
@@ -486,12 +489,13 @@ mkAuthorityTokenBuilder ps@AuthorityTokenParameters {carryDatum} =
       ac = Tagged @AuthorityTokenTag $ AssetClass authorityTokenSymbol tn
       minted = assetClassValue ac 1
       value = sortValue $ minAda <> minted
+      withDatum' = if shouldInlineDatum then withInlineDatum else withDatum
    in mconcat
         [ mint minted
         , output $
             mconcat
               [ script ps.mintGATsFor
-              , maybe mempty withInlineDatum carryDatum
+              , maybe mempty withDatum' carryDatum
               , withValue value
               ]
         ]
@@ -833,6 +837,7 @@ mkValidToNextStateBundle nCosigners nEffects authScript from =
                             , carryDatum = Just dummyDatum
                             , carryAuthScript = authScript
                             , invalidTokenName = False
+                            , shouldInlineDatum = False
                             }
                       )
                       (effects !! winner)
@@ -858,6 +863,30 @@ mkValidToNextStateBundles nCosigners nEffects =
     (mkValidToNextStateBundle nCosigners nEffects)
     [True, False]
     [Draft, VotingReady, Locked]
+
+mkValidToFinishedInlineGATDatumBundles ::
+  Word ->
+  Word ->
+  [ParameterBundle]
+mkValidToFinishedInlineGATDatumBundles nCosigners nEffects =
+  let templates =
+        liftA2
+          (mkValidToNextStateBundle nCosigners nEffects)
+          [True, False]
+          [Locked]
+
+      modifyTemplate template =
+        template
+          { authorityTokenParameters =
+              modifyAuthorityParameters
+                <$> template.authorityTokenParameters
+          }
+
+      modifyAuthorityParameters params =
+        params
+          { shouldInlineDatum = True
+          }
+   in modifyTemplate <$> templates
 
 mkValidToFailedStateBundles ::
   -- | Number of cosigners
@@ -1065,6 +1094,7 @@ mkGATsWithWrongDatumBundle nCosigners nEffects =
             aut.mintGATsFor
             (Just (1 :: Integer))
             aut.carryAuthScript
+            False
             False
       )
         <$> template.authorityTokenParameters
