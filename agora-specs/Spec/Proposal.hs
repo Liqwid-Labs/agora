@@ -254,6 +254,11 @@ specs =
                                     mkName
                                     (Advance.mkValidToFailedStateBundles cs es)
                                     allValid
+                                , Advance.mkTestTree'
+                                    "to finished state with inline datum"
+                                    mkName
+                                    (Advance.mkValidToFinishedInlineGATDatumBundles cs es)
+                                    allValid
                                 ]
                       , group
                           "illegal"
