@@ -18,9 +18,10 @@ module Agora.Utils (
   ptag,
   puntag,
   phashDatum,
+  phashDatum',
 ) where
 
-import Plutarch.Api.V1.Scripts (PDatumHash (PDatumHash))
+import Plutarch.Api.V1.Scripts (PDatumHash (PDatumHash), PDatum)
 import Plutarch.Api.V2 (
   AmountGuarantees,
   KeyGuarantees,
@@ -139,3 +140,15 @@ phashDatum =
         . (pserialiseData #)
         . pforgetData
         . pdata
+
+phashDatum' ::
+  forall (s :: S).
+  Term s (PDatum :--> PDatumHash)
+phashDatum' =
+  phoistAcyclic $
+    plam $
+      pcon
+        . PDatumHash
+        . (pblake2b_256 #)
+        . (pserialiseData #)
+        . pto

@@ -491,7 +491,7 @@ mkAuthorityTokenBuilder ps@AuthorityTokenParameters {carryDatum} =
         , output $
             mconcat
               [ script ps.mintGATsFor
-              , maybe mempty withDatum carryDatum
+              , maybe mempty withInlineDatum carryDatum
               , withValue value
               ]
         ]

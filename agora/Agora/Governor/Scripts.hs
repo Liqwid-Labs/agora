@@ -80,6 +80,7 @@ import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (
   ptraceC,
   ptryFromC,
  )
+import Plutarch.Api.V2 (PDatum)
 
 --------------------------------------------------------------------------------
 
@@ -543,7 +544,7 @@ governorValidator =
                                     #== 1
 
                             let outputDatumHash = pmatch outputF.datum $ \case
-                                  POutputDatum d -> ptrace "inline datum" $ phashDatum # d
+                                  POutputDatum d -> ptrace "inline datum" $ phashDatum #$ pfield @"outputDatum" @PDatum # d
                                   POutputDatumHash h -> ptrace "datum hash" $ pfield @"datumHash" # h
                                   _ -> ptraceError "expcted effect datum, got nothing"
 
