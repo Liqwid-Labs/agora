@@ -232,7 +232,7 @@ data ProposalThresholds = ProposalThresholds
   -- It is recommended this be a high enough amount, in order to prevent DOS from bad
   -- actors.
   , toVoting :: Tagged GTTag Integer
-  -- ^ How much GT required to to move into 'Locked'.
+  -- ^ How much GT required to to move into 'VotingReady'.
   , vote :: Tagged GTTag Integer
   -- ^ How much GT required to vote on a outcome.
   , cosign :: Tagged GTTag Integer
