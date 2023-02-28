@@ -13,7 +13,7 @@ import Agora.Bootstrap qualified as Bootstrap
 import Agora.Linker (linker)
 import Data.Aeson qualified as Aeson
 import Data.Default (def)
-import Plutarch (Config (Config), TracingMode (DoTracingAndBinds))
+import Plutarch (Config (Config), TracingMode (DoTracing))
 import ScriptExport.Export (exportMain)
 import ScriptExport.Types (
   Builders,
@@ -31,7 +31,7 @@ builders =
     , insertScriptExportWithLinker
         "agoraDebug"
         ( Bootstrap.agoraScripts
-            (Config DoTracingAndBinds)
+            (Config DoTracing)
         )
         linker
     , -- Note: To be compatible with current off-chain setup, we are not using
