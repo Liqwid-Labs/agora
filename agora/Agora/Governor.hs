@@ -41,6 +41,7 @@ import Agora.Proposal.Time (
   pisProposalTimingConfigValid,
  )
 import Agora.SafeMoney (GTTag, GovernorSTTag)
+import AgoraRegistry.Generation (PHasDatumSchema)
 import Data.Aeson qualified as Aeson
 import Data.Tagged (Tagged)
 import Optics.TH (makeFieldLabelsNoPrefix)
@@ -201,6 +202,7 @@ newtype PGovernorDatum (s :: S) = PGovernorDatum
       PEq
     , -- | @since 0.2.1
       PShow
+    , PHasDatumSchema
     )
 
 -- | @since 0.2.0

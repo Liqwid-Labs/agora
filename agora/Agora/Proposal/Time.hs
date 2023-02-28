@@ -31,6 +31,7 @@ module Agora.Proposal.Time (
   psatisfyMaximumWidth,
 ) where
 
+import AgoraRegistry.Generation (PHasDatumSchema)
 import Data.Functor ((<&>))
 import Plutarch.Api.V1 (
   PExtended (PFinite),
@@ -236,6 +237,7 @@ newtype PProposalTimingConfig (s :: S) = PProposalTimingConfig
       PDataFields
     , -- | @since 0.2.1
       PShow
+    , PHasDatumSchema
     )
 
 instance DerivePlutusType PProposalTimingConfig where
@@ -276,6 +278,7 @@ newtype PMaxTimeRangeWidth (s :: S)
       PShow
     , -- | @since 1.0.0
       PNum
+    , PHasDatumSchema
     )
 
 instance DerivePlutusType PMaxTimeRangeWidth where

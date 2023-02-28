@@ -27,6 +27,7 @@ import Agora.Governor (
  )
 import Agora.SafeMoney (AuthorityTokenTag, GovernorSTTag)
 import Agora.Utils (ptaggedSymbolValueOf)
+import AgoraRegistry.Generation (HasDatumSchema, PHasDatumSchema)
 import Plutarch.Api.V1 (PCurrencySymbol)
 import Plutarch.Api.V2 (
   PScriptHash,
@@ -104,6 +105,7 @@ newtype PMutateGovernorDatum (s :: S)
       PDataFields
     , -- | @since 0.1.0
       PEq
+    , PHasDatumSchema
     )
 
 instance DerivePlutusType PMutateGovernorDatum where
@@ -121,6 +123,8 @@ deriving via
 
 -- | @since 0.1.0
 deriving anyclass instance PTryFrom PData PMutateGovernorDatum
+
+instance HasDatumSchema MutateGovernorDatum
 
 --------------------------------------------------------------------------------
 

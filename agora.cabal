@@ -85,6 +85,7 @@ common lang
 common deps
   build-depends:
     , aeson
+    , agora-effect-registry
     , ansi-terminal
     , base                   >=4.14 && <5
     , base-compat

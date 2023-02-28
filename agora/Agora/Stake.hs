@@ -1,5 +1,6 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE NoFieldSelectors #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 
 {- |
 Module     : Agora.Stake
@@ -53,6 +54,7 @@ import Agora.Proposal (
  )
 import Agora.Proposal.Time (PProposalTime)
 import Agora.SafeMoney (GTTag, StakeSTTag)
+import AgoraRegistry.Generation (PHasDatumSchema)
 import Data.Tagged (Tagged)
 import Generics.SOP qualified as SOP
 import Plutarch.Api.V1 (PCredential, PPOSIXTime)
@@ -379,6 +381,7 @@ data PProposalAction (s :: S)
       PEq
     , -- | @since 1.0.0
       PShow
+    , PHasDatumSchema
     )
 
 -- | @since 1.0.0

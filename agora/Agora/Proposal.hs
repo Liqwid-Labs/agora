@@ -1,4 +1,5 @@
 {-# LANGUAGE TemplateHaskell #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 
 {- |
 Module     : Agora.Proposal
@@ -50,6 +51,7 @@ import Agora.Proposal.Time (
   ProposalTimingConfig,
  )
 import Agora.SafeMoney (GTTag)
+import AgoraRegistry.Generation (PHasDatumSchema)
 import Data.Map.Strict qualified as StrictMap
 import Data.Tagged (Tagged)
 import Generics.SOP qualified as SOP
@@ -450,6 +452,7 @@ newtype PResultTag (s :: S) = PResultTag (Term s PInteger)
       POrd
     , -- | @since 0.2.0
       PShow
+    , PHasDatumSchema
     )
 
 -- | @since 0.2.0
@@ -490,6 +493,7 @@ newtype PProposalId (s :: S) = PProposalId (Term s PInteger)
       POrd
     , -- | @since 0.2.0
       PShow
+    , PHasDatumSchema
     )
 
 -- | @since 0.2.0
@@ -536,6 +540,7 @@ data PProposalStatus (s :: S)
       PIsData
     , -- | @since 0.1.0
       PEq
+    , PHasDatumSchema
     )
 
 -- | @since 0.2.0
@@ -581,6 +586,7 @@ newtype PProposalThresholds (s :: S) = PProposalThresholds
       PDataFields
     , -- | @since 0.2.1
       PShow
+    , PHasDatumSchema
     )
 
 -- | @since 0.2.0
@@ -623,6 +629,7 @@ newtype PProposalVotes (s :: S)
       PIsData
     , -- | @since 1.0.0
       PShow
+    , PHasDatumSchema
     )
 
 -- | @since 0.2.0
@@ -668,6 +675,7 @@ newtype PProposalEffectMetadata (s :: S)
       PEq
     , -- | @since 1.0.0
       PDataFields
+    , PHasDatumSchema
     )
 
 -- | @since 1.0.0

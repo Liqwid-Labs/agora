@@ -9,6 +9,7 @@ module Agora.Effect.NoOp (noOpValidator, PNoOp) where
 
 import Agora.Effect (makeEffect)
 import Agora.SafeMoney (AuthorityTokenTag)
+import AgoraRegistry.Generation (PHasDatumSchema)
 import Plutarch.Api.V1 (PCurrencySymbol)
 import Plutarch.Api.V2 (PValidator)
 import Plutarch.Extra.Tagged (PTagged)
@@ -27,6 +28,7 @@ newtype PNoOp (s :: S) = PNoOp (Term s PUnit)
       PlutusType
     , -- | @since 0.1.0
       PIsData
+    , PHasDatumSchema
     )
 
 -- | @since 0.2.0

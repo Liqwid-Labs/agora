@@ -15,6 +15,7 @@ module Agora.Effect.TreasuryWithdrawal (
 
 import Agora.Effect (makeEffect)
 import Agora.SafeMoney (AuthorityTokenTag)
+import AgoraRegistry.Generation (HasDatumSchema, PHasDatumSchema)
 import Plutarch.Api.V1 (
   PCredential,
   PCurrencySymbol,
@@ -95,6 +96,7 @@ newtype PTreasuryWithdrawalDatum (s :: S)
       PIsData
     , -- | @since 0.1.0
       PDataFields
+    , PHasDatumSchema
     )
 
 instance DerivePlutusType PTreasuryWithdrawalDatum where
@@ -112,6 +114,8 @@ deriving via
 
 -- | @since 0.1.0
 instance PTryFrom PData PTreasuryWithdrawalDatum
+
+instance HasDatumSchema TreasuryWithdrawalDatum
 
 {- | Withdraws given list of values to specific target addresses.
      It can be evoked by burning GAT. The transaction should have correct

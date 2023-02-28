@@ -20,6 +20,11 @@
     };
 
     liqwid-libs.url = "github:Liqwid-Labs/liqwid-libs";
+
+    agora-effect-registry = {
+      url = "github:Liqwid-Labs/agora-effect-registry?ref=connor/generate-datum-schema";
+      inputs.nixpkgs-latest.follows = "nixpkgs-latest";
+    };
   };
 
   outputs = inputs@{ self, flake-parts, ... }:
@@ -50,6 +55,7 @@
               "${inputs.liqwid-libs}/liqwid-script-export"
               "${inputs.liqwid-libs.inputs.ply}/ply-core"
               "${inputs.liqwid-libs.inputs.ply}/ply-plutarch"
+              "${inputs.agora-effect-registry}"
             ];
           };
           ci.required = [ "all_onchain" ];
