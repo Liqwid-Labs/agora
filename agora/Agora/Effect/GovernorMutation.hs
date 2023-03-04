@@ -151,9 +151,9 @@ deriving anyclass instance PTryFrom PData PMutateGovernorDatum
 -}
 mutateGovernorValidator ::
   ClosedTerm
-    ( PScriptHash
-        :--> PTagged GovernorSTTag PCurrencySymbol
-        :--> PTagged AuthorityTokenTag PCurrencySymbol
+    ( PAsData PScriptHash
+        :--> PAsData (PTagged GovernorSTTag PCurrencySymbol)
+        :--> PAsData (PTagged AuthorityTokenTag PCurrencySymbol)
         :--> PValidator
     )
 mutateGovernorValidator =
@@ -189,7 +189,7 @@ mutateGovernorValidator =
                         (#&&)
                         [ ptraceIfFalse "Governor UTxO should carry GST" $
                             ptaggedSymbolValueOf
-                              # gstSymbol
+                              # pfromData gstSymbol
                               # (pfield @"value" # inputF.resolved)
                               #== 1
                         , ptraceIfFalse "Can only modify the pinned governor" $
@@ -200,7 +200,7 @@ mutateGovernorValidator =
                                     #$ pscriptHashFromAddress
                                     #$ pfield @"address"
                                     # inputF.resolved
-                             in inputScriptHash #== govValidatorHash
+                             in inputScriptHash #== pfromData govValidatorHash
                         ]
                  in isGovernorInput
             )

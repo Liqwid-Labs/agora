@@ -102,7 +102,7 @@ import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (
 
   @since 1.0.0
 -}
-governorPolicy :: ClosedTerm (PTxOutRef :--> PMintingPolicy)
+governorPolicy :: ClosedTerm (PAsData PTxOutRef :--> PMintingPolicy)
 governorPolicy =
   plam $ \initialSpend _ ctx -> unTermCont $ do
     PMinting ((pfield @"_0" #) -> gstSymbol) <-
@@ -121,7 +121,7 @@ governorPolicy =
         txInfo
 
     pguardC "Referenced utxo should be spent" $
-      pisUTXOSpent # initialSpend # txInfoF.inputs
+      pisUTXOSpent # pfromData initialSpend # txInfoF.inputs
 
     pguardC "Exactly one token should be minted" $
       let vMap = pfromData $ pto txInfoF.mint
@@ -257,15 +257,17 @@ governorPolicy =
 governorValidator ::
   -- | Lazy precompiled scripts.
   ClosedTerm
-    ( PScriptHash
-        :--> PTagged StakeSTTag PAssetClassData
-        :--> PTagged GovernorSTTag PCurrencySymbol
-        :--> PTagged ProposalSTTag PCurrencySymbol
-        :--> PTagged AuthorityTokenTag PCurrencySymbol
+    ( PAsData PScriptHash
+        :--> PAsData (PTagged StakeSTTag PAssetClassData)
+        :--> PAsData (PTagged GovernorSTTag PCurrencySymbol)
+        :--> PAsData (PTagged ProposalSTTag PCurrencySymbol)
+        :--> PAsData (PTagged AuthorityTokenTag PCurrencySymbol)
         :--> PValidator
     )
 governorValidator =
-  plam $ \proposalScriptHash sstClass gstSymbol pstSymbol atSymbol datum redeemer ctx -> unTermCont $ do
+  plam $ \proposalScriptHash sstClass gstSymbol pstSymbol' atSymbol' datum redeemer ctx -> unTermCont $ do
+    atSymbol <- pletC $ pfromData atSymbol'
+    pstSymbol <- pletC $ pfromData pstSymbol'
     ctxF <- pletAllC ctx
     txInfo <- pletC $ pfromData ctxF.txInfo
     txInfoF <-
@@ -314,7 +316,7 @@ governorValidator =
                               outputF.address
                               governorInputF.address
                         , ptraceIfFalse "Has governor ST" $
-                            ptaggedSymbolValueOf # gstSymbol # outputF.value #== 1
+                            ptaggedSymbolValueOf # pfromData gstSymbol # outputF.value #== 1
                         ]
 
                     datum =
@@ -339,7 +341,7 @@ governorValidator =
           flip (pletFields @'["value", "datum", "address"]) $ \txOutF ->
             let isProposalUTxO =
                   (pfromJust #$ pscriptHashFromAddress # pfromData txOutF.address)
-                    #== proposalScriptHash
+                    #== pfromData proposalScriptHash
                     #&& passetClassValueOf
                     # pstClass
                     # txOutF.value
@@ -396,7 +398,7 @@ governorValidator =
                   # "Stake input should present"
                   #$ pfindJust
                   # ( presolveStakeInputDatum
-                        # (ptoScottEncodingT # sstClass)
+                        # (ptoScottEncodingT # pfromData sstClass)
                         # txInfoF.datums
                     )
                   # pfromData txInfoF.inputs

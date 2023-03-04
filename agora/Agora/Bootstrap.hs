@@ -4,7 +4,7 @@
 
      Initialize a governance system
 -}
-module Agora.Bootstrap (agoraScripts, alwaysSucceedsPolicyRoledScript) where
+module Agora.Bootstrap (agoraScripts, agoraScripts', alwaysSucceedsPolicyRoledScript) where
 
 import Agora.AuthorityToken (authorityTokenPolicy)
 import Agora.Effect.GovernorMutation (mutateGovernorValidator)
@@ -52,6 +52,30 @@ agoraScripts conf =
       ClosedTerm pt ->
       (Text, TypedScriptEnvelope)
     envelope d t = (d, either (error . unpack) id $ mkEnvelope conf d t)
+
+agoraScripts' :: Config -> Either Text [TypedScriptEnvelope]
+agoraScripts' conf =
+  sequenceA
+    [ envelope "agora:governorPolicy" governorPolicy
+    , envelope "agora:governorValidator" governorValidator
+    , envelope "agora:stakePolicy" stakePolicy
+    , envelope "agora:stakeValidator" stakeValidator
+    , envelope "agora:proposalPolicy" proposalPolicy
+    , envelope "agora:proposalValidator" proposalValidator
+    , envelope "agora:treasuryValidator" treasuryValidator
+    , envelope "agora:authorityTokenPolicy" authorityTokenPolicy
+    , envelope "agora:noOpValidator" noOpValidator
+    , envelope "agora:treasuryWithdrawalValidator" treasuryWithdrawalValidator
+    , envelope "agora:mutateGovernorValidator" mutateGovernorValidator
+    ]
+  where
+    envelope ::
+      forall (pt :: S -> Type).
+      TypedWriter pt =>
+      Text ->
+      ClosedTerm pt ->
+      Either Text TypedScriptEnvelope
+    envelope = mkEnvelope conf
 
 {- | A minting policy that always succeeds.
 

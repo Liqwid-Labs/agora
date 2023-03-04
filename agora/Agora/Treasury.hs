@@ -30,7 +30,7 @@ import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletFieldsC, pm
      @since 1.0.0
 -}
 treasuryValidator ::
-  ClosedTerm (PTagged AuthorityTokenTag PCurrencySymbol :--> PValidator)
+  ClosedTerm (PAsData (PTagged AuthorityTokenTag PCurrencySymbol) :--> PValidator)
 treasuryValidator = plam $ \atSymbol _ _ ctx' -> unTermCont $ do
   -- plet required fields from script context.
   ctx <- pletFieldsC @["txInfo", "purpose"] ctx'
@@ -44,6 +44,6 @@ treasuryValidator = plam $ \atSymbol _ _ ctx' -> unTermCont $ do
       mint = txInfo.mint
 
   pguardC "A single authority token has been burned" $
-    singleAuthorityTokenBurned atSymbol txInfo.inputs mint
+    singleAuthorityTokenBurned (pfromData atSymbol) txInfo.inputs mint
 
   pure . popaque $ pconstant ()

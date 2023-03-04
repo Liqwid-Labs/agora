@@ -19,7 +19,7 @@
       inputs.nixpkgs-latest.follows = "nixpkgs-latest";
     };
 
-    liqwid-libs.url = "github:Liqwid-Labs/liqwid-libs";
+    liqwid-libs.url = "github:Liqwid-Labs/liqwid-libs?ref=seungheonoh/bumpPly";
   };
 
   outputs = inputs@{ self, flake-parts, ... }:

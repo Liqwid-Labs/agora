@@ -113,7 +113,7 @@ import "plutarch-extra" Plutarch.Extra.Map (pupdate)
 
      @since 1.0.0
 -}
-proposalPolicy :: ClosedTerm (PTagged GovernorSTTag PAssetClassData :--> PMintingPolicy)
+proposalPolicy :: ClosedTerm (PAsData (PTagged GovernorSTTag PAssetClassData) :--> PMintingPolicy)
 proposalPolicy =
   plam $ \gstAssetClass _redeemer ctx -> unTermCont $ do
     ctxF <- pletAllC ctx
@@ -137,7 +137,7 @@ proposalPolicy =
           passertPJust
             # "GST should move"
             #$ presolveGovernorRedeemer
-            # (ptoScottEncodingT # gstAssetClass)
+            # (ptoScottEncodingT # pfromData gstAssetClass)
             # pfromData txInfoF.inputs
             # txInfoF.redeemers
 
@@ -224,10 +224,10 @@ instance DerivePlutusType PStakeInputsContext where
 -}
 proposalValidator ::
   ClosedTerm
-    ( PTagged StakeSTTag PAssetClassData
-        :--> PTagged GovernorSTTag PCurrencySymbol
-        :--> PTagged ProposalSTTag PCurrencySymbol
-        :--> PInteger
+    ( PAsData (PTagged StakeSTTag PAssetClassData)
+        :--> PAsData (PTagged GovernorSTTag PCurrencySymbol)
+        :--> PAsData (PTagged ProposalSTTag PCurrencySymbol)
+        :--> PAsData PInteger
         :--> PValidator
     )
 proposalValidator =
@@ -289,7 +289,7 @@ proposalValidator =
                               outputF.address
                               proposalInputF.address
                         , ptraceIfFalse "Has proposal ST" $
-                            ptaggedSymbolValueOf # pstSymbol # outputF.value #== 1
+                            ptaggedSymbolValueOf # pfromData pstSymbol # outputF.value #== 1
                         ]
 
                     handleProposalUTxO =
@@ -335,7 +335,7 @@ proposalValidator =
     resolveStakeInputDatum <-
       pletC $
         presolveStakeInputDatum
-          # (ptoScottEncodingT # sstClass)
+          # (ptoScottEncodingT # pfromData sstClass)
           # txInfoF.datums
 
     spendStakes' :: Term _ ((PStakeInputsContext :--> PUnit) :--> PUnit) <-
@@ -450,7 +450,7 @@ proposalValidator =
                     # proposalInputDatumF.cosigners
 
             pguardC "Less cosigners than maximum limit" $
-              plength # updatedSigs #<= maximumCosigners
+              plength # updatedSigs #<= pfromData maximumCosigners
 
             pguardC "Meet minimum GT requirement" $
               pfromData thresholdsF.cosign #<= stakeF.stakedAmount
@@ -741,7 +741,7 @@ proposalValidator =
                                   . (pfield @"resolved" #) ->
                                   value
                                 ) ->
-                                  ptaggedSymbolValueOf # gstSymbol # value #== 1
+                                  ptaggedSymbolValueOf # pfromData gstSymbol # value #== 1
                             )
                           # pfromData txInfoF.inputs
 

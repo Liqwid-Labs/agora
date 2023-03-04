@@ -138,7 +138,7 @@ import Prelude hiding (Num ((+)))
    @since 1.0.0
 -}
 stakePolicy ::
-  ClosedTerm (PTagged GTTag PAssetClassData :--> PMintingPolicy)
+  ClosedTerm (PAsData (PTagged GTTag PAssetClassData) :--> PMintingPolicy)
 stakePolicy =
   plam $ \gtClass _redeemer ctx' -> unTermCont $ do
     ctx <- pletFieldsC @'["txInfo", "purpose"] ctx'
@@ -207,7 +207,7 @@ stakePolicy =
                   (#&&)
                   [ ptraceIfFalse "Stake ouput has expected amount of stake token" $
                       passetClassValueOfT
-                        # (ptoScottEncodingT # gtClass)
+                        # (ptoScottEncodingT # pfromData gtClass)
                         # outputF.value
                         #== pfromData datumF.stakedAmount
                   , ptraceIfFalse "Stake Owner should sign the transaction" $
@@ -656,9 +656,9 @@ mkStakeValidator impl sstSymbol pstClass gtClass =
 -}
 stakeValidator ::
   ClosedTerm
-    ( PTagged StakeSTTag PCurrencySymbol
-        :--> PTagged ProposalSTTag PAssetClassData
-        :--> PTagged GTTag PAssetClassData
+    ( PAsData (PTagged StakeSTTag PCurrencySymbol)
+        :--> PAsData (PTagged ProposalSTTag PAssetClassData)
+        :--> PAsData (PTagged GTTag PAssetClassData)
         :--> PValidator
     )
 stakeValidator =
@@ -673,6 +673,6 @@ stakeValidator =
           , onClearDelegate = pclearDelegate
           }
       )
-      sstSymbol
-      (ptoScottEncodingT # pstClass)
-      (ptoScottEncodingT # gstClass)
+      (pfromData sstSymbol)
+      (ptoScottEncodingT # pfromData pstClass)
+      (ptoScottEncodingT # pfromData gstClass)
