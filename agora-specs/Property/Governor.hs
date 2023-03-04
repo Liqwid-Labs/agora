@@ -221,7 +221,7 @@ mkPolicyScript ctx = mustCompile (go # pconstant ctx)
     go = loudEval $
       plam $ \sc ->
         governorPolicy
-          # pconstant (view #gstOutRef governor)
+          # pdata (pconstant (view #gstOutRef governor))
           # pforgetData (pconstantData ())
           # sc
 
