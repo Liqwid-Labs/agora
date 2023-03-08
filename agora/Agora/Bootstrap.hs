@@ -56,17 +56,18 @@ agoraScripts conf =
 agoraScripts' :: Config -> Either Text [TypedScriptEnvelope]
 agoraScripts' conf =
   sequenceA
-    [ envelope "agora:governorPolicy" governorPolicy
-    , envelope "agora:governorValidator" governorValidator
-    , envelope "agora:stakePolicy" stakePolicy
-    , envelope "agora:stakeValidator" stakeValidator
-    , envelope "agora:proposalPolicy" proposalPolicy
-    , envelope "agora:proposalValidator" proposalValidator
-    , envelope "agora:treasuryValidator" treasuryValidator
-    , envelope "agora:authorityTokenPolicy" authorityTokenPolicy
-    , envelope "agora:noOpValidator" noOpValidator
-    , envelope "agora:treasuryWithdrawalValidator" treasuryWithdrawalValidator
-    , envelope "agora:mutateGovernorValidator" mutateGovernorValidator
+    [ envelope "Governor Policy" governorPolicy
+    , envelope "Governor Validator" governorValidator
+    , envelope "Stake Policy" stakePolicy
+    , envelope "Stake Validator" stakeValidator
+    , envelope "Proposal Policy" proposalPolicy
+    , envelope "Proposal Validator" proposalValidator
+    , envelope "Treasury Validator" treasuryValidator
+    , envelope "Authority Token Policy" authorityTokenPolicy
+    , envelope "NoOp Validator" noOpValidator
+    , envelope "Treasury Withdrawal Validator" treasuryWithdrawalValidator
+    , envelope "Mutate Governor Validator" mutateGovernorValidator
+    , envelope "Always Succeeds Policy" $ ((plam $ \_ _ -> popaque $ pcon PUnit) :: Term s PMintingPolicy)
     ]
   where
     envelope ::

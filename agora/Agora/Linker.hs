@@ -178,6 +178,7 @@ linker = do
             , ("agora:proposalValidator", toRoledScript propVal')
             , ("agora:treasuryValidator", toRoledScript treaVal')
             , ("agora:authorityTokenPolicy", toRoledScript atPol')
+
             , ("agora:noOpValidator", toRoledScript noOpVal')
             , ("agora:treasuryWithdrawalValidator", toRoledScript treaWithdrawalVal')
             , ("agora:mutateGovernorValidator", toRoledScript mutateGovVal')

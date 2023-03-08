@@ -53,6 +53,25 @@
             ];
           };
           ci.required = [ "all_onchain" ];
+          packages.export =
+            pkgs.stdenv.mkDerivation {
+              name = "export";
+              src = ./.;
+              buildInput = [
+                self'.packages."agora:exe:agora-scripts"
+              ];
+              buildPhase = ''
+                export PATH=$PATH:${self'.packages."agora:exe:agora-scripts"}/bin
+                agora-scripts file --builder raw
+                agora-scripts file --builder rawDebug
+              '';
+              installPhase = ''
+                NAME=${if self ? rev then self.shortRev else "dirty"}
+                mkdir $out
+                cp raw.json $out/agora-"$NAME".json
+                cp rawDebug.json $out/agora-debug-"$NAME".json
+              '';
+            };
         };
 
       flake.hydraJobs.x86_64-linux = (
