@@ -116,8 +116,6 @@ newtype ProposalId = ProposalId {proposalTag :: Integer}
       PlutusTx.ToData
     , -- | @since 0.1.0
       PlutusTx.FromData
-    , -- | @since 0.1.0
-      PlutusTx.UnsafeFromData
     )
 
 {- | Encodes a result. Typically, for a Yes/No proposal, we encode it like this:
@@ -212,8 +210,6 @@ data ProposalStatus
       PlutusTx.FromData
     , -- | @since 0.1.0
       PlutusTx.ToData
-    , -- | @since 0.1.0
-      PlutusTx.UnsafeFromData
     )
     via (EnumIsData ProposalStatus)
 
@@ -246,8 +242,17 @@ data ProposalThresholds = ProposalThresholds
     , -- | @since 0.1.0
       Generic
     )
-
-PlutusTx.makeIsDataIndexed 'ProposalThresholds [('ProposalThresholds, 0)]
+  deriving anyclass
+    ( -- | @since 1.0.0
+      SOP.Generic
+    )
+  deriving
+    ( -- | @since 1.0.0
+      PlutusTx.ToData
+    , -- | @since 1.0.0
+      PlutusTx.FromData
+    )
+    via (ProductIsData ProposalThresholds)
 
 {- | Map which encodes the total tally for each result.
      It's important that the "shape" is consistent with the shape of 'effects'.
@@ -585,17 +590,17 @@ newtype PProposalThresholds (s :: S) = PProposalThresholds
 
 -- | @since 0.2.0
 instance DerivePlutusType PProposalThresholds where
-  type DPTStrat _ = PlutusTypeData
+  type DPTStrat _ = PlutusTypeNewtype
 
 -- | @since 0.1.0
-instance PTryFrom PData PProposalThresholds
+instance PTryFrom PData (PAsData PProposalThresholds)
 
 -- | @since 0.1.0
 instance PUnsafeLiftDecl PProposalThresholds where type PLifted PProposalThresholds = ProposalThresholds
 
 -- | @since 0.1.0
 deriving via
-  (DerivePConstantViaData ProposalThresholds PProposalThresholds)
+  (DerivePConstantViaDataList ProposalThresholds PProposalThresholds)
   instance
     (PConstantDecl ProposalThresholds)
 
