@@ -793,11 +793,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1677675212,
-        "narHash": "sha256-wQK+R5DDCIukr4p2/QbZOTXXXaq1AJ2V87BCPtnqw6I=",
+        "lastModified": 1678456951,
+        "narHash": "sha256-ogPX3R69CPt8VhGNHfn3wwGsgTZYWzmjv8Me5XM31oA=",
         "owner": "Liqwid-Labs",
         "repo": "agora-effect-registry",
-        "rev": "7b5c4a71a34bf2d6a7775eabeefb16c3ee513aa2",
+        "rev": "69e0b14a17381a73932236a6c028e7194ef27856",
         "type": "github"
       },
       "original": {
