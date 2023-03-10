@@ -116,8 +116,6 @@ newtype ProposalId = ProposalId {proposalTag :: Integer}
       PlutusTx.ToData
     , -- | @since 0.1.0
       PlutusTx.FromData
-    , -- | @since 0.1.0
-      PlutusTx.UnsafeFromData
     )
 
 {- | Encodes a result. Typically, for a Yes/No proposal, we encode it like this:
@@ -212,8 +210,6 @@ data ProposalStatus
       PlutusTx.FromData
     , -- | @since 0.1.0
       PlutusTx.ToData
-    , -- | @since 0.1.0
-      PlutusTx.UnsafeFromData
     )
     via (EnumIsData ProposalStatus)
 

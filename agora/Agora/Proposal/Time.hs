@@ -90,8 +90,6 @@ newtype ProposalStartingTime = ProposalStartingTime
       PlutusTx.ToData
     , -- | @since 0.1.0
       PlutusTx.FromData
-    , -- | @since 0.1.0
-      PlutusTx.UnsafeFromData
     )
 
 -- | Represents the maximum width of a 'PlutusLedgerApi.V1.Time.POSIXTimeRange'.
@@ -111,8 +109,6 @@ newtype MaxTimeRangeWidth = MaxTimeRangeWidth {getMaxWidth :: POSIXTime}
       PlutusTx.ToData
     , -- | @since 0.1.0
       PlutusTx.FromData
-    , -- | @since 0.1.0
-      PlutusTx.UnsafeFromData
     , -- | @since 1.0.0
       Num
     )
