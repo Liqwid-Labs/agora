@@ -1,0 +1,176 @@
+{
+  "datumSchema": {
+    "fields": [
+      {
+        "fields": [
+          {
+            "fields": [
+              {
+                "meta": {
+                  "description": "data record field",
+                  "name": "_0"
+                },
+                "type": "bytes"
+              }
+            ],
+            "meta": {
+              "description": "data record field",
+              "name": "id"
+            },
+            "tag": 0,
+            "type": "constr"
+          },
+          {
+            "meta": {
+              "description": "data record field",
+              "name": "idx"
+            },
+            "type": "integer"
+          }
+        ],
+        "meta": {
+          "description": "data record field",
+          "name": "governorRef"
+        },
+        "tag": 0,
+        "type": "constr"
+      },
+      {
+        "fields": [
+          {
+            "fields": [
+              {
+                "meta": {
+                  "description": "data record field",
+                  "name": "execute"
+                },
+                "type": "integer"
+              },
+              {
+                "meta": {
+                  "description": "data record field",
+                  "name": "create"
+                },
+                "type": "integer"
+              },
+              {
+                "meta": {
+                  "description": "data record field",
+                  "name": "toVoting"
+                },
+                "type": "integer"
+              },
+              {
+                "meta": {
+                  "description": "data record field",
+                  "name": "vote"
+                },
+                "type": "integer"
+              },
+              {
+                "meta": {
+                  "description": "data record field",
+                  "name": "cosign"
+                },
+                "type": "integer"
+              }
+            ],
+            "meta": {
+              "description": "data record field",
+              "name": "proposalThresholds"
+            },
+            "tag": 0,
+            "type": "constr"
+          },
+          {
+            "meta": {
+              "description": "data record field",
+              "name": "nextProposalId"
+            },
+            "type": "integer"
+          },
+          {
+            "fields": [
+              {
+                "meta": {
+                  "description": "data record field",
+                  "name": "draftTime"
+                },
+                "type": "integer"
+              },
+              {
+                "meta": {
+                  "description": "data record field",
+                  "name": "votingTime"
+                },
+                "type": "integer"
+              },
+              {
+                "meta": {
+                  "description": "data record field",
+                  "name": "lockingTime"
+                },
+                "type": "integer"
+              },
+              {
+                "meta": {
+                  "description": "data record field",
+                  "name": "executingTime"
+                },
+                "type": "integer"
+              },
+              {
+                "meta": {
+                  "description": "data record field",
+                  "name": "minStakeVotingTime"
+                },
+                "type": "integer"
+              },
+              {
+                "meta": {
+                  "description": "data record field",
+                  "name": "votingTimeRangeMaxWidth"
+                },
+                "type": "integer"
+              }
+            ],
+            "meta": {
+              "description": "data record field",
+              "name": "proposalTimings"
+            },
+            "tag": 0,
+            "type": "constr"
+          },
+          {
+            "meta": {
+              "description": "data record field",
+              "name": "createProposalTimeRangeMaxWidth"
+            },
+            "type": "integer"
+          },
+          {
+            "meta": {
+              "description": "data record field",
+              "name": "maximumCreatedProposalsPerStake"
+            },
+            "type": "integer"
+          }
+        ],
+        "meta": {
+          "description": "data record field",
+          "name": "newDatum"
+        },
+        "tag": 0,
+        "type": "constr"
+      }
+    ],
+    "meta": null,
+    "tag": 0,
+    "type": "constr"
+  },
+  "meta": {
+    "description": "",
+    "name": "hello"
+  },
+  "scriptHash": "babbccddeeff11223344556677889900aabbccddeeff112233445566"
+}
