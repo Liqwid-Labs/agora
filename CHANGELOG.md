@@ -6,6 +6,17 @@ This format is based on [Keep A Changelog](https://keepachangelog.com/en/1.0.0).
 
 ### Modified
 
+- For consistency and performance, the following data types are encoded as flat
+product as opposed to SoP now:
+
+  - `GovernorDatum`
+  - `ProposalThresholds`
+  - `ProposalTimingConfig`
+  - `MutateGovernorDatum`
+  - `TreasuryWithdrawalDatum`
+
+  Included by [#231](https://github.com/Liqwid-Labs/agora/pull/231)
+
 - Fix several vulnerabilities and bugs found by auditors.
 
   Including:
