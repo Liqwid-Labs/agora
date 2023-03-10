@@ -32,6 +32,7 @@ module Agora.Proposal.Time (
 ) where
 
 import Data.Functor ((<&>))
+import Generics.SOP qualified as SOP
 import Plutarch.Api.V1 (
   PExtended (PFinite),
   PInterval (PInterval),
@@ -41,13 +42,16 @@ import Plutarch.Api.V1 (
  )
 import Plutarch.Api.V2 (PPOSIXTimeRange)
 import Plutarch.DataRepr (
-  DerivePConstantViaData (..),
   PDataFields,
  )
 import Plutarch.Extra.Applicative (PApply (pliftA2))
 import Plutarch.Extra.Bool (passert)
 import Plutarch.Extra.Field (pletAll, pletAllC)
-import Plutarch.Extra.IsData (PlutusTypeEnumData)
+import Plutarch.Extra.IsData (
+  DerivePConstantViaDataList (DerivePConstantViaDataList),
+  PlutusTypeEnumData,
+  ProductIsData (ProductIsData),
+ )
 import Plutarch.Extra.Maybe (pjust, pmaybe, pnothing)
 import Plutarch.Extra.Time (
   PFullyBoundedTimeRange (PFullyBoundedTimeRange),
@@ -141,8 +145,17 @@ data ProposalTimingConfig = ProposalTimingConfig
     , -- | @since 0.1.0
       Generic
     )
-
-PlutusTx.makeIsDataIndexed 'ProposalTimingConfig [('ProposalTimingConfig, 0)]
+  deriving anyclass
+    ( -- | @since 1.0.0
+      SOP.Generic
+    )
+  deriving
+    ( -- | @since 1.0.0
+      PlutusTx.ToData
+    , -- | @since 1.0.0
+      PlutusTx.FromData
+    )
+    via (ProductIsData ProposalTimingConfig)
 
 --------------------------------------------------------------------------------
 
@@ -239,10 +252,10 @@ newtype PProposalTimingConfig (s :: S) = PProposalTimingConfig
     )
 
 instance DerivePlutusType PProposalTimingConfig where
-  type DPTStrat _ = PlutusTypeData
+  type DPTStrat _ = PlutusTypeNewtype
 
 -- | @since 0.1.0
-instance PTryFrom PData PProposalTimingConfig
+instance PTryFrom PData (PAsData PProposalTimingConfig)
 
 -- | @since 0.1.0
 instance PUnsafeLiftDecl PProposalTimingConfig where
@@ -250,7 +263,7 @@ instance PUnsafeLiftDecl PProposalTimingConfig where
 
 -- | @since 0.1.0
 deriving via
-  (DerivePConstantViaData ProposalTimingConfig PProposalTimingConfig)
+  (DerivePConstantViaDataList ProposalTimingConfig PProposalTimingConfig)
   instance
     (PConstantDecl ProposalTimingConfig)
 

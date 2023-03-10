@@ -43,22 +43,23 @@ import Agora.Proposal.Time (
 import Agora.SafeMoney (GTTag, GovernorSTTag)
 import Data.Aeson qualified as Aeson
 import Data.Tagged (Tagged)
+import Generics.SOP qualified as SOP
 import Optics.TH (makeFieldLabelsNoPrefix)
 import Plutarch.Api.V1.Scripts (PRedeemer)
 import Plutarch.Api.V2 (KeyGuarantees (Unsorted), PMap, PScriptPurpose (PSpending), PTxInInfo)
-import Plutarch.DataRepr (
-  DerivePConstantViaData (DerivePConstantViaData),
-  PDataFields,
- )
+import Plutarch.DataRepr (PDataFields)
 import Plutarch.Extra.AssetClass (AssetClass, PAssetClass)
 import Plutarch.Extra.Bind (PBind ((#>>=)))
 import Plutarch.Extra.Field (pletAll)
 import Plutarch.Extra.Function (pflip)
 import Plutarch.Extra.Functor (PFunctor (pfmap))
 import Plutarch.Extra.IsData (
+  DerivePConstantViaDataList (DerivePConstantViaDataList),
   DerivePConstantViaEnum (DerivePConstantEnum),
   EnumIsData (EnumIsData),
+  PlutusTypeDataList,
   PlutusTypeEnumData,
+  ProductIsData (ProductIsData),
  )
 import Plutarch.Extra.Maybe (pjust, pnothing)
 import Plutarch.Extra.Record (mkRecordConstr, (.=))
@@ -96,12 +97,17 @@ data GovernorDatum = GovernorDatum
     , -- | @since 0.1.0
       Generic
     )
-
--- | @since 0.2.1
-makeFieldLabelsNoPrefix ''GovernorDatum
-
--- | @since 0.1.0
-PlutusTx.makeIsDataIndexed ''GovernorDatum [('GovernorDatum, 0)]
+  deriving anyclass
+    ( -- | @since 1.0.0
+      SOP.Generic
+    )
+  deriving
+    ( -- | @since 1.0.0
+      PlutusTx.ToData
+    , -- | @since 1.0.0
+      PlutusTx.FromData
+    )
+    via (ProductIsData GovernorDatum)
 
 {- | Redeemer for Governor script. The governor has two primary
      responsibilities:
@@ -205,16 +211,19 @@ newtype PGovernorDatum (s :: S) = PGovernorDatum
 
 -- | @since 0.2.0
 instance DerivePlutusType PGovernorDatum where
-  type DPTStrat _ = PlutusTypeData
+  type DPTStrat _ = PlutusTypeDataList
 
 -- | @since 0.1.0
-instance PUnsafeLiftDecl PGovernorDatum where type PLifted PGovernorDatum = GovernorDatum
+instance PUnsafeLiftDecl PGovernorDatum where type PLifted _ = GovernorDatum
 
 -- | @since 0.1.0
-deriving via (DerivePConstantViaData GovernorDatum PGovernorDatum) instance (PConstantDecl GovernorDatum)
+deriving via
+  (DerivePConstantViaDataList GovernorDatum PGovernorDatum)
+  instance
+    (PConstantDecl GovernorDatum)
 
 -- | @since 0.1.0
-deriving anyclass instance PTryFrom PData PGovernorDatum
+deriving anyclass instance PTryFrom PData (PAsData PGovernorDatum)
 
 {- | Plutarch-level version of 'GovernorRedeemer'.
 
