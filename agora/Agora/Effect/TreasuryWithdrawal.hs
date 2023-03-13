@@ -15,6 +15,7 @@ module Agora.Effect.TreasuryWithdrawal (
 
 import Agora.Effect (makeEffect)
 import Agora.SafeMoney (AuthorityTokenTag)
+import Generics.SOP qualified as SOP
 import Plutarch.Api.V1 (
   PCredential,
   PCurrencySymbol,
@@ -30,10 +31,15 @@ import Plutarch.Api.V2 (
   PValidator,
  )
 import Plutarch.DataRepr (
-  DerivePConstantViaData (DerivePConstantViaData),
   PDataFields,
  )
 import Plutarch.Extra.Field (pletAllC)
+import Plutarch.Extra.IsData (
+  DerivePConstantViaDataList (
+    DerivePConstantViaDataList
+  ),
+  ProductIsData (ProductIsData),
+ )
 import Plutarch.Extra.ScriptContext (pisPubKey)
 import Plutarch.Extra.Tagged (PTagged)
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (PLifted))
@@ -41,7 +47,11 @@ import PlutusLedgerApi.V1.Credential (Credential)
 import PlutusLedgerApi.V1.Value (Value)
 import PlutusTx qualified
 import "liqwid-plutarch-extra" Plutarch.Extra.List (pdeleteFirst)
-import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC)
+import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (
+  pguardC,
+  pletC,
+  pletFieldsC,
+ )
 
 {- | Datum that encodes behavior of Treasury Withdrawal effect.
 
@@ -63,12 +73,17 @@ data TreasuryWithdrawalDatum = TreasuryWithdrawalDatum
     , -- | @since 0.1.0
       Generic
     )
-
--- | @since 0.1.0
-PlutusTx.makeLift ''TreasuryWithdrawalDatum
-
--- | @since 0.1.0
-PlutusTx.makeIsDataIndexed ''TreasuryWithdrawalDatum [('TreasuryWithdrawalDatum, 0)]
+  deriving anyclass
+    ( -- | @since 1.0.0
+      SOP.Generic
+    )
+  deriving
+    ( -- | @since 1.0.0
+      PlutusTx.ToData
+    , -- | @since 1.0.0
+      PlutusTx.FromData
+    )
+    via (ProductIsData TreasuryWithdrawalDatum)
 
 {- | Haskell-level version of 'TreasuryWithdrawalDatum'.
 
@@ -98,7 +113,7 @@ newtype PTreasuryWithdrawalDatum (s :: S)
     )
 
 instance DerivePlutusType PTreasuryWithdrawalDatum where
-  type DPTStrat _ = PlutusTypeData
+  type DPTStrat _ = PlutusTypeNewtype
 
 -- | @since 0.1.0
 instance PUnsafeLiftDecl PTreasuryWithdrawalDatum where
@@ -106,12 +121,12 @@ instance PUnsafeLiftDecl PTreasuryWithdrawalDatum where
 
 -- | @since 0.1.0
 deriving via
-  (DerivePConstantViaData TreasuryWithdrawalDatum PTreasuryWithdrawalDatum)
+  (DerivePConstantViaDataList TreasuryWithdrawalDatum PTreasuryWithdrawalDatum)
   instance
     (PConstantDecl TreasuryWithdrawalDatum)
 
 -- | @since 0.1.0
-instance PTryFrom PData PTreasuryWithdrawalDatum
+instance PTryFrom PData (PAsData PTreasuryWithdrawalDatum)
 
 {- | Withdraws given list of values to specific target addresses.
      It can be evoked by burning GAT. The transaction should have correct
@@ -136,8 +151,8 @@ treasuryWithdrawalValidator ::
   forall (s :: S).
   Term s (PAsData (PTagged AuthorityTokenTag PCurrencySymbol) :--> PValidator)
 treasuryWithdrawalValidator = plam $
-  makeEffect $
-    \_cs (datum :: Term _ PTreasuryWithdrawalDatum) effectInputRef txInfo -> unTermCont $ do
+  makeEffect @(PAsData PTreasuryWithdrawalDatum) $
+    \_cs (pfromData -> datum) effectInputRef txInfo -> unTermCont $ do
       datumF <- pletAllC datum
       txInfoF <- pletFieldsC @'["outputs", "inputs"] txInfo
 

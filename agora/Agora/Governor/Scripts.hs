@@ -147,9 +147,10 @@ governorPolicy =
 
                       governorDatum =
                         ptrace "Resolve governor datum" $
-                          ptryFromOutputDatum @PGovernorDatum
-                            # txOutF.datum
-                            # txInfoF.datums
+                          pfromData $
+                            ptryFromOutputDatum @(PAsData PGovernorDatum)
+                              # txOutF.datum
+                              # txInfoF.datums
                    in pif isGovernorUTxO (pjust # governorDatum) pnothing
               )
             # pfromData txInfoF.outputs
@@ -283,7 +284,7 @@ governorValidator =
 
     ----------------------------------------------------------------------------
 
-    governorInputDatum <- fst <$> ptryFromC @PGovernorDatum datum
+    governorInputDatum <- pfromData . fst <$> ptryFromC @(PAsData PGovernorDatum) datum
     governorInputDatumF <- pletAllC governorInputDatum
 
     PSpending ((pfield @"_0" #) -> governorInputRef) <-
@@ -321,9 +322,10 @@ governorValidator =
 
                     datum =
                       ptrace "Resolve governor datum" $
-                        ptryFromOutputDatum @PGovernorDatum
-                          # outputF.datum
-                          # txInfoF.datums
+                        pfromData $
+                          ptryFromOutputDatum @(PAsData PGovernorDatum)
+                            # outputF.datum
+                            # txInfoF.datums
                  in pif
                       isGovernorUTxO
                       (pjust # datum)

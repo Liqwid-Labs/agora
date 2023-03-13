@@ -27,6 +27,7 @@ import Agora.Governor (
  )
 import Agora.SafeMoney (AuthorityTokenTag, GovernorSTTag)
 import Agora.Utils (ptaggedSymbolValueOf)
+import Generics.SOP qualified as SOP
 import Plutarch.Api.V1 (PCurrencySymbol)
 import Plutarch.Api.V2 (
   PScriptHash,
@@ -35,10 +36,14 @@ import Plutarch.Api.V2 (
   PValidator,
  )
 import Plutarch.DataRepr (
-  DerivePConstantViaData (DerivePConstantViaData),
   PDataFields,
  )
 import Plutarch.Extra.Field (pletAll, pletAllC)
+import Plutarch.Extra.IsData (
+  DerivePConstantViaDataList (DerivePConstantViaDataList),
+  PlutusTypeDataList,
+  ProductIsData (ProductIsData),
+ )
 import Plutarch.Extra.Maybe (passertPJust, pfromJust)
 import Plutarch.Extra.Record (mkRecordConstr, (.=))
 import Plutarch.Extra.ScriptContext (
@@ -72,8 +77,17 @@ data MutateGovernorDatum = MutateGovernorDatum
     , -- | @since 0.1.ç
       Generic
     )
-
-PlutusTx.makeIsDataIndexed ''MutateGovernorDatum [('MutateGovernorDatum, 0)]
+  deriving anyclass
+    ( -- | @since 1.0.0
+      SOP.Generic
+    )
+  deriving
+    ( -- | @since 1.0.0
+      PlutusTx.ToData
+    , -- | @since 1.0.0
+      PlutusTx.FromData
+    )
+    via (ProductIsData MutateGovernorDatum)
 
 --------------------------------------------------------------------------------
 
@@ -107,7 +121,7 @@ newtype PMutateGovernorDatum (s :: S)
     )
 
 instance DerivePlutusType PMutateGovernorDatum where
-  type DPTStrat _ = PlutusTypeData
+  type DPTStrat _ = PlutusTypeDataList
 
 -- | @since 0.1.0
 instance PUnsafeLiftDecl PMutateGovernorDatum where
@@ -115,12 +129,12 @@ instance PUnsafeLiftDecl PMutateGovernorDatum where
 
 -- | @since 0.1.0
 deriving via
-  (DerivePConstantViaData MutateGovernorDatum PMutateGovernorDatum)
+  (DerivePConstantViaDataList MutateGovernorDatum PMutateGovernorDatum)
   instance
     (PConstantDecl MutateGovernorDatum)
 
 -- | @since 0.1.0
-deriving anyclass instance PTryFrom PData PMutateGovernorDatum
+deriving anyclass instance PTryFrom PData (PAsData PMutateGovernorDatum)
 
 --------------------------------------------------------------------------------
 
@@ -157,8 +171,8 @@ mutateGovernorValidator ::
         :--> PValidator
     )
 mutateGovernorValidator =
-  plam $ \govValidatorHash gstSymbol -> makeEffect @PMutateGovernorDatum $
-    \_gatCs (effectDatum :: Term _ PMutateGovernorDatum) _ txInfo -> unTermCont $ do
+  plam $ \govValidatorHash gstSymbol -> makeEffect @(PAsData PMutateGovernorDatum) $
+    \_gatCs (pfromData -> effectDatum) _ txInfo -> unTermCont $ do
       effectDatumF <- pletAllC effectDatum
       txInfoF <- pletFieldsC @'["inputs", "outputs", "datums", "redeemers"] txInfo
 
@@ -225,9 +239,10 @@ mutateGovernorValidator =
 
           governorOutputDatum =
             ptrace "Resolve governor outoput datum" $
-              ptryFromOutputDatum @PGovernorDatum
-                # (pfield @"datum" # governorOutput)
-                # txInfoF.datums
+              pfromData $
+                ptryFromOutputDatum @(PAsData PGovernorDatum)
+                  # (pfield @"datum" # governorOutput)
+                  # txInfoF.datums
 
       pguardC "New governor datum correct" $
         governorOutputDatum #== effectDatumF.newDatum
