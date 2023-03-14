@@ -50,7 +50,7 @@ import Plutarch.Api.V2 (PDatum, PMintingPolicy, PScriptHash, PScriptPurpose (PMi
 import Plutarch.Api.V2.Tx (POutputDatum (..))
 import Plutarch.Extra.AssetClass (PAssetClassData, passetClass)
 import Plutarch.Extra.Field (pletAll, pletAllC)
-import Plutarch.Extra.Maybe (passertPJust, pfromJust, pjust, pmaybeData, pnothing)
+import Plutarch.Extra.Maybe (passertPJust, pfromMaybe, pjust, pmaybeData, pnothing)
 import Plutarch.Extra.Ord (POrdering (..), pcompareBy, pfromOrd, psort)
 import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
 import Plutarch.Extra.ScriptContext (
@@ -338,12 +338,12 @@ governorValidator =
         plam $
           flip (pletFields @'["value", "datum", "address"]) $ \txOutF ->
             let isProposalUTxO =
-                  (pfromJust #$ pscriptHashFromAddress # pfromData txOutF.address)
-                    #== proposalScriptHash
-                    #&& passetClassValueOf
+                  passetClassValueOf
                     # pstClass
                     # txOutF.value
                     #== 1
+                    #&& (pfromMaybe # pconstant "" #$ pscriptHashFromAddress # pfromData txOutF.address)
+                    #== proposalScriptHash
 
                 proposalDatum =
                   ptrace "Resolve proposal output datum" $
