@@ -20,7 +20,7 @@
     };
 
     liqwid-libs.url =
-      "github:Liqwid-Labs/liqwid-libs?rev=050b2b6a3ee29dbba5bd43c38786b2947f45b2cb";
+      "github:Liqwid-Labs/liqwid-libs";
   };
 
   outputs = inputs@{ self, flake-parts, ... }:
