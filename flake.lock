@@ -3598,11 +3598,11 @@
         "ply": "ply"
       },
       "locked": {
-        "lastModified": 1674830336,
-        "narHash": "sha256-KIJH4kJzBIaDqV3N/f8Dolt//GBc4Cwam7+10HKGg18=",
+        "lastModified": 1678823448,
+        "narHash": "sha256-vdaA8lP0AlUIKLlWfwkLoqix3eMxvFP4cDWEeyoFHHM=",
         "owner": "Liqwid-Labs",
         "repo": "liqwid-libs",
-        "rev": "45f591ddfbf6342f958c4ead6dc6175965f8ce1d",
+        "rev": "050b2b6a3ee29dbba5bd43c38786b2947f45b2cb",
         "type": "github"
       },
       "original": {
@@ -6290,16 +6290,16 @@
         "pre-commit-hooks": "pre-commit-hooks"
       },
       "locked": {
-        "lastModified": 1672869303,
-        "narHash": "sha256-hX2nxIpyJWTqQnllc9bLIqQH3LXtLxof56TYkMPSOZ0=",
-        "owner": "mlabs-haskell",
+        "lastModified": 1677814602,
+        "narHash": "sha256-evpKJ5aWZGlr1Y5xV9chmG6D/Vx2OdAjzBdLtctXPXo=",
+        "owner": "liqwid-labs",
         "repo": "ply",
-        "rev": "2cda3b44f87c659980bea2bc0b4a822d1e9eaef4",
+        "rev": "8e686d78cd5a498df577376a502b49efa3e06fd8",
         "type": "github"
       },
       "original": {
-        "owner": "mlabs-haskell",
-        "ref": "master",
+        "owner": "liqwid-labs",
+        "ref": "seungheonoh/purs",
         "repo": "ply",
         "type": "github"
       }

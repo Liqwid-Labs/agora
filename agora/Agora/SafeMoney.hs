@@ -22,37 +22,37 @@ import PlutusLedgerApi.V1.Value (AssetClass (AssetClass))
 
      @since 0.1.0
 -}
-data GTTag
+type GTTag = "GTTag"
 
 {- | ADA.
 
      @since 0.1.0
 -}
-data ADATag
+type ADATag = "ADATag"
 
 {- | Governor ST token.
 
      @since 0.1.0
 -}
-data GovernorSTTag
+type GovernorSTTag = "GovernorSTTag"
 
 {- | Stake ST token.
 
      @since 0.1.0
 -}
-data StakeSTTag
+type StakeSTTag = "StakeSTTag"
 
 {- | Proposal ST token.
 
      @since 0.1.0
 -}
-data ProposalSTTag
+type ProposalSTTag = "ProposalSTTag"
 
 {- | Authority token.
 
      @since 1.0.0
 -}
-data AuthorityTokenTag
+type AuthorityTokenTag = "AuthorityTokenTag"
 
 {- | Resolves ada tags.
 

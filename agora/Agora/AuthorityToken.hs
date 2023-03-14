@@ -146,7 +146,7 @@ singleAuthorityTokenBurned gatCs inputs mint = unTermCont $ do
 
      @since 0.1.0
 -}
-authorityTokenPolicy :: ClosedTerm (PTagged GovernorSTTag PAssetClassData :--> PMintingPolicy)
+authorityTokenPolicy :: ClosedTerm (PAsData (PTagged GovernorSTTag PAssetClassData) :--> PMintingPolicy)
 authorityTokenPolicy =
   plam $ \gstAssetClass _redeemer ctx -> unTermCont $ do
     ctxF <- pletFieldsC @'["txInfo", "purpose"] ctx
@@ -176,7 +176,7 @@ authorityTokenPolicy =
                     passertPJust
                       # "GST should move"
                       #$ presolveGovernorRedeemer
-                      # (ptoScottEncodingT # gstAssetClass)
+                      # (ptoScottEncodingT # pfromData gstAssetClass)
                       # pfromData txInfoF.inputs
                       # txInfoF.redeemers
               pguardC "Governor redeemr correct" $

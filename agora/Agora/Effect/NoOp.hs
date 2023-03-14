@@ -40,7 +40,7 @@ instance PTryFrom PData (PAsData PNoOp)
 
      @since 1.0.0
 -}
-noOpValidator :: ClosedTerm (PTagged AuthorityTokenTag PCurrencySymbol :--> PValidator)
+noOpValidator :: ClosedTerm (PAsData (PTagged AuthorityTokenTag PCurrencySymbol) :--> PValidator)
 noOpValidator = plam $
   makeEffect $
     \_ (_datum :: Term s (PAsData PNoOp)) _ _ -> popaque (pconstant ())

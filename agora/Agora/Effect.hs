@@ -38,10 +38,11 @@ makeEffect ::
     Term s (PAsData PTxInfo) ->
     Term s POpaque
   ) ->
-  Term s (PTagged AuthorityTokenTag PCurrencySymbol) ->
+  Term s (PAsData (PTagged AuthorityTokenTag PCurrencySymbol)) ->
   Term s PValidator
-makeEffect f atSymbol =
+makeEffect f atSymbol' =
   plam $ \datum _redeemer ctx' -> unTermCont $ do
+    atSymbol <- pletC $ pfromData atSymbol'
     ctx <- pletFieldsC @'["txInfo", "purpose"] ctx'
 
     -- Convert input datum, PData, into desierable type

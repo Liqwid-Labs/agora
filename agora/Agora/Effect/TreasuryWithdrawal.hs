@@ -149,7 +149,7 @@ instance PTryFrom PData (PAsData PTreasuryWithdrawalDatum)
 -}
 treasuryWithdrawalValidator ::
   forall (s :: S).
-  Term s (PTagged AuthorityTokenTag PCurrencySymbol :--> PValidator)
+  Term s (PAsData (PTagged AuthorityTokenTag PCurrencySymbol) :--> PValidator)
 treasuryWithdrawalValidator = plam $
   makeEffect @(PAsData PTreasuryWithdrawalDatum) $
     \_cs (pfromData -> datum) effectInputRef txInfo -> unTermCont $ do

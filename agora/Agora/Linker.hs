@@ -12,6 +12,7 @@ import Plutarch.Extra.AssetClass (AssetClass (AssetClass))
 import Plutarch.Extra.ScriptContext (scriptHashToTokenName)
 import PlutusLedgerApi.V2 (CurrencySymbol (CurrencySymbol), ScriptHash, TxOutRef, getScriptHash)
 import Ply (
+  AsData (AsData),
   ScriptRole (MintingPolicyRole, ValidatorRole),
   (#),
  )
@@ -48,122 +49,122 @@ linker = do
   govPol <-
     fetchTS
       @MintingPolicyRole
-      @'[TxOutRef]
+      @'[AsData TxOutRef]
       "agora:governorPolicy"
   govVal <-
     fetchTS
       @ValidatorRole
-      @'[ ScriptHash
-        , Tagged StakeSTTag AssetClass
-        , Tagged GovernorSTTag CurrencySymbol
-        , Tagged ProposalSTTag CurrencySymbol
-        , Tagged AuthorityTokenTag CurrencySymbol
+      @'[ AsData ScriptHash
+        , AsData (Tagged StakeSTTag AssetClass)
+        , AsData (Tagged GovernorSTTag CurrencySymbol)
+        , AsData (Tagged ProposalSTTag CurrencySymbol)
+        , AsData (Tagged AuthorityTokenTag CurrencySymbol)
         ]
       "agora:governorValidator"
   stkPol <-
     fetchTS
       @MintingPolicyRole
-      @'[Tagged GTTag AssetClass]
+      @'[AsData (Tagged GTTag AssetClass)]
       "agora:stakePolicy"
   stkVal <-
     fetchTS
       @ValidatorRole
-      @'[ Tagged StakeSTTag CurrencySymbol
-        , Tagged ProposalSTTag AssetClass
-        , Tagged GTTag AssetClass
+      @'[ AsData (Tagged StakeSTTag CurrencySymbol)
+        , AsData (Tagged ProposalSTTag AssetClass)
+        , AsData (Tagged GTTag AssetClass)
         ]
       "agora:stakeValidator"
   prpPol <-
     fetchTS @MintingPolicyRole
-      @'[Tagged GovernorSTTag AssetClass]
+      @'[AsData (Tagged GovernorSTTag AssetClass)]
       "agora:proposalPolicy"
   prpVal <-
     fetchTS
       @ValidatorRole
-      @'[ Tagged StakeSTTag AssetClass
-        , Tagged GovernorSTTag CurrencySymbol
-        , Tagged ProposalSTTag CurrencySymbol
-        , Integer
+      @'[ AsData (Tagged StakeSTTag AssetClass)
+        , AsData (Tagged GovernorSTTag CurrencySymbol)
+        , AsData (Tagged ProposalSTTag CurrencySymbol)
+        , AsData Integer
         ]
       "agora:proposalValidator"
   treVal <-
     fetchTS
       @ValidatorRole
-      @'[Tagged AuthorityTokenTag CurrencySymbol]
+      @'[AsData (Tagged AuthorityTokenTag CurrencySymbol)]
       "agora:treasuryValidator"
   atkPol <-
     fetchTS
       @MintingPolicyRole
-      @'[Tagged GovernorSTTag AssetClass]
+      @'[AsData (Tagged GovernorSTTag AssetClass)]
       "agora:authorityTokenPolicy"
   noOpVal <-
     fetchTS
       @ValidatorRole
-      @'[Tagged AuthorityTokenTag CurrencySymbol]
+      @'[AsData (Tagged AuthorityTokenTag CurrencySymbol)]
       "agora:noOpValidator"
   treaWithdrawalVal <-
     fetchTS
       @ValidatorRole
-      @'[Tagged AuthorityTokenTag CurrencySymbol]
+      @'[AsData (Tagged AuthorityTokenTag CurrencySymbol)]
       "agora:treasuryWithdrawalValidator"
   mutateGovVal <-
     fetchTS
       @ValidatorRole
-      @'[ ScriptHash
-        , Tagged GovernorSTTag CurrencySymbol
-        , Tagged AuthorityTokenTag CurrencySymbol
+      @'[ AsData ScriptHash
+        , AsData (Tagged GovernorSTTag CurrencySymbol)
+        , AsData (Tagged AuthorityTokenTag CurrencySymbol)
         ]
       "agora:mutateGovernorValidator"
 
   governor <- getParam
 
-  let govPol' = govPol # governor.gstOutRef
+  let govPol' = govPol # AsData governor.gstOutRef
       govVal' =
         govVal
-          # propValHash
-          # Tagged sstAssetClass
-          # Tagged gstSymbol
-          # Tagged pstSymbol
-          # Tagged atSymbol
+          # AsData propValHash
+          # AsData (Tagged sstAssetClass)
+          # AsData (Tagged gstSymbol)
+          # AsData (Tagged pstSymbol)
+          # AsData (Tagged atSymbol)
       gstSymbol = CurrencySymbol . getScriptHash . scriptHash $ toScript govPol'
       gstAssetClass =
         AssetClass gstSymbol ""
       govValHash = scriptHash $ toScript govVal'
 
-      atPol' = atkPol # Tagged gstAssetClass
+      atPol' = atkPol # AsData (Tagged gstAssetClass)
       atSymbol = CurrencySymbol . getScriptHash . scriptHash $ toScript atPol'
 
-      propPol' = prpPol # Tagged gstAssetClass
+      propPol' = prpPol # AsData (Tagged gstAssetClass)
       propVal' =
         prpVal
-          # Tagged sstAssetClass
-          # Tagged gstSymbol
-          # Tagged pstSymbol
-          # governor.maximumCosigners
+          # AsData (Tagged sstAssetClass)
+          # AsData (Tagged gstSymbol)
+          # AsData (Tagged pstSymbol)
+          # AsData governor.maximumCosigners
       propValHash = scriptHash $ toScript propVal'
       pstSymbol = CurrencySymbol . getScriptHash . scriptHash $ toScript propPol'
       pstAssetClass = AssetClass pstSymbol ""
 
-      stakPol' = stkPol # governor.gtClassRef
+      stakPol' = stkPol # AsData governor.gtClassRef
       stakVal' =
         stkVal
-          # Tagged sstSymbol
-          # Tagged pstAssetClass
-          # governor.gtClassRef
+          # AsData (Tagged sstSymbol)
+          # AsData (Tagged pstAssetClass)
+          # AsData governor.gtClassRef
       sstSymbol = CurrencySymbol . getScriptHash . scriptHash $ toScript stakPol'
       stakValTokenName =
         scriptHashToTokenName $ scriptHash $ toScript stakVal'
       sstAssetClass = AssetClass sstSymbol stakValTokenName
 
-      treaVal' = treVal # Tagged atSymbol
+      treaVal' = treVal # AsData (Tagged atSymbol)
 
-      noOpVal' = noOpVal # Tagged atSymbol
-      treaWithdrawalVal' = treaWithdrawalVal # Tagged atSymbol
+      noOpVal' = noOpVal # AsData (Tagged atSymbol)
+      treaWithdrawalVal' = treaWithdrawalVal # AsData (Tagged atSymbol)
       mutateGovVal' =
         mutateGovVal
-          # govValHash
-          # Tagged gstSymbol
-          # Tagged atSymbol
+          # AsData govValHash
+          # AsData (Tagged gstSymbol)
+          # AsData (Tagged atSymbol)
 
   return $
     ScriptExport
