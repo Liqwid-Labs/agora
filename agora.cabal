@@ -126,6 +126,7 @@ common test-deps
     , agora
     , cryptonite
     , data-default-class
+    , directory
     , memory
     , mtl
     , plutarch-context-builder
@@ -133,6 +134,7 @@ common test-deps
     , QuickCheck
     , quickcheck-instances
     , tasty
+    , tasty-golden
     , tasty-hedgehog
     , tasty-hunit
     , tasty-quickcheck
@@ -231,7 +233,9 @@ test-suite agora-test
   type:           exitcode-stdio-1.0
   main-is:        Spec.hs
   hs-source-dirs: agora-test
+  other-modules:  Golden
   build-depends:
+    , agora
     , agora-specs
     , agora-testlib
 
