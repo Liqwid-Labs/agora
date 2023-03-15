@@ -1,4 +1,5 @@
 import GHC.IO.Encoding (setLocaleEncoding, utf8)
+import Golden qualified
 import Test.Tasty (defaultMain, testGroup)
 
 --------------------------------------------------------------------------------
@@ -22,7 +23,8 @@ main = do
   defaultMain $
     testGroup
       "test suite"
-      [ testGroup
+      [ Golden.testGolden
+      , testGroup
           "Effects"
           [ toTestTree $ group "Treasury Withdrawal Effect" TreasuryWithdrawal.specs
           , toTestTree $ group "Governor Mutation Effect" GovernorMutation.specs

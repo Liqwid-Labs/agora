@@ -4,6 +4,10 @@ This format is based on [Keep A Changelog](https://keepachangelog.com/en/1.0.0).
 
 ## Unreleased (Candidate for 1.0.0)
 
+### Added
+
+- Golden tests for the script exports.
+
 ### Modified
 
 - For consistency and performance, the following data types are encoded as flat
