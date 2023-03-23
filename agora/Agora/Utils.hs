@@ -18,22 +18,29 @@ module Agora.Utils (
   ptag,
   puntag,
   phashDatum,
+  puncurryTuple,
+  psubtractSortedValue,
 ) where
 
+import Plutarch.Api.V1 (KeyGuarantees (Sorted))
+import Plutarch.Api.V1.AssocMap (punionWith)
 import Plutarch.Api.V1.Scripts (PDatumHash (PDatumHash))
 import Plutarch.Api.V2 (
-  AmountGuarantees,
-  KeyGuarantees,
+  AmountGuarantees (NoGuarantees),
   PCurrencySymbol,
   PMaybeData (PDNothing),
+  PTuple,
   PValue,
  )
 import Plutarch.Builtin (pforgetData, pserialiseData)
 import Plutarch.Crypto (pblake2b_256)
+import Plutarch.DataRepr (punDataSum)
 import Plutarch.Extra.AssetClass (PAssetClass, PAssetClassData, ptoScottEncoding)
+import Plutarch.Extra.Field (pletAll)
 import Plutarch.Extra.Tagged (PTagged)
 import Plutarch.Extra.Value (psymbolValueOf)
-import Plutarch.Unsafe (punsafeDowncast)
+import Plutarch.Num ((#-))
+import Plutarch.Unsafe (punsafeCoerce, punsafeDowncast)
 import PlutusLedgerApi.V2 (
   Address (Address),
   Credential (ScriptCredential),
@@ -139,3 +146,27 @@ phashDatum =
         . (pserialiseData #)
         . pforgetData
         . pdata
+
+puncurryTuple ::
+  forall (c :: PType) (a :: PType) (b :: PType) (s :: S).
+  (PIsData a, PIsData b) =>
+  Term s ((a :--> b :--> c) :--> PTuple a b :--> c)
+puncurryTuple = phoistAcyclic $
+  plam $
+    \f ((punDataSum #) -> r) ->
+      pletAll r $ \rF -> f # rF._0 # rF._1
+
+psubtractSortedValue ::
+  forall (ag :: AmountGuarantees) (s :: S).
+  Term
+    s
+    ( PValue 'Sorted ag
+        :--> PValue 'Sorted ag
+        :--> PValue 'Sorted 'NoGuarantees
+    )
+psubtractSortedValue = phoistAcyclic $ plam $ \a b ->
+  punsafeCoerce $
+    punionWith
+      # (punionWith # plam (#-))
+      # pto a
+      # pto b
