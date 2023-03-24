@@ -27,3 +27,6 @@ haddock
 hoo
 
 .pre-commit-config.yaml
+
+agora-test/goldens/agora.json
+agora-test/goldens/agoraDebug.json
