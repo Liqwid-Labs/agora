@@ -58,6 +58,7 @@ module Sample.Shared (
   mockTrEffect,
   mockTrEffectHash,
   trValidator,
+  trScriptHash,
   trCredential,
   wrongEffHash,
 ) where
@@ -276,9 +277,12 @@ gatCs = authorityTokenSymbol
 trValidator :: Script
 trValidator = agoraScripts ! "agora:treasuryValidator"
 
+trScriptHash :: ScriptHash
+trScriptHash = scriptHash trValidator
+
 -- | `ScriptCredential` used for the dummy treasury validator.
 trCredential :: Credential
-trCredential = ScriptCredential $ scriptHash trValidator
+trCredential = ScriptCredential trScriptHash
 
 -- | `TokenName` for GAT generated from address of `mockTrEffect`.
 gatTn :: TokenName
