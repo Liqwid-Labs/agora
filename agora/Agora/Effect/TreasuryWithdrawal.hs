@@ -140,7 +140,7 @@ instance PTryFrom PData (PAsData PTreasuryWithdrawalDatum)
 
     The output order should be:
 
-      1. Reciever outputs. They should be in the same order as the 'receivers' field of the datum.
+      1. Receiver outputs. They should be in the same order as the 'receivers' field of the datum.
 
       2. Other outputs: treasury outputs, colleteral outputs, etc.
 
@@ -206,9 +206,9 @@ treasuryWithdrawalValidator = plam $
               # datumF.receivers
               # txInfoF.outputs
 
-        extractTeasuryOutputValue ::
+        extractTreasuryOutputValue ::
           Term _ (PTxOut :--> PValue 'Sorted 'Positive)
-        extractTeasuryOutputValue = plam $
+        extractTreasuryOutputValue = plam $
           flip (pletFields @'["address", "value"]) $ \outputF ->
             let cred = pfield @"credential" # outputF.address
 
@@ -222,7 +222,7 @@ treasuryWithdrawalValidator = plam $
         -- Return the value if it'll be sent to one of the treasuries.
         treasuryOutputAmount =
           pfoldMap
-            # extractTeasuryOutputValue
+            # extractTreasuryOutputValue
             # remainingOutputs
 
       pguardC "Unused treasury should stay at treasury validators" $
