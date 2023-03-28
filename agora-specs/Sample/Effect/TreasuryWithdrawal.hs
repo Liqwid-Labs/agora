@@ -6,175 +6,208 @@ Description: Sample based testing for Treasury Withdrawal Effect
 This module provides samples for Treasury Withdrawal Effect tests.
 -}
 module Sample.Effect.TreasuryWithdrawal (
-  validator,
-  inputTreasury,
-  inputUser,
-  inputGAT,
-  inputCollateral,
-  outputTreasury,
-  outputUser,
-  buildReceiversOutputFromDatum,
-  currSymbol,
-  users,
-  treasuries,
-  buildScriptContext,
+  runEffect,
+  Parameters (..),
+  Validity (..),
+  totallyValidParameters,
+  mkTestTree,
 ) where
 
 import Agora.Effect.TreasuryWithdrawal (
-  TreasuryWithdrawalDatum (TreasuryWithdrawalDatum),
+  TreasuryWithdrawalDatum (..),
  )
+import Control.Composition ((.*))
+import Data.Foldable (Foldable (fold))
+import Data.List (singleton)
 import Data.Map ((!))
+import Data.Map.Ordered (OMap)
+import Data.Map.Ordered qualified as Map
+import Data.Semigroup (mtimesDefault)
 import Plutarch.Api.V2 (scriptHash)
+import Plutarch.Context (credential, input, mint, output, script, withInlineDatum, withRef, withRefTxId, withValue)
 import Plutarch.Script (Script)
-import PlutusLedgerApi.V1.Interval qualified as Interval (always)
-import PlutusLedgerApi.V1.Value qualified as Value (singleton)
+import PlutusLedgerApi.V1.Value qualified as Value (scale, singleton)
 import PlutusLedgerApi.V2 (
-  Address (Address),
   Credential (..),
-  CurrencySymbol,
-  DatumHash (DatumHash),
-  OutputDatum (OutputDatumHash),
-  PubKeyHash,
-  Redeemer (Redeemer),
-  ScriptContext (..),
-  ScriptHash (ScriptHash),
-  ScriptPurpose (Spending),
-  TokenName (TokenName),
-  TxInInfo (TxInInfo),
-  TxInfo (..),
-  TxOut (..),
+  TxId,
   TxOutRef (TxOutRef),
   Value,
-  toBuiltinData,
  )
-import PlutusTx.AssocMap qualified as AssocMap
-import Sample.Shared (agoraScripts, authorityTokenSymbol)
-import Test.Util (scriptCredentials, userCredentials)
+import PlutusLedgerApi.V3 (ScriptHash)
+import Sample.Shared (agoraScripts, authorityTokenPolicy, authorityTokenSymbol, signer, signer2, trScriptHash, trValidator)
+import Test.Specification (SpecificationTree, group, testPolicy, testValidator)
+import Test.Util (CombinableBuilder, mkMinting, mkSpending, subtractValue, validatorHashes)
 
--- | A sample Currency Symbol.
-currSymbol :: CurrencySymbol
-currSymbol = authorityTokenSymbol
+data Parameters = Parameters
+  { shouldDeliver ::
+      OMap Credential Value
+  , treasuryInputCount :: Integer
+  , badReceivedValue :: Bool
+  , badReceivers :: Bool
+  , badReceiverOrder :: Bool
+  , badTreasuryPaybackValue :: Bool
+  }
 
--- | A sample 'PubKeyHash'.
-signer :: PubKeyHash
-signer = "8a30896c4fd5e79843e4ca1bd2cdbaa36f8c0bc3be7401214142019c"
+data Validity = Validity
+  { forGATPolicy :: Bool
+  , forEffectValidator :: Bool
+  , forTreasury :: Bool
+  }
 
--- | List of users who the effect will pay to.
-users :: [Credential]
-users = userCredentials
+effectValidator :: Script
+effectValidator = agoraScripts ! "agora:treasuryWithdrawalValidator"
 
--- | List of users who the effect will pay to.
-treasuries :: [Credential]
-treasuries = scriptCredentials
+effectHash :: ScriptHash
+effectHash = scriptHash effectValidator
 
-inputGAT :: TxInInfo
-inputGAT =
-  TxInInfo
-    (TxOutRef "0b2086cbf8b6900f8cb65e012de4516cb66b5cb08a9aaba12a8b88be" 1)
-    TxOut
-      { txOutAddress = Address (ScriptCredential $ scriptHash validator) Nothing
-      , txOutValue = Value.singleton currSymbol validatorHashTN 1 -- Stake ST
-      , txOutDatum = OutputDatumHash (DatumHash "")
-      , txOutReferenceScript = Nothing
-      }
-
--- | Create an input given the index of the treasury and the 'Value' at this input.
-inputTreasury :: Int -> Value -> TxInInfo
-inputTreasury indx val =
-  TxInInfo
-    (TxOutRef "" 1)
-    TxOut
-      { txOutAddress = Address (treasuries !! indx) Nothing
-      , txOutValue = val
-      , txOutDatum = OutputDatumHash (DatumHash "")
-      , txOutReferenceScript = Nothing
-      }
-
--- | Create a input given the index of the user and the 'Value' at this input.
-inputUser :: Int -> Value -> TxInInfo
-inputUser indx val =
-  TxInInfo
-    (TxOutRef "" 1)
-    TxOut
-      { txOutAddress = Address (users !! indx) Nothing
-      , txOutValue = val
-      , txOutDatum = OutputDatumHash (DatumHash "")
-      , txOutReferenceScript = Nothing
-      }
-
--- | Create a input representing the collateral given by a user.
-inputCollateral :: Int -> TxInInfo
-inputCollateral indx =
-  TxInInfo -- Initiator
-    (TxOutRef "" 1)
-    TxOut
-      { txOutAddress = Address (users !! indx) Nothing
-      , txOutValue = Value.singleton "" "" 2000000
-      , txOutDatum = OutputDatumHash (DatumHash "")
-      , txOutReferenceScript = Nothing
-      }
-
--- | Create an output at the nth treasury with the given 'Value'.
-outputTreasury :: Int -> Value -> TxOut
-outputTreasury indx val =
-  TxOut
-    { txOutAddress = Address (treasuries !! indx) Nothing
-    , txOutValue = val
-    , txOutDatum = OutputDatumHash (DatumHash "")
-    , txOutReferenceScript = Nothing
+mkEffectDatum :: Parameters -> TreasuryWithdrawalDatum
+mkEffectDatum ps =
+  TreasuryWithdrawalDatum
+    { receivers = Map.assocs ps.shouldDeliver
+    , treasuries = [ScriptCredential trScriptHash]
     }
 
--- | Create an output at the nth user with the given 'Value'.
-outputUser :: Int -> Value -> TxOut
-outputUser indx val =
-  TxOut
-    { txOutAddress = Address (users !! indx) Nothing
-    , txOutValue = val
-    , txOutDatum = OutputDatumHash (DatumHash "")
-    , txOutReferenceScript = Nothing
+effectRef :: TxOutRef
+effectRef = TxOutRef "0b2086cbf8b6900f8cb65e012de4516cb66b5cb08a9aaba12a8b88be" 0
+
+treasuryTxId :: TxId
+treasuryTxId = "0ca36f3a357bc69579ab2531aecd1e7d3714d993c7820f40b864be15"
+
+mkEffectInputBuilder :: forall b. CombinableBuilder b => Parameters -> b
+mkEffectInputBuilder ps =
+  let mkGATValue = Value.singleton authorityTokenSymbol ""
+   in mconcat
+        [ mint $ mkGATValue (-1)
+        , input $
+            mconcat
+              [ script effectHash
+              , withRef effectRef
+              , withInlineDatum $ mkEffectDatum ps
+              , withValue $ mkGATValue 1
+              ]
+        ]
+
+mkTreasuryInputBuilder ::
+  forall b.
+  CombinableBuilder b =>
+  Parameters ->
+  b
+mkTreasuryInputBuilder ps =
+  mtimesDefault ps.treasuryInputCount $
+    input $
+      mconcat
+        [ script trScriptHash
+        , withRefTxId treasuryTxId
+        , withInlineDatum ()
+        , withValue $ fold ps.shouldDeliver
+        ]
+
+mkTreasuryPaybackOutputBuilder ::
+  forall b.
+  CombinableBuilder b =>
+  Parameters ->
+  b
+mkTreasuryPaybackOutputBuilder ps =
+  let sentAmount = fold ps.shouldDeliver
+      inputAmount =
+        flip Value.scale sentAmount $
+          if ps.badTreasuryPaybackValue
+            then 1
+            else ps.treasuryInputCount
+      paybackValue = inputAmount `subtractValue` sentAmount
+   in output $
+        mconcat
+          [ script trScriptHash
+          , withValue paybackValue
+          , withInlineDatum ()
+          ]
+
+mkReceiverOutputBuilder ::
+  forall b.
+  CombinableBuilder b =>
+  Parameters ->
+  b
+mkReceiverOutputBuilder ps =
+  let mkOutputValue =
+        if ps.badReceivedValue
+          then const $ Value.singleton "" "bruh" 1
+          else id
+      mkFinalOutputs =
+        mconcat
+          . (if ps.badReceiverOrder then reverse else id)
+          . (if ps.badReceivers then drop 1 else id)
+      mkOutput :: _ -> _ -> b
+      mkOutput cred value =
+        output $
+          mconcat
+            [ credential cred
+            , withValue $ mkOutputValue value
+            , withInlineDatum ()
+            ]
+      rawOutputs =
+        foldMap (uncurry $ singleton .* mkOutput) $
+          Map.assocs ps.shouldDeliver
+   in mkFinalOutputs rawOutputs
+
+runEffect :: forall b. CombinableBuilder b => Parameters -> b
+runEffect ps =
+  foldMap
+    ($ ps)
+    [ mkEffectInputBuilder
+    , mkTreasuryInputBuilder
+    , mkReceiverOutputBuilder
+    , mkTreasuryPaybackOutputBuilder
+    ]
+
+totallyValidParameters :: Parameters
+totallyValidParameters =
+  Parameters
+    { shouldDeliver =
+        Map.fromList
+          [ (PubKeyCredential signer, Value.singleton "" "" 42_000_000)
+          , (PubKeyCredential signer2, Value.singleton "" "" 42_000_000)
+          , (ScriptCredential (head validatorHashes), Value.singleton "" "" 42_000_000)
+          ]
+    , treasuryInputCount = 2
+    , badReceivedValue = False
+    , badReceivers = False
+    , badReceiverOrder = False
+    , badTreasuryPaybackValue = False
     }
 
--- | Create a list of the outputs that are required as encoded in 'TreasuryWithdrawalDatum'.
-buildReceiversOutputFromDatum :: TreasuryWithdrawalDatum -> [TxOut]
-buildReceiversOutputFromDatum (TreasuryWithdrawalDatum xs _) = f <$> xs
+mkTestTree ::
+  String ->
+  Parameters ->
+  Validity ->
+  SpecificationTree
+mkTestTree name ps val =
+  group name [effect, treasury, authority]
   where
-    f x =
-      TxOut
-        { txOutAddress = Address (fst x) Nothing
-        , txOutValue = snd x
-        , txOutDatum = OutputDatumHash (DatumHash "")
-        , txOutReferenceScript = Nothing
-        }
+    spend = mkSpending runEffect ps
+    mint = mkMinting runEffect ps
 
--- | Effect validator instance.
-validator :: Script
-validator = agoraScripts ! "agora:treasuryWithdrawalValidator"
+    effect =
+      testValidator
+        val.forEffectValidator
+        "effect"
+        effectValidator
+        (mkEffectDatum ps)
+        ()
+        (spend effectRef)
 
--- | 'TokenName' that represents the hash of the 'Agora.Stake.Stake' validator.
-validatorHashTN :: TokenName
-validatorHashTN = let ScriptHash hash = scriptHash validator in TokenName hash
+    treasury =
+      testValidator
+        val.forTreasury
+        "treasury"
+        trValidator
+        ()
+        ()
+        (spend $ TxOutRef treasuryTxId 1)
 
-buildScriptContext :: [TxInInfo] -> [TxOut] -> ScriptContext
-buildScriptContext inputs outputs =
-  let spending = Spending (TxOutRef "0b2086cbf8b6900f8cb65e012de4516cb66b5cb08a9aaba12a8b88be" 1)
-   in ScriptContext
-        { scriptContextTxInfo =
-            TxInfo
-              { txInfoInputs = inputs
-              , txInfoReferenceInputs = []
-              , txInfoOutputs = outputs
-              , txInfoFee = Value.singleton "" "" 2
-              , txInfoMint = Value.singleton currSymbol validatorHashTN (-1)
-              , txInfoDCert = []
-              , txInfoWdrl = AssocMap.empty
-              , txInfoValidRange = Interval.always
-              , txInfoSignatories = [signer]
-              , txInfoData = AssocMap.empty
-              , txInfoRedeemers =
-                  AssocMap.fromList
-                    [ (spending, Redeemer $ toBuiltinData ())
-                    ]
-              , txInfoId = "0b2086cbf8b6900f8cb65e012de4516cb66b5cb08a9aaba12a8b88be"
-              }
-        , scriptContextPurpose = spending
-        }
+    authority =
+      testPolicy
+        val.forGATPolicy
+        "authority"
+        authorityTokenPolicy
+        ()
+        (mint authorityTokenSymbol)

@@ -2,7 +2,6 @@ module Golden (testGolden) where
 
 import Agora.Bootstrap qualified as Bootstrap
 import Agora.Linker (linker)
-import Data.ByteString.Lazy qualified as LBS
 import Data.Text qualified as Text
 import Plutarch (Config (Config), TracingMode (DoTracing, NoTracing))
 import ScriptExport.File qualified as ScriptExport
@@ -10,7 +9,7 @@ import ScriptExport.Options qualified as ScriptExport
 import ScriptExport.Types qualified as ScriptExport
 import System.Directory (createDirectoryIfMissing)
 import Test.Tasty (TestTree, testGroup)
-import Test.Tasty.Golden (goldenVsString)
+import Test.Tasty.Golden (goldenVsFile)
 import Test.Tasty.Providers (TestName)
 
 builders :: ScriptExport.Builders
@@ -30,15 +29,24 @@ testGolden =
 
 goldenTest :: TestName -> FilePath -> TestTree
 goldenTest builder outputPath =
-  goldenVsString
-    builder
-    (outputPath <> builder <> "-golden.json")
-    (callExportScript builder outputPath)
+  let mkFilename suffix = outputPath <> builder <> suffix <> ".json"
+      goldenFilename = mkFilename "-golden"
+      sampleFilename = mkFilename ""
+   in goldenVsFile
+        builder
+        goldenFilename
+        sampleFilename
+        $ callExportScript builder outputPath
 
 -- Call the script server and generate an unapplied script set.
-callExportScript :: String -> FilePath -> IO LBS.ByteString
+callExportScript :: String -> FilePath -> IO ()
 callExportScript builder outputPath = do
   _ <- createDirectoryIfMissing False outputPath
-  let sampleFilePath = outputPath <> builder <> ".json"
-  ScriptExport.runFile builders (ScriptExport.FileOptions {out = outputPath, param = "", builder = Text.pack builder})
-  LBS.readFile sampleFilePath
+  ScriptExport.runFile
+    builders
+    ( ScriptExport.FileOptions
+        { out = outputPath
+        , param = ""
+        , builder = Text.pack builder
+        }
+    )

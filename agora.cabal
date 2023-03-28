@@ -226,7 +226,9 @@ library agora-specs
     Spec.Utils
 
   hs-source-dirs:  agora-specs
-  build-depends:   agora-testlib
+  build-depends:
+    , agora-testlib
+    , ordered-containers
 
 test-suite agora-test
   import:         lang, deps, plutarch-prelude, test-deps, test-opts

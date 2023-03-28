@@ -8,20 +8,17 @@ Description: An Effect that withdraws treasury deposit
 An Effect that withdraws treasury deposit
 -}
 module Agora.Effect.TreasuryWithdrawal (
-  TreasuryWithdrawalDatum (TreasuryWithdrawalDatum),
+  TreasuryWithdrawalDatum (..),
   PTreasuryWithdrawalDatum (PTreasuryWithdrawalDatum),
   treasuryWithdrawalValidator,
 ) where
 
 import Agora.Effect (makeEffect)
 import Agora.SafeMoney (AuthorityTokenTag)
+import Agora.Utils (psubtractSortedValue, puncurryTuple)
 import Generics.SOP qualified as SOP
-import Plutarch.Api.V1 (
-  PCredential,
-  PCurrencySymbol,
-  PValue,
-  ptuple,
- )
+import Plutarch.Api.V1 (PCredential, PCurrencySymbol, PValue)
+import Plutarch.Api.V1.Value (pforgetPositive)
 import Plutarch.Api.V2 (
   AmountGuarantees (Positive),
   KeyGuarantees (Sorted),
@@ -42,11 +39,11 @@ import Plutarch.Extra.IsData (
  )
 import Plutarch.Extra.ScriptContext (pisPubKey)
 import Plutarch.Extra.Tagged (PTagged)
+import Plutarch.Extra.Traversable (pfoldMap)
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (PLifted))
 import PlutusLedgerApi.V1.Credential (Credential)
 import PlutusLedgerApi.V1.Value (Value)
 import PlutusTx qualified
-import "liqwid-plutarch-extra" Plutarch.Extra.List (pdeleteFirst)
 import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (
   pguardC,
   pletC,
@@ -141,9 +138,11 @@ instance PTryFrom PData (PAsData PTreasuryWithdrawalDatum)
 
        2. Left over assets should be redirected back to Treasury
 
-     It can be more flexiable over...
+    The output order should be:
 
-     - The number of outputs themselves
+      1. Receiver outputs. They should be in the same order as the 'receivers' field of the datum.
+
+      2. Other outputs: treasury outputs, colleteral outputs, etc.
 
      @since 1.0.0
 -}
@@ -156,54 +155,117 @@ treasuryWithdrawalValidator = plam $
       datumF <- pletAllC datum
       txInfoF <- pletFieldsC @'["outputs", "inputs"] txInfo
 
-      let validateInput :: Term _ (PTxInInfo :--> PBool)
-          validateInput = plam $ \input -> unTermCont $ do
-            inputF <- pletAllC input
+      let
+        -- Validate the input and if it's from one of the treasuries,
+        --  return the value.
+        --
+        -- Only effect inputs, treasury inputs and public key inputs are
+        --  allowed.
+        extractTreasuryInputValue ::
+          Term _ (PTxInInfo :--> PValue 'Sorted 'Positive)
+        extractTreasuryInputValue = plam $ \input -> unTermCont $ do
+          inputF <- pletAllC input
+          resolvedF <- pletFieldsC @'["address", "value"] inputF.resolved
 
-            cred <-
-              pletC $
-                pfield @"credential"
-                  #$ pfield @"address"
-                  # inputF.resolved
+          cred <- pletC $ pfield @"credential" # resolvedF.address
 
-            pure $
-              foldl1
-                (#||)
-                [ ptraceIfTrue "Effect input" $ inputF.outRef #== effectInputRef
-                , ptraceIfTrue "Treasury input" $ pelem # cred # datumF.treasuries
-                , ptraceIfTrue "Collateral input" $ pisPubKey # pfromData cred
-                ]
+          let isEffectInput =
+                ptraceIfTrue "Effect input" $
+                  inputF.outRef #== effectInputRef
+              isTreasuryInput =
+                ptraceIfTrue "Treasury input" $
+                  pelem # pdata cred # datumF.treasuries
+              isPubkeyInput =
+                ptraceIfTrue "Pubkey input" $
+                  pisPubKey # cred
+          pure
+            $ pif
+              (isEffectInput #|| isPubkeyInput)
+              mempty
+            $ pif isTreasuryInput resolvedF.value
+            $ ptraceError "Unknown input"
 
-          validateOutput ::
-            Term
-              _
-              ( PBuiltinList (PAsData (PTuple PCredential (PValue 'Sorted 'Positive)))
-                  :--> PTxOut
-                  :--> PBuiltinList (PAsData (PTuple PCredential (PValue 'Sorted 'Positive)))
-              )
-          validateOutput = plam $ \receivers output -> unTermCont $ do
-            outputF <- pletFieldsC @'["address", "value"] output
-            cred <- pletC $ pfield @"credential" # pfromData outputF.address
+        treasuryInputAmount =
+          pfoldMap
+            # extractTreasuryInputValue
+            # txInfoF.inputs
 
-            let credValue = pdata $ ptuple # cred # outputF.value
+        sentAmout =
+          pfoldMap
+            # plam ((puncurryTuple # plam (const id) #) . pfromData)
+            # pfromData datumF.receivers
 
-                shouldSendToTreasury =
-                  pif
-                    (pelem # cred # datumF.treasuries)
-                    receivers
-                    (ptraceError "Invalid receiver")
+        treasuryLeftOverAmount =
+          psubtractSortedValue
+            # treasuryInputAmount
+            # sentAmout
 
-            pure $
-              pmatch (pdeleteFirst # credValue # receivers) $ \case
-                PJust updatedReceivers ->
-                  ptrace "Receiver output" updatedReceivers
-                PNothing ->
-                  ptrace "Treasury output" shouldSendToTreasury
+        remainingOutputs =
+          ptrace "Check receiver outputs" $
+            checkReceiverOutputs
+              # datumF.receivers
+              # txInfoF.outputs
 
-      pguardC "All input are valid" $
-        pall # validateInput # txInfoF.inputs
+        extractTreasuryOutputValue ::
+          Term _ (PTxOut :--> PValue 'Sorted 'Positive)
+        extractTreasuryOutputValue = plam $
+          flip (pletFields @'["address", "value"]) $ \outputF ->
+            let cred = pfield @"credential" # outputF.address
 
-      pguardC "All receiver get correct output" $
-        pnull #$ pfoldl # validateOutput # datumF.receivers # txInfoF.outputs
+                isTreasuryOutput =
+                  pelem # cred # datumF.treasuries
+             in pif
+                  isTreasuryOutput
+                  outputF.value
+                  mempty
+
+        -- Return the value if it'll be sent to one of the treasuries.
+        treasuryOutputAmount =
+          pfoldMap
+            # extractTreasuryOutputValue
+            # remainingOutputs
+
+      pguardC "Unused treasury should stay at treasury validators" $
+        treasuryLeftOverAmount #== pforgetPositive treasuryOutputAmount
 
       pure . popaque $ pconstant ()
+  where
+    -- Make sure that all the receivers get the correct payment and return the
+    --  remaining outputs.
+    checkReceiverOutputs ::
+      forall (s :: S).
+      Term
+        s
+        ( PBuiltinList
+            (PAsData (PTuple PCredential (PValue 'Sorted 'Positive)))
+            :--> PBuiltinList PTxOut
+            :--> PBuiltinList PTxOut
+        )
+    checkReceiverOutputs = pfix #$ plam $ \self receivers outputs ->
+      pelimList
+        ( \r rs ->
+            pelimList
+              ( \o os -> pletFields @'["value", "address"] o $ \oF ->
+                  let isValidReceiverOutput =
+                        puncurryTuple
+                          # plam
+                            ( \expCred expVal ->
+                                foldl1
+                                  (#&&)
+                                  [ ptraceIfFalse "Valid credential" $
+                                      expCred #== pfield @"credential" # oF.address
+                                  , ptraceIfFalse "Valid value" $
+                                      expVal #== oF.value
+                                  ]
+                            )
+                          # pfromData r
+                   in pif
+                        isValidReceiverOutput
+                        (self # rs # os)
+                        (ptraceError "Invalid receiver output")
+              )
+              (ptraceError "Unable to exhaust receivers")
+              outputs
+        )
+        outputs
+        receivers

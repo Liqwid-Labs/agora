@@ -23,6 +23,7 @@ module Test.Util (
   mkSpending,
   mkMinting,
   CombinableBuilder,
+  subtractValue,
 ) where
 
 --------------------------------------------------------------------------------
@@ -45,6 +46,7 @@ import Plutarch.Context (
 import Plutarch.Crypto (pblake2b_256)
 import PlutusLedgerApi.V1.Interval qualified as PlutusTx
 import PlutusLedgerApi.V1.Value (Value (..))
+import PlutusLedgerApi.V1.Value qualified as Value
 import PlutusLedgerApi.V2 (
   Credential (
     PubKeyCredential,
@@ -212,3 +214,8 @@ mkMinting mkBuilder ps cs =
     mkBuilder ps <> withMinting cs
 
 type CombinableBuilder b = (Monoid b, Builder b)
+
+--------------------------------------------------------------------------------
+
+subtractValue :: Value -> Value -> Value
+subtractValue = Value.unionWith (-)

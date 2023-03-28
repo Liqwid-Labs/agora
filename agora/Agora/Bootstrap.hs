@@ -67,7 +67,7 @@ agoraScripts' conf =
     , envelope "NoOp Validator" noOpValidator
     , envelope "Treasury Withdrawal Validator" treasuryWithdrawalValidator
     , envelope "Mutate Governor Validator" mutateGovernorValidator
-    , envelope "Always Succeeds Policy" $ ((plam $ \_ _ -> popaque $ pcon PUnit) :: Term s PMintingPolicy)
+    , envelope "Always Succeeds Policy" ((plam $ \_ _ -> popaque $ pcon PUnit) :: Term s PMintingPolicy)
     ]
   where
     envelope ::
