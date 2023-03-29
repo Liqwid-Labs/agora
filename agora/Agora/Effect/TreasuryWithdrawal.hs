@@ -17,7 +17,9 @@ import Agora.Effect (makeEffect)
 import Agora.SafeMoney (AuthorityTokenTag)
 import Agora.Utils (psubtractSortedValue, puncurryTuple)
 import Generics.SOP qualified as SOP
+import Plutarch.Api.Internal.Hashing (hashData)
 import Plutarch.Api.V1 (PCredential, PCurrencySymbol, PValue)
+import Plutarch.Api.V1.Address (PCredential (PPubKeyCredential))
 import Plutarch.Api.V1.Value (pforgetPositive)
 import Plutarch.Api.V2 (
   AmountGuarantees (Positive),
@@ -27,6 +29,7 @@ import Plutarch.Api.V2 (
   PTxOut,
   PValidator,
  )
+import Plutarch.Api.V2.Tx (POutputDatum (..))
 import Plutarch.DataRepr (
   PDataFields,
  )
@@ -42,6 +45,7 @@ import Plutarch.Extra.Tagged (PTagged)
 import Plutarch.Extra.Traversable (pfoldMap)
 import Plutarch.Lift (PConstantDecl, PUnsafeLiftDecl (PLifted))
 import PlutusLedgerApi.V1.Credential (Credential)
+import PlutusLedgerApi.V1.Scripts (DatumHash (DatumHash))
 import PlutusLedgerApi.V1.Value (Value)
 import PlutusTx qualified
 import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (
@@ -209,13 +213,18 @@ treasuryWithdrawalValidator = plam $
         extractTreasuryOutputValue ::
           Term _ (PTxOut :--> PValue 'Sorted 'Positive)
         extractTreasuryOutputValue = plam $
-          flip (pletFields @'["address", "value"]) $ \outputF ->
+          flip (pletFields @'["address", "value", "datum"]) $ \outputF ->
             let cred = pfield @"credential" # outputF.address
 
                 isTreasuryOutput =
-                  pelem # cred # datumF.treasuries
+                  ptraceIfFalse "Should sent to one of the treasuries" $
+                    pelem # pdata cred # datumF.treasuries
+
+                isDatumValid =
+                  ptraceIfFalse "Valid output datum" $
+                    checkOutputDatum # cred # outputF.datum
              in pif
-                  isTreasuryOutput
+                  (isTreasuryOutput #&& isDatumValid)
                   outputF.value
                   mempty
 
@@ -230,10 +239,11 @@ treasuryWithdrawalValidator = plam $
 
       pure . popaque $ pconstant ()
   where
-    -- Make sure that all the receivers get the correct payment and return the
+    -- Make sure that all the receivers get the correct payment, return the
     --  remaining outputs.
+    --
+    -- This function is not hoisted cause it's used only once.
     checkReceiverOutputs ::
-      forall (s :: S).
       Term
         s
         ( PBuiltinList
@@ -245,7 +255,7 @@ treasuryWithdrawalValidator = plam $
       pelimList
         ( \r rs ->
             pelimList
-              ( \o os -> pletFields @'["value", "address"] o $ \oF ->
+              ( \o os -> pletFields @'["value", "address", "datum"] o $ \oF ->
                   let isValidReceiverOutput =
                         puncurryTuple
                           # plam
@@ -256,6 +266,8 @@ treasuryWithdrawalValidator = plam $
                                       expCred #== pfield @"credential" # oF.address
                                   , ptraceIfFalse "Valid value" $
                                       expVal #== oF.value
+                                  , ptraceIfFalse "Valid output datum" $
+                                      checkOutputDatum # expCred # oF.datum
                                   ]
                             )
                           # pfromData r
@@ -269,3 +281,17 @@ treasuryWithdrawalValidator = plam $
         )
         outputs
         receivers
+
+    unitDatum = PlutusTx.toData ()
+
+    unitDatumHash = DatumHash $ hashData unitDatum
+
+    checkOutputDatum :: Term s (PCredential :--> POutputDatum :--> PBool)
+    checkOutputDatum = phoistAcyclic $ plam $ \cred datum -> pmatch cred $
+      \case
+        PPubKeyCredential _ -> pcon PTrue
+        _ -> pmatch datum $ \case
+          PNoOutputDatum _ -> pcon PFalse
+          POutputDatum _ -> pcon PTrue
+          POutputDatumHash ((pfield @"datumHash" #) -> hash) ->
+            pconstant unitDatumHash #== hash
