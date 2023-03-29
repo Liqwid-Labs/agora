@@ -69,7 +69,7 @@ import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletC, pletFiel
 -}
 data MutateGovernorDatum = MutateGovernorDatum
   { oldDatum :: GovernorDatum
-  -- ^ The governor datum hash on which this effect is valid
+  -- ^ The governor datum value on which this effect is valid
   , newDatum :: GovernorDatum
   -- ^ The new settings for the governor.
   }
