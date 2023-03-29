@@ -28,17 +28,19 @@ import Agora.Governor (
 import Agora.SafeMoney (AuthorityTokenTag, GovernorSTTag)
 import Agora.Utils (ptaggedSymbolValueOf)
 import Generics.SOP qualified as SOP
-import Plutarch.Api.V1 (PCurrencySymbol)
+import Plutarch.Api.V1 (PCurrencySymbol, PTxOutRef)
 import Plutarch.Api.V2 (
   PScriptHash,
   PScriptPurpose (PSpending),
-  PTxOutRef,
+  PTxInInfo,
   PValidator,
  )
 import Plutarch.DataRepr (
   PDataFields,
  )
+import Plutarch.Extra.AssetClass (PAssetClass, passetClass)
 import Plutarch.Extra.Field (pletAll, pletAllC)
+import Plutarch.Extra.Functor (pfmap)
 import Plutarch.Extra.IsData (
   DerivePConstantViaDataList (DerivePConstantViaDataList),
   PlutusTypeDataList,
@@ -53,8 +55,8 @@ import Plutarch.Extra.ScriptContext (
   ptryFromRedeemer,
  )
 import Plutarch.Extra.Tagged (PTagged)
+import Plutarch.Extra.Value (passetClassValueOf)
 import Plutarch.Lift (PConstantDecl, PLifted, PUnsafeLiftDecl)
-import PlutusLedgerApi.V1 (TxOutRef)
 import PlutusTx qualified
 import "liqwid-plutarch-extra" Plutarch.Extra.List (ptryFromSingleton)
 import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC)
@@ -66,8 +68,8 @@ import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletC, pletFiel
      @since 0.1.0
 -}
 data MutateGovernorDatum = MutateGovernorDatum
-  { governorRef :: TxOutRef
-  -- ^ Referenced governor state UTXO should be updated by the effect.
+  { oldDatum :: GovernorDatum
+  -- ^ The governor datum hash on which this effect is valid
   , newDatum :: GovernorDatum
   -- ^ The new settings for the governor.
   }
@@ -100,7 +102,7 @@ newtype PMutateGovernorDatum (s :: S)
       ( Term
           s
           ( PDataRecord
-              '[ "governorRef" ':= PTxOutRef
+              '[ "oldDatum" ':= PGovernorDatum
                , "newDatum" ':= PGovernorDatum
                ]
           )
@@ -198,7 +200,13 @@ mutateGovernorValidator =
         pany
           # plam
             ( flip pletAll $ \inputF ->
-                let isGovernorInput =
+                let governorInputDatum =
+                      ptrace "Resolve governor input datum" $
+                        pfromData $
+                          ptryFromOutputDatum @(PAsData PGovernorDatum)
+                            # (pfield @"datum" # inputF.resolved)
+                            # txInfoF.datums
+                    isGovernorInput =
                       foldl1
                         (#&&)
                         [ ptraceIfFalse "Governor UTxO should carry GST" $
@@ -207,7 +215,7 @@ mutateGovernorValidator =
                               # (pfield @"value" # inputF.resolved)
                               #== 1
                         , ptraceIfFalse "Can only modify the pinned governor" $
-                            inputF.outRef #== effectDatumF.governorRef
+                            governorInputDatum #== effectDatumF.oldDatum
                         , ptraceIfFalse "Governor validator run" $
                             let inputScriptHash =
                                   pfromJust
@@ -220,13 +228,19 @@ mutateGovernorValidator =
             )
           # scriptInputs
 
-      let governorRedeemer =
-            pfromData $
-              passertPJust
-                # "Govenor redeemer should be resolved"
-                #$ ptryFromRedeemer @(PAsData PGovernorRedeemer)
-                # mkRecordConstr PSpending (#_0 .= effectDatumF.governorRef)
-                # txInfoF.redeemers
+      let
+        governorRef =
+          pfromJust
+            #$ findInputWithToken
+            # (passetClass # pfromData (pto gstSymbol) # pconstant "")
+            # txInfoF.inputs
+        governorRedeemer =
+          pfromData $
+            passertPJust
+              # "Govenor redeemer should be resolved"
+              #$ ptryFromRedeemer @(PAsData PGovernorRedeemer)
+              # mkRecordConstr PSpending (#_0 .= pdata governorRef)
+              # txInfoF.redeemers
 
       pguardC "Spend governor with redeemer MutateGovernor" $
         governorRedeemer #== pconstant MutateGovernor
@@ -248,3 +262,21 @@ mutateGovernorValidator =
         governorOutputDatum #== effectDatumF.newDatum
 
       return $ popaque $ pconstant ()
+  where
+    findInputWithToken ::
+      ClosedTerm
+        ( PAssetClass
+            :--> PBuiltinList PTxInInfo
+            :--> PMaybe PTxOutRef
+        )
+    findInputWithToken = plam $ \tokenClass inputs ->
+      pfmap
+        # pfield @"outRef"
+        #$ pfind
+        # ( plam $ \input ->
+              0
+                #< passetClassValueOf
+                # tokenClass
+                # (pfield @"value" # (pfield @"resolved" # input))
+          )
+        # inputs

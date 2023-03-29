@@ -47,7 +47,16 @@ specs =
           , effectSucceedsWith
               "effect validator should pass"
               effectValidator
-              (mkEffectDatum validNewGovernorDatum)
+              ( mkEffectDatum
+                  ( GovernorDatum
+                      def
+                      (ProposalId 0)
+                      def
+                      def
+                      3
+                  )
+                  validNewGovernorDatum
+              )
               (ScriptContext (mkEffectTxInfo validNewGovernorDatum) (Spending effectRef))
           ]
       , group
@@ -70,7 +79,16 @@ specs =
           , effectFailsWith
               "effect validator should fail"
               effectValidator
-              (mkEffectDatum validNewGovernorDatum)
+              ( mkEffectDatum
+                  ( GovernorDatum
+                      def
+                      (ProposalId 0)
+                      def
+                      def
+                      3
+                  )
+                  validNewGovernorDatum
+              )
               (ScriptContext (mkEffectTxInfo invalidNewGovernorDatum) (Spending effectRef))
           ]
       ]
