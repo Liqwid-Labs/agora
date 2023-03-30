@@ -15,7 +15,7 @@ module Agora.Effect.TreasuryWithdrawal (
 
 import Agora.Effect (makeEffect)
 import Agora.SafeMoney (AuthorityTokenTag)
-import Agora.Utils (psubtractSortedValue, puncurryTuple)
+import Agora.Utils (pisSubValueOf, psubtractSortedValue, puncurryTuple)
 import Generics.SOP qualified as SOP
 import Plutarch.Api.Internal.Hashing (hashData)
 import Plutarch.Api.V1 (PCredential, PCurrencySymbol, PValue)
@@ -265,7 +265,7 @@ treasuryWithdrawalValidator = plam $
                                   [ ptraceIfFalse "Valid credential" $
                                       expCred #== pfield @"credential" # oF.address
                                   , ptraceIfFalse "Valid value" $
-                                      expVal #== oF.value
+                                      pisSubValueOf # oF.value # expVal
                                   , ptraceIfFalse "Valid output datum" $
                                       checkOutputDatum # expCred # oF.datum
                                   ]

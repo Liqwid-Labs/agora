@@ -20,10 +20,12 @@ module Agora.Utils (
   phashDatum,
   puncurryTuple,
   psubtractSortedValue,
+  pisSubValueOf,
 ) where
 
-import Plutarch.Api.V1 (KeyGuarantees (Sorted))
+import Plutarch.Api.V1 (AmountGuarantees (Positive), KeyGuarantees (Sorted))
 import Plutarch.Api.V1.AssocMap (punionWith)
+import Plutarch.Api.V1.AssocMap qualified as AssocMap
 import Plutarch.Api.V1.Scripts (PDatumHash (PDatumHash))
 import Plutarch.Api.V2 (
   AmountGuarantees (NoGuarantees),
@@ -37,9 +39,10 @@ import Plutarch.Crypto (pblake2b_256)
 import Plutarch.DataRepr (punDataSum)
 import Plutarch.Extra.AssetClass (PAssetClass, PAssetClassData, ptoScottEncoding)
 import Plutarch.Extra.Field (pletAll)
+import Plutarch.Extra.Functor (PFunctor (pfmap))
 import Plutarch.Extra.Tagged (PTagged)
 import Plutarch.Extra.Value (psymbolValueOf)
-import Plutarch.Num ((#-))
+import Plutarch.Num (PNum (pnegate, (#+)))
 import Plutarch.Unsafe (punsafeCoerce, punsafeDowncast)
 import PlutusLedgerApi.V2 (
   Address (Address),
@@ -167,6 +170,31 @@ psubtractSortedValue ::
 psubtractSortedValue = phoistAcyclic $ plam $ \a b ->
   punsafeCoerce $
     punionWith
-      # (punionWith # plam (#-))
+      # (punionWith # plam (#+))
       # pto a
+      #$ pfmap
+      # (pfmap # pnegate)
       # pto b
+
+pisPositiveValue ::
+  forall (kg :: KeyGuarantees) (am :: AmountGuarantees) (s :: S).
+  Term s (PValue kg am :--> PBool)
+pisPositiveValue =
+  phoistAcyclic $
+    plam $
+      (AssocMap.pall # (AssocMap.pall # plam (0 #<)) #)
+        . pto
+
+pisSubValueOf ::
+  forall (s :: S).
+  Term
+    s
+    ( PValue 'Sorted 'Positive
+        :--> PValue 'Sorted 'Positive
+        :--> PBool
+    )
+pisSubValueOf = phoistAcyclic $ plam $ \vl vr ->
+  pisPositiveValue
+    #$ psubtractSortedValue
+    # vl
+    # vr

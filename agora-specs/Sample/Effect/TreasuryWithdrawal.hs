@@ -34,7 +34,7 @@ import PlutusLedgerApi.V2 (
   Value,
  )
 import PlutusLedgerApi.V3 (ScriptHash)
-import Sample.Shared (agoraScripts, authorityTokenPolicy, authorityTokenSymbol, signer, signer2, trScriptHash, trValidator)
+import Sample.Shared (agoraScripts, authorityTokenPolicy, authorityTokenSymbol, minAda, signer, signer2, trScriptHash, trValidator)
 import Test.Specification (SpecificationTree, group, testPolicy, testValidator)
 import Test.Util (CombinableBuilder, mkMinting, mkSpending, subtractValue, validatorHashes)
 
@@ -129,9 +129,10 @@ mkReceiverOutputBuilder ::
   b
 mkReceiverOutputBuilder ps =
   let mkOutputValue =
-        if ps.badReceivedValue
-          then const $ Value.singleton "" "bruh" 1
-          else id
+        (minAda <>)
+          . if ps.badReceivedValue
+            then const $ Value.singleton "" "bruh" 1
+            else id
       mkFinalOutputs =
         mconcat
           . (if ps.badReceiverOrder then reverse else id)
