@@ -199,7 +199,7 @@ mutateGovernorValidator =
             # "Governor UTXO should carry GST"
             # ( pfindInputWithStateThreadToken
                   # pfromData gstSymbol
-                  # txInfoF.inputs
+                  # scriptInputs
               )
 
         governorRef = pfield @"outRef" # governorInput
