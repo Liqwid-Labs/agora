@@ -21,6 +21,7 @@ module Agora.Utils (
   puncurryTuple,
   psubtractSortedValue,
   pisSubValueOf,
+  pfindInputWithStateThreadToken,
 ) where
 
 import Plutarch.Api.V1 (AmountGuarantees (Positive), KeyGuarantees (Sorted))
@@ -32,6 +33,7 @@ import Plutarch.Api.V2 (
   PCurrencySymbol,
   PMaybeData (PDNothing),
   PTuple,
+  PTxInInfo,
   PValue,
  )
 import Plutarch.Builtin (pforgetData, pserialiseData)
@@ -198,3 +200,24 @@ pisSubValueOf = phoistAcyclic $ plam $ \vl vr ->
     #$ psubtractSortedValue
     # vl
     # vr
+
+{- | Find an input containing exactly one token with the given currency symbol
+
+     @since 1.0.0
+-}
+pfindInputWithStateThreadToken ::
+  forall tag.
+  ClosedTerm
+    ( PTagged tag PCurrencySymbol
+        :--> PBuiltinList PTxInInfo
+        :--> PMaybe PTxInInfo
+    )
+pfindInputWithStateThreadToken = plam $ \tokenSymbol inputs ->
+  pfind
+    # ( plam $ \input ->
+          ptaggedSymbolValueOf
+            # tokenSymbol
+            # (pfield @"value" # (pfield @"resolved" # input))
+            #== 1
+      )
+    # inputs

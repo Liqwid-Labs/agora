@@ -34,14 +34,14 @@ specs =
               governorValidator
               ( GovernorDatum
                   def
-                  (ProposalId 0)
+                  nextProposalId
                   def
                   def
                   3
               )
               MutateGovernor
               ( ScriptContext
-                  (mkEffectTxInfo validNewGovernorDatum)
+                  (mkEffectTxInfo validNewGovernorDatum')
                   (Spending govRef)
               )
           , effectSucceedsWith
@@ -50,14 +50,14 @@ specs =
               ( mkEffectDatum
                   ( GovernorDatum
                       def
-                      (ProposalId 0)
+                      nextProposalId
                       def
                       def
                       3
                   )
                   validNewGovernorDatum
               )
-              (ScriptContext (mkEffectTxInfo validNewGovernorDatum) (Spending effectRef))
+              (ScriptContext (mkEffectTxInfo validNewGovernorDatum') (Spending effectRef))
           ]
       , group
           "invalid new governor datum"
@@ -66,7 +66,7 @@ specs =
               governorValidator
               ( GovernorDatum
                   def
-                  (ProposalId 0)
+                  nextProposalId
                   def
                   def
                   3
@@ -82,7 +82,7 @@ specs =
               ( mkEffectDatum
                   ( GovernorDatum
                       def
-                      (ProposalId 0)
+                      nextProposalId
                       def
                       def
                       3
@@ -93,3 +93,11 @@ specs =
           ]
       ]
   ]
+  where
+    validNewGovernorDatum' :: GovernorDatum
+    validNewGovernorDatum' = validNewGovernorDatum {nextProposalId}
+    -- \^ The datum value pinned by the effect, disregarding the proposal ID and
+    --   taking this field from the governor input instead
+
+    nextProposalId :: ProposalId
+    nextProposalId = ProposalId 0
