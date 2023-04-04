@@ -1,9 +1,9 @@
 name,cpu,mem,size
-Agora/Effects/Treasury Withdrawal Effect/totally valid/effect,307988057,881427,4118
+Agora/Effects/Treasury Withdrawal Effect/totally valid/effect,404221466,1186248,4516
 Agora/Effects/Treasury Withdrawal Effect/totally valid/treasury,55756262,158723,1778
 Agora/Effects/Treasury Withdrawal Effect/totally valid/authority,12933097,37168,2361
-Agora/Effects/Treasury Withdrawal Effect/bad received value/treasury,55756262,158723,1778
-Agora/Effects/Treasury Withdrawal Effect/bad received value/authority,12933097,37168,2361
+Agora/Effects/Treasury Withdrawal Effect/bad received value/treasury,55756262,158723,1796
+Agora/Effects/Treasury Withdrawal Effect/bad received value/authority,12933097,37168,2379
 Agora/Effects/Treasury Withdrawal Effect/bad receiver order/treasury,55756262,158723,1778
 Agora/Effects/Treasury Withdrawal Effect/bad receiver order/authority,12933097,37168,2361
 Agora/Effects/Governor Mutation Effect/validator/valid new governor datum/governor validator should pass,127096099,363203,11972
