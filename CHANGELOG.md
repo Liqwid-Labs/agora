@@ -183,6 +183,8 @@ the stake validator easily. The behaviour of the default stake validator remains
 
 - Expected input datum value is pinned instead of out ref for governor mutation
   effect.
+  
+  Included by [#238](https://github.com/Liqwid-Labs/agora/pull/238).
 
 ## 0.2.0 -- 2022-08-13
 
