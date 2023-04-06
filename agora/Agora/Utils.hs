@@ -176,13 +176,13 @@ psubtractSortedValue = phoistAcyclic $ plam $ \a b ->
       # (pfmap # pnegate)
       # pto b
 
-pisPositiveValue ::
+pisNonNegativeValue ::
   forall (kg :: KeyGuarantees) (am :: AmountGuarantees) (s :: S).
   Term s (PValue kg am :--> PBool)
-pisPositiveValue =
+pisNonNegativeValue =
   phoistAcyclic $
     plam $
-      (AssocMap.pall # (AssocMap.pall # plam (0 #<)) #)
+      (AssocMap.pall # (AssocMap.pall # plam (0 #<=)) #)
         . pto
 
 pisSubValueOf ::
@@ -194,7 +194,7 @@ pisSubValueOf ::
         :--> PBool
     )
 pisSubValueOf = phoistAcyclic $ plam $ \vl vr ->
-  pisPositiveValue
+  pisNonNegativeValue
     #$ psubtractSortedValue
     # vl
     # vr
