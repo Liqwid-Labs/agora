@@ -20,8 +20,9 @@ module Agora.Utils (
   phashDatum,
   puncurryTuple,
   psubtractSortedValue,
-  pisSubValueOf,
   pfindInputWithStateThreadToken,
+  pfindOutputWithStateThreadTokenAndAddress,
+  pisSubValueOf,
 ) where
 
 import Plutarch.Api.V1 (AmountGuarantees (Positive), KeyGuarantees (Sorted))
@@ -30,10 +31,12 @@ import Plutarch.Api.V1.AssocMap qualified as AssocMap
 import Plutarch.Api.V1.Scripts (PDatumHash (PDatumHash))
 import Plutarch.Api.V2 (
   AmountGuarantees (NoGuarantees),
+  PAddress,
   PCurrencySymbol,
   PMaybeData (PDNothing),
   PTuple,
   PTxInInfo,
+  PTxOut,
   PValue,
  )
 import Plutarch.Builtin (pforgetData, pserialiseData)
@@ -178,6 +181,52 @@ psubtractSortedValue = phoistAcyclic $ plam $ \a b ->
       # (pfmap # pnegate)
       # pto b
 
+{- | Find an input containing exactly one token with the given currency symbol
+
+     @since 1.0.0
+-}
+pfindInputWithStateThreadToken ::
+  forall tag.
+  ClosedTerm
+    ( PTagged tag PCurrencySymbol
+        :--> PBuiltinList PTxInInfo
+        :--> PMaybe PTxInInfo
+    )
+pfindInputWithStateThreadToken = plam $ \tokenSymbol inputs ->
+  pfind
+    # ( plam $ \input ->
+          ptaggedSymbolValueOf
+            # tokenSymbol
+            # (pfield @"value" # (pfield @"resolved" # input))
+            #== 1
+      )
+    # inputs
+
+{- | Find an output containing exactly one token with the given currency symbol,
+    and with a PAddress that matches the given one.
+
+     @since 1.0.0
+-}
+pfindOutputWithStateThreadTokenAndAddress ::
+  forall tag.
+  ClosedTerm
+    ( PTagged tag PCurrencySymbol
+        :--> PAddress
+        :--> PBuiltinList PTxOut
+        :--> PMaybe PTxOut
+    )
+pfindOutputWithStateThreadTokenAndAddress = plam $ \tokenSymbol address outputs ->
+  pfind
+    # ( plam $ \output ->
+          ( ptaggedSymbolValueOf
+              # tokenSymbol
+              # (pfield @"value" # output)
+              #== 1
+          )
+            #&& (address #== (pfield @"address" # output))
+      )
+    # outputs
+
 pisNonNegativeValue ::
   forall (kg :: KeyGuarantees) (am :: AmountGuarantees) (s :: S).
   Term s (PValue kg am :--> PBool)
@@ -200,24 +249,3 @@ pisSubValueOf = phoistAcyclic $ plam $ \vl vr ->
     #$ psubtractSortedValue
     # vl
     # vr
-
-{- | Find an input containing exactly one token with the given currency symbol
-
-     @since 1.0.0
--}
-pfindInputWithStateThreadToken ::
-  forall tag.
-  ClosedTerm
-    ( PTagged tag PCurrencySymbol
-        :--> PBuiltinList PTxInInfo
-        :--> PMaybe PTxInInfo
-    )
-pfindInputWithStateThreadToken = plam $ \tokenSymbol inputs ->
-  pfind
-    # ( plam $ \input ->
-          ptaggedSymbolValueOf
-            # tokenSymbol
-            # (pfield @"value" # (pfield @"resolved" # input))
-            #== 1
-      )
-    # inputs

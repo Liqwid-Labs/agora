@@ -27,7 +27,7 @@ import Agora.Governor (
  )
 import Agora.Proposal (PProposalId)
 import Agora.SafeMoney (AuthorityTokenTag, GovernorSTTag)
-import Agora.Utils (pfindInputWithStateThreadToken)
+import Agora.Utils (pfindInputWithStateThreadToken, pfindOutputWithStateThreadTokenAndAddress)
 import Generics.SOP qualified as SOP
 import Plutarch.Api.V1 (PCurrencySymbol)
 import Plutarch.Api.V2 (
@@ -55,7 +55,7 @@ import Plutarch.Extra.ScriptContext (
 import Plutarch.Extra.Tagged (PTagged)
 import Plutarch.Lift (PConstantDecl, PLifted, PUnsafeLiftDecl)
 import PlutusTx qualified
-import "liqwid-plutarch-extra" Plutarch.Extra.List (ptryFromSingleton)
+
 import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC)
 
 --------------------------------------------------------------------------------
@@ -204,6 +204,8 @@ mutateGovernorValidator =
 
         governorRef = pfield @"outRef" # governorInput
 
+        governorInputAddress = pfield @"address" #$ pfield @"resolved" # governorInput
+
         governorInputDatum =
           ptrace "Resolve governor input datum" $
             pfromData $
@@ -240,7 +242,7 @@ mutateGovernorValidator =
         governorRedeemer =
           pfromData $
             passertPJust
-              # "Govenor redeemer should be resolved"
+              # "Governor redeemer should be resolved"
               #$ ptryFromRedeemer @(PAsData PGovernorRedeemer)
               # mkRecordConstr PSpending (#_0 .= governorRef)
               # txInfoF.redeemers
@@ -252,8 +254,12 @@ mutateGovernorValidator =
 
       let
         governorOutput =
-          ptrace "Only governor output is allowed" $
-            ptryFromSingleton # pfromData txInfoF.outputs
+          passertPJust
+            # "No governor output found"
+            #$ pfindOutputWithStateThreadTokenAndAddress
+            # pfromData gstSymbol
+            # governorInputAddress
+            # pfromData txInfoF.outputs
 
         governorOutputDatum =
           ptrace "Resolve governor outoput datum" $
