@@ -21,7 +21,7 @@ module Agora.Utils (
   puncurryTuple,
   psubtractSortedValue,
   pfindInputWithStateThreadToken,
-  pfindOutputWithStateThreadTokenAndAddress,
+  pfindOutputWithStateThreadToken,
   pisSubValueOf,
 ) where
 
@@ -31,7 +31,6 @@ import Plutarch.Api.V1.AssocMap qualified as AssocMap
 import Plutarch.Api.V1.Scripts (PDatumHash (PDatumHash))
 import Plutarch.Api.V2 (
   AmountGuarantees (NoGuarantees),
-  PAddress,
   PCurrencySymbol,
   PMaybeData (PDNothing),
   PTuple,
@@ -203,19 +202,17 @@ pfindInputWithStateThreadToken = plam $ \tokenSymbol inputs ->
     # inputs
 
 {- | Find an output containing exactly one token with the given currency symbol,
-    and with a PAddress that matches the given one.
 
      @since 1.0.0
 -}
-pfindOutputWithStateThreadTokenAndAddress ::
+pfindOutputWithStateThreadToken ::
   forall tag.
   ClosedTerm
     ( PTagged tag PCurrencySymbol
-        :--> PAddress
         :--> PBuiltinList PTxOut
         :--> PMaybe PTxOut
     )
-pfindOutputWithStateThreadTokenAndAddress = plam $ \tokenSymbol address outputs ->
+pfindOutputWithStateThreadToken = plam $ \tokenSymbol outputs ->
   pfind
     # ( plam $ \output ->
           ( ptaggedSymbolValueOf
@@ -223,7 +220,6 @@ pfindOutputWithStateThreadTokenAndAddress = plam $ \tokenSymbol address outputs 
               # (pfield @"value" # output)
               #== 1
           )
-            #&& (address #== (pfield @"address" # output))
       )
     # outputs
 

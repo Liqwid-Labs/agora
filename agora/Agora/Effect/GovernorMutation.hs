@@ -27,7 +27,7 @@ import Agora.Governor (
  )
 import Agora.Proposal (PProposalId)
 import Agora.SafeMoney (AuthorityTokenTag, GovernorSTTag)
-import Agora.Utils (pfindInputWithStateThreadToken, pfindOutputWithStateThreadTokenAndAddress)
+import Agora.Utils (pfindInputWithStateThreadToken, pfindOutputWithStateThreadToken)
 import Generics.SOP qualified as SOP
 import Plutarch.Api.V1 (PCurrencySymbol)
 import Plutarch.Api.V2 (
@@ -204,8 +204,6 @@ mutateGovernorValidator =
 
         governorRef = pfield @"outRef" # governorInput
 
-        governorInputAddress = pfield @"address" #$ pfield @"resolved" # governorInput
-
         governorInputDatum =
           ptrace "Resolve governor input datum" $
             pfromData $
@@ -256,9 +254,8 @@ mutateGovernorValidator =
         governorOutput =
           passertPJust
             # "No governor output found"
-            #$ pfindOutputWithStateThreadTokenAndAddress
+            #$ pfindOutputWithStateThreadToken
             # pfromData gstSymbol
-            # governorInputAddress
             # pfromData txInfoF.outputs
 
         governorOutputDatum =
