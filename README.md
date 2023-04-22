@@ -34,7 +34,7 @@ cabal run agora-scripts -- --enable-cors-middleware
 
 ## Documentation
 
-Documentation for Agora is hosted on Notion. You can find the specs [here](https://liqwid.notion.site/e85c09d2c9a542b19aac8dd3d6caa98b?v=d863219cd6a14082a661c4959cabd6e7).
+Documentation for Agora is hosted on Notion. You can find the specs [here](https://liqwid.notion.site/e85c09d2c9a542b19aac8dd3d6caa98b?v=b6442faef00849fa8e92bc3771a22630).
 
 ### Using Agora for your protocol
 
