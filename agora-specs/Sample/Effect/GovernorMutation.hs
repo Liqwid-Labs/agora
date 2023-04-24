@@ -86,10 +86,10 @@ effectRef =
     1
 
 -- | The input effect datum in 'mkEffectTransaction'.
-mkEffectDatum :: GovernorDatum -> MutateGovernorDatum
-mkEffectDatum newGovDatum =
+mkEffectDatum :: GovernorDatum -> GovernorDatum -> MutateGovernorDatum
+mkEffectDatum oldGovDatum newGovDatum =
   MutateGovernorDatum
-    { governorRef = govRef
+    { oldDatum = oldGovDatum
     , newDatum = newGovDatum
     }
 
@@ -131,7 +131,7 @@ mkEffectTxInfo newGovDatum =
 
       -- The effect should update 'nextProposalId'
       effectInputDatum' :: MutateGovernorDatum
-      effectInputDatum' = mkEffectDatum newGovDatum
+      effectInputDatum' = mkEffectDatum governorInputDatum' newGovDatum
       effectInputDatum :: Datum
       effectInputDatum = Datum $ toBuiltinData effectInputDatum'
       effectInput :: TxOut

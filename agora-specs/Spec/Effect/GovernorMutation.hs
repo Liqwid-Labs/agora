@@ -34,21 +34,30 @@ specs =
               governorValidator
               ( GovernorDatum
                   def
-                  (ProposalId 0)
+                  nextProposalId
                   def
                   def
                   3
               )
               MutateGovernor
               ( ScriptContext
-                  (mkEffectTxInfo validNewGovernorDatum)
+                  (mkEffectTxInfo validNewGovernorDatum')
                   (Spending govRef)
               )
           , effectSucceedsWith
               "effect validator should pass"
               effectValidator
-              (mkEffectDatum validNewGovernorDatum)
-              (ScriptContext (mkEffectTxInfo validNewGovernorDatum) (Spending effectRef))
+              ( mkEffectDatum
+                  ( GovernorDatum
+                      def
+                      nextProposalId
+                      def
+                      def
+                      3
+                  )
+                  validNewGovernorDatum
+              )
+              (ScriptContext (mkEffectTxInfo validNewGovernorDatum') (Spending effectRef))
           ]
       , group
           "invalid new governor datum"
@@ -57,7 +66,7 @@ specs =
               governorValidator
               ( GovernorDatum
                   def
-                  (ProposalId 0)
+                  nextProposalId
                   def
                   def
                   3
@@ -70,8 +79,25 @@ specs =
           , effectFailsWith
               "effect validator should fail"
               effectValidator
-              (mkEffectDatum validNewGovernorDatum)
+              ( mkEffectDatum
+                  ( GovernorDatum
+                      def
+                      nextProposalId
+                      def
+                      def
+                      3
+                  )
+                  validNewGovernorDatum
+              )
               (ScriptContext (mkEffectTxInfo invalidNewGovernorDatum) (Spending effectRef))
           ]
       ]
   ]
+  where
+    validNewGovernorDatum' :: GovernorDatum
+    validNewGovernorDatum' = validNewGovernorDatum {nextProposalId}
+    -- \^ The datum value pinned by the effect, disregarding the proposal ID and
+    --   taking this field from the governor input instead
+
+    nextProposalId :: ProposalId
+    nextProposalId = ProposalId 0

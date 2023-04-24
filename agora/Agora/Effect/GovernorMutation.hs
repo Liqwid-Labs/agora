@@ -22,17 +22,17 @@ import Agora.Effect (makeEffect)
 import Agora.Governor (
   GovernorDatum,
   GovernorRedeemer (MutateGovernor),
-  PGovernorDatum,
+  PGovernorDatum (PGovernorDatum),
   PGovernorRedeemer,
  )
+import Agora.Proposal (PProposalId)
 import Agora.SafeMoney (AuthorityTokenTag, GovernorSTTag)
-import Agora.Utils (ptaggedSymbolValueOf)
+import Agora.Utils (pfindInputWithStateThreadToken, pfindOutputWithStateThreadToken)
 import Generics.SOP qualified as SOP
 import Plutarch.Api.V1 (PCurrencySymbol)
 import Plutarch.Api.V2 (
   PScriptHash,
   PScriptPurpose (PSpending),
-  PTxOutRef,
   PValidator,
  )
 import Plutarch.DataRepr (
@@ -45,7 +45,7 @@ import Plutarch.Extra.IsData (
   ProductIsData (ProductIsData),
  )
 import Plutarch.Extra.Maybe (passertPJust, pfromJust)
-import Plutarch.Extra.Record (mkRecordConstr, (.=))
+import Plutarch.Extra.Record (mkRecordConstr, (.&), (.=))
 import Plutarch.Extra.ScriptContext (
   pisScriptAddress,
   pscriptHashFromAddress,
@@ -54,9 +54,8 @@ import Plutarch.Extra.ScriptContext (
  )
 import Plutarch.Extra.Tagged (PTagged)
 import Plutarch.Lift (PConstantDecl, PLifted, PUnsafeLiftDecl)
-import PlutusLedgerApi.V1 (TxOutRef)
 import PlutusTx qualified
-import "liqwid-plutarch-extra" Plutarch.Extra.List (ptryFromSingleton)
+
 import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletC, pletFieldsC)
 
 --------------------------------------------------------------------------------
@@ -66,8 +65,8 @@ import "liqwid-plutarch-extra" Plutarch.Extra.TermCont (pguardC, pletC, pletFiel
      @since 0.1.0
 -}
 data MutateGovernorDatum = MutateGovernorDatum
-  { governorRef :: TxOutRef
-  -- ^ Referenced governor state UTXO should be updated by the effect.
+  { oldDatum :: GovernorDatum
+  -- ^ The governor datum value on which this effect is valid
   , newDatum :: GovernorDatum
   -- ^ The new settings for the governor.
   }
@@ -100,7 +99,7 @@ newtype PMutateGovernorDatum (s :: S)
       ( Term
           s
           ( PDataRecord
-              '[ "governorRef" ':= PTxOutRef
+              '[ "oldDatum" ':= PGovernorDatum
                , "newDatum" ':= PGovernorDatum
                ]
           )
@@ -194,57 +193,104 @@ mutateGovernorValidator =
       pguardC "Only self and governor script inputs are allowed" $
         plength # scriptInputs #== 2
 
-      pguardC "Governor input should present" $
-        pany
-          # plam
-            ( flip pletAll $ \inputF ->
-                let isGovernorInput =
-                      foldl1
-                        (#&&)
-                        [ ptraceIfFalse "Governor UTxO should carry GST" $
-                            ptaggedSymbolValueOf
-                              # pfromData gstSymbol
-                              # (pfield @"value" # inputF.resolved)
-                              #== 1
-                        , ptraceIfFalse "Can only modify the pinned governor" $
-                            inputF.outRef #== effectDatumF.governorRef
-                        , ptraceIfFalse "Governor validator run" $
-                            let inputScriptHash =
-                                  pfromJust
-                                    #$ pscriptHashFromAddress
-                                    #$ pfield @"address"
-                                    # inputF.resolved
-                             in inputScriptHash #== pfromData govValidatorHash
-                        ]
-                 in isGovernorInput
-            )
-          # scriptInputs
+      let
+        governorInput =
+          passertPJust
+            # "Governor UTXO should carry GST"
+            # ( pfindInputWithStateThreadToken
+                  # pfromData gstSymbol
+                  # scriptInputs
+              )
 
-      let governorRedeemer =
+        governorRef = pfield @"outRef" # governorInput
+
+        governorInputDatum =
+          ptrace "Resolve governor input datum" $
             pfromData $
-              passertPJust
-                # "Govenor redeemer should be resolved"
-                #$ ptryFromRedeemer @(PAsData PGovernorRedeemer)
-                # mkRecordConstr PSpending (#_0 .= effectDatumF.governorRef)
-                # txInfoF.redeemers
+              ptryFromOutputDatum @(PAsData PGovernorDatum)
+                # (pfield @"datum" #$ pfield @"resolved" # governorInput)
+                # txInfoF.datums
+
+        inputProposalId = pfield @"nextProposalId" # governorInputDatum
+
+        expectedInputDatum =
+          replaceProposalId # effectDatumF.oldDatum # inputProposalId
+
+      pguardC "Governor input should be valid" $
+        ( pletAll governorInput $ \inputF ->
+            let
+              isGovernorInput =
+                foldl1
+                  (#&&)
+                  [ ptraceIfFalse "Can only modify the pinned governor datum" $
+                      governorInputDatum #== expectedInputDatum
+                  , ptraceIfFalse "Governor validator run" $
+                      let inputScriptHash =
+                            pfromJust
+                              #$ pscriptHashFromAddress
+                              #$ pfield @"address"
+                              # inputF.resolved
+                       in inputScriptHash #== pfromData govValidatorHash
+                  ]
+             in
+              isGovernorInput
+        )
+
+      let
+        governorRedeemer =
+          pfromData $
+            passertPJust
+              # "Governor redeemer should be resolved"
+              #$ ptryFromRedeemer @(PAsData PGovernorRedeemer)
+              # mkRecordConstr PSpending (#_0 .= governorRef)
+              # txInfoF.redeemers
 
       pguardC "Spend governor with redeemer MutateGovernor" $
         governorRedeemer #== pconstant MutateGovernor
 
       ----------------------------------------------------------------------------
 
-      let governorOutput =
-            ptrace "Only governor output is allowed" $
-              ptryFromSingleton # pfromData txInfoF.outputs
+      let
+        governorOutput =
+          passertPJust
+            # "No governor output found"
+            #$ pfindOutputWithStateThreadToken
+            # pfromData gstSymbol
+            # pfromData txInfoF.outputs
 
-          governorOutputDatum =
-            ptrace "Resolve governor outoput datum" $
-              pfromData $
-                ptryFromOutputDatum @(PAsData PGovernorDatum)
-                  # (pfield @"datum" # governorOutput)
-                  # txInfoF.datums
+        governorOutputDatum =
+          ptrace "Resolve governor outoput datum" $
+            pfromData $
+              ptryFromOutputDatum @(PAsData PGovernorDatum)
+                # (pfield @"datum" # governorOutput)
+                # txInfoF.datums
+
+        expectedOutputDatum =
+          replaceProposalId # effectDatumF.newDatum # inputProposalId
 
       pguardC "New governor datum correct" $
-        governorOutputDatum #== effectDatumF.newDatum
+        governorOutputDatum #== expectedOutputDatum
 
       return $ popaque $ pconstant ()
+  where
+    replaceProposalId ::
+      ClosedTerm
+        ( PGovernorDatum
+            :--> PAsData PProposalId
+            :--> PGovernorDatum
+        )
+    replaceProposalId = plam $ \datum proposalId ->
+      pletAll datum $ \datumF ->
+        mkRecordConstr
+          PGovernorDatum
+          ( #proposalThresholds
+              .= datumF.proposalThresholds
+              .& #nextProposalId
+              .= proposalId
+              .& #proposalTimings
+              .= datumF.proposalTimings
+              .& #createProposalTimeRangeMaxWidth
+              .= datumF.createProposalTimeRangeMaxWidth
+              .& #maximumCreatedProposalsPerStake
+              .= datumF.maximumCreatedProposalsPerStake
+          )
