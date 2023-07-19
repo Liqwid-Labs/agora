@@ -38,6 +38,7 @@ module Sample.Proposal.Advance (
   mkUnexpectedOutputStakeBundles,
   mkFastforwardToFinishBundles,
   mkBadGovernorRedeemerBundle,
+  mkMintGATsForEffectlessProposal,
 ) where
 
 import Agora.Governor (
@@ -1049,6 +1050,30 @@ mkMintGATsForWrongEffectsBundle nCosigners nEffects =
     }
   where
     template = mkValidFromLockedBundle nCosigners nEffects
+
+mkMintGATsForEffectlessProposal ::
+  Word ->
+  ParameterBundle
+mkMintGATsForEffectlessProposal nCosigners =
+  template
+  {
+    proposalParameters =
+      template.proposalParameters
+        { effectList = [StrictMap.empty, StrictMap.empty]
+        , winnerAndVotes = Just (All, 1_000_000_000)
+        }
+  , authorityTokenParameters =
+      [ AuthorityTokenParameters
+          { mintGATsFor = validatorHashes !! 0
+          , carryDatum = Just dummyDatum
+          , carryAuthScript = Nothing
+          , invalidTokenName = True
+          , shouldInlineDatum = True
+          }
+      ]
+  }
+  where
+    template = mkValidFromLockedBundle nCosigners 2
 
 mkNoGATMintedBundle ::
   Word ->

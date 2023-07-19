@@ -328,6 +328,15 @@ specs =
                                 , forAuthorityTokenPolicy = Just True
                                 }
                           , Advance.mkTestTree
+                              "mint GATs when no effects are listed"
+                              (Advance.mkMintGATsForEffectlessProposal cs)
+                              Advance.Validity
+                                { forProposalValidator = True
+                                , forStakeValidator = True
+                                , forGovernorValidator = Just False
+                                , forAuthorityTokenPolicy = Just True
+                                }
+                          , Advance.mkTestTree
                               "mint GATs with bad token name"
                               (Advance.mkMintGATsWithoutTagBundle cs es)
                               Advance.Validity
